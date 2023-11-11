@@ -34,7 +34,7 @@ To build the code:
 * [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-05-10
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320.
 
-The following libraries are included in the code:
+The following libraries are used:
 
 * [kissfft](https://github.com/mborgerding/kissfft) 131.1.0.
 
