@@ -11,8 +11,120 @@
 #include "SpectrumAnalyzerUI.h"
 
 #include <vector>
+#include <algorithm>
 
 #pragma hdrstop
+
+struct Band
+{
+    double lo;
+    double ctr;
+    double hi;
+} * FrequencyBands;
+
+double * spectrum;
+
+double * currentSpectrum;
+
+enum SummationMode
+{
+    Minimum,
+    Maximum,
+    Sum,
+    RMSSum,
+    RMS,
+    Average,
+    Median
+};
+
+enum TimeSmootingMethod
+{
+    MethodAverage,
+    MethodPeak
+};
+
+enum ScalingFunctions
+{
+    Logarithmic = 1,
+};
+
+enum FrequencyDistribution
+{
+    Octaves,
+    Frequencies,
+    AveePlayer,
+};
+
+struct Settings
+{
+    FrequencyDistribution _FrequencyDistribution = FrequencyDistribution::Frequencies;
+
+    size_t _numBands = 320;
+    uint32_t _minFreq = 20;
+    uint32_t _maxFreq = 20000;
+
+    double _hzLinearFactor = 0.0; // 0.0 - 1.0
+    double _bandwidth = 0.5; // 0.0 - 1.0
+
+    // Octaves
+    uint32_t _octaves = 12;
+    uint32_t _minNote = 4;
+    uint32_t _maxNote = 124;
+    uint32_t _detune = 0;
+    uint32_t _noteTuning = 440;
+
+    // Frequencies
+    ScalingFunctions _fscale = Logarithmic;
+
+    TimeSmootingMethod _SmoothingMethod = TimeSmootingMethod::MethodAverage;
+    double _SmoothingConstant = 0.0; // 0.0 - 1.0
+
+/*
+        type: 'fft',
+        fftSize: 4096,
+        bandwidthOffset: 1,
+
+        windowFunction: 'hann',
+        windowParameter: 1,
+        windowSkew: 0,
+        timeAlignment: 1,
+        downsample: 0,
+        interpSize: 32,
+        summationMode: 'max',
+        useComplex: true,
+        smoothInterp: true,
+        smoothSlope: true,
+        holdTime: 30,
+        fallRate: 0.5,
+        clampPeaks: true,
+        peakMode: 'gravity',
+        showPeaks: true,
+        hzLinearFactor: 0,
+        minDecibels: -90,
+        maxDecibels: 0,
+        useDecibels: true,
+        gamma: 1,
+        useAbsolute: true,
+        freeze: false,
+        color: 'none',
+        showLabels: true,
+        showLabelsY: true,
+        labelTuning: 440,
+        showDC: true,
+        showNyquist: true,
+        mirrorLabels: true,
+        diffLabels: false,
+        labelMode : 'decade',
+        darkMode: false,
+        compensateDelay: false
+*/
+} _Settings;
+
+struct Complex
+{
+    double re;
+    double im;
+};
 
 static bool _IsPlaying = false;
 
@@ -64,6 +176,13 @@ inline static double Log(double a, double newBase)
 SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10)
 {
     set_configuration(data);
+
+    FrequencyBands = new Band[_Settings._numBands];
+    ::memset(FrequencyBands, 0, sizeof(Band) * _Settings._numBands);
+
+    spectrum = new double[_Settings._numBands];
+
+    currentSpectrum = new double[_Settings._numBands];
 }
 
 #pragma region CWindowImpl
@@ -374,11 +493,6 @@ double clamp(double x, double min, double max)
     return Min(Max(x, min), max);
 }
 
-enum ScalingFunctions
-{
-    Logarithmic = 1,
-};
-
 double fscale(double x, ScalingFunctions function, double freqSkew)
 {
     switch (function)
@@ -403,24 +517,13 @@ double invFscale(double x, ScalingFunctions function, double freqSkew)
     }
 }
 
-struct Band
+void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, ScalingFunctions scalingFunction, double freqSkew, double bandwidth)
 {
-    double lo;
-    double ctr;
-    double hi;
-} FrequencyBands[320] = { };
-
-double spectrum[320] = { };
-
-double currentSpectrum[320] = { };
-
-void generateFreqBands(size_t N = _countof(FrequencyBands), uint32_t low = 20, uint32_t high = 20000, ScalingFunctions freqScale = Logarithmic, double freqSkew = 0.0, double bandwidth = 0.5)
-{
-    for (size_t i = 0; i < N; ++i)
+    for (size_t i = 0; i < numBands; ++i)
     {
-        FrequencyBands[i].lo  = invFscale(map((double)((double) i - bandwidth), 0., (double)(N - 1), fscale(low, freqScale, freqSkew), fscale(high, freqScale, freqSkew)), freqScale, freqSkew);
-        FrequencyBands[i].ctr = invFscale(map((double)(i),                      0., (double)(N - 1), fscale(low, freqScale, freqSkew), fscale(high, freqScale, freqSkew)), freqScale, freqSkew);
-        FrequencyBands[i].hi  = invFscale(map((double)((double) i + bandwidth), 0., (double)(N - 1), fscale(low, freqScale, freqSkew), fscale(high, freqScale, freqSkew)), freqScale, freqSkew);
+        FrequencyBands[i].lo  = invFscale(map((double)((double) i - bandwidth), 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
+        FrequencyBands[i].ctr = invFscale(map((double)(i),                      0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
+        FrequencyBands[i].hi  = invFscale(map((double)((double) i + bandwidth), 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
     }
 }
 
@@ -440,27 +543,6 @@ double ascale(double x)
         return map(::pow(x, (1 / gamma)), !UseAbsolute * ::pow(::pow(10, (MinDecibels / 20)), (1 / gamma)), ::pow(::pow(10, (MaxDecibels / 20)), (1 / gamma)), 0., 1.);
 }
 
-enum SummationMode
-{
-    Minimum,
-    Maximum,
-    Sum,
-    RMSSum,
-    RMS,
-    Average,
-    Median
-};
-
-enum TimeSmootingMethod
-{
-    MethodAverage,
-    MethodPeak
-};
-
-TimeSmootingMethod smoothingMode = TimeSmootingMethod::MethodAverage;
-
-double smoothingTimeConstant = 0.;
-
 // Hz and FFT bin conversion
 double hertzToFFTBin(double x, size_t bufferSize = 4096, uint32_t sampleRate = 44100)
 {
@@ -471,12 +553,6 @@ uint32_t fftBinToHertz(size_t x, size_t bufferSize = 4096, uint32_t sampleRate =
 {
     return (uint32_t)((size_t)(x * sampleRate) / bufferSize);
 }
-
-struct Complex
-{
-    double re;
-    double im;
-};
 
 double lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
 {
@@ -515,31 +591,48 @@ double lanzcos(const double * fftCoeffs, size_t length, double x, int kernelSize
     return Sum;
 }
 
-// Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, size_t bufferSize, uint32_t sampleRate)
+double median(std::vector<double> & data)
 {
-    for (size_t j = 0; j < 320; ++j)
+    if (data.size())
+        return NAN;
+
+    if (data.size() <= 1)
+        return data[0];
+
+    std::vector<double> SortedData = data;
+
+    sort(SortedData.begin(), SortedData.end());
+
+    size_t Half = data.size() / 2;
+
+    return (data.size() % 2) ? SortedData[Half] : (SortedData[Half - 1] + SortedData[Half]) / 2;
+}
+
+// Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
+void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, size_t bandCount, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
+{
+    for (size_t j = 0; j < bandCount; ++j)
     {
         Band& x = freqBands[j];
 
-        int minIdx = (int)  ::ceil(hertzToFFTBin(Min(x.hi, x.lo), bufferSize, sampleRate));
-        int maxIdx = (int) ::floor(hertzToFFTBin(Max(x.hi, x.lo), bufferSize, sampleRate));
+        int minIdx = (int)  ::ceil(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate));
+        int maxIdx = (int) ::floor(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate));
 
-        int minIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Min(x.hi, x.lo), bufferSize, sampleRate)) + 1 : minIdx);
-        int maxIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Max(x.hi, x.lo), bufferSize, sampleRate)) - 1 : maxIdx);
+        int minIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate)) + 1 : minIdx);
+        int maxIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate)) - 1 : maxIdx);
 
-        double bandGain = smoothGainTransition && (summationMode == Sum || summationMode == RMSSum) ? ::hypot(1, ::pow(((x.hi - x.lo) * (double) bufferSize / sampleRate), (1 - (int) (summationMode == RMS || summationMode == RMSSum) / 2))) : 1.;
+        double bandGain = smoothGainTransition && (summationMode == Sum || summationMode == RMSSum) ? ::hypot(1, ::pow(((x.hi - x.lo) * (double) length / sampleRate), (1 - (int) (summationMode == RMS || summationMode == RMSSum) / 2))) : 1.;
 
         if (minIdx2 > maxIdx2)
         {
-            spectrum[j] = ::fabs(lanzcos(fftCoeffs, length, x.ctr * (double) bufferSize / sampleRate, interpSize, useComplex)) * bandGain;
+            spectrum[j] = ::fabs(lanzcos(fftCoeffs, length, x.ctr * (double) length / sampleRate, interpSize, useComplex)) * bandGain;
         }
         else
         {
             double sum = (summationMode == Minimum) ? DBL_MAX : 0.;
             double diff = 0.;
 
-            int overflowCompensation = Max(maxIdx - minIdx - (int) bufferSize, 0);
+            int overflowCompensation = Max(maxIdx - minIdx - (int) length, 0);
 
             bool isAverage = (summationMode == Average || summationMode == RMS) || ((summationMode == Sum || summationMode == RMSSum) && smoothGainTransition);
             bool isRMS = summationMode == RMS || summationMode == RMSSum;
@@ -581,8 +674,7 @@ void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, int
             }
 
             if (summationMode == Median)
-//FIXME         sum = median(medianData);
-                sum = 0.;
+                sum = median(medianData);
             else
                 sum /= isAverage ? diff : 1;
 
@@ -591,36 +683,26 @@ void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, int
     }
 }
 
-void calcSmoothingTimeConstant(double * targetArr, double * sourceArr, double factor = 0.5)
+/// <summary>
+/// Applies a time smoothing factor.
+/// </summary>
+void calcSmoothingTimeConstant(double * dst, const double * src, size_t count, double factor)
 {
-    for (size_t i = 0; i < 320; ++i)
-        targetArr[i] = (!::isnan(targetArr[i]) ? targetArr[i] * factor : 0)  + (!::isnan(sourceArr[i]) ? sourceArr[i] * (1 - factor) : 0);
+    if (factor != 0.0)
+    {
+        for (size_t i = 0; i < count; ++i)
+            dst[i] = (!::isnan(dst[i]) ? dst[i] * factor : 0.0) + (!::isnan(src[i]) ? src[i] * (1.0 - factor) : 0.0);
+    }
+    else
+        ::memcpy(dst, src, sizeof(dst) * count);
 }
 
-void calcPeakDecay(double * targetArr, double * sourceArr, double factor = 0.5)
+void calcPeakDecay(double * dst, const double * src, size_t count, double factor)
 {
-    for (size_t i = 0; i < 320; ++i)
-        targetArr[i] = Max(!::isnan(targetArr[i]) ? targetArr[i] * factor : 0, !::isnan(sourceArr[i]) ? sourceArr[i] : 0);
+    for (size_t i = 0; i < count; ++i)
+        dst[i] = Max(!::isnan(dst[i]) ? dst[i] * factor : 0.0, !::isnan(src[i]) ? src[i] : 0.0);
 }
-/*
-double median(std::vector<double>& data)
-{
-    if (data.size())
-        return NAN;
 
-    if (data.size() <= 1)
-        return data[0];
-
-    const
-        sortedData = data.slice().sort((x, y) => x - y),
-        half = Math.trunc(data.length / 2);
-
-    if (data.length % 2)
-        return sortedData[half];
-
-    return (sortedData[half - 1] + sortedData[half]) / 2;
-}
-*/
 /// <summary>
 /// Render an audio chunk.
 /// </summary>
@@ -640,7 +722,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         ::memset(_FrequencyBands, 0, sizeof(_FrequencyBands[0]) * _BandCount);
     }
 
-    // Add the samples to the spectrum provider.
+    // Add the samples to the spectrum analyzer.
     {
         const audio_sample * Samples = chunk.get_data();
 
@@ -650,7 +732,20 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     }
 
     // Initialize the bands.
-    generateFreqBands();
+    switch (_Settings._FrequencyDistribution)
+    {
+        case Octaves:
+//          generateOctaveBands(_Settings._octaves, _Settings._minNote, _Settings._maxNote, _Settings._detune, _Settings._noteTuning, _Settings._bandwidth);
+            break;
+
+        case AveePlayer:
+//          generateAveePlayerFreqs(_Settings._numBands, _Settings._minFreq, _Settings._maxFreq, _Settings._hzLinearFactor, _Settings._bandwidth);
+            break;
+
+        case Frequencies:
+        default:
+            generateFreqBands(_Settings._numBands, _Settings._minFreq, _Settings._maxFreq, _Settings._fscale, _Settings._hzLinearFactor, _Settings._bandwidth);
+    }
 
     {
         // Get the frequency data.
@@ -658,18 +753,17 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
         _SpectrumAnalyzer->GetFrequencyData(FreqData, (size_t) _FFTSize);
 
-        ::memset(spectrum, 0, sizeof(spectrum));
+        // Calculate the spectrum 
+        calcSpectrum(FreqData, (size_t) _FFTSize / 2, FrequencyBands, _Settings._numBands, 32, SummationMode::Maximum, false, true, true, SampleRate);
 
-        calcSpectrum(FreqData, (size_t) _FFTSize / 2, FrequencyBands, 32, SummationMode::Maximum, false, true, true, (size_t) _FFTSize / 2, SampleRate);
-
-        switch (smoothingMode)
+        switch (_Settings._SmoothingMethod)
         {
             case MethodAverage:
-                calcSmoothingTimeConstant(currentSpectrum, spectrum, smoothingTimeConstant / 100);
+                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Settings._numBands, _Settings._SmoothingConstant);
                 break;
 
             case MethodPeak:
-                calcPeakDecay(currentSpectrum, spectrum, smoothingTimeConstant / 100);
+                calcPeakDecay(currentSpectrum, spectrum, _Settings._numBands, _Settings._SmoothingConstant);
                 break;
         
             default:
@@ -972,6 +1066,9 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _IsPlaying = true;
+
+    ::memset(spectrum, 0, sizeof(double) * _Settings._numBands);
+    ::memset(currentSpectrum, 0, sizeof(double) * _Settings._numBands);
 
     Invalidate();
 }

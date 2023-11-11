@@ -7,6 +7,7 @@
 
 #include "Configuration.h"
 #include "SpectrumAnalyzer.h"
+#include "RingBuffer.h"
 
 struct FrequencyBand
 {
@@ -21,9 +22,8 @@ struct FrequencyBand
 class SpectrumAnalyzerUIElement : public ui_element_instance, public CWindowImpl<SpectrumAnalyzerUIElement>, private play_callback_impl_base
 {
 public:
-    SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
-
     SpectrumAnalyzerUIElement() = delete;
+    SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
 
     SpectrumAnalyzerUIElement(const SpectrumAnalyzerUIElement &) = delete;
     SpectrumAnalyzerUIElement & operator=(const SpectrumAnalyzerUIElement &) = delete;
@@ -160,6 +160,7 @@ private:
     const double dBRange = dBMax - dBMin;
 };
 
+#ifdef later
 /// <summary>
 /// Handles the playback events we're subscribed to.
 /// </summary>
@@ -180,7 +181,7 @@ public:
     /// </summary>
     virtual unsigned get_flags()
     {
-            return flag_on_playback_new_track | flag_on_playback_stop | flag_on_playback_pause;
+        return flag_on_playback_new_track | flag_on_playback_stop | flag_on_playback_pause;
     }
 
     /// <summary>
@@ -236,3 +237,4 @@ public:
 
 private:
 };
+#endif

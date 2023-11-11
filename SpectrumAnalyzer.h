@@ -3,8 +3,6 @@
 
 #include "framework.h"
 
-#include "RingBuffer.h"
-
 #include "FftProvider.h"
 
 #pragma once
@@ -15,6 +13,8 @@
 class SpectrumAnalyzer : public FFTProvider
 {
 public:
+    SpectrumAnalyzer() = delete;
+
     /// <summary>
     /// Initializes an instance of the class.
     /// </summary>
@@ -28,8 +28,6 @@ public:
 
         _SampleRate = sampleRate;
     }
-
-    SpectrumAnalyzer() = delete;
 
     SpectrumAnalyzer(const SpectrumAnalyzer &) = delete;
     SpectrumAnalyzer & operator=(const SpectrumAnalyzer &) = delete;
