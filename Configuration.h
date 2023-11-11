@@ -3,21 +3,16 @@
 
 #pragma once
 
-class Config
+class Configuration
 {
 public:
     size_t GetVersion();
 
-    Config();
+    Configuration();
 
     void Build(ui_element_config_builder & builder);
     void Parse(ui_element_config_parser & parser);
     void Reset();
-
-    double GetZoomPercentage()
-    {
-        return (double) _ZoomFactor * 0.01;
-    }
 
     /// <summary>
     /// Gets the duration (in ms) of the window that will be rendered.
@@ -34,13 +29,10 @@ public:
 
 public:
     bool _UseHardwareRendering;
-    bool _DoDownMixing;
     bool _UseZeroTrigger;
-    bool _DoResampling;
-    bool _UseLowQuality;
+    bool _UseAntialiasing;
 
     size_t _WindowDuration;
-    size_t _ZoomFactor;
     size_t _RefreshRateLimit; // in Hz
     size_t _LineStrokeWidth;
 };

@@ -12,46 +12,41 @@
 
 #pragma hdrstop
 
-size_t Config::GetVersion()
+size_t Configuration::GetVersion()
 {
     return NUM_CONFIG_VERSION;
 }
 
-Config::Config()
+Configuration::Configuration()
 {
     Reset();
 }
 
-void Config::Reset()
+void Configuration::Reset()
 {
-    _UseHardwareRendering = true;
-
-    _DoDownMixing = false;
-    _UseZeroTrigger = false;
-    _DoResampling = false;
-    _UseLowQuality = false;
-    _WindowDuration = 100;
-    _ZoomFactor = 100;
     _RefreshRateLimit = 20;
-    _LineStrokeWidth = 10;
+    _UseHardwareRendering = true;
+    _UseAntialiasing = true;
 
+    _UseZeroTrigger = false;
+    _WindowDuration = 100;
+    _LineStrokeWidth = 10;
 }
 
-void Config::Build(ui_element_config_builder & builder)
+void Configuration::Build(ui_element_config_builder & builder)
 {
     builder << GetVersion();
-    builder << _LineStrokeWidth;
-    builder << _UseLowQuality;
-    builder << _DoResampling;
+
     builder << _RefreshRateLimit;
-    builder << _UseZeroTrigger;
+
     builder << _UseHardwareRendering;
-    builder << _DoDownMixing;
+    builder << _UseAntialiasing;
+
+    builder << _UseZeroTrigger;
     builder << _WindowDuration;
-    builder << _ZoomFactor;
 }
 
-void Config::Parse(ui_element_config_parser & parser)
+void Configuration::Parse(ui_element_config_parser & parser)
 {
     Reset();
 
@@ -63,28 +58,17 @@ void Config::Parse(ui_element_config_parser & parser)
 
         switch (Version)
         {
-            case 2:
-                // Fallthrough
-
             case 1:
-                parser >> _UseHardwareRendering;
-                parser >> _DoDownMixing;
-                parser >> _WindowDuration;
-                _WindowDuration = pfc::clip_t<size_t>(_WindowDuration, 50, 800);
-
-                parser >> _ZoomFactor;
-                _ZoomFactor = pfc::clip_t<size_t>(_ZoomFactor, 50, 800);
-
-                parser >> _UseZeroTrigger;
-
                 parser >> _RefreshRateLimit;
                 _RefreshRateLimit = pfc::clip_t<size_t>(_RefreshRateLimit, 20, 200);
 
-                parser >> _DoResampling;
-                parser >> _UseLowQuality;
+                parser >> _UseHardwareRendering;
+                parser >> _UseAntialiasing;
 
-                parser >> _LineStrokeWidth;
-                _LineStrokeWidth = pfc::clip_t<size_t>(_LineStrokeWidth, 5, 30);
+                parser >> _UseZeroTrigger;
+
+                parser >> _WindowDuration;
+                _WindowDuration = pfc::clip_t<size_t>(_WindowDuration, 50, 800);
                 break;
 
             default:

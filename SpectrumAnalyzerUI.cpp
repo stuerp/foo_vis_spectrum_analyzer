@@ -15,16 +15,20 @@
 
 #pragma hdrstop
 
-struct Band
+struct FrequencyBand
 {
+    FrequencyBand() : lo(), ctr(), hi() { }
+
     double lo;
     double ctr;
     double hi;
-} * FrequencyBands;
+};
 
-double * spectrum;
+std::vector<FrequencyBand> FrequencyBands;
 
-double * currentSpectrum;
+std::vector<double> spectrum;
+
+std::vector<double> currentSpectrum;
 
 enum SummationMode
 {
@@ -57,6 +61,8 @@ enum FrequencyDistribution
 
 struct Settings
 {
+    FFTSize _FFTSize = FFTSize::Fft4096;
+
     FrequencyDistribution _FrequencyDistribution = FrequencyDistribution::Frequencies;
 
     size_t _numBands = 320;
@@ -81,7 +87,6 @@ struct Settings
 
 /*
         type: 'fft',
-        fftSize: 4096,
         bandwidthOffset: 1,
 
         windowFunction: 'hann',
@@ -177,12 +182,11 @@ SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data
 {
     set_configuration(data);
 
-    FrequencyBands = new Band[_Settings._numBands];
-    ::memset(FrequencyBands, 0, sizeof(Band) * _Settings._numBands);
+    FrequencyBands.resize(_Settings._numBands);
 
-    spectrum = new double[_Settings._numBands];
+    spectrum.resize(_Settings._numBands);
 
-    currentSpectrum = new double[_Settings._numBands];
+    currentSpectrum.resize(_Settings._numBands);
 }
 
 #pragma region CWindowImpl
@@ -248,12 +252,6 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnDestroy()
 {
-    if (_FrequencyBands)
-    {
-        delete[] _FrequencyBands,
-        _FrequencyBands = nullptr;
-    }
-
     if (_SpectrumAnalyzer)
     {
         delete _SpectrumAnalyzer;
@@ -327,23 +325,19 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 
         Menu.CreatePopupMenu();
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Toggle Full-Screen Mode"));
-        Menu.AppendMenu((UINT) MF_STRING | (_Config._UseHardwareRendering ? MF_CHECKED : 0), IDM_HW_RENDERING_ENABLED, TEXT("Hardware Rendering"));
+        Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_HW_RENDERING_ENABLED, TEXT("Hardware Rendering"));
 
         Menu.SetMenuDefaultItem(IDM_TOGGLE_FULLSCREEN);
 
         CMenu RefreshRateLimitMenu;
 
         RefreshRateLimitMenu.CreatePopupMenu();
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Config._RefreshRateLimit ==  20) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20,  TEXT("20 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Config._RefreshRateLimit ==  60) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_60,  TEXT("60 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Config._RefreshRateLimit == 100) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_100, TEXT("100 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Config._RefreshRateLimit == 200) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_200, TEXT("200 Hz"));
+        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  20) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20,  TEXT("20 Hz"));
+        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  60) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_60,  TEXT("60 Hz"));
+        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 100) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_100, TEXT("100 Hz"));
+        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 200) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_200, TEXT("200 Hz"));
 
         Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, TEXT("Refresh Rate Limit"));
-
-        // Visualization specific menu items
-
-        /** None **/
 
         int CommandId = Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this);
 
@@ -358,22 +352,22 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
                 break;
 
             case IDM_REFRESH_RATE_LIMIT_20:
-                _Config._RefreshRateLimit = 20;
+                _Configuration._RefreshRateLimit = 20;
                 UpdateRefreshRateLimit();
                 break;
 
             case IDM_REFRESH_RATE_LIMIT_60:
-                _Config._RefreshRateLimit = 60;
+                _Configuration._RefreshRateLimit = 60;
                 UpdateRefreshRateLimit();
                 break;
 
             case IDM_REFRESH_RATE_LIMIT_100:
-                _Config._RefreshRateLimit = 100;
+                _Configuration._RefreshRateLimit = 100;
                 UpdateRefreshRateLimit();
                 break;
 
             case IDM_REFRESH_RATE_LIMIT_200:
-                _Config._RefreshRateLimit = 200;
+                _Configuration._RefreshRateLimit = 200;
                 UpdateRefreshRateLimit();
                 break;
         }
@@ -403,7 +397,7 @@ void SpectrumAnalyzerUIElement::ToggleFullScreen()
 /// </summary>
 void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
 {
-    _Config._UseHardwareRendering = !_Config._UseHardwareRendering;
+    _Configuration._UseHardwareRendering = !_Configuration._UseHardwareRendering;
     ReleaseDeviceSpecificResources();
 }
 
@@ -412,7 +406,7 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
 /// </summary>
 void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit()
 {
-    _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD)_Config._RefreshRateLimit, 5, 1000);
+    _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD)_Configuration._RefreshRateLimit, 5, 1000);
 }
 
 /// <summary>
@@ -435,7 +429,7 @@ HRESULT SpectrumAnalyzerUIElement::Render()
     {
         _RenderTarget->BeginDraw();
 
-        _RenderTarget->SetAntialiasMode(_Config._UseLowQuality ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
         _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
         // Draw the background.
@@ -457,11 +451,11 @@ HRESULT SpectrumAnalyzerUIElement::Render()
 
                 if (_VisualisationStream->get_absolute_time(PlaybackTime))
                 {
-                    double WindowDuration = _Config.GetWindowDurationInMs();
+                    double WindowDuration = _Configuration.GetWindowDurationInMs();
 
                     audio_chunk_impl Chunk;
 
-                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2, WindowDuration * (_Config._UseZeroTrigger ? 2 : 1)))
+                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2, WindowDuration * (_Configuration._UseZeroTrigger ? 2 : 1)))
                         RenderChunk(Chunk);
                 }
             }
@@ -519,11 +513,13 @@ double invFscale(double x, ScalingFunctions function, double freqSkew)
 
 void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, ScalingFunctions scalingFunction, double freqSkew, double bandwidth)
 {
-    for (size_t i = 0; i < numBands; ++i)
+    for (double i = 0.0; i < (size_t)(FrequencyBands.size()); ++i)
     {
-        FrequencyBands[i].lo  = invFscale(map((double)((double) i - bandwidth), 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
-        FrequencyBands[i].ctr = invFscale(map((double)(i),                      0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
-        FrequencyBands[i].hi  = invFscale(map((double)((double) i + bandwidth), 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
+        FrequencyBand& Iter = FrequencyBands[(size_t) i];
+
+        Iter.lo  = invFscale(map(i - bandwidth, 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
+        Iter.ctr = invFscale(map(i,             0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
+        Iter.hi  = invFscale(map(i + bandwidth, 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
     }
 }
 
@@ -609,12 +605,12 @@ double median(std::vector<double> & data)
 }
 
 // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, size_t bandCount, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
+void calcSpectrum(const double * fftCoeffs, size_t length, std::vector<FrequencyBand> & freqBands, size_t bandCount, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
 {
-    for (size_t j = 0; j < bandCount; ++j)
-    {
-        Band& x = freqBands[j];
+    size_t j = 0;
 
+    for (auto x : freqBands)
+    {
         int minIdx = (int)  ::ceil(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate));
         int maxIdx = (int) ::floor(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate));
 
@@ -680,26 +676,28 @@ void calcSpectrum(const double * fftCoeffs, size_t length, Band * freqBands, siz
 
             spectrum[j] = (isRMS ? ::sqrt(sum) : sum) * bandGain;
         }
+
+        ++j;
     }
 }
 
 /// <summary>
 /// Applies a time smoothing factor.
 /// </summary>
-void calcSmoothingTimeConstant(double * dst, const double * src, size_t count, double factor)
+void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor)
 {
     if (factor != 0.0)
     {
-        for (size_t i = 0; i < count; ++i)
+        for (size_t i = 0; i < src.size(); ++i)
             dst[i] = (!::isnan(dst[i]) ? dst[i] * factor : 0.0) + (!::isnan(src[i]) ? src[i] * (1.0 - factor) : 0.0);
     }
     else
-        ::memcpy(dst, src, sizeof(dst) * count);
+        dst = src;
 }
 
-void calcPeakDecay(double * dst, const double * src, size_t count, double factor)
+void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor)
 {
-    for (size_t i = 0; i < count; ++i)
+    for (size_t i = 0; i < src.size(); ++i)
         dst[i] = Max(!::isnan(dst[i]) ? dst[i] * factor : 0.0, !::isnan(src[i]) ? src[i] : 0.0);
 }
 
@@ -715,11 +713,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     if (_SpectrumAnalyzer == nullptr)
     {
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _FFTSize, SampleRate);
-
-        _FrequencyBands = new FrequencyBand[_BandCount];
-
-        ::memset(_FrequencyBands, 0, sizeof(_FrequencyBands[0]) * _BandCount);
+        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Settings._FFTSize, SampleRate);
     }
 
     // Add the samples to the spectrum analyzer.
@@ -749,25 +743,25 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        double * FreqData = new double[(size_t) _FFTSize];
+        double * FreqData = new double[(size_t) _Settings._FFTSize];
 
-        _SpectrumAnalyzer->GetFrequencyData(FreqData, (size_t) _FFTSize);
+        _SpectrumAnalyzer->GetFrequencyData(FreqData, (size_t) _Settings._FFTSize);
 
         // Calculate the spectrum 
-        calcSpectrum(FreqData, (size_t) _FFTSize / 2, FrequencyBands, _Settings._numBands, 32, SummationMode::Maximum, false, true, true, SampleRate);
+        calcSpectrum(FreqData, (size_t) _Settings._FFTSize / 2, FrequencyBands, _Settings._numBands, 32, SummationMode::Maximum, false, true, true, SampleRate);
 
         switch (_Settings._SmoothingMethod)
         {
             case MethodAverage:
-                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Settings._numBands, _Settings._SmoothingConstant);
+                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Settings._SmoothingConstant);
                 break;
 
             case MethodPeak:
-                calcPeakDecay(currentSpectrum, spectrum, _Settings._numBands, _Settings._SmoothingConstant);
+                calcPeakDecay(currentSpectrum, spectrum, _Settings._SmoothingConstant);
                 break;
         
             default:
-                ::memcpy(currentSpectrum, spectrum, sizeof(currentSpectrum));
+                currentSpectrum = spectrum;
         }
 
         if (FreqData)
@@ -792,15 +786,15 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     FLOAT Width  = (FLOAT) _RenderTargetProperties.pixelSize.width;
 //  FLOAT Height = (FLOAT) _RenderTargetProperties.pixelSize.height;
 
-    FLOAT BandWidth = Width / (FLOAT) _BandCount;
+    FLOAT BandWidth = Width / (FLOAT) _Settings._numBands;
 
-    FLOAT x1 = (Width - ((FLOAT) _BandCount * BandWidth)) / 2.f;
+    FLOAT x1 = (Width - ((FLOAT) _Settings._numBands * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
     const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - PaddingY;
 
-    for (size_t BandIndex = 0; BandIndex < _BandCount; ++BandIndex)
+    for (size_t BandIndex = 0; BandIndex < _Settings._numBands; ++BandIndex)
     {
         // Draw the background.
         D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
@@ -843,7 +837,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
     HRESULT hr = ::StringCchPrintfW(Text, _countof(Text),
         L"%uHz - %uHz, %u bands, FFT %u, FPS: %.2f\n",
-        _MinFrequency, _MaxFrequency, (uint32_t) _BandCount, _FFTSize, FPS
+        _Settings._minFreq, _Settings._maxFreq, (uint32_t) _Settings._numBands, _Settings._FFTSize, FPS
     );
 
     if (SUCCEEDED(hr))
@@ -923,7 +917,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 
         D2D1_SIZE_U ClientSize = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
 
-        D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Config._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
+        D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
 
         _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, ClientSize);
 
@@ -1000,7 +994,7 @@ GUID SpectrumAnalyzerUIElement::g_get_subclass()
 ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
 {
     ui_element_config_builder builder;
-    Config config;
+    Configuration config;
 
     config.Build(builder);
 
@@ -1021,11 +1015,11 @@ void SpectrumAnalyzerUIElement::initialize_window(HWND p_parent)
 void SpectrumAnalyzerUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
-    Config config;
+    Configuration config;
 
     config.Parse(Parser);
 
-    _Config = config;
+    _Configuration = config;
 
 //  UpdateChannelMode();
     UpdateRefreshRateLimit();
@@ -1038,7 +1032,7 @@ ui_element_config::ptr SpectrumAnalyzerUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _Config.Build(Builder);
+    _Configuration.Build(Builder);
 
     return Builder.finish(g_get_guid());
 }
@@ -1067,8 +1061,8 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _IsPlaying = true;
 
-    ::memset(spectrum, 0, sizeof(double) * _Settings._numBands);
-    ::memset(currentSpectrum, 0, sizeof(double) * _Settings._numBands);
+    std::fill(spectrum.begin(), spectrum.end(), 0.0);
+    std::fill(currentSpectrum.begin(), currentSpectrum.end(), 0.0);
 
     Invalidate();
 }

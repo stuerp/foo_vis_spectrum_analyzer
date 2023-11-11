@@ -9,13 +9,6 @@
 #include "SpectrumAnalyzer.h"
 #include "RingBuffer.h"
 
-struct FrequencyBand
-{
-    FLOAT _Value;
-    int _MinFrequency;
-    int _MaxFrequency;
-};
-
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
@@ -113,7 +106,8 @@ private:
         IDM_REFRESH_RATE_LIMIT_200,
     };
 
-    Config _Config;
+    Configuration _Configuration;
+
     ULONGLONG _LastRefresh;
     DWORD _RefreshInterval;
 
@@ -130,34 +124,10 @@ private:
     CComPtr<ID2D1SolidColorBrush> _StrokeBrush;
     CComPtr<ID2D1SolidColorBrush> _TextBrush;
  
-    static const UINT TIME_RING_BUFFER_SIZE  = 16;
-
-    RingBuffer<LONGLONG, TIME_RING_BUFFER_SIZE> _Times;
+    RingBuffer<LONGLONG, 16> _Times;
 
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
-    FFTSize _FFTSize = FFTSize::Fft4096;
-
-    uint32_t _BandCount = 320; // Number of bands
-    FrequencyBand * _FrequencyBands = nullptr;
-
-    uint32_t _MinFrequency =    20;
-    uint32_t _MaxFrequency = 22000;
-
-    // Work variables
-    uint32_t _MinFFTBandIndex;
-    uint32_t _MaxFFTBandIndex;
-
-    // Scaling Strategies
-    int _SpectrumDataSize = ((int) _FFTSize / 2) - 1;
-
-    // Scaling parameters
-
-    const int _Normal = 255;
-
-    const double dBMax   =   0.0;
-    const double dBMin   = -60.0;
-    const double dBRange = dBMax - dBMin;
 };
 
 #ifdef later
