@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="Resources.h" />
+    <ClInclude Include="Configuration.h" />
+    <ClInclude Include="SpectrumAnalyzerUI.h" />
+    <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="FFTProvider.h" />
+    <ClInclude Include="SpectrumAnalyzer.h" />
+    <ClInclude Include="FFT.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Component.cpp" />
+    <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="SpectrumAnalyzerUI.cpp" />
+    <ClCompile Include="FFTProvider.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="Build-FB2KComponent.ps1" />
+    <None Include=".gitignore" />
+    <None Include=".gitattributes" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="LICENSE.txt" />
+  </ItemGroup>
+</Project>

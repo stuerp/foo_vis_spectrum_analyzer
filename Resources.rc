@@ -1,0 +1,45 @@
+
+/** $VER: Resources.rc (2023.11.09) P. Stuer **/
+
+#include "Resources.h"
+
+#include <winres.h>
+
+language LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+VS_VERSION_INFO versioninfo
+fileversion     NUM_FILE_MAJOR,    NUM_FILE_MINOR,    NUM_FILE_PATCH,    NUM_FILE_PRERELEASE
+productversion  NUM_PRODUCT_MAJOR, NUM_PRODUCT_MINOR, NUM_PRODUCT_PATCH, NUM_PRODUCT_PRERELEASE
+fileflagsmask   0x3FL
+#ifdef _DEBUG
+fileflags       VS_FF_DEBUG
+#else
+fileflags       0
+#endif
+fileos          VOS_NT_WINDOWS32
+filetype        VFT_DLL
+filesubtype     VFT2_UNKNOWN
+{
+    block "StringFileInfo"
+    {
+        block "040904E4" // U.S. English, Multilingual character set
+        {
+            value "FileVersion",      STR_FILE_VERSION     "\0"
+            value "FileDescription",  STR_FILE_DESCRIPTION "\0"
+            value "LegalCopyright",   STR_COPYRIGHT        "\0"
+            value "LegalTrademarks",                       "\0"
+            value "Comments",         STR_COMMENTS         "\0"
+            value "CompanyName",      STR_COMPANY_NAME     "\0"
+            value "InternalName",     STR_INTERNAL_NAME    "\0"
+            value "OriginalFilename", STR_FILE_NAME        "\0"
+            value "ProductName",      STR_PRODUCT_NAME     "\0"
+            value "ProductVersion",   STR_PRODUCT_VERSION  "\0"
+        }
+    }
+
+    block "VarFileInfo"
+    {
+        value "Translation", 0x409, 1252    // U.S. English, Multilingual character set
+    }
+}
