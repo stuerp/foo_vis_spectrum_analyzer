@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2022.11.11) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.11) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -25,12 +25,12 @@ Configuration::Configuration()
 void Configuration::Reset()
 {
     _RefreshRateLimit = 20;
+
     _UseHardwareRendering = true;
     _UseAntialiasing = true;
 
     _UseZeroTrigger = false;
     _WindowDuration = 100;
-    _LineStrokeWidth = 10;
 }
 
 void Configuration::Build(ui_element_config_builder & builder)

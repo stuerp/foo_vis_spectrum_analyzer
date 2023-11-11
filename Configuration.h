@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2022.11.06) P. Stuer **/
+/** $VER: Configuration.h (2023.11.11) P. Stuer **/
 
 #pragma once
 
@@ -22,11 +22,6 @@ public:
         return (double) _WindowDuration * 0.001;
     }
 
-    double GetLineStrokeWidth()
-    {
-        return (double) _LineStrokeWidth * 0.1;
-    }
-
 public:
     bool _UseHardwareRendering;
     bool _UseZeroTrigger;
@@ -34,7 +29,6 @@ public:
 
     size_t _WindowDuration;
     size_t _RefreshRateLimit; // in Hz
-    size_t _LineStrokeWidth;
 };
 
 extern cfg_bool cfg_popup_enabled;

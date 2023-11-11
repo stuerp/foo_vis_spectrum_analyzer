@@ -67,7 +67,7 @@ bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
     // Make sure there are enough samples for all the channels.
     sampleCount -= (sampleCount % _ChannelCount);
 
-    // Merge the samples of all channels into one average sample.
+    // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
         _SampleData[_SampleCount++] = AverageSamples(samples, i, _ChannelCount);
@@ -130,6 +130,7 @@ bool FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) noexcept
 ///</returns>
 bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
 {
+    //FIXME Don't reallocate this buffer all the time.
     audio_sample * TimeData = new audio_sample[_FFTSize];
 
     if (TimeData == nullptr)
@@ -153,11 +154,32 @@ bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
     }
 
     // Apply the windowing function.
-    for (int i = 0; i < _FFTSize; i++)
-        TimeData[i] *= FFT::HanningWindow(i, _FFTSize);
+    double Norm = 0.0;
 
+    for (int i = 0; i < _FFTSize; ++i)
+    {
+        double w = FFT::HanningWindow(i, _FFTSize);
+
+        TimeData[i] *= w;
+
+        Norm += w;
+    }
+/*
+    // Normalize the time domain data.
+    double Factor = (double) _FFTSize / Norm / M_SQRT2;
+
+    for (int i = 0; i < _FFTSize; ++i)
+        TimeData[i] *= Factor;
+*/
     // Transform the data from the Time domain to the Frequency domain.
-    _FFT.Compute(TimeData, freqData);
+    _FFT.Transform(TimeData, freqData);
+
+    // Normalize the frequency domain data. Use the size of the FFT for dB scale. FIXME: Determine scale factor for a logaritmic scale.
+    for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
+    {
+        freqData[i].r /= _FFTSize;
+        freqData[i].i /= _FFTSize;
+    }
 
     delete[] TimeData;
 

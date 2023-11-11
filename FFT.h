@@ -77,7 +77,7 @@ public:
     /// <param name="timeData"></param>
     /// <param name="freqData">freqData[0] = DC; freqData[1] = 1Hz; freqData[fftSize / 2] = Nyquist frequency</param>
     /// <returns></returns>
-    bool Compute(const kiss_fft_scalar * timeData, kiss_fft_cpx * freqData) const
+    bool Transform(const kiss_fft_scalar * timeData, kiss_fft_cpx * freqData) const
     {
         if (_Config == nullptr)
             return false;
@@ -97,7 +97,7 @@ public:
     /// <returns>Hanning window multiplier</returns>
     static double HanningWindow(int n, int N)
     {
-        return (0.5 * (1.0 - ::cos(M_PI * 2.0 * (double) n / (double)(N - 1))));
+        return (0.5 * (1.0 - ::cos(M_PI * 2.0 * (double) n / (double) (N - 1))));
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public:
     /// <returns>Hamming window multiplier</returns>
     static double HammingWindow(int n, int N)
     {
-        return 0.53836 - 0.46164 * ::cos(M_PI * 2.0 * (double) n / (double)(N - 1));
+        return 0.53836 - 0.46164 * ::cos(M_PI * 2.0 * (double) n / (double) (N - 1));
     }
 
 private:

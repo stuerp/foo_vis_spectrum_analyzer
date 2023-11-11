@@ -81,6 +81,7 @@ private:
 
     HRESULT Render();
     HRESULT RenderChunk(const audio_chunk & chunk);
+    HRESULT RenderYAxis();
     HRESULT RenderBands();
     HRESULT RenderText();
 
@@ -117,6 +118,9 @@ private:
     CComPtr<ID2D1Factory> _Direct2dFactory;
     CComPtr<IDWriteFactory> _DirectWriteFactory;
     CComPtr<IDWriteTextFormat> _TextFormat;
+    CComPtr<IDWriteTextFormat> _LabelTextFormat;
+
+    DWRITE_TEXT_METRICS _LabelTextMetrics;
 
     // Device-specific resources
     D2D1_HWND_RENDER_TARGET_PROPERTIES _RenderTargetProperties;
