@@ -323,8 +323,8 @@ Global
 		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|ARM64EC.Build.0 = Release|x64
 		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x64.ActiveCfg = Release|x64
 		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x64.Build.0 = Release|x64
-		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x86.ActiveCfg = Debug|Win32
-		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x86.Build.0 = Debug|Win32
+		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x86.ActiveCfg = Release|Win32
+		{330B107A-E39E-4F89-B201-D635ED1D833D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -792,7 +792,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     {
         const audio_sample * Samples = chunk.get_data();
 
-        t_size SampleCount  = chunk.get_sample_count();
+        size_t SampleCount  = chunk.get_sample_count();
 
         _SpectrumAnalyzer->Add(Samples, SampleCount);
     }

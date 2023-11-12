@@ -3,8 +3,6 @@
 
 #pragma once
 
-#define kiss_fft_scalar double
-
 #include "FFT.h"
 
 /// <summary>

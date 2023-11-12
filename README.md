@@ -75,9 +75,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.1.0.1, 2023-xx-xx
+v0.1.0.1, 2023-11-12
 
-* Fixed: Spectrum calculation used the wrong FFT size.
+* Fixed: Spectrum calculation used the wrong FFT size. A 440Hz A4 note now appears in the right place.
+* Fixed: Crash in 32-bit version.
 
 v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 
