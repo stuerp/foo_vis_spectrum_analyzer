@@ -91,6 +91,10 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>../sdk/foobar2000/shared/shared-$(Platform).lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Message>Executing post-build script...</Message>
+      <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -137,6 +141,10 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>../sdk/foobar2000/shared/shared-$(Platform).lib</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Message>Executing post-build script...</Message>
+      <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
