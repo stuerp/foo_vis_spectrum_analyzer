@@ -3,7 +3,7 @@
 
 #include <CppCoreCheck/Warnings.h>
 
-#pragma warning(disable: 4625 4626 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -154,11 +154,11 @@ bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
     }
 
     // Apply the windowing function.
-    kiss_fft_scalar Norm = 0.0;
+    audio_sample Norm = 0.0;
 
     for (int i = 0; i < _FFTSize; ++i)
     {
-        kiss_fft_scalar Multiplier = (kiss_fft_scalar) FFT::HanningWindow(i, _FFTSize);
+        audio_sample Multiplier = (audio_sample) FFT::HanningWindow(i, _FFTSize);
 
         TimeData[i] *= Multiplier;
 

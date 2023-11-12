@@ -3,7 +3,7 @@
 
 #include <CppCoreCheck/Warnings.h>
 
-#pragma warning(disable: 4100 4625 4626 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -73,10 +73,10 @@ struct Settings
 
     // Octaves
     uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
-    uint32_t _minNote =   4;    // Minimum note, 0 .. 128
-    uint32_t _maxNote = 124;    // Maximum note, 0 .. 128
+    uint32_t _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
+    uint32_t _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
     uint32_t _detune =    0;    // Detune, -24 ..24
-    uint32_t _noteTuning = 440; // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+    double _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
     ScalingFunctions _fscale = Logarithmic;
@@ -162,6 +162,15 @@ inline static T Max(T a, T b)
 }
 
 /// <summary>
+/// Returns the input value clamped between min and max.
+/// </summary>
+template <class T>
+inline static T Clamp(T value, T minValue, T maxValue)
+{
+    return Min(Max(value, minValue), maxValue);
+}
+
+/// <summary>
 /// Returns the logarithm of a specified number in a specified base.
 /// </summary>
 /// <param name="a">The number whose logarithm is to be found.</param>
@@ -180,7 +189,7 @@ inline static double Log(double a, double newBase)
     if (a != 1.0 && (newBase == 0.0 || newBase == INFINITY))
         return NAN;
 
-    return log(a) / log(newBase);
+    return ::log(a) / ::log(newBase);
 }
 
 /// <summary>
@@ -353,7 +362,7 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 
         Menu.CreatePopupMenu();
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Toggle Full-Screen Mode"));
-        Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_HW_RENDERING_ENABLED, TEXT("Hardware Rendering"));
+//      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_HW_RENDERING_ENABLED, TEXT("Hardware Rendering"));
 
         Menu.SetMenuDefaultItem(IDM_TOGGLE_FULLSCREEN);
 
@@ -412,6 +421,8 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
     ToggleFullScreen();
 }
 
+#pragma endregion
+
 /// <summary>
 /// 
 /// </summary>
@@ -426,6 +437,7 @@ void SpectrumAnalyzerUIElement::ToggleFullScreen()
 void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
 {
     _Configuration._UseHardwareRendering = !_Configuration._UseHardwareRendering;
+
     ReleaseDeviceSpecificResources();
 }
 
@@ -434,7 +446,7 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
 /// </summary>
 void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit()
 {
-    _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD)_Configuration._RefreshRateLimit, 5, 1000);
+    _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
 }
 
 /// <summary>
@@ -510,11 +522,6 @@ inline static double Map(double value, double minValue, double maxValue, double 
     return minTarget + ((value - minValue) * (maxTarget - minTarget)) / (maxValue - minValue);
 }
 
-inline static double clamp(double x, double min, double max)
-{
-    return Min(Max(x, min), max);
-}
-
 /// <summary>
 /// Scales the frequency.
 /// </summary>
@@ -538,12 +545,11 @@ static double ascale(double x)
     if (_Settings._UseDecibels)
         return Map(ToDecibel(x), _Settings._MinDecibels, _Settings._MaxDecibels, 0.0, 1.0);
     else
-        return Map(::pow(x, (1.0 / _Settings._gamma)),
-            (!_Settings._UseAbsolute ? 1.0 : 0.0) * ::pow(ToMagnitude(_Settings._MinDecibels), (1.0 / _Settings._gamma)),
-                                                    ::pow(ToMagnitude(_Settings._MaxDecibels), (1.0 / _Settings._gamma)),
-//          (!_Settings._UseAbsolute ? 1.0 : 0.0) * ::pow(::pow(10, (_Settings._MinDecibels / 20)), (1.0 / _Settings._gamma)),
-//                                                  ::pow(::pow(10, (_Settings._MaxDecibels / 20)), (1.0 / _Settings._gamma)),
-            0.0, 1.0);
+    {
+        double Exponent = 1.0 / _Settings._gamma;
+
+        return Map(::pow(x, Exponent), _Settings._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Settings._MinDecibels), Exponent), ::pow(ToMagnitude(_Settings._MaxDecibels), Exponent), 0.0, 1.0);
+    }
 }
 
 double invFscale(double x, ScalingFunctions function, double freqSkew)
@@ -558,25 +564,33 @@ double invFscale(double x, ScalingFunctions function, double freqSkew)
     }
 }
 
-void generateOctaveBands(uint32_t bandsPerOctave, uint32_t lowerNote, uint32_t higherNote, uint32_t detune, uint32_t tuningFreq, double bandwidth)
+/// <summary>
+/// Generates frequency bands based on the frequencies of musical notes.
+/// </summary>
+void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, uint32_t detune, double pitch, double bandwidth, uint32_t sampleRate)
 {
+    const double Root24 = ::exp2(1. / 24.);
+    const double NyquistFrequency = (double) sampleRate / 2.0;
+
+    const double Pitch = (pitch > 0.0) ? ::round((::log2(pitch) - 4.0) * 12.0) * 2.0 : 0.0;
+    const double C0 = pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double groupNotes = 24. / bandsPerOctave;
+
+    const double LoNote = ::round(loNote * 2 / groupNotes);
+    const double HiNote = ::round(hiNote * 2 / groupNotes);
+
     FrequencyBands.clear();
 
-    double tuningNote = ::isfinite(::log2(tuningFreq)) ? ::round((::log2(tuningFreq) - 4.0) * 12.0) * 2.0 : 0.0;
-    double root24 = ::exp2(1. / 24.);
-    double c0 = tuningFreq * ::pow(root24, -tuningNote); // ~16.35 Hz
-    double groupNotes = 24. / bandsPerOctave;
-
-    for (double i = ::round(lowerNote * 2 / groupNotes); i <= ::round(higherNote * 2 / groupNotes); ++i)
+    for (double i = LoNote; i <= HiNote; ++i)
     {
         FrequencyBand fb = 
         {
-            c0 * ::pow(root24, ((i - bandwidth) * groupNotes + detune)),
-            c0 * ::pow(root24,  (i * groupNotes              + detune)),
-            c0 * ::pow(root24, ((i + bandwidth) * groupNotes + detune))
+            C0 * ::pow(Root24, ((i - bandwidth) * groupNotes + detune)),
+            C0 * ::pow(Root24,  (i              * groupNotes + detune)),
+            C0 * ::pow(Root24, ((i + bandwidth) * groupNotes + detune)),
         };
 
-        FrequencyBands.push_back(fb);
+        FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
     }
 }
 
@@ -624,7 +638,7 @@ double lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool
     return ::hypot(Sum.re, Sum.im);
 }
 
-double lanzcos(const double * fftCoeffs, size_t length, double x, int kernelSize = 4, bool useComplex = false)
+double lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
 {
     double Sum = 0.;
 
@@ -634,9 +648,10 @@ double lanzcos(const double * fftCoeffs, size_t length, double x, int kernelSize
         double twiddle = x - pos; // -pos + ::round(pos) + i
 
         double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
-        int idx = (int) (((int) pos % length + length) % length);
 
-        Sum += fftCoeffs[idx] * w;
+        size_t CoefIdx = ((size_t) pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+
+        Sum += fftCoeffs[CoefIdx] * w;
     }
 
     return Sum;
@@ -660,41 +675,44 @@ double median(std::vector<double> & data)
 }
 
 // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-void calcSpectrum(const double * fftCoeffs, size_t length, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
+void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
 {
     size_t j = 0;
 
-    for (FrequencyBand & x : freqBands)
+    for (const FrequencyBand & Iter : freqBands)
     {
-        int minIdx = (int)  ::ceil(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate));
-        int maxIdx = (int) ::floor(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate));
+        const double LoHz = hertzToFFTBin(Min(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
+        const double HiHz = hertzToFFTBin(Max(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
 
-        int minIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate)) + 1 : minIdx);
-        int maxIdx2 = (int) (smoothInterp ? ::round(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate)) - 1 : maxIdx);
+        int minIdx1 = (int)                  ::ceil(LoHz);
+        int maxIdx1 = (int)                 ::floor(HiHz);
 
-        double bandGain = smoothGainTransition && (summationMode == Sum || summationMode == RMSSum) ? ::hypot(1, ::pow(((x.hi - x.lo) * (double) length / sampleRate), (1 - (int) (summationMode == RMS || summationMode == RMSSum) / 2))) : 1.;
+        int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
+        int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
+
+        double bandGain = smoothGainTransition && (summationMode == Sum || summationMode == RMSSum) ? ::hypot(1, ::pow(((Iter.hi - Iter.lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMode == RMS || summationMode == RMSSum) / 2))) : 1.;
 
         if (minIdx2 > maxIdx2)
         {
-            spectrum[j] = ::fabs(lanzcos(fftCoeffs, length, x.ctr * (double) length / sampleRate, interpSize, useComplex)) * bandGain;
+            spectrum[j] = ::fabs(lanzcos(fftCoeffs, Iter.ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
         }
         else
         {
             double sum = (summationMode == Minimum) ? DBL_MAX : 0.;
             double diff = 0.;
 
-            int overflowCompensation = Max(maxIdx - minIdx - (int) length, 0);
+            int overflowCompensation = Max(maxIdx1 - minIdx1 - (int) fftCoeffs.size(), 0);
 
             bool isAverage = (summationMode == Average || summationMode == RMS) || ((summationMode == Sum || summationMode == RMSSum) && smoothGainTransition);
             bool isRMS = summationMode == RMS || summationMode == RMSSum;
 
             std::vector<double> medianData;
 
-            for (int i = minIdx; i <= maxIdx - overflowCompensation; ++i)
+            for (int i = minIdx1; i <= maxIdx1 - overflowCompensation; ++i)
             {
-                int binIdx = (int)((i % length + length) % length);
+                size_t CoefIdx = ((size_t) i % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
-                double data = fftCoeffs[binIdx];
+                double data = fftCoeffs[CoefIdx];
 
                 switch (summationMode)
                 {
@@ -784,7 +802,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     switch (_Settings._FrequencyDistribution)
     {
         case Octaves:
-            generateOctaveBands(_Settings._octaves, _Settings._minNote, _Settings._maxNote, _Settings._detune, _Settings._noteTuning, _Settings._bandwidth);
+            generateOctaveBands(_Settings._octaves, _Settings._minNote, _Settings._maxNote, _Settings._detune, _Settings._Pitch, _Settings._bandwidth, SampleRate);
             break;
 
         case AveePlayer:
@@ -804,12 +822,12 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        double * FreqData = new double[(size_t) _Settings._FFTSize];
+        std::vector<double> FreqData((size_t) _Settings._FFTSize, 0.0);
 
-        _SpectrumAnalyzer->GetFrequencyData(FreqData, (size_t) _Settings._FFTSize);
+        _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        calcSpectrum(FreqData, (size_t) _Settings._FFTSize / 2, FrequencyBands, _Settings.interpSize, _Settings._SummationMode, false, _Settings.smoothInterp, _Settings.smoothSlope, SampleRate);
+        calcSpectrum(FreqData, FrequencyBands, _Settings.interpSize, _Settings._SummationMode, false, _Settings.smoothInterp, _Settings.smoothSlope, SampleRate);
 
         switch (_Settings._SmoothingMethod)
         {
@@ -824,9 +842,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             default:
                 currentSpectrum = spectrum;
         }
-
-        if (FreqData)
-            delete[] FreqData;
     }
 
     hr = RenderBands();
@@ -839,9 +854,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderBands()
 {
+    const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
-
-    const FLOAT RightMargin = 1.f;
 
     FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
 
@@ -851,14 +865,16 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height - PaddingY;
+    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height;
 
     RenderYAxis();
 
     uint32_t Note = _Settings._minNote;
 
-    for (auto Iter : currentSpectrum)
+    for (const auto Iter : currentSpectrum)
     {
+        D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
+
         {
             if (Note % 12 == 0)
             {
@@ -875,7 +891,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             Note++;
         }
 
-        D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
 #ifdef Original
         // Draw the background.
         {
@@ -895,7 +910,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         // Draw the foreground.
         if (Iter > 0.0)
         {
-            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1, y2);
 
             _RenderTarget->FillRectangle(Rect, _GradientBrush);
         }
@@ -906,7 +921,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     return S_OK;
 }
-
 
 /// <summary>
 /// Renders the X axis.
@@ -1013,8 +1027,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
             break;
 
         case FrequencyDistribution::Octaves:
-            hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %uHz, FFT %u, FPS: %.2f\n",
-                    _Settings._minNote, _Settings._maxNote, (uint32_t) _Settings._octaves, _Settings._noteTuning, _Settings._FFTSize, FPS);
+            hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %.2fHz, FFT %u, FPS: %.2f\n",
+                    _Settings._minNote, _Settings._maxNote, (uint32_t) _Settings._octaves, _Settings._Pitch, _Settings._FFTSize, FPS);
             break;
 
         case FrequencyDistribution::AveePlayer:
@@ -1210,8 +1224,6 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
     _StrokeBrush.Release();
     _RenderTarget.Release();
 }
-
-#pragma endregion
 
 #pragma region ui_element_instance
 
