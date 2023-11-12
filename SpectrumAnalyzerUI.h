@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.11) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.12) P. Stuer **/
 
 #pragma once
 
@@ -81,11 +81,10 @@ private:
 
     HRESULT Render();
     HRESULT RenderChunk(const audio_chunk & chunk);
+    HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, int octave);
     HRESULT RenderYAxis();
     HRESULT RenderBands();
     HRESULT RenderText();
-
-    HRESULT Resample(const audio_chunk & chunk, audio_chunk & chunkCopy, D2D1_SIZE_F rtSize);
 
     HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources();
@@ -127,88 +126,11 @@ private:
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
     CComPtr<ID2D1SolidColorBrush> _StrokeBrush;
     CComPtr<ID2D1SolidColorBrush> _TextBrush;
+
+    CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
  
     RingBuffer<LONGLONG, 16> _Times;
 
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
 };
-
-#ifdef later
-/// <summary>
-/// Handles the playback events we're subscribed to.
-/// </summary>
-class PlaybackEventHandler : public play_callback_static
-{
-public:
-    PlaybackEventHandler() = delete;
-
-    PlaybackEventHandler(const PlaybackEventHandler &) = delete;
-    PlaybackEventHandler & operator=(const PlaybackEventHandler &) = delete;
-    PlaybackEventHandler(PlaybackEventHandler &&) = delete;
-    PlaybackEventHandler & operator=(PlaybackEventHandler &&) = delete;
-
-    virtual ~PlaybackEventHandler() = delete;
-
-    /// <summary>
-    /// Controls which methods your callback wants called; returned value should not change in run time, you should expect it to be queried only once (on startup). See play_callback::flag_* constants.
-    /// </summary>
-    virtual unsigned get_flags()
-    {
-        return flag_on_playback_new_track | flag_on_playback_stop | flag_on_playback_pause;
-    }
-
-    /// <summary>
-    /// Playback process is being initialized. on_playback_new_track() should be called soon after this when first file is successfully opened for decoding.
-    /// </summary>
-    virtual void on_playback_starting(play_control::t_track_command, bool) { }
-
-    /// <summary>
-    /// Playback advanced to new track.
-    /// </summary>
-    virtual void on_playback_new_track(metadb_handle_ptr track);
-
-    /// <summary>
-    /// Playback stopped.
-    /// </summary>
-    virtual void on_playback_stop(play_control::t_stop_reason reason);
-
-    /// <summary>
-    /// The user has seeked to a specific time.
-    /// </summary>
-    virtual void on_playback_seek(double) { }
-
-    /// <summary>
-    /// Playback paused/resumed.
-    /// </summary>
-    virtual void on_playback_pause(bool);
-
-    /// <summary>
-    /// Current track gets edited.
-    /// </summary>
-    virtual void on_playback_edited(metadb_handle_ptr) { }
-
-    /// <summary>
-    /// Dynamic info f.e. VBR bitrate changed.
-    /// </summary>
-    virtual void on_playback_dynamic_info(const file_info &) { }
-
-    /// <summary>
-    /// Per-track dynamic info (stream track titles etc) changed. Happens less often than on_playback_dynamic_info().
-    /// </summary>
-    virtual void on_playback_dynamic_info_track(const file_info &) { }
-
-    /// <summary>
-    /// Called every second, for time display
-    /// </summary>
-    virtual void on_playback_time(double time) { }
-
-    /// <summary>
-    /// User changed volume settings. Possibly called when not playing.
-    /// @param p_new_val new volume level in dB; 0 for full volume.
-    /// </summary>
-    virtual void on_volume_change(float) { }
-
-private:
-};
-#endif

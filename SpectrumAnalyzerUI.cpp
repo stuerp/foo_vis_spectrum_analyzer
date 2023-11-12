@@ -67,15 +67,15 @@ struct Settings
     FrequencyDistribution _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Common
-    size_t _numBands =    320;     // Number of frequency bands, 2 .. 512
+    size_t _numBands =    320;  // Number of frequency bands, 2 .. 512
     uint32_t _minFreq =    20;  // Hz, 0 .. 96000
     uint32_t _maxFreq = 20000;  // Hz, 0 .. 96000
 
     // Octaves
-    uint32_t _octaves = 12;     // Bands per octave, 1 .. 48
-    uint32_t _minNote = 4;      // Minimum note, 0 .. 128
+    uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
+    uint32_t _minNote =   4;    // Minimum note, 0 .. 128
     uint32_t _maxNote = 124;    // Maximum note, 0 .. 128
-    uint32_t _detune = 0;       // Detune, -24 ..24
+    uint32_t _detune =    0;    // Detune, -24 ..24
     uint32_t _noteTuning = 440; // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
@@ -286,8 +286,8 @@ void SpectrumAnalyzerUIElement::OnDestroy()
 
     _VisualisationStream.release();
 
-    _StrokeBrush.Release();
-    _RenderTarget.Release();
+    ReleaseDeviceSpecificResources();
+
     _Direct2dFactory.Release();
 }
 
@@ -332,8 +332,10 @@ void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
 {
-    if (_RenderTarget)
-        _RenderTarget->Resize(D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy));
+    if (!_RenderTarget)
+        return;
+
+    _RenderTarget->Resize(D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy));
 }
 
 /// <summary>
@@ -487,7 +489,7 @@ HRESULT SpectrumAnalyzerUIElement::Render()
             }
 
             // Draw the text.
-            hr = RenderText();
+//          hr = RenderText();
         }
 
         hr = _RenderTarget->EndDraw();
@@ -827,14 +829,41 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             delete[] FreqData;
     }
 
-    hr = RenderYAxis();
-
     hr = RenderBands();
 
     return hr;
 }
 
-const FLOAT YAxisMargin = 30.f;
+/// <summary>
+/// Renders the X axis.
+/// </summary>
+HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, int octave)
+{
+    _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    // Draw the label.
+    {
+        WCHAR Text[16] = { };
+
+        ::StringCchPrintfW(Text, _countof(Text), L"C%d", octave);
+
+        D2D1_RECT_F TextRect = { x1, y1, x2, y2 };
+
+        _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+
+        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+        _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        _LabelTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+
+        #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
+        _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        #pragma warning(default: 6385)
+    }
+
+    return S_OK;
+}
+
+const FLOAT YAxisWidth = 30.f;
 
 /// <summary>
 /// Renders the Y axis.
@@ -844,7 +873,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
     const double Amplitudes[] = { 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60, -66, -72, -78, -84, -90 }; // FIXME: Should be based on MindB and MaxdB
 
     const FLOAT Width  = (FLOAT) _RenderTargetProperties.pixelSize.width;
-    const FLOAT Height = (FLOAT) _RenderTargetProperties.pixelSize.height;
+    const FLOAT Height = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height;
 
     const FLOAT StrokeWidth = 1.0f;
 
@@ -856,9 +885,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
 
         // Draw the horizontal grid line.
         {
-            _TextBrush->SetColor(D2D1::ColorF(0.3f, 0.3f, 0.3f, 1.0f));
+            _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
-            _RenderTarget->DrawLine(D2D1_POINT_2F(YAxisMargin, y), D2D1_POINT_2F(Width, y), _TextBrush, StrokeWidth, nullptr);
+            _RenderTarget->DrawLine(D2D1_POINT_2F(YAxisWidth, y), D2D1_POINT_2F(Width, y), _TextBrush, StrokeWidth, nullptr);
         }
 
         // Draw the label.
@@ -869,7 +898,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
 
             FLOAT LineHeight = _LabelTextMetrics.height;
 
-            D2D1_RECT_F TextRect = { 0.f, y - LineHeight / 2, YAxisMargin - 2.f, y + LineHeight / 2 };
+            D2D1_RECT_F TextRect = { 0.f, y - LineHeight / 2, YAxisWidth - 2.f, y + LineHeight / 2 };
 
             _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
@@ -894,20 +923,40 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     const FLOAT RightMargin = 1.f;
 
-    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisMargin;
+    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
 
     FLOAT BandWidth = Max((Width / (FLOAT) currentSpectrum.size()), 1.f);
 
-    FLOAT x1 = YAxisMargin + (Width - ((FLOAT) currentSpectrum.size() * BandWidth)) / 2.f;
+    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) currentSpectrum.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - PaddingY;
+    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height - PaddingY;
+
+    RenderYAxis();
+
+    int Note = _Settings._minNote;
 
     for (auto Iter : currentSpectrum)
     {
-        D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
+        {
+            if (Note % 12 == 0)
+            {
+                RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12);
 
+                // Draw the vertical grid line.
+                {
+                    _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                    _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
+                }
+            }
+
+            Note++;
+        }
+
+        D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
+#ifdef Original
         // Draw the background.
         {
             _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f)); // #1E90FF
@@ -922,6 +971,14 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 1.0f)); // #1E90FF
             _RenderTarget->FillRectangle(Rect, _TextBrush);
         }
+#endif
+        // Draw the foreground.
+        if (Iter > 0.0)
+        {
+            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
+
+            _RenderTarget->FillRectangle(Rect, _GradientBrush);
+        }
 
         x1  = x2;
         x2 += BandWidth;
@@ -935,8 +992,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderText()
 {
-return S_OK;
-
     float FPS = 0.0f;
 
     {
@@ -1074,6 +1129,70 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_StrokeBrush);
     }
 
+    if (SUCCEEDED(hr) && (_GradientBrush == nullptr))
+    {
+        CComPtr<ID2D1GradientStopCollection> Collection;
+
+        // Prism / foo_musical_spectrum
+        const D2D1_GRADIENT_STOP GradientStops[] =
+        {
+            { 0.f / 5.f, D2D1::ColorF(0xFD0000, 1.f) },
+            { 1.f / 5.f, D2D1::ColorF(0xFF8000, 1.f) },
+            { 2.f / 5.f, D2D1::ColorF(0xFFFF01, 1.f) },
+            { 3.f / 5.f, D2D1::ColorF(0x7EFF77, 1.f) },
+            { 4.f / 5.f, D2D1::ColorF(0x0193A2, 1.f) },
+            { 5.f / 5.f, D2D1::ColorF(0x002161, 1.f) },
+        };
+/*
+        // Prism 2
+        const D2D1_GRADIENT_STOP GradientStops[] =
+        {
+            { 0.f / 9.f, D2D1::ColorF(0xAA3355, 1.f) },
+            { 1.f / 9.f, D2D1::ColorF(0xCC6666, 1.f) },
+            { 2.f / 9.f, D2D1::ColorF(0xEE9944, 1.f) },
+            { 3.f / 9.f, D2D1::ColorF(0xEEDD00, 1.f) },
+            { 4.f / 9.f, D2D1::ColorF(0x99DD55, 1.f) },
+            { 5.f / 9.f, D2D1::ColorF(0x44DD88, 1.f) },
+            { 6.f / 9.f, D2D1::ColorF(0x22CCBB, 1.f) },
+            { 7.f / 9.f, D2D1::ColorF(0x00BBCC, 1.f) },
+            { 8.f / 9.f, D2D1::ColorF(0x0099CC, 1.f) },
+            { 9.f / 9.f, D2D1::ColorF(0x3366BB, 1.f) },
+        };
+*//*
+        // Prism 3
+        const D2D1_GRADIENT_STOP GradientStops[] =
+        {
+            { 0.f / 4.f, D2D1::ColorF(0xFF0000, 1.f) }, // hsl(  0, 100%, 50%)
+            { 1.f / 4.f, D2D1::ColorF(0xFFFF00, 1.f) }, // hsl( 60, 100%, 50%)
+            { 2.f / 4.f, D2D1::ColorF(0x00FF00, 1.f) }, // hsl(120, 100%, 50%)
+            { 3.f / 4.f, D2D1::ColorF(0x00FFFF, 1.f) }, // hsl(180, 100%, 50%)
+            { 4.f / 4.f, D2D1::ColorF(0x0000FF, 1.f) }, // hsl(240, 100%, 50%)
+        };
+*//*
+        // foobar2000 Dark Mode
+        const D2D1_GRADIENT_STOP GradientStops[] =
+        {
+            { 0.f / 1.f, D2D1::ColorF(0x0080FF, 1.f) },
+            { 1.f / 1.f, D2D1::ColorF(0xFFFFFF, 1.f) },
+        };
+*//*
+        // foobar2000
+        const D2D1_GRADIENT_STOP GradientStops[] =
+        {
+            { 0.f / 1.f, D2D1::ColorF(0x0066CC, 1.f) }, 
+            { 1.f / 1.f, D2D1::ColorF(0x000000, 1.f) },
+        };
+*/
+        hr = _RenderTarget->CreateGradientStopCollection(GradientStops, _countof(GradientStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+
+        if (SUCCEEDED(hr))
+        {
+            D2D1_SIZE_F Size = _RenderTarget->GetSize();
+
+            hr = _RenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_GradientBrush);
+        }
+    }
+
     if (SUCCEEDED(hr) && (_TextBrush == nullptr))
     {
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_TextBrush);
@@ -1088,6 +1207,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 {
     _TextBrush.Release();
+    _GradientBrush.Release();
     _StrokeBrush.Release();
     _RenderTarget.Release();
 }
@@ -1163,7 +1283,6 @@ void SpectrumAnalyzerUIElement::set_configuration(ui_element_config::ptr data)
 
     _Configuration = config;
 
-//  UpdateChannelMode();
     UpdateRefreshRateLimit();
 }
 
