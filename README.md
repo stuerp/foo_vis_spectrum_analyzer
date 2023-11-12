@@ -75,7 +75,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.0.0.1, 2023-11-12, *"Scratchin' the itch"*
+v0.1.0.1, 2023-xx-xx
+
+* Fixed: Spectrum calculation used the wrong FFT size.
+
+v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 
 * Initial release.
 

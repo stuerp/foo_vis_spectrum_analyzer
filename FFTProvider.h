@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.h (2022.11.18) P. Stuer **/
+/** $VER: FFTProvider.h (2023.11.12) P. Stuer **/
 
 #pragma once
 
@@ -14,9 +14,15 @@ class FFTProvider
 {
 public:
     FFTProvider(t_size channelCount, FFTSize fftSize);
-    ~FFTProvider();
 
-    t_size GetChannelCount() const
+    virtual ~FFTProvider();
+
+    void Reset()
+    {
+        _SampleCount = 0;
+    }
+
+    size_t GetChannelCount() const
     {
         return _ChannelCount;
     }
@@ -27,13 +33,13 @@ public:
     }
 
     bool Add(const audio_sample * samples, size_t count) noexcept;
-    bool GetFrequencyData(double * freqData, size_t freqSize) noexcept;
+    bool GetFrequencyData(double * freqData, size_t freqSize) const noexcept;
 
 private:
     FFTProvider();
     FFTProvider(const FFTProvider&);
 
-    bool GetFrequencyData(kiss_fft_cpx * freqData) noexcept;
+    bool GetFrequencyData(kiss_fft_cpx * freqData) const noexcept;
 
     static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
 

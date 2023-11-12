@@ -90,7 +90,7 @@ bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 /// </returns>
-bool FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) noexcept
+bool FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
 {
     if ((freqData == nullptr) || (freqSize != (size_t) _FFTSize))
         return false;
@@ -128,7 +128,7 @@ bool FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) noexcept
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 ///</returns>
-bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
+bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) const noexcept
 {
     //FIXME Don't reallocate this buffer all the time.
     audio_sample * TimeData = new audio_sample[_FFTSize];

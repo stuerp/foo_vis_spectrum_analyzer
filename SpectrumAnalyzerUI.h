@@ -9,6 +9,8 @@
 #include "SpectrumAnalyzer.h"
 #include "RingBuffer.h"
 
+constexpr GUID ColumnsUIExtensionGUID = {0xdcc224dc,0x678c,0x4234,{0xb1,0x9a,0x90,0xb5,0x58,0xe0,0x1a,0x94}};
+
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
@@ -23,6 +25,7 @@ public:
     SpectrumAnalyzerUIElement(SpectrumAnalyzerUIElement &&) = delete;
     SpectrumAnalyzerUIElement & operator=(SpectrumAnalyzerUIElement &&) = delete;
 
+    // Default User Interface
     #pragma region (ui_element_instance interface)
     static void g_get_name(pfc::string_base & p_out);
     static const char * g_get_description();

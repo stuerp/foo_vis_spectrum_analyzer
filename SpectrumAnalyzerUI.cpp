@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.11) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.12) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -608,37 +608,17 @@ void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, Scalin
     }
 }
 
-// Hz and FFT bin conversion
-double hertzToFFTBin(double x, size_t bufferSize = 4096, uint32_t sampleRate = 44100)
+double HzToFFTIndex(double x, size_t bufferSize, uint32_t sampleRate)
 {
     return x * (double) bufferSize / sampleRate;
 }
 
-uint32_t fftBinToHertz(size_t x, size_t bufferSize = 4096, uint32_t sampleRate = 44100)
+uint32_t FFTIndexToHz(size_t x, size_t bufferSize, uint32_t sampleRate)
 {
     return (uint32_t)((size_t)(x * sampleRate) / bufferSize);
 }
 
-double lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
-{
-    Complex Sum = { 0., 0. };
-
-    for (int i = -kernelSize + 1; i <= kernelSize; ++i)
-    {
-        double pos = ::floor(x) + i; // i + x
-        double twiddle = x - pos; // -pos + ::round(pos) + i
-
-        double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
-        int idx = (int) (((int) pos % length + length) % length);
-
-        Sum.re += data[idx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
-        Sum.im += data[idx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
-    }
-
-    return ::hypot(Sum.re, Sum.im);
-}
-
-double lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
+double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
 {
     double Sum = 0.;
 
@@ -655,6 +635,25 @@ double lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize =
     }
 
     return Sum;
+}
+
+double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
+{
+    Complex Sum = { 0., 0. };
+
+    for (int i = -kernelSize + 1; i <= kernelSize; ++i)
+    {
+        double pos = ::floor(x) + i; // i + x
+        double twiddle = x - pos; // -pos + ::round(pos) + i
+
+        double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
+        int idx = (int) (((int) pos % length + length) % length);
+
+        Sum.re += data[idx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
+        Sum.im += data[idx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
+    }
+
+    return ::hypot(Sum.re, Sum.im);
 }
 
 double median(std::vector<double> & data)
@@ -681,8 +680,8 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
 
     for (const FrequencyBand & Iter : freqBands)
     {
-        const double LoHz = hertzToFFTBin(Min(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
-        const double HiHz = hertzToFFTBin(Max(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
+        const double LoHz = HzToFFTIndex(Min(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
+        const double HiHz = HzToFFTIndex(Max(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
 
         int minIdx1 = (int)                  ::ceil(LoHz);
         int maxIdx1 = (int)                 ::floor(HiHz);
@@ -694,7 +693,7 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
 
         if (minIdx2 > maxIdx2)
         {
-            spectrum[j] = ::fabs(lanzcos(fftCoeffs, Iter.ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
+            spectrum[j] = ::fabs(Lanzcos(fftCoeffs, Iter.ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
         }
         else
         {
@@ -1331,6 +1330,13 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 /// </summary>
 void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
+    // Make sure the spectrum analyzer will be recreated. The audio chunks may have another configuration than the ones from the previous track.
+    if (_SpectrumAnalyzer != nullptr)
+    {
+        delete _SpectrumAnalyzer;
+        _SpectrumAnalyzer = nullptr;
+    }
+
     _IsPlaying = true;
 
     Invalidate();
