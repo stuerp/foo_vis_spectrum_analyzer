@@ -6,7 +6,7 @@
 .EXAMPLE
     C:\PS> .\Build-FB2KComponent.ps1
 .OUTPUTS
-    foo_midi.fb2k-component
+    foo_input_pmd.fb2k-component
 #>
 
 [CmdletBinding()]
@@ -29,85 +29,113 @@ Set-PSDebug -Strict; # Equivalent of VBA "Option Explicit".
 
 $ErrorActionPreference = 'Stop';
 
-$PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText;
-
 # Note: The working directory is the solution directory.
 
-function Install-Component
-{
-    if (Test-Path -Path "../bin")
-    {
-        Write-Host "Installing component in foobar2000 64-bit...";
-
-        $ProfilePath = "../bin/profile/user-components-x64/$TargetName";
-
-        if (!(Test-Path -Path $ProfilePath))
-        {
-            Write-Host "Creating output directory `"$ProfilePath`"...";
-            $null = New-Item -Path '../bin/profile/user-components-x64/' -Name "$TargetName" -ItemType 'directory';
-        }
-
-        if (Test-Path -Path $PackagePath64)
-        {
-            Copy-Item "$PackagePath64/*" -Destination $ProfilePath -Force;
-        }
-    }
-
-    if (Test-Path -Path "../bin/x86")
-    {
-        Write-Host "Installing component in foobar2000 32-bit...";
-
-        $ProfilePath = "../bin/x86/profile/user-components/$TargetName";
-
-        if (!(Test-Path -Path $ProfilePath))
-        {
-            Write-Host "Creating output directory `"$ProfilePath`"...";
-            $null = New-Item -Path '../bin/x86/profile/user-components/' -Name "$TargetName" -ItemType 'directory';
-        }
-
-        if (Test-Path -Path $PackagePath86)
-        {
-            Copy-Item "$PackagePath86/*" -Exclude "x64" -Destination $ProfilePath -Force;
-        }
-    }
-}
-
-Write-Host "Building package `"$TargetName`"...";
-
-$PackagePath64 = "../out/$TargetName/x64";
-$PackagePath86 = "../out/$TargetName";
+Write-Host "Building package `"$TargetName`" ($Platform)...";
 
 if ($Platform -eq 'x64')
 {
-    if (!(Test-Path -Path $PackagePath64))
+    $PackagePath = "../out/$TargetName/x64";
+
+    if (!(Test-Path -Path $PackagePath))
     {
-        Write-Host "Creating output directory `"$PackagePath64`"...";
+        Write-Host "Creating directory `"$PackagePath`"...";
         $null = New-Item -Path '../out/' -Name "$TargetName/x64" -ItemType 'directory';
     }
 
     if (Test-Path -Path "$OutputPath/$TargetFileName")
     {
-        Write-Host "Copying $TargetFileName to `"$PackagePath64`"...";
-        Copy-Item "$OutputPath/$TargetFileName" -Destination "$PackagePath64";
+        Write-Host "Copying $TargetFileName to `"$PackagePath`"...";
+        Copy-Item "$OutputPath/$TargetFileName" -Destination "$PackagePath";
     }
 
-    Install-Component;
+    # install the component in the foobar2000 x86 components directory.
+    $foobar2000Path = '../bin/x86';
+
+    if (Test-Path -Path "$foobar2000Path/foobar2000.exe")
+    {
+        $ComponentPath = "$foobar2000Path/profile/user-components/$TargetName";
+
+        Write-Host "Creating directory `"$ComponentPath`"...";
+        $null = New-Item -Path "$foobar2000Path/profile/user-components/" -Name "$TargetName" -ItemType 'directory' -Force;
+
+        Write-Host "Installing component in foobar2000 32-bit...";
+        Copy-Item "$PackagePath/../*" "$foobar2000Path/profile/user-components/$TargetName" -Force;
+    }
+    else
+    {
+        Write-Host "Skipped component installation: foobar2000 32-bit directory not found.";
+    }
+
+    # install the component in the foobar2000 x64 components directory.
+    $foobar2000Path = '../bin';
+
+    if (Test-Path -Path "$foobar2000Path/foobar2000.exe")
+    {
+        $ComponentPath = "$foobar2000Path/profile/user-components-x64/$TargetName";
+
+        Write-Host "Creating directory `"$ComponentPath`"...";
+        $null = New-Item -Path "$foobar2000Path/profile/user-components-x64/" -Name "$TargetName" -ItemType 'directory' -Force;
+
+        Write-Host "Installing component in foobar2000 64-bit...";
+        Copy-Item "$PackagePath/*" $ComponentPath -Force;
+    }
+    else
+    {
+        Write-Host "Skipped component installation: foobar2000 64-bit directory not found.";
+    }
 }
 elseif ($Platform -eq 'Win32')
 {
-    if (!(Test-Path -Path $PackagePath86))
+    $PackagePath = "../out/$TargetName";
+
+    if (!(Test-Path -Path $PackagePath))
     {
-        Write-Host "Creating output directory `"$PackagePath86`"...";
-        $null = New-Item -Path '../out/' -Name "$TargetName" -ItemType 'directory';
+        Write-Host "Creating directory `"$PackagePath`"...";
+        $null = New-Item -Path '../out/' -Name "$TargetName/x64" -ItemType 'directory' -Force;
     }
 
     if (Test-Path -Path "$OutputPath/$TargetFileName")
     {
-        Write-Host "Copying $TargetFileName to `"$PackagePath86`"...";
-        Copy-Item "$OutputPath/$TargetFileName" -Destination "$PackagePath86";
+        Write-Host "Copying $TargetFileName to `"$PackagePath`"...";
+        Copy-Item "$OutputPath/$TargetFileName" -Destination "$PackagePath";
     }
 
-    Install-Component;
+    # install the component in the foobar2000 x86 components directory.
+    $foobar2000Path = '../bin/x86';
+
+    if (Test-Path -Path "$foobar2000Path/foobar2000.exe")
+    {
+        $ComponentPath = "$foobar2000Path/profile/user-components/$TargetName";
+
+        Write-Host "Creating directory `"$ComponentPath`"...";
+        $null = New-Item -Path "$foobar2000Path/profile/user-components/" -Name "$TargetName" -ItemType 'directory' -Force;
+
+        Write-Host "Copying component files to profile...";
+        Copy-Item "$PackagePath/*" $ComponentPath -Recurse -Force;
+    }
+    else
+    {
+        Write-Host "Skipped component installation: foobar2000 32-bit directory not found.";
+    }
+
+    # install the component in the foobar2000 x64 components directory.
+    $foobar2000Path = '../bin';
+
+    if (Test-Path -Path "$foobar2000Path/foobar2000.exe")
+    {
+        $ComponentPath = "$foobar2000Path/profile/user-components-x64/$TargetName";
+
+        Write-Host "Creating directory `"$ComponentPath`"...";
+        $null = New-Item -Path "$foobar2000Path/profile/user-components-x64/" -Name "$TargetName" -ItemType 'directory' -Force;
+
+        Write-Host "Copying component files to profile...";
+        Copy-Item "$PackagePath/*" $ComponentPath -Recurse -Force;
+    }
+    else
+    {
+        Write-Host "Skipped component installation: foobar2000 64-bit directory not found.";
+    }
 }
 else
 {
@@ -115,6 +143,10 @@ else
     exit;
 }
 
-Compress-Archive -Force -Path ../out/$TargetName/* -DestinationPath ../out/$TargetName.fb2k-component;
+$ArchivePath = "../out/$TargetName.fb2k-component";
+
+Write-Host "Creating component archive `"$ArchivePath`"...";
+
+Compress-Archive -Force -Path ../out/$TargetName/* -DestinationPath $ArchivePath;
 
 Write-Host "Done.";

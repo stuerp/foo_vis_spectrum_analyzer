@@ -1,5 +1,5 @@
 
-/** $VER: Component.cpp (2023.11.11) P. Stuer **/
+/** $VER: Component.cpp (2023.11.12) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -25,7 +25,6 @@ namespace
         STR_COMPONENT_VERSION,
         STR_COMPONENT_BASENAME " " STR_COMPONENT_VERSION "\n"
             STR_COMPONENT_COPYRIGHT "\n"
-            STR_COMPONENT_COMMENTS "\n"
             "\n"
             STR_COMPONENT_DESCRIPTION "\n"
             "\n"

@@ -3,9 +3,11 @@
 
 [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
 
+It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur for foobar2000 64-bit.
+
 ## Features
 
-* Rendered using Direct2D.
+* Uses Direct2D rendering.
 * Supports foobar2000 2.0 (32-bit and 64-bit version)
 * Supports dark mode.
 
@@ -73,7 +75,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v1.0.0.0, 2023-xx-xx, *"Scratchin' the itch"*
+v0.0.0.1, 2023-11-12, *"Scratchin' the itch"*
 
 * Initial release.
 
@@ -82,9 +84,9 @@ v1.0.0.0, 2023-xx-xx, *"Scratchin' the itch"*
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
 * [Mark Borgerding](https://github.com/mborgerding) for [kissfft](https://github.com/mborgerding/kissfft).
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
-* fismineur for [Musical Spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)).
+* fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)).
 * [filoe](https://github.com/filoe) for [cscore](https://github.com/filoe/cscore). I took a long look at the FFT analyzer.
-* [TF3RDL](https://hydrogenaud.io/index.php?action=profile;u=160476) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) and the advice and help.
+* [TF3RDL](https://hydrogenaud.io/index.php?action=profile;u=160476) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help.
 
 ## Reference Material
 

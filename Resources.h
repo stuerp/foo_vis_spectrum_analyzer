@@ -1,5 +1,5 @@
 
-/** $VER: Resources.cpp (2023.11.11) P. Stuer **/
+/** $VER: Resources.cpp (2023.11.12) P. Stuer **/
 
 #pragma once
 
@@ -13,8 +13,8 @@
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
-#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023. All rights reserved."
-#define STR_COMPONENT_COMMENTS      "Written by P. Stuer"
+#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023 P. Stuer. All rights reserved."
+#define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
 
 /** Generic **/
@@ -30,7 +30,7 @@
 #define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH))
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define NUM_PRODUCT_MAJOR       0

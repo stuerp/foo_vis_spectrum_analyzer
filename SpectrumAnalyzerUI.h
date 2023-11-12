@@ -81,7 +81,7 @@ private:
 
     HRESULT Render();
     HRESULT RenderChunk(const audio_chunk & chunk);
-    HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, int octave);
+    HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
     HRESULT RenderYAxis();
     HRESULT RenderBands();
     HRESULT RenderText();
@@ -134,3 +134,5 @@ private:
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
 };
+
+const FLOAT YAxisWidth = 30.f;

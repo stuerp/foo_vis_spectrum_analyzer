@@ -71,6 +71,8 @@ public:
         return true;
     }
 
+    const int IsInverseFFT = 0;
+
     /// <summary>
     /// Computes the Fast Fourier Transform.
     /// </summary>
@@ -86,8 +88,6 @@ public:
 
         return true;
     }
-
-    const int IsInverseFFT = 0;
 
     /// <summary>
     /// Implements the Hanning Window function.
@@ -113,7 +113,7 @@ public:
 
 private:
     /// <summary>
-    /// Frees all allocated resources.
+    /// Disposes all allocated resources.
     /// </summary>
     void Dispose() noexcept
     {

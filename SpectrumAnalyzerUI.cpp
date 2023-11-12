@@ -565,7 +565,7 @@ void generateOctaveBands(uint32_t bandsPerOctave, uint32_t lowerNote, uint32_t h
     double tuningNote = ::isfinite(::log2(tuningFreq)) ? ::round((::log2(tuningFreq) - 4.0) * 12.0) * 2.0 : 0.0;
     double root24 = ::exp2(1. / 24.);
     double c0 = tuningFreq * ::pow(root24, -tuningNote); // ~16.35 Hz
-    double groupNotes = 24 / bandsPerOctave;
+    double groupNotes = 24. / bandsPerOctave;
 
     for (double i = ::round(lowerNote * 2 / groupNotes); i <= ::round(higherNote * 2 / groupNotes); ++i)
     {
@@ -664,7 +664,7 @@ void calcSpectrum(const double * fftCoeffs, size_t length, std::vector<Frequency
 {
     size_t j = 0;
 
-    for (auto x : freqBands)
+    for (FrequencyBand & x : freqBands)
     {
         int minIdx = (int)  ::ceil(hertzToFFTBin(Min(x.hi, x.lo), length, sampleRate));
         int maxIdx = (int) ::floor(hertzToFFTBin(Max(x.hi, x.lo), length, sampleRate));
@@ -835,9 +835,83 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 }
 
 /// <summary>
+/// Renders the bands.
+/// </summary>
+HRESULT SpectrumAnalyzerUIElement::RenderBands()
+{
+    const FLOAT PaddingY = 1.f;
+
+    const FLOAT RightMargin = 1.f;
+
+    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
+
+    FLOAT BandWidth = Max((Width / (FLOAT) currentSpectrum.size()), 1.f);
+
+    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) currentSpectrum.size() * BandWidth)) / 2.f;
+    FLOAT x2 = x1 + BandWidth;
+
+    const FLOAT y1 = PaddingY;
+    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height - PaddingY;
+
+    RenderYAxis();
+
+    uint32_t Note = _Settings._minNote;
+
+    for (auto Iter : currentSpectrum)
+    {
+        {
+            if (Note % 12 == 0)
+            {
+                RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12u);
+
+                // Draw the vertical grid line.
+                {
+                    _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                    _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
+                }
+            }
+
+            Note++;
+        }
+
+        D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
+#ifdef Original
+        // Draw the background.
+        {
+            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f)); // #1E90FF
+            _RenderTarget->FillRectangle(Rect, _TextBrush);
+        }
+
+        // Draw the foreground.
+        if (Iter > 0.0)
+        {
+            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
+
+            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 1.0f)); // #1E90FF
+            _RenderTarget->FillRectangle(Rect, _TextBrush);
+        }
+#endif
+        // Draw the foreground.
+        if (Iter > 0.0)
+        {
+            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
+
+            _RenderTarget->FillRectangle(Rect, _GradientBrush);
+        }
+
+        x1  = x2;
+        x2 += BandWidth;
+    }
+
+    return S_OK;
+}
+
+
+/// <summary>
 /// Renders the X axis.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, int octave)
+HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, uint32_t octave)
 {
     _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
@@ -862,8 +936,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLO
 
     return S_OK;
 }
-
-const FLOAT YAxisWidth = 30.f;
 
 /// <summary>
 /// Renders the Y axis.
@@ -909,79 +981,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
             _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
             #pragma warning(default: 6385)
         }
-    }
-
-    return S_OK;
-}
-
-/// <summary>
-/// Renders the bands.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderBands()
-{
-    const FLOAT PaddingY = 1.f;
-
-    const FLOAT RightMargin = 1.f;
-
-    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
-
-    FLOAT BandWidth = Max((Width / (FLOAT) currentSpectrum.size()), 1.f);
-
-    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) currentSpectrum.size() * BandWidth)) / 2.f;
-    FLOAT x2 = x1 + BandWidth;
-
-    const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height - PaddingY;
-
-    RenderYAxis();
-
-    int Note = _Settings._minNote;
-
-    for (auto Iter : currentSpectrum)
-    {
-        {
-            if (Note % 12 == 0)
-            {
-                RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12);
-
-                // Draw the vertical grid line.
-                {
-                    _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                    _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
-                }
-            }
-
-            Note++;
-        }
-
-        D2D1_RECT_F Rect = { x1, y1, x2 - RightMargin, y2 };
-#ifdef Original
-        // Draw the background.
-        {
-            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f)); // #1E90FF
-            _RenderTarget->FillRectangle(Rect, _TextBrush);
-        }
-
-        // Draw the foreground.
-        if (Iter > 0.0)
-        {
-            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
-
-            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 1.0f)); // #1E90FF
-            _RenderTarget->FillRectangle(Rect, _TextBrush);
-        }
-#endif
-        // Draw the foreground.
-        if (Iter > 0.0)
-        {
-            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
-
-            _RenderTarget->FillRectangle(Rect, _GradientBrush);
-        }
-
-        x1  = x2;
-        x2 += BandWidth;
     }
 
     return S_OK;

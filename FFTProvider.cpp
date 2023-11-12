@@ -154,15 +154,15 @@ bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
     }
 
     // Apply the windowing function.
-    double Norm = 0.0;
+    kiss_fft_scalar Norm = 0.0;
 
     for (int i = 0; i < _FFTSize; ++i)
     {
-        double w = FFT::HanningWindow(i, _FFTSize);
+        kiss_fft_scalar Multiplier = (kiss_fft_scalar) FFT::HanningWindow(i, _FFTSize);
 
-        TimeData[i] *= w;
+        TimeData[i] *= Multiplier;
 
-        Norm += w;
+        Norm += Multiplier;
     }
 /*
     // Normalize the time domain data.
@@ -172,13 +172,13 @@ bool FFTProvider::GetFrequencyData(kiss_fft_cpx * freqData) noexcept
         TimeData[i] *= Factor;
 */
     // Transform the data from the Time domain to the Frequency domain.
-    _FFT.Transform(TimeData, freqData);
+    _FFT.Transform((const kiss_fft_scalar *) TimeData, freqData);
 
     // Normalize the frequency domain data. Use the size of the FFT for dB scale. FIXME: Determine scale factor for a logaritmic scale.
     for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
     {
-        freqData[i].r /= _FFTSize;
-        freqData[i].i /= _FFTSize;
+        freqData[i].r /= (kiss_fft_scalar) _FFTSize;
+        freqData[i].i /= (kiss_fft_scalar) _FFTSize;
     }
 
     delete[] TimeData;
@@ -197,28 +197,28 @@ audio_sample FFTProvider::AverageSamples(const audio_sample * samples, size_t i,
             return samples[i];
 
         case 2:
-            return (samples[i] + samples[i + 1]) / 2.0;
+            return (samples[i] + samples[i + 1]) / (audio_sample) 2.0;
 
         case 3:
-            return (samples[i] + samples[i + 1] + samples[i + 2]) / 3.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2]) / (audio_sample) 3.0;
 
         case 4:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / 4.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (audio_sample) 4.0;
 
         case 5:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / 5.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (audio_sample) 5.0;
 
         case 6:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / 6.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (audio_sample) 6.0;
 
         default:
         {
-            double Average = 0.;
+            audio_sample Average = 0.;
 
             for (size_t j = 0; j < channelCount; j++)
                 Average += samples[i + j];
 
-            return Average / (double)channelCount;
+            return Average / (audio_sample) channelCount;
         }
     }
 }
