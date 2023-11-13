@@ -5,12 +5,30 @@
 
 #pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "framework.h"
 
 #include "Configuration.h"
 #include "Resources.h"
 
+#include "JSON.h"
+
+using namespace JSON;
+
+#include <tchar.h>
+#include <pathcch.h>
+
+#pragma comment(lib, "pathcch")
+
+#include <pfc/string_conv.h>
+
+using namespace pfc;
+using namespace stringcvt;
+
 #pragma hdrstop
+
+Configuration _Configuration;
 
 /// <summary>
 /// Initializes a new instance.
@@ -34,6 +52,74 @@ void Configuration::Reset() noexcept
 
     _UseZeroTrigger = false;
     _WindowDuration = 100;
+
+    _FFTSize = FFTSize::Fft4096;
+    _FrequencyDistribution = FrequencyDistribution::Octaves;
+
+    // Common
+    _numBands =    320;  // Number of frequency bands, 2 .. 512
+    _minFreq =    20;  // Hz, 0 .. 96000
+    _maxFreq = 20000;  // Hz, 0 .. 96000
+    // Octaves
+    _octaves =  12;    // Bands per octave, 1 .. 48
+    _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
+    _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
+    _detune =    0;    // Detune, -24 ..24
+    _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+
+    // Frequencies
+    _fscale = Logarithmic;
+
+    _hzLinearFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
+    _bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+
+    _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
+    _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
+
+    interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
+    _SummationMode = SummationMode::Maximum;  // Band power summation method
+    smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
+    smoothSlope = true;                                // Smoother frequency slope on sum modes
+
+    // ascale() Amplitude Scale
+    _UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
+
+    _MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
+    _MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
+
+    _UseAbsolute = true;                               // Use absolute value
+
+    _gamma = 1.;                                     // Gamma, 0.5 .. 10
+/*
+    type: 'fft',
+    bandwidthOffset: 1,
+
+    windowFunction: 'hann',
+    windowParameter: 1,
+    windowSkew: 0,
+
+    timeAlignment: 1,
+    downsample: 0,
+    useComplex: true,
+    holdTime: 30,
+    fallRate: 0.5,
+    clampPeaks: true,
+    peakMode: 'gravity',
+    showPeaks: true,
+
+    freeze: false,
+    color: 'none',
+    showLabels: true,
+    showLabelsY: true,
+    labelTuning: 440,
+    showDC: true,
+    showNyquist: true,
+    mirrorLabels: true,
+    diffLabels: false,
+    labelMode : 'decade',
+    darkMode: false,
+    compensateDelay: false
+*/
 }
 
 /// <summary>
@@ -99,4 +185,105 @@ void Configuration::Write(ui_element_config_builder & builder) const
 
     builder << _UseZeroTrigger;
     builder << _WindowDuration;
+}
+
+void Configuration::Read()
+{
+    HMODULE hModule = ::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
+
+    WCHAR PathName[MAX_PATH];
+
+    ::GetModuleFileNameW(hModule, PathName, _countof(PathName));
+
+    HRESULT hResult = ::PathCchRenameExtension(PathName, _countof(PathName), L"json");
+
+    if (SUCCEEDED(hResult))
+    {
+        FILE * fp = ::_wfopen(PathName, L"r");
+
+        if (fp != nullptr)
+        {
+            struct _stat64i32 Stat = { };
+
+            ::_wstat(PathName, &Stat);
+
+            char * UTF8 = new char[(size_t) Stat.st_size];
+
+            if (UTF8 != nullptr)
+            {
+                size_t BytesRead = ::fread(UTF8, 1, (size_t) Stat.st_size, fp);
+
+                wchar_t * Text = new wchar_t[BytesRead + 64];
+
+                if (Text != nullptr)
+                {
+                    ::convert_utf8_to_wide(Text, BytesRead + 64, UTF8, BytesRead);
+
+                    Reader Reader(Text);
+
+                    Value Value;
+
+                    try
+                    {
+                        bool Success = Reader.Read(Value);
+
+                        while (Success)
+                        {
+                            if (Value.Contains(L"FFTSize"))
+                            {
+                                FFTSize v = (FFTSize) (int) Value[L"FFTSize"];
+
+                                if (v >= Fft64 && v <= Fft32768)
+                                    _Configuration._FFTSize = v;
+                            }
+
+                            if (Value.Contains(L"FrequencyDistribution"))
+                            {
+                                FrequencyDistribution v = (FrequencyDistribution) (int) Value[L"FrequencyDistribution"];
+
+                                if (v >= Frequencies && v <= AveePlayer)
+                                    _Configuration._FrequencyDistribution = v;
+                            }
+
+                            if (Value.Contains(L"NumberOfBands"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"NumberOfBands"];
+
+                                if (2 <= v && v <= 512)
+                                    _Configuration._numBands = v;
+                            }
+
+                            if (Value.Contains(L"MinFrequency"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"MinFrequency"];
+
+                                if (v <= 96000)
+                                    _Configuration._minFreq = v;
+                            }
+
+                            if (Value.Contains(L"MaxFrequency"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"MaxFrequency"];
+
+                                if (v <= 96000)
+                                    _Configuration._maxFreq = v;
+                            }
+
+                            Success = Reader.Read(Value);
+                        }
+                    }
+                    catch (JSON::ReaderException e)
+                    {
+                        FB2K_console_formatter() << "Error: " << e.GetMessage().c_str() << " (Position " << e.GetPosition() << ")";
+                    }
+
+                    delete[] Text;
+                }
+            }
+
+            delete[] UTF8;
+
+            ::fclose(fp);
+        }
+    }
 }

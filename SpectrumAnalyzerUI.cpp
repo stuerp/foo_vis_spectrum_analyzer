@@ -13,6 +13,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "Configuration.h"
+
 #pragma hdrstop
 
 struct FrequencyBand
@@ -30,110 +32,6 @@ std::vector<FrequencyBand> FrequencyBands;
 std::vector<double> spectrum;
 
 std::vector<double> currentSpectrum;
-
-enum SummationMode
-{
-    Minimum,
-    Maximum,
-    Sum,
-    RMSSum,
-    RMS,
-    Average,
-    Median
-};
-
-enum TimeSmootingMethod
-{
-    MethodAverage,
-    MethodPeak
-};
-
-enum ScalingFunctions
-{
-    Logarithmic = 1,
-};
-
-enum FrequencyDistribution
-{
-    Octaves,
-    Frequencies,
-    AveePlayer,
-};
-
-struct Settings
-{
-    FFTSize _FFTSize = FFTSize::Fft4096;
-
-    FrequencyDistribution _FrequencyDistribution = FrequencyDistribution::Octaves;
-
-    // Common
-    size_t _numBands =    320;  // Number of frequency bands, 2 .. 512
-    uint32_t _minFreq =    20;  // Hz, 0 .. 96000
-    uint32_t _maxFreq = 20000;  // Hz, 0 .. 96000
-
-    // Octaves
-    uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
-    uint32_t _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
-    uint32_t _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    uint32_t _detune =    0;    // Detune, -24 ..24
-    double _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
-
-    // Frequencies
-    ScalingFunctions _fscale = Logarithmic;
-
-    double _hzLinearFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    double _bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
-
-    TimeSmootingMethod _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
-    double _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
-
-    int interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
-    SummationMode _SummationMode = SummationMode::Maximum;  // Band power summation method
-    bool smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
-    bool smoothSlope = true;                                // Smoother frequency slope on sum modes
-
-    // ascale() Amplitude Scale
-    bool _UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
-
-    double _MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    double _MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
-
-    bool _UseAbsolute = true;                               // Use absolute value
-
-    double _gamma = 1.;                                     // Gamma, 0.5 .. 10
-
-
-/*
-        type: 'fft',
-        bandwidthOffset: 1,
-
-        windowFunction: 'hann',
-        windowParameter: 1,
-        windowSkew: 0,
-
-        timeAlignment: 1,
-        downsample: 0,
-        useComplex: true,
-        holdTime: 30,
-        fallRate: 0.5,
-        clampPeaks: true,
-        peakMode: 'gravity',
-        showPeaks: true,
-
-        freeze: false,
-        color: 'none',
-        showLabels: true,
-        showLabelsY: true,
-        labelTuning: 440,
-        showDC: true,
-        showNyquist: true,
-        mirrorLabels: true,
-        diffLabels: false,
-        labelMode : 'decade',
-        darkMode: false,
-        compensateDelay: false
-*/
-} _Settings;
 
 struct Complex
 {
@@ -571,13 +469,13 @@ static double fscale(double x, ScalingFunctions function, double freqSkew)
 /// </summary>
 static double ascale(double x)
 {
-    if (_Settings._UseDecibels)
-        return Map(ToDecibel(x), _Settings._MinDecibels, _Settings._MaxDecibels, 0.0, 1.0);
+    if (_Configuration._UseDecibels)
+        return Map(ToDecibel(x), _Configuration._MinDecibels, _Configuration._MaxDecibels, 0.0, 1.0);
     else
     {
-        double Exponent = 1.0 / _Settings._gamma;
+        double Exponent = 1.0 / _Configuration._gamma;
 
-        return Map(::pow(x, Exponent), _Settings._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Settings._MinDecibels), Exponent), ::pow(ToMagnitude(_Settings._MaxDecibels), Exponent), 0.0, 1.0);
+        return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration._MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration._MaxDecibels), Exponent), 0.0, 1.0);
     }
 }
 
@@ -625,7 +523,7 @@ void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNo
 
 void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, ScalingFunctions scalingFunction, double freqSkew, double bandwidth)
 {
-    FrequencyBands.resize(_Settings._numBands);
+    FrequencyBands.resize(_Configuration._numBands);
 
     for (double i = 0.0; i < (double) FrequencyBands.size(); ++i)
     {
@@ -814,7 +712,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     if (_SpectrumAnalyzer == nullptr)
     {
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Settings._FFTSize, SampleRate);
+        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Configuration._FFTSize, SampleRate);
     }
 
     // Add the samples to the spectrum analyzer.
@@ -827,19 +725,19 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     }
 
     // Initialize the bands.
-    switch (_Settings._FrequencyDistribution)
+    switch (_Configuration._FrequencyDistribution)
     {
         case Octaves:
-            generateOctaveBands(_Settings._octaves, _Settings._minNote, _Settings._maxNote, _Settings._detune, _Settings._Pitch, _Settings._bandwidth, SampleRate);
+            generateOctaveBands(_Configuration._octaves, _Configuration._minNote, _Configuration._maxNote, _Configuration._detune, _Configuration._Pitch, _Configuration._bandwidth, SampleRate);
             break;
 
         case AveePlayer:
-//          generateAveePlayerFreqs(_Settings._numBands, _Settings._minFreq, _Settings._maxFreq, _Settings._hzLinearFactor, _Settings._bandwidth);
+//          generateAveePlayerFreqs(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._hzLinearFactor, _Configuration._bandwidth);
             break;
 
         case Frequencies:
         default:
-            generateFreqBands(_Settings._numBands, _Settings._minFreq, _Settings._maxFreq, _Settings._fscale, _Settings._hzLinearFactor, _Settings._bandwidth);
+            generateFreqBands(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._fscale, _Configuration._hzLinearFactor, _Configuration._bandwidth);
     }
 
     spectrum.resize(FrequencyBands.size());
@@ -850,21 +748,21 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        std::vector<double> FreqData((size_t) _Settings._FFTSize, 0.0);
+        std::vector<double> FreqData((size_t) _Configuration._FFTSize, 0.0);
 
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        calcSpectrum(FreqData, FrequencyBands, _Settings.interpSize, _Settings._SummationMode, false, _Settings.smoothInterp, _Settings.smoothSlope, SampleRate);
+        calcSpectrum(FreqData, FrequencyBands, _Configuration.interpSize, _Configuration._SummationMode, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate);
 
-        switch (_Settings._SmoothingMethod)
+        switch (_Configuration._SmoothingMethod)
         {
             case MethodAverage:
-                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Settings._SmoothingConstant);
+                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Configuration._SmoothingConstant);
                 break;
 
             case MethodPeak:
-                calcPeakDecay(currentSpectrum, spectrum, _Settings._SmoothingConstant);
+                calcPeakDecay(currentSpectrum, spectrum, _Configuration._SmoothingConstant);
                 break;
         
             default:
@@ -897,7 +795,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     RenderYAxis();
 
-    uint32_t Note = _Settings._minNote;
+    uint32_t Note = _Configuration._minNote;
 
     for (const auto Iter : currentSpectrum)
     {
@@ -1047,16 +945,16 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
     WCHAR Text[512] = { };
 
-    switch (_Settings._FrequencyDistribution)
+    switch (_Configuration._FrequencyDistribution)
     {
         case FrequencyDistribution::Frequencies:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"%uHz - %uHz, %u bands, FFT %u, FPS: %.2f\n",
-                    _Settings._minFreq, _Settings._maxFreq, (uint32_t) _Settings._numBands, _Settings._FFTSize, FPS);
+                    _Configuration._minFreq, _Configuration._maxFreq, (uint32_t) _Configuration._numBands, _Configuration._FFTSize, FPS);
             break;
 
         case FrequencyDistribution::Octaves:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %.2fHz, FFT %u, FPS: %.2f\n",
-                    _Settings._minNote, _Settings._maxNote, (uint32_t) _Settings._octaves, _Settings._Pitch, _Settings._FFTSize, FPS);
+                    _Configuration._minNote, _Configuration._maxNote, (uint32_t) _Configuration._octaves, _Configuration._Pitch, _Configuration._FFTSize, FPS);
             break;
 
         case FrequencyDistribution::AveePlayer:
@@ -1357,7 +1255,9 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 /// </summary>
 void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    // Make sure the spectrum analyzer will be recreated. The audio chunks may have another configuration than the ones from the previous track.
+    _Configuration.Read();
+
+    // Make sure the spectrum analyzer is recreated. The audio chunks may have another configuration than the ones from the previous track.
     if (_SpectrumAnalyzer != nullptr)
     {
         delete _SpectrumAnalyzer;

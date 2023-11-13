@@ -178,6 +178,7 @@
     <ClInclude Include="FFT.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="JSON.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="SpectrumAnalyzer.h" />
@@ -188,6 +189,7 @@
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="FFTProvider.cpp" />
     <ClCompile Include="ConfigurationDialog.h" />
+    <ClCompile Include="JSON.cpp" />
     <ClCompile Include="SpectrumAnalyzerUI.cpp" />
   </ItemGroup>
   <ItemGroup>

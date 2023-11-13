@@ -112,8 +112,6 @@ private:
         IDM_CONFIGURE,
     };
 
-    Configuration _Configuration;
-
     ULONGLONG _LastRefresh;
     DWORD _RefreshInterval;
 
