@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.11) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.13) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,23 +7,26 @@
 
 #include "framework.h"
 
-#include "Resources.h"
 #include "Configuration.h"
+#include "Resources.h"
 
 #pragma hdrstop
 
-size_t Configuration::GetVersion()
-{
-    return NUM_CONFIG_VERSION;
-}
-
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
 Configuration::Configuration()
 {
     Reset();
 }
 
-void Configuration::Reset()
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void Configuration::Reset() noexcept
 {
+    _OptionsRect = {  };
+
     _RefreshRateLimit = 20;
 
     _UseHardwareRendering = true;
@@ -33,20 +36,10 @@ void Configuration::Reset()
     _WindowDuration = 100;
 }
 
-void Configuration::Build(ui_element_config_builder & builder)
-{
-    builder << GetVersion();
-
-    builder << _RefreshRateLimit;
-
-    builder << _UseHardwareRendering;
-    builder << _UseAntialiasing;
-
-    builder << _UseZeroTrigger;
-    builder << _WindowDuration;
-}
-
-void Configuration::Parse(ui_element_config_parser & parser)
+/// <summary>
+/// Reads this instance from the specified parser.
+/// </summary>
+void Configuration::Read(ui_element_config_parser & parser)
 {
     Reset();
 
@@ -58,8 +51,13 @@ void Configuration::Parse(ui_element_config_parser & parser)
 
         switch (Version)
         {
-            case 1:
-                parser >> _RefreshRateLimit;
+            case 2:
+            {
+                parser >> _OptionsRect.left;
+                parser >> _OptionsRect.top;
+                parser >> _OptionsRect.right;
+                parser >> _OptionsRect.bottom;
+
                 _RefreshRateLimit = pfc::clip_t<size_t>(_RefreshRateLimit, 20, 200);
 
                 parser >> _UseHardwareRendering;
@@ -70,6 +68,7 @@ void Configuration::Parse(ui_element_config_parser & parser)
                 parser >> _WindowDuration;
                 _WindowDuration = pfc::clip_t<size_t>(_WindowDuration, 50, 800);
                 break;
+            }
 
             default:
                 FB2K_console_formatter() << core_api::get_my_file_name() << ": Unknown configuration format. Version: " << Version;
@@ -79,4 +78,25 @@ void Configuration::Parse(ui_element_config_parser & parser)
     {
         FB2K_console_formatter() << core_api::get_my_file_name() << ": Exception while reading configuration data: " << ex;
     }
+}
+
+/// <summary>
+/// Writes this instance to the specified builder.
+/// </summary>
+void Configuration::Write(ui_element_config_builder & builder) const
+{
+    builder << _Version;
+
+    builder << _OptionsRect.left;
+    builder << _OptionsRect.top;
+    builder << _OptionsRect.right;
+    builder << _OptionsRect.bottom;
+
+    builder << _RefreshRateLimit;
+
+    builder << _UseHardwareRendering;
+    builder << _UseAntialiasing;
+
+    builder << _UseZeroTrigger;
+    builder << _WindowDuration;
 }

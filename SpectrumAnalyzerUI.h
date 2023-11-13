@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.12) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.13) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,7 @@
 
 #include "Configuration.h"
 #include "SpectrumAnalyzer.h"
+#include "ConfigurationDialog.h"
 #include "RingBuffer.h"
 
 constexpr GUID ColumnsUIExtensionGUID = {0xdcc224dc,0x678c,0x4234,{0xb1,0x9a,0x90,0xb5,0x58,0xe0,0x1a,0x94}};
@@ -78,9 +79,10 @@ private:
     void on_volume_change(float p_new_val) { }
     #pragma endregion
 
-    void ToggleFullScreen();
-    void ToggleHardwareRendering();
-    void UpdateRefreshRateLimit();
+    void ToggleFullScreen() noexcept;
+    void ToggleHardwareRendering() noexcept;
+    void UpdateRefreshRateLimit() noexcept;
+    void Configure() noexcept;
 
     HRESULT Render();
     HRESULT RenderChunk(const audio_chunk & chunk);
@@ -102,17 +104,20 @@ private:
     enum
     {
         IDM_TOGGLE_FULLSCREEN = 1,
-        IDM_HW_RENDERING_ENABLED,
+        IDM_TOGGLE_HARDWARE_RENDERING,
         IDM_REFRESH_RATE_LIMIT_20,
         IDM_REFRESH_RATE_LIMIT_60,
         IDM_REFRESH_RATE_LIMIT_100,
         IDM_REFRESH_RATE_LIMIT_200,
+        IDM_CONFIGURE,
     };
 
     Configuration _Configuration;
 
     ULONGLONG _LastRefresh;
     DWORD _RefreshInterval;
+
+    bool _UseFullScreen;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
@@ -133,6 +138,8 @@ private:
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
  
     RingBuffer<LONGLONG, 16> _Times;
+
+    ConfigurationDialog _ConfigurationDialog;
 
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;

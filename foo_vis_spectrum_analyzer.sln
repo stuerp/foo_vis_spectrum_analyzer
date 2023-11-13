@@ -19,7 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_sdk_helpers", ".
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libPPUI", "..\sdk\libPPUI\libPPUI.vcxproj", "{7729EB82-4069-4414-964B-AD399091A03F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkissfft", "..\3rdParty\kissfft\libkissfft.vcxproj", "{330B107A-E39E-4F89-B201-D635ED1D833D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkissfft", "3rdParty\kissfft\libkissfft.vcxproj", "{330B107A-E39E-4F89-B201-D635ED1D833D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

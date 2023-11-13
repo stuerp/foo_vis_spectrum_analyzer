@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.12) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.13) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -344,9 +344,11 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
     if (!_RenderTarget)
         return;
 
-    _RenderTarget->Resize(D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy));
+    const D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(size.cx, size.cy));
+    _RenderTarget->Resize(Size);
+
+    _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 }
 
 /// <summary>
@@ -361,22 +363,27 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
     else
     {
         CMenu Menu;
-
-        Menu.CreatePopupMenu();
-        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Toggle Full-Screen Mode"));
-//      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_HW_RENDERING_ENABLED, TEXT("Hardware Rendering"));
-
-        Menu.SetMenuDefaultItem(IDM_TOGGLE_FULLSCREEN);
-
         CMenu RefreshRateLimitMenu;
 
-        RefreshRateLimitMenu.CreatePopupMenu();
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  20) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20,  TEXT("20 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  60) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_60,  TEXT("60 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 100) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_100, TEXT("100 Hz"));
-        RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 200) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_200, TEXT("200 Hz"));
+        {
+            Menu.CreatePopupMenu();
+            Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, TEXT("Configure"));
+            Menu.AppendMenu((UINT) MF_SEPARATOR);
+            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
+//          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, TEXT("Hardware Rendering"));
 
-        Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, TEXT("Refresh Rate Limit"));
+            {
+                RefreshRateLimitMenu.CreatePopupMenu();
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  20) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20,  TEXT("20 Hz"));
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  60) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_60,  TEXT("60 Hz"));
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 100) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_100, TEXT("100 Hz"));
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 200) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_200, TEXT("200 Hz"));
+
+                Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, TEXT("Refresh Rate Limit"));
+            }
+
+            Menu.SetMenuDefaultItem(IDM_CONFIGURE);
+        }
 
         int CommandId = Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this);
 
@@ -386,7 +393,7 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
                 ToggleFullScreen();
                 break;
 
-            case IDM_HW_RENDERING_ENABLED:
+            case IDM_TOGGLE_HARDWARE_RENDERING:
                 ToggleHardwareRendering();
                 break;
 
@@ -409,6 +416,10 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
                 _Configuration._RefreshRateLimit = 200;
                 UpdateRefreshRateLimit();
                 break;
+
+            case IDM_CONFIGURE:
+                Configure();
+                break;
         }
 
         Invalidate();
@@ -426,17 +437,17 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
 #pragma endregion
 
 /// <summary>
-/// 
+/// Toggles full screen mode.
 /// </summary>
-void SpectrumAnalyzerUIElement::ToggleFullScreen()
+void SpectrumAnalyzerUIElement::ToggleFullScreen() noexcept
 {
     static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
 }
 
 /// <summary>
-/// 
+/// Toggles hardware/software rendering.
 /// </summary>
-void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
+void SpectrumAnalyzerUIElement::ToggleHardwareRendering() noexcept
 {
     _Configuration._UseHardwareRendering = !_Configuration._UseHardwareRendering;
 
@@ -444,11 +455,27 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering()
 }
 
 /// <summary>
-/// 
+/// Updates the refresh rate.
 /// </summary>
-void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit()
+void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
 {
     _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
+}
+
+/// <summary>
+/// Shows the Options dialog.
+/// </summary>
+void SpectrumAnalyzerUIElement::Configure() noexcept
+{
+    if (!_ConfigurationDialog.IsWindow())
+    {
+        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &_Configuration) == NULL)
+            return;
+
+        _ConfigurationDialog.ShowWindow(SW_SHOW);
+    }
+    else
+        _ConfigurationDialog.BringWindowToTop();
 }
 
 /// <summary>
@@ -1267,12 +1294,13 @@ GUID SpectrumAnalyzerUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
 {
-    ui_element_config_builder builder;
-    Configuration config;
+    Configuration Config;
 
-    config.Build(builder);
+    ui_element_config_builder Builder;
 
-    return builder.finish(g_get_guid());
+    Config.Write(Builder);
+
+    return Builder.finish(g_get_guid());
 }
 
 /// <summary>
@@ -1284,28 +1312,25 @@ void SpectrumAnalyzerUIElement::initialize_window(HWND p_parent)
 }
 
 /// <summary>
-/// 
+/// Alters element's current configuration. Specified ui_element_config's GUID must be the same as this element's GUID.
 /// </summary>
 void SpectrumAnalyzerUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
-    Configuration config;
 
-    config.Parse(Parser);
-
-    _Configuration = config;
+    _Configuration.Read(Parser);
 
     UpdateRefreshRateLimit();
 }
 
 /// <summary>
-/// 
+/// Retrieves element's current configuration. Returned object's GUID must be set to your element's GUID so your element can be re-instantiated with stored settings.
 /// </summary>
 ui_element_config::ptr SpectrumAnalyzerUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _Configuration.Build(Builder);
+    _Configuration.Write(Builder);
 
     return Builder.finish(g_get_guid());
 }

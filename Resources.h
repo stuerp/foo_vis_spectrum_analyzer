@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.12) P. Stuer **/
+/** $VER: Resources.h (2023.11.13) P. Stuer **/
 
 #pragma once
 
@@ -45,11 +45,13 @@
 #define STR_ABOUT_WEB           TEXT("https://github.com/stuerp/") STR_COMPONENT_BASENAME
 #define STR_ABOUT_EMAIL         TEXT("mailto:peter.stuer@outlook.com")
 
-/** Preferences **/
-
-#define IDD_CONFIG                      101
+/** Window **/
 
 #define GUID_UI_ELEMENT_SPECTOGRAM      {0x3247c894,0xe585,0x4025,{0xa8,0x66,0xc7,0xd4,0x93,0x3f,0xb2,0xe3}} // {3247c894-e585-4025-a866-c7d4933fb2e3}
 #define STR_SPECTOGRAM_WINDOW_CLASS     "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
-#define NUM_CONFIG_VERSION      1
+/** Configuration **/
+
+#define IDD_CONFIGURATION 1000
+
+#define IDC_FILENAME IDD_CONFIGURATION + 1

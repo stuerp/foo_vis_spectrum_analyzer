@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.09) P. Stuer **/
+/** $VER: Resources.rc (2023.11.13) P. Stuer **/
 
 #include "Resources.h"
 
@@ -42,4 +42,44 @@ filesubtype     VFT2_UNKNOWN
     {
         value "Translation", 0x409, 1252    // U.S. English, Multilingual character set
     }
+}
+
+/** Configuration dialog **/
+
+#define H_LABEL     8
+
+#define W_BUTTON    50
+#define H_BUTTON    14
+
+#define H_EDITTEXT  14
+
+#define W_DIALOG   320
+#define H_DIALOG   200
+
+#define X_FILENAME_LABEL    7
+#define Y_FILENAME_LABEL    7 + 2
+#define W_FILENAME_LABEL    30
+#define H_FILENAME_LABEL    H_LABEL
+
+#define X_FILENAME          X_FILENAME_LABEL + W_FILENAME_LABEL + 3
+#define Y_FILENAME          7
+#define W_FILENAME          W_DIALOG - X_FILENAME - 7 - 66
+#define H_FILENAME          H_EDITTEXT
+
+#define X_CANCEL            W_DIALOG - W_BUTTON - 7
+#define Y_CANCEL            H_DIALOG - H_BUTTON - 7
+
+#define X_OK                X_CANCEL - W_BUTTON - 4
+#define Y_OK                Y_CANCEL
+
+IDD_CONFIGURATION dialogex 0, 0, W_DIALOG, H_DIALOG
+caption "Spectrum Analyzer Configuration"
+font 8, "MS Shell Dlg", 400, 0, 0x1
+style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+{
+    rtext           "Filename:",    IDC_STATIC,     X_FILENAME_LABEL, Y_FILENAME_LABEL, W_FILENAME_LABEL, H_FILENAME_LABEL, SS_NOPREFIX
+    edittext                        IDC_FILENAME,   X_FILENAME, Y_FILENAME, W_FILENAME, H_FILENAME, ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    defpushbutton   "OK",           IDOK,           X_OK, Y_OK, W_BUTTON, H_BUTTON
+    pushbutton      "Cancel",       IDCANCEL,       X_CANCEL, Y_CANCEL, W_BUTTON, H_BUTTON
 }

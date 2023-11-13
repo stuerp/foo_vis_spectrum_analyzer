@@ -36,7 +36,7 @@ To build the code:
 * [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-05-10
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320.
 
-The following libraries are used:
+The following libraries are included:
 
 * [kissfft](https://github.com/mborgerding/kissfft) 131.1.0.
 
@@ -75,6 +75,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.1.0.2, 2023-xx-xx
+
+* New: Added a configuration dialog.
+
 v0.1.0.1, 2023-11-12
 
 * Fixed: Spectrum calculation used the wrong FFT size. A 440Hz A4 note now appears in the right place.
@@ -83,6 +87,10 @@ v0.1.0.1, 2023-11-12
 v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 
 * Initial release.
+
+## To Do
+
+* Support ColumnsUI.
 
 ## Acknowledgements / Credits
 
