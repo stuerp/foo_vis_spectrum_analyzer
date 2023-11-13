@@ -345,6 +345,8 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
         return;
 
     _RenderTarget->Resize(D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy));
+
+    _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(size.cx, size.cy));
 }
 
 /// <summary>
