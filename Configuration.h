@@ -48,6 +48,14 @@ enum SummationMethod
     Median = 6
 };
 
+enum XAxisMode
+{
+    Bands = 0,
+    Decades = 1,
+    OctavesX = 2,
+    Notes = 3,
+};
+
 enum TimeSmootingMethod
 {
     MethodAverage,
@@ -132,6 +140,8 @@ public:
     bool _UseAbsolute = true;                               // Use absolute value
 
     double _gamma = 1.;                                     // Gamma, 0.5 .. 10
+
+    XAxisMode _XAxisMode;
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -158,7 +168,6 @@ public:
     showNyquist: true,
     mirrorLabels: true,
     diffLabels: false,
-    labelMode : 'decade',
     darkMode: false,
     compensateDelay: false
 */

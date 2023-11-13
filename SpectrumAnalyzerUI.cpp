@@ -691,12 +691,12 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
         }
         else
         {
-            double Sum = (summationMethod == Minimum) ? DBL_MAX : 0.;
+            double Value = (summationMethod == Minimum) ? DBL_MAX : 0.;
             int Count = 0;
 
             int overflowCompensation = Max(maxIdx1 - minIdx1 - (int) fftCoeffs.size(), 0);
 
-            bool IsAverage = (summationMethod == Average || summationMethod == RMS) || ((summationMethod == Sum || summationMethod == RMSSum) && smoothGainTransition);
+            bool IsAverage = (summationMethod == Average || summationMethod == RMS) || ((summationMethod == SummationMethod::Sum || summationMethod == RMSSum) && smoothGainTransition);
             bool IsRMS = summationMethod == RMS || summationMethod == RMSSum;
 
             std::vector<double> medianData;
@@ -710,18 +710,18 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
                 switch (summationMethod)
                 {
                     case SummationMethod::Minimum:
-                        Sum = Min(data, Sum);
+                        Value = Min(data, Value);
                         break;
 
                     case SummationMethod::Maximum:
-                        Sum = Max(data, Sum);
+                        Value = Max(data, Value);
                         break;
 
                     case SummationMethod::Sum:
                     case SummationMethod::RMS:
                     case SummationMethod::RMSSum:
                     case SummationMethod::Average:
-                        Sum += ::pow(data, (1.0 + (IsRMS ? 1.0 : 0.0)));
+                        Value += ::pow(data, (1.0 + (IsRMS ? 1.0 : 0.0)));
                         break;
 
                     case SummationMethod::Median:
@@ -729,22 +729,22 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
                         break;
 
                     default:
-                        Sum = data;
+                        Value = data;
                 }
 
                 ++Count;
             }
 
             if (IsAverage && (Count != 0))
-                Sum /= Count;
+                Value /= Count;
             else
             if (IsRMS)
-                Sum = ::sqrt(Sum);
+                Value = ::sqrt(Value);
             else
             if (summationMethod == Median)
-                Sum = median(medianData);
+                Value = median(medianData);
 
-            spectrum[j] = Sum * bandGain;
+            spectrum[j] = Value * bandGain;
         }
 
         ++j;
@@ -866,20 +866,90 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     RenderYAxis();
 
+    const double FrequenciesDecades[] = { 10., 20., 30., 40., 50., 60., 70., 80., 90., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 9000., 10000., 20000. };
+    const double FrequenciesOctaves[] = { 31., 63.5, 125., 250., 500., 1000., 2000., 4000., 8000., 16000. };
+
     uint32_t Note = _Configuration._minNote;
+    uint32_t i = 0;
+    uint32_t j = 0;
+
+    if (_Configuration._XAxisMode == XAxisMode::Decades)
+    {
+        for (; j < _countof(FrequenciesDecades); ++j)
+        {
+            if (FrequencyBands[0].lo <= FrequenciesDecades[j])
+                break;
+        }
+    }
+    else
+    if (_Configuration._XAxisMode == XAxisMode::OctavesX)
+    {
+        for (; j < _countof(FrequenciesOctaves); ++j)
+        {
+            if (FrequencyBands[0].lo <= FrequenciesOctaves[j])
+                break;
+        }
+    }
 
     for (const auto Iter : currentSpectrum)
     {
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
-        switch (_Configuration._FrequencyDistribution)
+        switch (_Configuration._XAxisMode)
         {
-            case FrequencyDistribution::Frequencies:
+            default:
+
+            case XAxisMode::Bands:
             {
+                if (i % 10 == 0)
+                {
+                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequencyBands[i].ctr);
+
+                    // Draw the vertical grid line.
+                    {
+                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
+                    }
+                }
                 break;
             }
 
-            case FrequencyDistribution::Octaves:
+            case XAxisMode::Decades:
+            {
+                if ((FrequencyBands[i].lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= FrequencyBands[i].hi) && (j < _countof(FrequenciesDecades)))
+                {
+                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesDecades[j]);
+                    ++j;
+
+                    // Draw the vertical grid line.
+                    {
+                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
+                    }
+                }
+                break;
+            }
+
+            case XAxisMode::OctavesX:
+            {
+                if ((FrequencyBands[i].lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= FrequencyBands[i].hi) && (j < _countof(FrequenciesOctaves)))
+                {
+                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesOctaves[j]);
+                    ++j;
+
+                    // Draw the vertical grid line.
+                    {
+                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
+                    }
+                }
+                break;
+            }
+
+            case XAxisMode::Notes:
             {
                 if (Note % 12 == 0)
                 {
@@ -896,9 +966,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
                 Note++;
                 break;
             }
-
-            case FrequencyDistribution::AveePlayer:
-                break;
         }
 
 #ifdef Original
@@ -927,13 +994,49 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
         x1  = x2;
         x2 += BandWidth;
+
+        ++i;
     }
 
     return S_OK;
 }
 
 /// <summary>
-/// Renders the X axis.
+/// Render an X axis label.
+/// </summary>
+HRESULT SpectrumAnalyzerUIElement::RenderXAxisFreq(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, double frequency)
+{
+    _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    // Draw the label.
+    {
+        WCHAR Text[16] = { };
+
+        if (frequency < 1000.0)
+            ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", frequency);
+        else
+            ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", frequency / 1000);
+
+        D2D1_RECT_F TextRect = { x1, y1, x2, y2 };
+
+//      _RenderTarget->FillRectangle(&TextRect, _GradientBrush);
+
+        _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+
+        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        _LabelTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+
+        #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
+        _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        #pragma warning(default: 6385)
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Render an X axis label.
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, uint32_t octave)
 {
@@ -949,7 +1052,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLO
 
         _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
         _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         _LabelTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 

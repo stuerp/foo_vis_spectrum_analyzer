@@ -90,6 +90,9 @@ void Configuration::Reset() noexcept
     _UseAbsolute = true;                               // Use absolute value
 
     _gamma = 1.;                                     // Gamma, 0.5 .. 10
+
+    _XAxisMode = XAxisMode::Decades;
+
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -116,7 +119,6 @@ void Configuration::Reset() noexcept
     showNyquist: true,
     mirrorLabels: true,
     diffLabels: false,
-    labelMode : 'decade',
     darkMode: false,
     compensateDelay: false
 */
@@ -338,6 +340,14 @@ void Configuration::Read()
 
                                 if (SummationMethod::Minimum <= v && v <= SummationMethod::Median)
                                     _Configuration._SummationMethod = v;
+                            }
+
+                            if (Value.Contains(L"XAxisMode"))
+                            {
+                                XAxisMode v = (XAxisMode) (int) Value[L"XAxisMode"];
+
+                                if (XAxisMode::Bands <= v && v <= XAxisMode::Notes)
+                                    _Configuration._XAxisMode = v;
                             }
 
                             Success = Reader.Read(Value);

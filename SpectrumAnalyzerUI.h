@@ -86,6 +86,7 @@ private:
 
     HRESULT Render();
     HRESULT RenderChunk(const audio_chunk & chunk);
+    HRESULT RenderXAxisFreq(FLOAT, FLOAT, FLOAT, FLOAT, double frequency);
     HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
     HRESULT RenderYAxis();
     HRESULT RenderBands();
