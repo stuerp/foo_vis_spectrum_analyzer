@@ -668,7 +668,7 @@ double median(std::vector<double> & data)
 }
 
 // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMode summationMode, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
+void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
 {
     size_t j = 0;
 
@@ -683,7 +683,7 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
         int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
         int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
 
-        double bandGain = smoothGainTransition && (summationMode == Sum || summationMode == RMSSum) ? ::hypot(1, ::pow(((Iter.hi - Iter.lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMode == RMS || summationMode == RMSSum) / 2))) : 1.;
+        double bandGain = smoothGainTransition && (summationMethod == Sum || summationMethod == RMSSum) ? ::hypot(1, ::pow(((Iter.hi - Iter.lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == RMS || summationMethod == RMSSum) / 2))) : 1.;
 
         if (minIdx2 > maxIdx2)
         {
@@ -691,13 +691,13 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
         }
         else
         {
-            double sum = (summationMode == Minimum) ? DBL_MAX : 0.;
-            double diff = 0.;
+            double Sum = (summationMethod == Minimum) ? DBL_MAX : 0.;
+            int Count = 0;
 
             int overflowCompensation = Max(maxIdx1 - minIdx1 - (int) fftCoeffs.size(), 0);
 
-            bool isAverage = (summationMode == Average || summationMode == RMS) || ((summationMode == Sum || summationMode == RMSSum) && smoothGainTransition);
-            bool isRMS = summationMode == RMS || summationMode == RMSSum;
+            bool IsAverage = (summationMethod == Average || summationMethod == RMS) || ((summationMethod == Sum || summationMethod == RMSSum) && smoothGainTransition);
+            bool IsRMS = summationMethod == RMS || summationMethod == RMSSum;
 
             std::vector<double> medianData;
 
@@ -707,40 +707,44 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
 
                 double data = fftCoeffs[CoefIdx];
 
-                switch (summationMode)
+                switch (summationMethod)
                 {
-                    case SummationMode::Maximum:
-                        sum = Max(data, sum);
+                    case SummationMethod::Minimum:
+                        Sum = Min(data, Sum);
                         break;
 
-                    case SummationMode::Minimum:
-                        sum = Min(data, sum);
+                    case SummationMethod::Maximum:
+                        Sum = Max(data, Sum);
                         break;
 
-                    case SummationMode::Average:
-                    case SummationMode::RMS:
-                    case SummationMode::Sum:
-                    case SummationMode::RMSSum:
-                        sum += ::pow(data, (1 + isRMS));
+                    case SummationMethod::Sum:
+                    case SummationMethod::RMS:
+                    case SummationMethod::RMSSum:
+                    case SummationMethod::Average:
+                        Sum += ::pow(data, (1.0 + (IsRMS ? 1.0 : 0.0)));
                         break;
 
-                    case SummationMode::Median:
+                    case SummationMethod::Median:
                         medianData.push_back(data);
                         break;
 
                     default:
-                        sum = data;
+                        Sum = data;
                 }
 
-                diff++;
+                ++Count;
             }
 
-            if (summationMode == Median)
-                sum = median(medianData);
+            if (IsAverage && (Count != 0))
+                Sum /= Count;
             else
-                sum /= isAverage ? diff : 1;
+            if (IsRMS)
+                Sum = ::sqrt(Sum);
+            else
+            if (summationMethod == Median)
+                Sum = median(medianData);
 
-            spectrum[j] = (isRMS ? ::sqrt(sum) : sum) * bandGain;
+            spectrum[j] = Sum * bandGain;
         }
 
         ++j;
@@ -820,7 +824,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        calcSpectrum(FreqData, FrequencyBands, _Configuration.interpSize, _Configuration._SummationMode, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate);
+        calcSpectrum(FreqData, FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate);
 
         switch (_Configuration._SmoothingMethod)
         {

@@ -34,15 +34,18 @@ enum ScalingFunctions
     Period = 11,
 };
 
-enum SummationMode
+enum SummationMethod
 {
-    Minimum,
-    Maximum,
-    Sum,
-    RMSSum,
-    RMS,
-    Average,
-    Median
+    Minimum = 0,
+    Maximum = 1,
+
+    Sum = 2,
+
+    RMS = 3,
+    RMSSum = 4,
+
+    Average = 5,
+    Median = 6
 };
 
 enum TimeSmootingMethod
@@ -116,7 +119,7 @@ public:
     double _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
 
     int interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
-    SummationMode _SummationMode = SummationMode::Maximum;  // Band power summation method
+    SummationMethod _SummationMethod = SummationMethod::Maximum;  // Band power summation method
     bool smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
     bool smoothSlope = true;                                // Smoother frequency slope on sum modes
 

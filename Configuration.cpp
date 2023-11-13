@@ -77,7 +77,7 @@ void Configuration::Reset() noexcept
     _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
 
     interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
-    _SummationMode = SummationMode::Maximum;  // Band power summation method
+    _SummationMethod = SummationMethod::Maximum;  // Band power summation method
     smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
     smoothSlope = true;                                // Smoother frequency slope on sum modes
 
@@ -144,15 +144,14 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _OptionsRect.right;
                 parser >> _OptionsRect.bottom;
 
-                _RefreshRateLimit = pfc::clip_t<size_t>(_RefreshRateLimit, 20, 200);
+                parser >> _RefreshRateLimit; _RefreshRateLimit = pfc::clip_t<size_t>(_RefreshRateLimit, 20, 200);
 
                 parser >> _UseHardwareRendering;
                 parser >> _UseAntialiasing;
 
                 parser >> _UseZeroTrigger;
 
-                parser >> _WindowDuration;
-                _WindowDuration = pfc::clip_t<size_t>(_WindowDuration, 50, 800);
+                parser >> _WindowDuration; _WindowDuration = pfc::clip_t<size_t>(_WindowDuration, 50, 800);
                 break;
             }
 
@@ -253,6 +252,22 @@ void Configuration::Read()
                                     _Configuration._fscale = v;
                             }
 
+                            if (Value.Contains(L"ScalingFunctionFactor"))
+                            {
+                                double v = Value[L"ScalingFunctionFactor"];
+
+                                if (0.0 <= v && v <= 1.0)
+                                    _Configuration._hzLinearFactor = v;
+                            }
+
+                            if (Value.Contains(L"Bandwidth"))
+                            {
+                                double v = Value[L"Bandwidth"];
+
+                                if (0.0 <= v && v <= 64.0)
+                                    _Configuration._bandwidth = v;
+                            }
+
                             if (Value.Contains(L"NumberOfBands"))
                             {
                                 uint32_t v = (uint32_t) (int) Value[L"NumberOfBands"];
@@ -315,6 +330,14 @@ void Configuration::Read()
 
                                 if (0.0 <= v && v <= 96000)
                                     _Configuration._Pitch = v;
+                            }
+
+                            if (Value.Contains(L"SummationMethod"))
+                            {
+                                SummationMethod v = (SummationMethod) (int) Value[L"SummationMethod"];
+
+                                if (SummationMethod::Minimum <= v && v <= SummationMethod::Median)
+                                    _Configuration._SummationMethod = v;
                             }
 
                             Success = Reader.Read(Value);
