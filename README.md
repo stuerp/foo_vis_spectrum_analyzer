@@ -75,11 +75,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.1.0.2, 2023-xx-xx
+v0.1.0.2, 2023-11-13
 
 * New: The configuration is now read from a JSON file. Note: Not all parameters are implemented yet.
 * New: Implemented all frequency scaling methods.
 * New: Implemented all coefficient summation methods.
+* New: The X axis has 3 extra display modes.
 
 v0.1.0.1, 2023-11-12
 
