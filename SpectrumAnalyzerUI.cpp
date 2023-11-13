@@ -452,15 +452,94 @@ inline static double Map(double value, double minValue, double maxValue, double 
 /// <summary>
 /// Scales the frequency.
 /// </summary>
-static double fscale(double x, ScalingFunctions function, double freqSkew)
+static double fscale(double x, ScalingFunctions function, double factor)
 {
     switch (function)
     {
+        default:
+
+        case Linear:
+            return x;
+
         case Logarithmic:
             return ::log2(x);
 
+        case ShiftedLogarithmic:
+            return ::log2(::pow(10, factor * 4.0) + x);
+
+        case Mel:
+            return ::log2(1.0 + x / 700.0);
+
+        case Bark: // "Critical bands"
+            return (26.81 * x) / (1960.0 + x) - 0.53;
+
+        case AdjustableBark:
+            return (26.81 * x) / (::pow(10, factor * 4.0) + x);
+
+        case ERB: // Equivalent Rectangular Bandwidth
+            return ::log2(1.0 + 0.00437 * x);
+
+        case Cams:
+            return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
+
+        case HyperbolicSine:
+            return ::asinh(x / ::pow(10, factor * 4));
+
+        case NthRoot:
+            return ::pow(x, (1.0 / (11.0 - factor * 10.0)));
+
+        case NegativeExponential:
+            return -::exp2(-x / ::exp2(7 + factor * 8));
+
+        case Period:
+            return 1.0 / x;
+    }
+}
+
+/// <summary>
+/// Scales the frequency.
+/// </summary>
+double invFscale(double x, ScalingFunctions function, double factor)
+{
+    switch (function)
+    {
         default:
+
+        case Linear:
             return x;
+
+        case Logarithmic:
+            return ::exp2(x);
+
+        case ShiftedLogarithmic:
+            return ::exp2(x) - ::pow(10.0, factor * 4.0);
+
+        case Mel:
+            return 700.0 * (::exp2(x) - 1.0);
+
+        case Bark: // "Critical bands"
+            return 1960.0 / (26.81 / (x + 0.53) - 1.0);
+
+        case AdjustableBark:
+            return ::pow(10.0, (factor * 4.0)) / (26.81 / x - 1.0);
+
+        case ERB: // Equivalent Rectangular Bandwidth
+            return (1 / 0.00437) * (::exp2(x) - 1);
+
+        case Cams:
+            return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
+
+        case HyperbolicSine:
+            return ::sinh(x) * ::pow(10.0, factor * 4);
+
+        case NthRoot:
+            return ::pow(x, ((11.0 - factor * 10.0)));
+
+        case NegativeExponential:
+            return -::log2(-x) * ::exp2(7.0 + factor * 8.0);
+
+        case Period:
+            return 1.0 / x;
     }
 }
 
@@ -479,22 +558,10 @@ static double ascale(double x)
     }
 }
 
-double invFscale(double x, ScalingFunctions function, double freqSkew)
-{
-    switch (function)
-    {
-        case Logarithmic:
-            return ::exp2(x);
-
-        default:
-            return x;
-    }
-}
-
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, uint32_t detune, double pitch, double bandwidth, uint32_t sampleRate)
+void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate)
 {
     const double Root24 = ::exp2(1. / 24.);
     const double NyquistFrequency = (double) sampleRate / 2.0;
@@ -801,20 +868,33 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     {
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
+        switch (_Configuration._FrequencyDistribution)
         {
-            if (Note % 12 == 0)
+            case FrequencyDistribution::Frequencies:
             {
-                RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12u);
-
-                // Draw the vertical grid line.
-                {
-                    _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                    _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
-                }
+                break;
             }
 
-            Note++;
+            case FrequencyDistribution::Octaves:
+            {
+                if (Note % 12 == 0)
+                {
+                    RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12u);
+
+                    // Draw the vertical grid line.
+                    {
+                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+
+                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
+                    }
+                }
+
+                Note++;
+                break;
+            }
+
+            case FrequencyDistribution::AveePlayer:
+                break;
         }
 
 #ifdef Original

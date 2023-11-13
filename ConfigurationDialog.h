@@ -5,12 +5,39 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include "framework.h"
+#include <SDKDDKVer.h>
+
+// ATL
+#include <atlbase.h>
+#include <atlcom.h>
+#include <atlstr.h>
+#include <atltypes.h>
+#include <atlwin.h>
+
+// WTL
+#include <atlapp.h>
+#include <atlcrack.h>
+#include <atlctrls.h>
+#include <atlctrlw.h>
+#include <atlctrlx.h>
+#include <atlddx.h>
+#include <atldlgs.h>
+//#include <atldwm.h>
+#include <atlfind.h>
+#include <atlframe.h>
+#include <atlgdi.h>
+#include <atlmisc.h>
+#include <atlprint.h>
+#include <atlres.h>
+#include <atlribbon.h>
+#include <atlscrl.h>
+#include <atlsplit.h>
+#include <atltheme.h>
+#include <atluser.h>
+#include <atlwinx.h>
 
 #include "Resources.h"
 #include "Configuration.h"
-
-#include <atlframe.h>
 
 /// <summary>
 /// Implements the modeless Options dialog.

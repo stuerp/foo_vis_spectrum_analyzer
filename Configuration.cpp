@@ -241,8 +241,16 @@ void Configuration::Read()
                             {
                                 FrequencyDistribution v = (FrequencyDistribution) (int) Value[L"FrequencyDistribution"];
 
-                                if (v >= Frequencies && v <= AveePlayer)
+                                if (v >= FrequencyDistribution::Frequencies && v <= FrequencyDistribution::AveePlayer)
                                     _Configuration._FrequencyDistribution = v;
+                            }
+
+                            if (Value.Contains(L"ScalingFunction"))
+                            {
+                                ScalingFunctions v = (ScalingFunctions) (int) Value[L"ScalingFunction"];
+
+                                if (ScalingFunctions::Linear <= v && v <= ScalingFunctions::Period)
+                                    _Configuration._fscale = v;
                             }
 
                             if (Value.Contains(L"NumberOfBands"))
@@ -267,6 +275,46 @@ void Configuration::Read()
 
                                 if (v <= 96000)
                                     _Configuration._maxFreq = v;
+                            }
+
+                            if (Value.Contains(L"BandsPerOctave"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"BandsPerOctave"];
+
+                                if (1 <= v && v <= 48)
+                                    _Configuration._octaves = v;
+                            }
+
+                            if (Value.Contains(L"MinNote"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"MinNote"];
+
+                                if (v <= 143)
+                                    _Configuration._minNote = v;
+                            }
+
+                            if (Value.Contains(L"MaxNote"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"MaxNote"];
+
+                                if (v <= 143)
+                                    _Configuration._maxNote = v;
+                            }
+
+                            if (Value.Contains(L"Detune"))
+                            {
+                                int v = (int) Value[L"Detune"];
+
+                                if (-24 <= v && v <= 24)
+                                    _Configuration._detune= v;
+                            }
+
+                            if (Value.Contains(L"Pitch"))
+                            {
+                                double v = (double) Value[L"Pitch"];
+
+                                if (0.0 <= v && v <= 96000)
+                                    _Configuration._Pitch = v;
                             }
 
                             Success = Reader.Read(Value);

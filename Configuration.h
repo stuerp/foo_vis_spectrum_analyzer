@@ -1,15 +1,37 @@
 
 /** $VER: Configuration.h (2023.11.13) P. Stuer **/
 
-#include "FFT.h"
-
 #pragma once
+
+#include "framework.h"
+
+#include "FFT.h"
 
 enum FrequencyDistribution
 {
     Frequencies = 0,
     Octaves = 1,
     AveePlayer = 2,
+};
+
+enum ScalingFunctions
+{
+    Linear = 0,
+
+    Logarithmic = 1,
+    ShiftedLogarithmic = 2,
+
+    Mel = 3, // AIMP
+
+    Bark = 4,
+    AdjustableBark = 5,
+
+    ERB = 6,
+    Cams = 7,
+    HyperbolicSine = 8,
+    NthRoot = 9,
+    NegativeExponential = 10,
+    Period = 11,
 };
 
 enum SummationMode
@@ -27,11 +49,6 @@ enum TimeSmootingMethod
 {
     MethodAverage,
     MethodPeak
-};
-
-enum ScalingFunctions
-{
-    Logarithmic = 1,
 };
 
 /// <summary>
@@ -81,12 +98,13 @@ public:
     size_t _numBands =    320;  // Number of frequency bands, 2 .. 512
     uint32_t _minFreq =    20;  // Hz, 0 .. 96000
     uint32_t _maxFreq = 20000;  // Hz, 0 .. 96000
+
     // Octaves
     uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
     uint32_t _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
     uint32_t _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    uint32_t _detune =    0;    // Detune, -24 ..24
-    double _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+    int _detune       =   0;    // Detune, -24 ..24
+    double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
     ScalingFunctions _fscale = Logarithmic;
@@ -145,8 +163,5 @@ public:
 private:
     const size_t _Version = 2;
 };
-
-extern cfg_bool cfg_popup_enabled;
-extern cfg_window_placement cfg_popup_window_placement;
 
 extern Configuration _Configuration;
