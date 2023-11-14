@@ -788,14 +788,15 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleRate)
 {
     const double Root24 = ::exp2(1. / 24.);
-    const double NyquistFrequency = (double) sampleRate / 2.0;
+    const double NyquistFrequency = (double) sampleRate / 2.;
 
-    const double Pitch = (_Configuration._Pitch > 0.0) ? ::round((::log2(_Configuration._Pitch) - 4.0) * 12.0) * 2.0 : 0.0;
+    const double Pitch = (_Configuration._Pitch > 0.0) ? ::round((::log2(_Configuration._Pitch) - 4.) * 12.) * 2. : 00;
     const double C0 = _Configuration._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
-    const double groupNotes = 24. / _Configuration.BandsPerOctave;
 
-    const double LoNote = ::round(_Configuration.MinNote * 2 / groupNotes);
-    const double HiNote = ::round(_Configuration.MaxNote * 2 / groupNotes);
+    const double NotesGroup = 24. / _Configuration.BandsPerOctave;
+
+    const double LoNote = ::round(_Configuration.MinNote * 2. / NotesGroup);
+    const double HiNote = ::round(_Configuration.MaxNote * 2. / NotesGroup);
 
     _FrequencyBands.clear();
 
@@ -803,9 +804,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleR
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - _Configuration.Bandwidth) * groupNotes + _Configuration.Detune)),
-            C0 * ::pow(Root24,  (i                             * groupNotes + _Configuration.Detune)),
-            C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * groupNotes + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i - _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
+            C0 * ::pow(Root24,  (i                             * NotesGroup + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
         };
 
         _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
