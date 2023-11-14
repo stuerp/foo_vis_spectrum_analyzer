@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.11) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.14) P. Stuer **/
 
 #include "framework.h"
 
@@ -66,9 +66,9 @@ public:
     }
 
     // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-    void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool useComplex, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate, std::vector<double> & spectrum)
+    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate, std::vector<double> & spectrum)
     {
-        size_t j = 0;
+        size_t i = 0;
 
         for (const FrequencyBand & Iter : freqBands)
         {
@@ -85,7 +85,7 @@ public:
 
             if (minIdx2 > maxIdx2)
             {
-                spectrum[j] = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
+                spectrum[i] = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize)) * bandGain;
             }
             else
             {
@@ -99,9 +99,9 @@ public:
 
                 std::vector<double> medianData;
 
-                for (int i = minIdx1; i <= maxIdx1 - overflowCompensation; ++i)
+                for (int Idx = minIdx1; Idx <= maxIdx1 - overflowCompensation; ++Idx)
                 {
-                    size_t CoefIdx = ((size_t) i % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+                    size_t CoefIdx = ((size_t) Idx % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
                     double data = fftCoeffs[CoefIdx];
 
@@ -142,14 +142,14 @@ public:
                 if (summationMethod == Median)
                     Value = median(medianData);
 
-                spectrum[j] = Value * bandGain;
+                spectrum[i] = Value * bandGain;
             }
 
-            ++j;
+            ++i;
         }
     }
 
-    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
+    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4)
     {
         double Sum = 0.;
 
@@ -168,7 +168,7 @@ public:
         return Sum;
     }
 
-    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
+    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4)
     {
         Complex Sum = { 0., 0. };
 

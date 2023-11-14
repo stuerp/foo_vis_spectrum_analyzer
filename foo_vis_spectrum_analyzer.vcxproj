@@ -189,7 +189,6 @@
   <ItemGroup>
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Component.cpp" />
-    <ClCompile Include="FFTProvider.cpp" />
     <ClCompile Include="ConfigurationDialog.h" />
     <ClCompile Include="JSON.cpp" />
     <ClCompile Include="SpectrumAnalyzerUI.cpp" />

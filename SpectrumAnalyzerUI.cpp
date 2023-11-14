@@ -402,12 +402,12 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        std::vector<double> FreqData((size_t) _Configuration._FFTSize, 0.0);
+        std::vector<double> FreqData((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
 
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        _SpectrumAnalyzer->calcSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate, _Spectrum);
+        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate, _Spectrum);
 
         switch (_Configuration._SmoothingMethod)
         {
