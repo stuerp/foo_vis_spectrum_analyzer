@@ -22,7 +22,7 @@ struct Complex
 /// <summary>
 /// Implements a Fast Fourier Transform provider.
 /// </summary>
-template<class T> class FFTProvider
+class FFTProvider
 {
 public:
     FFTProvider() = delete;
@@ -68,8 +68,7 @@ private:
 /// </summary>
 /// <param name="channelCount">Number of channels of the input data</param>
 /// <param name="fftSize">The number of bands to use</param>
-template<class T>
-inline FFTProvider<T>::FFTProvider(t_size channelCount, FFTSize fftSize)
+inline FFTProvider::FFTProvider(t_size channelCount, FFTSize fftSize)
 {
     if (channelCount == 0)
         throw; // FIXME
@@ -97,8 +96,7 @@ inline FFTProvider<T>::FFTProvider(t_size channelCount, FFTSize fftSize)
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-template<class T>
-inline FFTProvider<T>::~FFTProvider<T>()
+inline FFTProvider::~FFTProvider()
 {
     if (_SampleData)
     {
@@ -113,8 +111,7 @@ inline FFTProvider<T>::~FFTProvider<T>()
 /// </summary>
 /// <param name="samples">Double array that contains samples</param>
 /// <param name="sampleCount">Number of samples to add to the provider</param>
-template<class T>
-inline bool FFTProvider<T>::Add(const audio_sample * samples, size_t sampleCount) noexcept
+inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
 {
     if (samples == nullptr)
         return false;
@@ -145,8 +142,7 @@ inline bool FFTProvider<T>::Add(const audio_sample * samples, size_t sampleCount
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 /// </returns>
-template<class T>
-bool inline FFTProvider<T>::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
+bool inline FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
 {
     if ((freqData == nullptr) || (freqSize != (size_t) _FFTSize))
         return false;
@@ -180,8 +176,7 @@ bool inline FFTProvider<T>::GetFrequencyData(double * freqData, size_t freqSize)
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 ///</returns>
-template<class T>
-bool inline FFTProvider<T>::GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept
+bool inline FFTProvider::GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept
 {
     //FIXME Don't reallocate this buffer all the time.
     audio_sample * TimeData = new audio_sample[_FFTSize];
@@ -242,8 +237,7 @@ bool inline FFTProvider<T>::GetFrequencyData(Complex * freqData, size_t freqSize
 /// <summary>
 /// Calculates the average of the specified samples.
 /// </summary>
-template<class T>
-audio_sample inline FFTProvider<T>::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
+audio_sample inline FFTProvider::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
 {
     switch (channelCount)
     {

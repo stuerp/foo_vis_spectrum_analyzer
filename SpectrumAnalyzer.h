@@ -15,7 +15,7 @@
 /// Implements a wave analyzer to measure relative amplitudes of single frequency components in a complex waveform.
 /// </summary>
 template<class T>
-class SpectrumAnalyzer : public FFTProvider<T>
+class SpectrumAnalyzer : public FFTProvider
 {
 public:
     SpectrumAnalyzer() = delete;
@@ -26,12 +26,13 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(uint32_t channelCount, FFTSize fftSize, uint32_t sampleRate) : FFTProvider<T>(channelCount, fftSize)
+    SpectrumAnalyzer(uint32_t channelCount, FFTSize fftSize, uint32_t sampleRate) : FFTProvider(channelCount, fftSize)
     {
         if (sampleRate <= 0)
             throw;
 
         _SampleRate = sampleRate;
+        _NyquistFrequency = _SampleRate / 2.;
     }
 
     SpectrumAnalyzer(const SpectrumAnalyzer &) = delete;
@@ -46,11 +47,7 @@ public:
     /// </summary>
     int GetFFTIndex(double frequency) const
     {
-        int fftSize = (int) GetFFTSize<T>();
-
-        double NyquistFrequency = _SampleRate / 2.0;
-
-        return (int)(frequency / NyquistFrequency * ((double) fftSize / 2.0));
+        return (int)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.0));
     }
 
     /// <summary>
@@ -58,11 +55,7 @@ public:
     /// </summary>
     int GetFrequency(int index) const
     {
-        int fftSize = (int) GetFFTSize<T>();
-
-        double NyquistFrequency = _SampleRate / 2.0;
-
-        return (int)(index * NyquistFrequency / ((double) fftSize / 2.0));
+        return (int)(index * _NyquistFrequency / ((double) GetFFTSize() / 2.0));
     }
 
     // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
@@ -216,4 +209,5 @@ public:
 
 private:
     uint32_t _SampleRate;
+    double _NyquistFrequency;
 };
