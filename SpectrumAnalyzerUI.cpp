@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.13) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.14) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -17,59 +17,13 @@
 
 #pragma hdrstop
 
-std::vector<FrequencyBand> FrequencyBands;
-
-std::vector<double> spectrum;
-
-std::vector<double> currentSpectrum;
-
 static bool _IsPlaying = false;
 
-/// <summary>
-/// Returns the logarithm of a specified number in a specified base.
-/// </summary>
-/// <param name="a">The number whose logarithm is to be found.</param>
-/// <param name="newBase">The base of the logarithm.</param>
-inline static double Log(double a, double newBase)
-{
-    if (a == NAN)
-        return a;
+static std::vector<FrequencyBand> _FrequencyBands;
 
-    if (newBase == NAN)
-        return newBase;
+static std::vector<double> _Spectrum;
 
-    if (newBase == 1.0)
-        return NAN;
-
-    if (a != 1.0 && (newBase == 0.0 || newBase == INFINITY))
-        return NAN;
-
-    return ::log(a) / ::log(newBase);
-}
-
-/// <summary>
-/// Converts magnitude to decibel (dB).
-/// </summary>
-inline static double ToDecibel(double magnitude)
-{
-    return 20.0 * ::log10(magnitude);
-}
-
-/// <summary>
-/// Converts decibel (dB) to magnitude.
-/// </summary>
-inline static double ToMagnitude(double dB)
-{
-    return ::pow(10.0, dB / 20.0);
-}
-
-/// <summary>
-/// Converts points to DIPs (Device Independet Pixels).
-/// </summary>
-inline static FLOAT ToDIPs(FLOAT points)
-{
-    return (points / 72.0f) * 96.0f; // FIXME: Should 96.0 change on high DPI screens?
-}
+static std::vector<double> _CurrentSpectrum;
 
 /// <summary>
 /// Constructor
@@ -530,7 +484,7 @@ void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNo
     const double LoNote = ::round(loNote * 2 / groupNotes);
     const double HiNote = ::round(hiNote * 2 / groupNotes);
 
-    FrequencyBands.clear();
+    _FrequencyBands.clear();
 
     for (double i = LoNote; i <= HiNote; ++i)
     {
@@ -541,17 +495,17 @@ void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNo
             C0 * ::pow(Root24, ((i + bandwidth) * groupNotes + detune)),
         };
 
-        FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
+        _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
     }
 }
 
 void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, ScalingFunctions scalingFunction, double freqSkew, double bandwidth)
 {
-    FrequencyBands.resize(_Configuration._numBands);
+    _FrequencyBands.resize(_Configuration._numBands);
 
-    for (double i = 0.0; i < (double) FrequencyBands.size(); ++i)
+    for (double i = 0.0; i < (double) _FrequencyBands.size(); ++i)
     {
-        FrequencyBand& Iter = FrequencyBands[(size_t) i];
+        FrequencyBand& Iter = _FrequencyBands[(size_t) i];
 
         Iter.lo  = invFscale(Map(i - bandwidth, 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
         Iter.ctr = invFscale(Map(i,             0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
@@ -620,11 +574,11 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             generateFreqBands(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._fscale, _Configuration._hzLinearFactor, _Configuration._bandwidth);
     }
 
-    spectrum.resize(FrequencyBands.size());
-    std::fill(spectrum.begin(), spectrum.end(), 0.0);
+    _Spectrum.resize(_FrequencyBands.size());
+    std::fill(_Spectrum.begin(), _Spectrum.end(), 0.0);
 
-    currentSpectrum.resize(FrequencyBands.size());
-    std::fill(currentSpectrum.begin(), currentSpectrum.end(), 0.0);
+    _CurrentSpectrum.resize(_FrequencyBands.size());
+    std::fill(_CurrentSpectrum.begin(), _CurrentSpectrum.end(), 0.0);
 
     {
         // Get the frequency data.
@@ -633,20 +587,20 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        _SpectrumAnalyzer->calcSpectrum(FreqData, FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate, spectrum);
+        _SpectrumAnalyzer->calcSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, false, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate, _Spectrum);
 
         switch (_Configuration._SmoothingMethod)
         {
             case MethodAverage:
-                calcSmoothingTimeConstant(currentSpectrum, spectrum, _Configuration._SmoothingConstant);
+                calcSmoothingTimeConstant(_CurrentSpectrum, _Spectrum, _Configuration._SmoothingConstant);
                 break;
 
             case MethodPeak:
-                calcPeakDecay(currentSpectrum, spectrum, _Configuration._SmoothingConstant);
+                calcPeakDecay(_CurrentSpectrum, _Spectrum, _Configuration._SmoothingConstant);
                 break;
         
             default:
-                currentSpectrum = spectrum;
+                _CurrentSpectrum = _Spectrum;
         }
     }
 
@@ -665,9 +619,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
 
-    FLOAT BandWidth = Max((Width / (FLOAT) currentSpectrum.size()), 1.f);
+    FLOAT BandWidth = Max((Width / (FLOAT) _CurrentSpectrum.size()), 1.f);
 
-    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) currentSpectrum.size() * BandWidth)) / 2.f;
+    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) _CurrentSpectrum.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
@@ -686,7 +640,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     {
         for (; j < _countof(FrequenciesDecades); ++j)
         {
-            if (FrequencyBands[0].lo <= FrequenciesDecades[j])
+            if (_FrequencyBands[0].lo <= FrequenciesDecades[j])
                 break;
         }
     }
@@ -695,12 +649,12 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     {
         for (; j < _countof(FrequenciesOctaves); ++j)
         {
-            if (FrequencyBands[0].lo <= FrequenciesOctaves[j])
+            if (_FrequencyBands[0].lo <= FrequenciesOctaves[j])
                 break;
         }
     }
 
-    for (const auto Iter : currentSpectrum)
+    for (const auto Iter : _CurrentSpectrum)
     {
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
@@ -712,7 +666,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             {
                 if (i % 10 == 0)
                 {
-                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequencyBands[i].ctr);
+                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, _FrequencyBands[i].ctr);
 
                     // Draw the vertical grid line.
                     {
@@ -726,7 +680,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
             case XAxisMode::Decades:
             {
-                if ((FrequencyBands[i].lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= FrequencyBands[i].hi) && (j < _countof(FrequenciesDecades)))
+                if ((_FrequencyBands[i].lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= _FrequencyBands[i].hi) && (j < _countof(FrequenciesDecades)))
                 {
                     RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesDecades[j]);
                     ++j;
@@ -743,7 +697,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
             case XAxisMode::OctavesX:
             {
-                if ((FrequencyBands[i].lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= FrequencyBands[i].hi) && (j < _countof(FrequenciesOctaves)))
+                if ((_FrequencyBands[i].lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= _FrequencyBands[i].hi) && (j < _countof(FrequenciesOctaves)))
                 {
                     RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesOctaves[j]);
                     ++j;

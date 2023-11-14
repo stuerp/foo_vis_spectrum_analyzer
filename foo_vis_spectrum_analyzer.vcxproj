@@ -178,7 +178,9 @@
     <ClInclude Include="FFT.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="JSON.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="SpectrumAnalyzer.h" />

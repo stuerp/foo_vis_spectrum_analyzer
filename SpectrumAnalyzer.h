@@ -3,113 +3,13 @@
 
 #include "framework.h"
 
-#include "FftProvider.h"
+#include "FrequencyBand.h"
+#include "FFTProvider.h"
+#include "Math.h"
 
 #include <algorithm>
 
 #pragma once
-
-struct FrequencyBand
-{
-    FrequencyBand() : lo(), ctr(), hi() { }
-    FrequencyBand(double l, double c, double h) : lo(l), ctr(c), hi(h) { }
-
-    double lo;
-    double ctr;
-    double hi;
-};
-
-/// <summary>
-/// Returns the minimum value of the specified values.
-/// </summary>
-template <class T>
-inline static T Min(T a, T b)
-{
-    return (a < b) ? a : b;
-}
-
-/// <summary>
-/// Returns the maximum value of the specified values.
-/// </summary>
-template <class T>
-inline static T Max(T a, T b)
-{
-    return (a > b) ? a : b;
-}
-
-/// <summary>
-/// Returns the input value clamped between min and max.
-/// </summary>
-template <class T>
-inline static T Clamp(T value, T minValue, T maxValue)
-{
-    return Min(Max(value, minValue), maxValue);
-}
-
-double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
-{
-    double Sum = 0.;
-
-    for (int i = -kernelSize + 1; i <= kernelSize; ++i)
-    {
-        double pos = ::floor(x) + i;
-        double twiddle = x - pos; // -pos + ::round(pos) + i
-
-        double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
-
-        size_t CoefIdx = ((size_t) pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
-
-        Sum += fftCoeffs[CoefIdx] * w;
-    }
-
-    return Sum;
-}
-
-double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
-{
-    Complex Sum = { 0., 0. };
-
-    for (int i = -kernelSize + 1; i <= kernelSize; ++i)
-    {
-        double pos = ::floor(x) + i; // i + x
-        double twiddle = x - pos; // -pos + ::round(pos) + i
-
-        double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
-        int idx = (int) (((int) pos % length + length) % length);
-
-        Sum.re += data[idx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
-        Sum.im += data[idx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
-    }
-
-    return ::hypot(Sum.re, Sum.im);
-}
-
-double median(std::vector<double> & data)
-{
-    if (data.size())
-        return NAN;
-
-    if (data.size() <= 1)
-        return data[0];
-
-    std::vector<double> SortedData = data;
-
-    std::sort(SortedData.begin(), SortedData.end());
-
-    size_t Half = data.size() / 2;
-
-    return (data.size() % 2) ? SortedData[Half] : (SortedData[Half - 1] + SortedData[Half]) / 2;
-}
-
-double HzToFFTIndex(double x, size_t bufferSize, uint32_t sampleRate)
-{
-    return x * (double) bufferSize / sampleRate;
-}
-
-uint32_t FFTIndexToHz(size_t x, size_t bufferSize, uint32_t sampleRate)
-{
-    return (uint32_t)((size_t)(x * sampleRate) / bufferSize);
-}
 
 /// <summary>
 /// Implements a wave analyzer to measure relative amplitudes of single frequency components in a complex waveform.
@@ -247,6 +147,71 @@ public:
 
             ++j;
         }
+    }
+
+    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4, bool useComplex = false)
+    {
+        double Sum = 0.;
+
+        for (int i = -kernelSize + 1; i <= kernelSize; ++i)
+        {
+            double pos = ::floor(x) + i;
+            double twiddle = x - pos; // -pos + ::round(pos) + i
+
+            double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
+
+            size_t CoefIdx = ((size_t) pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+
+            Sum += fftCoeffs[CoefIdx] * w;
+        }
+
+        return Sum;
+    }
+
+    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4, bool useComplex = false)
+    {
+        Complex Sum = { 0., 0. };
+
+        for (int i = -kernelSize + 1; i <= kernelSize; ++i)
+        {
+            double pos = ::floor(x) + i; // i + x
+            double twiddle = x - pos; // -pos + ::round(pos) + i
+
+            double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
+            int idx = (int) (((int) pos % length + length) % length);
+
+            Sum.re += data[idx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
+            Sum.im += data[idx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
+        }
+
+        return ::hypot(Sum.re, Sum.im);
+    }
+
+    double median(std::vector<double> & data)
+    {
+        if (data.size())
+            return NAN;
+
+        if (data.size() <= 1)
+            return data[0];
+
+        std::vector<double> SortedData = data;
+
+        std::sort(SortedData.begin(), SortedData.end());
+
+        size_t Half = data.size() / 2;
+
+        return (data.size() % 2) ? SortedData[Half] : (SortedData[Half - 1] + SortedData[Half]) / 2;
+    }
+
+    double HzToFFTIndex(double x, size_t bufferSize, uint32_t sampleRate)
+    {
+        return x * (double) bufferSize / sampleRate;
+    }
+
+    uint32_t FFTIndexToHz(size_t x, size_t bufferSize, uint32_t sampleRate)
+    {
+        return (uint32_t)((size_t)(x * sampleRate) / bufferSize);
     }
 
 private:
