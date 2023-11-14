@@ -57,9 +57,9 @@ void Configuration::Reset() noexcept
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Common
-    _numBands =    320;  // Number of frequency bands, 2 .. 512
-    _minFreq =    20;  // Hz, 0 .. 96000
-    _maxFreq = 20000;  // Hz, 0 .. 96000
+    NumBands =    320;  // Number of frequency bands, 2 .. 512
+    MinFrequency =    20;  // Hz, 0 .. 96000
+    MaxFrequency = 20000;  // Hz, 0 .. 96000
     // Octaves
     _octaves =  12;    // Bands per octave, 1 .. 48
     _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
@@ -68,10 +68,10 @@ void Configuration::Reset() noexcept
     _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    _fscale = Logarithmic;
+    ScalingFunction = Logarithmic;
 
-    _hzLinearFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    _bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+    SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
+    Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
     _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
     _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
@@ -82,14 +82,14 @@ void Configuration::Reset() noexcept
     smoothSlope = true;                                // Smoother frequency slope on sum modes
 
     // ascale() Amplitude Scale
-    _UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
+    UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
 
-    _MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    _MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
+    MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
+    MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
 
     _UseAbsolute = true;                               // Use absolute value
 
-    _gamma = 1.;                                     // Gamma, 0.5 .. 10
+    Gamma = 1.;                                     // Gamma, 0.5 .. 10
 
     _XAxisMode = XAxisMode::Decades;
 
@@ -251,7 +251,7 @@ void Configuration::Read()
                                 ScalingFunctions v = (ScalingFunctions) (int) Value[L"ScalingFunction"];
 
                                 if (ScalingFunctions::Linear <= v && v <= ScalingFunctions::Period)
-                                    _Configuration._fscale = v;
+                                    _Configuration.ScalingFunction = v;
                             }
 
                             if (Value.Contains(L"ScalingFunctionFactor"))
@@ -259,7 +259,7 @@ void Configuration::Read()
                                 double v = Value[L"ScalingFunctionFactor"];
 
                                 if (0.0 <= v && v <= 1.0)
-                                    _Configuration._hzLinearFactor = v;
+                                    _Configuration.SkewFactor = v;
                             }
 
                             if (Value.Contains(L"Bandwidth"))
@@ -267,7 +267,7 @@ void Configuration::Read()
                                 double v = Value[L"Bandwidth"];
 
                                 if (0.0 <= v && v <= 64.0)
-                                    _Configuration._bandwidth = v;
+                                    _Configuration.Bandwidth = v;
                             }
 
                             if (Value.Contains(L"NumberOfBands"))
@@ -275,7 +275,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"NumberOfBands"];
 
                                 if (2 <= v && v <= 512)
-                                    _Configuration._numBands = v;
+                                    _Configuration.NumBands = v;
                             }
 
                             if (Value.Contains(L"MinFrequency"))
@@ -283,7 +283,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MinFrequency"];
 
                                 if (v <= 96000)
-                                    _Configuration._minFreq = v;
+                                    _Configuration.MinFrequency = v;
                             }
 
                             if (Value.Contains(L"MaxFrequency"))
@@ -291,7 +291,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MaxFrequency"];
 
                                 if (v <= 96000)
-                                    _Configuration._maxFreq = v;
+                                    _Configuration.MaxFrequency = v;
                             }
 
                             if (Value.Contains(L"BandsPerOctave"))

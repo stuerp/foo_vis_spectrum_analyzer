@@ -106,9 +106,9 @@ public:
     FrequencyDistribution _FrequencyDistribution;
 
     // Common
-    size_t _numBands =    320;  // Number of frequency bands, 2 .. 512
-    uint32_t _minFreq =    20;  // Hz, 0 .. 96000
-    uint32_t _maxFreq = 20000;  // Hz, 0 .. 96000
+    size_t NumBands =    320;  // Number of frequency bands, 2 .. 512
+    uint32_t MinFrequency =    20;  // Hz, 0 .. 96000
+    uint32_t MaxFrequency = 20000;  // Hz, 0 .. 96000
 
     // Octaves
     uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
@@ -118,10 +118,10 @@ public:
     double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    ScalingFunctions _fscale = Logarithmic;
+    ScalingFunctions ScalingFunction = Logarithmic;
 
-    double _hzLinearFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    double _bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+    double SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
+    double Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
     TimeSmootingMethod _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
     double _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
@@ -132,14 +132,14 @@ public:
     bool smoothSlope = true;                                // Smoother frequency slope on sum modes
 
     // ascale() Amplitude Scale
-    bool _UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
+    bool UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
 
-    double _MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    double _MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
+    double MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
+    double MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
 
     bool _UseAbsolute = true;                               // Use absolute value
 
-    double _gamma = 1.;                                     // Gamma, 0.5 .. 10
+    double Gamma = 1.;                                     // Gamma, 0.5 .. 10
 
     XAxisMode _XAxisMode;
 /*

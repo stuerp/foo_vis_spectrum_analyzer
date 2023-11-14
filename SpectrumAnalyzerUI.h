@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.13) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.14) P. Stuer **/
 
 #pragma once
 
@@ -10,7 +10,7 @@
 #include "ConfigurationDialog.h"
 #include "RingBuffer.h"
 
-constexpr GUID ColumnsUIExtensionGUID = {0xdcc224dc,0x678c,0x4234,{0xb1,0x9a,0x90,0xb5,0x58,0xe0,0x1a,0x94}};
+#include <vector>
 
 /// <summary>
 /// Implements the UIElement and Playback interface.
@@ -92,9 +92,20 @@ private:
     HRESULT RenderBands();
     HRESULT RenderText();
 
+    void GenerateFrequencyBands();
+    void GenerateFrequencyBandsFromNotes(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate);
+    void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor);
+    void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor);
+
+    static double ScaleF(double x, ScalingFunctions function, double factor);
+    static double DeScaleF(double x, ScalingFunctions function, double factor);
+    double ScaleA(double x) const;
+
+    #pragma region DirectX
     HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
+    #pragma endregion
 
 private:
     enum
@@ -120,6 +131,8 @@ private:
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
+    #pragma region DirectX
+
     // Device-independent resources
     CComPtr<ID2D1Factory> _Direct2dFactory;
     CComPtr<IDWriteFactory> _DirectWriteFactory;
@@ -135,13 +148,21 @@ private:
     CComPtr<ID2D1SolidColorBrush> _TextBrush;
 
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
- 
+
+    #pragma endregion
+
     RingBuffer<LONGLONG, 16> _Times;
 
     ConfigurationDialog _ConfigurationDialog;
 
 private:
     SpectrumAnalyzer<double> * _SpectrumAnalyzer;
+
+    std::vector<FrequencyBand> _FrequencyBands;
+
+    std::vector<double> _Spectrum;
+
+    std::vector<double> _CurrentSpectrum;
 };
 
 const FLOAT YAxisWidth = 30.f;

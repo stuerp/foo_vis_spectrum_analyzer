@@ -57,3 +57,8 @@ inline static FLOAT ToDIPs(FLOAT points)
 {
     return (points / 72.0f) * 96.0f; // FIXME: Should 96.0 change on high DPI screens?
 }
+
+inline static double Map(double value, double minValue, double maxValue, double minTarget, double maxTarget)
+{
+    return minTarget + ((value - minValue) * (maxTarget - minTarget)) / (maxValue - minValue);
+}

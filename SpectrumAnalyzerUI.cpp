@@ -11,19 +11,12 @@
 #include "SpectrumAnalyzerUI.h"
 
 #include <complex>
-#include <vector>
 
 #include "Configuration.h"
 
 #pragma hdrstop
 
 static bool _IsPlaying = false;
-
-static std::vector<FrequencyBand> _FrequencyBands;
-
-static std::vector<double> _Spectrum;
-
-static std::vector<double> _CurrentSpectrum;
 
 /// <summary>
 /// Constructor
@@ -355,184 +348,6 @@ HRESULT SpectrumAnalyzerUIElement::Render()
     return hr;
 }
 
-inline static double Map(double value, double minValue, double maxValue, double minTarget, double maxTarget)
-{
-    return minTarget + ((value - minValue) * (maxTarget - minTarget)) / (maxValue - minValue);
-}
-
-/// <summary>
-/// Scales the frequency.
-/// </summary>
-static double fscale(double x, ScalingFunctions function, double factor)
-{
-    switch (function)
-    {
-        default:
-
-        case Linear:
-            return x;
-
-        case Logarithmic:
-            return ::log2(x);
-
-        case ShiftedLogarithmic:
-            return ::log2(::pow(10, factor * 4.0) + x);
-
-        case Mel:
-            return ::log2(1.0 + x / 700.0);
-
-        case Bark: // "Critical bands"
-            return (26.81 * x) / (1960.0 + x) - 0.53;
-
-        case AdjustableBark:
-            return (26.81 * x) / (::pow(10, factor * 4.0) + x);
-
-        case ERB: // Equivalent Rectangular Bandwidth
-            return ::log2(1.0 + 0.00437 * x);
-
-        case Cams:
-            return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
-
-        case HyperbolicSine:
-            return ::asinh(x / ::pow(10, factor * 4));
-
-        case NthRoot:
-            return ::pow(x, (1.0 / (11.0 - factor * 10.0)));
-
-        case NegativeExponential:
-            return -::exp2(-x / ::exp2(7 + factor * 8));
-
-        case Period:
-            return 1.0 / x;
-    }
-}
-
-/// <summary>
-/// Scales the frequency.
-/// </summary>
-double invFscale(double x, ScalingFunctions function, double factor)
-{
-    switch (function)
-    {
-        default:
-
-        case Linear:
-            return x;
-
-        case Logarithmic:
-            return ::exp2(x);
-
-        case ShiftedLogarithmic:
-            return ::exp2(x) - ::pow(10.0, factor * 4.0);
-
-        case Mel:
-            return 700.0 * (::exp2(x) - 1.0);
-
-        case Bark: // "Critical bands"
-            return 1960.0 / (26.81 / (x + 0.53) - 1.0);
-
-        case AdjustableBark:
-            return ::pow(10.0, (factor * 4.0)) / (26.81 / x - 1.0);
-
-        case ERB: // Equivalent Rectangular Bandwidth
-            return (1 / 0.00437) * (::exp2(x) - 1);
-
-        case Cams:
-            return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
-
-        case HyperbolicSine:
-            return ::sinh(x) * ::pow(10.0, factor * 4);
-
-        case NthRoot:
-            return ::pow(x, ((11.0 - factor * 10.0)));
-
-        case NegativeExponential:
-            return -::log2(-x) * ::exp2(7.0 + factor * 8.0);
-
-        case Period:
-            return 1.0 / x;
-    }
-}
-
-/// <summary>
-/// Scales the amplitude.
-/// </summary>
-static double ascale(double x)
-{
-    if (_Configuration._UseDecibels)
-        return Map(ToDecibel(x), _Configuration._MinDecibels, _Configuration._MaxDecibels, 0.0, 1.0);
-    else
-    {
-        double Exponent = 1.0 / _Configuration._gamma;
-
-        return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration._MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration._MaxDecibels), Exponent), 0.0, 1.0);
-    }
-}
-
-/// <summary>
-/// Generates frequency bands based on the frequencies of musical notes.
-/// </summary>
-void generateOctaveBands(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate)
-{
-    const double Root24 = ::exp2(1. / 24.);
-    const double NyquistFrequency = (double) sampleRate / 2.0;
-
-    const double Pitch = (pitch > 0.0) ? ::round((::log2(pitch) - 4.0) * 12.0) * 2.0 : 0.0;
-    const double C0 = pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
-    const double groupNotes = 24. / bandsPerOctave;
-
-    const double LoNote = ::round(loNote * 2 / groupNotes);
-    const double HiNote = ::round(hiNote * 2 / groupNotes);
-
-    _FrequencyBands.clear();
-
-    for (double i = LoNote; i <= HiNote; ++i)
-    {
-        FrequencyBand fb = 
-        {
-            C0 * ::pow(Root24, ((i - bandwidth) * groupNotes + detune)),
-            C0 * ::pow(Root24,  (i              * groupNotes + detune)),
-            C0 * ::pow(Root24, ((i + bandwidth) * groupNotes + detune)),
-        };
-
-        _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
-    }
-}
-
-void generateFreqBands(size_t numBands, uint32_t loFreq, uint32_t hiFreq, ScalingFunctions scalingFunction, double freqSkew, double bandwidth)
-{
-    _FrequencyBands.resize(_Configuration._numBands);
-
-    for (double i = 0.0; i < (double) _FrequencyBands.size(); ++i)
-    {
-        FrequencyBand& Iter = _FrequencyBands[(size_t) i];
-
-        Iter.lo  = invFscale(Map(i - bandwidth, 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
-        Iter.ctr = invFscale(Map(i,             0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
-        Iter.hi  = invFscale(Map(i + bandwidth, 0., (double)(numBands - 1), fscale(loFreq, scalingFunction, freqSkew), fscale(hiFreq, scalingFunction, freqSkew)), scalingFunction, freqSkew);
-    }
-}
-
-/// <summary>
-/// Applies a time smoothing factor.
-/// </summary>
-void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor)
-{
-    if (factor != 0.0)
-    {
-        for (size_t i = 0; i < src.size(); ++i)
-            dst[i] = (!::isnan(dst[i]) ? dst[i] * factor : 0.0) + (!::isnan(src[i]) ? src[i] * (1.0 - factor) : 0.0);
-    }
-    else
-        dst = src;
-}
-
-void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor)
-{
-    for (size_t i = 0; i < src.size(); ++i)
-        dst[i] = Max(!::isnan(dst[i]) ? dst[i] * factor : 0.0, !::isnan(src[i]) ? src[i] : 0.0);
-}
-
 /// <summary>
 /// Render an audio chunk.
 /// </summary>
@@ -543,6 +358,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
     uint32_t SampleRate   = chunk.get_sample_rate();
 
+    // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
         _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, SampleRate);
 
@@ -561,17 +377,19 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     // Initialize the bands.
     switch (_Configuration._FrequencyDistribution)
     {
+        default:
+
+        case Frequencies:
+            GenerateFrequencyBands();
+            break;
+
         case Octaves:
-            generateOctaveBands(_Configuration._octaves, _Configuration._minNote, _Configuration._maxNote, _Configuration._detune, _Configuration._Pitch, _Configuration._bandwidth, SampleRate);
+            GenerateFrequencyBandsFromNotes(_Configuration._octaves, _Configuration._minNote, _Configuration._maxNote, _Configuration._detune, _Configuration._Pitch, _Configuration.Bandwidth, SampleRate);
             break;
 
         case AveePlayer:
 //          generateAveePlayerFreqs(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._hzLinearFactor, _Configuration._bandwidth);
             break;
-
-        case Frequencies:
-        default:
-            generateFreqBands(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._fscale, _Configuration._hzLinearFactor, _Configuration._bandwidth);
     }
 
     _Spectrum.resize(_FrequencyBands.size());
@@ -750,7 +568,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         // Draw the foreground.
         if (Iter > 0.0)
         {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1, y2);
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter))), y1, y2);
 
             _RenderTarget->FillRectangle(Rect, _GradientBrush);
         }
@@ -841,7 +659,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
 
     for (size_t i = 0; i < _countof(Amplitudes); ++i)
     {
-        FLOAT y = (FLOAT) Map(ascale(ToMagnitude(Amplitudes[i])), 0.0, 1.0, Height, 0.0);
+        FLOAT y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, Height, 0.0);
 
         _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
@@ -899,7 +717,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
     {
         case FrequencyDistribution::Frequencies:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"%uHz - %uHz, %u bands, FFT %u, FPS: %.2f\n",
-                    _Configuration._minFreq, _Configuration._maxFreq, (uint32_t) _Configuration._numBands, _Configuration._FFTSize, FPS);
+                    _Configuration.MinFrequency, _Configuration.MaxFrequency, (uint32_t) _Configuration.NumBands, _Configuration._FFTSize, FPS);
             break;
 
         case FrequencyDistribution::Octaves:
@@ -944,6 +762,184 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
     return hr;
 }
 
+/// <summary>
+/// Generates frequency bands;
+/// </summary>
+void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
+{
+    const double MinFreq = ScaleF(_Configuration.MinFrequency, _Configuration.ScalingFunction, _Configuration.SkewFactor);
+    const double MaxFreq = ScaleF(_Configuration.MaxFrequency, _Configuration.ScalingFunction, _Configuration.SkewFactor);
+
+    _FrequencyBands.resize(_Configuration.NumBands);
+
+    for (size_t i = 0; i < _FrequencyBands.size(); ++i)
+    {
+        FrequencyBand& Iter = _FrequencyBands[i];
+
+        Iter.lo  = DeScaleF(Map(i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.ctr = DeScaleF(Map(i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.hi  = DeScaleF(Map(i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+    }
+}
+
+/// <summary>
+/// Generates frequency bands based on the frequencies of musical notes.
+/// </summary>
+void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate)
+{
+    const double Root24 = ::exp2(1. / 24.);
+    const double NyquistFrequency = (double) sampleRate / 2.0;
+
+    const double Pitch = (pitch > 0.0) ? ::round((::log2(pitch) - 4.0) * 12.0) * 2.0 : 0.0;
+    const double C0 = pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double groupNotes = 24. / bandsPerOctave;
+
+    const double LoNote = ::round(loNote * 2 / groupNotes);
+    const double HiNote = ::round(hiNote * 2 / groupNotes);
+
+    _FrequencyBands.clear();
+
+    for (double i = LoNote; i <= HiNote; ++i)
+    {
+        FrequencyBand fb = 
+        {
+            C0 * ::pow(Root24, ((i - bandwidth) * groupNotes + detune)),
+            C0 * ::pow(Root24,  (i              * groupNotes + detune)),
+            C0 * ::pow(Root24, ((i + bandwidth) * groupNotes + detune)),
+        };
+
+        _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
+    }
+}
+
+/// <summary>
+/// Scales the frequency.
+/// </summary>
+double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunctions function, double skewFactor)
+{
+    switch (function)
+    {
+        default:
+
+        case Linear:
+            return x;
+
+        case Logarithmic:
+            return ::log2(x);
+
+        case ShiftedLogarithmic:
+            return ::log2(::pow(10, skewFactor * 4.0) + x);
+
+        case Mel:
+            return ::log2(1.0 + x / 700.0);
+
+        case Bark: // "Critical bands"
+            return (26.81 * x) / (1960.0 + x) - 0.53;
+
+        case AdjustableBark:
+            return (26.81 * x) / (::pow(10, skewFactor * 4.0) + x);
+
+        case ERB: // Equivalent Rectangular Bandwidth
+            return ::log2(1.0 + 0.00437 * x);
+
+        case Cams:
+            return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
+
+        case HyperbolicSine:
+            return ::asinh(x / ::pow(10, skewFactor * 4));
+
+        case NthRoot:
+            return ::pow(x, (1.0 / (11.0 - skewFactor * 10.0)));
+
+        case NegativeExponential:
+            return -::exp2(-x / ::exp2(7 + skewFactor * 8));
+
+        case Period:
+            return 1.0 / x;
+    }
+}
+
+/// <summary>
+/// Descales the frequency.
+/// </summary>
+double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunctions function, double skewFactor)
+{
+    switch (function)
+    {
+        default:
+
+        case Linear:
+            return x;
+
+        case Logarithmic:
+            return ::exp2(x);
+
+        case ShiftedLogarithmic:
+            return ::exp2(x) - ::pow(10.0, skewFactor * 4.0);
+
+        case Mel:
+            return 700.0 * (::exp2(x) - 1.0);
+
+        case Bark: // "Critical bands"
+            return 1960.0 / (26.81 / (x + 0.53) - 1.0);
+
+        case AdjustableBark:
+            return ::pow(10.0, (skewFactor * 4.0)) / (26.81 / x - 1.0);
+
+        case ERB: // Equivalent Rectangular Bandwidth
+            return (1 / 0.00437) * (::exp2(x) - 1);
+
+        case Cams:
+            return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
+
+        case HyperbolicSine:
+            return ::sinh(x) * ::pow(10.0, skewFactor * 4);
+
+        case NthRoot:
+            return ::pow(x, ((11.0 - skewFactor * 10.0)));
+
+        case NegativeExponential:
+            return -::log2(-x) * ::exp2(7.0 + skewFactor * 8.0);
+
+        case Period:
+            return 1.0 / x;
+    }
+}
+
+/// <summary>
+/// Scales the amplitude.
+/// </summary>
+double SpectrumAnalyzerUIElement::ScaleA(double x) const
+{
+    if (_Configuration.UseDecibels)
+        return Map(ToDecibel(x), _Configuration.MinDecibels, _Configuration.MaxDecibels, 0.0, 1.0);
+
+    double Exponent = 1.0 / _Configuration.Gamma;
+
+    return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration.MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration.MaxDecibels), Exponent), 0.0, 1.0);
+}
+
+/// <summary>
+/// Applies a time smoothing factor.
+/// </summary>
+void SpectrumAnalyzerUIElement::calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor)
+{
+    if (factor != 0.0)
+    {
+        for (size_t i = 0; i < src.size(); ++i)
+            dst[i] = (!::isnan(dst[i]) ? dst[i] * factor : 0.0) + (!::isnan(src[i]) ? src[i] * (1.0 - factor) : 0.0);
+    }
+    else
+        dst = src;
+}
+
+void SpectrumAnalyzerUIElement::calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor)
+{
+    for (size_t i = 0; i < src.size(); ++i)
+        dst[i] = Max(!::isnan(dst[i]) ? dst[i] * factor : 0.0, !::isnan(src[i]) ? src[i] : 0.0);
+}
+
+#pragma region DirectX
 /// <summary>
 /// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
@@ -1100,6 +1096,7 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
     _StrokeBrush.Release();
     _RenderTarget.Release();
 }
+#pragma endregion
 
 #pragma region ui_element_instance
 
