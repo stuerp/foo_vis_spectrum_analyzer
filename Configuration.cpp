@@ -61,10 +61,10 @@ void Configuration::Reset() noexcept
     MinFrequency =    20;  // Hz, 0 .. 96000
     MaxFrequency = 20000;  // Hz, 0 .. 96000
     // Octaves
-    _octaves =  12;    // Bands per octave, 1 .. 48
-    _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
-    _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    _detune =    0;    // Detune, -24 ..24
+    BandsPerOctave =  12;    // Bands per octave, 1 .. 48
+    MinNote =   0;    // Minimum note, 0 .. 143, 12 octaves
+    MaxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
+    Detune =    0;    // Detune, -24 ..24
     _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
@@ -299,7 +299,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"BandsPerOctave"];
 
                                 if (1 <= v && v <= 48)
-                                    _Configuration._octaves = v;
+                                    _Configuration.BandsPerOctave = v;
                             }
 
                             if (Value.Contains(L"MinNote"))
@@ -307,7 +307,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MinNote"];
 
                                 if (v <= 143)
-                                    _Configuration._minNote = v;
+                                    _Configuration.MinNote = v;
                             }
 
                             if (Value.Contains(L"MaxNote"))
@@ -315,7 +315,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MaxNote"];
 
                                 if (v <= 143)
-                                    _Configuration._maxNote = v;
+                                    _Configuration.MaxNote = v;
                             }
 
                             if (Value.Contains(L"Detune"))
@@ -323,7 +323,7 @@ void Configuration::Read()
                                 int v = (int) Value[L"Detune"];
 
                                 if (-24 <= v && v <= 24)
-                                    _Configuration._detune= v;
+                                    _Configuration.Detune= v;
                             }
 
                             if (Value.Contains(L"Pitch"))

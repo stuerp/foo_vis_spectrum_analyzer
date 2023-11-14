@@ -93,7 +93,7 @@ private:
     HRESULT RenderText();
 
     void GenerateFrequencyBands();
-    void GenerateFrequencyBandsFromNotes(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate);
+    void GenerateFrequencyBandsFromNotes(uint32_t sampleRate);
     void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor);
     void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor);
 

@@ -384,7 +384,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             break;
 
         case Octaves:
-            GenerateFrequencyBandsFromNotes(_Configuration._octaves, _Configuration._minNote, _Configuration._maxNote, _Configuration._detune, _Configuration._Pitch, _Configuration.Bandwidth, SampleRate);
+            GenerateFrequencyBandsFromNotes(SampleRate);
             break;
 
         case AveePlayer:
@@ -450,7 +450,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     const double FrequenciesDecades[] = { 10., 20., 30., 40., 50., 60., 70., 80., 90., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 9000., 10000., 20000. };
     const double FrequenciesOctaves[] = { 31., 63.5, 125., 250., 500., 1000., 2000., 4000., 8000., 16000. };
 
-    uint32_t Note = _Configuration._minNote;
+    uint32_t Note = _Configuration.MinNote;
     uint32_t i = 0;
     uint32_t j = 0;
 
@@ -722,7 +722,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
         case FrequencyDistribution::Octaves:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %.2fHz, FFT %u, FPS: %.2f\n",
-                    _Configuration._minNote, _Configuration._maxNote, (uint32_t) _Configuration._octaves, _Configuration._Pitch, _Configuration._FFTSize, FPS);
+                    _Configuration.MinNote, _Configuration.MaxNote, (uint32_t) _Configuration.BandsPerOctave, _Configuration._Pitch, _Configuration._FFTSize, FPS);
             break;
 
         case FrequencyDistribution::AveePlayer:
@@ -763,7 +763,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 }
 
 /// <summary>
-/// Generates frequency bands;
+/// Generates frequency bands.
 /// </summary>
 void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 {
@@ -776,26 +776,26 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.lo  = DeScaleF(Map(i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.ctr = DeScaleF(Map(i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.hi  = DeScaleF(Map(i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.lo  = DeScaleF(Map((double) i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.hi  = DeScaleF(Map((double) i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
     }
 }
 
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t bandsPerOctave, uint32_t loNote, uint32_t hiNote, int detune, double pitch, double bandwidth, uint32_t sampleRate)
+void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleRate)
 {
     const double Root24 = ::exp2(1. / 24.);
     const double NyquistFrequency = (double) sampleRate / 2.0;
 
-    const double Pitch = (pitch > 0.0) ? ::round((::log2(pitch) - 4.0) * 12.0) * 2.0 : 0.0;
-    const double C0 = pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
-    const double groupNotes = 24. / bandsPerOctave;
+    const double Pitch = (_Configuration._Pitch > 0.0) ? ::round((::log2(_Configuration._Pitch) - 4.0) * 12.0) * 2.0 : 0.0;
+    const double C0 = _Configuration._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double groupNotes = 24. / _Configuration.BandsPerOctave;
 
-    const double LoNote = ::round(loNote * 2 / groupNotes);
-    const double HiNote = ::round(hiNote * 2 / groupNotes);
+    const double LoNote = ::round(_Configuration.MinNote * 2 / groupNotes);
+    const double HiNote = ::round(_Configuration.MaxNote * 2 / groupNotes);
 
     _FrequencyBands.clear();
 
@@ -803,9 +803,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t bandsPe
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - bandwidth) * groupNotes + detune)),
-            C0 * ::pow(Root24,  (i              * groupNotes + detune)),
-            C0 * ::pow(Root24, ((i + bandwidth) * groupNotes + detune)),
+            C0 * ::pow(Root24, ((i - _Configuration.Bandwidth) * groupNotes + _Configuration.Detune)),
+            C0 * ::pow(Root24,  (i                             * groupNotes + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * groupNotes + _Configuration.Detune)),
         };
 
         _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));

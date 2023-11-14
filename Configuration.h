@@ -111,10 +111,10 @@ public:
     uint32_t MaxFrequency = 20000;  // Hz, 0 .. 96000
 
     // Octaves
-    uint32_t _octaves =  12;    // Bands per octave, 1 .. 48
-    uint32_t _minNote =   0;    // Minimum note, 0 .. 143, 12 octaves
-    uint32_t _maxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    int _detune       =   0;    // Detune, -24 ..24
+    uint32_t BandsPerOctave =  12;    // Bands per octave, 1 .. 48
+    uint32_t MinNote =   0;    // Minimum note, 0 .. 143, 12 octaves
+    uint32_t MaxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
+    int Detune       =   0;    // Detune, -24 ..24
     double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
