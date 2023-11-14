@@ -72,7 +72,7 @@ public:
             const int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
             const int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
 
-            double bandGain = smoothGainTransition && (summationMethod == Sum || summationMethod == RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == RMS || summationMethod == RMSSum) / 2))) : 1.;
+            double bandGain = smoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum) / 2))) : 1.;
 
             if (minIdx2 > maxIdx2)
             {
@@ -80,13 +80,13 @@ public:
             }
             else
             {
-                double Value = (summationMethod == Minimum) ? DBL_MAX : 0.;
+                double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
                 int Count = 0;
 
                 int overflowCompensation = Max(maxIdx1 - minIdx1 - (int) fftCoeffs.size(), 0);
 
-                bool IsAverage = (summationMethod == Average || summationMethod == RMS) || ((summationMethod == SummationMethod::Sum || summationMethod == RMSSum) && smoothGainTransition);
-                bool IsRMS = summationMethod == RMS || summationMethod == RMSSum;
+                bool IsAverage = (summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || ((summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) && smoothGainTransition);
+                bool IsRMS = summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum;
 
                 std::vector<double> medianData;
 
@@ -130,7 +130,7 @@ public:
                 if (IsRMS)
                     Value = ::sqrt(Value);
                 else
-                if (summationMethod == Median)
+                if (summationMethod == SummationMethod::Median)
                     Value = median(medianData);
 
                 Iter.NewValue = Value * bandGain;

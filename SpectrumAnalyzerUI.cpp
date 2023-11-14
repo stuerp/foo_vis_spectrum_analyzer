@@ -24,6 +24,8 @@ static bool _IsPlaying = false;
 SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10)
 {
     set_configuration(data);
+
+    _Configuration.Read();
 }
 
 #pragma region CWindowImpl
@@ -65,7 +67,8 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 
     if (FAILED(hr))
     {
-        FB2K_console_formatter() << core_api::get_my_file_name() << ": Unable to create Direct2D device independent resources.";
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::complain(core_api::get_my_file_name(), ": Unable to create Direct2D device independent resources.");
     }
 
     try
@@ -78,7 +81,8 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        FB2K_console_formatter() << core_api::get_my_file_name() << ": Exception while creating visualisation stream. " << ex;
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
     }
 
     return 0;
@@ -151,6 +155,9 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
     _RenderTarget->Resize(Size);
 
     _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
+
+    if (_Configuration._LogLevel <= LogLevel::Critical)
+        console::printf("%s: RenderTarget: { Width: %d, Height: %d }", core_api::get_my_file_name(), _RenderTargetProperties.pixelSize.width, _RenderTargetProperties.pixelSize.height);
 }
 
 /// <summary>
@@ -364,19 +371,19 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, SampleRate);
 
         // Initialize the bands.
-        switch (_Configuration._FrequencyDistribution)
+        switch (_Configuration.FrequencyDistribution)
         {
             default:
 
-            case Frequencies:
+            case FrequencyDistributions::Frequencies:
                 GenerateFrequencyBands();
                 break;
 
-            case Octaves:
+            case FrequencyDistributions::Octaves:
                 GenerateFrequencyBandsFromNotes(SampleRate);
                 break;
 
-            case AveePlayer:
+            case FrequencyDistributions::AveePlayer:
                 GenerateFrequencyBandsOfAveePlayer();
                 break;
         }
@@ -471,7 +478,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         }
     }
 
-    for (const auto Iter : _FrequencyBands)
+    for (const FrequencyBand & Iter : _FrequencyBands)
     {
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
@@ -712,19 +719,19 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
     WCHAR Text[512] = { };
 
-    switch (_Configuration._FrequencyDistribution)
+    switch (_Configuration.FrequencyDistribution)
     {
-        case FrequencyDistribution::Frequencies:
+        case FrequencyDistributions::Frequencies:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"%uHz - %uHz, %u bands, FFT %u, FPS: %.2f\n",
                     _Configuration.MinFrequency, _Configuration.MaxFrequency, (uint32_t) _Configuration.NumBands, _Configuration._FFTSize, FPS);
             break;
 
-        case FrequencyDistribution::Octaves:
+        case FrequencyDistributions::Octaves:
             hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %.2fHz, FFT %u, FPS: %.2f\n",
                     _Configuration.MinNote, _Configuration.MaxNote, (uint32_t) _Configuration.BandsPerOctave, _Configuration._Pitch, _Configuration._FFTSize, FPS);
             break;
 
-        case FrequencyDistribution::AveePlayer:
+        case FrequencyDistributions::AveePlayer:
             break;
     }
 
@@ -840,40 +847,40 @@ double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunctions function, do
     {
         default:
 
-        case Linear:
+        case ScalingFunctions::Linear:
             return x;
 
-        case Logarithmic:
+        case ScalingFunctions::Logarithmic:
             return ::log2(x);
 
-        case ShiftedLogarithmic:
+        case ScalingFunctions::ShiftedLogarithmic:
             return ::log2(::pow(10, skewFactor * 4.0) + x);
 
-        case Mel:
+        case ScalingFunctions::Mel:
             return ::log2(1.0 + x / 700.0);
 
-        case Bark: // "Critical bands"
+        case ScalingFunctions::Bark: // "Critical bands"
             return (26.81 * x) / (1960.0 + x) - 0.53;
 
-        case AdjustableBark:
+        case ScalingFunctions::AdjustableBark:
             return (26.81 * x) / (::pow(10, skewFactor * 4.0) + x);
 
-        case ERB: // Equivalent Rectangular Bandwidth
+        case ScalingFunctions::ERB: // Equivalent Rectangular Bandwidth
             return ::log2(1.0 + 0.00437 * x);
 
-        case Cams:
+        case ScalingFunctions::Cams:
             return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
 
-        case HyperbolicSine:
+        case ScalingFunctions::HyperbolicSine:
             return ::asinh(x / ::pow(10, skewFactor * 4));
 
-        case NthRoot:
+        case ScalingFunctions::NthRoot:
             return ::pow(x, (1.0 / (11.0 - skewFactor * 10.0)));
 
-        case NegativeExponential:
+        case ScalingFunctions::NegativeExponential:
             return -::exp2(-x / ::exp2(7 + skewFactor * 8));
 
-        case Period:
+        case ScalingFunctions::Period:
             return 1.0 / x;
     }
 }
@@ -887,40 +894,40 @@ double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunctions function, 
     {
         default:
 
-        case Linear:
+        case ScalingFunctions::Linear:
             return x;
 
-        case Logarithmic:
+        case ScalingFunctions::Logarithmic:
             return ::exp2(x);
 
-        case ShiftedLogarithmic:
+        case ScalingFunctions::ShiftedLogarithmic:
             return ::exp2(x) - ::pow(10.0, skewFactor * 4.0);
 
-        case Mel:
+        case ScalingFunctions::Mel:
             return 700.0 * (::exp2(x) - 1.0);
 
-        case Bark: // "Critical bands"
+        case ScalingFunctions::Bark: // "Critical bands"
             return 1960.0 / (26.81 / (x + 0.53) - 1.0);
 
-        case AdjustableBark:
+        case ScalingFunctions::AdjustableBark:
             return ::pow(10.0, (skewFactor * 4.0)) / (26.81 / x - 1.0);
 
-        case ERB: // Equivalent Rectangular Bandwidth
+        case ScalingFunctions::ERB: // Equivalent Rectangular Bandwidth
             return (1 / 0.00437) * (::exp2(x) - 1);
 
-        case Cams:
+        case ScalingFunctions::Cams:
             return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
 
-        case HyperbolicSine:
+        case ScalingFunctions::HyperbolicSine:
             return ::sinh(x) * ::pow(10.0, skewFactor * 4);
 
-        case NthRoot:
+        case ScalingFunctions::NthRoot:
             return ::pow(x, ((11.0 - skewFactor * 10.0)));
 
-        case NegativeExponential:
+        case ScalingFunctions::NegativeExponential:
             return -::log2(-x) * ::exp2(7.0 + skewFactor * 8.0);
 
-        case Period:
+        case ScalingFunctions::Period:
             return 1.0 / x;
     }
 }
@@ -974,6 +981,9 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 
     if (SUCCEEDED(hr))
         hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_DirectWriteFactory), reinterpret_cast<IUnknown **>(&_DirectWriteFactory));
+    else
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
 
     if (SUCCEEDED(hr))
     {
@@ -982,6 +992,9 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 
         hr = _DirectWriteFactory->CreateTextFormat(FontFamilyName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
     }
+    else
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: Unable to create DWriteCreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
 
     if (SUCCEEDED(hr))
     {
@@ -990,6 +1003,9 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 
         hr = _DirectWriteFactory->CreateTextFormat(FontFamilyName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_LabelTextFormat);
     }
+    else
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: Unable to create TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
     if (SUCCEEDED(hr))
     {
@@ -1000,6 +1016,9 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
         if (SUCCEEDED(hr))
             TextLayout->GetMetrics(&_LabelTextMetrics);
     }
+    else
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
     return hr;
 }
@@ -1027,6 +1046,9 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
 
         _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, ClientSize);
+
+        if (_Configuration._LogLevel <= LogLevel::Critical)
+            console::printf("%s: RenderTarget: { Width: %d, Height: %d }", core_api::get_my_file_name(), _RenderTargetProperties.pixelSize.width, _RenderTargetProperties.pixelSize.height);
 
         hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, _RenderTargetProperties, &_RenderTarget);
     }

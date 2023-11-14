@@ -7,14 +7,14 @@
 
 #include "FFT.h"
 
-enum FrequencyDistribution
+enum class FrequencyDistributions
 {
     Frequencies = 0,
     Octaves = 1,
     AveePlayer = 2,
 };
 
-enum ScalingFunctions
+enum class ScalingFunctions
 {
     Linear = 0,
 
@@ -34,7 +34,7 @@ enum ScalingFunctions
     Period = 11,
 };
 
-enum SummationMethod
+enum class SummationMethod
 {
     Minimum = 0,
     Maximum = 1,
@@ -60,6 +60,17 @@ enum class XAxisMode
     Decades = 1,
     OctavesX = 2,
     Notes = 3,
+};
+
+enum class LogLevel
+{
+    Trace = 0,          // Logs that contain the most detailed messages. These messages may contain sensitive application data. These messages are disabled by default and should never be enabled in a production environment.
+    Debug = 1,          // Logs that are used for interactive investigation during development. These logs should primarily contain information useful for debugging and have no long-term value.
+    Information = 2,    // Logs that track the general flow of the application. These logs should have long-term value.
+    Warning = 3,        // Logs that highlight an abnormal or unexpected event in the application flow, but do not otherwise cause the application execution to stop.
+    Error = 4,          // Logs that highlight when the current flow of execution is stopped due to a failure. These should indicate a failure in the current activity, not an application-wide failure.
+    Critical = 5,       // Logs that describe an unrecoverable application or system crash, or a catastrophic failure that requires immediate attention.
+    None = 6,           // Not used for writing log messages. Specifies that a logging category should not write any messages.
 };
 
 /// <summary>
@@ -103,7 +114,7 @@ public:
     size_t _RefreshRateLimit;   // in Hz
 
     FFTSize _FFTSize;           // Power of 2
-    FrequencyDistribution _FrequencyDistribution;
+    FrequencyDistributions FrequencyDistribution;
 
     // Common
     size_t NumBands =    320;  // Number of frequency bands, 2 .. 512
@@ -118,7 +129,7 @@ public:
     double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    ScalingFunctions ScalingFunction = Logarithmic;
+    ScalingFunctions ScalingFunction = ScalingFunctions::Logarithmic;
 
     double SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     double Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
@@ -142,6 +153,8 @@ public:
     double Gamma = 1.;                                     // Gamma, 0.5 .. 10
 
     XAxisMode _XAxisMode;
+
+    LogLevel _LogLevel;
 /*
     type: 'fft',
     bandwidthOffset: 1,

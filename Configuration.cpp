@@ -22,6 +22,7 @@ using namespace JSON;
 #pragma comment(lib, "pathcch")
 
 #include <pfc/string_conv.h>
+#include <pfc/string-conv-lite.h>
 
 using namespace pfc;
 using namespace stringcvt;
@@ -54,7 +55,7 @@ void Configuration::Reset() noexcept
     _WindowDuration = 100;
 
     _FFTSize = FFTSize::Fft4096;
-    _FrequencyDistribution = FrequencyDistribution::Octaves;
+    FrequencyDistribution = FrequencyDistributions::Octaves;
 
     // Common
     NumBands =    320;  // Number of frequency bands, 2 .. 512
@@ -68,7 +69,7 @@ void Configuration::Reset() noexcept
     _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    ScalingFunction = Logarithmic;
+    ScalingFunction = ScalingFunctions::Logarithmic;
 
     SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
@@ -93,6 +94,7 @@ void Configuration::Reset() noexcept
 
     _XAxisMode = XAxisMode::Decades;
 
+    _LogLevel = LogLevel::None;
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -103,7 +105,9 @@ void Configuration::Reset() noexcept
 
     timeAlignment: 1,
     downsample: 0,
+
     useComplex: true,
+
     holdTime: 30,
     fallRate: 0.5,
     clampPeaks: true,
@@ -112,6 +116,7 @@ void Configuration::Reset() noexcept
 
     freeze: false,
     color: 'none',
+
     showLabels: true,
     showLabelsY: true,
     labelTuning: 440,
@@ -158,12 +163,12 @@ void Configuration::Read(ui_element_config_parser & parser)
             }
 
             default:
-                FB2K_console_formatter() << core_api::get_my_file_name() << ": Unknown configuration format. Version: " << Version;
+                console::printf("%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
         }
     }
     catch (exception_io & ex)
     {
-        FB2K_console_formatter() << core_api::get_my_file_name() << ": Exception while reading configuration data: " << ex;
+        console::printf("%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -240,10 +245,10 @@ void Configuration::Read()
 
                             if (Value.Contains(L"FrequencyDistribution"))
                             {
-                                FrequencyDistribution v = (FrequencyDistribution) (int) Value[L"FrequencyDistribution"];
+                                FrequencyDistributions v = (FrequencyDistributions) (int) Value[L"FrequencyDistribution"];
 
-                                if (v >= FrequencyDistribution::Frequencies && v <= FrequencyDistribution::AveePlayer)
-                                    _Configuration._FrequencyDistribution = v;
+                                if (v >= FrequencyDistributions::Frequencies && v <= FrequencyDistributions::AveePlayer)
+                                    _Configuration.FrequencyDistribution = v;
                             }
 
                             if (Value.Contains(L"ScalingFunction"))
@@ -366,12 +371,20 @@ void Configuration::Read()
                                     _Configuration._XAxisMode = v;
                             }
 
+                            if (Value.Contains(L"LogLevel"))
+                            {
+                                LogLevel v = (LogLevel) (int) Value[L"LogLevel"];
+
+                                if (LogLevel::Trace <= v && v <= LogLevel::None)
+                                    _Configuration._LogLevel = v;
+                            }
+
                             Success = Reader.Read(Value);
                         }
                     }
                     catch (JSON::ReaderException e)
                     {
-                        FB2K_console_formatter() << "Error: " << e.GetMessage().c_str() << " (Position " << e.GetPosition() << ")";
+                        console::printf("%s: JSON Error: %s at position %d.", core_api::get_my_file_name(), ::utf8FromWide(e.GetMessage().c_str()).c_str(), e.GetPosition());
                     }
 
                     delete[] Text;

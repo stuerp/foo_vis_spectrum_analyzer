@@ -75,10 +75,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.1.0.3, 2023-xx-xx
+v0.1.0.3, 2023-11-14
 
 * New: Implemented the frequency bands of [AveePlayer](https://aveeplayer.com/).
 * New: Implemented the smoothing methods of the spectrum.
+* New: Added some DirectX debug logging to the console. Set the "LogLevel" parameter to 1 to enable; Use 6 (default) to disable.
 
 v0.1.0.2, 2023-11-13
 
