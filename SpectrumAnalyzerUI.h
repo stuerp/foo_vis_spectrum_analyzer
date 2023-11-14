@@ -141,7 +141,7 @@ private:
     ConfigurationDialog _ConfigurationDialog;
 
 private:
-    SpectrumAnalyzer * _SpectrumAnalyzer;
+    SpectrumAnalyzer<double> * _SpectrumAnalyzer;
 };
 
 const FLOAT YAxisWidth = 30.f;

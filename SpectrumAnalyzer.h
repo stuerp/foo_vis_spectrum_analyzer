@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.14) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.11) P. Stuer **/
 
 #include "framework.h"
 
@@ -10,7 +10,7 @@
 /// <summary>
 /// Implements a wave analyzer to measure relative amplitudes of single frequency components in a complex waveform.
 /// </summary>
-template <class T>
+template<class T>
 class SpectrumAnalyzer : public FFTProvider<T>
 {
 public:
@@ -22,7 +22,7 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(uint32_t channelCount, FFTSize fftSize, uint32_t sampleRate) : FFTProvider(channelCount, fftSize)
+    SpectrumAnalyzer(uint32_t channelCount, FFTSize fftSize, uint32_t sampleRate) : FFTProvider<T>(channelCount, fftSize)
     {
         if (sampleRate <= 0)
             throw;
@@ -42,7 +42,7 @@ public:
     /// </summary>
     int GetFFTIndex(double frequency) const
     {
-        int fftSize = (int)GetFFTSize();
+        int fftSize = (int) GetFFTSize<T>();
 
         double NyquistFrequency = _SampleRate / 2.0;
 
@@ -54,7 +54,7 @@ public:
     /// </summary>
     int GetFrequency(int index) const
     {
-        int fftSize = (int)GetFFTSize();
+        int fftSize = (int) GetFFTSize<T>();
 
         double NyquistFrequency = _SampleRate / 2.0;
 

@@ -1,5 +1,5 @@
 
-/** $VER: FFT.h (2023.11.11) P. Stuer **/
+/** $VER: FFT.h (2023.11.14) P. Stuer **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 /// </summary>
 enum FFTSize
 {
-    Fft64    =    64, // bands
+    Fft64    =    64, // Number of frequency bins
     Fft128   =   128,
     Fft256   =   256,
     Fft512   =   512,

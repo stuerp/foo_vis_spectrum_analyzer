@@ -10,6 +10,7 @@
 #include "Resources.h"
 #include "SpectrumAnalyzerUI.h"
 
+#include <complex>
 #include <vector>
 #include <algorithm>
 
@@ -32,12 +33,6 @@ std::vector<FrequencyBand> FrequencyBands;
 std::vector<double> spectrum;
 
 std::vector<double> currentSpectrum;
-
-struct Complex
-{
-    double re;
-    double im;
-};
 
 static bool _IsPlaying = false;
 
@@ -677,11 +672,11 @@ void calcSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBa
         const double LoHz = HzToFFTIndex(Min(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
         const double HiHz = HzToFFTIndex(Max(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
 
-        int minIdx1 = (int)                  ::ceil(LoHz);
-        int maxIdx1 = (int)                 ::floor(HiHz);
+        const int minIdx1 = (int)                  ::ceil(LoHz);
+        const int maxIdx1 = (int)                 ::floor(HiHz);
 
-        int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
-        int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
+        const int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
+        const int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
 
         double bandGain = smoothGainTransition && (summationMethod == Sum || summationMethod == RMSSum) ? ::hypot(1, ::pow(((Iter.hi - Iter.lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == RMS || summationMethod == RMSSum) / 2))) : 1.;
 
@@ -782,13 +777,14 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t SampleRate   = chunk.get_sample_rate();
 
     if (_SpectrumAnalyzer == nullptr)
-    {
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Configuration._FFTSize, SampleRate);
-    }
+        _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, SampleRate);
 
     // Add the samples to the spectrum analyzer.
     {
         const audio_sample * Samples = chunk.get_data();
+
+        if (Samples == nullptr)
+            return E_FAIL;
 
         size_t SampleCount  = chunk.get_sample_count();
 

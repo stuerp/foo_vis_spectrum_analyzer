@@ -11,21 +11,29 @@
 
 #include "FFT.h"
 
+#define IsPowerOfTwo(x) ((x) & ((x) - 1) == 0)
+
+struct Complex
+{
+    double re;
+    double im;
+};
+
 /// <summary>
 /// Implements a Fast Fourier Transform provider.
 /// </summary>
-template <class T>
-class FFTProvider
+template<class T> class FFTProvider
 {
 public:
+    FFTProvider() = delete;
     FFTProvider(t_size channelCount, FFTSize fftSize);
 
-    virtual ~FFTProvider();
+    FFTProvider(const FFTProvider &) = delete;
+    FFTProvider & operator=(const FFTProvider &) = delete;
+    FFTProvider(FFTProvider &&) = delete;
+    FFTProvider & operator=(FFTProvider &&) = delete;
 
-    void Reset()
-    {
-        _SampleCount = 0;
-    }
+    virtual ~FFTProvider();
 
     size_t GetChannelCount() const
     {
@@ -37,39 +45,36 @@ public:
         return _FFTSize;
     }
 
-    bool Add(const T * samples, size_t count) noexcept;
+    bool Add(const audio_sample * samples, size_t count) noexcept;
     bool GetFrequencyData(double * freqData, size_t freqSize) const noexcept;
+    bool GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept;
 
 private:
-    FFTProvider();
-    FFTProvider(const FFTProvider&);
-
-    bool GetFrequencyData(kiss_fft_cpx * freqData) const noexcept;
-
-    static T AverageSamples(const T * samples, size_t i, size_t channelCount);
+    static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
 
 private:
     size_t _ChannelCount;
     FFTSize _FFTSize;
 
-    T * _SampleData;
+    audio_sample * _SampleData;
     size_t _SampleSize;
     size_t _SampleCount;
 
     FFT _FFT;
 };
 
-#define IsPowerOfTwo(x) ((x) & ((x) - 1) == 0)
-
 /// <summary>
 /// Initializes a new instance of the class.
 /// </summary>
 /// <param name="channelCount">Number of channels of the input data</param>
 /// <param name="fftSize">The number of bands to use</param>
-FFTProvider<class T>::FFTProvider(t_size channelCount, FFTSize fftSize)
+template<class T>
+inline FFTProvider<T>::FFTProvider(t_size channelCount, FFTSize fftSize)
 {
     if (channelCount == 0)
         throw; // FIXME
+
+    assert(sizeof(Complex) == sizeof(kiss_fft_cpx));
 
     // fftSize must be a power of 2 in the range 32 to 32768.
 //  if ((fftSize < 32) || (fftSize > 32768) || !IsPowerOfTwo(fftSize))
@@ -81,18 +86,19 @@ FFTProvider<class T>::FFTProvider(t_size channelCount, FFTSize fftSize)
     _FFT.Initialize(_FFTSize);
 
     // Create the ring buffer for the samples. The size should be a multiple of 2.
-    _SampleData = new T[(size_t) fftSize];
+    _SampleData = new audio_sample[(size_t) fftSize];
     _SampleSize = (size_t) fftSize;
 
-    ::memset(_SampleData, 0, sizeof(T) * _SampleSize);
+    ::memset(_SampleData, 0, sizeof(audio_sample) * _SampleSize);
 
     _SampleCount = 0;
 }
 
 /// <summary>
-/// 
+/// Destroys this instance.
 /// </summary>
-FFTProvider<class T>::~FFTProvider()
+template<class T>
+inline FFTProvider<T>::~FFTProvider<T>()
 {
     if (_SampleData)
     {
@@ -107,7 +113,8 @@ FFTProvider<class T>::~FFTProvider()
 /// </summary>
 /// <param name="samples">Double array that contains samples</param>
 /// <param name="sampleCount">Number of samples to add to the provider</param>
-bool FFTProvider<class T>::Add(const T * samples, size_t sampleCount) noexcept
+template<class T>
+inline bool FFTProvider<T>::Add(const audio_sample * samples, size_t sampleCount) noexcept
 {
     if (samples == nullptr)
         return false;
@@ -138,7 +145,8 @@ bool FFTProvider<class T>::Add(const T * samples, size_t sampleCount) noexcept
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 /// </returns>
-bool FFTProvider<class T>::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
+template<class T>
+bool inline FFTProvider<T>::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
 {
     if ((freqData == nullptr) || (freqSize != (size_t) _FFTSize))
         return false;
@@ -146,20 +154,16 @@ bool FFTProvider<class T>::GetFrequencyData(double * freqData, size_t freqSize) 
     {
         // FIXME: Don't new/delete with every transform!
         // Create the buffer for the frequency domain data.
-        kiss_fft_cpx * FreqData = new kiss_fft_cpx[(size_t) _FFTSize / 2 + 1];
+        Complex * FreqData = new Complex[(size_t) _FFTSize / 2 + 1];
 
         if (FreqData == nullptr)
             return false;
 
-        GetFrequencyData(FreqData);
+        GetFrequencyData(FreqData, freqSize);
 
         // Compute the magnitude of each of the frequencies.
         for (size_t i = 0; i < (size_t) _FFTSize / 2; i++)
-        {
-            double Magnitude = ::sqrt((FreqData[i].r * FreqData[i].r) + (FreqData[i].i * FreqData[i].i));
-
-            freqData[i] =  Magnitude;
-        }
+            freqData[i] =  ::sqrt((FreqData[i].re * FreqData[i].re) + (FreqData[i].im * FreqData[i].im));
 
         delete[] FreqData;
     }
@@ -176,37 +180,38 @@ bool FFTProvider<class T>::GetFrequencyData(double * freqData, size_t freqSize) 
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 ///</returns>
-bool FFTProvider<class T>::GetFrequencyData(kiss_fft_cpx * freqData) const noexcept
+template<class T>
+bool inline FFTProvider<T>::GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept
 {
     //FIXME Don't reallocate this buffer all the time.
-    T * TimeData = new T[_FFTSize];
+    audio_sample * TimeData = new audio_sample[_FFTSize];
 
     if (TimeData == nullptr)
         return false;
 
-//  ::memset(TimeData, 0, sizeof(T) * _FFTSize);
+//  ::memset(TimeData, 0, sizeof(audio_sample) * _FFTSize);
 
     {
-        T * t = TimeData;
+        audio_sample * t = TimeData;
 
         // Fill the FFT buffer from the wrap-around sample buffer with Time domain data.
         size_t SamplesToCopy = _SampleSize - _SampleCount;
 
-        ::memcpy(t, &_SampleData[_SampleCount], SamplesToCopy * sizeof(T));
+        ::memcpy(t, &_SampleData[_SampleCount], SamplesToCopy * sizeof(audio_sample));
 
         t += SamplesToCopy;
 
         SamplesToCopy = _SampleCount;
 
-        ::memcpy(t, &_SampleData[0], SamplesToCopy * sizeof(T));
+        ::memcpy(t, &_SampleData[0], SamplesToCopy * sizeof(audio_sample));
     }
 
     // Apply the windowing function.
-    T Norm = 0.0;
+    audio_sample Norm = 0.0;
 
     for (int i = 0; i < _FFTSize; ++i)
     {
-        T Multiplier = (T) FFT::HanningWindow(i, _FFTSize);
+        audio_sample Multiplier = (audio_sample) FFT::HanningWindow(i, _FFTSize);
 
         TimeData[i] *= Multiplier;
 
@@ -220,13 +225,13 @@ bool FFTProvider<class T>::GetFrequencyData(kiss_fft_cpx * freqData) const noexc
         TimeData[i] *= Factor;
 */
     // Transform the data from the Time domain to the Frequency domain.
-    _FFT.Transform((const kiss_fft_scalar *) TimeData, freqData);
+    _FFT.Transform((const kiss_fft_scalar *) TimeData, (kiss_fft_cpx *) freqData);
 
     // Normalize the frequency domain data. Use the size of the FFT for dB scale. FIXME: Determine scale factor for a logaritmic scale.
     for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
     {
-        freqData[i].r /= (kiss_fft_scalar) _FFTSize;
-        freqData[i].i /= (kiss_fft_scalar) _FFTSize;
+        freqData[i].re /= (kiss_fft_scalar) _FFTSize;
+        freqData[i].im /= (kiss_fft_scalar) _FFTSize;
     }
 
     delete[] TimeData;
@@ -237,7 +242,8 @@ bool FFTProvider<class T>::GetFrequencyData(kiss_fft_cpx * freqData) const noexc
 /// <summary>
 /// Calculates the average of the specified samples.
 /// </summary>
-T FFTProvider<class T>::AverageSamples(const T * samples, size_t i, size_t channelCount)
+template<class T>
+audio_sample inline FFTProvider<T>::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
 {
     switch (channelCount)
     {
@@ -245,28 +251,28 @@ T FFTProvider<class T>::AverageSamples(const T * samples, size_t i, size_t chann
             return samples[i];
 
         case 2:
-            return (samples[i] + samples[i + 1]) / (T) 2.0;
+            return (samples[i] + samples[i + 1]) / (audio_sample) 2.0;
 
         case 3:
-            return (samples[i] + samples[i + 1] + samples[i + 2]) / (T) 3.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2]) / (audio_sample) 3.0;
 
         case 4:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (T) 4.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (audio_sample) 4.0;
 
         case 5:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (T) 5.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (audio_sample) 5.0;
 
         case 6:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (T) 6.0;
+            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (audio_sample) 6.0;
 
         default:
         {
-            T Average = 0.;
+            audio_sample Average = 0.;
 
             for (size_t j = 0; j < channelCount; j++)
                 Average += samples[i + j];
 
-            return Average / (T) channelCount;
+            return Average / (audio_sample) channelCount;
         }
     }
 }
