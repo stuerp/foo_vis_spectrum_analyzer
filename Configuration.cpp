@@ -73,8 +73,8 @@ void Configuration::Reset() noexcept
     SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
-    _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
-    _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
+    _SmoothingMethod = SmoothingMethod::Average;    // Smoothing method
+    SmoothingFactor = 0.5;                       // Smoothing constant, 0.0 .. 1.0
 
     interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
     _SummationMethod = SummationMethod::Maximum;  // Band power summation method
@@ -340,6 +340,22 @@ void Configuration::Read()
 
                                 if (SummationMethod::Minimum <= v && v <= SummationMethod::Median)
                                     _Configuration._SummationMethod = v;
+                            }
+
+                            if (Value.Contains(L"SmoothingMethod"))
+                            {
+                                SmoothingMethod v = (SmoothingMethod) (int) Value[L"SmoothingMethod"];
+
+                                if (SmoothingMethod::Average <= v && v <= SmoothingMethod::Peak)
+                                    _Configuration._SmoothingMethod = v;
+                            }
+
+                            if (Value.Contains(L"SmoothingFactor"))
+                            {
+                                double v = Value[L"SmoothingFactor"];
+
+                                if (0.0 <= v && v <= 1.0)
+                                    _Configuration.SmoothingFactor = v;
                             }
 
                             if (Value.Contains(L"XAxisMode"))

@@ -394,12 +394,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->Add(Samples, SampleCount);
     }
 
-    _Spectrum.resize(_FrequencyBands.size());
-    std::fill(_Spectrum.begin(), _Spectrum.end(), 0.0);
-
-    _CurrentSpectrum.resize(_FrequencyBands.size());
-    std::fill(_CurrentSpectrum.begin(), _CurrentSpectrum.end(), 0.0);
-
     {
         // Get the frequency data.
         std::vector<double> FreqData((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
@@ -407,20 +401,23 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate, _Spectrum);
+        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate);
 
         switch (_Configuration._SmoothingMethod)
         {
-            case MethodAverage:
-                calcSmoothingTimeConstant(_CurrentSpectrum, _Spectrum, _Configuration._SmoothingConstant);
-                break;
-
-            case MethodPeak:
-                calcPeakDecay(_CurrentSpectrum, _Spectrum, _Configuration._SmoothingConstant);
-                break;
-        
             default:
-                _CurrentSpectrum = _Spectrum;
+
+            case SmoothingMethod::Average:
+            {
+                ApplyAverageSmoothing(_Configuration.SmoothingFactor);
+                break;
+            }
+
+            case SmoothingMethod::Peak:
+            {
+                ApplyPeakSmoothing(_Configuration.SmoothingFactor);
+                break;
+            }
         }
     }
 
@@ -439,9 +436,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
     FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
 
-    FLOAT BandWidth = Max((Width / (FLOAT) _CurrentSpectrum.size()), 1.f);
+    FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
 
-    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) _CurrentSpectrum.size() * BandWidth)) / 2.f;
+    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
@@ -474,7 +471,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         }
     }
 
-    for (const auto Iter : _CurrentSpectrum)
+    for (const auto Iter : _FrequencyBands)
     {
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
@@ -568,9 +565,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         }
 #endif
         // Draw the foreground.
-        if (Iter > 0.0)
+        if (Iter.CurValue > 0.0)
         {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter))), y1, y2);
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, y2);
 
             _RenderTarget->FillRectangle(Rect, _GradientBrush);
         }
@@ -944,21 +941,27 @@ double SpectrumAnalyzerUIElement::ScaleA(double x) const
 /// <summary>
 /// Applies a time smoothing factor.
 /// </summary>
-void SpectrumAnalyzerUIElement::calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor)
+void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
 {
     if (factor != 0.0)
     {
-        for (size_t i = 0; i < src.size(); ++i)
-            dst[i] = (!::isnan(dst[i]) ? dst[i] * factor : 0.0) + (!::isnan(src[i]) ? src[i] * (1.0 - factor) : 0.0);
+        for (FrequencyBand & Iter : _FrequencyBands)
+            Iter.CurValue = (!::isnan(Iter.CurValue) ? Iter.CurValue * factor : 0.0) + (!::isnan(Iter.NewValue) ? Iter.NewValue * (1.0 - factor) : 0.0);
     }
     else
-        dst = src;
+    {
+        for (FrequencyBand & Iter : _FrequencyBands)
+            Iter.CurValue = Iter.NewValue;
+    }
 }
 
-void SpectrumAnalyzerUIElement::calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor)
+/// <summary>
+/// Calculates the peak decay.
+/// </summary>
+void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
 {
-    for (size_t i = 0; i < src.size(); ++i)
-        dst[i] = Max(!::isnan(dst[i]) ? dst[i] * factor : 0.0, !::isnan(src[i]) ? src[i] : 0.0);
+    for (FrequencyBand & Iter : _FrequencyBands)
+        Iter.CurValue = Max(!::isnan(Iter.CurValue) ? Iter.CurValue * factor : 0.0, !::isnan(Iter.NewValue) ? Iter.NewValue : 0.0);
 }
 
 #pragma region DirectX

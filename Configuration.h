@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.13) P. Stuer **/
+/** $VER: Configuration.h (2023.11.14) P. Stuer **/
 
 #pragma once
 
@@ -48,18 +48,18 @@ enum SummationMethod
     Median = 6
 };
 
-enum XAxisMode
+enum class SmoothingMethod
+{
+    Average = 0,
+    Peak = 1
+};
+
+enum class XAxisMode
 {
     Bands = 0,
     Decades = 1,
     OctavesX = 2,
     Notes = 3,
-};
-
-enum TimeSmootingMethod
-{
-    MethodAverage,
-    MethodPeak
 };
 
 /// <summary>
@@ -123,8 +123,8 @@ public:
     double SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     double Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
-    TimeSmootingMethod _SmoothingMethod = TimeSmootingMethod::MethodAverage;    // Time smoothing method
-    double _SmoothingConstant = 0.0;                                            // Time smoothing constant, 0.0 .. 1.0
+    SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;    // Smoothing method
+    double SmoothingFactor = 0.0;                                            // Smoothing constant, 0.0 .. 1.0
 
     int interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
     SummationMethod _SummationMethod = SummationMethod::Maximum;  // Band power summation method

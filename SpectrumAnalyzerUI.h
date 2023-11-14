@@ -96,8 +96,8 @@ private:
     void GenerateFrequencyBandsFromNotes(uint32_t sampleRate);
     void GenerateFrequencyBandsOfAveePlayer();
 
-    void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor);
-    void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor);
+    void ApplyAverageSmoothing(double factor);
+    void ApplyPeakSmoothing(double factor);
 
     static double ScaleF(double x, ScalingFunctions function, double factor);
     static double DeScaleF(double x, ScalingFunctions function, double factor);
@@ -161,10 +161,6 @@ private:
     SpectrumAnalyzer<double> * _SpectrumAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
-
-    std::vector<double> _Spectrum;
-
-    std::vector<double> _CurrentSpectrum;
 };
 
 const FLOAT YAxisWidth = 30.f;

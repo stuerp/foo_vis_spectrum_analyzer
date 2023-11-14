@@ -13,11 +13,19 @@
 
 #define IsPowerOfTwo(x) ((x) & ((x) - 1) == 0)
 
+#ifdef _WIN64
 struct Complex
 {
     double re;
     double im;
 };
+#else
+struct Complex
+{
+    float re;
+    float im;
+};
+#endif
 
 /// <summary>
 /// Implements a Fast Fourier Transform provider.

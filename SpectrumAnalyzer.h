@@ -59,11 +59,9 @@ public:
     }
 
     // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate, std::vector<double> & spectrum)
+    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
     {
-        size_t i = 0;
-
-        for (const FrequencyBand & Iter : freqBands)
+        for (FrequencyBand & Iter : freqBands)
         {
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
             const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
@@ -78,7 +76,7 @@ public:
 
             if (minIdx2 > maxIdx2)
             {
-                spectrum[i] = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize)) * bandGain;
+                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize)) * bandGain;
             }
             else
             {
@@ -135,14 +133,12 @@ public:
                 if (summationMethod == Median)
                     Value = median(medianData);
 
-                spectrum[i] = Value * bandGain;
+                Iter.NewValue = Value * bandGain;
             }
-
-            ++i;
         }
     }
 
-    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4)
+    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4) const
     {
         double Sum = 0.;
 
@@ -161,7 +157,7 @@ public:
         return Sum;
     }
 
-    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4)
+    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4) const
     {
         Complex Sum = { 0., 0. };
 
