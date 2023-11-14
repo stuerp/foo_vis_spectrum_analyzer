@@ -62,3 +62,10 @@ inline static double Map(double value, double minValue, double maxValue, double 
 {
     return minTarget + ((value - minValue) * (maxTarget - minTarget)) / (maxValue - minValue);
 }
+
+inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandIndex, size_t maxBands, double skewFactor)
+{
+    const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
+
+    return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
+}

@@ -77,7 +77,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.1.0.3, 2023-xx-xx
 
-*
+* New: Implemented the frequency bands of [AveePlayer](https://aveeplayer.com/).
 
 v0.1.0.2, 2023-11-13
 

@@ -72,8 +72,8 @@ public:
 
         for (const FrequencyBand & Iter : freqBands)
         {
-            const double LoHz = HzToFFTIndex(Min(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
-            const double HiHz = HzToFFTIndex(Max(Iter.hi, Iter.lo), fftCoeffs.size(), sampleRate);
+            const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
+            const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
 
             const int minIdx1 = (int)                  ::ceil(LoHz);
             const int maxIdx1 = (int)                 ::floor(HiHz);
@@ -81,11 +81,11 @@ public:
             const int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
             const int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
 
-            double bandGain = smoothGainTransition && (summationMethod == Sum || summationMethod == RMSSum) ? ::hypot(1, ::pow(((Iter.hi - Iter.lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == RMS || summationMethod == RMSSum) / 2))) : 1.;
+            double bandGain = smoothGainTransition && (summationMethod == Sum || summationMethod == RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == RMS || summationMethod == RMSSum) / 2))) : 1.;
 
             if (minIdx2 > maxIdx2)
             {
-                spectrum[j] = ::fabs(Lanzcos(fftCoeffs, Iter.ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
+                spectrum[j] = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize, useComplex)) * bandGain;
             }
             else
             {

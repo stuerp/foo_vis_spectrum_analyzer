@@ -94,6 +94,8 @@ private:
 
     void GenerateFrequencyBands();
     void GenerateFrequencyBandsFromNotes(uint32_t sampleRate);
+    void GenerateFrequencyBandsOfAveePlayer();
+
     void calcSmoothingTimeConstant(std::vector<double> & dst, const std::vector<double> & src, double factor);
     void calcPeakDecay(std::vector<double> & dst, const std::vector<double> & src, double factor);
 

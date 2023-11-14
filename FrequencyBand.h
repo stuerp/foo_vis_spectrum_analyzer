@@ -11,10 +11,13 @@
 
 struct FrequencyBand
 {
-    FrequencyBand() : lo(), ctr(), hi() { }
-    FrequencyBand(double l, double c, double h) : lo(l), ctr(c), hi(h) { }
+    FrequencyBand() : Lo(), Ctr(), Hi(), LoBound(), HiBound() { }
+    FrequencyBand(double l, double c, double h) : Lo(l), Ctr(c), Hi(h), LoBound(), HiBound() { }
 
-    double lo;
-    double ctr;
-    double hi;
+    double Lo;
+    double Ctr;
+    double Hi;
+
+    double LoBound;
+    double HiBound;
 };

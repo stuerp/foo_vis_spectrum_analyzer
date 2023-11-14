@@ -360,7 +360,27 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
+    {
         _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, SampleRate);
+
+        // Initialize the bands.
+        switch (_Configuration._FrequencyDistribution)
+        {
+            default:
+
+            case Frequencies:
+                GenerateFrequencyBands();
+                break;
+
+            case Octaves:
+                GenerateFrequencyBandsFromNotes(SampleRate);
+                break;
+
+            case AveePlayer:
+                GenerateFrequencyBandsOfAveePlayer();
+                break;
+        }
+    }
 
     // Add the samples to the spectrum analyzer.
     {
@@ -372,24 +392,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         size_t SampleCount  = chunk.get_sample_count();
 
         _SpectrumAnalyzer->Add(Samples, SampleCount);
-    }
-
-    // Initialize the bands.
-    switch (_Configuration._FrequencyDistribution)
-    {
-        default:
-
-        case Frequencies:
-            GenerateFrequencyBands();
-            break;
-
-        case Octaves:
-            GenerateFrequencyBandsFromNotes(SampleRate);
-            break;
-
-        case AveePlayer:
-//          generateAveePlayerFreqs(_Configuration._numBands, _Configuration._minFreq, _Configuration._maxFreq, _Configuration._hzLinearFactor, _Configuration._bandwidth);
-            break;
     }
 
     _Spectrum.resize(_FrequencyBands.size());
@@ -458,7 +460,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     {
         for (; j < _countof(FrequenciesDecades); ++j)
         {
-            if (_FrequencyBands[0].lo <= FrequenciesDecades[j])
+            if (_FrequencyBands[0].Lo <= FrequenciesDecades[j])
                 break;
         }
     }
@@ -467,7 +469,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
     {
         for (; j < _countof(FrequenciesOctaves); ++j)
         {
-            if (_FrequencyBands[0].lo <= FrequenciesOctaves[j])
+            if (_FrequencyBands[0].Lo <= FrequenciesOctaves[j])
                 break;
         }
     }
@@ -484,7 +486,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             {
                 if (i % 10 == 0)
                 {
-                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, _FrequencyBands[i].ctr);
+                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, _FrequencyBands[i].Ctr);
 
                     // Draw the vertical grid line.
                     {
@@ -498,7 +500,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
             case XAxisMode::Decades:
             {
-                if ((_FrequencyBands[i].lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= _FrequencyBands[i].hi) && (j < _countof(FrequenciesDecades)))
+                if ((_FrequencyBands[i].Lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= _FrequencyBands[i].Hi) && (j < _countof(FrequenciesDecades)))
                 {
                     RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesDecades[j]);
                     ++j;
@@ -515,7 +517,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
             case XAxisMode::OctavesX:
             {
-                if ((_FrequencyBands[i].lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= _FrequencyBands[i].hi) && (j < _countof(FrequenciesOctaves)))
+                if ((_FrequencyBands[i].Lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= _FrequencyBands[i].Hi) && (j < _countof(FrequenciesOctaves)))
                 {
                     RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesOctaves[j]);
                     ++j;
@@ -776,9 +778,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.lo  = DeScaleF(Map((double) i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.hi  = DeScaleF(Map((double) i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.Lo  = DeScaleF(Map((double) i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.Hi  = DeScaleF(Map((double) i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
     }
 }
 
@@ -809,7 +811,26 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleR
             C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
         };
 
-        _FrequencyBands.push_back((fb.ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
+        _FrequencyBands.push_back((fb.Ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
+    }
+}
+
+/// <summary>
+/// Generates frequency bands of AveePlayer.
+/// </summary>
+void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
+{
+    _FrequencyBands.resize(_Configuration.NumBands);
+
+    for (size_t i = 0; i < _FrequencyBands.size(); ++i)
+    {
+        FrequencyBand& Iter = _FrequencyBands[i];
+
+        Iter.Lo      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - _Configuration.Bandwidth, _Configuration.NumBands - 1, _Configuration.SkewFactor);
+        Iter.Ctr     = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i,                            _Configuration.NumBands - 1, _Configuration.SkewFactor);
+        Iter.Hi      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + _Configuration.Bandwidth, _Configuration.NumBands - 1, _Configuration.SkewFactor);
+        Iter.LoBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - 0.5,                      _Configuration.NumBands - 1, _Configuration.SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.HiBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + 0.5,                      _Configuration.NumBands - 1, _Configuration.SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 
