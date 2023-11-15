@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.14) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.15) P. Stuer **/
 
 #pragma once
 
@@ -8,7 +8,8 @@
 #include "Configuration.h"
 #include "SpectrumAnalyzer.h"
 #include "ConfigurationDialog.h"
-#include "RingBuffer.h"
+
+#include "FrameCounter.h"
 #include "YAxis.h"
 
 #include <vector>
@@ -91,7 +92,7 @@ private:
     HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
     HRESULT RenderYAxis();
     HRESULT RenderBands();
-    HRESULT RenderText();
+    HRESULT RenderFrameCounter();
 
     void GenerateFrequencyBands();
     void GenerateFrequencyBandsFromNotes(uint32_t sampleRate);
@@ -134,6 +135,7 @@ private:
     visualisation_stream_v2::ptr _VisualisationStream;
 
     #pragma region Rendering
+    FrameCounter _FrameCounter;
     YAxis _YAxis;
     #pragma endregion
 
@@ -156,8 +158,6 @@ private:
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
 
     #pragma endregion
-
-    RingBuffer<LONGLONG, 16> _Times;
 
     ConfigurationDialog _ConfigurationDialog;
 

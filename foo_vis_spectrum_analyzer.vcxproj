@@ -179,6 +179,7 @@
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
+    <ClInclude Include="FrameCounter.h" />
     <ClInclude Include="JSON.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Resources.h" />

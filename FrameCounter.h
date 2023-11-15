@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.15) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: FrameCounter.h (2023.11.15) P. Stuer - Represents and renders the frame counter display. **/
 
 #pragma once
 
@@ -7,58 +7,55 @@
 
 #include "Configuration.h"
 #include "Math.h"
+#include "RingBuffer.h"
 
-#include <vector>
 #include <string>
 
 /// <summary>
-/// Implements the Y axis.
+/// Implements the frame counter display.
 /// </summary>
-class YAxis
+class FrameCounter
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _Width(), _Height(), _TextHeight() { }
+    FrameCounter() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _LabelWidth(30.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight() { }
 
-    YAxis(const YAxis &) = delete;
-    YAxis & operator=(const YAxis &) = delete;
-    YAxis(YAxis &&) = delete;
-    YAxis & operator=(YAxis &&) = delete;
+    FrameCounter(const FrameCounter &) = delete;
+    FrameCounter & operator=(const FrameCounter &) = delete;
+    FrameCounter(FrameCounter &&) = delete;
+    FrameCounter & operator=(FrameCounter &&) = delete;
 
     FLOAT GetWidth() const { return _LabelWidth; }
 
-    struct Label
+    /// <summary>
+    /// Registers the time at the time when starting a new frame.
+    /// </summary>
+    void NewFrame()
     {
-        std::wstring Text;
-        FLOAT y;
-    };
+        LARGE_INTEGER Counter;
+
+        ::QueryPerformanceCounter(&Counter);
+
+        _Times.Add(Counter.QuadPart);
+    }
+
+    float GetFPS()
+    {
+        LARGE_INTEGER Frequency;
+
+        ::QueryPerformanceFrequency(&Frequency);
+
+        float FPS = (float)((_Times.GetCount() - 1) * Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
+
+        return FPS;
+    }
 
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(FLOAT width, FLOAT height)
+    void Initialize(FLOAT clientWidth, FLOAT clientHeight)
     {
-        _Width = width;
-        _Height = height;
-
-        // Create the labels.
-        {
-            _Labels.clear();
-
-            const double Amplitudes[] = { 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60, -66, -72, -78, -84, -90 }; // FIXME: Should this be based on MindB and MaxdB?
-
-            for (size_t i = 0; i < _countof(Amplitudes); ++i)
-            {
-                FLOAT y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, _Height, 0.0);
-
-                WCHAR Text[16] = { };
-
-                ::StringCchPrintfW(Text, _countof(Text), L"%ddB", (int) Amplitudes[i]);
-
-                Label lb = { Text, y };
-
-                _Labels.push_back(lb);
-            }
-        }
+        _ClientWidth = clientWidth;
+        _ClientHeight = clientHeight;
     }
 
     /// <summary>
@@ -66,28 +63,31 @@ public:
     /// </summary>
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
     {
-        const FLOAT StrokeWidth = 1.0f;
+        WCHAR Text[512] = { };
 
-        for (const Label & Iter : _Labels)
+        HRESULT hr = ::StringCchPrintfW(Text, _countof(Text), L"FPS: %.2f", GetFPS());
+
+        if (SUCCEEDED(hr))
         {
-            // Draw the horizontal grid line.
-            {
-                _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+            static const D2D1_RECT_F Rect = { _ClientWidth - 4.f - _TextWidth, 4.f, _ClientWidth - 4.f, 4.f + _TextHeight };
+            static const FLOAT Inset = 4.f;
 
-                renderTarget->DrawLine(D2D1_POINT_2F(_LabelWidth, Iter.y), D2D1_POINT_2F(_Width, Iter.y), _Brush, StrokeWidth, nullptr);
+            // Draw the background.
+            {
+                _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
+
+                renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
             }
 
-            // Draw the label.
+            // Draw the text.
             {
-                D2D1_RECT_F TextRect = { 0.f, Iter.y - _TextHeight / 2.f, _LabelWidth - 2.f, Iter.y + _TextHeight / 2.f };
-
                 _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
         }
 
-        return S_OK;
+        return hr;
     }
 
     /// <summary>
@@ -99,26 +99,29 @@ public:
 
         if (SUCCEEDED(hr))
         {
-            static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+            static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
             hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
         }
 
         if (SUCCEEDED(hr))
         {
+            const WCHAR Text[] = L"FPS: 999.99";
+
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            hr = directWriteFactory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+            hr = directWriteFactory->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
-                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
                 _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
                 DWRITE_TEXT_METRICS TextMetrics = { };
 
                 TextLayout->GetMetrics(&TextMetrics);
 
+                _TextWidth  = TextMetrics.width;
                 _TextHeight = TextMetrics.height;
             }
             else
@@ -155,18 +158,19 @@ public:
     }
 
 private:
+    RingBuffer<LONGLONG, 16> _Times;
+
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
     FLOAT _LabelWidth;  // Determines the max. width of the label.
 
     // Parent-dependent parameters
-    FLOAT _Width;
-    FLOAT _Height;
-
-    std::vector<Label> _Labels;
+    FLOAT _ClientWidth;
+    FLOAT _ClientHeight;
 
     // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
+    FLOAT _TextWidth;
     FLOAT _TextHeight;
 
     // Device-specific resources

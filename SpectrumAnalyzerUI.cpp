@@ -298,14 +298,7 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::Render()
 {
-    // Frame counter
-    {
-        LARGE_INTEGER Time;
-
-        ::QueryPerformanceCounter(&Time);
-
-        _Times.Add(Time.QuadPart);
-    }
+    _FrameCounter.NewFrame();
 
     HRESULT hr = CreateDeviceSpecificResources();
 
@@ -314,7 +307,6 @@ HRESULT SpectrumAnalyzerUIElement::Render()
         _RenderTarget->BeginDraw();
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
         // Draw the background.
         {
@@ -342,6 +334,11 @@ HRESULT SpectrumAnalyzerUIElement::Render()
                     if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2, WindowDuration * (_Configuration._UseZeroTrigger ? 2 : 1)))
                         RenderChunk(Chunk);
                 }
+
+                if (_Configuration._LogLevel != LogLevel::None)
+                    _FrameCounter.Initialize((FLOAT) _RenderTargetProperties.pixelSize.width, (FLOAT) _RenderTargetProperties.pixelSize.height);
+
+                _FrameCounter.Render(_RenderTarget);
             }
 
             // Draw the text.
@@ -607,8 +604,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderXAxisFreq(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, double frequency)
 {
-    _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
     // Draw the label.
     {
         WCHAR Text[16] = { };
@@ -641,8 +636,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderXAxisFreq(FLOAT x1, FLOAT y1, FLOAT x2,
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, uint32_t octave)
 {
-    _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
     // Draw the label.
     {
         WCHAR Text[16] = { };
@@ -664,60 +657,11 @@ HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLO
 
     return S_OK;
 }
-
-/// <summary>
-/// Renders the Y axis.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
-{
-    const double Amplitudes[] = { 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60, -66, -72, -78, -84, -90 }; // FIXME: Should be based on MindB and MaxdB
-
-    const FLOAT Width  = (FLOAT) _RenderTargetProperties.pixelSize.width;
-    const FLOAT Height = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height;
-
-    const FLOAT StrokeWidth = 1.0f;
-
-    for (size_t i = 0; i < _countof(Amplitudes); ++i)
-    {
-        FLOAT y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, Height, 0.0);
-
-        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        // Draw the horizontal grid line.
-        {
-            _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-            _RenderTarget->DrawLine(D2D1_POINT_2F(_YAxis.GetWidth(), y), D2D1_POINT_2F(Width, y), _TextBrush, StrokeWidth, nullptr);
-        }
-
-        // Draw the label.
-        {
-            WCHAR Text[16] = { };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%ddB", (int) Amplitudes[i]);
-
-            FLOAT LineHeight = _LabelTextMetrics.height;
-
-            D2D1_RECT_F TextRect = { 0.f, y - LineHeight / 2, _YAxis.GetWidth() - 2.f, y + LineHeight / 2 };
-
-            _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-            _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-            #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
-            _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-            #pragma warning(default: 6385)
-        }
-    }
-
-    return S_OK;
-}
-
+/*
 /// <summary>
 /// Renders some information about the visulizer.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderText()
+HRESULT SpectrumAnalyzerUIElement::RenderFrameCounter()
 {
     float FPS = 0.0f;
 
@@ -751,8 +695,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
     if (SUCCEEDED(hr))
     {
-        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
         static const D2D1_RECT_F TextRect = { 4.f, 4.f, 768.f, 50.f };
         static const float TextRectInset = 10.f;
 
@@ -781,7 +723,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderText()
 
     return hr;
 }
-
+*/
 /// <summary>
 /// Generates frequency bands.
 /// </summary>
@@ -990,17 +932,6 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 
     if (SUCCEEDED(hr))
     {
-        static const PCWSTR FontFamilyName = L"Calibri";
-        static const FLOAT FontSize = 20.0f; // In DIP
-
-        hr = _DirectWriteFactory->CreateTextFormat(FontFamilyName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-    }
-    else
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: Unable to create DWriteCreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
-
-    if (SUCCEEDED(hr))
-    {
         static const PCWSTR FontFamilyName = L"Segoe UI";
         static const FLOAT FontSize = ToDIPs(6.0f); // In DIP
 
@@ -1022,6 +953,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
     else
         if (_Configuration._LogLevel <= LogLevel::Critical)
             console::printf("%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+
+    hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
 
     hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
 
@@ -1135,7 +1068,11 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_TextBrush);
     }
 
-    hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
+    if (SUCCEEDED(hr))
+        hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
 }
@@ -1146,6 +1083,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 {
     _YAxis.ReleaseDeviceSpecificResources();
+
+    _FrameCounter.ReleaseDeviceSpecificResources();
 
     _TextBrush.Release();
     _GradientBrush.Release();

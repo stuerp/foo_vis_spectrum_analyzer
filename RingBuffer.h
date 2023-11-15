@@ -8,6 +8,7 @@ class RingBuffer
 public:
     RingBuffer() : _StartIndex(0), _ItemCount(0)
     {
+        ::memset(_Items, 0, sizeof(T) * size);
     }
 
     void Add(T item)
