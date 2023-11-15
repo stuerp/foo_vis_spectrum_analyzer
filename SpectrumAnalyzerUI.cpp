@@ -375,7 +375,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
                     audio_chunk_impl Chunk;
 
-                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2, WindowDuration * (_Configuration._UseZeroTrigger ? 2 : 1)))
+                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
                         RenderChunk(Chunk);
                 }
             }
@@ -418,19 +418,19 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         if (Samples == nullptr)
             return E_FAIL;
 
-        size_t SampleCount  = chunk.get_sample_count();
+        size_t SampleCount = chunk.get_sample_count();
 
         _SpectrumAnalyzer->Add(Samples, SampleCount);
     }
 
     {
         // Get the frequency data.
-        std::vector<double> FreqData((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
+        std::vector<double> Coefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
 
-        _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
+        _SpectrumAnalyzer->GetFrequencyData(&Coefficients[0], Coefficients.size());
 
         // Calculate the spectrum 
-        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _SampleRate, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
+        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
 
         switch (_Configuration._SmoothingMethod)
         {
@@ -448,6 +448,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
                 break;
             }
         }
+
+        if (_Configuration._PeakMode != PeakMode::None)
+            _SpectrumAnalyzer->GetDecay(_FrequencyBands);
     }
 
     hr = RenderBands();
@@ -482,13 +485,21 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 
         // Draw the background.
         {
-//          _RenderTarget->FillRectangle(Rect, _BackgroundBrush);
+//          _RenderTarget->FillRectangle(Rect, _BackgroundBrush); // FIXME
         }
 
         // Draw the foreground.
         if (Iter.CurValue > 0.0)
         {
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
+
+            _RenderTarget->FillRectangle(Rect, _GradientBrush);
+        }
+
+        if ((_Configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
+        {
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
+            Rect.bottom = Rect.top + 1.f;
 
             _RenderTarget->FillRectangle(Rect, _GradientBrush);
         }

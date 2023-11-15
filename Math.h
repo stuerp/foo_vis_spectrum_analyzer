@@ -67,11 +67,17 @@ inline static FLOAT ToDIPs(FLOAT points)
     return (points / 72.0f) * 96.0f; // FIXME: Should 96.0 change on high DPI screens?
 }
 
-inline static double Map(double value, double minValue, double maxValue, double minTarget, double maxTarget)
+/// <summary>
+/// Maps a value from one range (srcMin, srcMax) to another (dstMin, dstMax).
+/// </summary>
+inline static double Map(double value, double srcMin, double srcMax, double dstMin, double dstMax)
 {
-    return minTarget + ((value - minValue) * (maxTarget - minTarget)) / (maxValue - minValue);
+    return dstMin + ((value - srcMin) * (dstMax - dstMin)) / (srcMax - srcMin);
 }
 
+/// <summary>
+/// 
+/// </summary>
 inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandIndex, size_t maxBands, double skewFactor)
 {
     const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
@@ -80,7 +86,7 @@ inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandInd
 }
 
 /// <summary>
-/// Scales the amplitude.
+/// Scales the coefficient to a relative amplitude between 0.0 and 1.0.
 /// </summary>
 inline double ScaleA(double x)
 {

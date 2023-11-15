@@ -95,6 +95,7 @@ void Configuration::Reset() noexcept
     _XAxisMode = XAxisMode::Decades;
 
     _ColorScheme = ColorScheme::Solid;
+    _PeakMode = PeakMode::Classic;
 
     _LogLevel = LogLevel::None;
 /*
@@ -371,6 +372,14 @@ void Configuration::Read()
 
                                 if (XAxisMode::Bands <= v && v <= XAxisMode::Notes)
                                     _Configuration._XAxisMode = v;
+                            }
+
+                            if (Value.Contains(L"PeakMode"))
+                            {
+                                PeakMode v = (PeakMode) (int) Value[L"PeakMode"];
+
+                                if (PeakMode::Classic <= v && v <= PeakMode::AIMP)
+                                    _Configuration._PeakMode = v;
                             }
 
                             if (Value.Contains(L"ColorScheme"))

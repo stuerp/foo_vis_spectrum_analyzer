@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2023.11.14) P. Stuer **/
+/** $VER: FrequencyBand.h (2023.11.15) P. Stuer **/
 
 #pragma once
 
@@ -23,4 +23,8 @@ struct FrequencyBand
 
     double NewValue;
     double CurValue;
+
+    double Peak;        // 0.0 - 1.0
+    double HoldTime;    // Time to hold the current peak value.
+    double DecaySpeed;  // Speed at which the current peak value decays.
 };

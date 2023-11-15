@@ -58,7 +58,9 @@ public:
         return (int)(index * _NyquistFrequency / ((double) GetFFTSize() / 2.0));
     }
 
-    // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
+    /// <summary>
+    /// Gets the spectrum from the FFT coefficients.
+    /// </summary>
     void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition)
     {
         for (FrequencyBand & Iter : freqBands)
@@ -66,15 +68,15 @@ public:
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
             const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
 
-            const int minIdx1 = (int)                  ::ceil(LoHz);
-            const int maxIdx1 = (int)                 ::floor(HiHz);
+            const int MinIdx1 = (int)                  ::ceil(LoHz);
+            const int MaxIdx1 = (int)                 ::floor(HiHz);
 
-            const int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
-            const int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
+            const int MinIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : MinIdx1);
+            const int MaxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : MaxIdx1);
 
             double bandGain = smoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum) ? 0.5 : 1.)) : 1.;
 
-            if (minIdx2 > maxIdx2)
+            if (MinIdx2 > MaxIdx2)
             {
                 Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize)) * bandGain;
             }
@@ -83,14 +85,14 @@ public:
                 double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
                 int Count = 0;
 
-                int overflowCompensation = Max(maxIdx1 - minIdx1 - (int) fftCoeffs.size(), 0);
+                int OverflowCompensation = Max(MaxIdx1 - MinIdx1 - (int) fftCoeffs.size(), 0);
 
                 bool IsAverage = (summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || ((summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) && smoothGainTransition);
                 bool IsRMS = summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum;
 
                 std::vector<double> medianData;
 
-                for (int Idx = minIdx1; Idx <= maxIdx1 - overflowCompensation; ++Idx)
+                for (int Idx = MinIdx1; Idx <= MaxIdx1 - OverflowCompensation; ++Idx)
                 {
                     size_t CoefIdx = ((size_t) Idx % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
@@ -110,7 +112,7 @@ public:
                         case SummationMethod::RMS:
                         case SummationMethod::RMSSum:
                         case SummationMethod::Average:
-                            Value += ::pow(data, (1.0 + (IsRMS ? 1.0 : 0.0)));
+                            Value += ::pow(data, (1.0 + (double) IsRMS));
                             break;
 
                         case SummationMethod::Median:
@@ -131,25 +133,28 @@ public:
                     Value = ::sqrt(Value);
                 else
                 if (summationMethod == SummationMethod::Median)
-                    Value = median(medianData);
+                    Value = Median(medianData);
 
                 Iter.NewValue = Value * bandGain;
             }
         }
     }
 
+    /// <summary>
+    /// Applies a Lanzcos kernel.
+    /// </summary>
     double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4) const
     {
         double Sum = 0.;
 
         for (int i = -kernelSize + 1; i <= kernelSize; ++i)
         {
-            double pos = ::floor(x) + i;
-            double twiddle = x - pos; // -pos + ::round(pos) + i
+            double Pos = ::floor(x) + i;
+            double Twiddle = x - Pos; // -Pos + ::round(Pos) + i
 
-            double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
+            double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-            size_t CoefIdx = ((size_t) pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+            size_t CoefIdx = ((size_t) Pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
             Sum += fftCoeffs[CoefIdx] * w;
         }
@@ -157,26 +162,33 @@ public:
         return Sum;
     }
 
+    /// <summary>
+    /// Applies a Lanzcos kernel.
+    /// </summary>
     double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4) const
     {
         Complex Sum = { 0., 0. };
 
         for (int i = -kernelSize + 1; i <= kernelSize; ++i)
         {
-            double pos = ::floor(x) + i; // i + x
-            double twiddle = x - pos; // -pos + ::round(pos) + i
+            double Pos = ::floor(x) + i; // i + x
+            double Twiddle = x - Pos; // -Pos + ::round(Pos) + i
 
-            double w = ::fabs(twiddle) <= 0 ? 1 : ::sin(twiddle * M_PI) / (twiddle * M_PI) * ::sin(M_PI * twiddle / kernelSize) / (M_PI * twiddle / kernelSize);
-            int idx = (int) (((int) pos % length + length) % length);
+            double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-            Sum.re += data[idx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
-            Sum.im += data[idx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
+            size_t CoefIdx = (int) (((int) Pos % length + length) % length);
+
+            Sum.re += data[CoefIdx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
+            Sum.im += data[CoefIdx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
         }
 
         return ::hypot(Sum.re, Sum.im);
     }
 
-    double median(std::vector<double> & data)
+    /// <summary>
+    /// Calculates the median.
+    /// </summary>
+    double Median(std::vector<double> & data)
     {
         if (data.size())
             return NAN;
@@ -193,14 +205,82 @@ public:
         return (data.size() % 2) ? SortedData[Half] : (SortedData[Half - 1] + SortedData[Half]) / 2;
     }
 
-    double HzToFFTIndex(double x, size_t bufferSize, uint32_t sampleRate)
+    /// <summary>
+    /// Calculates the decay of the peak values.
+    /// </summary>
+    void GetDecay(std::vector<FrequencyBand> & freqBands)
     {
-        return x * (double) bufferSize / sampleRate;
+        for (FrequencyBand & Iter : freqBands)
+        {
+            double Amplitude = ScaleA(Iter.CurValue);
+
+            if (!::isfinite(Iter.Peak))
+                Iter.Peak = 0.;
+
+            if (Amplitude >= Iter.Peak)
+            {
+                if (_Configuration._PeakMode == PeakMode::AIMP)
+                    Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration._HoldTime;
+                else
+                    Iter.HoldTime = _Configuration._HoldTime;
+
+                Iter.Peak = Amplitude;
+                Iter.DecaySpeed = 0.;
+            }
+            else
+            if (Iter.HoldTime >= 0.)
+            {
+                if ((_Configuration._PeakMode == PeakMode::AIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration._HoldTime;
+
+                Iter.HoldTime -= 1.;
+
+                if (_Configuration._PeakMode == PeakMode::AIMP)
+                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration._HoldTime);
+            }
+            else
+            {
+                switch (_Configuration._PeakMode)
+                {
+                    default:
+
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
+                        Iter.DecaySpeed = _Configuration._FallRate / 256.;
+                        break;
+
+                    case PeakMode::Gravity:
+                        Iter.DecaySpeed += _Configuration._FallRate / 256.;
+                        break;
+
+                    case PeakMode::AIMP:
+                        Iter.DecaySpeed = (_Configuration._FallRate / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        break;
+                }
+
+                Iter.Peak -= Iter.DecaySpeed;
+            }
+
+            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+        }
     }
 
-    uint32_t FFTIndexToHz(size_t x, size_t bufferSize, uint32_t sampleRate)
+    /// <summary>
+    /// Gets the index of the coefficient corresponding to the specified frequency.
+    /// </summary>
+    double HzToFFTIndex(double frequency, size_t bufferSize, uint32_t sampleRate)
     {
-        return (uint32_t)((size_t)(x * sampleRate) / bufferSize);
+        return frequency * (double) bufferSize / sampleRate;
+    }
+
+    /// <summary>
+    /// Gets the frequency corresponding to the specified coefficient index.
+    /// </summary>
+    double FFTIndexToHz(size_t index, size_t bufferSize, uint32_t sampleRate)
+    {
+        return (double)((size_t)(index * sampleRate) / bufferSize);
     }
 
 private:

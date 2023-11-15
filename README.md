@@ -77,6 +77,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.1.0.4, 2023-xx-xx
 
+* New: Implemented the peak value indicators.
 * Improved: Improved and refactored rendering code.
 
 v0.1.0.3, 2023-11-14
