@@ -9,6 +9,7 @@
 #include "SpectrumAnalyzer.h"
 #include "ConfigurationDialog.h"
 #include "RingBuffer.h"
+#include "YAxis.h"
 
 #include <vector>
 
@@ -101,7 +102,6 @@ private:
 
     static double ScaleF(double x, ScalingFunctions function, double factor);
     static double DeScaleF(double x, ScalingFunctions function, double factor);
-    double ScaleA(double x) const;
 
     #pragma region DirectX
     HRESULT CreateDeviceIndependentResources();
@@ -133,6 +133,10 @@ private:
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
+    #pragma region Rendering
+    YAxis _YAxis;
+    #pragma endregion
+
     #pragma region DirectX
 
     // Device-independent resources
@@ -162,5 +166,3 @@ private:
 
     std::vector<FrequencyBand> _FrequencyBands;
 };
-
-const FLOAT YAxisWidth = 30.f;

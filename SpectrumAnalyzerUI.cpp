@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.14) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.15) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -27,6 +27,8 @@ SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data
 
     _Configuration.Read();
 }
+
+#pragma region User Interface
 
 #pragma region CWindowImpl
 
@@ -75,9 +77,9 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     {
         static_api_ptr_t<visualisation_manager> VisualisationManager;
 
-        VisualisationManager->create_stream(_VisualisationStream, 0);
+        VisualisationManager->create_stream(_VisualisationStream, visualisation_manager::KStreamFlagNewFFT);
 
-        _VisualisationStream->request_backlog(0.8);
+        _VisualisationStream->request_backlog(0.0); // FIXME: What does this do?
     }
     catch (std::exception & ex)
     {
@@ -287,6 +289,10 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
         _ConfigurationDialog.BringWindowToTop();
 }
 
+#pragma endregion
+
+#pragma region Rendering
+
 /// <summary>
 /// Renders a frame.
 /// </summary>
@@ -428,7 +434,11 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         }
     }
 
-    hr = RenderBands();
+    {
+        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        hr = RenderBands();
+    }
 
     return hr;
 }
@@ -438,20 +448,24 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderBands()
 {
+    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - _YAxis.GetWidth();
+
+    _YAxis.Initialize(Width, (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height);
+    _YAxis.Render(_RenderTarget);
+
+
+
+
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
-    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - YAxisWidth;
-
     FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
 
-    FLOAT x1 = YAxisWidth + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
+    FLOAT x1 = _YAxis.GetWidth() + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
     const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height;
-
-    RenderYAxis();
 
     const double FrequenciesDecades[] = { 10., 20., 30., 40., 50., 60., 70., 80., 90., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 9000., 10000., 20000. };
     const double FrequenciesOctaves[] = { 31., 63.5, 125., 250., 500., 1000., 2000., 4000., 8000., 16000. };
@@ -673,7 +687,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
         {
             _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
-            _RenderTarget->DrawLine(D2D1_POINT_2F(YAxisWidth, y), D2D1_POINT_2F(Width, y), _TextBrush, StrokeWidth, nullptr);
+            _RenderTarget->DrawLine(D2D1_POINT_2F(_YAxis.GetWidth(), y), D2D1_POINT_2F(Width, y), _TextBrush, StrokeWidth, nullptr);
         }
 
         // Draw the label.
@@ -684,7 +698,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderYAxis()
 
             FLOAT LineHeight = _LabelTextMetrics.height;
 
-            D2D1_RECT_F TextRect = { 0.f, y - LineHeight / 2, YAxisWidth - 2.f, y + LineHeight / 2 };
+            D2D1_RECT_F TextRect = { 0.f, y - LineHeight / 2, _YAxis.GetWidth() - 2.f, y + LineHeight / 2 };
 
             _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
@@ -933,19 +947,6 @@ double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunctions function, 
 }
 
 /// <summary>
-/// Scales the amplitude.
-/// </summary>
-double SpectrumAnalyzerUIElement::ScaleA(double x) const
-{
-    if (_Configuration.UseDecibels)
-        return Map(ToDecibel(x), _Configuration.MinDecibels, _Configuration.MaxDecibels, 0.0, 1.0);
-
-    double Exponent = 1.0 / _Configuration.Gamma;
-
-    return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration.MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration.MaxDecibels), Exponent), 0.0, 1.0);
-}
-
-/// <summary>
 /// Applies a time smoothing factor.
 /// </summary>
 void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
@@ -970,6 +971,8 @@ void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
     for (FrequencyBand & Iter : _FrequencyBands)
         Iter.CurValue = Max(!::isnan(Iter.CurValue) ? Iter.CurValue * factor : 0.0, !::isnan(Iter.NewValue) ? Iter.NewValue : 0.0);
 }
+
+#pragma endregion
 
 #pragma region DirectX
 /// <summary>
@@ -1019,6 +1022,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
     else
         if (_Configuration._LogLevel <= LogLevel::Critical)
             console::printf("%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+
+    hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
 
     return hr;
 }
@@ -1130,6 +1135,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_TextBrush);
     }
 
+    hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
+
     return hr;
 }
 
@@ -1138,6 +1145,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 /// </summary>
 void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 {
+    _YAxis.ReleaseDeviceSpecificResources();
+
     _TextBrush.Release();
     _GradientBrush.Release();
     _StrokeBrush.Release();

@@ -69,3 +69,17 @@ inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandInd
 
     return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
 }
+
+/// <summary>
+/// Scales the amplitude.
+/// </summary>
+inline double ScaleA(double x)
+{
+    if (_Configuration.UseDecibels)
+        return Map(ToDecibel(x), _Configuration.MinDecibels, _Configuration.MaxDecibels, 0.0, 1.0);
+
+    double Exponent = 1.0 / _Configuration.Gamma;
+
+    return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration.MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration.MaxDecibels), Exponent), 0.0, 1.0);
+}
+
