@@ -112,6 +112,8 @@ private:
     HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
+
+    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
     #pragma endregion
 
 private:

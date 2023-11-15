@@ -58,8 +58,21 @@ enum class XAxisMode
 {
     Bands = 0,
     Decades = 1,
-    OctavesX = 2,
+    Octaves = 2,
     Notes = 3,
+};
+
+enum class ColorScheme
+{
+    Solid = 0,
+    Custom = 1,
+
+    Prism1 = 2,
+    Prism2 = 3,
+    Prism3 = 4,
+
+    foobar2000 = 5,
+    foobar2000DarkMode = 6,
 };
 
 enum class LogLevel
@@ -153,6 +166,8 @@ public:
     double Gamma = 1.;                                     // Gamma, 0.5 .. 10
 
     XAxisMode _XAxisMode;
+
+    ColorScheme _ColorScheme;
 
     LogLevel _LogLevel;
 /*

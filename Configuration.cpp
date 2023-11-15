@@ -94,6 +94,8 @@ void Configuration::Reset() noexcept
 
     _XAxisMode = XAxisMode::Decades;
 
+    _ColorScheme = ColorScheme::Solid;
+
     _LogLevel = LogLevel::None;
 /*
     type: 'fft',
@@ -369,6 +371,14 @@ void Configuration::Read()
 
                                 if (XAxisMode::Bands <= v && v <= XAxisMode::Notes)
                                     _Configuration._XAxisMode = v;
+                            }
+
+                            if (Value.Contains(L"ColorScheme"))
+                            {
+                                ColorScheme v = (ColorScheme) (int) Value[L"ColorScheme"];
+
+                                if (ColorScheme::Solid <= v && v <= ColorScheme::foobar2000DarkMode)
+                                    _Configuration._ColorScheme = v;
                             }
 
                             if (Value.Contains(L"LogLevel"))

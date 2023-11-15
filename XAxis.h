@@ -100,7 +100,7 @@ public:
                     break;
                 }
 
-                case XAxisMode::OctavesX:
+                case XAxisMode::Octaves:
                 {
                     const double FrequenciesOctaves[] = { 32.7, 65.41, 130.81, 261.63, 523.25, 1108.73, 2093.00, 4186.01, 8372.02, 16744.04, 33488.07 };
 

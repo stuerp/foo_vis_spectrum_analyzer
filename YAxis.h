@@ -37,13 +37,16 @@ public:
     /// </summary>
     void Initialize(FLOAT x, FLOAT y, FLOAT width, FLOAT height)
     {
+        _X = x;
+        _Y = y;
+
         _ClientWidth = width;
         _ClientHeight = height;
 
-        // Create the labels.
-        {
-            _Labels.clear();
+        _Labels.clear();
 
+        // Precalculate the labels and their position.
+        {
             const double Amplitudes[] = { 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60, -66, -72, -78, -84, -90 }; // FIXME: Should this be based on MindB and MaxdB?
 
             for (size_t i = 0; i < _countof(Amplitudes); ++i)
@@ -74,12 +77,12 @@ public:
             {
                 _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
-                renderTarget->DrawLine(D2D1_POINT_2F(_LabelWidth, Iter.y), D2D1_POINT_2F(_ClientWidth, Iter.y), _Brush, StrokeWidth, nullptr);
+                renderTarget->DrawLine(D2D1_POINT_2F(_X + _LabelWidth, Iter.y), D2D1_POINT_2F(_ClientWidth, Iter.y), _Brush, StrokeWidth, nullptr);
             }
 
             // Draw the label.
             {
-                D2D1_RECT_F TextRect = { 0.f, Iter.y - _TextHeight / 2.f, _LabelWidth - 2.f, Iter.y + _TextHeight / 2.f };
+                D2D1_RECT_F TextRect = { _X, Iter.y - _TextHeight / 2.f, _X + _LabelWidth - 2.f, Iter.y + _TextHeight / 2.f };
 
                 _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
@@ -160,6 +163,9 @@ private:
     FLOAT _LabelWidth;  // Determines the max. width of the label.
 
     // Parent-dependent parameters
+    FLOAT _X;
+    FLOAT _Y;
+
     FLOAT _ClientWidth;
     FLOAT _ClientHeight;
 

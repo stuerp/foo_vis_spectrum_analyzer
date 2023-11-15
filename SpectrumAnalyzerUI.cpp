@@ -779,59 +779,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 
     if (SUCCEEDED(hr) && (_GradientBrush == nullptr))
     {
-        CComPtr<ID2D1GradientStopCollection> Collection;
-
-        // Prism / foo_musical_spectrum
-        const D2D1_GRADIENT_STOP GradientStops[] =
-        {
-            { 0.f / 5.f, D2D1::ColorF(0xFD0000, 1.f) },
-            { 1.f / 5.f, D2D1::ColorF(0xFF8000, 1.f) },
-            { 2.f / 5.f, D2D1::ColorF(0xFFFF01, 1.f) },
-            { 3.f / 5.f, D2D1::ColorF(0x7EFF77, 1.f) },
-            { 4.f / 5.f, D2D1::ColorF(0x0193A2, 1.f) },
-            { 5.f / 5.f, D2D1::ColorF(0x002161, 1.f) },
-        };
-/*
-        // Prism 2
-        const D2D1_GRADIENT_STOP GradientStops[] =
-        {
-            { 0.f / 9.f, D2D1::ColorF(0xAA3355, 1.f) },
-            { 1.f / 9.f, D2D1::ColorF(0xCC6666, 1.f) },
-            { 2.f / 9.f, D2D1::ColorF(0xEE9944, 1.f) },
-            { 3.f / 9.f, D2D1::ColorF(0xEEDD00, 1.f) },
-            { 4.f / 9.f, D2D1::ColorF(0x99DD55, 1.f) },
-            { 5.f / 9.f, D2D1::ColorF(0x44DD88, 1.f) },
-            { 6.f / 9.f, D2D1::ColorF(0x22CCBB, 1.f) },
-            { 7.f / 9.f, D2D1::ColorF(0x00BBCC, 1.f) },
-            { 8.f / 9.f, D2D1::ColorF(0x0099CC, 1.f) },
-            { 9.f / 9.f, D2D1::ColorF(0x3366BB, 1.f) },
-        };
-*//*
-        // Prism 3
-        const D2D1_GRADIENT_STOP GradientStops[] =
-        {
-            { 0.f / 4.f, D2D1::ColorF(0xFF0000, 1.f) }, // hsl(  0, 100%, 50%)
-            { 1.f / 4.f, D2D1::ColorF(0xFFFF00, 1.f) }, // hsl( 60, 100%, 50%)
-            { 2.f / 4.f, D2D1::ColorF(0x00FF00, 1.f) }, // hsl(120, 100%, 50%)
-            { 3.f / 4.f, D2D1::ColorF(0x00FFFF, 1.f) }, // hsl(180, 100%, 50%)
-            { 4.f / 4.f, D2D1::ColorF(0x0000FF, 1.f) }, // hsl(240, 100%, 50%)
-        };
-*//*
-        // foobar2000 Dark Mode
-        const D2D1_GRADIENT_STOP GradientStops[] =
-        {
-            { 0.f / 1.f, D2D1::ColorF(0x0080FF, 1.f) },
-            { 1.f / 1.f, D2D1::ColorF(0xFFFFFF, 1.f) },
-        };
-*//*
-        // foobar2000
-        const D2D1_GRADIENT_STOP GradientStops[] =
-        {
-            { 0.f / 1.f, D2D1::ColorF(0x0066CC, 1.f) }, 
-            { 1.f / 1.f, D2D1::ColorF(0x000000, 1.f) },
-        };
-*/
-        hr = _RenderTarget->CreateGradientStopCollection(GradientStops, _countof(GradientStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+        CComPtr<ID2D1GradientStopCollection> Collection = GetGradientStopCollection();
 
         if (SUCCEEDED(hr))
         {
@@ -851,6 +799,131 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
+}
+
+/// <summary>
+/// Gets a collection of colors to create a gradient brush with.
+/// </summary>
+CComPtr<ID2D1GradientStopCollection> SpectrumAnalyzerUIElement::GetGradientStopCollection() const
+{
+    const D2D1_GRADIENT_STOP GradientStopsSolid[] =
+    {
+        { 1.f, D2D1::ColorF(0x1E90FF, 1.f) },
+    };
+
+    // Prism / foo_musical_spectrum
+    const D2D1_GRADIENT_STOP GradientStopsPrism1[] =
+    {
+        { 0.f / 5.f, D2D1::ColorF(0xFD0000, 1.f) },
+        { 1.f / 5.f, D2D1::ColorF(0xFF8000, 1.f) },
+        { 2.f / 5.f, D2D1::ColorF(0xFFFF01, 1.f) },
+        { 3.f / 5.f, D2D1::ColorF(0x7EFF77, 1.f) },
+        { 4.f / 5.f, D2D1::ColorF(0x0193A2, 1.f) },
+        { 5.f / 5.f, D2D1::ColorF(0x002161, 1.f) },
+    };
+
+    // Prism 2
+    const D2D1_GRADIENT_STOP GradientStopsPrism2[] =
+    {
+        { 0.f / 9.f, D2D1::ColorF(0xAA3355, 1.f) },
+        { 1.f / 9.f, D2D1::ColorF(0xCC6666, 1.f) },
+        { 2.f / 9.f, D2D1::ColorF(0xEE9944, 1.f) },
+        { 3.f / 9.f, D2D1::ColorF(0xEEDD00, 1.f) },
+        { 4.f / 9.f, D2D1::ColorF(0x99DD55, 1.f) },
+        { 5.f / 9.f, D2D1::ColorF(0x44DD88, 1.f) },
+        { 6.f / 9.f, D2D1::ColorF(0x22CCBB, 1.f) },
+        { 7.f / 9.f, D2D1::ColorF(0x00BBCC, 1.f) },
+        { 8.f / 9.f, D2D1::ColorF(0x0099CC, 1.f) },
+        { 9.f / 9.f, D2D1::ColorF(0x3366BB, 1.f) },
+    };
+
+    // Prism 3
+    const D2D1_GRADIENT_STOP GradientStopsPrism3[] =
+    {
+        { 0.f / 4.f, D2D1::ColorF(0xFF0000, 1.f) }, // hsl(  0, 100%, 50%)
+        { 1.f / 4.f, D2D1::ColorF(0xFFFF00, 1.f) }, // hsl( 60, 100%, 50%)
+        { 2.f / 4.f, D2D1::ColorF(0x00FF00, 1.f) }, // hsl(120, 100%, 50%)
+        { 3.f / 4.f, D2D1::ColorF(0x00FFFF, 1.f) }, // hsl(180, 100%, 50%)
+        { 4.f / 4.f, D2D1::ColorF(0x0000FF, 1.f) }, // hsl(240, 100%, 50%)
+    };
+
+    // foobar2000
+    const D2D1_GRADIENT_STOP GradientStopsFB2K[] =
+    {
+        { 0.f / 1.f, D2D1::ColorF(0x0066CC, 1.f) }, 
+        { 1.f / 1.f, D2D1::ColorF(0x000000, 1.f) },
+    };
+
+    // foobar2000 Dark Mode
+    const D2D1_GRADIENT_STOP GradientStopsFB2KDarkMode[] =
+    {
+        { 0.f / 1.f, D2D1::ColorF(0x0080FF, 1.f) },
+        { 1.f / 1.f, D2D1::ColorF(0xFFFFFF, 1.f) },
+    };
+
+    const D2D1_GRADIENT_STOP * GradientStops = nullptr;
+    UINT32 GradientStopCount = 0;
+
+    switch (_Configuration._ColorScheme)
+    {
+        default:
+
+        case ColorScheme::Solid:
+        {
+            GradientStops = GradientStopsSolid;
+            GradientStopCount = _countof(GradientStopsSolid);
+            break;
+        }
+
+        case ColorScheme::Custom:
+        {
+            // FIXME
+            GradientStops = GradientStopsSolid;
+            GradientStopCount = _countof(GradientStopsSolid);
+            break;
+        }
+
+        case ColorScheme::Prism1:
+        {
+            GradientStops = GradientStopsPrism1;
+            GradientStopCount = _countof(GradientStopsPrism1);
+            break;
+        }
+
+        case ColorScheme::Prism2:
+        {
+            GradientStops = GradientStopsPrism2;
+            GradientStopCount = _countof(GradientStopsPrism2);
+            break;
+        }
+
+        case ColorScheme::Prism3:
+        {
+            GradientStops = GradientStopsPrism3;
+            GradientStopCount = _countof(GradientStopsPrism3);
+            break;
+        }
+
+        case ColorScheme::foobar2000:
+        {
+            GradientStops = GradientStopsFB2K;
+            GradientStopCount = _countof(GradientStopsFB2K);
+            break;
+        }
+
+        case ColorScheme::foobar2000DarkMode:
+        {
+            GradientStops = GradientStopsFB2KDarkMode;
+            GradientStopCount = _countof(GradientStopsFB2KDarkMode);
+            break;
+        }
+    };
+
+    CComPtr<ID2D1GradientStopCollection> Collection;
+
+    _RenderTarget->CreateGradientStopCollection(GradientStops, GradientStopCount, D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+
+    return Collection;
 }
 
 /// <summary>
@@ -951,7 +1024,7 @@ ui_element_config::ptr SpectrumAnalyzerUIElement::get_configuration()
 }
 
 /// <summary>
-/// 
+/// Used by host to notify the element about various events. See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value. Container classes should dispatch all notifications to their children.
 /// </summary>
 void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const void * p_param2, t_size p_param2size)
 {
@@ -982,6 +1055,8 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
         delete _SpectrumAnalyzer;
         _SpectrumAnalyzer = nullptr;
     }
+
+    _GradientBrush.Release();
 
     _IsPlaying = true;
 
