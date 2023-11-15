@@ -186,6 +186,7 @@
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="SpectrumAnalyzer.h" />
     <ClInclude Include="SpectrumAnalyzerUI.h" />
+    <ClInclude Include="XAxis.h" />
     <ClInclude Include="YAxis.h" />
   </ItemGroup>
   <ItemGroup>

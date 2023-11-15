@@ -10,6 +10,7 @@
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
+#include "XAxis.h"
 #include "YAxis.h"
 
 #include <vector>
@@ -85,8 +86,11 @@ private:
     void ToggleHardwareRendering() noexcept;
     void UpdateRefreshRateLimit() noexcept;
     void Configure() noexcept;
+    void ApplyConfiguration() noexcept;
 
-    HRESULT Render();
+    void Resize();
+
+    HRESULT RenderFrame();
     HRESULT RenderChunk(const audio_chunk & chunk);
     HRESULT RenderXAxisFreq(FLOAT, FLOAT, FLOAT, FLOAT, double frequency);
     HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
@@ -95,7 +99,7 @@ private:
     HRESULT RenderFrameCounter();
 
     void GenerateFrequencyBands();
-    void GenerateFrequencyBandsFromNotes(uint32_t sampleRate);
+    void GenerateFrequencyBandsFromNotes();
     void GenerateFrequencyBandsOfAveePlayer();
 
     void ApplyAverageSmoothing(double factor);
@@ -136,6 +140,7 @@ private:
 
     #pragma region Rendering
     FrameCounter _FrameCounter;
+    XAxis _XAxis;
     YAxis _YAxis;
     #pragma endregion
 
@@ -150,11 +155,10 @@ private:
     DWRITE_TEXT_METRICS _LabelTextMetrics;
 
     // Device-specific resources
-    D2D1_HWND_RENDER_TARGET_PROPERTIES _RenderTargetProperties;
+    D2D1_SIZE_U _ClientSize;
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-    CComPtr<ID2D1SolidColorBrush> _StrokeBrush;
-    CComPtr<ID2D1SolidColorBrush> _TextBrush;
 
+    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
 
     #pragma endregion
@@ -165,4 +169,5 @@ private:
     SpectrumAnalyzer<double> * _SpectrumAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
+    uint32_t _SampleRate;
 };

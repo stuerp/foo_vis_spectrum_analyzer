@@ -59,7 +59,7 @@ public:
     }
 
     // Calculates bandpower from FFT (foobar2000 flavored, can be enhanced by using complex FFT coefficients instead of magnitude-only FFT data)
-    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition, uint32_t sampleRate)
+    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition)
     {
         for (FrequencyBand & Iter : freqBands)
         {
@@ -72,7 +72,7 @@ public:
             const int minIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : minIdx1);
             const int maxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : maxIdx1);
 
-            double bandGain = smoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (1 - (int) (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum) / 2))) : 1.;
+            double bandGain = smoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum) ? 0.5 : 1.)) : 1.;
 
             if (minIdx2 > maxIdx2)
             {

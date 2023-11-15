@@ -17,7 +17,7 @@
 class YAxis
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _Width(), _Height(), _TextHeight() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _ClientWidth(), _ClientHeight(), _TextHeight() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
@@ -35,10 +35,10 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(FLOAT width, FLOAT height)
+    void Initialize(FLOAT x, FLOAT y, FLOAT width, FLOAT height)
     {
-        _Width = width;
-        _Height = height;
+        _ClientWidth = width;
+        _ClientHeight = height;
 
         // Create the labels.
         {
@@ -48,7 +48,7 @@ public:
 
             for (size_t i = 0; i < _countof(Amplitudes); ++i)
             {
-                FLOAT y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, _Height, 0.0);
+                y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, _ClientHeight, 0.0);
 
                 WCHAR Text[16] = { };
 
@@ -74,7 +74,7 @@ public:
             {
                 _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
-                renderTarget->DrawLine(D2D1_POINT_2F(_LabelWidth, Iter.y), D2D1_POINT_2F(_Width, Iter.y), _Brush, StrokeWidth, nullptr);
+                renderTarget->DrawLine(D2D1_POINT_2F(_LabelWidth, Iter.y), D2D1_POINT_2F(_ClientWidth, Iter.y), _Brush, StrokeWidth, nullptr);
             }
 
             // Draw the label.
@@ -112,8 +112,8 @@ public:
 
             if (SUCCEEDED(hr))
             {
-                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
+                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
 
                 DWRITE_TEXT_METRICS TextMetrics = { };
 
@@ -160,8 +160,8 @@ private:
     FLOAT _LabelWidth;  // Determines the max. width of the label.
 
     // Parent-dependent parameters
-    FLOAT _Width;
-    FLOAT _Height;
+    FLOAT _ClientWidth;
+    FLOAT _ClientHeight;
 
     std::vector<Label> _Labels;
 

@@ -87,6 +87,8 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
             console::printf("%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
     }
 
+    ApplyConfiguration();
+
     return 0;
 }
 
@@ -114,6 +116,7 @@ void SpectrumAnalyzerUIElement::OnDestroy()
 void SpectrumAnalyzerUIElement::OnTimer(UINT_PTR timerID)
 {
     KillTimer(ID_REFRESH_TIMER);
+
     Invalidate();
 }
 
@@ -122,7 +125,8 @@ void SpectrumAnalyzerUIElement::OnTimer(UINT_PTR timerID)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
 {
-    Render();
+    RenderFrame();
+
     ValidateRect(nullptr);
 
     if (!_IsPlaying)
@@ -152,14 +156,9 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
     if (!_RenderTarget)
         return;
 
-    const D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+    _ClientSize = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    _RenderTarget->Resize(Size);
-
-    _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
-
-    if (_Configuration._LogLevel <= LogLevel::Critical)
-        console::printf("%s: RenderTarget: { Width: %d, Height: %d }", core_api::get_my_file_name(), _RenderTargetProperties.pixelSize.width, _RenderTargetProperties.pixelSize.height);
+    Resize();
 }
 
 /// <summary>
@@ -289,14 +288,55 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
         _ConfigurationDialog.BringWindowToTop();
 }
 
+/// <summary>
+/// Applies the current configuration.
+/// </summary>
+void SpectrumAnalyzerUIElement::ApplyConfiguration() noexcept
+{
+    // Initialize the bands.
+    switch (_Configuration.FrequencyDistribution)
+    {
+        default:
+
+        case FrequencyDistributions::Frequencies:
+            GenerateFrequencyBands();
+            break;
+
+        case FrequencyDistributions::Octaves:
+            GenerateFrequencyBandsFromNotes();
+            break;
+
+        case FrequencyDistributions::AveePlayer:
+            GenerateFrequencyBandsOfAveePlayer();
+            break;
+    }
+
+    _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+}
+
 #pragma endregion
 
 #pragma region Rendering
 
 /// <summary>
+/// Resizes all canvases.
+/// </summary>
+void SpectrumAnalyzerUIElement::Resize()
+{
+    if (_RenderTarget)
+        _RenderTarget->Resize(_ClientSize);
+
+    _FrameCounter.Initialize((FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height);
+
+    _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
+}
+
+/// <summary>
 /// Renders a frame.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::Render()
+HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 {
     _FrameCounter.NewFrame();
 
@@ -318,6 +358,10 @@ HRESULT SpectrumAnalyzerUIElement::Render()
             _RenderTarget->Clear(D2D1::ColorF(GetRValue(BackgroundColor) / 255.0f, GetGValue(BackgroundColor) / 255.0f, GetBValue(BackgroundColor) / 255.0f));
         }
 
+        _XAxis.Render(_RenderTarget);
+
+        _YAxis.Render(_RenderTarget);
+
         if (_IsPlaying)
         {
             // Draw the visualization.
@@ -334,15 +378,10 @@ HRESULT SpectrumAnalyzerUIElement::Render()
                     if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2, WindowDuration * (_Configuration._UseZeroTrigger ? 2 : 1)))
                         RenderChunk(Chunk);
                 }
-
-                if (_Configuration._LogLevel != LogLevel::None)
-                    _FrameCounter.Initialize((FLOAT) _RenderTargetProperties.pixelSize.width, (FLOAT) _RenderTargetProperties.pixelSize.height);
-
-                _FrameCounter.Render(_RenderTarget);
             }
 
-            // Draw the text.
-//          hr = RenderText();
+            if (_Configuration._LogLevel != LogLevel::None)
+                _FrameCounter.Render(_RenderTarget);
         }
 
         hr = _RenderTarget->EndDraw();
@@ -366,31 +405,11 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     HRESULT hr = S_OK;
 
     uint32_t ChannelCount = chunk.get_channel_count();
-    uint32_t SampleRate   = chunk.get_sample_rate();
+    _SampleRate   = chunk.get_sample_rate();
 
     // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
-    {
-        _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, SampleRate);
-
-        // Initialize the bands.
-        switch (_Configuration.FrequencyDistribution)
-        {
-            default:
-
-            case FrequencyDistributions::Frequencies:
-                GenerateFrequencyBands();
-                break;
-
-            case FrequencyDistributions::Octaves:
-                GenerateFrequencyBandsFromNotes(SampleRate);
-                break;
-
-            case FrequencyDistributions::AveePlayer:
-                GenerateFrequencyBandsOfAveePlayer();
-                break;
-        }
-    }
+        _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, _SampleRate);
 
     // Add the samples to the spectrum analyzer.
     {
@@ -411,7 +430,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->GetFrequencyData(&FreqData[0], FreqData.size());
 
         // Calculate the spectrum 
-        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope, SampleRate);
+        _SpectrumAnalyzer->GetSpectrum(FreqData, _FrequencyBands, _SampleRate, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
 
         switch (_Configuration._SmoothingMethod)
         {
@@ -431,11 +450,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         }
     }
 
-    {
-        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        hr = RenderBands();
-    }
+    hr = RenderBands();
 
     return hr;
 }
@@ -445,285 +460,46 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderBands()
 {
-    FLOAT Width = (FLOAT) _RenderTargetProperties.pixelSize.width - _YAxis.GetWidth();
-
-    _YAxis.Initialize(Width, (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height);
-    _YAxis.Render(_RenderTarget);
-
-
-
-
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
-    FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
+    const FLOAT Width = (FLOAT) _ClientSize.width - _YAxis.GetWidth();
+
+    const FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
 
     FLOAT x1 = _YAxis.GetWidth() + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _RenderTargetProperties.pixelSize.height - _LabelTextMetrics.height;
-
-    const double FrequenciesDecades[] = { 10., 20., 30., 40., 50., 60., 70., 80., 90., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 9000., 10000., 20000. };
-    const double FrequenciesOctaves[] = { 31., 63.5, 125., 250., 500., 1000., 2000., 4000., 8000., 16000. };
-
-    uint32_t Note = _Configuration.MinNote;
-    uint32_t i = 0;
-    uint32_t j = 0;
-
-    if (_Configuration._XAxisMode == XAxisMode::Decades)
-    {
-        for (; j < _countof(FrequenciesDecades); ++j)
-        {
-            if (_FrequencyBands[0].Lo <= FrequenciesDecades[j])
-                break;
-        }
-    }
-    else
-    if (_Configuration._XAxisMode == XAxisMode::OctavesX)
-    {
-        for (; j < _countof(FrequenciesOctaves); ++j)
-        {
-            if (_FrequencyBands[0].Lo <= FrequenciesOctaves[j])
-                break;
-        }
-    }
+    const FLOAT y2 = (FLOAT) _ClientSize.height - _XAxis.GetHeight();
 
     for (const FrequencyBand & Iter : _FrequencyBands)
     {
+        if (Iter.Hi > ((double) _SampleRate / 2.)) // Don't render anything above the Nyquist frequency.
+            break;
+
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
-        switch (_Configuration._XAxisMode)
-        {
-            default:
-
-            case XAxisMode::Bands:
-            {
-                if (i % 10 == 0)
-                {
-                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, _FrequencyBands[i].Ctr);
-
-                    // Draw the vertical grid line.
-                    {
-                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
-                    }
-                }
-                break;
-            }
-
-            case XAxisMode::Decades:
-            {
-                if ((_FrequencyBands[i].Lo <= FrequenciesDecades[j]) && (FrequenciesDecades[j] <= _FrequencyBands[i].Hi) && (j < _countof(FrequenciesDecades)))
-                {
-                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesDecades[j]);
-                    ++j;
-
-                    // Draw the vertical grid line.
-                    {
-                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
-                    }
-                }
-                break;
-            }
-
-            case XAxisMode::OctavesX:
-            {
-                if ((_FrequencyBands[i].Lo <= FrequenciesOctaves[j]) && (FrequenciesOctaves[j] <= _FrequencyBands[i].Hi) && (j < _countof(FrequenciesOctaves)))
-                {
-                    RenderXAxisFreq(x1 + BandWidth / 2.f - 20.f, y2, x1 + BandWidth / 2.f + 20.f, y2 + _LabelTextMetrics.height, FrequenciesOctaves[j]);
-                    ++j;
-
-                    // Draw the vertical grid line.
-                    {
-                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1 + BandWidth / 2.f, y1), D2D1_POINT_2F(x1 + BandWidth / 2.f, y2), _TextBrush, 1.f, nullptr);
-                    }
-                }
-                break;
-            }
-
-            case XAxisMode::Notes:
-            {
-                if (Note % 12 == 0)
-                {
-                    RenderXAxis(x1, y2, x2, y2 + _LabelTextMetrics.height, Note / 12u);
-
-                    // Draw the vertical grid line.
-                    {
-                        _TextBrush->SetColor(D2D1::ColorF(0x444444, 1.0f));
-
-                        _RenderTarget->DrawLine(D2D1_POINT_2F(x1, y1), D2D1_POINT_2F(x1, y2), _TextBrush, 1.f, nullptr);
-                    }
-                }
-
-                Note++;
-                break;
-            }
-        }
-
-#ifdef Original
         // Draw the background.
         {
-            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f)); // #1E90FF
-            _RenderTarget->FillRectangle(Rect, _TextBrush);
+//          _RenderTarget->FillRectangle(Rect, _BackgroundBrush);
         }
 
-        // Draw the foreground.
-        if (Iter > 0.0)
-        {
-            Rect.top = Max((FLOAT)(y2 - ((y2 - y1) * ascale(Iter))), y1);
-
-            _TextBrush->SetColor(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 1.0f)); // #1E90FF
-            _RenderTarget->FillRectangle(Rect, _TextBrush);
-        }
-#endif
         // Draw the foreground.
         if (Iter.CurValue > 0.0)
         {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, y2);
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
             _RenderTarget->FillRectangle(Rect, _GradientBrush);
         }
 
         x1  = x2;
         x2 += BandWidth;
-
-        ++i;
     }
 
     return S_OK;
 }
 
-/// <summary>
-/// Render an X axis label.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderXAxisFreq(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, double frequency)
-{
-    // Draw the label.
-    {
-        WCHAR Text[16] = { };
-
-        if (frequency < 1000.0)
-            ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", frequency);
-        else
-            ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", frequency / 1000);
-
-        D2D1_RECT_F TextRect = { x1, y1, x2, y2 };
-
-//      _RenderTarget->FillRectangle(&TextRect, _GradientBrush);
-
-        _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        _LabelTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-        #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
-        _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-        #pragma warning(default: 6385)
-    }
-
-    return S_OK;
-}
-
-/// <summary>
-/// Render an X axis label.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderXAxis(FLOAT x1, FLOAT y1, FLOAT x2, FLOAT y2, uint32_t octave)
-{
-    // Draw the label.
-    {
-        WCHAR Text[16] = { };
-
-        ::StringCchPrintfW(Text, _countof(Text), L"C%d", octave);
-
-        D2D1_RECT_F TextRect = { x1, y1, x2, y2 };
-
-        _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-        _LabelTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        _LabelTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        _LabelTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-        #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
-        _RenderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _LabelTextFormat, TextRect, _TextBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-        #pragma warning(default: 6385)
-    }
-
-    return S_OK;
-}
-/*
-/// <summary>
-/// Renders some information about the visulizer.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderFrameCounter()
-{
-    float FPS = 0.0f;
-
-    {
-        LARGE_INTEGER Frequency;
-
-        ::QueryPerformanceFrequency(&Frequency);
-
-        FPS = (float)((_Times.GetCount() - 1) * Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
-    }
-
-    HRESULT hr = S_OK;
-
-    WCHAR Text[512] = { };
-
-    switch (_Configuration.FrequencyDistribution)
-    {
-        case FrequencyDistributions::Frequencies:
-            hr = ::StringCchPrintfW(Text, _countof(Text), L"%uHz - %uHz, %u bands, FFT %u, FPS: %.2f\n",
-                    _Configuration.MinFrequency, _Configuration.MaxFrequency, (uint32_t) _Configuration.NumBands, _Configuration._FFTSize, FPS);
-            break;
-
-        case FrequencyDistributions::Octaves:
-            hr = ::StringCchPrintfW(Text, _countof(Text), L"Note %u - %u, %u bands per octave, Tuning %.2fHz, FFT %u, FPS: %.2f\n",
-                    _Configuration.MinNote, _Configuration.MaxNote, (uint32_t) _Configuration.BandsPerOctave, _Configuration._Pitch, _Configuration._FFTSize, FPS);
-            break;
-
-        case FrequencyDistributions::AveePlayer:
-            break;
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        static const D2D1_RECT_F TextRect = { 4.f, 4.f, 768.f, 50.f };
-        static const float TextRectInset = 10.f;
-
-        {
-            _TextBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.5f));
-
-            _RenderTarget->FillRoundedRectangle(D2D1::RoundedRect(TextRect, TextRectInset, TextRectInset), _TextBrush);
-        }
-
-        {
-            _TextBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-            #pragma warning(disable: 6385) // Reading invalid data from 'Text': false positive.
-            _RenderTarget->DrawText
-            (
-                Text,
-                (UINT) ::wcsnlen(Text, _countof(Text)),
-                _TextFormat,
-                D2D1::RectF(TextRect.left + TextRectInset, TextRect.top + TextRectInset, TextRect.right - TextRectInset, TextRect.bottom - TextRectInset),
-                _TextBrush,
-                D2D1_DRAW_TEXT_OPTIONS_NONE
-            );
-            #pragma warning(default: 6385)
-        }
-    }
-
-    return hr;
-}
-*/
 /// <summary>
 /// Generates frequency bands.
 /// </summary>
@@ -747,12 +523,11 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleRate)
+void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
 {
     const double Root24 = ::exp2(1. / 24.);
-    const double NyquistFrequency = (double) sampleRate / 2.;
 
-    const double Pitch = (_Configuration._Pitch > 0.0) ? ::round((::log2(_Configuration._Pitch) - 4.) * 12.) * 2. : 00;
+    const double Pitch = (_Configuration._Pitch > 0.) ? ::round((::log2(_Configuration._Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _Configuration._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
 
     const double NotesGroup = 24. / _Configuration.BandsPerOctave;
@@ -771,7 +546,7 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes(uint32_t sampleR
             C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
         };
 
-        _FrequencyBands.push_back((fb.Ctr < NyquistFrequency) ? fb : FrequencyBand(NyquistFrequency, NyquistFrequency, NyquistFrequency));
+        _FrequencyBands.push_back(fb);
     }
 }
 
@@ -956,6 +731,8 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 
     hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
 
+    hr = _XAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
+
     hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
 
     return hr;
@@ -979,24 +756,25 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 
         GetClientRect(ClientRect);
 
-        D2D1_SIZE_U ClientSize = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
+        _ClientSize = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
+
+        Resize();
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
+        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, _ClientSize);
 
-        _RenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, ClientSize);
-
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: RenderTarget: { Width: %d, Height: %d }", core_api::get_my_file_name(), _RenderTargetProperties.pixelSize.width, _RenderTargetProperties.pixelSize.height);
-
-        hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, _RenderTargetProperties, &_RenderTarget);
+        hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
     }
 
     // Create the brushes.
-    if (SUCCEEDED(hr) && (_StrokeBrush == nullptr))
+    if (SUCCEEDED(hr) && (_BackgroundBrush == nullptr))
     {
-        t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
+        _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_StrokeBrush);
+//      t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
+
+//      hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_BackgroundBrush);
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f), &_BackgroundBrush); // #1E90FF
     }
 
     if (SUCCEEDED(hr) && (_GradientBrush == nullptr))
@@ -1063,13 +841,11 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         }
     }
 
-    if (SUCCEEDED(hr) && (_TextBrush == nullptr))
-    {
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_TextBrush);
-    }
-
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _XAxis.CreateDeviceSpecificResources(_RenderTarget);
 
     if (SUCCEEDED(hr))
         hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
@@ -1083,12 +859,11 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 {
     _YAxis.ReleaseDeviceSpecificResources();
-
+    _XAxis.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
-    _TextBrush.Release();
     _GradientBrush.Release();
-    _StrokeBrush.Release();
+    _BackgroundBrush.Release();
     _RenderTarget.Release();
 }
 #pragma endregion
@@ -1182,7 +957,7 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 {
     if (what == ui_element_notify_colors_changed)
     {
-        _StrokeBrush.Release();
+        _BackgroundBrush.Release();
 
         Invalidate();
     }
@@ -1198,6 +973,8 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _Configuration.Read();
+
+    ApplyConfiguration();
 
     // Make sure the spectrum analyzer is recreated. The audio chunks may have another configuration than the ones from the previous track.
     if (_SpectrumAnalyzer != nullptr)

@@ -17,7 +17,12 @@
 class FrameCounter
 {
 public:
-    FrameCounter() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _LabelWidth(30.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight() { }
+    FrameCounter() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _LabelWidth(30.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight()
+    {
+        ::QueryPerformanceFrequency(&_Frequency);
+
+        NewFrame();
+    }
 
     FrameCounter(const FrameCounter &) = delete;
     FrameCounter & operator=(const FrameCounter &) = delete;
@@ -40,11 +45,7 @@ public:
 
     float GetFPS()
     {
-        LARGE_INTEGER Frequency;
-
-        ::QueryPerformanceFrequency(&Frequency);
-
-        float FPS = (float)((_Times.GetCount() - 1) * Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
+        float FPS = (float)((_Times.GetCount() - 1) * _Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
 
         return FPS;
     }
@@ -158,6 +159,7 @@ public:
     }
 
 private:
+    LARGE_INTEGER _Frequency;
     RingBuffer<LONGLONG, 16> _Times;
 
     std::wstring _FontFamilyName;

@@ -1,5 +1,5 @@
 
-/** $VER: Math.h (2023.11.14) P. Stuer - Math support routines **/
+/** $VER: Math.h (2023.11.15) P. Stuer - Math support routines **/
 
 #pragma once
 
@@ -32,6 +32,15 @@ template <class T>
 inline static T Clamp(T value, T minValue, T maxValue)
 {
     return Min(Max(value, minValue), maxValue);
+}
+
+/// <summary>
+/// Returns true of the input value is in the interval between min and max.
+/// </summary>
+template <class T>
+inline static T InInterval(T value, T minValue, T maxValue)
+{
+    return (minValue <= value) && (value <= maxValue);
 }
 
 /// <summary>

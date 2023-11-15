@@ -75,6 +75,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.1.0.4, 2023-xx-xx
+
+* Improved: Improved and refactored rendering code.
+
 v0.1.0.3, 2023-11-14
 
 * New: Implemented the frequency bands of [AveePlayer](https://aveeplayer.com/).
