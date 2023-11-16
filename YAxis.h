@@ -17,7 +17,7 @@
 class YAxis
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _ClientWidth(), _ClientHeight(), _TextHeight() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _X(), _Y(), _ClientWidth(), _ClientHeight(), _TextHeight() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;

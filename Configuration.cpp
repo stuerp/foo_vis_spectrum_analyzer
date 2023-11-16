@@ -82,17 +82,18 @@ void Configuration::Reset() noexcept
     smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
     smoothSlope = true;                                // Smoother frequency slope on sum modes
 
-    // ascale() Amplitude Scale
-    UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
-
-    MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
-
     _UseAbsolute = true;                               // Use absolute value
 
     Gamma = 1.;                                     // Gamma, 0.5 .. 10
 
+    // X axis
     _XAxisMode = XAxisMode::Decades;
+
+    // Y axis
+    _YAxisMode = YAxisMode::Decibels;
+
+    MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
+    MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
 
     _ColorScheme = ColorScheme::Solid;
     _PeakMode = PeakMode::Classic;
@@ -111,22 +112,20 @@ void Configuration::Reset() noexcept
 
     useComplex: true,
 
-    holdTime: 30,
-    fallRate: 0.5,
-    clampPeaks: true,
-    peakMode: 'gravity',
-    showPeaks: true,
-
     freeze: false,
     color: 'none',
 
     showLabels: true,
     showLabelsY: true,
+
     labelTuning: 440,
+
     showDC: true,
     showNyquist: true,
+
     mirrorLabels: true,
     diffLabels: false,
+
     darkMode: false,
     compensateDelay: false
 */
@@ -372,6 +371,14 @@ void Configuration::Read()
 
                                 if (XAxisMode::Bands <= v && v <= XAxisMode::Notes)
                                     _Configuration._XAxisMode = v;
+                            }
+
+                            if (Value.Contains(L"YAxisMode"))
+                            {
+                                YAxisMode v = (YAxisMode) (int) Value[L"YAxisMode"];
+
+                                if (YAxisMode::Decibels <= v && v <= YAxisMode::Logarithmic)
+                                    _Configuration._YAxisMode = v;
                             }
 
                             if (Value.Contains(L"PeakMode"))

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.13) P. Stuer **/
+/** $VER: Resources.rc (2023.11.16) P. Stuer **/
 
 #include "Resources.h"
 
@@ -46,40 +46,31 @@ filesubtype     VFT2_UNKNOWN
 
 /** Configuration dialog **/
 
-#define H_LABEL     8
+#include "Layout.h"
 
-#define W_BUTTON    50
-#define H_BUTTON    14
-
-#define H_EDITTEXT  14
-
-#define W_DIALOG   320
-#define H_DIALOG   200
-
-#define X_FILENAME_LABEL    7
-#define Y_FILENAME_LABEL    7 + 2
-#define W_FILENAME_LABEL    30
-#define H_FILENAME_LABEL    H_LABEL
-
-#define X_FILENAME          X_FILENAME_LABEL + W_FILENAME_LABEL + 3
-#define Y_FILENAME          7
-#define W_FILENAME          W_DIALOG - X_FILENAME - 7 - 66
-#define H_FILENAME          H_EDITTEXT
-
-#define X_CANCEL            W_DIALOG - W_BUTTON - 7
-#define Y_CANCEL            H_DIALOG - H_BUTTON - 7
-
-#define X_OK                X_CANCEL - W_BUTTON - 4
-#define Y_OK                Y_CANCEL
-
-IDD_CONFIGURATION dialogex 0, 0, W_DIALOG, H_DIALOG
+IDD_CONFIGURATION dialogex 0, 0, W_A00, H_A00
 caption "Spectrum Analyzer Configuration"
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 {
-    rtext           "Filename:",    IDC_STATIC,     X_FILENAME_LABEL, Y_FILENAME_LABEL, W_FILENAME_LABEL, H_FILENAME_LABEL, SS_NOPREFIX
-    edittext                        IDC_FILENAME,   X_FILENAME, Y_FILENAME, W_FILENAME, H_FILENAME, ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP
+    rtext           "Frequencies:", IDC_STATIC,      X_A01, Y_A01 + 2, W_A01, H_A01
+    combobox                        IDC_FREQUENCIES, X_A02, Y_A02,     W_A02, H_A02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    defpushbutton   "OK",           IDOK,           X_OK, Y_OK, W_BUTTON, H_BUTTON
-    pushbutton      "Cancel",       IDCANCEL,       X_CANCEL, Y_CANCEL, W_BUTTON, H_BUTTON
+    rtext           "FFT Size:",    IDC_STATIC,      X_A03, Y_A03 + 2, W_A03, H_A03
+    combobox                        IDC_FFT_SIZE,    X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "X Axis:",      IDC_STATIC,      X_A05, Y_A05 + 2, W_A05, H_A05
+    combobox                        IDC_X_AXIS,      X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Y Axis:",      IDC_STATIC,      X_A07, Y_A07 + 2, W_A07, H_A07
+    combobox                        IDC_Y_AXIS,      X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Color Scheme:",IDC_STATIC,      X_A09, Y_A09 + 2, W_A09, H_A09
+    combobox                        IDC_COLOR_SCHEME,X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Peak Mode:",   IDC_STATIC,      X_A11, Y_A11 + 2, W_A11, H_A11
+    combobox                        IDC_PEAK_MODE,   X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    defpushbutton   "OK",           IDOK,            X_A99, Y_A99, W_A99, H_A99
+    pushbutton      "Cancel",       IDCANCEL,        X_A98, Y_A98, W_A98, H_A98
 }

@@ -90,7 +90,7 @@ inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandInd
 /// </summary>
 inline double ScaleA(double x)
 {
-    if (_Configuration.UseDecibels)
+    if (_Configuration._YAxisMode == YAxisMode::Decibels)
         return Map(ToDecibel(x), _Configuration.MinDecibels, _Configuration.MaxDecibels, 0.0, 1.0);
 
     double Exponent = 1.0 / _Configuration.Gamma;

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.15) P. Stuer **/
+/** $VER: Resources.h (2023.11.16) P. Stuer **/
 
 #pragma once
 
@@ -52,6 +52,13 @@
 
 /** Configuration **/
 
-#define IDD_CONFIGURATION 1000
+#define IDD_CONFIGURATION   1000
 
-#define IDC_FILENAME IDD_CONFIGURATION + 1
+#define IDC_FREQUENCIES     2000
+#define IDC_FFT_SIZE        IDC_FREQUENCIES + 1
+
+#define IDC_X_AXIS          IDC_FFT_SIZE + 1
+#define IDC_Y_AXIS          IDC_X_AXIS + 1
+
+#define IDC_COLOR_SCHEME    IDC_Y_AXIS + 1
+#define IDC_PEAK_MODE       IDC_COLOR_SCHEME + 1

@@ -176,7 +176,7 @@ public:
 
             double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-            size_t CoefIdx = (int) (((int) Pos % length + length) % length);
+            size_t CoefIdx = ((size_t) Pos % length + length) % length;
 
             Sum.re += data[CoefIdx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
             Sum.im += data[CoefIdx].im * w * (-1 + (i % 2 + 2) % 2 * 2);

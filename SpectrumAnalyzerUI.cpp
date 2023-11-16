@@ -398,7 +398,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 }
 
 /// <summary>
-/// Render an audio chunk.
+/// Renders an audio chunk.
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 {

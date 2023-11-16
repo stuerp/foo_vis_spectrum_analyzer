@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.13) P. Stuer **/
+/** $VER: ConfigurationDialog.h (2023.11.16) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,10 +9,10 @@
 
 // ATL
 #include <atlbase.h>
-#include <atlcom.h>
+//#include <atlcom.h>
 #include <atlstr.h>
-#include <atltypes.h>
-#include <atlwin.h>
+//#include <atltypes.h>
+//#include <atlwin.h>
 
 // WTL
 #include <atlapp.h>
@@ -20,19 +20,19 @@
 #include <atlctrls.h>
 #include <atlctrlw.h>
 #include <atlctrlx.h>
-#include <atlddx.h>
+//#include <atlddx.h>
 #include <atldlgs.h>
 //#include <atldwm.h>
 #include <atlfind.h>
 #include <atlframe.h>
-#include <atlgdi.h>
+//#include <atlgdi.h>
 #include <atlmisc.h>
-#include <atlprint.h>
+//#include <atlprint.h>
 #include <atlres.h>
-#include <atlribbon.h>
-#include <atlscrl.h>
-#include <atlsplit.h>
-#include <atltheme.h>
+//#include <atlribbon.h>
+//#include <atlscrl.h>
+//#include <atlsplit.h>
+//#include <atltheme.h>
 #include <atluser.h>
 #include <atlwinx.h>
 
@@ -59,7 +59,7 @@ public:
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
-        DLGRESIZE_CONTROL(IDC_FILENAME, DLSZ_SIZE_X)
+//      DLGRESIZE_CONTROL(IDC_FREQUENCIES, DLSZ_SIZE_X)
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
@@ -67,12 +67,15 @@ public:
     enum { IDD = IDD_CONFIGURATION };
 
 private:
+    #pragma region CDialogImpl
     /// <summary>
     /// Initializes the dialog.
     /// </summary>
     BOOL OnInitDialog(CWindow, LPARAM lParam)
     {
         _Configuration = (Configuration *) lParam;
+
+        Initialize();
 
         DlgResize_Init();
 
@@ -83,7 +86,7 @@ private:
     }
 
     /// <summary>
-    /// Handles the Close message;
+    /// Handles the Close message.
     /// </summary>
     void OnClose()
     {
@@ -105,6 +108,9 @@ private:
 
         DestroyWindow();
     }
+    #pragma endregion
+
+    void Initialize();
 
 private:
     Configuration * _Configuration;

@@ -62,6 +62,12 @@ enum class XAxisMode
     Notes = 3,
 };
 
+enum class YAxisMode
+{
+    Decibels = 0,
+    Logarithmic = 1,
+};
+
 enum class ColorScheme
 {
     Solid = 0,
@@ -81,6 +87,7 @@ enum class PeakMode
     Classic = 1,
     Gravity = 2,
     AIMP = 3,
+    FadeOut = 4,
 };
 
 enum class LogLevel
@@ -164,17 +171,18 @@ public:
     bool smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
     bool smoothSlope = true;                                // Smoother frequency slope on sum modes
 
-    // ascale() Amplitude Scale
-    bool UseDecibels = true;                               // Use decibel scale or logaritmic amplitude
+        double Gamma = 1.;                                     // Gamma, 0.5 .. 10
+
+    // X axis
+    XAxisMode _XAxisMode;
+
+    // Y axis
+    YAxisMode _YAxisMode;
 
     double MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
     double MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
 
     bool _UseAbsolute = true;                               // Use absolute value
-
-    double Gamma = 1.;                                     // Gamma, 0.5 .. 10
-
-    XAxisMode _XAxisMode;
 
     ColorScheme _ColorScheme;
 
