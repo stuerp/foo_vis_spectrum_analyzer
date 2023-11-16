@@ -176,8 +176,6 @@
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Configuration.h" />
-    <ClInclude Include="FFT.h" />
-    <ClInclude Include="FFTKiss.h" />
     <ClInclude Include="FFTBase.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
@@ -190,6 +188,7 @@
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="SpectrumAnalyzer.h" />
     <ClInclude Include="SpectrumAnalyzerUI.h" />
+    <ClInclude Include="Support.h" />
     <ClInclude Include="XAxis.h" />
     <ClInclude Include="YAxis.h" />
   </ItemGroup>
@@ -218,9 +217,6 @@
     <ProjectReference Include="..\sdk\pfc\pfc.vcxproj">
       <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
     </ProjectReference>
-    <ProjectReference Include="3rdParty\kissfft\libkissfft.vcxproj">
-      <Project>{330b107a-e39e-4f89-b201-d635ed1d833d}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />
@@ -229,7 +225,7 @@
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
     <None Include="Build-FB2KComponent.ps1" />
-    <None Include="FFTProjectNayuki.h" />
+    <None Include="FFT.h" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>

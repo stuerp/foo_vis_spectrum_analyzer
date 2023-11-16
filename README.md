@@ -38,7 +38,7 @@ To build the code:
 
 The following library is included:
 
-* [kissfft](https://github.com/mborgerding/kissfft) 131.1.0.
+* [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages))
 
 To create the deployment package:
 
@@ -50,7 +50,6 @@ Create the following directory structure:
 
     3rdParty
         WTL10_10320
-        kissfft
     bin
         x86
     foo_vis_spectrum_analyzer
@@ -58,7 +57,6 @@ Create the following directory structure:
     sdk
 
 * `3rdParty/WTL10_10320` contains WTL 10.0.10320.
-* `3rdParty/kissfft` contains kissfft.
 * `bin` contains a portable version of foobar2000 2.0 for debugging purposes.
 * `bin/x86` contains a portable version of foobar2000 1.6 for debugging purposes.
 * `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
@@ -75,9 +73,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.1.0.4, 2023-xx-xx
+v0.1.0.4, 2023-11-16
 
+* New: Implemented color schemes.
 * New: Implemented the peak value indicators.
+* Improved: Replaced the FFT with one that supports complex values and non-radix-2 FFT sizes.
 * Improved: Improved and refactored rendering code.
 
 v0.1.0.3, 2023-11-14
@@ -109,7 +109,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Acknowledgements / Credits
 
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
-* [Mark Borgerding](https://github.com/mborgerding) for [kissfft](https://github.com/mborgerding/kissfft).
+* [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)).
 * [filoe](https://github.com/filoe) for [cscore](https://github.com/filoe/cscore). I took a long look at the FFT analyzer.

@@ -1,11 +1,29 @@
 
-/** $VER: Configuration.h (2023.11.15) P. Stuer **/
+/** $VER: Configuration.h (2023.11.16) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include "FFT.h"
+
+/// <summary>
+/// Defines FFT data size constants that can be used for FFT calculations.
+/// Note that only the half of the specified size can be used for visualizations.
+/// </summary>
+enum FFTSize
+{
+    Fft64    =    64, // Number of frequency bins
+    Fft128   =   128,
+    Fft256   =   256,
+    Fft512   =   512,
+    Fft1024  =  1024,
+    Fft2048  =  2048,
+    Fft4096  =  4096,
+    Fft8192  =  8192,
+    Fft16384 = 16384,
+    Fft32768 = 32768
+};
 
 enum class FrequencyDistributions
 {
@@ -142,7 +160,7 @@ public:
     size_t _WindowDuration;
     size_t _RefreshRateLimit;   // in Hz
 
-    FFTSize _FFTSize;           // Power of 2
+    size_t _FFTSize;
     FrequencyDistributions FrequencyDistribution;
 
     // Common
@@ -164,9 +182,9 @@ public:
     double Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
     SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;    // Smoothing method
-    double SmoothingFactor = 0.0;                                            // Smoothing constant, 0.0 .. 1.0
+    double _SmoothingFactor = 0.0;                                            // Smoothing constant, 0.0 .. 1.0
 
-    int interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
+    int _KernelSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
     SummationMethod _SummationMethod = SummationMethod::Maximum;  // Band power summation method
     bool smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
     bool smoothSlope = true;                                // Smoother frequency slope on sum modes

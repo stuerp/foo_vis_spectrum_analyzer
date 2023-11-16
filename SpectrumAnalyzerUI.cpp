@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.15) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.16) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,12 +7,12 @@
 
 #include "framework.h"
 
-#include "Resources.h"
-#include "SpectrumAnalyzerUI.h"
-
 #include <complex>
 
 #include "Configuration.h"
+#include "Support.h"
+#include "Resources.h"
+#include "SpectrumAnalyzerUI.h"
 
 #pragma hdrstop
 
@@ -68,10 +68,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
-    {
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::complain(core_api::get_my_file_name(), ": Unable to create Direct2D device independent resources.");
-    }
+        Log(LogLevel::Critical, "%s: Unable to create Direct2D device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
 
     try
     {
@@ -83,8 +80,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
+        Log(LogLevel::Critical, "%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
     }
 
     ApplyConfiguration();
@@ -379,6 +375,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
                         RenderChunk(Chunk);
                 }
             }
+            else
+                Log(LogLevel::Trace, "%s: Visualisation stream is invalid.", core_api::get_my_file_name());
 
             if (_Configuration._LogLevel != LogLevel::None)
                 _FrameCounter.Render(_RenderTarget);
@@ -405,7 +403,10 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     HRESULT hr = S_OK;
 
     uint32_t ChannelCount = chunk.get_channel_count();
-    _SampleRate   = chunk.get_sample_rate();
+
+    _SampleRate = chunk.get_sample_rate();
+
+    Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
     // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
@@ -425,12 +426,12 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        std::vector<double> Coefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
+        std::vector<std::complex<double>> Coefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
 
-        _SpectrumAnalyzer->GetFrequencyData(&Coefficients[0], Coefficients.size());
+        _SpectrumAnalyzer->GetFrequencyData(Coefficients);
 
-        // Calculate the spectrum 
-        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration.interpSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
+        // Get the spectrum from the FFT coefficiens.
+        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration._KernelSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
 
         switch (_Configuration._SmoothingMethod)
         {
@@ -438,13 +439,13 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
             case SmoothingMethod::Average:
             {
-                ApplyAverageSmoothing(_Configuration.SmoothingFactor);
+                ApplyAverageSmoothing(_Configuration._SmoothingFactor);
                 break;
             }
 
             case SmoothingMethod::Peak:
             {
-                ApplyPeakSmoothing(_Configuration.SmoothingFactor);
+                ApplyPeakSmoothing(_Configuration._SmoothingFactor);
                 break;
             }
         }
@@ -463,6 +464,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::RenderBands()
 {
+    Log(LogLevel::Trace, "%s: Rendering %d bands.", core_api::get_my_file_name(), _FrequencyBands.size());
+
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
@@ -708,13 +711,14 @@ void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
 /// </summary>
 HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 {
+    Log(LogLevel::Trace, "%s: Creating device independent resource", core_api::get_my_file_name());
+
     HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2dFactory);
 
     if (SUCCEEDED(hr))
         hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_DirectWriteFactory), reinterpret_cast<IUnknown **>(&_DirectWriteFactory));
     else
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
+        Log(LogLevel::Error, "%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
 
     if (SUCCEEDED(hr))
     {
@@ -724,8 +728,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
         hr = _DirectWriteFactory->CreateTextFormat(FontFamilyName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_LabelTextFormat);
     }
     else
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: Unable to create TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+        Log(LogLevel::Critical, "%s: Unable to create TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
     if (SUCCEEDED(hr))
     {
@@ -737,8 +740,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
             TextLayout->GetMetrics(&_LabelTextMetrics);
     }
     else
-        if (_Configuration._LogLevel <= LogLevel::Critical)
-            console::printf("%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+        Log(LogLevel::Critical, "%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
     hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
 

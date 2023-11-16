@@ -1,22 +1,32 @@
 {
     "FFTSize": 4096,
 
-    "FrequencyDistribution" : 2,
+    "FrequencyDistribution": 2,
 
-    "ScalingFunction" : 1,
-    "ScalingFunctionFactor" : 0.0,
+    "ScalingFunction": 1,
+    "ScalingFunctionFactor": 0.0,
 
-    "NumberOfBands" : 160,
-    "MinFrequency" : 20,
-    "MaxFrequency" : 20000,
-    "Bandwidth" : 0.5,
+    "NumberOfBands": 160,
+    "MinFrequency": 20,
+    "MaxFrequency": 20000,
+    "Bandwidth": 0.5,
 
-    "BandsPerOctave" : 12,
-    "MinNote" : 0,
-    "MaxNote" : 143,
-    "Detune" : 0,
-    "Pitch" : 440.0,
+    "BandsPerOctave": 12,
+    "MinNote": 0,
+    "MaxNote": 143,
+    "Detune": 0,
+    "Pitch": 440.0,
 
-    "SummationMethod" : 1,
-    "XAxisMode" : 1
+    "SummationMethod": 1,
+
+    "SmoothingMethod": 1,
+    "SmoothingFactor": 0.75,
+
+    "XAxisMode": 3,
+    "YAxisMode": 0,
+
+    "ColorScheme": 2,
+    "PeakMode": 3,
+
+    "LogLevel": 1
 }

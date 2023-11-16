@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.15) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.16) P. Stuer **/
 
 #pragma once
 

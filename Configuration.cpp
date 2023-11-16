@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.13) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.16) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -10,6 +10,7 @@
 #include "framework.h"
 
 #include "Configuration.h"
+#include "Support.h"
 #include "Resources.h"
 
 #include "JSON.h"
@@ -54,7 +55,7 @@ void Configuration::Reset() noexcept
     _UseZeroTrigger = false;
     _WindowDuration = 100;
 
-    _FFTSize = FFTSize::Fft4096;
+    _FFTSize = 4096;
     FrequencyDistribution = FrequencyDistributions::Octaves;
 
     // Common
@@ -74,13 +75,13 @@ void Configuration::Reset() noexcept
     SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
-    _SmoothingMethod = SmoothingMethod::Average;    // Smoothing method
-    SmoothingFactor = 0.5;                       // Smoothing constant, 0.0 .. 1.0
+    _SmoothingMethod = SmoothingMethod::Average;
+    _SmoothingFactor = 0.5;                         // Smoothing constant, 0.0 .. 1.0
 
-    interpSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
-    _SummationMethod = SummationMethod::Maximum;  // Band power summation method
-    smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
-    smoothSlope = true;                                // Smoother frequency slope on sum modes
+    _KernelSize = 32;                               // Lanczos interpolation kernel size, 1 .. 64
+    _SummationMethod = SummationMethod::Maximum;    // Band power summation method
+    smoothInterp = true;                           // Smoother bin interpolation on lower frequencies
+    smoothSlope = true;                            // Smoother frequency slope on sum modes
 
     _UseAbsolute = true;                               // Use absolute value
 
@@ -165,12 +166,12 @@ void Configuration::Read(ui_element_config_parser & parser)
             }
 
             default:
-                console::printf("%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
+                Log(LogLevel::Error, "%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
         }
     }
     catch (exception_io & ex)
     {
-        console::printf("%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -239,9 +240,9 @@ void Configuration::Read()
                         {
                             if (Value.Contains(L"FFTSize"))
                             {
-                                FFTSize v = (FFTSize) (int) Value[L"FFTSize"];
+                                size_t v = (size_t) (int) Value[L"FFTSize"];
 
-                                if (v >= Fft64 && v <= Fft32768)
+                                if (v >= (size_t) FFTSize::Fft64 && v <= (size_t) FFTSize::Fft32768)
                                     _Configuration._FFTSize = v;
                             }
 
@@ -362,7 +363,7 @@ void Configuration::Read()
                                 double v = Value[L"SmoothingFactor"];
 
                                 if (0.0 <= v && v <= 1.0)
-                                    _Configuration.SmoothingFactor = v;
+                                    _Configuration._SmoothingFactor = v;
                             }
 
                             if (Value.Contains(L"XAxisMode"))
@@ -410,7 +411,7 @@ void Configuration::Read()
                     }
                     catch (JSON::ReaderException e)
                     {
-                        console::printf("%s: JSON Error: %s at position %d.", core_api::get_my_file_name(), ::utf8FromWide(e.GetMessage().c_str()).c_str(), e.GetPosition());
+                        Log(LogLevel::Error, "%s: JSON Error: %s at position %d.", core_api::get_my_file_name(), ::utf8FromWide(e.GetMessage().c_str()).c_str(), e.GetPosition());
                     }
 
                     delete[] Text;

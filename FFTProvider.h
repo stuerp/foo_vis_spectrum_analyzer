@@ -9,24 +9,9 @@
 
 #include "framework.h"
 
-#include "FFTKiss.h"
-#include "FFTProjectNayuki.h"
+#include "FFT.h"
 
-#define IsPowerOfTwo(x) ((x) & ((x) - 1) == 0)
-
-#ifdef _WIN64
-struct Complex
-{
-    double re;
-    double im;
-};
-#else
-struct Complex
-{
-    float re;
-    float im;
-};
-#endif
+using namespace std;
 
 /// <summary>
 /// Implements a Fast Fourier Transform provider.
@@ -35,7 +20,7 @@ class FFTProvider
 {
 public:
     FFTProvider() = delete;
-    FFTProvider(t_size channelCount, FFTSize fftSize);
+    FFTProvider(size_t channelCount, size_t fftSize);
 
     FFTProvider(const FFTProvider &) = delete;
     FFTProvider & operator=(const FFTProvider &) = delete;
@@ -49,28 +34,28 @@ public:
         return _ChannelCount;
     }
 
-    FFTSize GetFFTSize() const
+    size_t GetFFTSize() const
     {
         return _FFTSize;
     }
 
     bool Add(const audio_sample * samples, size_t count) noexcept;
-    bool GetFrequencyData(double * freqData, size_t freqSize) const noexcept;
-    bool GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept;
+    bool GetFrequencyData(vector<complex<double>> & freqData) noexcept;
 
 private:
     static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
 
 private:
     size_t _ChannelCount;
-    FFTSize _FFTSize;
+    size_t _FFTSize;
+
+    FFT _FFT;
 
     audio_sample * _SampleData;
     size_t _SampleSize;
     size_t _SampleCount;
 
-    FFT _FFT;
-    FFTProjectNayuki _FFTProjectNayuki;
+    vector<complex<double>> _TimeData;
 };
 
 /// <summary>
@@ -78,22 +63,16 @@ private:
 /// </summary>
 /// <param name="channelCount">Number of channels of the input data</param>
 /// <param name="fftSize">The number of bands to use</param>
-inline FFTProvider::FFTProvider(t_size channelCount, FFTSize fftSize)
+inline FFTProvider::FFTProvider(size_t channelCount, size_t fftSize)
 {
     if (channelCount == 0)
         throw; // FIXME
 
-    assert(sizeof(Complex) == sizeof(kiss_fft_cpx));
-
-    // fftSize must be a power of 2 in the range 32 to 32768.
-//  if ((fftSize < 32) || (fftSize > 32768) || !IsPowerOfTwo(fftSize))
-//      throw; // FIXME
-
     _ChannelCount = channelCount;
     _FFTSize = fftSize;
 
-    _FFT.Initialize(_FFTSize);
-    _FFTProjectNayuki.Initialize(_FFTSize);
+    _FFT.Initialize(fftSize);
+    _TimeData.resize((size_t) fftSize);
 
     // Create the ring buffer for the samples. The size should be a multiple of 2.
     _SampleData = new audio_sample[(size_t) fftSize];
@@ -144,41 +123,6 @@ inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) n
 }
 
 /// <summary>
-/// Calculates the Fast Fourier Transform and stores the result in fftData.
-/// </summary>
-/// <param name="freqData">The output buffer containing the magnitude of the frequencies.</param>
-/// <param name="freqSize"></param>
-/// <returns>
-/// Returns a value which indicates whether the Fast Fourier Transform got calculated.
-/// If there have not been added any new samples since the last transform, the FFT
-/// won't be calculated. True means that the Fast Fourier Transform got calculated.
-/// </returns>
-bool inline FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) const noexcept
-{
-    if ((freqData == nullptr) || (freqSize != (size_t) _FFTSize))
-        return false;
-
-    {
-        // FIXME: Don't new/delete with every transform!
-        // Create the buffer for the frequency domain data.
-        Complex * FreqData = new Complex[(size_t) _FFTSize / 2 + 1];
-
-        if (FreqData == nullptr)
-            return false;
-
-        GetFrequencyData(FreqData, freqSize);
-
-        // Compute the magnitude of each of the frequencies.
-        for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
-            freqData[i] =  ::sqrt((FreqData[i].re * FreqData[i].re) + (FreqData[i].im * FreqData[i].im));
-
-        delete[] FreqData;
-    }
-
-    return true;
-}
-
-/// <summary>
 /// Calculates the Fast Fourier Transform and returns the frequency data in the result buffer.
 /// </summary>
 /// <param name="result">The output buffer</param>
@@ -187,78 +131,48 @@ bool inline FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) co
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 ///</returns>
-bool inline FFTProvider::GetFrequencyData(Complex * freqData, size_t freqSize) const noexcept
+bool inline FFTProvider::GetFrequencyData(vector<complex<double>> & freqData) noexcept
 {
-    //FIXME Don't reallocate this buffer all the time.
-    audio_sample * TimeData = new audio_sample[_FFTSize];
-
-    if (TimeData == nullptr)
-        return false;
-
-//  ::memset(TimeData, 0, sizeof(audio_sample) * _FFTSize);
-
+    // Fill the FFT buffer from the wrap-around sample buffer with Time domain data.
+    for (size_t i = _SampleCount, j = 0; j < _TimeData.size(); ++j)
     {
-        audio_sample * t = TimeData;
+        _TimeData[j].real(_SampleData[i]);
 
-        // Fill the FFT buffer from the wrap-around sample buffer with Time domain data.
-        size_t SamplesToCopy = _SampleSize - _SampleCount;
-
-        ::memcpy(t, &_SampleData[_SampleCount], SamplesToCopy * sizeof(audio_sample));
-
-        t += SamplesToCopy;
-
-        SamplesToCopy = _SampleCount;
-
-        ::memcpy(t, &_SampleData[0], SamplesToCopy * sizeof(audio_sample));
+        if (++i == _SampleSize)
+            i = 0;
     }
 
     // Apply the windowing function.
     audio_sample Norm = 0.0;
 
-    for (int i = 0; i < _FFTSize; ++i)
+    for (size_t i = 0; i < (size_t) _FFTSize; ++i)
     {
-        audio_sample Multiplier = (audio_sample) FFT::HanningWindow(i, _FFTSize);
+        double Multiplier = FFT::HanningWindow(i, _FFTSize);
 
-        TimeData[i] *= Multiplier;
+        _TimeData[i].real(_TimeData[i].real() * Multiplier);
 
-        Norm += Multiplier;
+        Norm += (audio_sample) Multiplier;
     }
-/*
+
     // Normalize the time domain data.
     double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
-    for (int i = 0; i < _FFTSize; ++i)
-        TimeData[i] *= Factor;
-*/
+    for (size_t i = 0; i < _FFTSize; ++i)
+        _TimeData[i].real(_TimeData[i].real() * Factor);
+
     // Transform the data from the Time domain to the Frequency domain.
-#ifdef Kiss
-    _FFT.Transform((const kiss_fft_scalar *) TimeData, (kiss_fft_cpx *) freqData);
-#else
     {
         std::vector<std::complex<double>> td;
-        std::vector<std::complex<double>> fd;
 
-        for (int i = 0; i < _FFTSize; ++i)
-            td.push_back(std::complex<double>(TimeData[i]));
+        for (size_t i = 0; i < _FFTSize; ++i)
+            td.push_back(std::complex<double>(_TimeData[i]));
 
-        _FFTProjectNayuki.Transform(td, fd);
-
-        for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
-        {
-            freqData[i].re = fd[i].real();
-            freqData[i].im = fd[i].imag();
-        }
+        _FFT.Transform(td, freqData);
     }
-#endif
 
     // Normalize the frequency domain data. Use the size of the FFT for dB scale.
-    for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
-    {
-        freqData[i].re /= (kiss_fft_scalar) _FFTSize;
-        freqData[i].im /= (kiss_fft_scalar) _FFTSize;
-    }
-
-    delete[] TimeData;
+    for (complex<double> & Iter : freqData)
+        Iter /= _FFTSize;
 
     return true;
 }

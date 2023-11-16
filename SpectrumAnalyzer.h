@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.14) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.16) P. Stuer **/
 
 #include "framework.h"
 
@@ -26,7 +26,7 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(uint32_t channelCount, FFTSize fftSize, uint32_t sampleRate) : FFTProvider(channelCount, fftSize)
+    SpectrumAnalyzer(uint32_t channelCount, size_t fftSize, uint32_t sampleRate) : FFTProvider(channelCount, fftSize)
     {
         if (sampleRate <= 0)
             throw;
@@ -61,7 +61,7 @@ public:
     /// <summary>
     /// Gets the spectrum from the FFT coefficients.
     /// </summary>
-    void GetSpectrum(const std::vector<double> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, int interpSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition)
+    void GetSpectrum(const std::vector<std::complex<double>> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, int kernelSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition)
     {
         for (FrequencyBand & Iter : freqBands)
         {
@@ -78,7 +78,7 @@ public:
 
             if (MinIdx2 > MaxIdx2)
             {
-                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, interpSize)) * bandGain;
+                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, kernelSize)) * bandGain;
             }
             else
             {
@@ -96,7 +96,7 @@ public:
                 {
                     size_t CoefIdx = ((size_t) Idx % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
-                    double data = fftCoeffs[CoefIdx];
+                    double data = std::abs(fftCoeffs[CoefIdx]);
 
                     switch (summationMethod)
                     {
@@ -143,9 +143,10 @@ public:
     /// <summary>
     /// Applies a Lanzcos kernel.
     /// </summary>
-    double Lanzcos(const std::vector<double> & fftCoeffs, double x, int kernelSize = 4) const
+    double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double x, int kernelSize) const
     {
-        double Sum = 0.;
+        double re = 0.;
+        double im = 0.;
 
         for (int i = -kernelSize + 1; i <= kernelSize; ++i)
         {
@@ -156,33 +157,11 @@ public:
 
             size_t CoefIdx = ((size_t) Pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
-            Sum += fftCoeffs[CoefIdx] * w;
+            re += fftCoeffs[CoefIdx].real() * w * (-1 + (i % 2 + 2) % 2 * 2);
+            im += fftCoeffs[CoefIdx].imag() * w * (-1 + (i % 2 + 2) % 2 * 2);
         }
 
-        return Sum;
-    }
-
-    /// <summary>
-    /// Applies a Lanzcos kernel.
-    /// </summary>
-    double Lanzcos(Complex * data, size_t length, double x, int kernelSize = 4) const
-    {
-        Complex Sum = { 0., 0. };
-
-        for (int i = -kernelSize + 1; i <= kernelSize; ++i)
-        {
-            double Pos = ::floor(x) + i; // i + x
-            double Twiddle = x - Pos; // -Pos + ::round(Pos) + i
-
-            double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
-
-            size_t CoefIdx = ((size_t) Pos % length + length) % length;
-
-            Sum.re += data[CoefIdx].re * w * (-1 + (i % 2 + 2) % 2 * 2);
-            Sum.im += data[CoefIdx].im * w * (-1 + (i % 2 + 2) % 2 * 2);
-        }
-
-        return ::hypot(Sum.re, Sum.im);
+        return ::hypot(re, im);
     }
 
     /// <summary>

@@ -214,12 +214,10 @@ public:
                 _LabelHeight = 2.f + _TextHeight + 2.f;
             }
             else
-                if (_Configuration._LogLevel <= LogLevel::Critical)
-                    console::printf("%s: Unable to create Y axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
+                Log(LogLevel::Critical, "%s: Unable to create X axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
         else
-            if (_Configuration._LogLevel <= LogLevel::Critical)
-                console::printf("%s: Unable to create Y axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+            Log(LogLevel::Critical, "%s: Unable to create X axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }
