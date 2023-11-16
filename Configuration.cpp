@@ -381,20 +381,20 @@ void Configuration::Read()
                                     _Configuration._YAxisMode = v;
                             }
 
-                            if (Value.Contains(L"PeakMode"))
-                            {
-                                PeakMode v = (PeakMode) (int) Value[L"PeakMode"];
-
-                                if (PeakMode::Classic <= v && v <= PeakMode::AIMP)
-                                    _Configuration._PeakMode = v;
-                            }
-
                             if (Value.Contains(L"ColorScheme"))
                             {
                                 ColorScheme v = (ColorScheme) (int) Value[L"ColorScheme"];
 
                                 if (ColorScheme::Solid <= v && v <= ColorScheme::foobar2000DarkMode)
                                     _Configuration._ColorScheme = v;
+                            }
+
+                            if (Value.Contains(L"PeakMode"))
+                            {
+                                PeakMode v = (PeakMode) (int) Value[L"PeakMode"];
+
+                                if (PeakMode::Classic <= v && v <= PeakMode::AIMP)
+                                    _Configuration._PeakMode = v;
                             }
 
                             if (Value.Contains(L"LogLevel"))

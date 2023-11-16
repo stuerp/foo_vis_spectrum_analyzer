@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.h (2023.11.14) P. Stuer **/
+/** $VER: FFTProvider.h (2023.11.16) P. Stuer **/
 
 #pragma once
 
@@ -9,7 +9,8 @@
 
 #include "framework.h"
 
-#include "FFT.h"
+#include "FFTKiss.h"
+#include "FFTProjectNayuki.h"
 
 #define IsPowerOfTwo(x) ((x) & ((x) - 1) == 0)
 
@@ -69,6 +70,7 @@ private:
     size_t _SampleCount;
 
     FFT _FFT;
+    FFTProjectNayuki _FFTProjectNayuki;
 };
 
 /// <summary>
@@ -91,6 +93,7 @@ inline FFTProvider::FFTProvider(t_size channelCount, FFTSize fftSize)
     _FFTSize = fftSize;
 
     _FFT.Initialize(_FFTSize);
+    _FFTProjectNayuki.Initialize(_FFTSize);
 
     // Create the ring buffer for the samples. The size should be a multiple of 2.
     _SampleData = new audio_sample[(size_t) fftSize];
@@ -166,7 +169,7 @@ bool inline FFTProvider::GetFrequencyData(double * freqData, size_t freqSize) co
         GetFrequencyData(FreqData, freqSize);
 
         // Compute the magnitude of each of the frequencies.
-        for (size_t i = 0; i < (size_t) _FFTSize / 2; i++)
+        for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
             freqData[i] =  ::sqrt((FreqData[i].re * FreqData[i].re) + (FreqData[i].im * FreqData[i].im));
 
         delete[] FreqData;
@@ -228,9 +231,27 @@ bool inline FFTProvider::GetFrequencyData(Complex * freqData, size_t freqSize) c
         TimeData[i] *= Factor;
 */
     // Transform the data from the Time domain to the Frequency domain.
+#ifdef Kiss
     _FFT.Transform((const kiss_fft_scalar *) TimeData, (kiss_fft_cpx *) freqData);
+#else
+    {
+        std::vector<std::complex<double>> td;
+        std::vector<std::complex<double>> fd;
 
-    // Normalize the frequency domain data. Use the size of the FFT for dB scale. FIXME: Determine scale factor for a logaritmic scale.
+        for (int i = 0; i < _FFTSize; ++i)
+            td.push_back(std::complex<double>(TimeData[i]));
+
+        _FFTProjectNayuki.Transform(td, fd);
+
+        for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
+        {
+            freqData[i].re = fd[i].real();
+            freqData[i].im = fd[i].imag();
+        }
+    }
+#endif
+
+    // Normalize the frequency domain data. Use the size of the FFT for dB scale.
     for (size_t i = 0; i < (size_t) _FFTSize / 2; ++i)
     {
         freqData[i].re /= (kiss_fft_scalar) _FFTSize;

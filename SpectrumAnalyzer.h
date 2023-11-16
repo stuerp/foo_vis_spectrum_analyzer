@@ -258,6 +258,9 @@ public:
                     case PeakMode::AIMP:
                         Iter.DecaySpeed = (_Configuration._FallRate / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         break;
+
+                    case PeakMode::FadeOut:
+                        break;
                 }
 
                 Iter.Peak -= Iter.DecaySpeed;

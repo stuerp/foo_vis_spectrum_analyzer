@@ -77,9 +77,9 @@
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>kiss_fft_scalar=float;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>kiss_fft_scalar=float;_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft;3rdParty/ProjectNayuki</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -100,9 +100,9 @@
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>kiss_fft_scalar=float;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>kiss_fft_scalar=float;_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft;3rdParty/ProjectNayuki</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -127,9 +127,9 @@
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>kiss_fft_scalar=double;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft;3rdParty/ProjectNayuki</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -150,9 +150,9 @@
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>kiss_fft_scalar=double;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>kiss_fft_scalar=double;_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdParty/WTL10_10320/Include;../3rdParty/columns_ui_sdk;../sdk;../sdk/foobar2000;3rdParty/kissfft;3rdParty/ProjectNayuki</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -174,8 +174,11 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="FFT.h" />
+    <ClInclude Include="FFTKiss.h" />
+    <ClInclude Include="FFTBase.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
@@ -191,6 +194,7 @@
     <ClInclude Include="YAxis.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="ConfigurationDialog.cpp" />
@@ -225,6 +229,7 @@
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
     <None Include="Build-FB2KComponent.ps1" />
+    <None Include="FFTProjectNayuki.h" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
