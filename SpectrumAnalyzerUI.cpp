@@ -410,7 +410,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
-        _SpectrumAnalyzer = new SpectrumAnalyzer<double>(ChannelCount, _Configuration._FFTSize, _SampleRate);
+        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Configuration._FFTSize, _SampleRate);
 
     // Add the samples to the spectrum analyzer.
     {

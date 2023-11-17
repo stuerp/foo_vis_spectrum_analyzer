@@ -167,7 +167,7 @@ bool inline FFTProvider::GetFrequencyData(vector<complex<double>> & freqData) no
 
     // Normalize the frequency domain data.
     for (complex<double> & Iter : freqData)
-        Iter /= _FFTSize;
+        Iter /= (double) _FFTSize;
 
     return true;
 }

@@ -168,7 +168,7 @@ private:
     ConfigurationDialog _ConfigurationDialog;
 
 private:
-    SpectrumAnalyzer<double> * _SpectrumAnalyzer;
+    SpectrumAnalyzer * _SpectrumAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
     uint32_t _SampleRate;

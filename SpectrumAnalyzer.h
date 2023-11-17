@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.16) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.17) P. Stuer **/
 
 #include "framework.h"
 
@@ -14,7 +14,6 @@
 /// <summary>
 /// Implements a wave analyzer to measure relative amplitudes of single frequency components in a complex waveform.
 /// </summary>
-template<class T>
 class SpectrumAnalyzer : public FFTProvider
 {
 public:
