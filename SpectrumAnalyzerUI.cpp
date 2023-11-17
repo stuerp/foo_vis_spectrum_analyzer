@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.16) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.17) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -265,7 +265,7 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering() noexcept
 /// </summary>
 void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
 {
-    _RefreshInterval = pfc::clip_t<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
+    _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
 }
 
 /// <summary>
@@ -308,6 +308,8 @@ void SpectrumAnalyzerUIElement::ApplyConfiguration() noexcept
     }
 
     _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
 }
 
 #pragma endregion
@@ -344,15 +346,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        // Draw the background.
-        {
-            t_ui_color BackgroundColor = m_callback->query_std_color(ui_color_background);
-
-            //FIXME: Should be dynamic
-            BackgroundColor = RGB(0, 0, 0);
-
-            _RenderTarget->Clear(D2D1::ColorF(GetRValue(BackgroundColor) / 255.0f, GetGValue(BackgroundColor) / 255.0f, GetBValue(BackgroundColor) / 255.0f));
-        }
+        // Draw the background ,x-axis and y-axis.
+        _RenderTarget->Clear(_Configuration._BackgroundColor);
 
         _XAxis.Render(_RenderTarget);
 
@@ -426,12 +421,12 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     {
         // Get the frequency data.
-        std::vector<std::complex<double>> Coefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
+        std::vector<std::complex<double>> FrequencyCoefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
 
-        _SpectrumAnalyzer->GetFrequencyData(Coefficients);
+        _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
 
         // Get the spectrum from the FFT coefficiens.
-        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
+        _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
 
         switch (_Configuration._SmoothingMethod)
         {
@@ -495,6 +490,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             // Draw the foreground.
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
+
             _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }
 
@@ -503,7 +499,15 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
             Rect.bottom = Rect.top + 1.f;
 
-            _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
+            ID2D1Brush * Brush = (_Configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
+
+            if (_Configuration._PeakMode == PeakMode::FadeOut)
+                Brush->SetOpacity((FLOAT) (Iter.HoldTime / _Configuration._HoldTime));
+
+            _RenderTarget->FillRectangle(Rect, Brush);
+
+            if (_Configuration._PeakMode == PeakMode::FadeOut)
+                Brush->SetOpacity(1.f);
         }
 
         x1  = x2;
@@ -757,13 +761,23 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
     }
 
     // Create the brushes.
+    if (SUCCEEDED(hr) && (_WhiteBrush == nullptr))
+    {
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
+    }
+
     if (SUCCEEDED(hr) && (_BandBackgroundBrush == nullptr))
     {
         _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+/*
+        t_ui_color BackColor = m_callback->query_std_color(ui_color_background);
 
-//      t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(BackColor) / 255.0f, GetGValue(BackColor) / 255.0f, GetBValue(BackColor) / 255.0f), &_BackBrush);
 
-//      hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_BackgroundBrush);
+        t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
+
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_TextBrush);
+*/
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f), &_BandBackgroundBrush); // #1E90FF
     }
 
@@ -927,6 +941,9 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 
     _BandForegroundBrush.Release();
     _BandBackgroundBrush.Release();
+
+    _WhiteBrush.Release();
+
     _RenderTarget.Release();
 }
 #pragma endregion

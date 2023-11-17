@@ -75,7 +75,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.1.0.5, 2023-xx-xx
 
-*
+* New: Implemented logarithmic Y axis.
+* New: Experimental fade-out mode for the peak indicators.
 
 v0.1.0.4, 2023-11-16
 

@@ -83,6 +83,9 @@ void Configuration::Reset() noexcept
     _SmoothLowerFrequencies = true;
     _SmoothGainTransition = true;
 
+    // Rendering parameters
+    _BackgroundColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
+
     // X axis
     _XAxisMode = XAxisMode::Decades;
 
@@ -95,12 +98,13 @@ void Configuration::Reset() noexcept
     _UseAbsolute = true;                               // Use absolute value
     _Gamma = 1.;
 
+    // Band
     _ColorScheme = ColorScheme::Solid;
     _PeakMode = PeakMode::Classic;
+    _DrawBandBackground = false;
 
+    // Logging
     _LogLevel = LogLevel::None;
-
-    _DrawBandBackground = true;
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -383,6 +387,13 @@ void Configuration::Read()
                                     _Configuration._YAxisMode = v;
                             }
 
+                            if (Value.Contains(L"BackgroundColor"))
+                            {
+                                uint32_t v = (uint32_t) (int) Value[L"BackgroundColor"]; // FIXME
+
+//                              _Configuration._BackgroundColor = v;
+                            }
+
                             if (Value.Contains(L"ColorScheme"))
                             {
                                 ColorScheme v = (ColorScheme) (int) Value[L"ColorScheme"];
@@ -395,7 +406,7 @@ void Configuration::Read()
                             {
                                 PeakMode v = (PeakMode) (int) Value[L"PeakMode"];
 
-                                if (PeakMode::Classic <= v && v <= PeakMode::AIMP)
+                                if (PeakMode::Classic <= v && v <= PeakMode::FadeOut)
                                     _Configuration._PeakMode = v;
                             }
 

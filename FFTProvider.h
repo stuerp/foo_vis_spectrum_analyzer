@@ -40,7 +40,7 @@ public:
     }
 
     bool Add(const audio_sample * samples, size_t count) noexcept;
-    bool GetFrequencyData(vector<complex<double>> & freqData) noexcept;
+    bool GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
 private:
     static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
@@ -131,7 +131,7 @@ inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) n
 /// If there have not been added any new samples since the last transform, the FFT
 /// won't be calculated. True means that the Fast Fourier Transform got calculated.
 ///</returns>
-bool inline FFTProvider::GetFrequencyData(vector<complex<double>> & freqData) noexcept
+bool inline FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
 {
     double Norm = 0.0;
 
@@ -163,10 +163,10 @@ bool inline FFTProvider::GetFrequencyData(vector<complex<double>> & freqData) no
     }
 
     // Transform the data from the Time domain to the Frequency domain.
-    _FFT.Transform(_TimeData, freqData);
+    _FFT.Transform(_TimeData, freqCoefficients);
 
     // Normalize the frequency domain data.
-    for (complex<double> & Iter : freqData)
+    for (complex<double> & Iter : freqCoefficients)
         Iter /= (double) _FFTSize;
 
     return true;

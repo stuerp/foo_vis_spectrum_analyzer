@@ -191,6 +191,9 @@ public:
 
     double _Gamma;                                                  // Gamma, 0.5 .. 10
 
+    // Rendering parameters
+    D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);
+
     // X axis
     XAxisMode _XAxisMode;
 
@@ -200,17 +203,18 @@ public:
     double _MinDecibels;                                            // Lower amplitude, -120.0 .. 0.0
     double _MaxDecibels;                                            // Upper amplitude, -120.0 .. 0.0
 
-    bool _UseAbsolute = true;                               // Use absolute value
+    bool _UseAbsolute = true;                                       // Use absolute value
 
     ColorScheme _ColorScheme;
 
     PeakMode _PeakMode;
-    double _FallRate = 0.5;                                 // Peak fall rate, 0.0 .. 2.0
-    double _HoldTime = 30.0;                                // Peak hold time, 0.0 .. 120.0
+    double _FallRate = 0.5;                                         // Peak fall rate, 0.0 .. 2.0
+    double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
+
+    bool _DrawBandBackground;                                       // True if the background for each band should be drawn.
 
     LogLevel _LogLevel;
 
-    bool _DrawBandBackground;                               // True if the background for each band should be drawn.
 /*
     type: 'fft',
     bandwidthOffset: 1,

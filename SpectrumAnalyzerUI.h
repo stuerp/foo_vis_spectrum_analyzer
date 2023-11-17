@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.16) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.17) P. Stuer **/
 
 #pragma once
 
@@ -155,6 +155,8 @@ private:
     // Device-specific resources
     D2D1_SIZE_U _ClientSize;
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+    CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
 
     CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
     CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;

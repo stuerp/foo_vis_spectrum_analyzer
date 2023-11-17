@@ -60,12 +60,12 @@ public:
     /// <summary>
     /// Gets the spectrum from the FFT coefficients.
     /// </summary>
-    void GetSpectrum(const std::vector<std::complex<double>> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod)
+    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod)
     {
         for (FrequencyBand & Iter : freqBands)
         {
-            const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
-            const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
+            const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
+            const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
 
             const int LoIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
             const int HiIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
@@ -73,15 +73,11 @@ public:
             const bool SmoothGainTransition = (_Configuration._SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
             const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
 
-            const double BandGain =  SmoothGainTransition ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+            const double BandGain =  SmoothGainTransition ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) coefficients.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
-            if (LoIdx > HiIdx)
+            if (LoIdx <= HiIdx)
             {
-                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, _Configuration._KernelSize)) * BandGain;
-            }
-            else
-            {
-                const int OverflowCompensation = Max(HiIdx - LoIdx - (int) fftCoeffs.size(), 0);
+                const int OverflowCompensation = Max(HiIdx - LoIdx - (int) coefficients.size(), 0);
 
                 double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -90,9 +86,9 @@ public:
 
                 for (int Idx = LoIdx; Idx <= HiIdx - OverflowCompensation; ++Idx)
                 {
-                    size_t CoefIdx = ((size_t) Idx % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+                    size_t CoefIdx = ((size_t) Idx % coefficients.size() + coefficients.size()) % coefficients.size();
 
-                    double data = std::abs(fftCoeffs[CoefIdx]);
+                    double data = std::abs(coefficients[CoefIdx]);
 
                     switch (summationMethod)
                     {
@@ -133,21 +129,27 @@ public:
 
                 Iter.NewValue = Value * BandGain;
             }
+            else
+            {
+                const double Value = Iter.Ctr * (double) coefficients.size() / sampleRate;
+
+                Iter.NewValue = ::fabs(Lanzcos(coefficients, Value, _Configuration._KernelSize)) * BandGain;
+            }
         }
     }
 
     /// <summary>
     /// Applies a Lanzcos kernel.
     /// </summary>
-    double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double x, int kernelSize) const
+    double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const
     {
         double re = 0.;
         double im = 0.;
 
         for (int i = -kernelSize + 1; i <= kernelSize; ++i)
         {
-            double Pos = ::floor(x) + i;
-            double Twiddle = x - Pos; // -Pos + ::round(Pos) + i
+            double Pos = ::floor(value) + i;
+            double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
 
             double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
