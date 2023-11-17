@@ -24,7 +24,7 @@ void ConfigurationDialog::Initialize()
             w.AddString(Labels[i]);
         }
 
-        w.SetCurSel((int) _Configuration->FrequencyDistribution);
+        w.SetCurSel((int) _Configuration->_FrequencyDistribution);
     }
     #pragma endregion
 

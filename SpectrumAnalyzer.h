@@ -60,38 +60,35 @@ public:
     /// <summary>
     /// Gets the spectrum from the FFT coefficients.
     /// </summary>
-    void GetSpectrum(const std::vector<std::complex<double>> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, int kernelSize, SummationMethod summationMethod, bool smoothInterp, bool smoothGainTransition)
+    void GetSpectrum(const std::vector<std::complex<double>> & fftCoeffs, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod)
     {
         for (FrequencyBand & Iter : freqBands)
         {
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
             const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), fftCoeffs.size(), sampleRate);
 
-            const int MinIdx1 = (int)                  ::ceil(LoHz);
-            const int MaxIdx1 = (int)                 ::floor(HiHz);
+            const int LoIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
+            const int HiIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
 
-            const int MinIdx2 = (int) (smoothInterp ? ::round(LoHz) + 1 : MinIdx1);
-            const int MaxIdx2 = (int) (smoothInterp ? ::round(HiHz) - 1 : MaxIdx1);
+            const bool SmoothGainTransition = (_Configuration._SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
+            const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
 
-            double bandGain = smoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / sampleRate), (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum) ? 0.5 : 1.)) : 1.;
+            const double BandGain =  SmoothGainTransition ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) fftCoeffs.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
-            if (MinIdx2 > MaxIdx2)
+            if (LoIdx > HiIdx)
             {
-                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, kernelSize)) * bandGain;
+                Iter.NewValue = ::fabs(Lanzcos(fftCoeffs, Iter.Ctr * (double) fftCoeffs.size() / sampleRate, _Configuration._KernelSize)) * BandGain;
             }
             else
             {
+                const int OverflowCompensation = Max(HiIdx - LoIdx - (int) fftCoeffs.size(), 0);
+
                 double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
+
+                std::vector<double> Values(16);
                 int Count = 0;
 
-                int OverflowCompensation = Max(MaxIdx1 - MinIdx1 - (int) fftCoeffs.size(), 0);
-
-                bool IsAverage = (summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || ((summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum) && smoothGainTransition);
-                bool IsRMS = summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum;
-
-                std::vector<double> medianData;
-
-                for (int Idx = MinIdx1; Idx <= MaxIdx1 - OverflowCompensation; ++Idx)
+                for (int Idx = LoIdx; Idx <= HiIdx - OverflowCompensation; ++Idx)
                 {
                     size_t CoefIdx = ((size_t) Idx % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
 
@@ -115,7 +112,7 @@ public:
                             break;
 
                         case SummationMethod::Median:
-                            medianData.push_back(data);
+                            Values.push_back(data);
                             break;
 
                         default:
@@ -125,16 +122,16 @@ public:
                     ++Count;
                 }
 
-                if (IsAverage && (Count != 0))
+                if (((summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || SmoothGainTransition) && (Count != 0))
                     Value /= Count;
                 else
                 if (IsRMS)
                     Value = ::sqrt(Value);
                 else
                 if (summationMethod == SummationMethod::Median)
-                    Value = Median(medianData);
+                    Value = Median(Values);
 
-                Iter.NewValue = Value * bandGain;
+                Iter.NewValue = Value * BandGain;
             }
         }
     }

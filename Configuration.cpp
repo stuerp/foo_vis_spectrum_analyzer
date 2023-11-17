@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.16) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.17) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -56,7 +56,7 @@ void Configuration::Reset() noexcept
     _WindowDuration = 100;
 
     _FFTSize = 4096;
-    FrequencyDistribution = FrequencyDistributions::Octaves;
+    _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Common
     NumBands =    320;  // Number of frequency bands, 2 .. 512
@@ -70,22 +70,18 @@ void Configuration::Reset() noexcept
     _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    ScalingFunction = ScalingFunctions::Logarithmic;
+    _ScalingFunction = ScalingFunction::Logarithmic;
 
-    SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+    _SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
+    _Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;                         // Smoothing constant, 0.0 .. 1.0
 
     _KernelSize = 32;                               // Lanczos interpolation kernel size, 1 .. 64
     _SummationMethod = SummationMethod::Maximum;    // Band power summation method
-    smoothInterp = true;                           // Smoother bin interpolation on lower frequencies
-    smoothSlope = true;                            // Smoother frequency slope on sum modes
-
-    _UseAbsolute = true;                               // Use absolute value
-
-    Gamma = 1.;                                     // Gamma, 0.5 .. 10
+    _SmoothLowerFrequencies = true;
+    _SmoothGainTransition = true;
 
     // X axis
     _XAxisMode = XAxisMode::Decades;
@@ -93,13 +89,18 @@ void Configuration::Reset() noexcept
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
 
-    MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
+    _MinDecibels = -90.;
+    _MaxDecibels =   0.;
+
+    _UseAbsolute = true;                               // Use absolute value
+    _Gamma = 1.;
 
     _ColorScheme = ColorScheme::Solid;
     _PeakMode = PeakMode::Classic;
 
     _LogLevel = LogLevel::None;
+
+    _DrawBandBackground = true;
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -248,18 +249,18 @@ void Configuration::Read()
 
                             if (Value.Contains(L"FrequencyDistribution"))
                             {
-                                FrequencyDistributions v = (FrequencyDistributions) (int) Value[L"FrequencyDistribution"];
+                                FrequencyDistribution v = (FrequencyDistribution) (int) Value[L"FrequencyDistribution"];
 
-                                if (v >= FrequencyDistributions::Frequencies && v <= FrequencyDistributions::AveePlayer)
-                                    _Configuration.FrequencyDistribution = v;
+                                if (v >= FrequencyDistribution::Frequencies && v <= FrequencyDistribution::AveePlayer)
+                                    _Configuration._FrequencyDistribution = v;
                             }
 
                             if (Value.Contains(L"ScalingFunction"))
                             {
-                                ScalingFunctions v = (ScalingFunctions) (int) Value[L"ScalingFunction"];
+                                ScalingFunction v = (ScalingFunction) (int) Value[L"ScalingFunction"];
 
-                                if (ScalingFunctions::Linear <= v && v <= ScalingFunctions::Period)
-                                    _Configuration.ScalingFunction = v;
+                                if (ScalingFunction::Linear <= v && v <= ScalingFunction::Period)
+                                    _Configuration._ScalingFunction = v;
                             }
 
                             if (Value.Contains(L"ScalingFunctionFactor"))
@@ -267,7 +268,7 @@ void Configuration::Read()
                                 double v = Value[L"ScalingFunctionFactor"];
 
                                 if (0.0 <= v && v <= 1.0)
-                                    _Configuration.SkewFactor = v;
+                                    _Configuration._SkewFactor = v;
                             }
 
                             if (Value.Contains(L"Bandwidth"))
@@ -275,7 +276,7 @@ void Configuration::Read()
                                 double v = Value[L"Bandwidth"];
 
                                 if (0.0 <= v && v <= 64.0)
-                                    _Configuration.Bandwidth = v;
+                                    _Configuration._Bandwidth = v;
                             }
 
                             if (Value.Contains(L"NumberOfBands"))

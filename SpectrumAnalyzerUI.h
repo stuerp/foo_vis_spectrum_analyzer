@@ -105,8 +105,8 @@ private:
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
 
-    static double ScaleF(double x, ScalingFunctions function, double factor);
-    static double DeScaleF(double x, ScalingFunctions function, double factor);
+    static double ScaleF(double x, ScalingFunction function, double factor);
+    static double DeScaleF(double x, ScalingFunction function, double factor);
 
     #pragma region DirectX
     HRESULT CreateDeviceIndependentResources();
@@ -151,17 +151,13 @@ private:
     // Device-independent resources
     CComPtr<ID2D1Factory> _Direct2dFactory;
     CComPtr<IDWriteFactory> _DirectWriteFactory;
-    CComPtr<IDWriteTextFormat> _TextFormat;
-    CComPtr<IDWriteTextFormat> _LabelTextFormat;
-
-    DWRITE_TEXT_METRICS _LabelTextMetrics;
 
     // Device-specific resources
     D2D1_SIZE_U _ClientSize;
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
-    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
-    CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
+    CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
+    CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
 
     #pragma endregion
 

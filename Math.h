@@ -89,10 +89,10 @@ inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandInd
 inline double ScaleA(double x)
 {
     if (_Configuration._YAxisMode == YAxisMode::Decibels)
-        return Map(ToDecibel(x), _Configuration.MinDecibels, _Configuration.MaxDecibels, 0.0, 1.0);
+        return Map(ToDecibel(x), _Configuration._MinDecibels, _Configuration._MaxDecibels, 0.0, 1.0);
 
-    double Exponent = 1.0 / _Configuration.Gamma;
+    double Exponent = 1.0 / _Configuration._Gamma;
 
-    return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration.MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration.MaxDecibels), Exponent), 0.0, 1.0);
+    return Map(::pow(x, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration._MinDecibels), Exponent), ::pow(ToMagnitude(_Configuration._MaxDecibels), Exponent), 0.0, 1.0);
 }
 

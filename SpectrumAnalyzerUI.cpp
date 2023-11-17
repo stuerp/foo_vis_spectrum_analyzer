@@ -290,19 +290,19 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 void SpectrumAnalyzerUIElement::ApplyConfiguration() noexcept
 {
     // Initialize the bands.
-    switch (_Configuration.FrequencyDistribution)
+    switch (_Configuration._FrequencyDistribution)
     {
         default:
 
-        case FrequencyDistributions::Frequencies:
+        case FrequencyDistribution::Frequencies:
             GenerateFrequencyBands();
             break;
 
-        case FrequencyDistributions::Octaves:
+        case FrequencyDistribution::Octaves:
             GenerateFrequencyBandsFromNotes();
             break;
 
-        case FrequencyDistributions::AveePlayer:
+        case FrequencyDistribution::AveePlayer:
             GenerateFrequencyBandsOfAveePlayer();
             break;
     }
@@ -431,7 +431,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer->GetFrequencyData(Coefficients);
 
         // Get the spectrum from the FFT coefficiens.
-        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration._KernelSize, _Configuration._SummationMethod, _Configuration.smoothInterp, _Configuration.smoothSlope);
+        _SpectrumAnalyzer->GetSpectrum(Coefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
 
         switch (_Configuration._SmoothingMethod)
         {
@@ -487,16 +487,15 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
         // Draw the background.
-        {
-//          _RenderTarget->FillRectangle(Rect, _BackgroundBrush); // FIXME
-        }
+        if (_Configuration._DrawBandBackground)
+            _RenderTarget->FillRectangle(Rect, _BandBackgroundBrush);
 
-        // Draw the foreground.
         if (Iter.CurValue > 0.0)
         {
+            // Draw the foreground.
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
-            _RenderTarget->FillRectangle(Rect, _GradientBrush);
+            _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }
 
         if ((_Configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
@@ -504,7 +503,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
             Rect.bottom = Rect.top + 1.f;
 
-            _RenderTarget->FillRectangle(Rect, _GradientBrush);
+            _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }
 
         x1  = x2;
@@ -519,8 +518,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 /// </summary>
 void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 {
-    const double MinFreq = ScaleF(_Configuration.MinFrequency, _Configuration.ScalingFunction, _Configuration.SkewFactor);
-    const double MaxFreq = ScaleF(_Configuration.MaxFrequency, _Configuration.ScalingFunction, _Configuration.SkewFactor);
+    const double MinFreq = ScaleF(_Configuration.MinFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    const double MaxFreq = ScaleF(_Configuration.MaxFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
     _FrequencyBands.resize(_Configuration.NumBands);
 
@@ -528,9 +527,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo  = DeScaleF(Map((double) i - _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
-        Iter.Hi  = DeScaleF(Map((double) i + _Configuration.Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration.ScalingFunction, _Configuration.SkewFactor);
+        Iter.Lo  = DeScaleF(Map((double) i - _Configuration._Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Hi  = DeScaleF(Map((double) i + _Configuration._Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
     }
 }
 
@@ -555,9 +554,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i - _Configuration._Bandwidth) * NotesGroup + _Configuration.Detune)),
             C0 * ::pow(Root24,  (i                             * NotesGroup + _Configuration.Detune)),
-            C0 * ::pow(Root24, ((i + _Configuration.Bandwidth) * NotesGroup + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i + _Configuration._Bandwidth) * NotesGroup + _Configuration.Detune)),
         };
 
         _FrequencyBands.push_back(fb);
@@ -575,57 +574,57 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - _Configuration.Bandwidth, _Configuration.NumBands - 1, _Configuration.SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i,                            _Configuration.NumBands - 1, _Configuration.SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + _Configuration.Bandwidth, _Configuration.NumBands - 1, _Configuration.SkewFactor);
-        Iter.LoBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - 0.5,                      _Configuration.NumBands - 1, _Configuration.SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
-        Iter.HiBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + 0.5,                      _Configuration.NumBands - 1, _Configuration.SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.Lo      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - _Configuration._Bandwidth, _Configuration.NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr     = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i,                            _Configuration.NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + _Configuration._Bandwidth, _Configuration.NumBands - 1, _Configuration._SkewFactor);
+        Iter.LoBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - 0.5,                      _Configuration.NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.HiBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + 0.5,                      _Configuration.NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 
 /// <summary>
 /// Scales the frequency.
 /// </summary>
-double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunctions function, double skewFactor)
+double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunction function, double skewFactor)
 {
     switch (function)
     {
         default:
 
-        case ScalingFunctions::Linear:
+        case ScalingFunction::Linear:
             return x;
 
-        case ScalingFunctions::Logarithmic:
+        case ScalingFunction::Logarithmic:
             return ::log2(x);
 
-        case ScalingFunctions::ShiftedLogarithmic:
+        case ScalingFunction::ShiftedLogarithmic:
             return ::log2(::pow(10, skewFactor * 4.0) + x);
 
-        case ScalingFunctions::Mel:
+        case ScalingFunction::Mel:
             return ::log2(1.0 + x / 700.0);
 
-        case ScalingFunctions::Bark: // "Critical bands"
+        case ScalingFunction::Bark: // "Critical bands"
             return (26.81 * x) / (1960.0 + x) - 0.53;
 
-        case ScalingFunctions::AdjustableBark:
+        case ScalingFunction::AdjustableBark:
             return (26.81 * x) / (::pow(10, skewFactor * 4.0) + x);
 
-        case ScalingFunctions::ERB: // Equivalent Rectangular Bandwidth
+        case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
             return ::log2(1.0 + 0.00437 * x);
 
-        case ScalingFunctions::Cams:
+        case ScalingFunction::Cams:
             return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
 
-        case ScalingFunctions::HyperbolicSine:
+        case ScalingFunction::HyperbolicSine:
             return ::asinh(x / ::pow(10, skewFactor * 4));
 
-        case ScalingFunctions::NthRoot:
+        case ScalingFunction::NthRoot:
             return ::pow(x, (1.0 / (11.0 - skewFactor * 10.0)));
 
-        case ScalingFunctions::NegativeExponential:
+        case ScalingFunction::NegativeExponential:
             return -::exp2(-x / ::exp2(7 + skewFactor * 8));
 
-        case ScalingFunctions::Period:
+        case ScalingFunction::Period:
             return 1.0 / x;
     }
 }
@@ -633,46 +632,46 @@ double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunctions function, do
 /// <summary>
 /// Descales the frequency.
 /// </summary>
-double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunctions function, double skewFactor)
+double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunction function, double skewFactor)
 {
     switch (function)
     {
         default:
 
-        case ScalingFunctions::Linear:
+        case ScalingFunction::Linear:
             return x;
 
-        case ScalingFunctions::Logarithmic:
+        case ScalingFunction::Logarithmic:
             return ::exp2(x);
 
-        case ScalingFunctions::ShiftedLogarithmic:
+        case ScalingFunction::ShiftedLogarithmic:
             return ::exp2(x) - ::pow(10.0, skewFactor * 4.0);
 
-        case ScalingFunctions::Mel:
+        case ScalingFunction::Mel:
             return 700.0 * (::exp2(x) - 1.0);
 
-        case ScalingFunctions::Bark: // "Critical bands"
+        case ScalingFunction::Bark: // "Critical bands"
             return 1960.0 / (26.81 / (x + 0.53) - 1.0);
 
-        case ScalingFunctions::AdjustableBark:
+        case ScalingFunction::AdjustableBark:
             return ::pow(10.0, (skewFactor * 4.0)) / (26.81 / x - 1.0);
 
-        case ScalingFunctions::ERB: // Equivalent Rectangular Bandwidth
+        case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
             return (1 / 0.00437) * (::exp2(x) - 1);
 
-        case ScalingFunctions::Cams:
+        case ScalingFunction::Cams:
             return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
 
-        case ScalingFunctions::HyperbolicSine:
+        case ScalingFunction::HyperbolicSine:
             return ::sinh(x) * ::pow(10.0, skewFactor * 4);
 
-        case ScalingFunctions::NthRoot:
+        case ScalingFunction::NthRoot:
             return ::pow(x, ((11.0 - skewFactor * 10.0)));
 
-        case ScalingFunctions::NegativeExponential:
+        case ScalingFunction::NegativeExponential:
             return -::log2(-x) * ::exp2(7.0 + skewFactor * 8.0);
 
-        case ScalingFunctions::Period:
+        case ScalingFunction::Period:
             return 1.0 / x;
     }
 }
@@ -720,28 +719,6 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
     else
         Log(LogLevel::Error, "%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
 
-    if (SUCCEEDED(hr))
-    {
-        static const PCWSTR FontFamilyName = L"Segoe UI";
-        static const FLOAT FontSize = ToDIPs(6.0f); // In DIP
-
-        hr = _DirectWriteFactory->CreateTextFormat(FontFamilyName, NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_LabelTextFormat);
-    }
-    else
-        Log(LogLevel::Critical, "%s: Unable to create TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
-
-    if (SUCCEEDED(hr))
-    {
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWriteFactory->CreateTextLayout(L"-90dB", 1, _LabelTextFormat, 100, 100, &TextLayout);
-
-        if (SUCCEEDED(hr))
-            TextLayout->GetMetrics(&_LabelTextMetrics);
-    }
-    else
-        Log(LogLevel::Critical, "%s: Unable to create LabelTextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
-
     hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
 
     hr = _XAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
@@ -780,17 +757,17 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
     }
 
     // Create the brushes.
-    if (SUCCEEDED(hr) && (_BackgroundBrush == nullptr))
+    if (SUCCEEDED(hr) && (_BandBackgroundBrush == nullptr))
     {
         _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
 //      t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
 
 //      hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_BackgroundBrush);
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f), &_BackgroundBrush); // #1E90FF
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f), &_BandBackgroundBrush); // #1E90FF
     }
 
-    if (SUCCEEDED(hr) && (_GradientBrush == nullptr))
+    if (SUCCEEDED(hr) && (_BandForegroundBrush == nullptr))
     {
         CComPtr<ID2D1GradientStopCollection> Collection = GetGradientStopCollection();
 
@@ -798,7 +775,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
         {
             D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
-            hr = _RenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_GradientBrush);
+            hr = _RenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_BandForegroundBrush);
         }
     }
 
@@ -948,8 +925,8 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
     _XAxis.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
-    _GradientBrush.Release();
-    _BackgroundBrush.Release();
+    _BandForegroundBrush.Release();
+    _BandBackgroundBrush.Release();
     _RenderTarget.Release();
 }
 #pragma endregion
@@ -1043,7 +1020,7 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 {
     if (what == ui_element_notify_colors_changed)
     {
-        _BackgroundBrush.Release();
+        _BandBackgroundBrush.Release();
 
         Invalidate();
     }
@@ -1069,7 +1046,7 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
         _SpectrumAnalyzer = nullptr;
     }
 
-    _GradientBrush.Release();
+    _BandForegroundBrush.Release();
 
     _IsPlaying = true;
 

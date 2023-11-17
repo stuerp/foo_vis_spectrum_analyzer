@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.16) P. Stuer **/
+/** $VER: Configuration.h (2023.11.17) P. Stuer **/
 
 #pragma once
 
@@ -25,14 +25,14 @@ enum FFTSize
     Fft32768 = 32768
 };
 
-enum class FrequencyDistributions
+enum class FrequencyDistribution
 {
     Frequencies = 0,
     Octaves = 1,
     AveePlayer = 2,
 };
 
-enum class ScalingFunctions
+enum class ScalingFunction
 {
     Linear = 0,
 
@@ -161,7 +161,7 @@ public:
     size_t _RefreshRateLimit;   // in Hz
 
     size_t _FFTSize;
-    FrequencyDistributions FrequencyDistribution;
+    FrequencyDistribution _FrequencyDistribution;
 
     // Common
     size_t NumBands =    320;  // Number of frequency bands, 2 .. 512
@@ -176,20 +176,20 @@ public:
     double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
 
     // Frequencies
-    ScalingFunctions ScalingFunction = ScalingFunctions::Logarithmic;
+    ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
 
-    double SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    double Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+    double _SkewFactor = 0.0;   // 0.0 .. 1.0
+    double _Bandwidth = 0.5;        // 0.0 .. 64.0
 
-    SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;    // Smoothing method
-    double _SmoothingFactor = 0.0;                                            // Smoothing constant, 0.0 .. 1.0
+    SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
+    double _SmoothingFactor = 0.0;                                  // 0.0 .. 1.0
 
-    int _KernelSize = 32;                                    // Lanczos interpolation kernel size, 1 .. 64
-    SummationMethod _SummationMethod = SummationMethod::Maximum;  // Band power summation method
-    bool smoothInterp = true;                               // Smoother bin interpolation on lower frequencies
-    bool smoothSlope = true;                                // Smoother frequency slope on sum modes
+    int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64
+    SummationMethod _SummationMethod = SummationMethod::Maximum;
+    bool _SmoothLowerFrequencies;                                   // Smoother bin interpolation of lower frequencies
+    bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
 
-        double Gamma = 1.;                                     // Gamma, 0.5 .. 10
+    double _Gamma;                                                  // Gamma, 0.5 .. 10
 
     // X axis
     XAxisMode _XAxisMode;
@@ -197,8 +197,8 @@ public:
     // Y axis
     YAxisMode _YAxisMode;
 
-    double MinDecibels = -90.;                             // Lower amplitude, -120.0 .. 0.0
-    double MaxDecibels =   0.;                             // Upper amplitude, -120.0 .. 0.0
+    double _MinDecibels;                                            // Lower amplitude, -120.0 .. 0.0
+    double _MaxDecibels;                                            // Upper amplitude, -120.0 .. 0.0
 
     bool _UseAbsolute = true;                               // Use absolute value
 
@@ -209,6 +209,8 @@ public:
     double _HoldTime = 30.0;                                // Peak hold time, 0.0 .. 120.0
 
     LogLevel _LogLevel;
+
+    bool _DrawBandBackground;                               // True if the background for each band should be drawn.
 /*
     type: 'fft',
     bandwidthOffset: 1,
