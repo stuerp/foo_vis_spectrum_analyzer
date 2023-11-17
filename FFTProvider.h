@@ -133,44 +133,39 @@ inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) n
 ///</returns>
 bool inline FFTProvider::GetFrequencyData(vector<complex<double>> & freqData) noexcept
 {
-    // Fill the FFT buffer from the wrap-around sample buffer with Time domain data.
-    for (size_t i = _SampleCount, j = 0; j < _TimeData.size(); ++j)
-    {
-        _TimeData[j].real(_SampleData[i]);
+    double Norm = 0.0;
 
-        if (++i == _SampleSize)
-            i = 0;
+    // Fill the FFT buffer from the wrap-around sample buffer with Time domain data and apply the windowing function.
+    {
+        size_t i = _SampleCount;
+        size_t j = 0;
+
+        for (complex<double> & Iter : _TimeData)
+        {
+            double Multiplier = FFT::HanningWindow(j, _FFTSize);
+
+            Iter.real(_SampleData[i] * Multiplier);
+
+            if (++i == _SampleSize)
+                i = 0;
+
+            Norm += Multiplier;
+            j++;
+        }
     }
 
-    // Apply the windowing function.
-    audio_sample Norm = 0.0;
-
-    for (size_t i = 0; i < (size_t) _FFTSize; ++i)
+    // Normalize the Time domain data.
     {
-        double Multiplier = FFT::HanningWindow(i, _FFTSize);
+        double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
-        _TimeData[i].real(_TimeData[i].real() * Multiplier);
-
-        Norm += (audio_sample) Multiplier;
+        for (complex<double> & Iter : _TimeData)
+            Iter.real(Iter.real() * Factor);
     }
-
-    // Normalize the time domain data.
-    double Factor = (double) _FFTSize / Norm / M_SQRT2;
-
-    for (size_t i = 0; i < _FFTSize; ++i)
-        _TimeData[i].real(_TimeData[i].real() * Factor);
 
     // Transform the data from the Time domain to the Frequency domain.
-    {
-        std::vector<std::complex<double>> td;
+    _FFT.Transform(_TimeData, freqData);
 
-        for (size_t i = 0; i < _FFTSize; ++i)
-            td.push_back(std::complex<double>(_TimeData[i]));
-
-        _FFT.Transform(td, freqData);
-    }
-
-    // Normalize the frequency domain data. Use the size of the FFT for dB scale.
+    // Normalize the frequency domain data.
     for (complex<double> & Iter : freqData)
         Iter /= _FFTSize;
 
@@ -206,7 +201,7 @@ audio_sample inline FFTProvider::AverageSamples(const audio_sample * samples, si
         {
             audio_sample Average = 0.;
 
-            for (size_t j = 0; j < channelCount; j++)
+            for (size_t j = 0; j < channelCount; ++j)
                 Average += samples[i + j];
 
             return Average / (audio_sample) channelCount;

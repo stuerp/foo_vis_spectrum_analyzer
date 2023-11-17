@@ -73,6 +73,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.1.0.5, 2023-xx-xx
+
+*
+
 v0.1.0.4, 2023-11-16
 
 * New: Implemented color schemes.
