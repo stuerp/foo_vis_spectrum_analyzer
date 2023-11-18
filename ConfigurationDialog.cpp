@@ -1,34 +1,21 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.16) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.18) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "framework.h"
 
 #include "ConfigurationDialog.h"
+#include "Math.h"
 
+/// <summary>
+/// Initializes the controls of the dialog.
+/// </summary>
 void ConfigurationDialog::Initialize()
 {
-    #pragma region Frequencies
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_FREQUENCIES);
-
-        const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-        {
-            w.AddString(Labels[i]);
-        }
-
-        w.SetCurSel((int) _Configuration->_FrequencyDistribution);
-    }
-    #pragma endregion
-
-    #pragma region FFT Size
+    #pragma region FFT
     {
         auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
 
@@ -38,11 +25,80 @@ void ConfigurationDialog::Initialize()
         {
             w.AddString(pfc::wideFromUTF8(pfc::format_int(i)));
 
-            if (i == (int) _Configuration->_FFTSize)
+            if (i == (int) _Configuration._FFTSize)
                 SelectedIndex = j;
         }
 
+//      w.AddString(L"Custom");
+//      w.AddString(L"Time");
+
         w.SetCurSel(SelectedIndex);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
+
+        const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration._ScalingFunction);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
+
+        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"Residual Mean Square (RMS)", L"RMS Sum", L"Average", L"Median" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration._SummationMethod);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
+
+        const WCHAR * Labels[] = { L"Average", L"Peak" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+        {
+            w.AddString(Labels[i]);
+        }
+
+        w.SetCurSel((int) _Configuration._SmoothingMethod);
+
+        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SmoothingFactor, 3, 1)));
+
+        SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _Configuration._SmoothLowerFrequencies);
+        SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _Configuration._SmoothGainTransition);
+
+        SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration._KernelSize)));
+        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration._Gamma, 4, 1)));
+    }
+    #pragma endregion
+
+    #pragma region Frequencies
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_FREQUENCIES);
+
+        const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration._FrequencyDistribution);
+
+        SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration._NumBands)));
+
+        SetDlgItemTextW(IDC_MIN_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration._MinFrequency)));
+        SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration._MaxFrequency)));
+
+        SetDlgItemTextW(IDC_MIN_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration._MinNote)));
+        SetDlgItemTextW(IDC_MAX_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration._MaxNote)));
+        SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration._BandsPerOctave)));
+        SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Pitch, 7, 1)));
+        SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration._Transpose)));
+        SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SkewFactor, 3, 1)));
+        SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Bandwidth, 4, 1)));
     }
     #pragma endregion
 
@@ -53,11 +109,9 @@ void ConfigurationDialog::Initialize()
         const WCHAR * Labels[] = { L"Bands", L"Decades", L"Octaves", L"Notes" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
 
-        w.SetCurSel((int) _Configuration->_XAxisMode);
+        w.SetCurSel((int) _Configuration._XAxisMode);
     }
     #pragma endregion
 
@@ -68,15 +122,17 @@ void ConfigurationDialog::Initialize()
         const WCHAR * Labels[] = { L"Decibel", L"Logarithmic" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
 
-        w.SetCurSel((int) _Configuration->_YAxisMode);
+        w.SetCurSel((int) _Configuration._YAxisMode);
+
+        SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MinDecibel, 3, 1)));
+        SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MaxDecibel, 3, 1)));
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration._UseAbsolute);
     }
     #pragma endregion
 
-    #pragma region Color Scheme
+    #pragma region Rendering
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
@@ -87,10 +143,8 @@ void ConfigurationDialog::Initialize()
             w.AddString(Labels[i]);
         }
 
-        w.SetCurSel((int) _Configuration->_ColorScheme);
+        w.SetCurSel((int) _Configuration._ColorScheme);
     }
-
-    #pragma region Peak Mode
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
@@ -101,7 +155,319 @@ void ConfigurationDialog::Initialize()
             w.AddString(Labels[i]);
         }
 
-        w.SetCurSel((int) _Configuration->_ColorScheme);
+        w.SetCurSel((int) _Configuration._ColorScheme);
+    }
+    {
+        SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration._HoldTime, 3, 1)));
+    }
+
+    {
+        SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration._Acceleration, 2, 1)));
     }
     #pragma endregion
+}
+
+/// <summary>
+/// Handles an update of the selected item of a combo box.
+/// </summary>
+void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
+{
+    CComboBox cb = (CComboBox) w;
+
+    int SelectedIndex = cb.GetCurSel();
+
+    switch (id)
+    {
+    #pragma region FFT
+        case IDC_FFT_SIZE:
+        {
+            if (SelectedIndex < (int) FFTSize::Custom)
+                _Configuration._FFTSize = (size_t) (64. * ::exp2((long) SelectedIndex));
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Frequencies
+        case IDC_FREQUENCIES:
+        {
+            _Configuration._FrequencyDistribution = (FrequencyDistribution) SelectedIndex;
+            break;
+        }
+
+        case IDC_SCALING_FUNCTION:
+        {
+            _Configuration._ScalingFunction = (ScalingFunction) SelectedIndex;
+            break;
+        }
+
+        case IDC_SUMMATION_METHOD:
+        {
+            _Configuration._SummationMethod = (SummationMethod) SelectedIndex;
+            break;
+        }
+
+        case IDC_SMOOTHING_METHOD:
+        {
+            _Configuration._SmoothingMethod = (SmoothingMethod) SelectedIndex;
+            break;
+        }
+    #pragma endregion
+
+    #pragma region X axis
+        case IDC_X_AXIS:
+        {
+            _Configuration._XAxisMode = (XAxisMode) SelectedIndex;
+            break;
+        }
+
+    #pragma region Y axis
+        case IDC_Y_AXIS:
+        {
+            _Configuration._YAxisMode = (YAxisMode) SelectedIndex;
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Rendering
+        case IDC_COLOR_SCHEME:
+        {
+            _Configuration._ColorScheme = (ColorScheme) SelectedIndex;
+            break;
+        }
+
+        case IDC_PEAK_MODE:
+        {
+            _Configuration._PeakMode = (PeakMode) SelectedIndex;
+            break;
+        }
+    #pragma endregion
+    }
+
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+}
+
+/// <summary>
+/// Handles the notification when a control loses focus.
+/// </summary>
+void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
+{
+    if (code != EN_CHANGE)
+        return;
+
+    WCHAR Text[MAX_PATH];
+
+    GetDlgItemTextW(id, Text, _countof(Text));
+
+    switch (id)
+    {
+    #pragma region FFT
+        case IDC_KERNEL_SIZE:
+        {
+            int Value = ::_wtoi(Text);
+
+            if (!InInterval(Value, 1, 64))
+                return;
+
+            _Configuration._KernelSize = Value;
+            break;
+        }
+
+        case IDC_GAMMA:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0.5, 10.0))
+                return;
+
+            _Configuration._Gamma = Value;
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Frequencies
+        case IDC_NUM_BANDS:
+        {
+            int Value = ::_wtoi(Text);
+
+            if (!InInterval(Value, 2, 512))
+                return;
+
+            _Configuration._NumBands = (size_t) Value;
+            break;
+        }
+
+        case IDC_MIN_FREQUENCY:
+        {
+            int Value = ::_wtoi(Text);
+
+            if ((!InInterval(Value, 0, 96000)) || (Value >= (int) _Configuration._MaxFrequency))
+                return;
+
+            _Configuration._MinFrequency = (uint32_t) Value;
+            break;
+        }
+
+        case IDC_MAX_FREQUENCY:
+        {
+            int Value = ::_wtoi(Text);
+
+            if ((!InInterval(Value, 0, 96000)) || (Value <= (int) _Configuration._MinFrequency))
+                return;
+
+            _Configuration._MaxFrequency = (uint32_t) Value;
+            break;
+        }
+
+        case IDC_MIN_NOTE:
+        {
+            int Value = ::_wtoi(Text);
+
+            if ((!InInterval(Value, 0, 143)) || (Value >= (int) _Configuration._MaxNote))
+                return;
+
+            _Configuration._MinNote = (uint32_t) Value;
+            break;
+        }
+
+        case IDC_MAX_NOTE:
+        {
+            int Value = ::_wtoi(Text);
+
+            if ((!InInterval(Value, 0, 143)) || (Value <= (int) _Configuration._MinNote))
+                return;
+
+            _Configuration._MaxNote = (uint32_t) Value;
+            break;
+        }
+
+        case IDC_BANDS_PER_OCTAVE:
+        {
+            int Value = ::_wtoi(Text);
+
+            if (!InInterval(Value, 1, 48))
+                return;
+
+            _Configuration._BandsPerOctave = (uint32_t) Value;
+            break;
+        }
+
+        case IDC_PITCH:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 96000.))
+                return;
+
+            _Configuration._Pitch = Value;
+            break;
+        }
+
+        case IDC_SKEW_FACTOR:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 1.))
+                return;
+
+            _Configuration._SkewFactor = Value;
+            break;
+        }
+
+        case IDC_BANDWIDTH:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 64.))
+                return;
+
+            _Configuration._Bandwidth = Value;
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Y axis
+        case IDC_MIN_DECIBEL:
+        {
+            double Value = ::_wtof(Text);
+
+            if ((!InInterval(Value, -120., 0.)) || (Value >= _Configuration._MaxDecibel))
+                return;
+
+            _Configuration._MinDecibel = Value;
+            break;
+        }
+
+        case IDC_MAX_DECIBEL:
+        {
+            double Value = ::_wtof(Text);
+
+            if ((!InInterval(Value, -120., 0.)) || (Value <= _Configuration._MinDecibel))
+                return;
+
+            _Configuration._MaxDecibel = Value;
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Peak indicator
+        case IDC_HOLD_TIME:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 120.))
+                return;
+
+            _Configuration._HoldTime = Value;
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 2.))
+                return;
+
+            _Configuration._Acceleration = Value;
+            break;
+        }
+    #pragma endregion
+
+        default:
+            return;
+    }
+
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+}
+
+/// <summary>
+/// Handles the notification when a button is clicked.
+/// </summary>
+void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
+{
+    switch (id)
+    {
+        case IDC_SMOOTH_LOWER_FREQUENCIES:
+        {
+            _Configuration._SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SMOOTH_GAIN_TRANSITION:
+        {
+            _Configuration._SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_USE_ABSOLUTE:
+        {
+            _Configuration._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        default:
+            return;
+    }
+
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }

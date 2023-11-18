@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.17) P. Stuer **/
+/** $VER: Configuration.h (2023.11.18) P. Stuer **/
 
 #pragma once
 
@@ -11,18 +11,21 @@
 /// Defines FFT data size constants that can be used for FFT calculations.
 /// Note that only the half of the specified size can be used for visualizations.
 /// </summary>
-enum FFTSize
+enum class FFTSize
 {
-    Fft64    =    64, // Number of frequency bins
-    Fft128   =   128,
-    Fft256   =   256,
-    Fft512   =   512,
-    Fft1024  =  1024,
-    Fft2048  =  2048,
-    Fft4096  =  4096,
-    Fft8192  =  8192,
-    Fft16384 = 16384,
-    Fft32768 = 32768
+    FFT64      =    64, // Number of frequency bins
+    FFT128     =   128,
+    FFT256     =   256,
+    FFT512     =   512,
+    FFT1024    =  1024,
+    FFT2048    =  2048,
+    FFT4096    =  4096,
+    FFT8192    =  8192,
+    FFT16384   = 16384,
+    FFT32768   = 32768,
+
+    Custom     = 0x8000001,
+    TimeWindow = 0x8000002,
 };
 
 enum class FrequencyDistribution
@@ -160,26 +163,9 @@ public:
     size_t _WindowDuration;
     size_t _RefreshRateLimit;   // in Hz
 
+    #pragma region FFT
+
     size_t _FFTSize;
-    FrequencyDistribution _FrequencyDistribution;
-
-    // Common
-    size_t NumBands =    320;  // Number of frequency bands, 2 .. 512
-    uint32_t MinFrequency =    20;  // Hz, 0 .. 96000
-    uint32_t MaxFrequency = 20000;  // Hz, 0 .. 96000
-
-    // Octaves
-    uint32_t BandsPerOctave =  12;    // Bands per octave, 1 .. 48
-    uint32_t MinNote =   0;    // Minimum note, 0 .. 143, 12 octaves
-    uint32_t MaxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    int Detune       =   0;    // Detune, -24 ..24
-    double _Pitch     = 440.0;  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
-
-    // Frequencies
-    ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
-
-    double _SkewFactor = 0.0;   // 0.0 .. 1.0
-    double _Bandwidth = 0.5;        // 0.0 .. 64.0
 
     SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
     double _SmoothingFactor = 0.0;                                  // 0.0 .. 1.0
@@ -189,32 +175,69 @@ public:
     bool _SmoothLowerFrequencies;                                   // Smoother bin interpolation of lower frequencies
     bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
 
-    double _Gamma;                                                  // Gamma, 0.5 .. 10
+    double _Gamma;                                                  // Gamma, 0.5 .. 10.0
 
-    // Rendering parameters
+    #pragma endregion
+
+    #pragma region Frequencies
+
+    FrequencyDistribution _FrequencyDistribution;
+
+    // Frequency range
+    size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
+    uint32_t _MinFrequency;                                         // Hz, 0 .. 96000
+    uint32_t _MaxFrequency;                                         // Hz, 0 .. 96000
+
+    // Note range
+    uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
+    uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
+    uint32_t _BandsPerOctave;                                        // Bands per octave, 1 .. 48
+    double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+    int _Transpose;                                                 // Transpose, -24 ..24 semitones
+
+    ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
+
+    double _SkewFactor = 0.0;                                       // 0.0 .. 1.0
+    double _Bandwidth = 0.5;                                        // 0.0 .. 64.0
+
+    #pragma endregion
+
+    #pragma region Rendering
+
     D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);
 
-    // X axis
+    #pragma region X axis
+
     XAxisMode _XAxisMode;
 
-    // Y axis
+    #pragma endregion
+
+    #pragma region Y axis
+
     YAxisMode _YAxisMode;
 
-    double _MinDecibels;                                            // Lower amplitude, -120.0 .. 0.0
-    double _MaxDecibels;                                            // Upper amplitude, -120.0 .. 0.0
+    double _MinDecibel;                                             // Lower amplitude, -120.0 .. 0.0
+    double _MaxDecibel;                                             // Upper amplitude, -120.0 .. 0.0
 
     bool _UseAbsolute = true;                                       // Use absolute value
 
-    ColorScheme _ColorScheme;
+    #pragma endregion
 
-    PeakMode _PeakMode;
-    double _FallRate = 0.5;                                         // Peak fall rate, 0.0 .. 2.0
-    double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
+    #pragma region Bands
+
+    ColorScheme _ColorScheme;
 
     bool _DrawBandBackground;                                       // True if the background for each band should be drawn.
 
-    LogLevel _LogLevel;
+    PeakMode _PeakMode;
+    double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
+    double _Acceleration = 0.5;                                     // Peak fall rate, 0.0 .. 2.0
 
+    #pragma endregion
+
+    #pragma endregion
+
+    LogLevel _LogLevel;
 /*
     type: 'fft',
     bandwidthOffset: 1,
@@ -225,12 +248,7 @@ public:
 
     timeAlignment: 1,
     downsample: 0,
-    useComplex: true,
-    holdTime: 30,
-    fallRate: 0.5,
     clampPeaks: true,
-    peakMode: 'gravity',
-    showPeaks: true,
 
     freeze: false,
     color: 'none',

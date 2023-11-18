@@ -63,9 +63,7 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 {
-    HRESULT hr = S_OK;
-
-    hr = CreateDeviceIndependentResources();
+    HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
         Log(LogLevel::Critical, "%s: Unable to create Direct2D device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
@@ -83,7 +81,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
         Log(LogLevel::Critical, "%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
     }
 
-    ApplyConfiguration();
+    SetConfiguration();
 
     return 0;
 }
@@ -240,6 +238,13 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
     ToggleFullScreen();
 }
 
+LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    SetConfiguration();
+
+    return 0;
+}
+
 #pragma endregion
 
 /// <summary>
@@ -275,7 +280,7 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &_Configuration) == NULL)
+        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) m_hWnd) == NULL)
             return;
 
         _ConfigurationDialog.ShowWindow(SW_SHOW);
@@ -285,9 +290,9 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 }
 
 /// <summary>
-/// Applies the current configuration.
+/// Sets the current configuration.
 /// </summary>
-void SpectrumAnalyzerUIElement::ApplyConfiguration() noexcept
+void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 {
     // Initialize the bands.
     switch (_Configuration._FrequencyDistribution)
@@ -310,11 +315,17 @@ void SpectrumAnalyzerUIElement::ApplyConfiguration() noexcept
     _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
     _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
+
+    // Forces the recreation of the brush.
+    _BandForegroundBrush.Release();
+
+    // Forces the recreation of the spectrum analyzer.
+    if (_SpectrumAnalyzer != nullptr)
+    {
+        delete _SpectrumAnalyzer;
+        _SpectrumAnalyzer = nullptr;
+    }
 }
-
-#pragma endregion
-
-#pragma region Rendering
 
 /// <summary>
 /// Resizes all canvases.
@@ -330,6 +341,9 @@ void SpectrumAnalyzerUIElement::Resize()
 
     _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
 }
+#pragma endregion
+
+#pragma region Rendering
 
 /// <summary>
 /// Renders a frame.
@@ -490,7 +504,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             // Draw the foreground.
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
-
             _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }
 
@@ -502,7 +515,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             ID2D1Brush * Brush = (_Configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
 
             if (_Configuration._PeakMode == PeakMode::FadeOut)
-                Brush->SetOpacity((FLOAT) (Iter.HoldTime / _Configuration._HoldTime));
+                Brush->SetOpacity((FLOAT) Iter.Peak);
 
             _RenderTarget->FillRectangle(Rect, Brush);
 
@@ -522,18 +535,18 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
 /// </summary>
 void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 {
-    const double MinFreq = ScaleF(_Configuration.MinFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
-    const double MaxFreq = ScaleF(_Configuration.MaxFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    const double MinFreq = ScaleF(_Configuration._MinFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    const double MaxFreq = ScaleF(_Configuration._MaxFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
-    _FrequencyBands.resize(_Configuration.NumBands);
+    _FrequencyBands.resize(_Configuration._NumBands);
 
     for (size_t i = 0; i < _FrequencyBands.size(); ++i)
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo  = DeScaleF(Map((double) i - _Configuration._Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Hi  = DeScaleF(Map((double) i + _Configuration._Bandwidth, 0., (double)(_Configuration.NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Lo  = DeScaleF(Map((double) i - _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Hi  = DeScaleF(Map((double) i + _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
     }
 }
 
@@ -547,10 +560,10 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
     const double Pitch = (_Configuration._Pitch > 0.) ? ::round((::log2(_Configuration._Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _Configuration._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
 
-    const double NotesGroup = 24. / _Configuration.BandsPerOctave;
+    const double NotesGroup = 24. / _Configuration._BandsPerOctave;
 
-    const double LoNote = ::round(_Configuration.MinNote * 2. / NotesGroup);
-    const double HiNote = ::round(_Configuration.MaxNote * 2. / NotesGroup);
+    const double LoNote = ::round(_Configuration._MinNote * 2. / NotesGroup);
+    const double HiNote = ::round(_Configuration._MaxNote * 2. / NotesGroup);
 
     _FrequencyBands.clear();
 
@@ -558,9 +571,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - _Configuration._Bandwidth) * NotesGroup + _Configuration.Detune)),
-            C0 * ::pow(Root24,  (i                             * NotesGroup + _Configuration.Detune)),
-            C0 * ::pow(Root24, ((i + _Configuration._Bandwidth) * NotesGroup + _Configuration.Detune)),
+            C0 * ::pow(Root24, ((i - _Configuration._Bandwidth) * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24,  (i                              * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24, ((i + _Configuration._Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
         _FrequencyBands.push_back(fb);
@@ -572,17 +585,17 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
 /// </summary>
 void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
 {
-    _FrequencyBands.resize(_Configuration.NumBands);
+    _FrequencyBands.resize(_Configuration._NumBands);
 
     for (size_t i = 0; i < _FrequencyBands.size(); ++i)
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - _Configuration._Bandwidth, _Configuration.NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i,                            _Configuration.NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + _Configuration._Bandwidth, _Configuration.NumBands - 1, _Configuration._SkewFactor);
-        Iter.LoBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i - 0.5,                      _Configuration.NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
-        Iter.HiBound = LogSpace(_Configuration.MinFrequency, _Configuration.MaxFrequency, (double) i + 0.5,                      _Configuration.NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.Lo      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - _Configuration._Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr     = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i,                             _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + _Configuration._Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,                       _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,                       _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 
@@ -1054,16 +1067,7 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _Configuration.Read();
 
-    ApplyConfiguration();
-
-    // Make sure the spectrum analyzer is recreated. The audio chunks may have another configuration than the ones from the previous track.
-    if (_SpectrumAnalyzer != nullptr)
-    {
-        delete _SpectrumAnalyzer;
-        _SpectrumAnalyzer = nullptr;
-    }
-
-    _BandForegroundBrush.Release();
+    SetConfiguration();
 
     _IsPlaying = true;
 

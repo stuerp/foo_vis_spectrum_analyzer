@@ -47,15 +47,13 @@ public:
 
         // Precalculate the labels and their position.
         {
-            const double Amplitudes[] = { 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60, -66, -72, -78, -84, -90 }; // FIXME: Should this be based on MindB and MaxdB?
-
-            for (size_t i = 0; i < _countof(Amplitudes); ++i)
+            for (double Amplitude = _Configuration._MinDecibel; Amplitude <= _Configuration._MaxDecibel; Amplitude += 6.0)
             {
-                y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitudes[i])), 0.0, 1.0, _ClientHeight, 0.0);
+                y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitude)), 0.0, 1.0, _ClientHeight, 0.0);
 
                 WCHAR Text[16] = { };
 
-                ::StringCchPrintfW(Text, _countof(Text), L"%ddB", (int) Amplitudes[i]);
+                ::StringCchPrintfW(Text, _countof(Text), L"%ddB", (int) Amplitude);
 
                 Label lb = { Text, y };
 

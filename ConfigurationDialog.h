@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.16) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.18) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,7 +9,6 @@
 
 // ATL
 #include <atlbase.h>
-//#include <atlcom.h>
 #include <atlstr.h>
 //#include <atltypes.h>
 //#include <atlwin.h>
@@ -20,19 +19,11 @@
 #include <atlctrls.h>
 #include <atlctrlw.h>
 #include <atlctrlx.h>
-//#include <atlddx.h>
 #include <atldlgs.h>
-//#include <atldwm.h>
 #include <atlfind.h>
 #include <atlframe.h>
-//#include <atlgdi.h>
 #include <atlmisc.h>
-//#include <atlprint.h>
 #include <atlres.h>
-//#include <atlribbon.h>
-//#include <atlscrl.h>
-//#include <atlsplit.h>
-//#include <atltheme.h>
 #include <atluser.h>
 #include <atlwinx.h>
 
@@ -45,12 +36,66 @@
 class ConfigurationDialog : public CDialogImpl<ConfigurationDialog>, public CDialogResize<ConfigurationDialog>
 {
 public:
-    ConfigurationDialog() : m_bMsgHandled(false), _Configuration() { }
+    ConfigurationDialog() : m_bMsgHandled(false), _hParent() { }
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
+
+    #pragma region FFT
+        COMMAND_HANDLER_EX(IDC_FFT_SIZE, CBN_SELCHANGE, OnSelectionChanged)
+
+        COMMAND_HANDLER_EX(IDC_SCALING_FUNCTION, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_SUMMATION_METHOD, CBN_SELCHANGE, OnSelectionChanged)
+
+        COMMAND_HANDLER_EX(IDC_SMOOTHING_METHOD, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_SMOOTHING_FACTOR, EN_CHANGE, OnEditChange)
+
+        COMMAND_HANDLER_EX(IDC_SMOOTH_LOWER_FREQUENCIES, BN_CLICKED, OnButtonClick)
+        COMMAND_HANDLER_EX(IDC_SMOOTH_GAIN_TRANSITION, BN_CLICKED, OnButtonClick)
+
+        COMMAND_HANDLER_EX(IDC_KERNEL_SIZE, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_GAMMA, EN_CHANGE, OnEditChange)
+    #pragma endregion
+
+    #pragma region Frequencies
+        COMMAND_HANDLER_EX(IDC_FREQUENCIES, CBN_SELCHANGE, OnSelectionChanged)
+
+        COMMAND_HANDLER_EX(IDC_NUM_BANDS, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_MIN_FREQUENCY, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_MAX_FREQUENCY, EN_CHANGE, OnEditChange)
+
+        COMMAND_HANDLER_EX(IDC_MIN_NOTE, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_MAX_NOTE, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_BANDS_PER_OCTAVE, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_PITCH, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_TRANSPOSE, EN_CHANGE, OnEditChange)
+
+        COMMAND_HANDLER_EX(IDC_SKEW_FACTOR, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_BANDWIDTH, EN_CHANGE, OnEditChange)
+    #pragma endregion
+
+    #pragma region X axis
+        COMMAND_HANDLER_EX(IDC_X_AXIS, CBN_SELCHANGE, OnSelectionChanged)
+    #pragma endregion
+
+    #pragma region Y axis
+        COMMAND_HANDLER_EX(IDC_Y_AXIS, CBN_SELCHANGE, OnSelectionChanged)
+
+        COMMAND_HANDLER_EX(IDC_MIN_DECIBEL, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_MAX_DECIBEL, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_USE_ABSOLUTE, BN_CLICKED, OnButtonClick)
+    #pragma endregion
+
+    #pragma region Rendering
+        COMMAND_HANDLER_EX(IDC_COLOR_SCHEME, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_DRAW_BAND_BACKGROUND, BN_CLICKED, OnButtonClick)
+
+        COMMAND_HANDLER_EX(IDC_PEAK_MODE, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_HOLD_TIME, EN_CHANGE, OnEditChange)
+        COMMAND_HANDLER_EX(IDC_ACCELERATION, EN_CHANGE, OnEditChange)
+    #pragma endregion
 
         COMMAND_HANDLER_EX(IDOK, BN_CLICKED, OnButton)
         COMMAND_HANDLER_EX(IDCANCEL, BN_CLICKED, OnButton)
@@ -71,16 +116,16 @@ private:
     /// <summary>
     /// Initializes the dialog.
     /// </summary>
-    BOOL OnInitDialog(CWindow, LPARAM lParam)
+    BOOL OnInitDialog(CWindow w, LPARAM lParam)
     {
-        _Configuration = (Configuration *) lParam;
-
-        Initialize();
+        _hParent = (HWND) lParam;
 
         DlgResize_Init();
 
-        if (_Configuration->_OptionsRect.right != -1)
-            MoveWindow(&_Configuration->_OptionsRect);
+        Initialize();
+
+        if (_Configuration._OptionsRect.right != -1)
+            MoveWindow(&_Configuration._OptionsRect);
 
         return TRUE;
     }
@@ -90,7 +135,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_Configuration->_OptionsRect);
+        GetWindowRect(&_Configuration._OptionsRect);
         SetMsgHandled(FALSE);
     }
 
@@ -104,14 +149,19 @@ private:
 
     void OnButton(UINT, int id, CWindow)
     {
-        GetWindowRect(&_Configuration->_OptionsRect);
+        GetWindowRect(&_Configuration._OptionsRect);
 
         DestroyWindow();
     }
+
+    void OnSelectionChanged(UINT, int, CWindow);
+    void OnEditChange(UINT, int, CWindow) noexcept;
+    void OnButtonClick(UINT, int, CWindow);
     #pragma endregion
 
     void Initialize();
 
 private:
-    Configuration * _Configuration;
+    HWND _hParent;
+//  Configuration * _Configuration;
 };

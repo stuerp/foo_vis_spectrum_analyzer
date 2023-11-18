@@ -183,7 +183,7 @@ public:
     }
 
     /// <summary>
-    /// Calculates the decay of the peak values.
+    /// Calculates the position of the peak indicators.
     /// </summary>
     void GetDecay(std::vector<FrequencyBand> & freqBands)
     {
@@ -225,15 +225,15 @@ public:
                         break;
 
                     case PeakMode::Classic:
-                        Iter.DecaySpeed = _Configuration._FallRate / 256.;
+                        Iter.DecaySpeed = _Configuration._Acceleration / 256.;
                         break;
 
                     case PeakMode::Gravity:
-                        Iter.DecaySpeed += _Configuration._FallRate / 256.;
+                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
                         break;
 
                     case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_Configuration._FallRate / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         break;
 
                     case PeakMode::FadeOut:

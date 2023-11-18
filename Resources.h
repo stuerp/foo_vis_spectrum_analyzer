@@ -50,15 +50,52 @@
 #define GUID_UI_ELEMENT_SPECTOGRAM      {0x3247c894,0xe585,0x4025,{0xa8,0x66,0xc7,0xd4,0x93,0x3f,0xb2,0xe3}} // {3247c894-e585-4025-a866-c7d4933fb2e3}
 #define STR_SPECTOGRAM_WINDOW_CLASS     "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
+#define WM_CONFIGURATION_CHANGED          WM_USER + 1
+
 /** Configuration **/
 
-#define IDD_CONFIGURATION   1000
+#define IDD_CONFIGURATION               1000
 
-#define IDC_FREQUENCIES     2000
-#define IDC_FFT_SIZE        IDC_FREQUENCIES + 1
+#define IDC_FREQUENCIES                 2000
+#define IDC_FFT_SIZE                    IDC_FREQUENCIES + 1
 
-#define IDC_X_AXIS          IDC_FFT_SIZE + 1
-#define IDC_Y_AXIS          IDC_X_AXIS + 1
+#define IDC_X_AXIS                      IDC_FFT_SIZE + 1
+#define IDC_Y_AXIS                      IDC_X_AXIS + 1
 
-#define IDC_COLOR_SCHEME    IDC_Y_AXIS + 1
-#define IDC_PEAK_MODE       IDC_COLOR_SCHEME + 1
+#define IDC_COLOR_SCHEME                IDC_Y_AXIS + 1
+#define IDC_PEAK_MODE                   IDC_COLOR_SCHEME + 1
+
+#define IDC_SCALING_FUNCTION            IDC_PEAK_MODE + 1
+#define IDC_SUMMATION_METHOD            IDC_SCALING_FUNCTION + 1
+#define IDC_SMOOTHING_METHOD            IDC_SUMMATION_METHOD + 1
+
+
+
+
+#define IDC_NUM_BANDS                   IDC_SMOOTHING_METHOD + 1
+#define IDC_MIN_FREQUENCY               IDC_NUM_BANDS + 1
+#define IDC_MAX_FREQUENCY               IDC_MIN_FREQUENCY + 1
+
+#define IDC_MIN_NOTE                    IDC_MAX_FREQUENCY + 1
+#define IDC_MAX_NOTE                    IDC_MIN_NOTE + 1
+#define IDC_BANDS_PER_OCTAVE            IDC_MAX_NOTE + 1
+#define IDC_PITCH                       IDC_BANDS_PER_OCTAVE + 1
+#define IDC_TRANSPOSE                   IDC_PITCH + 1
+
+#define IDC_SKEW_FACTOR                 IDC_TRANSPOSE + 1
+#define IDC_BANDWIDTH                   IDC_SKEW_FACTOR + 1
+#define IDC_SMOOTHING_FACTOR            IDC_BANDWIDTH + 1
+#define IDC_KERNEL_SIZE                 IDC_SMOOTHING_FACTOR + 1
+#define IDC_GAMMA                       IDC_KERNEL_SIZE + 1
+
+#define IDC_SMOOTH_LOWER_FREQUENCIES    IDC_GAMMA + 1
+#define IDC_SMOOTH_GAIN_TRANSITION      IDC_SMOOTH_LOWER_FREQUENCIES + 1
+
+#define IDC_MIN_DECIBEL                 IDC_SMOOTH_GAIN_TRANSITION + 1
+#define IDC_MAX_DECIBEL                 IDC_MIN_DECIBEL + 1
+#define IDC_USE_ABSOLUTE                IDC_MAX_DECIBEL + 1
+
+#define IDC_HOLD_TIME                   IDC_USE_ABSOLUTE + 1
+#define IDC_ACCELERATION                IDC_HOLD_TIME + 1
+
+#define IDC_DRAW_BAND_BACKGROUND        IDC_ACCELERATION + 1

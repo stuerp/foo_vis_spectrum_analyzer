@@ -54,6 +54,8 @@ public:
     void OnContextMenu(CWindow wnd, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
 
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
     BEGIN_MSG_MAP_EX(SpectrumAnalyzerUIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
@@ -61,7 +63,8 @@ public:
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
-        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
     #pragma endregion
 
@@ -86,7 +89,7 @@ private:
     void ToggleHardwareRendering() noexcept;
     void UpdateRefreshRateLimit() noexcept;
     void Configure() noexcept;
-    void ApplyConfiguration() noexcept;
+    void SetConfiguration() noexcept;
 
     void Resize();
 

@@ -58,16 +58,17 @@ void Configuration::Reset() noexcept
     _FFTSize = 4096;
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
-    // Common
-    NumBands =    320;  // Number of frequency bands, 2 .. 512
-    MinFrequency =    20;  // Hz, 0 .. 96000
-    MaxFrequency = 20000;  // Hz, 0 .. 96000
-    // Octaves
-    BandsPerOctave =  12;    // Bands per octave, 1 .. 48
-    MinNote =   0;    // Minimum note, 0 .. 143, 12 octaves
-    MaxNote = 143;    // Maximum note, 0 .. 143, 12 octaves
-    Detune =    0;    // Detune, -24 ..24
-    _Pitch    = 440.0;   // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+    // Frequency range
+    _NumBands = 320;
+    _MinFrequency = 20;
+    _MaxFrequency = 20000;
+
+    // Note range
+    _MinNote = 0;
+    _MaxNote = 143;
+    _BandsPerOctave = 12;
+    _Pitch = 440.0;
+    _Transpose = 0;
 
     // Frequencies
     _ScalingFunction = ScalingFunction::Logarithmic;
@@ -92,8 +93,8 @@ void Configuration::Reset() noexcept
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
 
-    _MinDecibels = -90.;
-    _MaxDecibels =   0.;
+    _MinDecibel = -90.;
+    _MaxDecibel =   0.;
 
     _UseAbsolute = true;                               // Use absolute value
     _Gamma = 1.;
@@ -247,7 +248,7 @@ void Configuration::Read()
                             {
                                 size_t v = (size_t) (int) Value[L"FFTSize"];
 
-                                if (v >= (size_t) FFTSize::Fft64 && v <= (size_t) FFTSize::Fft32768)
+                                if (v >= (size_t) FFTSize::FFT64 && v <= (size_t) FFTSize::TimeWindow)
                                     _Configuration._FFTSize = v;
                             }
 
@@ -288,7 +289,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"NumberOfBands"];
 
                                 if (2 <= v && v <= 512)
-                                    _Configuration.NumBands = v;
+                                    _Configuration._NumBands = v;
                             }
 
                             if (Value.Contains(L"MinFrequency"))
@@ -296,7 +297,7 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MinFrequency"];
 
                                 if (v <= 96000)
-                                    _Configuration.MinFrequency = v;
+                                    _Configuration._MinFrequency = v;
                             }
 
                             if (Value.Contains(L"MaxFrequency"))
@@ -304,31 +305,31 @@ void Configuration::Read()
                                 uint32_t v = (uint32_t) (int) Value[L"MaxFrequency"];
 
                                 if (v <= 96000)
-                                    _Configuration.MaxFrequency = v;
+                                    _Configuration._MaxFrequency = v;
                             }
 
-                            if (Value.Contains(L"BandsPerOctave"))
+                            if (Value.Contains(L"_BandsPerOctave"))
                             {
-                                uint32_t v = (uint32_t) (int) Value[L"BandsPerOctave"];
+                                uint32_t v = (uint32_t) (int) Value[L"_BandsPerOctave"];
 
                                 if (1 <= v && v <= 48)
-                                    _Configuration.BandsPerOctave = v;
+                                    _Configuration._BandsPerOctave = v;
                             }
 
-                            if (Value.Contains(L"MinNote"))
+                            if (Value.Contains(L"_MinNote"))
                             {
-                                uint32_t v = (uint32_t) (int) Value[L"MinNote"];
+                                uint32_t v = (uint32_t) (int) Value[L"_MinNote"];
 
                                 if (v <= 143)
-                                    _Configuration.MinNote = v;
+                                    _Configuration._MinNote = v;
                             }
 
-                            if (Value.Contains(L"MaxNote"))
+                            if (Value.Contains(L"_MaxNote"))
                             {
-                                uint32_t v = (uint32_t) (int) Value[L"MaxNote"];
+                                uint32_t v = (uint32_t) (int) Value[L"_MaxNote"];
 
                                 if (v <= 143)
-                                    _Configuration.MaxNote = v;
+                                    _Configuration._MaxNote = v;
                             }
 
                             if (Value.Contains(L"Detune"))
@@ -336,7 +337,7 @@ void Configuration::Read()
                                 int v = (int) Value[L"Detune"];
 
                                 if (-24 <= v && v <= 24)
-                                    _Configuration.Detune= v;
+                                    _Configuration._Transpose= v;
                             }
 
                             if (Value.Contains(L"Pitch"))
