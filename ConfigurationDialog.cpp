@@ -19,6 +19,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
 
+        w.Clear();
+
         int SelectedIndex = -1;
 
         for (int i = 64, j = 0; i <= 32768; i *= 2, ++j)
@@ -37,6 +39,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
 
+        w.Clear();
+
         const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
@@ -47,6 +51,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
 
+        w.Clear();
+
         const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"Residual Mean Square (RMS)", L"RMS Sum", L"Average", L"Median" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
@@ -56,6 +62,8 @@ void ConfigurationDialog::Initialize()
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
+
+        w.Clear();
 
         const WCHAR * Labels[] = { L"Average", L"Peak" };
 
@@ -79,6 +87,8 @@ void ConfigurationDialog::Initialize()
     #pragma region Frequencies
     {
         auto w = (CComboBox) GetDlgItem(IDC_FREQUENCIES);
+
+        w.Clear();
 
         const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
 
@@ -106,6 +116,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_X_AXIS);
 
+        w.Clear();
+
         const WCHAR * Labels[] = { L"Bands", L"Decades", L"Octaves", L"Notes" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
@@ -118,6 +130,8 @@ void ConfigurationDialog::Initialize()
     #pragma region Y Axis
     {
         auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
+
+        w.Clear();
 
         const WCHAR * Labels[] = { L"Decibel", L"Logarithmic" };
 
@@ -136,6 +150,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
+        w.Clear();
+
         const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
@@ -148,6 +164,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
+        w.Clear();
+
         const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
@@ -155,14 +173,13 @@ void ConfigurationDialog::Initialize()
             w.AddString(Labels[i]);
         }
 
-        w.SetCurSel((int) _Configuration._ColorScheme);
+        w.SetCurSel((int) _Configuration._PeakMode);
     }
     {
-        SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration._HoldTime, 3, 1)));
-    }
+        SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration._DrawBandBackground);
 
-    {
-        SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration._Acceleration, 2, 1)));
+        SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration._HoldTime, 0, 1)));
+        SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration._Acceleration, 0, 1)));
     }
     #pragma endregion
 }
@@ -462,6 +479,20 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_USE_ABSOLUTE:
         {
             _Configuration._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_DRAW_BAND_BACKGROUND:
+        {
+            _Configuration._DrawBandBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_RESET:
+        {
+            _Configuration.Reset();
+
+            Initialize();
             break;
         }
 

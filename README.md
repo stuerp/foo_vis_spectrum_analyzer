@@ -73,10 +73,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.1.0.5, 2023-xx-xx
+v0.2.0.0, 2023-xx-xx
 
 * New: Implemented first version of the configuration dialog.
-  * It's not much to look at, has a lot of rough edges and not user-friendly but it works. Use it to play with but except things to change.
+  * It's not pretty to look at, has a lot of rough edges and is not user-friendly but it works. Use it to play with but except things to change (and hopefully improve).
   * The JSON file will be ignored from now on, possible later to be re-used for loading and saving presets.
 * New: Implemented logarithmic Y axis.
 * New: Experimental "Fade-Out" mode for the peak indicators.

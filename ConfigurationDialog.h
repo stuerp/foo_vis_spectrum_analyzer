@@ -10,8 +10,6 @@
 // ATL
 #include <atlbase.h>
 #include <atlstr.h>
-//#include <atltypes.h>
-//#include <atlwin.h>
 
 // WTL
 #include <atlapp.h>
@@ -97,6 +95,8 @@ public:
         COMMAND_HANDLER_EX(IDC_ACCELERATION, EN_CHANGE, OnEditChange)
     #pragma endregion
 
+        COMMAND_HANDLER_EX(IDC_RESET, BN_CLICKED, OnButtonClick)
+
         COMMAND_HANDLER_EX(IDOK, BN_CLICKED, OnButton)
         COMMAND_HANDLER_EX(IDCANCEL, BN_CLICKED, OnButton)
 
@@ -119,13 +119,14 @@ private:
     BOOL OnInitDialog(CWindow w, LPARAM lParam)
     {
         _hParent = (HWND) lParam;
+        _OldConfiguration = _Configuration;
 
         DlgResize_Init();
 
         Initialize();
 
-        if (_Configuration._OptionsRect.right != -1)
-            MoveWindow(&_Configuration._OptionsRect);
+        if (_Configuration._DialogBounds.right != -1)
+            MoveWindow(&_Configuration._DialogBounds);
 
         return TRUE;
     }
@@ -135,7 +136,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_Configuration._OptionsRect);
+        GetWindowRect(&_Configuration._DialogBounds);
         SetMsgHandled(FALSE);
     }
 
@@ -147,9 +148,19 @@ private:
         return (HBRUSH)::GetStockObject(DKGRAY_BRUSH);
     }
 
+    /// <summary>
+    /// Handles the OK or Cancel button.
+    /// </summary>
     void OnButton(UINT, int id, CWindow)
     {
-        GetWindowRect(&_Configuration._OptionsRect);
+        if (id == IDCANCEL)
+        {
+            _Configuration = _OldConfiguration;
+
+            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+        }
+
+        GetWindowRect(&_Configuration._DialogBounds);
 
         DestroyWindow();
     }
@@ -163,5 +174,5 @@ private:
 
 private:
     HWND _hParent;
-//  Configuration * _Configuration;
+    Configuration _OldConfiguration;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.17) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.18) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -97,12 +97,20 @@
 #define Y_A10    Y_A09
 #pragma endregion
 
+#pragma region Draw band background
+// Checkbox
+#define W_A57    100
+#define H_A57    H_CH
+#define X_A57    X_A10
+#define Y_A57    Y_A10 + H_A10 + IY
+#pragma endregion
+
 #pragma region("Peak Mode")
 // Label
 #define W_A11    42
 #define H_A11    H_LA
 #define X_A11    X_A09
-#define Y_A11    Y_A10 + H_A10 + IY
+#define Y_A11    Y_A57 + H_A57 + IY
 
 // Combobox
 #define W_A12    60
@@ -318,7 +326,7 @@
 #define Y_A38    Y_A37
 #pragma endregion
 
-#pragma region Kernel Size
+#pragma region Lanczos Kernel
 // Label
 #define W_A39    60
 #define H_A39    H_LA
@@ -438,13 +446,19 @@
 
 
 // Cancel button (right-most button)
-#define X_A98   W_A00 - W_BT - DX
-#define Y_A98   H_A00 - H_BT - DY
-#define W_A98   W_BT
-#define H_A98   H_BT
-
-// OK button
-#define X_A99   X_A98 - W_BT - IX
-#define Y_A99   Y_A98
 #define W_A99   W_BT
 #define H_A99   H_BT
+#define X_A99   W_A00 - W_A99 - DX
+#define Y_A99   H_A00 - H_A99 - DY
+
+// OK button
+#define W_A98   W_BT
+#define H_A98   H_BT
+#define X_A98   X_A99 - W_A99 - IX
+#define Y_A98   Y_A99
+
+// Reset button
+#define W_A97   W_BT
+#define H_A97   H_BT
+#define X_A97   X_A98 - W_A98 - IX
+#define Y_A97   Y_A98

@@ -131,10 +131,10 @@ class Configuration
 public:
     Configuration();
 
-    Configuration(const Configuration &) = delete;
-    Configuration & operator=(const Configuration &) = delete;
-    Configuration(Configuration &&) = delete;
-    Configuration & operator=(Configuration &&) = delete;
+//  Configuration(const Configuration &) = delete;
+    Configuration & operator=(const Configuration & other);
+//  Configuration(Configuration &&) = delete;
+//  Configuration & operator=(Configuration &&) = delete;
 
     virtual ~Configuration() { }
 
@@ -154,7 +154,7 @@ public:
     }
 
 public:
-    RECT _OptionsRect;
+    RECT _DialogBounds;
 
     bool _UseHardwareRendering;
     bool _UseZeroTrigger;

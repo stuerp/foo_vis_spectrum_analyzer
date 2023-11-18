@@ -24,8 +24,6 @@ static bool _IsPlaying = false;
 SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10)
 {
     set_configuration(data);
-
-    _Configuration.Read();
 }
 
 #pragma region User Interface
@@ -325,6 +323,8 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
         delete _SpectrumAnalyzer;
         _SpectrumAnalyzer = nullptr;
     }
+
+    InvalidateRect(NULL);
 }
 
 /// <summary>
@@ -341,6 +341,7 @@ void SpectrumAnalyzerUIElement::Resize()
 
     _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
 }
+
 #pragma endregion
 
 #pragma region Rendering
@@ -1065,8 +1066,6 @@ void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const
 /// </summary>
 void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    _Configuration.Read();
-
     SetConfiguration();
 
     _IsPlaying = true;
