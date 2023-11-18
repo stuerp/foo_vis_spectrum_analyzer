@@ -19,7 +19,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
 
-        w.Clear();
+        w.ResetContent();
 
         int SelectedIndex = -1;
 
@@ -39,7 +39,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
 
@@ -51,7 +51,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"Residual Mean Square (RMS)", L"RMS Sum", L"Average", L"Median" };
 
@@ -63,7 +63,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Average", L"Peak" };
 
@@ -74,21 +74,21 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration._SmoothingMethod);
 
-        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SmoothingFactor, 3, 1)));
+        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SmoothingFactor, 0, 1)));
 
         SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _Configuration._SmoothLowerFrequencies);
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _Configuration._SmoothGainTransition);
 
         SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration._KernelSize)));
-        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration._Gamma, 4, 1)));
+        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration._Gamma, 0, 1)));
     }
     #pragma endregion
 
     #pragma region Frequencies
     {
-        auto w = (CComboBox) GetDlgItem(IDC_FREQUENCIES);
+        auto w = (CComboBox) GetDlgItem(IDC_DISTRIBUTION);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
 
@@ -105,10 +105,10 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_MIN_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration._MinNote)));
         SetDlgItemTextW(IDC_MAX_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration._MaxNote)));
         SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration._BandsPerOctave)));
-        SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Pitch, 7, 1)));
+        SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Pitch, 0, 1)));
         SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration._Transpose)));
-        SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SkewFactor, 3, 1)));
-        SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Bandwidth, 4, 1)));
+        SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SkewFactor, 0, 1)));
+        SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Bandwidth, 0, 1)));
     }
     #pragma endregion
 
@@ -116,7 +116,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_X_AXIS);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Bands", L"Decades", L"Octaves", L"Notes" };
 
@@ -131,7 +131,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Decibel", L"Logarithmic" };
 
@@ -140,8 +140,8 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration._YAxisMode);
 
-        SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MinDecibel, 3, 1)));
-        SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MaxDecibel, 3, 1)));
+        SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MinDecibel, 0, 1)));
+        SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MaxDecibel, 0, 1)));
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration._UseAbsolute);
     }
     #pragma endregion
@@ -150,7 +150,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode" };
 
@@ -164,7 +164,7 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
-        w.Clear();
+        w.ResetContent();
 
         const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out" };
 
@@ -182,6 +182,8 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration._Acceleration, 0, 1)));
     }
     #pragma endregion
+
+    UpdateControls();
 }
 
 /// <summary>
@@ -205,9 +207,11 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
 
     #pragma region Frequencies
-        case IDC_FREQUENCIES:
+        case IDC_DISTRIBUTION:
         {
             _Configuration._FrequencyDistribution = (FrequencyDistribution) SelectedIndex;
+
+            UpdateControls();
             break;
         }
 
@@ -241,6 +245,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_Y_AXIS:
         {
             _Configuration._YAxisMode = (YAxisMode) SelectedIndex;
+
+            UpdateControls();
             break;
         }
     #pragma endregion
@@ -255,6 +261,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_PEAK_MODE:
         {
             _Configuration._PeakMode = (PeakMode) SelectedIndex;
+
+            UpdateControls();
             break;
         }
     #pragma endregion
@@ -501,4 +509,44 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
     }
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+}
+
+/// <summary>
+/// Enables or disables controls based on the selection of the user.
+/// </summary>
+void ConfigurationDialog::UpdateControls() const
+{
+    // Frequencies
+    bool State = (_Configuration._FrequencyDistribution != FrequencyDistribution::Octaves);
+
+    GetDlgItem(IDC_NUM_BANDS).EnableWindow(State);
+    GetDlgItem(IDC_MIN_FREQUENCY).EnableWindow(State);
+    GetDlgItem(IDC_MAX_FREQUENCY).EnableWindow(State);
+    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(State);
+    GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(State);
+    GetDlgItem(IDC_BANDWIDTH).EnableWindow(State);
+
+    GetDlgItem(IDC_MIN_NOTE).EnableWindow(!State);
+    GetDlgItem(IDC_MAX_NOTE).EnableWindow(!State);
+    GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(!State);
+    GetDlgItem(IDC_PITCH).EnableWindow(!State);
+    GetDlgItem(IDC_TRANSPOSE).EnableWindow(!State);
+
+    State = (_Configuration._FrequencyDistribution == FrequencyDistribution::AveePlayer);
+
+    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!State);
+
+    // Y axis
+    State = (_Configuration._YAxisMode == YAxisMode::Decibels);
+
+    GetDlgItem(IDC_MIN_DECIBEL).EnableWindow(State);
+    GetDlgItem(IDC_MAX_DECIBEL).EnableWindow(State);
+    GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(State);
+    GetDlgItem(IDC_GAMMA).EnableWindow(State);
+
+    // Peak indicators
+    State = (_Configuration._PeakMode == PeakMode::None);
+
+    GetDlgItem(IDC_HOLD_TIME).EnableWindow(!State);
+    GetDlgItem(IDC_ACCELERATION).EnableWindow(!State);
 }

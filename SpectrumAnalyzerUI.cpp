@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.17) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.18) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -236,6 +236,9 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
     ToggleFullScreen();
 }
 
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     SetConfiguration();
@@ -440,7 +443,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
         _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
 
-        // Get the spectrum from the FFT coefficiens.
+        // Get the spectrum from the FFT coefficients.
         _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
 
         switch (_Configuration._SmoothingMethod)
@@ -546,7 +549,7 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
         FrequencyBand& Iter = _FrequencyBands[i];
 
         Iter.Lo  = DeScaleF(Map((double) i - _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Ctr = DeScaleF(Map((double) i,                            0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Ctr = DeScaleF(Map((double) i,                             0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
         Iter.Hi  = DeScaleF(Map((double) i + _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
     }
 }

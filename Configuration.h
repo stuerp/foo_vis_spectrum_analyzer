@@ -164,77 +164,65 @@ public:
     size_t _RefreshRateLimit;   // in Hz
 
     #pragma region FFT
+        size_t _FFTSize;
 
-    size_t _FFTSize;
+        SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
+        double _SmoothingFactor = 0.0;                                  // 0.0 .. 1.0
 
-    SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
-    double _SmoothingFactor = 0.0;                                  // 0.0 .. 1.0
-
-    int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64
-    SummationMethod _SummationMethod = SummationMethod::Maximum;
-    bool _SmoothLowerFrequencies;                                   // Smoother bin interpolation of lower frequencies
-    bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
-
-    double _Gamma;                                                  // Gamma, 0.5 .. 10.0
-
+        int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64
+        SummationMethod _SummationMethod = SummationMethod::Maximum;
+        bool _SmoothLowerFrequencies;                                   // Smoother bin interpolation of lower frequencies
+        bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
     #pragma endregion
 
     #pragma region Frequencies
+        FrequencyDistribution _FrequencyDistribution;
 
-    FrequencyDistribution _FrequencyDistribution;
+        // Frequency range
+        size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
+        uint32_t _MinFrequency;                                         // Hz, 0 .. 96000
+        uint32_t _MaxFrequency;                                         // Hz, 0 .. 96000
 
-    // Frequency range
-    size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
-    uint32_t _MinFrequency;                                         // Hz, 0 .. 96000
-    uint32_t _MaxFrequency;                                         // Hz, 0 .. 96000
+        // Note range
+        uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
+        uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
+        uint32_t _BandsPerOctave;                                        // Bands per octave, 1 .. 48
+        double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+        int _Transpose;                                                 // Transpose, -24 ..24 semitones
 
-    // Note range
-    uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
-    uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
-    uint32_t _BandsPerOctave;                                        // Bands per octave, 1 .. 48
-    double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
-    int _Transpose;                                                 // Transpose, -24 ..24 semitones
+        ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
 
-    ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
-
-    double _SkewFactor = 0.0;                                       // 0.0 .. 1.0
-    double _Bandwidth = 0.5;                                        // 0.0 .. 64.0
-
+        double _SkewFactor = 0.0;                                       // 0.0 .. 1.0
+        double _Bandwidth = 0.5;                                        // 0.0 .. 64.0
     #pragma endregion
 
     #pragma region Rendering
+        D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);
 
-    D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);
+        #pragma region X axis
+            XAxisMode _XAxisMode;
+        #pragma endregion
 
-    #pragma region X axis
+        #pragma region Y axis
+            YAxisMode _YAxisMode;
 
-    XAxisMode _XAxisMode;
+            double _MinDecibel;                                             // Lower amplitude, -120.0 .. 0.0
+            double _MaxDecibel;                                             // Upper amplitude, -120.0 .. 0.0
 
-    #pragma endregion
+            bool _UseAbsolute = true;                                       // Use absolute value
 
-    #pragma region Y axis
+            double _Gamma;                                                  // Gamma, 0.5 .. 10.0
+        #pragma endregion
 
-    YAxisMode _YAxisMode;
+        #pragma region Bands
+            ColorScheme _ColorScheme;
 
-    double _MinDecibel;                                             // Lower amplitude, -120.0 .. 0.0
-    double _MaxDecibel;                                             // Upper amplitude, -120.0 .. 0.0
+            bool _DrawBandBackground;                                       // True if the background for each band should be drawn.
 
-    bool _UseAbsolute = true;                                       // Use absolute value
-
-    #pragma endregion
-
-    #pragma region Bands
-
-    ColorScheme _ColorScheme;
-
-    bool _DrawBandBackground;                                       // True if the background for each band should be drawn.
-
-    PeakMode _PeakMode;
-    double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
-    double _Acceleration = 0.5;                                     // Peak fall rate, 0.0 .. 2.0
-
-    #pragma endregion
-
+            PeakMode _PeakMode;
+            double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
+            double _Acceleration = 0.5;                                     // Peak fall rate, 0.0 .. 2.0
+        #pragma endregion
     #pragma endregion
 
     LogLevel _LogLevel;
@@ -264,7 +252,7 @@ public:
 */
 
 private:
-    const size_t _Version = 2;
+    const size_t _Version = 1;
 };
 
 extern Configuration _Configuration;

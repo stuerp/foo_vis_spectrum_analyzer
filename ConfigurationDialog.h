@@ -58,7 +58,7 @@ public:
     #pragma endregion
 
     #pragma region Frequencies
-        COMMAND_HANDLER_EX(IDC_FREQUENCIES, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_DISTRIBUTION, CBN_SELCHANGE, OnSelectionChanged)
 
         COMMAND_HANDLER_EX(IDC_NUM_BANDS, EN_CHANGE, OnEditChange)
         COMMAND_HANDLER_EX(IDC_MIN_FREQUENCY, EN_CHANGE, OnEditChange)
@@ -104,7 +104,7 @@ public:
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
-//      DLGRESIZE_CONTROL(IDC_FREQUENCIES, DLSZ_SIZE_X)
+        DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
@@ -171,6 +171,7 @@ private:
     #pragma endregion
 
     void Initialize();
+    void UpdateControls() const;
 
 private:
     HWND _hParent;

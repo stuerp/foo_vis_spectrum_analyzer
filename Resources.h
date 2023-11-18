@@ -56,8 +56,8 @@
 
 #define IDD_CONFIGURATION               1000
 
-#define IDC_FREQUENCIES                 2000
-#define IDC_FFT_SIZE                    IDC_FREQUENCIES + 1
+#define IDC_DISTRIBUTION                 2000
+#define IDC_FFT_SIZE                    IDC_DISTRIBUTION + 1
 
 #define IDC_X_AXIS                      IDC_FFT_SIZE + 1
 #define IDC_Y_AXIS                      IDC_X_AXIS + 1

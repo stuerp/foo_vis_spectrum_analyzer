@@ -380,8 +380,12 @@ void Configuration::Write(ui_element_config_builder & builder) const
     #pragma endregion
 }
 
+/// <summary>
+/// Reads the configuration from a JSON file.
+/// </summary>
 void Configuration::Read()
 {
+/*
     HMODULE hModule = ::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
 
     WCHAR PathName[MAX_PATH];
@@ -614,6 +618,7 @@ void Configuration::Read()
             ::fclose(fp);
         }
     }
+*/
 }
 
 Configuration _Configuration;
