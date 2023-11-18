@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.17) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.18) P. Stuer **/
 
 #include "framework.h"
 
@@ -139,7 +139,7 @@ public:
     }
 
     /// <summary>
-    /// Applies a Lanzcos kernel.
+    /// Applies a Lanzcos kernel to the specified value.
     /// </summary>
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const
     {
@@ -203,6 +203,7 @@ public:
 
                 Iter.Peak = Amplitude;
                 Iter.DecaySpeed = 0.;
+                Iter.Opacity = 1.;
             }
             else
             if (Iter.HoldTime >= 0.)
@@ -229,6 +230,7 @@ public:
                         break;
 
                     case PeakMode::Gravity:
+                    case PeakMode::FadeOut:
                         Iter.DecaySpeed += _Configuration._Acceleration / 256.;
                         break;
 
@@ -236,11 +238,18 @@ public:
                         Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         break;
 
-                    case PeakMode::FadeOut:
                         break;
                 }
 
-                Iter.Peak -= Iter.DecaySpeed;
+                if (_Configuration._PeakMode != PeakMode::FadeOut)
+                    Iter.Peak -= Iter.DecaySpeed;
+                else
+                {
+                    Iter.Opacity -= Iter.DecaySpeed;
+
+                    if (Iter.Opacity <= 0.)
+                        Iter.Peak = 0.;
+                }
             }
 
             Iter.Peak = Clamp(Iter.Peak, 0., 1.);

@@ -145,7 +145,7 @@ void Configuration::Reset() noexcept
     _SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
     _Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
 
-    _SmoothingMethod = SmoothingMethod::Average;
+    _SmoothingMethod = SmoothingMethod::Peak;
     _SmoothingFactor = 0.5;                         // Smoothing constant, 0.0 .. 1.0
 
     _KernelSize = 32;                               // Lanczos interpolation kernel size, 1 .. 64
@@ -157,7 +157,7 @@ void Configuration::Reset() noexcept
     _BackgroundColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
 
     // X axis
-    _XAxisMode = XAxisMode::Decades;
+    _XAxisMode = XAxisMode::Notes;
 
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
@@ -169,9 +169,9 @@ void Configuration::Reset() noexcept
     _Gamma = 1.;
 
     // Band
-    _ColorScheme = ColorScheme::Solid;
+    _ColorScheme = ColorScheme::Prism1;
     _PeakMode = PeakMode::Classic;
-    _DrawBandBackground = false;
+    _DrawBandBackground = true;
 
     // Logging
     _LogLevel = LogLevel::None;

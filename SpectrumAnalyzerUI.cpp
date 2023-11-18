@@ -503,14 +503,15 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
         if (_Configuration._DrawBandBackground)
             _RenderTarget->FillRectangle(Rect, _BandBackgroundBrush);
 
+        // Draw the foreground.
         if (Iter.CurValue > 0.0)
         {
-            // Draw the foreground.
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
             _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }
 
+        // Draw the peak indicator.
         if ((_Configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
         {
             Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
@@ -519,7 +520,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderBands()
             ID2D1Brush * Brush = (_Configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
 
             if (_Configuration._PeakMode == PeakMode::FadeOut)
-                Brush->SetOpacity((FLOAT) Iter.Peak);
+                Brush->SetOpacity((FLOAT) Iter.Opacity);
 
             _RenderTarget->FillRectangle(Rect, Brush);
 
@@ -795,7 +796,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 
         hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_TextBrush);
 */
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(30.f / 255.f, 144.f / 255.f, 255.f / 255.f, 0.3f), &_BandBackgroundBrush); // #1E90FF
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(.2f, .2f, .2f, .7f), &_BandBackgroundBrush); // #1E90FF, 0.3f
     }
 
     if (SUCCEEDED(hr) && (_BandForegroundBrush == nullptr))

@@ -5,6 +5,8 @@
 
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur for foobar2000 64-bit.
 
+![Screenshot](/Resources/Screenshot.png?raw=true "Screenshot")
+
 ## Features
 
 * Uses Direct2D rendering.
@@ -73,11 +75,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.2.0.0, 2023-xx-xx
+v0.2.0.0, 2023-11-18
 
-* New: Implemented first version of the configuration dialog.
+* New: Implemented a configuration dialog.
   * It's not pretty to look at, has a lot of rough edges and is not user-friendly but it works. Use it to play with but except things to change (and hopefully improve).
-  * The JSON file will be ignored from now on, possible later to be re-used for loading and saving presets.
+  * The JSON file will be ignored from now on, possibly later to be re-used for loading and saving presets.
 * New: Implemented logarithmic Y axis.
 * New: Experimental "Fade-Out" mode for the peak indicators.
 
