@@ -41,9 +41,13 @@ public:
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
-    #pragma region Transform
+    #pragma region FFT
         COMMAND_HANDLER_EX(IDC_TRANSFORM, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_TRANSFORM_PARAMETER, EN_CHANGE, OnEditChange)
+    #pragma endregion
+
+    #pragma region FFT
+        COMMAND_HANDLER_EX(IDC_FFT_SIZE, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_FFT_SIZE_PARAMETER, EN_CHANGE, OnEditChange)
 
         COMMAND_HANDLER_EX(IDC_SCALING_FUNCTION, CBN_SELCHANGE, OnSelectionChanged)
         COMMAND_HANDLER_EX(IDC_SUMMATION_METHOD, CBN_SELCHANGE, OnSelectionChanged)

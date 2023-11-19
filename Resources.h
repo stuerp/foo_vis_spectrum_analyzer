@@ -56,14 +56,17 @@
 
 #define IDD_CONFIGURATION               1000
 
-#define IDC_DISTRIBUTION                2000
+#define IDC_TRANSFORM                   2000
+#define IDC_TRANSFORM_TYPE              IDC_TRANSFORM + 1
 
-#define IDC_TRANSFORM                   IDC_DISTRIBUTION + 1
-#define IDC_TRANSFORM_PARAMETER_NAME    IDC_TRANSFORM + 1
-#define IDC_TRANSFORM_PARAMETER         IDC_TRANSFORM_PARAMETER_NAME + 1
-#define IDC_TRANSFORM_PARAMETER_UNIT    IDC_TRANSFORM_PARAMETER + 1
+#define IDC_DISTRIBUTION                IDC_TRANSFORM_TYPE + 1
 
-#define IDC_X_AXIS                      IDC_TRANSFORM_PARAMETER_UNIT + 1
+#define IDC_FFT_SIZE                    IDC_DISTRIBUTION + 1
+#define IDC_FFT_SIZE_PARAMETER_NAME     IDC_FFT_SIZE + 1
+#define IDC_FFT_SIZE_PARAMETER          IDC_FFT_SIZE_PARAMETER_NAME + 1
+#define IDC_FFT_SIZE_PARAMETER_UNIT     IDC_FFT_SIZE_PARAMETER + 1
+
+#define IDC_X_AXIS                      IDC_FFT_SIZE_PARAMETER_UNIT + 1
 #define IDC_Y_AXIS                      IDC_X_AXIS + 1
 
 #define IDC_COLOR_SCHEME                IDC_Y_AXIS + 1

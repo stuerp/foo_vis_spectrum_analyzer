@@ -53,14 +53,19 @@ caption "Spectrum Analyzer Configuration"
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 {
-    groupbox "Transfor", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Transform", IDC_STATIC, X_B05, Y_B05, W_B05, H_B05, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Method:"                   IDC_STATIC,                     X_A03, Y_A03 + 2, W_A03, H_A03
-        combobox                                    IDC_TRANSFORM,                  X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Method:"                   IDC_STATIC,                     X_A62, Y_A62 + 2, W_A62, H_A62
+        combobox                                    IDC_TRANSFORM,                  X_A63, Y_A63,     W_A63, H_A63, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           ""                          IDC_TRANSFORM_PARAMETER_NAME,   X_A61, Y_A61 + 2, W_A61, H_A61
-        edittext                                    IDC_TRANSFORM_PARAMETER,        X_A59, Y_A59, W_A59, H_A59, WS_TABSTOP
-        ltext           "samples",                  IDC_TRANSFORM_PARAMETER_UNIT,   X_A60, Y_A60 + 2, W_A60, H_A60
+    groupbox "FFT", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext           "Size:"                     IDC_STATIC,                     X_A03, Y_A03 + 2, W_A03, H_A03
+        combobox                                    IDC_FFT_SIZE,                   X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           ""                          IDC_FFT_SIZE_PARAMETER_NAME,    X_A61, Y_A61 + 2, W_A61, H_A61
+        edittext                                    IDC_FFT_SIZE_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, WS_TABSTOP
+        ltext           "samples",                  IDC_FFT_SIZE_PARAMETER_UNIT,    X_A60, Y_A60 + 2, W_A60, H_A60
 
         rtext           "Summation:",               IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
         combobox                                    IDC_SUMMATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP

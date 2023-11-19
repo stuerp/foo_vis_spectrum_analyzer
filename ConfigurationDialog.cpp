@@ -15,9 +15,22 @@
 /// </summary>
 void ConfigurationDialog::Initialize()
 {
-    #pragma region FFT
+    #pragma region Transform
     {
         auto w = (CComboBox) GetDlgItem(IDC_TRANSFORM);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"Fast Fourier", L"Constant-Q" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration._Transform);
+    }
+    #pragma region FFT
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
 
         w.ResetContent();
 
@@ -196,8 +209,18 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
-    #pragma region Transform
+    #pragma region FFT
         case IDC_TRANSFORM:
+        {
+            _Configuration._Transform = (Transform) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+    #pragma endregion
+
+    #pragma region FFT
+        case IDC_FFT_SIZE:
         {
             _Configuration._FFTSize = (FFTSize) SelectedIndex;
 
@@ -286,7 +309,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     switch (id)
     {
     #pragma region Transform
-        case IDC_TRANSFORM_PARAMETER:
+        case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
             switch (_Configuration._FFTSize)
@@ -551,61 +574,73 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 void ConfigurationDialog::UpdateControls()
 {
     // Transform
+    bool IsFFT = (_Configuration._Transform == Transform::FFT);
+
+        GetDlgItem(IDC_DISTRIBUTION).EnableWindow(IsFFT);
+
+    // FFT
+        GetDlgItem(IDC_FFT_SIZE).EnableWindow(IsFFT);
+
     bool State = (_Configuration._FFTSize == FFTSize::FFTCustom) || (_Configuration._FFTSize == FFTSize::FFTDuration);
 
-    GetDlgItem(IDC_TRANSFORM_PARAMETER).EnableWindow(State);
+        GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && State);
 
-    #pragma warning (disable: 4061)
-    switch (_Configuration._FFTSize)
-    {
-        default:
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"");
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"");
-            break;
+        GetDlgItem(IDC_SUMMATION_METHOD).EnableWindow(IsFFT);
+        GetDlgItem(IDC_SMOOTH_LOWER_FREQUENCIES).EnableWindow(IsFFT);
+        GetDlgItem(IDC_SMOOTH_GAIN_TRANSITION).EnableWindow(IsFFT);
+        GetDlgItem(IDC_KERNEL_SIZE).EnableWindow(IsFFT);
 
-        case FFTSize::FFTCustom:
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"FFT Size:");
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTCustom)));
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"samples");
-            break;
+        #pragma warning (disable: 4061)
+        switch (_Configuration._FFTSize)
+        {
+            default:
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"");
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"");
+                break;
 
-        case FFTSize::FFTDuration:
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"Duration:");
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration._FFTDuration, 0, 1)));
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"ms");
-            break;
-    }
-    #pragma warning (default: 4061)
+            case FFTSize::FFTCustom:
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"FFT Size:");
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTCustom)));
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"samples");
+                break;
+
+            case FFTSize::FFTDuration:
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"Duration:");
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration._FFTDuration, 0, 1)));
+                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"ms");
+                break;
+        }
+        #pragma warning (default: 4061)
 
     // Frequencies
     State = (_Configuration._FrequencyDistribution != FrequencyDistribution::Octaves);
 
-    GetDlgItem(IDC_NUM_BANDS).EnableWindow(State);
-    GetDlgItem(IDC_MIN_FREQUENCY).EnableWindow(State);
-    GetDlgItem(IDC_MAX_FREQUENCY).EnableWindow(State);
-    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(State);
-    GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(State);
-    GetDlgItem(IDC_BANDWIDTH).EnableWindow(State);
+        GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_MIN_FREQUENCY).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_MAX_FREQUENCY).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(State);
+        GetDlgItem(IDC_BANDWIDTH).EnableWindow(State);
 
-    GetDlgItem(IDC_MIN_NOTE).EnableWindow(!State);
-    GetDlgItem(IDC_MAX_NOTE).EnableWindow(!State);
-    GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(!State);
-    GetDlgItem(IDC_PITCH).EnableWindow(!State);
-    GetDlgItem(IDC_TRANSPOSE).EnableWindow(!State);
+        GetDlgItem(IDC_MIN_NOTE).EnableWindow(!State);
+        GetDlgItem(IDC_MAX_NOTE).EnableWindow(!State);
+        GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(!State);
+        GetDlgItem(IDC_PITCH).EnableWindow(!State);
+        GetDlgItem(IDC_TRANSPOSE).EnableWindow(!State);
 
     State = (_Configuration._FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
-    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!State);
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!State);
 
     // Y axis
     State = (_Configuration._YAxisMode == YAxisMode::Logarithmic);
 
-    GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(State);
-    GetDlgItem(IDC_GAMMA).EnableWindow(State);
+        GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(State);
+        GetDlgItem(IDC_GAMMA).EnableWindow(State);
 
     // Peak indicators
     State = (_Configuration._PeakMode == PeakMode::None);
 
-    GetDlgItem(IDC_HOLD_TIME).EnableWindow(!State);
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(!State);
+        GetDlgItem(IDC_HOLD_TIME).EnableWindow(!State);
+        GetDlgItem(IDC_ACCELERATION).EnableWindow(!State);
 }

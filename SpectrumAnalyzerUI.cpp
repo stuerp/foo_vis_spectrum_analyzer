@@ -436,35 +436,37 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
 
     _SampleRate = chunk.get_sample_rate();
-    _Bandwidth = /*_Configuration._Transform == 'cqt' ||*/ (_Configuration._Mapping == Mapping::FilterBanks) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._Mapping == Mapping::FilterBanks)) ? _Configuration._Bandwidth : 0.5;
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
     // Create the spectrum analyzer if necessary.
-    if (_SpectrumAnalyzer == nullptr)
     {
-        #pragma warning (disable: 4061)
-        switch (_Configuration._FFTSize)
+        if (_SpectrumAnalyzer == nullptr)
         {
-            default:
-                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
-                break;
+            #pragma warning (disable: 4061)
+            switch (_Configuration._FFTSize)
+            {
+                default:
+                    _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
+                    break;
 
-            case FFTSize::FFTCustom:
-                _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
-                break;
+                case FFTSize::FFTCustom:
+                    _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
+                    break;
 
-            case FFTSize::FFTDuration:
-                _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
-                break;
+                case FFTSize::FFTDuration:
+                    _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
+                    break;
+            }
+            #pragma warning (default: 4061)
+
+            _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _SampleRate, _FFTSize);
         }
-        #pragma warning (default: 4061)
 
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _FFTSize, _SampleRate);
+        if (_CQT == nullptr)
+            _CQT = new CQTProvider(ChannelCount, _SampleRate);
     }
-
-    if (_CQT == nullptr)
-        _CQT = new CQTProvider(ChannelCount);
 
     // Add the samples to the spectrum analyzer or the CQT.
     {
@@ -491,30 +493,34 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
                 _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate);
         }
         else
-            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands, _SampleRate, 1.0, 1.0, 0.0);
+            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands, 1.0, 1.0, 0.0);
     }
 
     // Smooth the spectrum.
-    switch (_Configuration._SmoothingMethod)
     {
-        default:
-
-        case SmoothingMethod::Average:
+        switch (_Configuration._SmoothingMethod)
         {
-            ApplyAverageSmoothing(_Configuration._SmoothingFactor);
-            break;
-        }
+            default:
 
-        case SmoothingMethod::Peak:
-        {
-            ApplyPeakSmoothing(_Configuration._SmoothingFactor);
-            break;
+            case SmoothingMethod::Average:
+            {
+                ApplyAverageSmoothing(_Configuration._SmoothingFactor);
+                break;
+            }
+
+            case SmoothingMethod::Peak:
+            {
+                ApplyPeakSmoothing(_Configuration._SmoothingFactor);
+                break;
+            }
         }
     }
 
     // Update the peak indicators.
-    if (_Configuration._PeakMode != PeakMode::None)
-        _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+    {
+        if (_Configuration._PeakMode != PeakMode::None)
+            _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+    }
 
     hr = RenderSpectrum();
 
@@ -543,7 +549,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderSpectrum()
 
     for (const FrequencyBand & Iter : _FrequencyBands)
     {
-        if (Iter.Hi > ((double) _SampleRate / 2.)) // Don't render anything above the Nyquist frequency.
+        // Don't render anything above the Nyquist frequency.
+        if (Iter.Ctr > ((double) _SampleRate / 2.))
             break;
 
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };

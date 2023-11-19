@@ -13,7 +13,7 @@
 #define H_CH        10 // Check box
 
 #define W_A00      356 // Dialog width (in dialog units)
-#define H_A00      346 // Dialog height (in dialog units)
+#define H_A00      378 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -21,12 +21,35 @@
 #define IX           4 // Spacing between two related controls
 #define IY           4
 
+#pragma region Transform
+// Groupbox
+#define X_B05   DX
+#define Y_B05   DX
+
+    #pragma region Method
+    // Label
+    #define W_A62    60
+    #define H_A62    H_LA
+    #define X_A62    X_B05 + 5
+    #define Y_A62    Y_B05 + 11
+
+    // Combobox
+    #define W_A63    82
+    #define H_A63    H_CB
+    #define X_A63    X_A62 + W_A62 + IX
+    #define Y_A63    Y_A62
+    #pragma endregion
+
+#define W_B05   174
+#define H_B05   11 + H_A06 + 7
+#pragma endregion
+
 #pragma region FFT
 // Groupbox
-#define X_B00   DX
-#define Y_B00   DX
+#define X_B00   X_B05
+#define Y_B00   Y_B05 + H_B05 + IY
 
-    #pragma region Transform
+    #pragma region Size
     // Label
     #define W_A03   60
     #define H_A03   H_LA
@@ -40,7 +63,7 @@
     #define Y_A04   Y_A03
     #pragma endregion
 
-    #pragma region Transform Parameter
+    #pragma region Size Parameter
     // Label
     #define W_A61   60
     #define H_A61   H_LA
@@ -105,7 +128,7 @@
     #pragma endregion
 
 #define W_B00    5 + W_A15 + IX + W_A16 + 5
-#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A44 + IY + H_A40 + 11
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
 #pragma region Frequencies
@@ -290,7 +313,7 @@
     #pragma endregion
 
 #define W_B01   W_B00 // 5 + W_A01 + IX + W_A02 + 5
-#define H_B01   11 + H_A02 + IY + H_A19 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 11
+#define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 
 #pragma region X axis
@@ -313,7 +336,7 @@
     #pragma endregion
 
 #define W_B02    5 + W_A05 + IX + W_A06 + 5
-#define H_B02   11 + H_A06 + 11
+#define H_B02   11 + H_A06 + 7
 #pragma endregion
 
 #pragma region Y axis
@@ -390,7 +413,7 @@
     #pragma endregion
 
 #define W_B03    5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
-#define H_B03   11 + H_A08 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 11
+#define H_B03   11 + H_A08 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
 #pragma region Bands
@@ -491,7 +514,7 @@
     #pragma endregion
 
 #define W_B04    5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 11 + 44
+#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 7
 #pragma endregion
 
 

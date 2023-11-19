@@ -197,7 +197,6 @@ void Configuration::Reset() noexcept
     // Logging
     _LogLevel = LogLevel::None;
 /*
-    type: 'fft',
     bandwidthOffset: 1,
 
     windowFunction: 'hann',
@@ -207,9 +206,6 @@ void Configuration::Reset() noexcept
     timeAlignment: 1,
     downsample: 0,
 
-    useComplex: true,
-
-    freeze: false,
     color: 'none',
 
     showLabels: true,
@@ -258,6 +254,8 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _UseZeroTrigger;
 
                 parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+
+                parser >> Integer; _Configuration._Transform = (Transform) Integer;
 
             #pragma region FFT
                 parser >> Integer; _Configuration._FFTSize = (FFTSize) Integer;
@@ -351,7 +349,9 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _WindowDuration;
     #pragma endregion
 
-    #pragma region Transform
+        builder << (int) _Configuration._Transform;
+
+    #pragma region FFT
         builder << (int) _Configuration._FFTSize;
         builder << _Configuration._FFTCustom;
         builder << _Configuration._FFTDuration;

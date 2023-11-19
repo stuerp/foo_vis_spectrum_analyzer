@@ -25,7 +25,7 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(uint32_t channelCount, size_t fftSize, uint32_t sampleRate) : FFTProvider(channelCount, fftSize)
+    SpectrumAnalyzer(uint32_t channelCount, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, fftSize)
     {
         if (sampleRate <= 0)
             throw;
