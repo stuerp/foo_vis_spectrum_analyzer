@@ -7,11 +7,13 @@
 
 #include "FFT.h"
 
-/// <summary>
-/// Defines FFT data size constants that can be used for FFT calculations.
-/// Note that only the half of the specified size can be used for visualizations.
-/// </summary>
 enum class Transform
+{
+    FFT = 0,
+    CQT = 1
+};
+
+enum class FFTSize
 {
     FFT64       = 0,
     FFT128      = 1,
@@ -28,9 +30,15 @@ enum class Transform
     FFTDuration = 11,
 };
 
+enum class Mapping
+{
+    Classic = 0,
+    FilterBanks = 1,
+};
+
 enum class FrequencyDistribution
 {
-    Frequencies = 0,
+    Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
 };
@@ -163,8 +171,10 @@ public:
     size_t _WindowDuration;
     size_t _RefreshRateLimit;                                           // Hz
 
+    Transform _Transform;                                               // FFT or CQT
+
     #pragma region FFT
-        Transform _Transform;
+        FFTSize _FFTSize;
         size_t _FFTCustom;                                              // samples, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
@@ -175,6 +185,8 @@ public:
         SummationMethod _SummationMethod = SummationMethod::Maximum;
         bool _SmoothLowerFrequencies;                                   // Smoother bin interpolation of lower frequencies
         bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
+
+        Mapping _Mapping;                                               // Determines how the FFT coefficients are mapped to the frequency bins.
     #pragma endregion
 
     #pragma region Frequencies

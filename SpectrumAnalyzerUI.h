@@ -7,6 +7,7 @@
 
 #include "Configuration.h"
 #include "SpectrumAnalyzer.h"
+#include "CQTProvider.h"
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
@@ -170,8 +171,10 @@ private:
 
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
+    CQTProvider * _CQT;
 
     std::vector<FrequencyBand> _FrequencyBands;
     size_t _FFTSize;
     uint32_t _SampleRate;
+    double _Bandwidth;
 };

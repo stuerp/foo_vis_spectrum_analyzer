@@ -77,7 +77,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.3.0.0, 2023-xx-xx
 
+* New: Implemented the Constant-Q transform (CQT).
 * New: A custom FFT size can be specified in the configuration dialog. When you select "FFT Duration" the FFT size will be calculated based on the duration specified and the sample rate.
+* New: Implemented Mel scale mapping of the FFT coefficients.
 * Fixed: The configuration dialog disable the decibel settings when selecting a logarithmic Y axis scale.
 
 v0.2.0.0, 2023-11-18
@@ -136,6 +138,9 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Fast Fourier Transformation FFT - Basics](https://www.nti-audio.com/en/support/know-how/fast-fourier-transform-fft)
 * [Sine Tone Generator](https://www.audiocheck.net/audiofrequencysignalgenerator_sinetone.php)
 * [A440](https://en.wikipedia.org/wiki/A440_(pitch_standard))
+* [Constant-Q transform](https://en.wikipedia.org/wiki/Constant-Q_transform)
+* [Mel-frequency cepstrum](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
+* [Mel scale](https://en.wikipedia.org/wiki/Mel_scale)
 
 ## Links
 

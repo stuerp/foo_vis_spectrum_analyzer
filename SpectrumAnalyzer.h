@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.18) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.19) P. Stuer **/
 
 #include "framework.h"
 
@@ -86,7 +86,8 @@ public:
 
                 for (int Idx = LoIdx; Idx <= HiIdx - OverflowCompensation; ++Idx)
                 {
-                    size_t CoefIdx = ((size_t) Idx % coefficients.size() + coefficients.size()) % coefficients.size();
+//                  size_t CoefIdx = ((size_t) Idx % coefficients.size() + coefficients.size()) % coefficients.size();
+                    size_t CoefIdx = Wrap((size_t) Idx, coefficients.size());
 
                     double data = std::abs(coefficients[CoefIdx]);
 
@@ -139,6 +140,32 @@ public:
     }
 
     /// <summary>
+    /// Gets the spectrum based on filter bank energies (Mel-Frequency Cepstrum (MFC)).
+    /// </summary>
+    /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
+    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate)
+    {
+        for (FrequencyBand & Iter : freqBands)
+        {
+            double Sum = 0;
+
+            const double minBin = Min(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
+            const double midBin = Iter.Ctr              * (double) coefficients.size() / sampleRate;
+            const double maxBin = Max(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
+
+            const double overflowCompensation = Max(0., maxBin - minBin - (double) coefficients.size());
+
+            for (double i = ::floor(midBin); i >= ::floor(minBin + overflowCompensation); --i)
+                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, minBin, midBin, 0., 1.), 0.), 2.0);
+
+            for (double i = ::ceil(midBin); i <= ::ceil(maxBin - overflowCompensation); ++i)
+                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, maxBin, midBin, 0., 1.), 0.), 2.0);
+
+            Iter.NewValue = ::sqrt(Sum);
+        }
+    }
+
+    /// <summary>
     /// Applies a Lanzcos kernel to the specified value.
     /// </summary>
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const
@@ -153,10 +180,13 @@ public:
 
             double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-            size_t CoefIdx = ((size_t) Pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+//          size_t CoefIdx = ((size_t) Pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
+            size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size());
 
-            re += fftCoeffs[CoefIdx].real() * w * (-1 + (i % 2 + 2) % 2 * 2);
-            im += fftCoeffs[CoefIdx].imag() * w * (-1 + (i % 2 + 2) % 2 * 2);
+//          re += fftCoeffs[CoefIdx].real() * w * (-1 + (i % 2 + 2) % 2 * 2);
+//          im += fftCoeffs[CoefIdx].imag() * w * (-1 + (i % 2 + 2) % 2 * 2);
+            re += fftCoeffs[CoefIdx].real() * w * (-1 + Wrap(i, 2) * 2);
+            im += fftCoeffs[CoefIdx].imag() * w * (-1 + Wrap(i, 2) * 2);
         }
 
         return ::hypot(re, im);

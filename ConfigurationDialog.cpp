@@ -33,7 +33,7 @@ void ConfigurationDialog::Initialize()
         w.AddString(L"FFT Custom");
         w.AddString(L"FFT Duration");
 
-        w.SetCurSel((int) _Configuration._Transform);
+        w.SetCurSel((int) _Configuration._FFTSize);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
@@ -199,7 +199,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma region Transform
         case IDC_TRANSFORM:
         {
-            _Configuration._Transform = (Transform) SelectedIndex;
+            _Configuration._FFTSize = (FFTSize) SelectedIndex;
 
             UpdateControls();
             break;
@@ -289,12 +289,12 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_TRANSFORM_PARAMETER:
         {
             #pragma warning (disable: 4061)
-            switch (_Configuration._Transform)
+            switch (_Configuration._FFTSize)
             {
                 default:
                     break;
 
-                case Transform::FFTCustom:
+                case FFTSize::FFTCustom:
                 {
                     int Value = ::_wtoi(Text);
 
@@ -305,7 +305,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                     break;
                 }
 
-                case Transform::FFTDuration:
+                case FFTSize::FFTDuration:
                 {
                     double Value = ::_wtof(Text);
 
@@ -551,25 +551,25 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 void ConfigurationDialog::UpdateControls()
 {
     // Transform
-    bool State = (_Configuration._Transform == Transform::FFTCustom) || (_Configuration._Transform == Transform::FFTDuration);
+    bool State = (_Configuration._FFTSize == FFTSize::FFTCustom) || (_Configuration._FFTSize == FFTSize::FFTDuration);
 
     GetDlgItem(IDC_TRANSFORM_PARAMETER).EnableWindow(State);
 
     #pragma warning (disable: 4061)
-    switch (_Configuration._Transform)
+    switch (_Configuration._FFTSize)
     {
         default:
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"");
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"");
             break;
 
-        case Transform::FFTCustom:
+        case FFTSize::FFTCustom:
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"FFT Size:");
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTCustom)));
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"samples");
             break;
 
-        case Transform::FFTDuration:
+        case FFTSize::FFTDuration:
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"Duration:");
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration._FFTDuration, 0, 1)));
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"ms");

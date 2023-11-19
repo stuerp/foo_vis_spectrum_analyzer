@@ -66,6 +66,15 @@ inline static FLOAT ToDIPs(FLOAT points)
 }
 
 /// <summary>
+/// Wraps an index.
+/// </summary>
+template<class T>
+inline static T Wrap(T index, T length)
+{
+    return (length + (index % length)) % length;
+}
+
+/// <summary>
 /// Maps a value from one range (srcMin, srcMax) to another (dstMin, dstMax).
 /// </summary>
 inline static double Map(double value, double srcMin, double srcMax, double dstMin, double dstMax)

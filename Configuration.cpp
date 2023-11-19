@@ -54,10 +54,17 @@ Configuration & Configuration::operator=(const Configuration & other)
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
 
+    // Transform type
     _Transform = other._Transform;
+
+    // FFT
+    _FFTSize = other._FFTSize;
     _FFTCustom = other._FFTCustom;
     _FFTDuration = other._FFTDuration;
 
+    _Mapping = other._Mapping;
+
+    // Frequencies
     _FrequencyDistribution = other._FrequencyDistribution;
 
     _NumBands = other._NumBands;
@@ -126,10 +133,16 @@ void Configuration::Reset() noexcept
     _UseZeroTrigger = false;
     _WindowDuration = 100;
 
-    _Transform = Transform::FFT4096;
+    _Transform = Transform::CQT;
+
+    // FFT
+    _FFTSize = FFTSize::FFT4096;
     _FFTCustom = 4096;
     _FFTDuration = 100.;
 
+    _Mapping = Mapping::Classic;
+
+    // Frequencies
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Frequency range
@@ -247,10 +260,11 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
             #pragma region FFT
-                parser >> Integer; _Configuration._Transform = (Transform) Integer;
+                parser >> Integer; _Configuration._FFTSize = (FFTSize) Integer;
                 parser >> _Configuration._FFTCustom;
                 parser >> _Configuration._FFTDuration;
 
+                parser >> Integer; _Configuration._Mapping = (Mapping) Integer;
                 parser >> Integer; _Configuration._SmoothingMethod = (SmoothingMethod) Integer;
                 parser >> _Configuration._SmoothingFactor;
                 parser >> _Configuration._KernelSize;
@@ -338,9 +352,10 @@ void Configuration::Write(ui_element_config_builder & builder) const
     #pragma endregion
 
     #pragma region Transform
-        builder << (int) _Configuration._Transform;
+        builder << (int) _Configuration._FFTSize;
         builder << _Configuration._FFTCustom;
         builder << _Configuration._FFTDuration;
+        builder << (int) _Configuration._Mapping;
 
         builder << (int) _Configuration._SmoothingMethod;
         builder << _Configuration._SmoothingFactor;

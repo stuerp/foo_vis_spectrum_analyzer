@@ -95,6 +95,12 @@ void SpectrumAnalyzerUIElement::OnDestroy()
         _SpectrumAnalyzer = nullptr;
     }
 
+    if (_CQT)
+    {
+        delete _CQT;
+        _CQT = nullptr;
+    }
+
     _VisualisationStream.release();
 
     ReleaseDeviceSpecificResources();
@@ -154,7 +160,7 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
 }
 
 /// <summary>
-/// 
+/// Handles a context menu selection.
 /// </summary>
 void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 {
@@ -295,23 +301,28 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 /// </summary>
 void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 {
-    // Initialize the bands.
-    switch (_Configuration._FrequencyDistribution)
+    // Initialize the frequency bands.
+    if (_Configuration._Transform == Transform::FFT)
     {
-        default:
+        switch (_Configuration._FrequencyDistribution)
+        {
+            default:
 
-        case FrequencyDistribution::Frequencies:
-            GenerateFrequencyBands();
-            break;
+            case FrequencyDistribution::Linear:
+                GenerateFrequencyBands();
+                break;
 
-        case FrequencyDistribution::Octaves:
-            GenerateFrequencyBandsFromNotes();
-            break;
+            case FrequencyDistribution::Octaves:
+                GenerateFrequencyBandsFromNotes();
+                break;
 
-        case FrequencyDistribution::AveePlayer:
-            GenerateFrequencyBandsOfAveePlayer();
-            break;
+            case FrequencyDistribution::AveePlayer:
+                GenerateFrequencyBandsOfAveePlayer();
+                break;
+        }
     }
+    else
+        GenerateFrequencyBandsFromNotes();
 
     _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
@@ -325,6 +336,13 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     {
         delete _SpectrumAnalyzer;
         _SpectrumAnalyzer = nullptr;
+    }
+
+    // Forces the recreation of the spectrum analyzer.
+    if (_CQT != nullptr)
+    {
+        delete _CQT;
+        _CQT = nullptr;
     }
 
     InvalidateRect(NULL);
@@ -418,6 +436,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
 
     _SampleRate = chunk.get_sample_rate();
+    _Bandwidth = /*_Configuration._Transform == 'cqt' ||*/ (_Configuration._Mapping == Mapping::FilterBanks) ? _Configuration._Bandwidth : 0.5;
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
@@ -425,17 +444,17 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     if (_SpectrumAnalyzer == nullptr)
     {
         #pragma warning (disable: 4061)
-        switch (_Configuration._Transform)
+        switch (_Configuration._FFTSize)
         {
             default:
-                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._Transform));
+                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
                 break;
 
-            case Transform::FFTCustom:
-                _FFTSize = (_Configuration._FFTCustom > 0.) ? (size_t) _Configuration._FFTCustom : 64;
+            case FFTSize::FFTCustom:
+                _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
                 break;
 
-            case Transform::FFTDuration:
+            case FFTSize::FFTDuration:
                 _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
                 break;
         }
@@ -444,7 +463,10 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _FFTSize, _SampleRate);
     }
 
-    // Add the samples to the spectrum analyzer.
+    if (_CQT == nullptr)
+        _CQT = new CQTProvider(ChannelCount);
+
+    // Add the samples to the spectrum analyzer or the CQT.
     {
         const audio_sample * Samples = chunk.get_data();
 
@@ -453,40 +475,46 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
         size_t SampleCount = chunk.get_sample_count();
 
-        _SpectrumAnalyzer->Add(Samples, SampleCount);
+        if (_Configuration._Transform == Transform::FFT)
+        {
+            _SpectrumAnalyzer->Add(Samples, SampleCount);
+
+            // Get the frequency coefficients.
+            std::vector<std::complex<double>> FrequencyCoefficients(_FFTSize, 0.0); // FIXME: Don't reallocate every time.
+
+            _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
+
+            // Get the spectrum from the frequency coefficients.
+            if (_Configuration._Mapping == Mapping::Classic)
+                _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
+            else
+                _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate);
+        }
+        else
+            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands, _SampleRate, 1.0, 1.0, 0.0);
     }
 
+    // Smooth the spectrum.
+    switch (_Configuration._SmoothingMethod)
     {
-        // Get the frequency coefficients.
-        std::vector<std::complex<double>> FrequencyCoefficients(_FFTSize, 0.0); // FIXME: Don't reallocate every time.
+        default:
 
-        _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
-
-        // Get the spectrum from the frequency coefficients.
-        _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
-
-        // Smooth the spectrum.
-        switch (_Configuration._SmoothingMethod)
+        case SmoothingMethod::Average:
         {
-            default:
-
-            case SmoothingMethod::Average:
-            {
-                ApplyAverageSmoothing(_Configuration._SmoothingFactor);
-                break;
-            }
-
-            case SmoothingMethod::Peak:
-            {
-                ApplyPeakSmoothing(_Configuration._SmoothingFactor);
-                break;
-            }
+            ApplyAverageSmoothing(_Configuration._SmoothingFactor);
+            break;
         }
 
-        // Update the peak indicators.
-        if (_Configuration._PeakMode != PeakMode::None)
-            _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+        case SmoothingMethod::Peak:
+        {
+            ApplyPeakSmoothing(_Configuration._SmoothingFactor);
+            break;
+        }
     }
+
+    // Update the peak indicators.
+    if (_Configuration._PeakMode != PeakMode::None)
+        _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
 
     hr = RenderSpectrum();
 
@@ -570,9 +598,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo  = DeScaleF(Map((double) i - _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Ctr = DeScaleF(Map((double) i,                             0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Hi  = DeScaleF(Map((double) i + _Configuration._Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Lo  = DeScaleF(Map((double) i - _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Ctr = DeScaleF(Map((double) i,              0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Hi  = DeScaleF(Map((double) i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
     }
 }
 
@@ -597,9 +625,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - _Configuration._Bandwidth) * NotesGroup + _Configuration._Transpose)),
-            C0 * ::pow(Root24,  (i                              * NotesGroup + _Configuration._Transpose)),
-            C0 * ::pow(Root24, ((i + _Configuration._Bandwidth) * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24, ((i - _Bandwidth) * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24,  (i               * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
         _FrequencyBands.push_back(fb);
@@ -617,11 +645,11 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - _Configuration._Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i,                             _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + _Configuration._Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,                       _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
-        Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,                       _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.Lo      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr     = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+        Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 

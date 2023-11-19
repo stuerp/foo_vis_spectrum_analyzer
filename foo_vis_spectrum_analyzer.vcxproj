@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Configuration.h" />
+    <ClInclude Include="CQTProvider.h" />
     <ClInclude Include="FFTBase.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
