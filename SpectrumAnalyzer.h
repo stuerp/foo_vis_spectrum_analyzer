@@ -185,7 +185,7 @@ public:
     /// <summary>
     /// Calculates the position of the peak indicators.
     /// </summary>
-    void GetDecay(std::vector<FrequencyBand> & freqBands)
+    void UpdatePeakIndicators(std::vector<FrequencyBand> & freqBands)
     {
         for (FrequencyBand & Iter : freqBands)
         {

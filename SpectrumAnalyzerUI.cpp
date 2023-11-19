@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.18) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.19) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -364,7 +364,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        // Draw the background ,x-axis and y-axis.
+        // Draw the background, x-axis and y-axis.
         _RenderTarget->Clear(_Configuration._BackgroundColor);
 
         _XAxis.Render(_RenderTarget);
@@ -423,7 +423,26 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     // Create the spectrum analyzer if necessary.
     if (_SpectrumAnalyzer == nullptr)
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _Configuration._FFTSize, _SampleRate);
+    {
+        #pragma warning (disable: 4061)
+        switch (_Configuration._Transform)
+        {
+            default:
+                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._Transform));
+                break;
+
+            case Transform::FFTCustom:
+                _FFTSize = (_Configuration._FFTCustom > 0.) ? (size_t) _Configuration._FFTCustom : 64;
+                break;
+
+            case Transform::FFTDuration:
+                _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
+                break;
+        }
+        #pragma warning (default: 4061)
+
+        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _FFTSize, _SampleRate);
+    }
 
     // Add the samples to the spectrum analyzer.
     {
@@ -438,14 +457,15 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     }
 
     {
-        // Get the frequency data.
-        std::vector<std::complex<double>> FrequencyCoefficients((size_t) _Configuration._FFTSize, 0.0); // FIXME: Don't reallocate every time.
+        // Get the frequency coefficients.
+        std::vector<std::complex<double>> FrequencyCoefficients(_FFTSize, 0.0); // FIXME: Don't reallocate every time.
 
         _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
 
-        // Get the spectrum from the FFT coefficients.
+        // Get the spectrum from the frequency coefficients.
         _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
 
+        // Smooth the spectrum.
         switch (_Configuration._SmoothingMethod)
         {
             default:
@@ -463,19 +483,20 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             }
         }
 
+        // Update the peak indicators.
         if (_Configuration._PeakMode != PeakMode::None)
-            _SpectrumAnalyzer->GetDecay(_FrequencyBands);
+            _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
     }
 
-    hr = RenderBands();
+    hr = RenderSpectrum();
 
     return hr;
 }
 
 /// <summary>
-/// Renders the bands.
+/// Renders the spectrum.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderBands()
+HRESULT SpectrumAnalyzerUIElement::RenderSpectrum()
 {
     Log(LogLevel::Trace, "%s: Rendering %d bands.", core_api::get_my_file_name(), _FrequencyBands.size());
 

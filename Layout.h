@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.18) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.19) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -13,7 +13,7 @@
 #define H_CH        10 // Check box
 
 #define W_A00      356 // Dialog width (in dialog units)
-#define H_A00      326 // Dialog height (in dialog units)
+#define H_A00      346 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -26,7 +26,7 @@
 #define X_B00   DX
 #define Y_B00   DX
 
-    #pragma region FFT Size
+    #pragma region Transform
     // Label
     #define W_A03   60
     #define H_A03   H_LA
@@ -38,12 +38,26 @@
     #define H_A04   H_CB
     #define X_A04   X_A03 + W_A03 + IX
     #define Y_A04   Y_A03
+    #pragma endregion
+
+    #pragma region Transform Parameter
+    // Label
+    #define W_A61   60
+    #define H_A61   H_LA
+    #define X_A61   X_A03
+    #define Y_A61   Y_A04 + H_A04 + IY
+
+    // Textbox
+    #define W_A59    30
+    #define H_A59    H_EB
+    #define X_A59    X_A61 + W_A61 + IY
+    #define Y_A59    Y_A61
 
     // Label
-    #define W_A04b  42
-    #define H_A04b  H_LA
-    #define X_A04b  X_A04 + W_A04 + IX
-    #define Y_A04b  Y_A03
+    #define W_A60   42
+    #define H_A60   H_LA
+    #define X_A60   X_A59 + W_A59 + IX
+    #define Y_A60   Y_A59
     #pragma endregion
 
     #pragma region Summation Method
@@ -51,7 +65,7 @@
     #define W_A15    60
     #define H_A15    H_LA
     #define X_A15    X_A03
-    #define Y_A15    Y_A04 + H_A04 + IY
+    #define Y_A15    Y_A59 + H_A59 + IY
 
     // Combobox
     #define W_A16    100
@@ -90,8 +104,8 @@
     #define Y_A40    Y_A39
     #pragma endregion
 
-#define W_B00    5 + W_A03 + IX + W_A04 + IX + W_A04b + 5
-#define H_B00   11 + H_A04 + IY + H_A16 + IY + H_A43 + IY + H_A44 + IY + H_A40 + 11
+#define W_B00    5 + W_A15 + IX + W_A16 + 5
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A44 + IY + H_A40 + 11
 #pragma endregion
 
 #pragma region Frequencies
@@ -233,7 +247,7 @@
     #define Y_A32    Y_A31
     #pragma endregion
 
-    #pragma region("Scaling Function")
+    #pragma region Scaling Function
     // Label
     #define W_A13    60
     #define H_A13    H_LA
@@ -477,7 +491,7 @@
     #pragma endregion
 
 #define W_B04    5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 11 + 24
+#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 11 + 44
 #pragma endregion
 
 

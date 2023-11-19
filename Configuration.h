@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.18) P. Stuer **/
+/** $VER: Configuration.h (2023.11.19) P. Stuer **/
 
 #pragma once
 
@@ -11,21 +11,21 @@
 /// Defines FFT data size constants that can be used for FFT calculations.
 /// Note that only the half of the specified size can be used for visualizations.
 /// </summary>
-enum class FFTSize
+enum class Transform
 {
-    FFT64      =    64, // Number of frequency bins
-    FFT128     =   128,
-    FFT256     =   256,
-    FFT512     =   512,
-    FFT1024    =  1024,
-    FFT2048    =  2048,
-    FFT4096    =  4096,
-    FFT8192    =  8192,
-    FFT16384   = 16384,
-    FFT32768   = 32768,
+    FFT64       = 0,
+    FFT128      = 1,
+    FFT256      = 2,
+    FFT512      = 3,
+    FFT1024     = 4,
+    FFT2048     = 5,
+    FFT4096     = 6,
+    FFT8192     = 7,
+    FFT16384    = 8,
+    FFT32768    = 9,
 
-    Custom     = 0x8000001,
-    TimeWindow = 0x8000002,
+    FFTCustom   = 10,
+    FFTDuration = 11,
 };
 
 enum class FrequencyDistribution
@@ -161,13 +161,15 @@ public:
     bool _UseAntialiasing;
 
     size_t _WindowDuration;
-    size_t _RefreshRateLimit;   // in Hz
+    size_t _RefreshRateLimit;                                           // Hz
 
     #pragma region FFT
-        size_t _FFTSize;
+        Transform _Transform;
+        size_t _FFTCustom;                                              // samples, Custom FFT size
+        double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
         SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
-        double _SmoothingFactor = 0.0;                                  // 0.0 .. 1.0
+        double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
 
         int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64
         SummationMethod _SummationMethod = SummationMethod::Maximum;
@@ -186,14 +188,14 @@ public:
         // Note range
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
         uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
-        uint32_t _BandsPerOctave;                                        // Bands per octave, 1 .. 48
+        uint32_t _BandsPerOctave;                                       // Bands per octave, 1 .. 48
         double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
         int _Transpose;                                                 // Transpose, -24 ..24 semitones
 
         ScalingFunction _ScalingFunction = ScalingFunction::Logarithmic;
 
-        double _SkewFactor = 0.0;                                       // 0.0 .. 1.0
-        double _Bandwidth = 0.5;                                        // 0.0 .. 64.0
+        double _SkewFactor;                                             // 0.0 .. 1.0
+        double _Bandwidth;                                              // 0.0 .. 64.0
     #pragma endregion
 
     #pragma region Rendering
@@ -206,22 +208,21 @@ public:
         #pragma region Y axis
             YAxisMode _YAxisMode;
 
-            double _MinDecibel;                                             // Lower amplitude, -120.0 .. 0.0
-            double _MaxDecibel;                                             // Upper amplitude, -120.0 .. 0.0
+            double _MinDecibel;                                         // Lower amplitude, -120.0 .. 0.0
+            double _MaxDecibel;                                         // Upper amplitude, -120.0 .. 0.0
 
-            bool _UseAbsolute = true;                                       // Use absolute value
-
-            double _Gamma;                                                  // Gamma, 0.5 .. 10.0
+            bool _UseAbsolute = true;                                   // Logarithmic scale: Use absolute value
+            double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
         #pragma endregion
 
         #pragma region Bands
             ColorScheme _ColorScheme;
 
-            bool _DrawBandBackground;                                       // True if the background for each band should be drawn.
+            bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
 
             PeakMode _PeakMode;
-            double _HoldTime = 30.0;                                        // Peak hold time, 0.0 .. 120.0
-            double _Acceleration = 0.5;                                     // Peak fall rate, 0.0 .. 2.0
+            double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
+            double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
         #pragma endregion
     #pragma endregion
 
@@ -238,10 +239,7 @@ public:
     downsample: 0,
     clampPeaks: true,
 
-    freeze: false,
     color: 'none',
-    showLabels: true,
-    showLabelsY: true,
     labelTuning: 440,
     showDC: true,
     showNyquist: true,
@@ -252,7 +250,7 @@ public:
 */
 
 private:
-    const size_t _Version = 1;
+    const size_t _Version = 2;
 };
 
 extern Configuration _Configuration;

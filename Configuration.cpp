@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.18) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.19) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -54,7 +54,9 @@ Configuration & Configuration::operator=(const Configuration & other)
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
 
-    _FFTSize = other._FFTSize;
+    _Transform = other._Transform;
+    _FFTCustom = other._FFTCustom;
+    _FFTDuration = other._FFTDuration;
 
     _FrequencyDistribution = other._FrequencyDistribution;
 
@@ -124,7 +126,10 @@ void Configuration::Reset() noexcept
     _UseZeroTrigger = false;
     _WindowDuration = 100;
 
-    _FFTSize = 4096;
+    _Transform = Transform::FFT4096;
+    _FFTCustom = 4096;
+    _FFTDuration = 100.;
+
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Frequency range
@@ -142,14 +147,14 @@ void Configuration::Reset() noexcept
     // Frequencies
     _ScalingFunction = ScalingFunction::Logarithmic;
 
-    _SkewFactor = 0.0;   // Hz linear factor, 0.0 .. 1.0
-    _Bandwidth = 0.5;        // Bandwidth, 0.0 .. 64.0
+    _SkewFactor = 0.0;
+    _Bandwidth = 0.5;
 
     _SmoothingMethod = SmoothingMethod::Peak;
-    _SmoothingFactor = 0.5;                         // Smoothing constant, 0.0 .. 1.0
+    _SmoothingFactor = 0.5;
 
-    _KernelSize = 32;                               // Lanczos interpolation kernel size, 1 .. 64
-    _SummationMethod = SummationMethod::Maximum;    // Band power summation method
+    _KernelSize = 32;
+    _SummationMethod = SummationMethod::Maximum;
     _SmoothLowerFrequencies = true;
     _SmoothGainTransition = true;
 
@@ -165,13 +170,16 @@ void Configuration::Reset() noexcept
     _MinDecibel = -90.;
     _MaxDecibel =   0.;
 
-    _UseAbsolute = true;                               // Use absolute value
+    _UseAbsolute = true;
     _Gamma = 1.;
 
     // Band
     _ColorScheme = ColorScheme::Prism1;
-    _PeakMode = PeakMode::Classic;
     _DrawBandBackground = true;
+
+    _PeakMode = PeakMode::Classic;
+    _HoldTime = 30.;
+    _Acceleration = 0.5;
 
     // Logging
     _LogLevel = LogLevel::None;
@@ -201,8 +209,6 @@ void Configuration::Reset() noexcept
 
     mirrorLabels: true,
     diffLabels: false,
-
-    darkMode: false,
     compensateDelay: false
 */
 }
@@ -222,7 +228,7 @@ void Configuration::Read(ui_element_config_parser & parser)
 
         switch (Version)
         {
-            case 1:
+            case 2:
             {
                 int Integer;
 
@@ -241,7 +247,9 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
             #pragma region FFT
-                parser >> _Configuration._FFTSize;
+                parser >> Integer; _Configuration._Transform = (Transform) Integer;
+                parser >> _Configuration._FFTCustom;
+                parser >> _Configuration._FFTDuration;
 
                 parser >> Integer; _Configuration._SmoothingMethod = (SmoothingMethod) Integer;
                 parser >> _Configuration._SmoothingFactor;
@@ -329,8 +337,11 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _WindowDuration;
     #pragma endregion
 
-    #pragma region FFT
-        builder << _Configuration._FFTSize;
+    #pragma region Transform
+        builder << (int) _Configuration._Transform;
+        builder << _Configuration._FFTCustom;
+        builder << _Configuration._FFTDuration;
+
         builder << (int) _Configuration._SmoothingMethod;
         builder << _Configuration._SmoothingFactor;
         builder << _Configuration._KernelSize;

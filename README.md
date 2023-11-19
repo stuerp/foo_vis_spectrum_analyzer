@@ -40,7 +40,7 @@ To build the code:
 
 The following library is included:
 
-* [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages))
+* [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 
 To create the deployment package:
 
@@ -74,6 +74,11 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.3.0.0, 2023-xx-xx
+
+* New: A custom FFT size can be specified in the configuration dialog. When you select "FFT Duration" the FFT size will be calculated based on the duration specified and the sample rate.
+* Fixed: The configuration dialog disable the decibel settings when selecting a logarithmic Y axis scale.
 
 v0.2.0.0, 2023-11-18
 

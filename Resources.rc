@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.18) P. Stuer **/
+/** $VER: Resources.rc (2023.11.19) P. Stuer **/
 
 #include "Resources.h"
 
@@ -53,20 +53,23 @@ caption "Spectrum Analyzer Configuration"
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 {
-    groupbox "FFT", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Transfor", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "FFT size:",        IDC_STATIC,             X_A03, Y_A03 + 2, W_A03, H_A03
-        combobox                            IDC_FFT_SIZE,           X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-        ltext           "samples",          IDC_STATIC,             X_A04b, Y_A04b + 2, W_A04b, H_A04b
+        rtext           "Method:"                   IDC_STATIC,                     X_A03, Y_A03 + 2, W_A03, H_A03
+        combobox                                    IDC_TRANSFORM,                  X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Summation:",       IDC_STATIC,             X_A15, Y_A15 + 2, W_A15, H_A15
-        combobox                            IDC_SUMMATION_METHOD,   X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           ""                          IDC_TRANSFORM_PARAMETER_NAME,   X_A61, Y_A61 + 2, W_A61, H_A61
+        edittext                                    IDC_TRANSFORM_PARAMETER,        X_A59, Y_A59, W_A59, H_A59, WS_TABSTOP
+        ltext           "samples",                  IDC_TRANSFORM_PARAMETER_UNIT,   X_A60, Y_A60 + 2, W_A60, H_A60
+
+        rtext           "Summation:",               IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
+        combobox                                    IDC_SUMMATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Smooth lower frequencies", IDC_SMOOTH_LOWER_FREQUENCIES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A43, Y_A43, W_A43, H_A43
         control         "Smooth gain transition",   IDC_SMOOTH_GAIN_TRANSITION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A44, Y_A44, W_A44, H_A44
 
-        rtext           "Lanczos kernel:"   IDC_STATIC,             X_A39, Y_A39 + 2, W_A39, H_A39
-        edittext                            IDC_KERNEL_SIZE,        X_A40, Y_A40, W_A40, H_A40, WS_TABSTOP
+        rtext           "Lanczos kernel:"           IDC_STATIC,                     X_A39, Y_A39 + 2, W_A39, H_A39
+        edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, WS_TABSTOP
 
     groupbox "Frequencies", IDC_STATIC, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 

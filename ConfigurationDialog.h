@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.18) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.19) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -41,8 +41,9 @@ public:
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
-    #pragma region FFT
-        COMMAND_HANDLER_EX(IDC_FFT_SIZE, CBN_SELCHANGE, OnSelectionChanged)
+    #pragma region Transform
+        COMMAND_HANDLER_EX(IDC_TRANSFORM, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_TRANSFORM_PARAMETER, EN_CHANGE, OnEditChange)
 
         COMMAND_HANDLER_EX(IDC_SCALING_FUNCTION, CBN_SELCHANGE, OnSelectionChanged)
         COMMAND_HANDLER_EX(IDC_SUMMATION_METHOD, CBN_SELCHANGE, OnSelectionChanged)
@@ -171,7 +172,7 @@ private:
     #pragma endregion
 
     void Initialize();
-    void UpdateControls() const;
+    void UpdateControls();
 
 private:
     HWND _hParent;

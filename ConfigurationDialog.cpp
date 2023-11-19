@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.18) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.19) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -17,24 +17,23 @@ void ConfigurationDialog::Initialize()
 {
     #pragma region FFT
     {
-        auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
+        auto w = (CComboBox) GetDlgItem(IDC_TRANSFORM);
 
         w.ResetContent();
 
-        int SelectedIndex = -1;
+        WCHAR Text[32] = { };
 
         for (int i = 64, j = 0; i <= 32768; i *= 2, ++j)
         {
-            w.AddString(pfc::wideFromUTF8(pfc::format_int(i)));
+            ::StringCchPrintfW(Text, _countof(Text), L"FFT %i", i);
 
-            if (i == (int) _Configuration._FFTSize)
-                SelectedIndex = j;
+            w.AddString(Text);
         }
 
-//      w.AddString(L"Custom");
-//      w.AddString(L"Time");
+        w.AddString(L"FFT Custom");
+        w.AddString(L"FFT Duration");
 
-        w.SetCurSel(SelectedIndex);
+        w.SetCurSel((int) _Configuration._Transform);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
@@ -97,7 +96,7 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration._FrequencyDistribution);
 
-        SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration._NumBands)));
+        SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._NumBands)));
 
         SetDlgItemTextW(IDC_MIN_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration._MinFrequency)));
         SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration._MaxFrequency)));
@@ -197,11 +196,12 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
-    #pragma region FFT
-        case IDC_FFT_SIZE:
+    #pragma region Transform
+        case IDC_TRANSFORM:
         {
-            if (SelectedIndex < (int) FFTSize::Custom)
-                _Configuration._FFTSize = (size_t) (64. * ::exp2((long) SelectedIndex));
+            _Configuration._Transform = (Transform) SelectedIndex;
+
+            UpdateControls();
             break;
         }
     #pragma endregion
@@ -285,7 +285,41 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
-    #pragma region FFT
+    #pragma region Transform
+        case IDC_TRANSFORM_PARAMETER:
+        {
+            #pragma warning (disable: 4061)
+            switch (_Configuration._Transform)
+            {
+                default:
+                    break;
+
+                case Transform::FFTCustom:
+                {
+                    int Value = ::_wtoi(Text);
+
+                    if (!InInterval(Value, 1, 32768))
+                        return;
+
+                    _Configuration._FFTCustom = (size_t) Value;
+                    break;
+                }
+
+                case Transform::FFTDuration:
+                {
+                    double Value = ::_wtof(Text);
+
+                    if (!InInterval(Value, 1., 100.))
+                        return;
+
+                    _Configuration._FFTDuration= Value;
+                    break;
+                }
+            }
+            #pragma warning (default: 4061)
+            break;
+        }
+
         case IDC_KERNEL_SIZE:
         {
             int Value = ::_wtoi(Text);
@@ -514,10 +548,37 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 /// <summary>
 /// Enables or disables controls based on the selection of the user.
 /// </summary>
-void ConfigurationDialog::UpdateControls() const
+void ConfigurationDialog::UpdateControls()
 {
+    // Transform
+    bool State = (_Configuration._Transform == Transform::FFTCustom) || (_Configuration._Transform == Transform::FFTDuration);
+
+    GetDlgItem(IDC_TRANSFORM_PARAMETER).EnableWindow(State);
+
+    #pragma warning (disable: 4061)
+    switch (_Configuration._Transform)
+    {
+        default:
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"");
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"");
+            break;
+
+        case Transform::FFTCustom:
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"FFT Size:");
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTCustom)));
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"samples");
+            break;
+
+        case Transform::FFTDuration:
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"Duration:");
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTDuration)));
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"ms");
+            break;
+    }
+    #pragma warning (default: 4061)
+
     // Frequencies
-    bool State = (_Configuration._FrequencyDistribution != FrequencyDistribution::Octaves);
+    State = (_Configuration._FrequencyDistribution != FrequencyDistribution::Octaves);
 
     GetDlgItem(IDC_NUM_BANDS).EnableWindow(State);
     GetDlgItem(IDC_MIN_FREQUENCY).EnableWindow(State);
@@ -537,10 +598,8 @@ void ConfigurationDialog::UpdateControls() const
     GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!State);
 
     // Y axis
-    State = (_Configuration._YAxisMode == YAxisMode::Decibels);
+    State = (_Configuration._YAxisMode == YAxisMode::Logarithmic);
 
-    GetDlgItem(IDC_MIN_DECIBEL).EnableWindow(State);
-    GetDlgItem(IDC_MAX_DECIBEL).EnableWindow(State);
     GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(State);
     GetDlgItem(IDC_GAMMA).EnableWindow(State);
 

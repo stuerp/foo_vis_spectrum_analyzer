@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.18) P. Stuer **/
+/** $VER: Resources.h (2023.11.19) P. Stuer **/
 
 #pragma once
 
@@ -25,7 +25,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          2
+#define NUM_FILE_MINOR          3
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
@@ -34,7 +34,7 @@
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       2
+#define NUM_PRODUCT_MINOR       3
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
@@ -56,10 +56,14 @@
 
 #define IDD_CONFIGURATION               1000
 
-#define IDC_DISTRIBUTION                 2000
-#define IDC_FFT_SIZE                    IDC_DISTRIBUTION + 1
+#define IDC_DISTRIBUTION                2000
 
-#define IDC_X_AXIS                      IDC_FFT_SIZE + 1
+#define IDC_TRANSFORM                   IDC_DISTRIBUTION + 1
+#define IDC_TRANSFORM_PARAMETER_NAME    IDC_TRANSFORM + 1
+#define IDC_TRANSFORM_PARAMETER         IDC_TRANSFORM_PARAMETER_NAME + 1
+#define IDC_TRANSFORM_PARAMETER_UNIT    IDC_TRANSFORM_PARAMETER + 1
+
+#define IDC_X_AXIS                      IDC_TRANSFORM_PARAMETER_UNIT + 1
 #define IDC_Y_AXIS                      IDC_X_AXIS + 1
 
 #define IDC_COLOR_SCHEME                IDC_Y_AXIS + 1

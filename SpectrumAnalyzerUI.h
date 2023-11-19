@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.17) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.19) P. Stuer **/
 
 #pragma once
 
@@ -98,7 +98,7 @@ private:
     HRESULT RenderXAxisFreq(FLOAT, FLOAT, FLOAT, FLOAT, double frequency);
     HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
     HRESULT RenderYAxis();
-    HRESULT RenderBands();
+    HRESULT RenderSpectrum();
     HRESULT RenderFrameCounter();
 
     void GenerateFrequencyBands();
@@ -172,5 +172,6 @@ private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
+    size_t _FFTSize;
     uint32_t _SampleRate;
 };
