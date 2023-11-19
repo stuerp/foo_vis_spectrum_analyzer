@@ -571,7 +571,7 @@ void ConfigurationDialog::UpdateControls()
 
         case Transform::FFTDuration:
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_NAME, L"Duration:");
-            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTDuration)));
+            SetDlgItemTextW(IDC_TRANSFORM_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration._FFTDuration, 0, 1)));
             SetDlgItemTextW(IDC_TRANSFORM_PARAMETER_UNIT, L"ms");
             break;
     }
