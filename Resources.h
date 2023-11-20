@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.19) P. Stuer **/
+/** $VER: Resources.h (2023.11.20) P. Stuer **/
 
 #pragma once
 
@@ -16,6 +16,7 @@
 #define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
+#define STR_COMPONENT_COMMENT       "Based on the Audio Spectrum project (https://codepen.io/TF3RDL/pen/poQJwRW)"
 
 /** Generic **/
 

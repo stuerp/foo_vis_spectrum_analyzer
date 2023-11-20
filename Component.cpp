@@ -27,6 +27,7 @@ namespace
             STR_COMPONENT_COPYRIGHT "\n"
             "\n"
             STR_COMPONENT_DESCRIPTION "\n"
+            STR_COMPONENT_COMMENT "\n"
             "\n"
             "Built with foobar2000 SDK " TOSTRING(FOOBAR2000_SDK_VERSION) "\n"
             "on " __DATE__ " " __TIME__ "."
