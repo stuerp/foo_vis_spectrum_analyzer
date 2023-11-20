@@ -72,7 +72,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 
         VisualisationManager->create_stream(_VisualisationStream, visualisation_manager::KStreamFlagNewFFT);
 
-        _VisualisationStream->request_backlog(0.0); // FIXME: What does this do?
+        _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
     }
     catch (std::exception & ex)
     {
@@ -654,8 +654,9 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
         Iter.Lo      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
         Iter.Ctr     = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
         Iter.Hi      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
-        Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+
+//      Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+//      Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 
