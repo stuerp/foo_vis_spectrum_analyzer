@@ -70,6 +70,9 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         rtext           "Summation:",               IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
         combobox                                    IDC_SUMMATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
+        rtext           "Mapping:",                 IDC_STATIC,                     X_A65, Y_A65 + 2, W_A65, H_A65
+        combobox                                    IDC_MAPPING_METHOD,             X_A66, Y_A66,     W_A66, H_A66, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
         control         "Smooth lower frequencies", IDC_SMOOTH_LOWER_FREQUENCIES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A43, Y_A43, W_A43, H_A43
         control         "Smooth gain transition",   IDC_SMOOTH_GAIN_TRANSITION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A44, Y_A44, W_A44, H_A44
 
@@ -100,6 +103,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         rtext           "Pitch:"            IDC_STATIC,             X_A29, Y_A29 + 2, W_A29, H_A29
         edittext                            IDC_PITCH,              X_A30, Y_A30, W_A30, H_A30, WS_TABSTOP
+        ltext           "Hz",               IDC_STATIC,             X_A64, Y_A64 + 2, W_A64, H_A64
 
         rtext           "Transpose:"        IDC_STATIC,             X_A31, Y_A31 + 2, W_A31, H_A31
         edittext                            IDC_TRANSPOSE,          X_A32, Y_A32, W_A32, H_A32, WS_TABSTOP

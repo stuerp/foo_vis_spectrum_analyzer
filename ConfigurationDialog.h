@@ -51,6 +51,7 @@ public:
 
         COMMAND_HANDLER_EX(IDC_SCALING_FUNCTION, CBN_SELCHANGE, OnSelectionChanged)
         COMMAND_HANDLER_EX(IDC_SUMMATION_METHOD, CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_HANDLER_EX(IDC_MAPPING_METHOD, CBN_SELCHANGE, OnSelectionChanged)
 
         COMMAND_HANDLER_EX(IDC_SMOOTHING_METHOD, CBN_SELCHANGE, OnSelectionChanged)
         COMMAND_HANDLER_EX(IDC_SMOOTHING_FACTOR, EN_CHANGE, OnEditChange)
@@ -158,11 +159,16 @@ private:
     /// </summary>
     void OnButton(UINT, int id, CWindow)
     {
+        if (id == IDOK)
+        {
+            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+        }
+        else
         if (id == IDCANCEL)
         {
             _Configuration = _OldConfiguration;
 
-            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
         }
 
         GetWindowRect(&_Configuration._DialogBounds);

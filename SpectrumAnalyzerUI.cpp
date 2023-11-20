@@ -16,8 +16,6 @@
 
 #pragma hdrstop
 
-static bool _IsPlaying = false;
-
 /// <summary>
 /// Constructor
 /// </summary>
@@ -126,9 +124,6 @@ void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
     RenderFrame();
 
     ValidateRect(nullptr);
-
-    if (!_IsPlaying)
-        return;
 
     ULONGLONG Now = ::GetTickCount64(); // in ms, with a resolution of the system timer, which is typically in the range of 10ms to 16ms.
 
@@ -245,9 +240,23 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     SetConfiguration();
+
+    return 0;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    ui_element_config_builder Builder;
+
+    _Configuration.Write(Builder);
+
+    Builder.finish(g_get_guid());
 
     return 0;
 }
@@ -326,7 +335,7 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 
     _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight(), _Configuration._YAxisMode);
 
     // Forces the recreation of the brush.
     _BandForegroundBrush.Release();
@@ -360,7 +369,7 @@ void SpectrumAnalyzerUIElement::Resize()
 
     _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight());
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight(), _Configuration._YAxisMode);
 }
 
 #pragma endregion
@@ -389,29 +398,24 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _YAxis.Render(_RenderTarget);
 
-        if (_IsPlaying)
+        // Draw the visualization.
+        if (_VisualisationStream.is_valid())
         {
-            // Draw the visualization.
-            if (_VisualisationStream.is_valid())
+            double PlaybackTime; // in ms
+
+            if (_VisualisationStream->get_absolute_time(PlaybackTime))
             {
-                double PlaybackTime; // in ms
+                double WindowDuration = _Configuration.GetWindowDurationInMs();
 
-                if (_VisualisationStream->get_absolute_time(PlaybackTime))
-                {
-                    double WindowDuration = _Configuration.GetWindowDurationInMs();
+                audio_chunk_impl Chunk;
 
-                    audio_chunk_impl Chunk;
-
-                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
-                        RenderChunk(Chunk);
-                }
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
+                    RenderChunk(Chunk);
             }
-            else
-                Log(LogLevel::Trace, "%s: Visualisation stream is invalid.", core_api::get_my_file_name());
-
-            if (_Configuration._LogLevel != LogLevel::None)
-                _FrameCounter.Render(_RenderTarget);
         }
+
+        if (_Configuration._LogLevel != LogLevel::None)
+            _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
 
@@ -436,7 +440,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
 
     _SampleRate = chunk.get_sample_rate();
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._Mapping == Mapping::FilterBanks)) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::FilterBanks)) ? _Configuration._Bandwidth : 0.5;
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
@@ -486,7 +490,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             _SpectrumAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
             // Get the spectrum from the frequency coefficients.
-            if (_Configuration._Mapping == Mapping::Classic)
+            if (_Configuration._MappingMethod == Mapping::Classic)
                 _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
             else
                 _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);
@@ -1063,11 +1067,11 @@ GUID SpectrumAnalyzerUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
 {
-    Configuration Config;
+    Configuration DefaultConfiguration;
 
     ui_element_config_builder Builder;
 
-    Config.Write(Builder);
+    DefaultConfiguration.Write(Builder);
 
     return Builder.finish(g_get_guid());
 }
@@ -1128,8 +1132,6 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     SetConfiguration();
 
-    _IsPlaying = true;
-
     Invalidate();
 }
 
@@ -1138,8 +1140,6 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void SpectrumAnalyzerUIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _IsPlaying = false;
-
     Invalidate();
 }
 
@@ -1148,8 +1148,6 @@ void SpectrumAnalyzerUIElement::on_playback_stop(play_control::t_stop_reason rea
 /// </summary>
 void SpectrumAnalyzerUIElement::on_playback_pause(bool)
 {
-    _IsPlaying = !_IsPlaying;
-
     Invalidate();
 }
 

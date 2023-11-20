@@ -61,7 +61,7 @@ void Configuration::Reset() noexcept
     _FFTCustom = 4096;
     _FFTDuration = 100.;
 
-    _Mapping = Mapping::Classic;
+    _MappingMethod = Mapping::Classic;
 
     // Frequencies
     _FrequencyDistribution = FrequencyDistribution::Octaves;
@@ -166,14 +166,13 @@ Configuration & Configuration::operator=(const Configuration & other)
         _FFTCustom = other._FFTCustom;
         _FFTDuration = other._FFTDuration;
 
-        _Mapping = other._Mapping;
+        _MappingMethod = other._MappingMethod;
         _SmoothingMethod = other._SmoothingMethod;
         _SmoothingFactor = other._SmoothingFactor;
         _KernelSize = other._KernelSize;
         _SummationMethod = other._SummationMethod;
         _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
         _SmoothGainTransition = other._SmoothGainTransition;
-        _Gamma = other._Gamma;
     #pragma endregion
 
     #pragma region Frequencies
@@ -208,6 +207,8 @@ Configuration & Configuration::operator=(const Configuration & other)
         _MaxDecibel = other._MaxDecibel;
         _UseAbsolute = other._UseAbsolute;
 
+        _Gamma = other._Gamma;
+
         // Bands
         _ColorScheme = other._ColorScheme;
         _DrawBandBackground = other._DrawBandBackground;
@@ -238,7 +239,7 @@ void Configuration::Read(ui_element_config_parser & parser)
 
         switch (Version)
         {
-            case 2:
+            case 4:
             {
                 int Integer;
 
@@ -263,14 +264,13 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _Configuration._FFTCustom;
                 parser >> _Configuration._FFTDuration;
 
-                parser >> Integer; _Configuration._Mapping = (Mapping) Integer;
+                parser >> Integer; _Configuration._MappingMethod = (Mapping) Integer;
                 parser >> Integer; _Configuration._SmoothingMethod = (SmoothingMethod) Integer;
                 parser >> _Configuration._SmoothingFactor;
                 parser >> _Configuration._KernelSize;
                 parser >> Integer; _Configuration._SummationMethod = (SummationMethod) Integer;
                 parser >> _Configuration._SmoothLowerFrequencies;
                 parser >> _Configuration._SmoothGainTransition;
-                parser >> _Configuration._Gamma;
             #pragma endregion
 
             #pragma region Frequencies
@@ -306,6 +306,7 @@ void Configuration::Read(ui_element_config_parser & parser)
                 parser >> _Configuration._MinDecibel;
                 parser >> _Configuration._MaxDecibel;
                 parser >> _Configuration._UseAbsolute;
+                parser >> _Configuration._Gamma;
 
                 parser >> Integer; _Configuration._ColorScheme = (ColorScheme) Integer;
 
@@ -356,7 +357,7 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << (int) _Configuration._FFTSize;
         builder << _Configuration._FFTCustom;
         builder << _Configuration._FFTDuration;
-        builder << (int) _Configuration._Mapping;
+        builder << (int) _Configuration._MappingMethod;
 
         builder << (int) _Configuration._SmoothingMethod;
         builder << _Configuration._SmoothingFactor;
@@ -364,7 +365,6 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << (int) _Configuration._SummationMethod;
         builder << _Configuration._SmoothLowerFrequencies;
         builder << _Configuration._SmoothGainTransition;
-        builder << _Configuration._Gamma;
     #pragma endregion
 
     #pragma region Frequencies
@@ -396,6 +396,7 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _Configuration._MinDecibel;
         builder << _Configuration._MaxDecibel;
         builder << _Configuration._UseAbsolute;
+        builder << _Configuration._Gamma;
 
         builder << (int) _Configuration._ColorScheme;
 

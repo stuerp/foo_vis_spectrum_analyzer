@@ -81,14 +81,18 @@ v0.3.0.0, 2023-xx-xx
 * New: A custom FFT size can be specified in the configuration dialog.
 * New: A sample rate-based FFT size can be specified in the configuration dialog. The FFT size will be calculated based on the duration specified and the sample rate of the track being played.
 * New: Implemented Mel scale mapping of the FFT coefficients.
-* Fixed: The configuration dialog disabled the decibel settings when selecting a logarithmic Y axis scale.
+* New: X-axis and Y-axis can hidden by selecting the "None" mode of each of the axes.
+* Improved: Added a versioning mechanism to the settings of the component. Unfortunate side-effect: Any configuration will be reset.
+* Improved: Tweaked the layout and the size of the configuration dialog a little bit.
+* Fixed: The configuration dialog disabled the decibel settings when selecting a logarithmic Y-axis scale.
+* Fixed: Opening the visualization when a track was already playing did not show the spectrum.
 
 v0.2.0.0, 2023-11-18
 
 * New: Implemented a configuration dialog.
   * It's not pretty to look at, has a lot of rough edges and is not user-friendly but it works. Use it to play with but except things to change (and hopefully improve).
   * The JSON file will be ignored from now on, possibly later to be re-used for loading and saving presets.
-* New: Implemented logarithmic Y axis.
+* New: Implemented logarithmic Y-axis.
 * New: Experimental "Fade-Out" mode for the peak indicators.
 
 v0.1.0.4, 2023-11-16
@@ -109,7 +113,7 @@ v0.1.0.2, 2023-11-13
 * New: The configuration is now read from a JSON file. Note: Not all parameters are implemented yet.
 * New: Implemented all frequency scaling methods.
 * New: Implemented all coefficient summation methods.
-* New: The X axis has 3 extra display modes.
+* New: The X-axis has 3 extra display modes.
 
 v0.1.0.1, 2023-11-12
 

@@ -13,7 +13,7 @@
 #define H_CH        10 // Check box
 
 #define W_A00      356 // Dialog width (in dialog units)
-#define H_A00      378 // Dialog height (in dialog units)
+#define H_A00      396 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -97,12 +97,26 @@
     #define Y_A16    Y_A15
     #pragma endregion
 
+    #pragma region Mapping
+    // Label
+    #define W_A65    60
+    #define H_A65    H_LA
+    #define X_A65    X_A15
+    #define Y_A65    Y_A16 + H_A16 + IY
+
+    // Combobox
+    #define W_A66    100
+    #define H_A66    H_CB
+    #define X_A66    X_A65 + W_A65 + IX
+    #define Y_A66    Y_A65
+    #pragma endregion
+
     #pragma region Smooth lower frequencies
     // Checkbox
     #define W_A43    100
     #define H_A43    H_CH
-    #define X_A43    X_A16
-    #define Y_A43    Y_A16 + H_A16 + IY
+    #define X_A43    X_A65
+    #define Y_A43    Y_A66 + H_A66 + IY
     #pragma endregion
 
     #pragma region Smooth gain transition
@@ -128,7 +142,7 @@
     #pragma endregion
 
 #define W_B00    5 + W_A15 + IX + W_A16 + 5
-#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A44 + IY + H_A40 + 7
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
 #pragma region Frequencies
@@ -250,10 +264,10 @@
     #define Y_A30    Y_A29
 
     // Label (Hz)
-    #define W_A30b   8
-    #define H_A30b   H_LA
-    #define X_A30b   X_A30 + W_A30 + IX
-    #define Y_A30b   Y_A30
+    #define W_A64    8
+    #define H_A64    H_LA
+    #define X_A64    X_A30 + W_A30 + IX
+    #define Y_A64    Y_A30
     #pragma endregion
 
     #pragma region Transpose

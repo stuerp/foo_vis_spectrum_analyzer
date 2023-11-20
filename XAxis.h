@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.15) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.20) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -17,14 +17,14 @@
 class XAxis
 {
 public:
-    XAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelHeight(30.f), _ClientWidth(), _ClientHeight(), _TextHeight() { }
+    XAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelHeight(30.f), _Mode(), _ClientWidth(), _ClientHeight(), _TextHeight() { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    FLOAT GetHeight() const { return _LabelHeight; }
+    FLOAT GetHeight() const { return (_Mode != XAxisMode::None) ? _LabelHeight : 0.f; }
 
     struct Label
     {
@@ -43,6 +43,8 @@ public:
         _ClientWidth = width;
         _ClientHeight = height;
 
+        _Mode = xAxisMode;
+
         _Labels.clear();
 
         if (bands.size() == 0)
@@ -56,6 +58,9 @@ public:
 
             switch (xAxisMode)
             {
+                case XAxisMode::None:
+                    break;
+
                 default:
 
                 case XAxisMode::Bands:
@@ -151,6 +156,9 @@ public:
     /// </summary>
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
     {
+        if (_Mode == XAxisMode::None)
+            return S_OK;
+
         const FLOAT StrokeWidth = 1.0f;
 
         for (const Label & Iter : _Labels)
@@ -248,6 +256,8 @@ private:
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
     FLOAT _LabelHeight;  // Determines the max. width of the label.
+
+    XAxisMode _Mode;
 
     // Parent-dependent parameters
     FLOAT _X;

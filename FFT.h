@@ -10,8 +10,6 @@
 
 using namespace std;
 
-#include "FFTBase.h"
-
 /// <summary>
 /// Implements a wrapper for the complex FFT from Project Nayuki (https://www.nayuki.io/page/free-small-fft-in-multiple-languages).
 /// </summary>

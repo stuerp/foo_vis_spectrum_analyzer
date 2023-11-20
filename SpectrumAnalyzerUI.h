@@ -55,6 +55,7 @@ public:
     void OnContextMenu(CWindow wnd, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
 
+    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     BEGIN_MSG_MAP_EX(SpectrumAnalyzerUIElement)
@@ -65,6 +66,7 @@ public:
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
 
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
     #pragma endregion

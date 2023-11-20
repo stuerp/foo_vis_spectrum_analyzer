@@ -28,6 +28,8 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration._Transform);
     }
+    #pragma endregion
+
     #pragma region FFT
     {
         auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
@@ -49,18 +51,6 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration._FFTSize);
     }
     {
-        auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
-
-        w.ResetContent();
-
-        const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
-
-        w.SetCurSel((int) _Configuration._ScalingFunction);
-    }
-    {
         auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
 
         w.ResetContent();
@@ -73,26 +63,23 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration._SummationMethod);
     }
     {
-        auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
+        auto w = (CComboBox) GetDlgItem(IDC_MAPPING_METHOD);
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Average", L"Peak" };
+        const WCHAR * Labels[] = { L"Standard", L"Mel" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
 
-        w.SetCurSel((int) _Configuration._SmoothingMethod);
-
-        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SmoothingFactor, 0, 1)));
-
+        w.SetCurSel((int) _Configuration._MappingMethod);
+    }
+    {
         SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _Configuration._SmoothLowerFrequencies);
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _Configuration._SmoothGainTransition);
-
+    }
+    {
         SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration._KernelSize)));
-        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration._Gamma, 0, 1)));
     }
     #pragma endregion
 
@@ -119,6 +106,18 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration._BandsPerOctave)));
         SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Pitch, 0, 1)));
         SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration._Transpose)));
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
+
+            w.ResetContent();
+
+            const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
+
+            for (size_t i = 0; i < _countof(Labels); ++i)
+                w.AddString(Labels[i]);
+
+            w.SetCurSel((int) _Configuration._ScalingFunction);
+        }
         SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SkewFactor, 0, 1)));
         SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Bandwidth, 0, 1)));
     }
@@ -130,7 +129,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Bands", L"Decades", L"Octaves", L"Notes" };
+        const WCHAR * Labels[] = { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -145,7 +144,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Decibel", L"Logarithmic" };
+        const WCHAR * Labels[] = { L"None", L"Decibel", L"Logarithmic" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -155,6 +154,7 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MinDecibel, 0, 1)));
         SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration._MaxDecibel, 0, 1)));
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration._UseAbsolute);
+        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration._Gamma, 0, 1)));
     }
     #pragma endregion
 
@@ -174,6 +174,24 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration._ColorScheme);
     }
     {
+        SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration._DrawBandBackground);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"Average", L"Peak" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+        {
+            w.AddString(Labels[i]);
+        }
+        w.SetCurSel((int) _Configuration._SmoothingMethod);
+
+        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration._SmoothingFactor, 0, 1)));
+    }
+    {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
         w.ResetContent();
@@ -188,8 +206,6 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration._PeakMode);
     }
     {
-        SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration._DrawBandBackground);
-
         SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration._HoldTime, 0, 1)));
         SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration._Acceleration, 0, 1)));
     }
@@ -209,7 +225,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
-    #pragma region FFT
+    #pragma region Transform
         case IDC_TRANSFORM:
         {
             _Configuration._Transform = (Transform) SelectedIndex;
@@ -223,6 +239,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_FFT_SIZE:
         {
             _Configuration._FFTSize = (FFTSize) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+
+        case IDC_MAPPING_METHOD:
+        {
+            _Configuration._MappingMethod = (Mapping) SelectedIndex;
 
             UpdateControls();
             break;
@@ -291,7 +315,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 }
 
 /// <summary>
@@ -519,7 +543,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 }
 
 /// <summary>
@@ -565,7 +589,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 }
 
 /// <summary>
@@ -586,6 +610,7 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && State);
 
         GetDlgItem(IDC_SUMMATION_METHOD).EnableWindow(IsFFT);
+        GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
         GetDlgItem(IDC_SMOOTH_LOWER_FREQUENCIES).EnableWindow(IsFFT);
         GetDlgItem(IDC_SMOOTH_GAIN_TRANSITION).EnableWindow(IsFFT);
         GetDlgItem(IDC_KERNEL_SIZE).EnableWindow(IsFFT);
