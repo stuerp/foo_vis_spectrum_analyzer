@@ -599,7 +599,7 @@ void Configuration::Read()
 
                             if (Value.Contains(L"BackgroundColor"))
                             {
-                                uint32_t v = (uint32_t) (int) Value[L"BackgroundColor"]; // FIXME
+                                uint32_t v = (uint32_t) (int) Value[L"BackgroundColor"];
 
 //                              _Configuration._BackgroundColor = v;
                             }

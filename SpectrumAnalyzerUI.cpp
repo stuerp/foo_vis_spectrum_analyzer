@@ -462,6 +462,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             #pragma warning (default: 4061)
 
             _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _SampleRate, _FFTSize);
+
+            _FrequencyCoefficients.resize(_FFTSize);
         }
 
         if (_CQT == nullptr)
@@ -481,16 +483,13 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         {
             _SpectrumAnalyzer->Add(Samples, SampleCount);
 
-            // Get the frequency coefficients.
-            std::vector<std::complex<double>> FrequencyCoefficients(_FFTSize, 0.0); // FIXME: Don't reallocate every time.
-
-            _SpectrumAnalyzer->GetFrequencyCoefficients(FrequencyCoefficients);
+            _SpectrumAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
             // Get the spectrum from the frequency coefficients.
             if (_Configuration._Mapping == Mapping::Classic)
-                _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
+                _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
             else
-                _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate);
+                _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);
         }
         else
             _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands);

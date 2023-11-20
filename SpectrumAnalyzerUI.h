@@ -171,6 +171,8 @@ private:
 
 private:
     SpectrumAnalyzer * _SpectrumAnalyzer;
+    std::vector<std::complex<double>> _FrequencyCoefficients;
+
     CQTProvider * _CQT;
 
     std::vector<FrequencyBand> _FrequencyBands;
