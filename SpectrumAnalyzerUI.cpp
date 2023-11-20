@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.19) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.20) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -59,6 +59,15 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    // Remove the border of the client area.
+    {
+        LONG_PTR NewStyle = ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE);
+
+        NewStyle &= ~WS_EX_STATICEDGE;
+
+        ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, NewStyle);
+    }
+
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -172,7 +181,7 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
             Menu.CreatePopupMenu();
             Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, TEXT("Configure"));
             Menu.AppendMenu((UINT) MF_SEPARATOR);
-            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
+            Menu.AppendMenu((UINT) MF_STRING | MF_DISABLED, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
 //          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, TEXT("Hardware Rendering"));
 
             {

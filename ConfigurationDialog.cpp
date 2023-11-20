@@ -85,16 +85,18 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Frequencies
     {
-        auto w = (CComboBox) GetDlgItem(IDC_DISTRIBUTION);
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_DISTRIBUTION);
 
-        w.ResetContent();
+            w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
+            const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
 
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+            for (size_t i = 0; i < _countof(Labels); ++i)
+                w.AddString(Labels[i]);
 
-        w.SetCurSel((int) _Configuration._FrequencyDistribution);
+            w.SetCurSel((int) _Configuration._FrequencyDistribution);
+        }
 
         SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._NumBands)));
 
@@ -106,6 +108,7 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration._BandsPerOctave)));
         SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration._Pitch, 0, 1)));
         SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration._Transpose)));
+
         {
             auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
 

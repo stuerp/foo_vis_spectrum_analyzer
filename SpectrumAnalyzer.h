@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.19) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.20) P. Stuer **/
 
 #include "framework.h"
 

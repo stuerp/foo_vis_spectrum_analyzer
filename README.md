@@ -75,7 +75,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.3.0.0, 2023-xx-xx
+v0.3.0.0, 2023-11-20
 
 * New: Implemented a first version of a Constant-Q transform (CQT). Default is still FFT.
 * New: A custom FFT size can be specified in the configuration dialog.
@@ -84,6 +84,7 @@ v0.3.0.0, 2023-xx-xx
 * New: X-axis and Y-axis can hidden by selecting the "None" mode of each of the axes.
 * Improved: Added a versioning mechanism to the settings of the component. Unfortunate side-effect: Any configuration will be reset.
 * Improved: Tweaked the layout and the size of the configuration dialog a little bit.
+* Improved: Removed the client edge of the window for a cleaner look.
 * Fixed: The configuration dialog disabled the decibel settings when selecting a logarithmic Y-axis scale.
 * Fixed: Opening the visualization when a track was already playing did not show the spectrum.
 
