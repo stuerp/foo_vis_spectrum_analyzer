@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.19) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.20) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -38,13 +38,13 @@ void ConfigurationDialog::Initialize()
 
         for (int i = 64, j = 0; i <= 32768; i *= 2, ++j)
         {
-            ::StringCchPrintfW(Text, _countof(Text), L"FFT %i", i);
+            ::StringCchPrintfW(Text, _countof(Text), L"%i", i);
 
             w.AddString(Text);
         }
 
-        w.AddString(L"FFT Custom");
-        w.AddString(L"FFT Duration");
+        w.AddString(L"Custom");
+        w.AddString(L"Sample rate based");
 
         w.SetCurSel((int) _Configuration._FFTSize);
     }
@@ -594,18 +594,15 @@ void ConfigurationDialog::UpdateControls()
         switch (_Configuration._FFTSize)
         {
             default:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"");
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"");
                 break;
 
             case FFTSize::FFTCustom:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"FFT Size:");
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration._FFTCustom)));
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"samples");
                 break;
 
             case FFTSize::FFTDuration:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_NAME, L"Duration:");
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration._FFTDuration, 0, 1)));
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"ms");
                 break;

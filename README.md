@@ -77,10 +77,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.3.0.0, 2023-xx-xx
 
-* New: Implemented a Constant-Q transform (CQT).
-* New: A custom FFT size can be specified in the configuration dialog. When you select "FFT Duration" the FFT size will be calculated based on the duration specified and the sample rate.
+* New: Implemented a Constant-Q transform (CQT). Default is still FFT.
+* New: A custom FFT size can be specified in the configuration dialog.
+* New: A sample rate-based FFT size can be specified in the configuration dialog. The FFT size will be calculated based on the duration specified and the sample rate of the track being played.
 * New: Implemented Mel scale mapping of the FFT coefficients.
-* Fixed: The configuration dialog disable the decibel settings when selecting a logarithmic Y axis scale.
+* Fixed: The configuration dialog disabled the decibel settings when selecting a logarithmic Y axis scale.
 
 v0.2.0.0, 2023-11-18
 

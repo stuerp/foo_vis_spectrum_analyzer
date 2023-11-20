@@ -1,5 +1,5 @@
 
-/** $VER: FFT.h (2023.11.16) P. Stuer **/
+/** $VER: FFT.h (2023.11.20) P. Stuer **/
 
 #pragma once
 
@@ -15,7 +15,7 @@ using namespace std;
 /// <summary>
 /// Implements a wrapper for the complex FFT from Project Nayuki (https://www.nayuki.io/page/free-small-fft-in-multiple-languages).
 /// </summary>
-class FFT : public FFTBase
+class FFT
 {
 public:
     /// <summary>
@@ -51,6 +51,26 @@ public:
         Fft::transform(freqData, false);
 
         return true;
+    }
+
+    /// <summary>
+    /// Implements the Hanning Window function.
+    /// </summary>
+    /// <param name="n">Current index of the input signal</param>
+    /// <returns>Hanning window multiplier</returns>
+    double HanningWindow(size_t n)
+    {
+        return (0.5 * (1.0 - ::cos(M_PI * 2.0 * (double) n / ((double) _FFTSize - 1.0))));
+    }
+
+    /// <summary>
+    /// Implements the Hamming Window function.
+    /// </summary>
+    /// <param name="n">Current index of the input signal</param>
+    /// <returns>Hamming window multiplier</returns>
+    double HammingWindow(size_t n)
+    {
+        return 0.53836 - 0.46164 * ::cos(M_PI * 2.0 * (double) n / ((double) _FFTSize - 1.0));
     }
 
 private:

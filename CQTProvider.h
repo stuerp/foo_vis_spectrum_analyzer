@@ -1,5 +1,5 @@
 
-/** $VER: CQTProvider.h (2023.11.19) P. Stuer **/
+/** $VER: CQTProvider.h (2023.11.20) P. Stuer **/
 
 #pragma once
 
@@ -14,17 +14,18 @@
 
 using namespace std;
 
+#include "TransformProvider.h"
 #include "FrequencyBand.h"
 #include "Math.h"
 
 /// <summary>
 /// Implements a Constant-Q Transform provider.
 /// </summary>
-class CQTProvider
+class CQTProvider : public TransformProvider
 {
 public:
     CQTProvider() = delete;
-    CQTProvider(size_t channelCount, uint32_t sampleRate);
+    CQTProvider(size_t channelCount, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample);
 
     CQTProvider(const CQTProvider &) = delete;
     CQTProvider & operator=(const CQTProvider &) = delete;
@@ -33,28 +34,33 @@ public:
 
     virtual ~CQTProvider();
 
-    bool GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand, double bandwidthOffset, double alignment, double downSample) const;
+    bool GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand) const;
 
 private:
     static double ApplyWindowFunction(double n);
-    static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
 
 private:
     size_t _ChannelCount;
     double _SampleRate;
+    double _BandwidthOffset;
+    double _Alignment;
+    double _DownSample;
 };
 
 /// <summary>
 /// Initializes a new instance of the class.
 /// </summary>
 /// <param name="channelCount">Number of channels of the input data</param>
-inline CQTProvider::CQTProvider(size_t channelCount, uint32_t sampleRate)
+inline CQTProvider::CQTProvider(size_t channelCount, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample)
 {
     if (channelCount == 0)
         throw; // FIXME
 
     _ChannelCount = channelCount;
     _SampleRate = (double) sampleRate;
+    _BandwidthOffset = bandwidthOffset;
+    _Alignment = alignment;
+    _DownSample = downSample;
 }
 
 /// <summary>
@@ -67,19 +73,19 @@ inline CQTProvider::~CQTProvider()
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool inline CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand, double bandwidthOffset, double alignment, double downSample) const
+inline bool CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand) const
 {
     for (FrequencyBand & Iter : freqBand)
     {
-        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + (_SampleRate / (double) sampleCount) * bandwidthOffset;
+        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + (_SampleRate / (double) sampleCount) * _BandwidthOffset;
         double TLen = Min(1.0 / Bandwidth, (double) sampleCount / _SampleRate);
-        double DownsampleAmount = Max(1.0, ::trunc((_SampleRate * downSample) / (Iter.Ctr + TLen)));
+        double DownsampleAmount = Max(1.0, ::trunc((_SampleRate * _DownSample) / (Iter.Ctr + TLen)));
         double Coeff = 2. * ::cos(2. * M_PI * Iter.Ctr / _SampleRate * DownsampleAmount);
 
         double f1 = 0.;
         double f2 = 0.;
         double Sine = 0.;
-        double Offset = ::trunc(((double) sampleCount - TLen * _SampleRate) * (0.5 + alignment / 2.));
+        double Offset = ::trunc(((double) sampleCount - TLen * _SampleRate) * (0.5 + _Alignment / 2.));
 
         double LoIdx = Offset;
         double HiIdx = ::trunc(TLen * _SampleRate) + Offset - 1.;
@@ -182,39 +188,4 @@ function applyWindow(posX, windowType = 'Hann', windowParameter = 1, truncate = 
     }
 }
 */
-/// <summary>
-/// Calculates the average of the specified samples.
-/// </summary>
-audio_sample inline CQTProvider::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
-{
-    switch (channelCount)
-    {
-        case 1:
-            return samples[i];
 
-        case 2:
-            return (samples[i] + samples[i + 1]) / (audio_sample) 2.0;
-
-        case 3:
-            return (samples[i] + samples[i + 1] + samples[i + 2]) / (audio_sample) 3.0;
-
-        case 4:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (audio_sample) 4.0;
-
-        case 5:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (audio_sample) 5.0;
-
-        case 6:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (audio_sample) 6.0;
-
-        default:
-        {
-            audio_sample Average = 0.;
-
-            for (size_t j = 0; j < channelCount; ++j)
-                Average += samples[i + j];
-
-            return Average / (audio_sample) channelCount;
-        }
-    }
-}

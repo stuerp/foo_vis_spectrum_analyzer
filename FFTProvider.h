@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.h (2023.11.16) P. Stuer **/
+/** $VER: FFTProvider.h (2023.11.20) P. Stuer **/
 
 #pragma once
 
@@ -9,6 +9,7 @@
 
 #include "framework.h"
 
+#include "TransformProvider.h"
 #include "FFT.h"
 
 using namespace std;
@@ -16,7 +17,7 @@ using namespace std;
 /// <summary>
 /// Implements a Fast Fourier Transform provider.
 /// </summary>
-class FFTProvider
+class FFTProvider : public TransformProvider
 {
 public:
     FFTProvider() = delete;
@@ -39,11 +40,8 @@ public:
         return _FFTSize;
     }
 
-    bool Add(const audio_sample * samples, size_t count) noexcept;
-    bool GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
-
-private:
-    static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
+    void Add(const audio_sample * samples, size_t count) noexcept;
+    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
 private:
     size_t _ChannelCount;
@@ -101,10 +99,10 @@ inline FFTProvider::~FFTProvider()
 /// </summary>
 /// <param name="samples">Double array that contains samples</param>
 /// <param name="sampleCount">Number of samples to add to the provider</param>
-inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
+inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
 {
     if (samples == nullptr)
-        return false;
+        return;
 
     // Make sure there are enough samples for all the channels.
     sampleCount -= (sampleCount % _ChannelCount);
@@ -118,20 +116,12 @@ inline bool FFTProvider::Add(const audio_sample * samples, size_t sampleCount) n
         if (_SampleCount >= _SampleSize)
             _SampleCount = 0;
     }
-
-    return true;
 }
 
 /// <summary>
 /// Calculates the Fast Fourier Transform and returns the frequency data in the result buffer.
 /// </summary>
-/// <param name="result">The output buffer</param>
-/// <returns>
-/// Returns a value which indicates whether the Fast Fourier Transform got calculated.
-/// If there have not been added any new samples since the last transform, the FFT
-/// won't be calculated. True means that the Fast Fourier Transform got calculated.
-///</returns>
-bool inline FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
+inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
 {
     double Norm = 0.0;
 
@@ -142,14 +132,14 @@ bool inline FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
         for (complex<double> & Iter : _TimeData)
         {
-            double Multiplier = FFT::HanningWindow(j, _FFTSize);
+            double WindowFactor = _FFT.HanningWindow(j);
 
-            Iter.real(_SampleData[i] * Multiplier);
+            Iter.real(_SampleData[i] * WindowFactor);
 
             if (++i == _SampleSize)
                 i = 0;
 
-            Norm += Multiplier;
+            Norm += WindowFactor;
             j++;
         }
     }
@@ -168,43 +158,4 @@ bool inline FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
     // Normalize the frequency domain data.
     for (complex<double> & Iter : freqCoefficients)
         Iter /= (double) _FFTSize;
-
-    return true;
-}
-
-/// <summary>
-/// Calculates the average of the specified samples.
-/// </summary>
-audio_sample inline FFTProvider::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
-{
-    switch (channelCount)
-    {
-        case 1:
-            return samples[i];
-
-        case 2:
-            return (samples[i] + samples[i + 1]) / (audio_sample) 2.0;
-
-        case 3:
-            return (samples[i] + samples[i + 1] + samples[i + 2]) / (audio_sample) 3.0;
-
-        case 4:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (audio_sample) 4.0;
-
-        case 5:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (audio_sample) 5.0;
-
-        case 6:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (audio_sample) 6.0;
-
-        default:
-        {
-            audio_sample Average = 0.;
-
-            for (size_t j = 0; j < channelCount; ++j)
-                Average += samples[i + j];
-
-            return Average / (audio_sample) channelCount;
-        }
-    }
 }

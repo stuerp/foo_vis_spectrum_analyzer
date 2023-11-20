@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.19) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.20) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -40,85 +40,6 @@ Configuration::Configuration()
 }
 
 /// <summary>
-/// Implements the = operator.
-/// </summary>
-Configuration & Configuration::operator=(const Configuration & other)
-{
-    _DialogBounds = other._DialogBounds;
-
-    _RefreshRateLimit = other._RefreshRateLimit;
-
-    _UseHardwareRendering = other._UseHardwareRendering;
-    _UseAntialiasing = other._UseAntialiasing;
-
-    _UseZeroTrigger = other._UseZeroTrigger;
-    _WindowDuration = other._WindowDuration;
-
-    // Transform type
-    _Transform = other._Transform;
-
-    // FFT
-    _FFTSize = other._FFTSize;
-    _FFTCustom = other._FFTCustom;
-    _FFTDuration = other._FFTDuration;
-
-    _Mapping = other._Mapping;
-
-    // Frequencies
-    _FrequencyDistribution = other._FrequencyDistribution;
-
-    _NumBands = other._NumBands;
-    _MinFrequency = other._MinFrequency;
-    _MaxFrequency = other._MaxFrequency;
-
-    // Note range
-    _MinNote = other._MinNote;
-    _MaxNote = other._MaxNote;
-    _BandsPerOctave = other._BandsPerOctave;
-    _Pitch = other._Pitch;
-    _Transpose = other._Transpose;
-
-    // Frequencies
-    _ScalingFunction = other._ScalingFunction;
-
-    _SkewFactor = other._SkewFactor;
-    _Bandwidth = other._Bandwidth;
-
-    _SmoothingMethod = other._SmoothingMethod;
-    _SmoothingFactor = other._SmoothingFactor;
-
-    _KernelSize = other._KernelSize;
-    _SummationMethod = other._SummationMethod;
-    _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-    _SmoothGainTransition = other._SmoothGainTransition;
-
-    // Rendering parameters
-    _BackgroundColor = other._BackgroundColor;
-
-    // X axis
-    _XAxisMode = other._XAxisMode;
-
-    // Y axis
-    _YAxisMode = other._YAxisMode;
-
-    _MinDecibel = other._MinDecibel;
-    _MaxDecibel = other._MaxDecibel;
-
-    _UseAbsolute = other._UseAbsolute;
-    _Gamma = other._Gamma;
-
-    // Band
-    _ColorScheme = other._ColorScheme;
-    _PeakMode = other._PeakMode;
-    _DrawBandBackground = other._DrawBandBackground;
-
-    // Logging
-    _LogLevel = other._LogLevel;
-
-    return *this;
-}
-
-/// <summary>
 /// Resets this instance.
 /// </summary>
 void Configuration::Reset() noexcept
@@ -133,7 +54,7 @@ void Configuration::Reset() noexcept
     _UseZeroTrigger = false;
     _WindowDuration = 100;
 
-    _Transform = Transform::CQT;
+    _Transform = Transform::FFT;
 
     // FFT
     _FFTSize = FFTSize::FFT4096;
@@ -220,6 +141,86 @@ void Configuration::Reset() noexcept
     diffLabels: false,
     compensateDelay: false
 */
+}
+
+/// <summary>
+/// Implements the = operator.
+/// </summary>
+Configuration & Configuration::operator=(const Configuration & other)
+{
+    _DialogBounds = other._DialogBounds;
+
+    _RefreshRateLimit = other._RefreshRateLimit;
+
+    _UseHardwareRendering = other._UseHardwareRendering;
+    _UseAntialiasing = other._UseAntialiasing;
+
+    _UseZeroTrigger = other._UseZeroTrigger;
+    _WindowDuration = other._WindowDuration;
+
+    // Transform type
+    _Transform = other._Transform;
+
+    #pragma region FFT
+        _FFTSize = other._FFTSize;
+        _FFTCustom = other._FFTCustom;
+        _FFTDuration = other._FFTDuration;
+
+        _Mapping = other._Mapping;
+        _SmoothingMethod = other._SmoothingMethod;
+        _SmoothingFactor = other._SmoothingFactor;
+        _KernelSize = other._KernelSize;
+        _SummationMethod = other._SummationMethod;
+        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
+        _SmoothGainTransition = other._SmoothGainTransition;
+        _Gamma = other._Gamma;
+    #pragma endregion
+
+    #pragma region Frequencies
+        _FrequencyDistribution = other._FrequencyDistribution;
+
+        _NumBands = other._NumBands;
+        _MinFrequency = other._MinFrequency;
+        _MaxFrequency = other._MaxFrequency;
+
+        // Note range
+        _MinNote = other._MinNote;
+        _MaxNote = other._MaxNote;
+        _BandsPerOctave = other._BandsPerOctave;
+        _Pitch = other._Pitch;
+        _Transpose = other._Transpose;
+
+        _ScalingFunction = other._ScalingFunction;
+        _SkewFactor = other._SkewFactor;
+        _Bandwidth = other._Bandwidth;
+    #pragma endregion
+
+    #pragma region Rendering
+        _BackgroundColor = other._BackgroundColor;
+
+        // X axis
+        _XAxisMode = other._XAxisMode;
+
+        // Y axis
+        _YAxisMode = other._YAxisMode;
+
+        _MinDecibel = other._MinDecibel;
+        _MaxDecibel = other._MaxDecibel;
+        _UseAbsolute = other._UseAbsolute;
+
+        // Bands
+        _ColorScheme = other._ColorScheme;
+        _DrawBandBackground = other._DrawBandBackground;
+
+        _PeakMode = other._PeakMode;
+        _HoldTime = other._HoldTime;
+        _Acceleration = other._Acceleration;
+    #pragma endregion
+
+    // Logging
+    _LogLevel = other._LogLevel;
+
+    return *this;
 }
 
 /// <summary>

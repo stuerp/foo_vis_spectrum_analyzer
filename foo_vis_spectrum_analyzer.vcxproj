@@ -177,7 +177,6 @@
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="CQTProvider.h" />
-    <ClInclude Include="FFTBase.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
@@ -190,6 +189,7 @@
     <ClInclude Include="SpectrumAnalyzer.h" />
     <ClInclude Include="SpectrumAnalyzerUI.h" />
     <ClInclude Include="Support.h" />
+    <ClInclude Include="TransformProvider.h" />
     <ClInclude Include="XAxis.h" />
     <ClInclude Include="YAxis.h" />
   </ItemGroup>

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.19) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.20) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -57,7 +57,7 @@
     #define Y_A03   Y_B00 + 11
 
     // Combobox
-    #define W_A04   60
+    #define W_A04   82
     #define H_A04   H_CB
     #define X_A04   X_A03 + W_A03 + IX
     #define Y_A04   Y_A03

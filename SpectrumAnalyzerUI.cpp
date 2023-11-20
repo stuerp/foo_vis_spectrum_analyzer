@@ -465,7 +465,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
         }
 
         if (_CQT == nullptr)
-            _CQT = new CQTProvider(ChannelCount, _SampleRate);
+            _CQT = new CQTProvider(ChannelCount, _SampleRate, 1.0, 1.0, 0.0);
     }
 
     // Add the samples to the spectrum analyzer or the CQT.
@@ -493,7 +493,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
                 _SpectrumAnalyzer->GetSpectrum(FrequencyCoefficients, _FrequencyBands, _SampleRate);
         }
         else
-            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands, 1.0, 1.0, 0.0);
+            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands);
     }
 
     // Smooth the spectrum.
