@@ -75,6 +75,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.4.0.0, 2023-xx-xx
+
+*
+
 v0.3.0.0, 2023-11-20
 
 * New: Implemented a first version of a Constant-Q transform (CQT). Default is still FFT.

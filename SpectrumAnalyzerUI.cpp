@@ -1050,7 +1050,7 @@ void SpectrumAnalyzerUIElement::g_get_name(pfc::string_base & p_out)
 /// </summary>
 const char * SpectrumAnalyzerUIElement::g_get_description()
 {
-    return "Spectogram visualization using Direct2D";
+    return "Spectum analyzer visualization using DirectX";
 }
 
 /// <summary>
