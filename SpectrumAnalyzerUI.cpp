@@ -464,7 +464,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
 
     _SampleRate = chunk.get_sample_rate();
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::FilterBanks)) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) ? _Configuration._Bandwidth : 0.5;
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
@@ -514,7 +514,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             _SpectrumAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
             // Get the spectrum from the frequency coefficients.
-            if (_Configuration._MappingMethod == Mapping::Classic)
+            if (_Configuration._MappingMethod == Mapping::Standard)
                 _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
             else
                 _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);

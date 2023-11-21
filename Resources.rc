@@ -78,6 +78,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         rtext           "Lanczos kernel:"           IDC_STATIC,                     X_A39, Y_A39 + 2, W_A39, H_A39
         edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, WS_TABSTOP
+        control         "",                         IDC_KERNEL_SIZE_SPIN,           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
     groupbox "Frequencies", IDC_STATIC, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -100,6 +101,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         rtext           "Bands per octave:" IDC_STATIC,             X_A55, Y_A55 + 2, W_A55, H_A55
         edittext                            IDC_BANDS_PER_OCTAVE,   X_A56, Y_A56, W_A56, H_A56, WS_TABSTOP
+        control         "",                 IDC_BANDS_PER_OCTAVE_SPIN, "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
         rtext           "Pitch:"            IDC_STATIC,             X_A29, Y_A29 + 2, W_A29, H_A29
         edittext                            IDC_PITCH,              X_A30, Y_A30, W_A30, H_A30, WS_TABSTOP
@@ -107,6 +109,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         rtext           "Transpose:"        IDC_STATIC,             X_A31, Y_A31 + 2, W_A31, H_A31
         edittext                            IDC_TRANSPOSE,          X_A32, Y_A32, W_A32, H_A32, WS_TABSTOP
+        control         "",                 IDC_TRANSPOSE_SPIN,     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
         rtext           "Scaling:",         IDC_STATIC,             X_A13, Y_A13 + 2, W_A13, H_A13
         combobox                            IDC_SCALING_FUNCTION,   X_A14, Y_A14,     W_A14, H_A14, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -145,6 +148,12 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         control         "Band background",  IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
 
+        rtext           "Smoothing:",       IDC_STATIC,             X_A17, Y_A17 + 2, W_A17, H_A17
+        combobox                            IDC_SMOOTHING_METHOD,   X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Smoothing factor:" IDC_STATIC,             X_A37, Y_A37 + 2, W_A37, H_A37
+        edittext                            IDC_SMOOTHING_FACTOR,   X_A38, Y_A38, W_A38, H_A38, WS_TABSTOP
+
         // Peak indicators
         rtext           "Peak mode:",       IDC_STATIC,             X_A11, Y_A11 + 2, W_A11, H_A11
         combobox                            IDC_PEAK_MODE,          X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -154,12 +163,6 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         rtext           "Acceleration:"     IDC_STATIC,             X_A53, Y_A53 + 2, W_A53, H_A53
         edittext                            IDC_ACCELERATION,       X_A54, Y_A54, W_A54, H_A54, WS_TABSTOP
-
-        rtext           "Smoothing:",       IDC_STATIC,             X_A17, Y_A17 + 2, W_A17, H_A17
-        combobox                            IDC_SMOOTHING_METHOD,   X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-
-        rtext           "Smoothing factor:" IDC_STATIC,             X_A37, Y_A37 + 2, W_A37, H_A37
-        edittext                            IDC_SMOOTHING_FACTOR,   X_A38, Y_A38, W_A38, H_A38, WS_TABSTOP
 
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97

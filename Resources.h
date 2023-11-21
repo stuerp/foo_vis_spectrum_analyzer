@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.20) P. Stuer **/
+/** $VER: Resources.h (2023.11.21) P. Stuer **/
 
 #pragma once
 
@@ -26,7 +26,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          3
+#define NUM_FILE_MINOR          4
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
@@ -35,7 +35,7 @@
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       3
+#define NUM_PRODUCT_MINOR       4
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
@@ -86,14 +86,17 @@
 #define IDC_MIN_NOTE                    IDC_MAX_FREQUENCY + 1
 #define IDC_MAX_NOTE                    IDC_MIN_NOTE + 1
 #define IDC_BANDS_PER_OCTAVE            IDC_MAX_NOTE + 1
-#define IDC_PITCH                       IDC_BANDS_PER_OCTAVE + 1
+#define IDC_BANDS_PER_OCTAVE_SPIN       IDC_BANDS_PER_OCTAVE + 1
+#define IDC_PITCH                       IDC_BANDS_PER_OCTAVE_SPIN + 1
 #define IDC_TRANSPOSE                   IDC_PITCH + 1
+#define IDC_TRANSPOSE_SPIN              IDC_TRANSPOSE + 1
 
-#define IDC_SKEW_FACTOR                 IDC_TRANSPOSE + 1
+#define IDC_SKEW_FACTOR                 IDC_TRANSPOSE_SPIN + 1
 #define IDC_BANDWIDTH                   IDC_SKEW_FACTOR + 1
 #define IDC_SMOOTHING_FACTOR            IDC_BANDWIDTH + 1
 #define IDC_KERNEL_SIZE                 IDC_SMOOTHING_FACTOR + 1
-#define IDC_GAMMA                       IDC_KERNEL_SIZE + 1
+#define IDC_KERNEL_SIZE_SPIN            IDC_KERNEL_SIZE + 1
+#define IDC_GAMMA                       IDC_KERNEL_SIZE_SPIN + 1
 
 #define IDC_SMOOTH_LOWER_FREQUENCIES    IDC_GAMMA + 1
 #define IDC_SMOOTH_GAIN_TRANSITION      IDC_SMOOTH_LOWER_FREQUENCIES + 1

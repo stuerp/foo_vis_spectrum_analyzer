@@ -67,7 +67,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Standard", L"Mel" };
+        const WCHAR * Labels[] = { L"Standard", L"Triangular Filter Bank" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -80,6 +80,11 @@ void ConfigurationDialog::Initialize()
     }
     {
         SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
+
+        w.SetRange32(1, 64);
+        w.SetPos32(_Configuration->_KernelSize);
     }
     #pragma endregion
 
@@ -110,6 +115,20 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
 
         {
+            auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
+
+            w.SetRange32(1, 48);
+            w.SetPos32(_Configuration->_BandsPerOctave);
+        }
+
+        {
+            auto w = CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN));
+
+            w.SetRange32(-24, 24);
+            w.SetPos32(_Configuration->_Transpose);
+        }
+
+        {
             auto w = (CComboBox) GetDlgItem(IDC_SCALING_FUNCTION);
 
             w.ResetContent();
@@ -121,6 +140,7 @@ void ConfigurationDialog::Initialize()
 
             w.SetCurSel((int) _Configuration->_ScalingFunction);
         }
+
         SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 1)));
         SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
     }
@@ -222,6 +242,9 @@ void ConfigurationDialog::Initialize()
 /// </summary>
 void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 {
+    if (_Configuration == nullptr)
+        return;
+
     CComboBox cb = (CComboBox) w;
 
     int SelectedIndex = cb.GetCurSel();
@@ -326,7 +349,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if (code != EN_CHANGE)
+    if ((code != EN_CHANGE) || (_Configuration == nullptr))
         return;
 
     WCHAR Text[MAX_PATH];
@@ -335,7 +358,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
-    #pragma region Transform
+    #pragma region FFT
         case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -378,17 +401,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 return;
 
             _Configuration->_KernelSize = Value;
-            break;
-        }
-
-        case IDC_GAMMA:
-        {
-            double Value = ::_wtof(Text);
-
-            if (!InInterval(Value, 0.5, 10.0))
-                return;
-
-            _Configuration->_Gamma = Value;
             break;
         }
     #pragma endregion
@@ -471,6 +483,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_TRANSPOSE:
+        {
+            int Value = ::_wtoi(Text);
+
+            if (!InInterval(Value, -24, 24))
+                return;
+
+            _Configuration->_Transpose = Value;
+            break;
+        }
+
         case IDC_SKEW_FACTOR:
         {
             double Value = ::_wtof(Text);
@@ -516,9 +539,31 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_MaxDecibel = Value;
             break;
         }
+
+        case IDC_GAMMA:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0.5, 10.0))
+                return;
+
+            _Configuration->_Gamma = Value;
+            break;
+        }
     #pragma endregion
 
     #pragma region Peak indicator
+        case IDC_SMOOTHING_FACTOR:
+        {
+            double Value = ::_wtof(Text);
+
+            if (!InInterval(Value, 0., 1.))
+                return;
+
+            _Configuration->_SmoothingFactor = Value;
+            break;
+        }
+
         case IDC_HOLD_TIME:
         {
             double Value = ::_wtof(Text);
@@ -554,6 +599,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 /// </summary>
 void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 {
+    if (_Configuration == nullptr)
+        return;
+
     switch (id)
     {
         case IDC_SMOOTH_LOWER_FREQUENCIES:

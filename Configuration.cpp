@@ -60,7 +60,7 @@ void Configuration::Reset() noexcept
     _FFTCustom = 4096;
     _FFTDuration = 100.;
 
-    _MappingMethod = Mapping::Classic;
+    _MappingMethod = Mapping::Standard;
 
     // Frequencies
     _FrequencyDistribution = FrequencyDistribution::Octaves;
