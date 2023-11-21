@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.20) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.21) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -10,7 +10,6 @@
 #include <complex>
 
 #include "Configuration.h"
-#include "Support.h"
 #include "Resources.h"
 #include "SpectrumAnalyzerUI.h"
 
@@ -181,7 +180,7 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
             Menu.CreatePopupMenu();
             Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, TEXT("Configure"));
             Menu.AppendMenu((UINT) MF_SEPARATOR);
-            Menu.AppendMenu((UINT) MF_STRING | MF_DISABLED, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
+            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
 //          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, TEXT("Hardware Rendering"));
 
             {
@@ -257,7 +256,7 @@ LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanging(UINT uMsg, WPARAM wPa
 }
 
 /// <summary>
-/// Handles a configuration change.
+/// Called when the configuration dialog is closed by an OK button.
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -298,6 +297,20 @@ void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
     _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
 }
 
+void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) noexcept
+{
+    if (logLevel < _Configuration._LogLevel)
+        return;
+
+    va_list va;
+
+    va_start(va, format);
+
+    console::printfv(format, va);
+
+    va_end(va);
+}
+
 /// <summary>
 /// Shows the Options dialog.
 /// </summary>
@@ -305,7 +318,9 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) m_hWnd) == NULL)
+        DialogParameters dp = { m_hWnd, &_Configuration };
+
+        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) == NULL)
             return;
 
         _ConfigurationDialog.ShowWindow(SW_SHOW);
@@ -342,9 +357,9 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     else
         GenerateFrequencyBandsFromNotes();
 
-    _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+    _XAxis.Initialize(((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight(), _Configuration._YAxisMode);
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
 
     // Forces the recreation of the brush.
     _BandForegroundBrush.Release();
@@ -376,9 +391,9 @@ void SpectrumAnalyzerUIElement::Resize()
 
     _FrameCounter.Initialize((FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height);
 
-    _XAxis.Initialize(_YAxis.GetWidth(), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+    _XAxis.Initialize((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - _XAxis.GetHeight(), _Configuration._YAxisMode);
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
 }
 
 #pragma endregion
@@ -474,7 +489,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             }
             #pragma warning (default: 4061)
 
-            _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, _SampleRate, _FFTSize);
+            _SpectrumAnalyzer = new SpectrumAnalyzer(&_Configuration, ChannelCount, _SampleRate, _FFTSize);
 
             _FrequencyCoefficients.resize(_FFTSize);
         }
@@ -574,7 +589,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderSpectrum()
         // Draw the foreground.
         if (Iter.CurValue > 0.0)
         {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * ScaleA(Iter.CurValue))), y1, Rect.bottom);
+            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * _Configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
             _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
         }

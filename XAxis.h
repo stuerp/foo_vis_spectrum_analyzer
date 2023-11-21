@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.20) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.21) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -24,7 +24,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    FLOAT GetHeight() const { return (_Mode != XAxisMode::None) ? _LabelHeight : 0.f; }
+    FLOAT GetHeight() const { return _LabelHeight; }
 
     struct Label
     {
@@ -221,11 +221,11 @@ public:
                 // Calculate the height
                 _LabelHeight = 2.f + _TextHeight + 2.f;
             }
-            else
-                Log(LogLevel::Critical, "%s: Unable to create X axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
+//          else
+//              Log(LogLevel::Critical, "%s: Unable to create X axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
-        else
-            Log(LogLevel::Critical, "%s: Unable to create X axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+//      else
+//          Log(LogLevel::Critical, "%s: Unable to create X axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }

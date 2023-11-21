@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.20) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.21) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -10,7 +10,6 @@
 #include "framework.h"
 
 #include "Configuration.h"
-#include "Support.h"
 #include "Resources.h"
 #include "Math.h"
 
@@ -257,38 +256,38 @@ void Configuration::Read(ui_element_config_parser & parser)
 
                 parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
-                parser >> Integer; _Configuration._Transform = (Transform) Integer;
+                parser >> Integer; _Transform = (Transform) Integer;
 
             #pragma region FFT
-                parser >> Integer; _Configuration._FFTSize = (FFTSize) Integer;
-                parser >> _Configuration._FFTCustom;
-                parser >> _Configuration._FFTDuration;
+                parser >> Integer; _FFTSize = (FFTSize) Integer;
+                parser >> _FFTCustom;
+                parser >> _FFTDuration;
 
-                parser >> Integer; _Configuration._MappingMethod = (Mapping) Integer;
-                parser >> Integer; _Configuration._SmoothingMethod = (SmoothingMethod) Integer;
-                parser >> _Configuration._SmoothingFactor;
-                parser >> _Configuration._KernelSize;
-                parser >> Integer; _Configuration._SummationMethod = (SummationMethod) Integer;
-                parser >> _Configuration._SmoothLowerFrequencies;
-                parser >> _Configuration._SmoothGainTransition;
+                parser >> Integer; _MappingMethod = (Mapping) Integer;
+                parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+                parser >> _SmoothingFactor;
+                parser >> _KernelSize;
+                parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+                parser >> _SmoothLowerFrequencies;
+                parser >> _SmoothGainTransition;
             #pragma endregion
 
             #pragma region Frequencies
-                parser >> Integer; _Configuration._FrequencyDistribution = (FrequencyDistribution) Integer;
+                parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
 
-                parser >> _Configuration._NumBands;
-                parser >> _Configuration._MinFrequency;
-                parser >> _Configuration._MaxFrequency;
+                parser >> _NumBands;
+                parser >> _MinFrequency;
+                parser >> _MaxFrequency;
 
-                parser >> _Configuration._MinNote;
-                parser >> _Configuration._MaxNote;
-                parser >> _Configuration._BandsPerOctave;
-                parser >> _Configuration._Pitch;
-                parser >> _Configuration._Transpose;
+                parser >> _MinNote;
+                parser >> _MaxNote;
+                parser >> _BandsPerOctave;
+                parser >> _Pitch;
+                parser >> _Transpose;
 
-                parser >> Integer; _Configuration._ScalingFunction = (ScalingFunction) Integer;
-                parser >> _Configuration._SkewFactor;
-                parser >> _Configuration._Bandwidth;
+                parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+                parser >> _SkewFactor;
+                parser >> _Bandwidth;
             #pragma endregion
 
             #pragma region Rendering
@@ -297,35 +296,35 @@ void Configuration::Read(ui_element_config_parser & parser)
 
                 parser >> Rgb;
                 parser >> Alpha;
-                _Configuration._BackgroundColor = D2D1::ColorF(Rgb, Alpha);
+                _BackgroundColor = D2D1::ColorF(Rgb, Alpha);
 
-                parser >> Integer; _Configuration._XAxisMode = (XAxisMode) Integer;
+                parser >> Integer; _XAxisMode = (XAxisMode) Integer;
 
-                parser >> Integer; _Configuration._YAxisMode = (YAxisMode) Integer;
+                parser >> Integer; _YAxisMode = (YAxisMode) Integer;
 
-                parser >> _Configuration._MinDecibel;
-                parser >> _Configuration._MaxDecibel;
-                parser >> _Configuration._UseAbsolute;
-                parser >> _Configuration._Gamma;
+                parser >> _MinDecibel;
+                parser >> _MaxDecibel;
+                parser >> _UseAbsolute;
+                parser >> _Gamma;
 
-                parser >> Integer; _Configuration._ColorScheme = (ColorScheme) Integer;
+                parser >> Integer; _ColorScheme = (ColorScheme) Integer;
 
-                parser >> _Configuration._DrawBandBackground;
+                parser >> _DrawBandBackground;
 
-                parser >> Integer; _Configuration._PeakMode = (PeakMode) Integer;
-                parser >> _Configuration._HoldTime;
-                parser >> _Configuration._Acceleration;
+                parser >> Integer; _PeakMode = (PeakMode) Integer;
+                parser >> _HoldTime;
+                parser >> _Acceleration;
             #pragma endregion
                 break;
             }
 
-            default:
-                Log(LogLevel::Error, "%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
+//          default:
+//                Log(LogLevel::Error, "%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
         }
     }
     catch (exception_io & ex)
     {
-        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+//        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -351,60 +350,60 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _WindowDuration;
     #pragma endregion
 
-        builder << (int) _Configuration._Transform;
+        builder << (int) _Transform;
 
     #pragma region FFT
-        builder << (int) _Configuration._FFTSize;
-        builder << _Configuration._FFTCustom;
-        builder << _Configuration._FFTDuration;
-        builder << (int) _Configuration._MappingMethod;
+        builder << (int) _FFTSize;
+        builder << _FFTCustom;
+        builder << _FFTDuration;
+        builder << (int) _MappingMethod;
 
-        builder << (int) _Configuration._SmoothingMethod;
-        builder << _Configuration._SmoothingFactor;
-        builder << _Configuration._KernelSize;
-        builder << (int) _Configuration._SummationMethod;
-        builder << _Configuration._SmoothLowerFrequencies;
-        builder << _Configuration._SmoothGainTransition;
+        builder << (int) _SmoothingMethod;
+        builder << _SmoothingFactor;
+        builder << _KernelSize;
+        builder << (int) _SummationMethod;
+        builder << _SmoothLowerFrequencies;
+        builder << _SmoothGainTransition;
     #pragma endregion
 
     #pragma region Frequencies
-        builder << (int) _Configuration._FrequencyDistribution;
+        builder << (int) _FrequencyDistribution;
 
-        builder << _Configuration._NumBands;
-        builder << _Configuration._MinFrequency;
-        builder << _Configuration._MaxFrequency;
+        builder << _NumBands;
+        builder << _MinFrequency;
+        builder << _MaxFrequency;
 
-        builder << _Configuration._MinNote;
-        builder << _Configuration._MaxNote;
-        builder << _Configuration._BandsPerOctave;
-        builder << _Configuration._Pitch;
-        builder << _Configuration._Transpose;
+        builder << _MinNote;
+        builder << _MaxNote;
+        builder << _BandsPerOctave;
+        builder << _Pitch;
+        builder << _Transpose;
 
-        builder << (int) _Configuration._ScalingFunction;
-        builder << _Configuration._SkewFactor;
-        builder << _Configuration._Bandwidth;
+        builder << (int) _ScalingFunction;
+        builder << _SkewFactor;
+        builder << _Bandwidth;
     #pragma endregion
 
     #pragma region Rendering
-        builder << RGB((BYTE) (_Configuration._BackgroundColor.r * 255.f), (BYTE) (_Configuration._BackgroundColor.g * 255.f), (BYTE) (_Configuration._BackgroundColor.b * 255.f));
-        builder << _Configuration._BackgroundColor.a;
+        builder << RGB((BYTE) (_BackgroundColor.r * 255.f), (BYTE) (_BackgroundColor.g * 255.f), (BYTE) (_BackgroundColor.b * 255.f));
+        builder << _BackgroundColor.a;
 
-        builder << (int) _Configuration._XAxisMode;
+        builder << (int) _XAxisMode;
 
-        builder << (int) _Configuration._YAxisMode;
+        builder << (int) _YAxisMode;
 
-        builder << _Configuration._MinDecibel;
-        builder << _Configuration._MaxDecibel;
-        builder << _Configuration._UseAbsolute;
-        builder << _Configuration._Gamma;
+        builder << _MinDecibel;
+        builder << _MaxDecibel;
+        builder << _UseAbsolute;
+        builder << _Gamma;
 
-        builder << (int) _Configuration._ColorScheme;
+        builder << (int) _ColorScheme;
 
-        builder << _Configuration._DrawBandBackground;
+        builder << _DrawBandBackground;
 
-        builder << (int) _Configuration._PeakMode;
-        builder << _Configuration._HoldTime;
-        builder << _Configuration._Acceleration;
+        builder << (int) _PeakMode;
+        builder << _HoldTime;
+        builder << _Acceleration;
     #pragma endregion
 }
 
@@ -648,5 +647,3 @@ void Configuration::Read()
     }
 */
 }
-
-Configuration _Configuration;

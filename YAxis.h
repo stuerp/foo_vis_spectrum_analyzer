@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.20) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.11.21) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -17,14 +17,14 @@
 class YAxis
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _Mode(), _X(), _Y(), _ClientWidth(), _ClientHeight(), _TextHeight() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelWidth(30.f), _Configuration(nullptr), _X(), _Y(), _ClientWidth(), _ClientHeight(), _TextHeight() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    FLOAT GetWidth() const { return (_Mode != YAxisMode::None) ? _LabelWidth : 0.f; }
+    FLOAT GetWidth() const { return _LabelWidth; }
 
     struct Label
     {
@@ -35,7 +35,7 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(FLOAT x, FLOAT y, FLOAT width, FLOAT height, YAxisMode yAxisMode)
+    void Initialize(FLOAT x, FLOAT y, FLOAT width, FLOAT height, const Configuration * configuration)
     {
         _X = x;
         _Y = y;
@@ -43,18 +43,18 @@ public:
         _ClientWidth = width;
         _ClientHeight = height;
 
-        _Mode = yAxisMode;
+        _Configuration = configuration;
 
         _Labels.clear();
 
-        if (_Mode == YAxisMode::None)
+        if (_Configuration->_YAxisMode == YAxisMode::None)
             return;
 
         // Precalculate the labels and their position.
         {
-            for (double Amplitude = _Configuration._MinDecibel; Amplitude <= _Configuration._MaxDecibel; Amplitude += 6.0)
+            for (double Amplitude = _Configuration->_MinDecibel; Amplitude <= _Configuration->_MaxDecibel; Amplitude += 6.0)
             {
-                y = (FLOAT) Map(ScaleA(ToMagnitude(Amplitude)), 0.0, 1.0, _ClientHeight, 0.0);
+                y = (FLOAT) Map(_Configuration->ScaleA(ToMagnitude(Amplitude)), 0.0, 1.0, _ClientHeight, 0.0);
 
                 WCHAR Text[16] = { };
 
@@ -72,7 +72,7 @@ public:
     /// </summary>
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
     {
-        if (_Mode == YAxisMode::None)
+        if (_Configuration->_YAxisMode == YAxisMode::None)
             return S_OK;
 
         const FLOAT StrokeWidth = 1.0f;
@@ -130,11 +130,11 @@ public:
 
                 _TextHeight = TextMetrics.height;
             }
-            else
-                Log(LogLevel::Critical, "%s: Unable to create Y axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
+//          else
+//              Log(LogLevel::Critical, "%s: Unable to create Y axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
-        else
-            Log(LogLevel::Critical, "%s: Unable to create Y axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+//      else
+//          Log(LogLevel::Critical, "%s: Unable to create Y axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }
@@ -166,7 +166,7 @@ private:
     FLOAT _FontSize;    // In points.
     FLOAT _LabelWidth;  // Determines the max. width of the label.
 
-    YAxisMode _Mode;
+    const Configuration * _Configuration;
 
     // Parent-dependent parameters
     FLOAT _X;

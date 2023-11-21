@@ -1,11 +1,12 @@
 
-/** $VER: Configuration.h (2023.11.20) P. Stuer **/
+/** $VER: Configuration.h (2023.11.21) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include "FFT.h"
+#include "Math.h"
 
 enum class Transform
 {
@@ -255,16 +256,30 @@ public:
 
     color: 'none',
     labelTuning: 440,
+
     showDC: true,
     showNyquist: true,
-    mirrorLabels: true,
+
     diffLabels: false,
     darkMode: false,
     compensateDelay: false
 */
 
+public:
+    /// <summary>
+    /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
+    /// </summary>
+    /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
+    double ScaleA(double value) const
+    {
+        if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
+            return Map(ToDecibel(value), _MinDecibel, _MaxDecibel, 0.0, 1.0);
+
+        double Exponent = 1.0 / _Gamma;
+
+        return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_MinDecibel), Exponent), ::pow(ToMagnitude(_MaxDecibel), Exponent), 0.0, 1.0);
+    }
+
 private:
     const size_t _Version = 4;
 };
-
-extern Configuration _Configuration;

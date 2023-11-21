@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.20) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.11.21) P. Stuer **/
 
 #include "framework.h"
 
@@ -25,11 +25,12 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(uint32_t channelCount, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, fftSize)
+    SpectrumAnalyzer(const Configuration * configuration, uint32_t channelCount, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, fftSize)
     {
         if (sampleRate <= 0)
             throw;
 
+        _Configuration = configuration;
         _SampleRate = sampleRate;
         _NyquistFrequency = _SampleRate / 2.;
     }
@@ -67,10 +68,10 @@ public:
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
             const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
 
-            const int LoIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
-            const int HiIdx = (int) (_Configuration._SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
+            const int LoIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
+            const int HiIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
 
-            const bool SmoothGainTransition = (_Configuration._SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
+            const bool SmoothGainTransition = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
             const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
 
             const double BandGain =  SmoothGainTransition ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) coefficients.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
@@ -134,7 +135,7 @@ public:
             {
                 const double Value = Iter.Ctr * (double) coefficients.size() / sampleRate;
 
-                Iter.NewValue = ::fabs(Lanzcos(coefficients, Value, _Configuration._KernelSize)) * BandGain;
+                Iter.NewValue = ::fabs(Lanzcos(coefficients, Value, _Configuration->_KernelSize)) * BandGain;
             }
         }
     }
@@ -219,17 +220,17 @@ public:
     {
         for (FrequencyBand & Iter : freqBands)
         {
-            double Amplitude = ScaleA(Iter.CurValue);
+            double Amplitude = _Configuration->ScaleA(Iter.CurValue);
 
             if (!::isfinite(Iter.Peak))
                 Iter.Peak = 0.;
 
             if (Amplitude >= Iter.Peak)
             {
-                if (_Configuration._PeakMode == PeakMode::AIMP)
-                    Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration._HoldTime;
+                if (_Configuration->_PeakMode == PeakMode::AIMP)
+                    Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration->_HoldTime;
                 else
-                    Iter.HoldTime = _Configuration._HoldTime;
+                    Iter.HoldTime = _Configuration->_HoldTime;
 
                 Iter.Peak = Amplitude;
                 Iter.DecaySpeed = 0.;
@@ -238,17 +239,17 @@ public:
             else
             if (Iter.HoldTime >= 0.)
             {
-                if ((_Configuration._PeakMode == PeakMode::AIMP))
-                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration._HoldTime;
+                if ((_Configuration->_PeakMode == PeakMode::AIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration->_HoldTime;
 
                 Iter.HoldTime -= 1.;
 
-                if (_Configuration._PeakMode == PeakMode::AIMP)
-                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration._HoldTime);
+                if (_Configuration->_PeakMode == PeakMode::AIMP)
+                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration->_HoldTime);
             }
             else
             {
-                switch (_Configuration._PeakMode)
+                switch (_Configuration->_PeakMode)
                 {
                     default:
 
@@ -256,22 +257,22 @@ public:
                         break;
 
                     case PeakMode::Classic:
-                        Iter.DecaySpeed = _Configuration._Acceleration / 256.;
+                        Iter.DecaySpeed = _Configuration->_Acceleration / 256.;
                         break;
 
                     case PeakMode::Gravity:
                     case PeakMode::FadeOut:
-                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.DecaySpeed += _Configuration->_Acceleration / 256.;
                         break;
 
                     case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_Configuration->_Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         break;
 
                         break;
                 }
 
-                if (_Configuration._PeakMode != PeakMode::FadeOut)
+                if (_Configuration->_PeakMode != PeakMode::FadeOut)
                     Iter.Peak -= Iter.DecaySpeed;
                 else
                 {
@@ -303,6 +304,7 @@ public:
     }
 
 private:
+    const Configuration * _Configuration;
     uint32_t _SampleRate;
     double _NyquistFrequency;
 };

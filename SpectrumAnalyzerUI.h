@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.20) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.21) P. Stuer **/
 
 #pragma once
 
@@ -91,6 +91,8 @@ private:
     void ToggleFullScreen() noexcept;
     void ToggleHardwareRendering() noexcept;
     void UpdateRefreshRateLimit() noexcept;
+    void Log(LogLevel logLevel, const char * format, ...) noexcept;
+
     void Configure() noexcept;
     void SetConfiguration() noexcept;
 
@@ -172,6 +174,7 @@ private:
     ConfigurationDialog _ConfigurationDialog;
 
 private:
+    Configuration _Configuration;
     SpectrumAnalyzer * _SpectrumAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 

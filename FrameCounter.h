@@ -125,11 +125,11 @@ public:
                 _TextWidth  = TextMetrics.width;
                 _TextHeight = TextMetrics.height;
             }
-            else
-                Log(LogLevel::Critical, "%s: Unable to create FrameCounter axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
+//          else
+//              Log(LogLevel::Critical, "%s: Unable to create FrameCounter axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
-        else
-            Log(LogLevel::Critical, "%s: Unable to create FrameCounter axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
+//      else
+//          Log(LogLevel::Critical, "%s: Unable to create FrameCounter axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }

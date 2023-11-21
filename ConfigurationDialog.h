@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.19) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.21) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -27,6 +27,12 @@
 
 #include "Resources.h"
 #include "Configuration.h"
+
+struct DialogParameters
+{
+    HWND _hWnd;
+    Configuration * _Configuration;
+};
 
 /// <summary>
 /// Implements the modeless Options dialog.
@@ -124,15 +130,19 @@ private:
     /// </summary>
     BOOL OnInitDialog(CWindow w, LPARAM lParam)
     {
-        _hParent = (HWND) lParam;
-        _OldConfiguration = _Configuration;
+        DialogParameters * dp = (DialogParameters *) lParam;
+
+        _hParent = dp->_hWnd;
+        _Configuration = dp->_Configuration;
+
+        _OldConfiguration = *_Configuration;
 
         DlgResize_Init();
 
         Initialize();
 
-        if (_Configuration._DialogBounds.right != -1)
-            MoveWindow(&_Configuration._DialogBounds);
+        if (_Configuration->_DialogBounds.right != -1)
+            MoveWindow(&_Configuration->_DialogBounds);
 
         return TRUE;
     }
@@ -142,7 +152,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_Configuration._DialogBounds);
+        GetWindowRect(&_Configuration->_DialogBounds);
         SetMsgHandled(FALSE);
     }
 
@@ -166,12 +176,12 @@ private:
         else
         if (id == IDCANCEL)
         {
-            _Configuration = _OldConfiguration;
+            *_Configuration = _OldConfiguration;
 
             ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
         }
 
-        GetWindowRect(&_Configuration._DialogBounds);
+        GetWindowRect(&_Configuration->_DialogBounds);
 
         DestroyWindow();
     }
@@ -186,5 +196,6 @@ private:
 
 private:
     HWND _hParent;
+    Configuration * _Configuration;
     Configuration _OldConfiguration;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Math.h (2023.11.15) P. Stuer - Math support routines **/
+/** $VER: Math.h (2023.11.21) P. Stuer - Math support routines **/
 
 #pragma once
 
@@ -91,17 +91,3 @@ inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandInd
 
     return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
 }
-
-/// <summary>
-/// Scales the coefficient to a relative amplitude between 0.0 and 1.0.
-/// </summary>
-inline double ScaleA(double value)
-{
-    if ((_Configuration._YAxisMode == YAxisMode::Decibels) || (_Configuration._YAxisMode == YAxisMode::None))
-        return Map(ToDecibel(value), _Configuration._MinDecibel, _Configuration._MaxDecibel, 0.0, 1.0);
-
-    double Exponent = 1.0 / _Configuration._Gamma;
-
-    return Map(::pow(value, Exponent), _Configuration._UseAbsolute ? 0.0 : ::pow(ToMagnitude(_Configuration._MinDecibel), Exponent), ::pow(ToMagnitude(_Configuration._MaxDecibel), Exponent), 0.0, 1.0);
-}
-
