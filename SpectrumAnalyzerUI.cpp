@@ -297,7 +297,7 @@ void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
     _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
 }
 
-void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) noexcept
+void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
 {
     if (logLevel < _Configuration._LogLevel)
         return;

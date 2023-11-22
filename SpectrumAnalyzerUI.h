@@ -91,7 +91,7 @@ private:
     void ToggleFullScreen() noexcept;
     void ToggleHardwareRendering() noexcept;
     void UpdateRefreshRateLimit() noexcept;
-    void Log(LogLevel logLevel, const char * format, ...) noexcept;
+    void Log(LogLevel logLevel, const char * format, ...) const noexcept;
 
     void Configure() noexcept;
     void SetConfiguration() noexcept;

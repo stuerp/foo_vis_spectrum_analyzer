@@ -125,7 +125,7 @@ void ConfigurationDialog::Initialize()
             w.SetAccel(_countof(Accel), Accel);
 
             w.SetRange32(0, 96000 * 100);
-            w.SetPos32((int)(_Configuration->_MinFrequency * 100.f));
+            w.SetPos32((int)((double) _Configuration->_MinFrequency * 100.));
         }
 
 //      SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MaxFrequency)));
@@ -148,7 +148,7 @@ void ConfigurationDialog::Initialize()
             w.SetAccel(_countof(Accel), Accel);
 
             w.SetRange32(0, 96000 * 100);
-            w.SetPos32((int)(_Configuration->_MaxFrequency * 100.f));
+            w.SetPos32((int)((double) _Configuration->_MaxFrequency * 100.));
         }
 
         {
@@ -157,7 +157,7 @@ void ConfigurationDialog::Initialize()
             auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN));
 
             w.SetRange32(0, 143);
-            w.SetPos32(_Configuration->_MinNote);
+            w.SetPos32((int) _Configuration->_MinNote);
         }
 
         {
@@ -166,7 +166,7 @@ void ConfigurationDialog::Initialize()
             auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN));
 
             w.SetRange32(0, 143);
-            w.SetPos32(_Configuration->_MaxNote);
+            w.SetPos32((int) _Configuration->_MaxNote);
         }
 
         SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
@@ -188,7 +188,7 @@ void ConfigurationDialog::Initialize()
 
             w.SetAccel(_countof(Accel), Accel);
 
-            w.SetRange32(16.35 * 100, 63217.06 * 100); // C0 - B11
+            w.SetRange32((int) (16.35 * 100.), (int) (63217.06 * 100.)); // C0 - B11
             w.SetPos32((int)(_Configuration->_Pitch * 100.f));
         }
 
@@ -243,16 +243,18 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Y Axis
     {
-        auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
 
-        w.ResetContent();
+            w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Decibel", L"Logarithmic" };
+            const WCHAR * Labels[] = { L"None", L"Decibel", L"Logarithmic" };
 
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+            for (size_t i = 0; i < _countof(Labels); ++i)
+                w.AddString(Labels[i]);
 
-        w.SetCurSel((int) _Configuration->_YAxisMode);
+            w.SetCurSel((int) _Configuration->_YAxisMode);
+        }
 
 //      SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MinDecibel, 0, 1)));
         {

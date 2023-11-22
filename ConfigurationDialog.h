@@ -236,14 +236,14 @@ private:
     /// <summary>
     /// Sets the display version of the note number.
     /// </summary>
-    void SetNote(int id, int noteNumber)
+    void SetNote(int id, uint32_t noteNumber)
     {
         static const WCHAR * Notes[] = { L"C%d", L"C#%d", L"D%d", L"D#%d", L"E%d", L"F%d", L"F#%d", L"G%d", L"G#%d", L"A%d", L"A#%d", L"B%d" };
 
         WCHAR Text[16] = { };
 
-        size_t NoteIndex = noteNumber % 12;
-        int Octave = (noteNumber + 3) / 12;
+        size_t NoteIndex = (size_t) (noteNumber % 12);
+        int Octave = (int) ((noteNumber + 3) / 12);
 
         ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
 
@@ -257,7 +257,7 @@ private:
     {
         LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
-        _Configuration->_MinFrequency = (double) nmud->iPos / 100.f;
+        _Configuration->_MinFrequency = (uint32_t) (nmud->iPos / 100);
         ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 
         SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
@@ -272,7 +272,7 @@ private:
     {
         LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
-        _Configuration->_MaxFrequency = (double) nmud->iPos / 100.f;
+        _Configuration->_MaxFrequency = (uint32_t) (nmud->iPos / 100);
         ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 
         SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
@@ -287,7 +287,7 @@ private:
     {
         LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
-        _Configuration->_Pitch = (double) nmud->iPos / 100.f;
+        _Configuration->_Pitch = (double) nmud->iPos / 100.;
         ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 
         SetFrequency(IDC_PITCH, _Configuration->_Pitch);
