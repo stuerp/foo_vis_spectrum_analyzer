@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.20) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.22) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #define H_CB        14 // Combo box
 #define H_CH        10 // Check box
 
-#define W_A00      356 // Dialog width (in dialog units)
+#define W_A00      369 // Dialog width (in dialog units)
 #define H_A00      396 // Dialog height (in dialog units)
 
 #define DX           7
@@ -186,7 +186,7 @@
     #define Y_A21    Y_A20 + H_A20 + IY
 
     // Textbox (Lo)
-    #define W_A22    30
+    #define W_A22    40
     #define H_A22    H_EB
     #define X_A22    X_A21 + W_A21 + IX
     #define Y_A22    Y_A21
@@ -198,7 +198,7 @@
     #define Y_A23    Y_A22
 
     // Textbox (Hi)
-    #define W_A24    30
+    #define W_A24    40
     #define H_A24    H_EB
     #define X_A24    X_A23 + W_A23 + IX
     #define Y_A24    Y_A23
@@ -218,7 +218,7 @@
     #define Y_A25    Y_A24 + H_A24 + IY
 
     // Textbox (Lo)
-    #define W_A26    30
+    #define W_A26    36
     #define H_A26    H_EB
     #define X_A26    X_A25 + W_A25 + IX
     #define Y_A26    Y_A25
@@ -230,7 +230,7 @@
     #define Y_A27    Y_A26
 
     // Textbox (Hi)
-    #define W_A28    30
+    #define W_A28    36
     #define H_A28    H_EB
     #define X_A28    X_A27 + W_A27 + IX
     #define Y_A28    Y_A27
@@ -258,7 +258,7 @@
     #define Y_A29    Y_A56 + H_A56 + IY
 
     // Textbox
-    #define W_A30    30
+    #define W_A30    40
     #define H_A30    H_EB
     #define X_A30    X_A29 + W_A29 + IX
     #define Y_A30    Y_A29
@@ -349,7 +349,7 @@
     #define Y_A06    Y_A05
     #pragma endregion
 
-#define W_B02    5 + W_A05 + IX + W_A06 + 5
+#define W_B02  176 // 5 + W_A05 + IX + W_A06 + 5
 #define H_B02   11 + H_A06 + 7
 #pragma endregion
 
@@ -380,7 +380,7 @@
     #define Y_A45    Y_A08 + H_A08 + DY
 
     // Textbox (Lo)
-    #define W_A46    30
+    #define W_A46    40
     #define H_A46    H_EB
     #define X_A46    X_A45 + W_A45 + IX
     #define Y_A46    Y_A45
@@ -392,7 +392,7 @@
     #define Y_A47    Y_A46
 
     // Textbox (Hi)
-    #define W_A48    30
+    #define W_A48    40
     #define H_A48    H_EB
     #define X_A48    X_A47 + W_A47 + IX
     #define Y_A48    Y_A47
@@ -426,7 +426,7 @@
     #define Y_A42    Y_A41
     #pragma endregion
 
-#define W_B03    5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
+#define W_B03   176 //  5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
 #define H_B03   11 + H_A08 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
@@ -527,7 +527,7 @@
     #define Y_A54    Y_A53
     #pragma endregion
 
-#define W_B04    5 + W_A09 + IX + W_A10  + 5
+#define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
 #define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 7
 #pragma endregion
 

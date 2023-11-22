@@ -58,11 +58,12 @@ inline static double ToMagnitude(double dB)
 }
 
 /// <summary>
-/// Converts points to DIPs (Device Independet Pixels).
+/// Converts points to DIPs (Device Independent Pixels).
 /// </summary>
 inline static FLOAT ToDIPs(FLOAT points)
 {
-    return (points / 72.0f) * 96.0f; // FIXME: Should 96.0 change on high DPI screens?
+
+    return (points / 72.0f) * (FLOAT) USER_DEFAULT_SCREEN_DPI; // FIXME: Should 96.0 change on high DPI screens?
 }
 
 /// <summary>

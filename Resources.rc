@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.20) P. Stuer **/
+/** $VER: Resources.rc (2023.11.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -88,28 +88,33 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         rtext           "No. of bands:",    IDC_STATIC,             X_A19, Y_A19 + 2, W_A19, H_A19
         edittext                            IDC_NUM_BANDS,          X_A20, Y_A20, W_A20, H_A20, WS_TABSTOP
 
-        rtext           "Frequency range:"  IDC_STATIC,             X_A21, Y_A21 + 2, W_A21, H_A21
-        edittext                            IDC_MIN_FREQUENCY,      X_A22, Y_A22, W_A22, H_A22, WS_TABSTOP
-        ctext           "-"                 IDC_STATIC,             X_A23, Y_A23 + 2, W_A23, H_A23
-        edittext                            IDC_MAX_FREQUENCY,      X_A24, Y_A24, W_A24, H_A24, WS_TABSTOP
-        ltext           "Hz",               IDC_STATIC,             X_A24b, Y_A24b + 2, W_A24b, H_A24b
+        rtext           "Frequency range:"  IDC_STATIC,                 X_A21, Y_A21 + 2, W_A21, H_A21
+        edittext                            IDC_MIN_FREQUENCY,          X_A22, Y_A22, W_A22, H_A22, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MIN_FREQUENCY_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ctext           "-"                 IDC_STATIC,                 X_A23, Y_A23 + 2, W_A23, H_A23
+        edittext                            IDC_MAX_FREQUENCY,          X_A24, Y_A24, W_A24, H_A24, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MAX_FREQUENCY_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "Hz",               IDC_STATIC,                 X_A24b, Y_A24b + 2, W_A24b, H_A24b
 
-        rtext           "Note range:"       IDC_STATIC,             X_A25, Y_A25 + 2, W_A25, H_A25
-        edittext                            IDC_MIN_NOTE,           X_A26, Y_A26, W_A26, H_A26, WS_TABSTOP
-        ctext           "-"                 IDC_STATIC,             X_A27, Y_A27 + 2, W_A27, H_A27
-        edittext                            IDC_MAX_NOTE,           X_A28, Y_A28, W_A28, H_A28, WS_TABSTOP
+        rtext           "Note range:"       IDC_STATIC,                 X_A25, Y_A25 + 2, W_A25, H_A25
+        edittext                            IDC_MIN_NOTE,               X_A26, Y_A26, W_A26, H_A26, ES_CENTER | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MIN_NOTE_SPIN,          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY, 0, 0, 0, 0
+        ctext           "-"                 IDC_STATIC,                 X_A27, Y_A27 + 2, W_A27, H_A27
+        edittext                            IDC_MAX_NOTE,               X_A28, Y_A28, W_A28, H_A28, ES_CENTER | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MAX_NOTE_SPIN,          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY, 0, 0, 0, 0
 
-        rtext           "Bands per octave:" IDC_STATIC,             X_A55, Y_A55 + 2, W_A55, H_A55
-        edittext                            IDC_BANDS_PER_OCTAVE,   X_A56, Y_A56, W_A56, H_A56, WS_TABSTOP
-        control         "",                 IDC_BANDS_PER_OCTAVE_SPIN, "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
+        rtext           "Bands per octave:" IDC_STATIC,                 X_A55, Y_A55 + 2, W_A55, H_A55
+        edittext                            IDC_BANDS_PER_OCTAVE,       X_A56, Y_A56, W_A56, H_A56, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_BANDS_PER_OCTAVE_SPIN,  "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
-        rtext           "Pitch:"            IDC_STATIC,             X_A29, Y_A29 + 2, W_A29, H_A29
-        edittext                            IDC_PITCH,              X_A30, Y_A30, W_A30, H_A30, WS_TABSTOP
-        ltext           "Hz",               IDC_STATIC,             X_A64, Y_A64 + 2, W_A64, H_A64
+        rtext           "Pitch:"            IDC_STATIC,                 X_A29, Y_A29 + 2, W_A29, H_A29
+        edittext                            IDC_PITCH,                  X_A30, Y_A30, W_A30, H_A30, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_PITCH_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "Hz",               IDC_STATIC,                 X_A64, Y_A64 + 2, W_A64, H_A64
 
-        rtext           "Transpose:"        IDC_STATIC,             X_A31, Y_A31 + 2, W_A31, H_A31
-        edittext                            IDC_TRANSPOSE,          X_A32, Y_A32, W_A32, H_A32, WS_TABSTOP
-        control         "",                 IDC_TRANSPOSE_SPIN,     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
+        rtext           "Transpose:"        IDC_STATIC,                 X_A31, Y_A31 + 2, W_A31, H_A31
+        edittext                            IDC_TRANSPOSE,              X_A32, Y_A32, W_A32, H_A32, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_TRANSPOSE_SPIN,         "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
         rtext           "Scaling:",         IDC_STATIC,             X_A13, Y_A13 + 2, W_A13, H_A13
         combobox                            IDC_SCALING_FUNCTION,   X_A14, Y_A14,     W_A14, H_A14, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -131,9 +136,11 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         combobox                            IDC_Y_AXIS,             X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Amplitude range:"  IDC_STATIC,             X_A45, Y_A45 + 2, W_A45, H_A45
-        edittext                            IDC_MIN_DECIBEL,        X_A46, Y_A46, W_A46, H_A46, WS_TABSTOP
+        edittext                            IDC_MIN_DECIBEL,        X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MIN_DECIBEL_SPIN    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ctext           "-"                 IDC_STATIC,             X_A47, Y_A47 + 2, W_A47, H_A47
-        edittext                            IDC_MAX_DECIBEL,        X_A48, Y_A48, W_A48, H_A48, WS_TABSTOP
+        edittext                            IDC_MAX_DECIBEL,        X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_MAX_DECIBEL_SPIN    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "dB"                IDC_STATIC,             X_A49, Y_A49 + 2, W_A49, H_A49
 
         control         "Use absolute",     IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50

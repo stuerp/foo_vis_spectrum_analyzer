@@ -357,7 +357,7 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     else
         GenerateFrequencyBandsFromNotes();
 
-    _XAxis.Initialize(((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f), 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+    _XAxis.Initialize((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
 
     _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
 
@@ -564,15 +564,18 @@ HRESULT SpectrumAnalyzerUIElement::RenderSpectrum()
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
-    const FLOAT Width = (FLOAT) _ClientSize.width - _YAxis.GetWidth();
+    const FLOAT XAxisH = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT YAxisW = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
+
+    const FLOAT Width = (FLOAT) _ClientSize.width - YAxisW;
 
     const FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
 
-    FLOAT x1 = _YAxis.GetWidth() + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
+    FLOAT x1 = YAxisW + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
     FLOAT x2 = x1 + BandWidth;
 
     const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _ClientSize.height - _XAxis.GetHeight();
+    const FLOAT y2 = (FLOAT) _ClientSize.height - XAxisH;
 
     for (const FrequencyBand & Iter : _FrequencyBands)
     {

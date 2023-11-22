@@ -105,20 +105,100 @@ void ConfigurationDialog::Initialize()
 
         SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
 
-        SetDlgItemTextW(IDC_MIN_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MinFrequency)));
-        SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MaxFrequency)));
+//      SetDlgItemTextW(IDC_MIN_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MinFrequency)));
+        {
+            SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
 
-        SetDlgItemTextW(IDC_MIN_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MinNote)));
-        SetDlgItemTextW(IDC_MAX_NOTE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MaxNote)));
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_FREQUENCY_SPIN));
+
+            UDACCEL Accel[] =
+            {
+                {  0,     100 }, //     1.0
+                {  2,    1000 }, //    10.0
+                {  4,    2500 }, //    25.0
+                {  6,    5000 }, //    50.0
+                {  8,   10000 }, //   100.0
+                { 10,  100000 }, //  1000.0
+                { 12, 1000000 }, // 10000.0
+            };
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(0, 96000 * 100);
+            w.SetPos32((int)(_Configuration->_MinFrequency * 100.f));
+        }
+
+//      SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MaxFrequency)));
+        {
+            SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_FREQUENCY_SPIN));
+
+            UDACCEL Accel[] =
+            {
+                {  0,     100 }, //     1.0
+                {  2,    1000 }, //    10.0
+                {  4,    2500 }, //    25.0
+                {  6,    5000 }, //    50.0
+                {  8,   10000 }, //   100.0
+                { 10,  100000 }, //  1000.0
+                { 12, 1000000 }, // 10000.0
+            };
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(0, 96000 * 100);
+            w.SetPos32((int)(_Configuration->_MaxFrequency * 100.f));
+        }
+
+        {
+            SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN));
+
+            w.SetRange32(0, 143);
+            w.SetPos32(_Configuration->_MinNote);
+        }
+
+        {
+            SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN));
+
+            w.SetRange32(0, 143);
+            w.SetPos32(_Configuration->_MaxNote);
+        }
+
         SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
-        SetDlgItemTextW(IDC_PITCH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Pitch, 0, 1)));
+
+        {
+            SetFrequency(IDC_PITCH, _Configuration->_Pitch);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN));
+
+            UDACCEL Accel[] =
+            {
+                {  0,    50 }, //   0.5
+                {  2,   100 }, //   1.0
+                {  4,  1000 }, //  10.0
+                {  6,  2500 }, //  25.0
+                {  8,  5000 }, //  50.0
+                { 10, 10000 }, // 100.0
+            };
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(16.35 * 100, 63217.06 * 100); // C0 - B11
+            w.SetPos32((int)(_Configuration->_Pitch * 100.f));
+        }
+
         SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
 
         {
             auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
 
             w.SetRange32(1, 48);
-            w.SetPos32(_Configuration->_BandsPerOctave);
+            w.SetPos32((int) _Configuration->_BandsPerOctave);
         }
 
         {
@@ -174,8 +254,46 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration->_YAxisMode);
 
-        SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MinDecibel, 0, 1)));
-        SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MaxDecibel, 0, 1)));
+//      SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MinDecibel, 0, 1)));
+        {
+            SetDecibel(IDC_MIN_DECIBEL, _Configuration->_MinDecibel);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_DECIBEL_SPIN));
+
+            UDACCEL Accel[] =
+            {
+                {  0,     10 }, //  0.1
+                {  2,    100 }, //  1.0
+                {  4,    250 }, //  2.5
+                {  6,    500 }, //  5.0
+            };
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(-120 * 10, 0);
+            w.SetPos32((int)(_Configuration->_MinDecibel * 10.f));
+        }
+
+//      SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MaxDecibel, 0, 1)));
+        {
+            SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_DECIBEL_SPIN));
+
+            UDACCEL Accel[] =
+            {
+                {  0,     10 }, //  0.1
+                {  2,    100 }, //  1.0
+                {  4,    250 }, //  2.5
+                {  6,    500 }, //  5.0
+            };
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(-120 * 10, 0);
+            w.SetPos32((int)(_Configuration->_MaxDecibel * 10.f));
+        }
+
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration->_UseAbsolute);
         SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
     }
@@ -476,7 +594,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             double Value = ::_wtof(Text);
 
-            if (!InInterval(Value, 0., 96000.))
+            if (!InInterval(Value, 16.35, 63217.06)) // C0 - B11
                 return;
 
             _Configuration->_Pitch = Value;

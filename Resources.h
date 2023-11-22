@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.21) P. Stuer **/
+/** $VER: Resources.h (2023.11.22) P. Stuer **/
 
 #pragma once
 
@@ -81,14 +81,19 @@
 
 #define IDC_NUM_BANDS                   IDC_SMOOTHING_METHOD + 1
 #define IDC_MIN_FREQUENCY               IDC_NUM_BANDS + 1
-#define IDC_MAX_FREQUENCY               IDC_MIN_FREQUENCY + 1
+#define IDC_MIN_FREQUENCY_SPIN          IDC_MIN_FREQUENCY + 1
+#define IDC_MAX_FREQUENCY               IDC_MIN_FREQUENCY_SPIN + 1
+#define IDC_MAX_FREQUENCY_SPIN          IDC_MAX_FREQUENCY + 1
 
-#define IDC_MIN_NOTE                    IDC_MAX_FREQUENCY + 1
-#define IDC_MAX_NOTE                    IDC_MIN_NOTE + 1
-#define IDC_BANDS_PER_OCTAVE            IDC_MAX_NOTE + 1
+#define IDC_MIN_NOTE                    IDC_MAX_FREQUENCY_SPIN + 1
+#define IDC_MIN_NOTE_SPIN               IDC_MIN_NOTE + 1
+#define IDC_MAX_NOTE                    IDC_MIN_NOTE_SPIN + 1
+#define IDC_MAX_NOTE_SPIN               IDC_MAX_NOTE + 1
+#define IDC_BANDS_PER_OCTAVE            IDC_MAX_NOTE_SPIN + 1
 #define IDC_BANDS_PER_OCTAVE_SPIN       IDC_BANDS_PER_OCTAVE + 1
 #define IDC_PITCH                       IDC_BANDS_PER_OCTAVE_SPIN + 1
-#define IDC_TRANSPOSE                   IDC_PITCH + 1
+#define IDC_PITCH_SPIN                  IDC_PITCH + 1
+#define IDC_TRANSPOSE                   IDC_PITCH_SPIN + 1
 #define IDC_TRANSPOSE_SPIN              IDC_TRANSPOSE + 1
 
 #define IDC_SKEW_FACTOR                 IDC_TRANSPOSE_SPIN + 1
@@ -102,8 +107,10 @@
 #define IDC_SMOOTH_GAIN_TRANSITION      IDC_SMOOTH_LOWER_FREQUENCIES + 1
 
 #define IDC_MIN_DECIBEL                 IDC_SMOOTH_GAIN_TRANSITION + 1
-#define IDC_MAX_DECIBEL                 IDC_MIN_DECIBEL + 1
-#define IDC_USE_ABSOLUTE                IDC_MAX_DECIBEL + 1
+#define IDC_MIN_DECIBEL_SPIN            IDC_MIN_DECIBEL + 1
+#define IDC_MAX_DECIBEL                 IDC_MIN_DECIBEL_SPIN + 1
+#define IDC_MAX_DECIBEL_SPIN            IDC_MAX_DECIBEL + 1
+#define IDC_USE_ABSOLUTE                IDC_MAX_DECIBEL_SPIN + 1
 
 #define IDC_HOLD_TIME                   IDC_USE_ABSOLUTE + 1
 #define IDC_ACCELERATION                IDC_HOLD_TIME + 1
