@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.21) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.23) P. Stuer **/
 
 #pragma once
 
@@ -149,11 +149,15 @@ private:
     visualisation_stream_v2::ptr _VisualisationStream;
 
     #pragma region Rendering
+
     FrameCounter _FrameCounter;
     XAxis _XAxis;
     YAxis _YAxis;
+    ConfigurationDialog _ConfigurationDialog;
+
     #pragma endregion
 
+private:
     #pragma region DirectX
 
     // Device-independent resources
@@ -170,8 +174,6 @@ private:
     CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
 
     #pragma endregion
-
-    ConfigurationDialog _ConfigurationDialog;
 
 private:
     Configuration _Configuration;
