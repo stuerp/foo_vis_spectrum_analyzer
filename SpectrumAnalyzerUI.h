@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.23) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.24) P. Stuer **/
 
 #pragma once
 
@@ -13,6 +13,7 @@
 #include "FrameCounter.h"
 #include "XAxis.h"
 #include "YAxis.h"
+#include "Spectrum.h"
 
 #include <vector>
 
@@ -153,6 +154,7 @@ private:
     FrameCounter _FrameCounter;
     XAxis _XAxis;
     YAxis _YAxis;
+    Spectrum _Spectrum;
     ConfigurationDialog _ConfigurationDialog;
 
     #pragma endregion
@@ -165,13 +167,8 @@ private:
     CComPtr<IDWriteFactory> _DirectWriteFactory;
 
     // Device-specific resources
-    D2D1_SIZE_U _ClientSize;
+    D2D1_SIZE_U _Size;
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
-
-    CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
-    CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
 
     #pragma endregion
 

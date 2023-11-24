@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.21) P. Stuer **/
+/** $VER: Configuration.h (2023.11.24) P. Stuer **/
 
 #pragma once
 
@@ -211,7 +211,7 @@ public:
     #pragma endregion
 
     #pragma region Rendering
-        D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);
+        D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);          // Background color of the element
 
         #pragma region X axis
             XAxisMode _XAxisMode;

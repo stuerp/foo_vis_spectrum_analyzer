@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.23) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.24) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -159,7 +159,7 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
     if (!_RenderTarget)
         return;
 
-    _ClientSize = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+    _Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
     Resize();
 }
@@ -258,7 +258,7 @@ LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanging(UINT uMsg, WPARAM wPa
 }
 
 /// <summary>
-/// Called when the configuration dialog is closed by an OK button.
+/// Called when the configuration dialog is closed by a click on the OK button.
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -359,12 +359,17 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     else
         GenerateFrequencyBandsFromNotes();
 
-    _XAxis.Initialize((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+    const FLOAT XAxisH = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT YAxisW = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
+    _XAxis.Initialize(_FrequencyBands, _Configuration);
 
-    // Forces the recreation of the brush.
-    _BandForegroundBrush.Release();
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - XAxisH, &_Configuration);
+
+    _Spectrum.Initialize();
+
+    _Spectrum.SetGradientStops(GetGradientStops(_Configuration._ColorScheme));
+    _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
 
     // Forces the recreation of the spectrum analyzer.
     if (_SpectrumAnalyzer != nullptr)
@@ -373,29 +378,45 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
         _SpectrumAnalyzer = nullptr;
     }
 
-    // Forces the recreation of the spectrum analyzer.
+    // Forces the recreation of the Constant-Q transform.
     if (_CQT != nullptr)
     {
         delete _CQT;
         _CQT = nullptr;
     }
 
+    // Force all elements to recalculate in case of a configuration change.
+    Resize();
+
     InvalidateRect(NULL);
 }
 
 /// <summary>
-/// Resizes all canvases.
+/// Resizes all render targets.
 /// </summary>
 void SpectrumAnalyzerUIElement::Resize()
 {
     if (_RenderTarget)
-        _RenderTarget->Resize(_ClientSize);
+        _RenderTarget->Resize(_Size);
 
-    _FrameCounter.Initialize((FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height);
+    const FLOAT dw = 0.f;
+    const FLOAT dh = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
 
-    _XAxis.Initialize((_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth() : 0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height, _FrequencyBands, _Configuration._XAxisMode);
+    _FrameCounter.Initialize((FLOAT) _Size.width, (FLOAT) _Size.height);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _ClientSize.width, (FLOAT) _ClientSize.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
+    {
+        D2D1_RECT_F Rect(dw, 0.f, _Size.width, _Size.height);
+
+        _XAxis.Resize(Rect);
+    }
+
+    _YAxis.Initialize(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
+
+    {
+        D2D1_RECT_F Rect(0, 0, _Size.width, _Size.height - dh);
+
+        _Spectrum.Resize(Rect);
+    }
 }
 
 #pragma endregion
@@ -417,12 +438,11 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        // Draw the background, x-axis and y-axis.
         _RenderTarget->Clear(_Configuration._BackgroundColor);
 
         _XAxis.Render(_RenderTarget);
 
-        _YAxis.Render(_RenderTarget);
+//      _YAxis.Render(_RenderTarget);
 
         // Draw the visualization.
         if (_VisualisationStream.is_valid())
@@ -551,76 +571,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
     }
 
-    hr = RenderSpectrum();
+    _Spectrum.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Configuration);
 
     return hr;
-}
-
-/// <summary>
-/// Renders the spectrum.
-/// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderSpectrum()
-{
-    Log(LogLevel::Trace, "%s: Rendering %d bands.", core_api::get_my_file_name(), _FrequencyBands.size());
-
-    const FLOAT PaddingX = 1.f;
-    const FLOAT PaddingY = 1.f;
-
-    const FLOAT XAxisH = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
-    const FLOAT YAxisW = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
-
-    const FLOAT Width = (FLOAT) _ClientSize.width - YAxisW;
-
-    const FLOAT BandWidth = Max((Width / (FLOAT) _FrequencyBands.size()), 1.f);
-
-    FLOAT x1 = YAxisW + (Width - ((FLOAT) _FrequencyBands.size() * BandWidth)) / 2.f;
-    FLOAT x2 = x1 + BandWidth;
-
-    const FLOAT y1 = PaddingY;
-    const FLOAT y2 = (FLOAT) _ClientSize.height - XAxisH;
-
-    for (const FrequencyBand & Iter : _FrequencyBands)
-    {
-        // Don't render anything above the Nyquist frequency.
-        if (Iter.Ctr > ((double) _SampleRate / 2.))
-            break;
-
-        D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
-
-        // Draw the background.
-        if (_Configuration._DrawBandBackground)
-            _RenderTarget->FillRectangle(Rect, _BandBackgroundBrush);
-
-        // Draw the foreground.
-        if (Iter.CurValue > 0.0)
-        {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * _Configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
-
-            _RenderTarget->FillRectangle(Rect, _BandForegroundBrush);
-        }
-
-        // Draw the peak indicator.
-        if ((_Configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
-        {
-            Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
-            Rect.bottom = Rect.top + 1.f;
-
-            ID2D1Brush * Brush = (_Configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
-
-            if (_Configuration._PeakMode == PeakMode::FadeOut)
-                Brush->SetOpacity((FLOAT) Iter.Opacity);
-
-            _RenderTarget->FillRectangle(Rect, Brush);
-
-            if (_Configuration._PeakMode == PeakMode::FadeOut)
-                Brush->SetOpacity(1.f);
-        }
-
-        x1  = x2;
-        x2 += BandWidth;
-    }
-
-    return S_OK;
 }
 
 /// <summary>
@@ -788,14 +741,15 @@ double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunction function, d
 }
 
 /// <summary>
-/// Applies a time smoothing factor.
+/// Smooths the spectrum using averages.
 /// </summary>
 void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
 {
     if (factor != 0.0)
     {
         for (FrequencyBand & Iter : _FrequencyBands)
-            Iter.CurValue = (!::isnan(Iter.CurValue) ? Iter.CurValue * factor : 0.0) + (!::isnan(Iter.NewValue) ? Iter.NewValue * (1.0 - factor) : 0.0);
+            Iter.CurValue = (::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0) + (::isfinite(Iter.NewValue) ? Iter.NewValue * (1.0 - factor) : 0.0);
+
     }
     else
     {
@@ -805,12 +759,12 @@ void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
 }
 
 /// <summary>
-/// Calculates the peak decay.
+/// Smooths the spectrum using peak decay.
 /// </summary>
 void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
 {
     for (FrequencyBand & Iter : _FrequencyBands)
-        Iter.CurValue = Max(!::isnan(Iter.CurValue) ? Iter.CurValue * factor : 0.0, !::isnan(Iter.NewValue) ? Iter.NewValue : 0.0);
+        Iter.CurValue = Max(::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0, ::isfinite(Iter.NewValue) ? Iter.NewValue : 0.0);
 }
 
 #pragma endregion
@@ -830,11 +784,14 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
     else
         Log(LogLevel::Error, "%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
 
-    hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
+    if (SUCCEEDED(hr))
+        hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
 
-    hr = _XAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
+    if (SUCCEEDED(hr))
+        hr = _XAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
 
-    hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
+    if (SUCCEEDED(hr))
+        hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
 
     return hr;
 }
@@ -857,12 +814,12 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 
         GetClientRect(ClientRect);
 
-        _ClientSize = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
+        _Size = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
 
         Resize();
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
-        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, _ClientSize);
+        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, _Size);
 
         hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
@@ -870,67 +827,21 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
     }
 
-    // Create the brushes.
-    if (SUCCEEDED(hr) && (_WhiteBrush == nullptr))
-    {
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
-    }
-
-    if (SUCCEEDED(hr) && (_BandBackgroundBrush == nullptr))
-    {
-/*
-        t_ui_color BackColor = m_callback->query_std_color(ui_color_background);
-
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(BackColor) / 255.0f, GetGValue(BackColor) / 255.0f, GetBValue(BackColor) / 255.0f), &_BackBrush);
-
-        t_ui_color TextColor = m_callback->query_std_color(ui_color_text);
-
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(GetRValue(TextColor) / 255.0f, GetGValue(TextColor) / 255.0f, GetBValue(TextColor) / 255.0f), &_TextBrush);
-*/
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(.2f, .2f, .2f, .7f), &_BandBackgroundBrush); // #1E90FF, 0.3f
-    }
-
-    if (SUCCEEDED(hr) && (_BandForegroundBrush == nullptr))
-    {
-        std::vector<D2D1_GRADIENT_STOP> GradientStops = GetGradientStops(_Configuration._ColorScheme);
-
-        CComPtr<ID2D1GradientStopCollection> Collection;
-
-        hr = _RenderTarget->CreateGradientStopCollection(&GradientStops[0], (UINT32) GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-        if (SUCCEEDED(hr))
-        {
-            D2D1_SIZE_F Size = _RenderTarget->GetSize();
-
-            hr = _RenderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_BandForegroundBrush);
-        }
-    }
-
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
-
-    if (SUCCEEDED(hr))
-        hr = _XAxis.CreateDeviceSpecificResources(_RenderTarget);
-
-    if (SUCCEEDED(hr))
-        hr = _YAxis.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
 }
 
 /// <summary>
-/// Release the device specific resources.
+/// Releases the device specific resources.
 /// </summary>
 void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 {
+    _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
-
-    _BandForegroundBrush.Release();
-    _BandBackgroundBrush.Release();
-
-    _WhiteBrush.Release();
 
     _RenderTarget.Release();
 }
@@ -939,7 +850,7 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 #pragma region ui_element_instance
 
 /// <summary>
-/// 
+/// Retrieves the name of the element.
 /// </summary>
 void SpectrumAnalyzerUIElement::g_get_name(pfc::string_base & p_out)
 {
@@ -947,7 +858,7 @@ void SpectrumAnalyzerUIElement::g_get_name(pfc::string_base & p_out)
 }
 
 /// <summary>
-/// 
+/// Retrieves the description of the element.
 /// </summary>
 const char * SpectrumAnalyzerUIElement::g_get_description()
 {
@@ -955,7 +866,7 @@ const char * SpectrumAnalyzerUIElement::g_get_description()
 }
 
 /// <summary>
-/// 
+/// Retrieves the GUID of the element.
 /// </summary>
 GUID SpectrumAnalyzerUIElement::g_get_guid()
 {
@@ -965,7 +876,7 @@ GUID SpectrumAnalyzerUIElement::g_get_guid()
 }
 
 /// <summary>
-/// 
+/// Retrieves the subclass GUID of the element.
 /// </summary>
 GUID SpectrumAnalyzerUIElement::g_get_subclass()
 {
@@ -973,7 +884,7 @@ GUID SpectrumAnalyzerUIElement::g_get_subclass()
 }
 
 /// <summary>
-/// 
+/// Retrieves the default configuration of the element.
 /// </summary>
 ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
 {
@@ -987,7 +898,7 @@ ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
 }
 
 /// <summary>
-/// 
+/// Initializes the element's windows.
 /// </summary>
 void SpectrumAnalyzerUIElement::initialize_window(HWND p_parent)
 {
@@ -1024,11 +935,7 @@ ui_element_config::ptr SpectrumAnalyzerUIElement::get_configuration()
 void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const void * p_param2, t_size p_param2size)
 {
     if (what == ui_element_notify_colors_changed)
-    {
-        _BandBackgroundBrush.Release();
-
         Invalidate();
-    }
 }
 
 #pragma endregion

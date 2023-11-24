@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.21) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.11.24) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -67,6 +67,10 @@ public:
         }
     }
 
+    void Resize(D2D1_SIZE_U size)
+    {
+    }
+
     /// <summary>
     /// Renders this instance to the specified render target.
     /// </summary>
@@ -74,6 +78,9 @@ public:
     {
         if (_Configuration->_YAxisMode == YAxisMode::None)
             return S_OK;
+
+        if (_Brush == nullptr)
+            CreateDeviceSpecificResources(renderTarget);
 
         const FLOAT StrokeWidth = 1.0f;
 
@@ -130,11 +137,7 @@ public:
 
                 _TextHeight = TextMetrics.height;
             }
-//          else
-//              Log(LogLevel::Critical, "%s: Unable to create Y axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
-//      else
-//          Log(LogLevel::Critical, "%s: Unable to create Y axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }

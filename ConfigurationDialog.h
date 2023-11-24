@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.24) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,21 +9,10 @@
 
 // ATL
 #include <atlbase.h>
-#include <atlstr.h>
 
 // WTL
 #include <atlapp.h>
-#include <atlcrack.h>
-#include <atlctrls.h>
-#include <atlctrlw.h>
-#include <atlctrlx.h>
-#include <atldlgs.h>
-#include <atlfind.h>
 #include <atlframe.h>
-#include <atlmisc.h>
-#include <atlres.h>
-#include <atluser.h>
-#include <atlwinx.h>
 
 #include "Resources.h"
 #include "Configuration.h"

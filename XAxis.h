@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.21) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.24) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -17,46 +17,47 @@
 class XAxis
 {
 public:
-    XAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _LabelHeight(30.f), _Mode(), _ClientWidth(), _ClientHeight(), _TextHeight() { }
+    XAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Height(30.f), _Mode() { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    FLOAT GetHeight() const { return _LabelHeight; }
-
     struct Label
     {
+        double Frequency;
         std::wstring Text;
         FLOAT x;
     };
 
     /// <summary>
+    /// Gets the height of the axis.
+    /// </summary>
+    FLOAT GetHeight() const { return _Height; }
+
+    /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(FLOAT x, FLOAT y, FLOAT width, FLOAT height, const std::vector<FrequencyBand> & bands, XAxisMode xAxisMode)
+    void Initialize(const std::vector<FrequencyBand> & frequencyBands, const Configuration & configuration)
     {
-        _X = x;
-        _Y = y;
+        if (frequencyBands.size() == 0)
+            return;
 
-        _ClientWidth = width;
-        _ClientHeight = height;
-
-        _Mode = xAxisMode;
+        _MinFrequency = frequencyBands[0].Ctr;
+        _MaxFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
+        _Mode = configuration._XAxisMode;
 
         _Labels.clear();
 
-        if (bands.size() == 0)
+        if (frequencyBands.size() == 0)
             return;
 
-        // Precalculate the labels and their position.
+        // Precalculate the labels.
         {
             WCHAR Text[32] = { };
 
-            const FLOAT BandWidth = Max((_ClientWidth / (FLOAT) bands.size()), 1.f);
-
-            switch (xAxisMode)
+            switch (_Mode)
             {
                 case XAxisMode::None:
                     break;
@@ -65,18 +66,16 @@ public:
 
                 case XAxisMode::Bands:
                 {
-                    for (size_t i = 0; i < bands.size(); i += 10)
+                    for (size_t i = 0; i < frequencyBands.size(); i += 10)
                     {
-                        double Frequency = bands[i].Ctr;
+                        double Frequency = frequencyBands[i].Ctr;
 
                         if (Frequency < 1000.)
                             ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
                         else
                             ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
 
-                        x = (FLOAT) Map(::log2(Frequency), ::log2(bands[0].Ctr), ::log2(bands[bands.size() - 1].Ctr), _X + (BandWidth / 2.f), width - _X);
-
-                        Label lb = { Text, x };
+                        Label lb = { Frequency, Text, 0.f };
 
                         _Labels.push_back(lb);
                     }
@@ -96,9 +95,7 @@ public:
                         else
                             ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
 
-                        x = (FLOAT) Map(::log2(Frequency), ::log2(bands[0].Ctr), ::log2(bands[bands.size() - 1].Ctr), _X + (BandWidth / 2.f), width - _X);
-
-                        Label lb = { Text, x };
+                        Label lb = { Frequency, Text, 0.f };
 
                         _Labels.push_back(lb);
                     }
@@ -118,9 +115,7 @@ public:
                         else
                             ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
 
-                        x = (FLOAT) Map(::log2(Frequency), ::log2(bands[0].Ctr), ::log2(bands[bands.size() - 1].Ctr), _X + (BandWidth / 2.f), width - _X);
-
-                        Label lb = { Text, x };
+                        Label lb = { Frequency, Text, 0.f };
 
                         _Labels.push_back(lb);
                     }
@@ -137,9 +132,7 @@ public:
 
                         double Frequency = 440. * ::exp2(Note / 12.); // Frequency of C0 (57 semi-tones lower than A4 at 440Hz)
 
-                        x = (FLOAT) Map(::log2(Frequency), ::log2(bands[0].Ctr), ::log2(bands[bands.size() - 1].Ctr), _X + (BandWidth / 2.f), width - _X);
-
-                        Label lb = { Text, x };
+                        Label lb = { Frequency, Text, 0.f };
 
                         _Labels.push_back(lb);
 
@@ -152,6 +145,21 @@ public:
     }
 
     /// <summary>
+    /// Resizes the axis.
+    /// </summary>
+    void Resize(const D2D1_RECT_F & rect)
+    {
+        _Rect = rect;
+
+        // Calculate the position of the labels based on the width.
+        const FLOAT Width = _Rect.right - _Rect.left;
+        const FLOAT BandWidth = Max((Width / (FLOAT) _Labels.size()), 1.f);
+
+        for (Label & Iter : _Labels)
+            Iter.x = (FLOAT) Map(::log2(Iter.Frequency), ::log2(_MinFrequency), ::log2(_MaxFrequency), _Rect.left + (BandWidth / 2.f), Width);
+    }
+
+    /// <summary>
     /// Renders this instance to the specified render target.
     /// </summary>
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
@@ -159,27 +167,28 @@ public:
         if (_Mode == XAxisMode::None)
             return S_OK;
 
+        if (_Brush == nullptr)
+            CreateDeviceSpecificResources(renderTarget);
+
         const FLOAT StrokeWidth = 1.0f;
+        const FLOAT Height = _Rect.bottom - _Rect.top;
 
         for (const Label & Iter : _Labels)
         {
-            if (InInterval(Iter.x, _X, _ClientWidth))
+            // Draw the horizontal grid line.
             {
-                // Draw the horizontal grid line.
-                {
-                    _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+                _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
-                    renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, _ClientHeight -_LabelHeight), _Brush, StrokeWidth, nullptr);
-                }
+                renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), _Brush, StrokeWidth, nullptr);
+            }
 
-                // Draw the label.
-                {
-                    D2D1_RECT_F TextRect = { Iter.x - 30.f, _ClientHeight - _LabelHeight, Iter.x + 30.f, _ClientHeight };
+            // Draw the label.
+            {
+                D2D1_RECT_F TextRect = { Iter.x - 30.f, Height - _Height, Iter.x + 30.f, Height };
 
-                    _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+                _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-                }
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
         }
 
@@ -216,16 +225,10 @@ public:
 
                 TextLayout->GetMetrics(&TextMetrics);
 
-                _TextHeight = TextMetrics.height;
-
                 // Calculate the height
-                _LabelHeight = 2.f + _TextHeight + 2.f;
+                _Height = 2.f + TextMetrics.height + 2.f;
             }
-//          else
-//              Log(LogLevel::Critical, "%s: Unable to create X axis TextLayout: 0x%08X.", core_api::get_my_file_name(), hr);
         }
-//      else
-//          Log(LogLevel::Critical, "%s: Unable to create X axis TextFormat: 0x%08X.", core_api::get_my_file_name(), hr);
 
         return hr;
     }
@@ -253,24 +256,20 @@ public:
     }
 
 private:
+    XAxisMode _Mode;
+    double _MinFrequency;
+    double _MaxFrequency;
+
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
-    FLOAT _LabelHeight;  // Determines the max. width of the label.
-
-    XAxisMode _Mode;
-
-    // Parent-dependent parameters
-    FLOAT _X;
-    FLOAT _Y;
-
-    FLOAT _ClientWidth;
-    FLOAT _ClientHeight;
-
+    
     std::vector<Label> _Labels;
 
     // Device-independent resources
+    D2D1_RECT_F _Rect;
+    FLOAT _Height;      // Determines the height of the axis (Font size-dependent).
+
     CComPtr<IDWriteTextFormat> _TextFormat;
-    FLOAT _TextHeight;
 
     // Device-specific resources
     CComPtr<ID2D1SolidColorBrush> _Brush;
