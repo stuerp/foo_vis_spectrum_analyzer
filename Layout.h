@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.22) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.25) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -172,7 +172,7 @@
     #define Y_A19    Y_A02 + H_A02 + IX
 
     // Textbox
-    #define W_A20    60
+    #define W_A20    40
     #define H_A20    H_EB
     #define X_A20    X_A19 + W_A19 + IX
     #define Y_A20    Y_A19
@@ -457,12 +457,39 @@
     #define Y_A57    Y_A10 + H_A10 + IY
     #pragma endregion
 
+    #pragma region Gradient
+    #define W_A67   14
+    #define H_A67   100
+    #define X_A67   X_A10 - W_A67 - IX
+    #define Y_A67   Y_A57 + H_A57 + IY
+
+    #define W_A68   45
+    #define H_A68   100
+    #define X_A68   X_A10
+    #define Y_A68   Y_A67
+
+    #define W_A69   W_BT
+    #define H_A69   H_BT
+    #define X_A69   X_A68 + W_A68 + IY
+    #define Y_A69   Y_A68
+
+    #define W_A70   W_BT
+    #define H_A70   H_BT
+    #define X_A70   X_A69
+    #define Y_A70   Y_A69 + H_A69 + IY
+
+    #define W_A71   W_BT
+    #define H_A71   H_BT
+    #define X_A71   X_A70
+    #define Y_A71   Y_A70 + H_A70 + IY
+    #pragma endregion
+
     #pragma region Smoothing Method
     // Label
     #define W_A17    60
     #define H_A17    H_LA
     #define X_A17    X_A09
-    #define Y_A17    Y_A57 + H_A57 + IY
+    #define Y_A17    Y_A67 + H_A67 + IY
 
     // Combobox
     #define W_A18    60
@@ -528,7 +555,7 @@
     #pragma endregion
 
 #define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + 7
+#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
 #pragma endregion
 
 

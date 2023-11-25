@@ -179,7 +179,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
+    <ClInclude Include="CColorButton.h" />
+    <ClInclude Include="CColorListBox.h" />
+    <ClInclude Include="CDirectXControl.h" />
     <ClInclude Include="Configuration.h" />
+    <ClInclude Include="COwnerDrawnListBox.h" />
     <ClInclude Include="CQTProvider.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
@@ -194,12 +198,16 @@
     <ClInclude Include="Spectrum.h" />
     <ClInclude Include="SpectrumAnalyzer.h" />
     <ClInclude Include="SpectrumAnalyzerUI.h" />
+    <ClInclude Include="Support.h" />
     <ClInclude Include="TransformProvider.h" />
     <ClInclude Include="XAxis.h" />
     <ClInclude Include="YAxis.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
+    <ClCompile Include="CColorButton.cpp" />
+    <ClCompile Include="CColorListBox.cpp" />
+    <ClCompile Include="CDirectXControl.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="ConfigurationDialog.cpp" />

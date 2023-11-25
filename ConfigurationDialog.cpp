@@ -10,6 +10,8 @@
 #include "ConfigurationDialog.h"
 #include "Math.h"
 
+#include "Gradients.h"
+
 /// <summary>
 /// Initializes the controls of the dialog.
 /// </summary>
@@ -83,7 +85,7 @@ void ConfigurationDialog::Initialize()
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
 
-        w.SetRange32(1, 64);
+        w.SetRange32(MinKernelSize, MaxKernelSize);
         w.SetPos32(_Configuration->_KernelSize);
     }
     #pragma endregion
@@ -103,7 +105,23 @@ void ConfigurationDialog::Initialize()
             w.SetCurSel((int) _Configuration->_FrequencyDistribution);
         }
 
-        SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
+        {
+            UDACCEL Accel[] =
+            {
+                { 0,  1 },
+                { 1, 10 },
+                { 2, 50 },
+            };
+
+            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32(MinBands, MaxBands);
+            w.SetPos32((int) _Configuration->_NumBands);
+        }
 
         {
             UDACCEL Accel[] =
@@ -361,6 +379,26 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    const std::vector<D2D1_GRADIENT_STOP> & GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+
+    // Initializes the gradient control.
+    {
+        _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
+        _Gradient.SetGradientStops(GradientStops);
+    }
+
+    // Initializes the color list box control.
+    {
+        _Colors.Initialize(GetDlgItem(IDC_COLORS));
+
+        std::vector<D2D1_COLOR_F> Colors;
+
+        for (const auto & Iter : GradientStops)
+            Colors.push_back(Iter.color);
+
+        _Colors.SetColors(Colors);
+    }
+
     UpdateControls();
 }
 
@@ -440,6 +478,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
             break;
         }
+    #pragma endregion
 
     #pragma region Y axis
         case IDC_Y_AXIS:
@@ -455,6 +494,19 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
+
+            const std::vector<D2D1_GRADIENT_STOP> & GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+
+            _Gradient.SetGradientStops(GradientStops);
+
+            {
+                std::vector<D2D1_COLOR_F> Colors;
+
+                for (const auto & Iter : GradientStops)
+                    Colors.push_back(Iter.color);
+
+                _Colors.SetColors(Colors);
+            }
             break;
         }
 
@@ -528,19 +580,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 return;
 
             _Configuration->_KernelSize = Value;
-            break;
-        }
-    #pragma endregion
-
-    #pragma region Frequencies
-        case IDC_NUM_BANDS:
-        {
-            int Value = ::_wtoi(Text);
-
-            if (!InRange(Value, MinBands, MaxBands))
-                return;
-
-            _Configuration->_NumBands = (size_t) Value;
             break;
         }
     #pragma endregion
@@ -634,6 +673,36 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_ADD:
+        {
+            D2D1_COLOR_F Color;
+
+            if (SelectColor(m_hWnd, Color))
+                _Colors.Add(Color);
+            break;
+        }
+
+        case IDC_REMOVE:
+        {
+            _Colors.Remove();
+            break;
+        }
+
+        case IDC_REVERSE:
+        {
+            std::vector<D2D1_COLOR_F> Colors;
+
+            _Colors.GetColors(Colors);
+
+            if (Colors.empty())
+                return;
+
+            std::reverse(Colors.begin(), Colors.end());
+
+            _Colors.SetColors(Colors);
+            break;
+        }
+
         case IDC_RESET:
         {
             _Configuration->Reset();
@@ -671,6 +740,12 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
     switch (nmhd->idFrom)
     {
+        case IDC_KERNEL_SIZE_SPIN:
+        {
+            _Configuration->_KernelSize = Clamp(NewPos, MinKernelSize, MaxKernelSize);
+            break;;
+        }
+
         case IDC_MIN_FREQUENCY_SPIN:
         {
             if (((double) NewPos / 100.) >= _Configuration->_MaxFrequency)
@@ -688,6 +763,13 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
             _Configuration->_MaxFrequency = (double) NewPos / 100.;
             SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
+            break;
+        }
+
+        case IDC_NUM_BANDS_SPIN:
+        {
+            _Configuration->_NumBands = (size_t) Clamp(NewPos, MinBands, MaxBands);
+            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration->_NumBands)));
             break;
         }
 
@@ -769,6 +851,35 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
     }
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+
+    return 0;
+}
+
+/// <summary>
+/// Handles a notification from the color list box.
+/// </summary>
+LRESULT ConfigurationDialog::OnGradientChanged(int, LPNMHDR, BOOL handled)
+{
+    std::vector<D2D1_COLOR_F> Colors;
+
+    _Colors.GetColors(Colors);
+
+    if (Colors.empty())
+        return 0;
+
+    std::vector<D2D1_GRADIENT_STOP> GradientStops;
+    FLOAT Position = 0.f;
+
+    for (const auto & Iter : Colors)
+    {
+        D2D1_GRADIENT_STOP gs = { Position, Iter };
+
+        GradientStops.push_back(gs);
+
+        Position += 1.f / Colors.size();
+    }
+
+    _Gradient.SetGradientStops(GradientStops);
 
     return 0;
 }

@@ -80,7 +80,8 @@
 #define IDC_SMOOTHING_METHOD            IDC_MAPPING_METHOD + 1
 
 #define IDC_NUM_BANDS                   IDC_SMOOTHING_METHOD + 1
-#define IDC_MIN_FREQUENCY               IDC_NUM_BANDS + 1
+#define IDC_NUM_BANDS_SPIN              IDC_NUM_BANDS + 1
+#define IDC_MIN_FREQUENCY               IDC_NUM_BANDS_SPIN + 1
 #define IDC_MIN_FREQUENCY_SPIN          IDC_MIN_FREQUENCY + 1
 #define IDC_MAX_FREQUENCY               IDC_MIN_FREQUENCY_SPIN + 1
 #define IDC_MAX_FREQUENCY_SPIN          IDC_MAX_FREQUENCY + 1
@@ -119,4 +120,11 @@
 
 #define IDC_DRAW_BAND_BACKGROUND        IDC_ACCELERATION + 1
 
-#define IDC_RESET                       IDC_DRAW_BAND_BACKGROUND + 1
+#define IDC_GRADIENT                    IDC_DRAW_BAND_BACKGROUND + 1
+
+#define IDC_COLORS                      IDC_GRADIENT + 1
+#define IDC_ADD                         IDC_COLORS + 1
+#define IDC_REMOVE                      IDC_ADD + 1
+#define IDC_REVERSE                     IDC_REMOVE + 1
+
+#define IDC_RESET                       IDC_REVERSE + 1

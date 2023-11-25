@@ -17,6 +17,9 @@
 #include "Resources.h"
 #include "Configuration.h"
 
+#include "CColorButton.h"
+#include "CColorListBox.h"
+
 struct DialogParameters
 {
     HWND _hWnd;
@@ -42,10 +45,23 @@ public:
         NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
 
+        NOTIFY_HANDLER(IDC_COLORS, NM_COLORS_CHANGED, OnGradientChanged)
+
+        REFLECT_NOTIFICATIONS() // Required for CColorListBox
+
         CHAIN_MSG_MAP(CDialogResize<ConfigurationDialog>)
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
+        DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
+        DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
+
+        DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
+
         DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -111,6 +127,11 @@ private:
     void OnButtonClick(UINT, int, CWindow);
     LRESULT OnDeltaPos(LPNMHDR nmhd);
 
+    LRESULT OnGradientChanged(int, LPNMHDR, BOOL handled);
+    void OnAddClicked(UINT, int id, CWindow);
+    void OnRemoveClicked(UINT, int id, CWindow);
+    void OnReverseClicked(UINT, int id, CWindow);
+
     void UpdateControls();
 
     /// <summary>
@@ -160,4 +181,7 @@ private:
     Configuration * _Configuration;
     Configuration _OldConfiguration;
     float _DPI;
+
+    CColorButton _Gradient;
+    CColorListBox _Colors;
 };

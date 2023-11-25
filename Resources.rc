@@ -82,11 +82,12 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
     groupbox "Frequencies", IDC_STATIC, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Distribution:",    IDC_STATIC,             X_A01, Y_A01 + 2, W_A01, H_A01
-        combobox                            IDC_DISTRIBUTION,       X_A02, Y_A02,     W_A02, H_A02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Distribution:",    IDC_STATIC,                 X_A01, Y_A01 + 2, W_A01, H_A01
+        combobox                            IDC_DISTRIBUTION,           X_A02, Y_A02,     W_A02, H_A02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "No. of bands:",    IDC_STATIC,             X_A19, Y_A19 + 2, W_A19, H_A19
-        edittext                            IDC_NUM_BANDS,          X_A20, Y_A20, W_A20, H_A20, WS_TABSTOP
+        rtext           "No. of bands:",    IDC_STATIC,                 X_A19, Y_A19 + 2, W_A19, H_A19
+        edittext                            IDC_NUM_BANDS,              X_A20, Y_A20, W_A20, H_A20, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_NUM_BANDS_SPIN          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
         rtext           "Frequency range:"  IDC_STATIC,                 X_A21, Y_A21 + 2, W_A21, H_A21
         edittext                            IDC_MIN_FREQUENCY,          X_A22, Y_A22, W_A22, H_A22, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
@@ -156,6 +157,12 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         combobox                            IDC_COLOR_SCHEME,       X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Band background",  IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
+
+        ltext           "",                 IDC_GRADIENT,           X_A67, Y_A67, W_A67, H_A67, WS_BORDER | SS_NOTIFY
+        listbox                             IDC_COLORS,             X_A68, Y_A68, W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+        pushbutton      "Add",              IDC_ADD,                X_A69, Y_A69, W_A69, H_A69
+        pushbutton      "Remove",           IDC_REMOVE,             X_A70, Y_A70, W_A70, H_A70
+        pushbutton      "Reverse",          IDC_REVERSE,            X_A71, Y_A71, W_A71, H_A71
 
         rtext           "Smoothing:",       IDC_STATIC,             X_A17, Y_A17 + 2, W_A17, H_A17
         combobox                            IDC_SMOOTHING_METHOD,   X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
