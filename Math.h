@@ -1,5 +1,5 @@
 
-/** $VER: Math.h (2023.11.21) P. Stuer - Math support routines **/
+/** $VER: Math.h (2023.11.25) P. Stuer - Math support routines **/
 
 #pragma once
 
@@ -36,7 +36,7 @@ inline static T Clamp(T value, T minValue, T maxValue)
 /// Returns true of the input value is in the interval between min and max.
 /// </summary>
 template <class T>
-inline static T InInterval(T value, T minValue, T maxValue)
+inline static T InRange(T value, T minValue, T maxValue)
 {
     return (minValue <= value) && (value <= maxValue);
 }
@@ -87,7 +87,7 @@ inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 /// <summary>
 /// 
 /// </summary>
-inline static double LogSpace(uint32_t minFreq, uint32_t maxFreq, double bandIndex, size_t maxBands, double skewFactor)
+inline static double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor)
 {
     const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
 

@@ -306,7 +306,7 @@
     #define Y_A33    Y_A14 + H_A14 + IY
 
     // Textbox
-    #define W_A34    30
+    #define W_A34    32
     #define H_A34    H_EB
     #define X_A34    X_A33 + W_A33 + IX
     #define Y_A34    Y_A33
@@ -320,7 +320,7 @@
     #define Y_A35    Y_A34 + H_A34 + IY
 
     // Textbox
-    #define W_A36    30
+    #define W_A36    32
     #define H_A36    H_EB
     #define X_A36    X_A35 + W_A35 + IX
     #define Y_A36    Y_A35

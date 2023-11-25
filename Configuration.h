@@ -8,6 +8,15 @@
 #include "FFT.h"
 #include "Math.h"
 
+inline const int MinFFTSize =     1;
+inline const int MaxFFTSize = 32768;
+
+inline const double MinFFTDuration =   1.; // ms
+inline const double MaxFFTDuration = 100.; // ms
+
+inline const int MinKernelSize =  1;
+inline const int MaxKernelSize = 64;
+
 inline const int MinBands =   2;
 inline const int MaxBands = 512;
 
@@ -24,16 +33,28 @@ inline const double MinPitch =    16.35; // Hz, C0
 inline const double MaxPitch = 63217.06; // Hz, B11
 
 inline const int MinTranspose = -24;
-inline const int MaxTranspose = -24;
+inline const int MaxTranspose =  24;
 
 inline const double MinSkewFactor = 0.;
 inline const double MaxSkewFactor = 1.;
 
-inline const double MinBandwidth = 0.;
+inline const double MinBandwidth =  0.;
 inline const double MaxBandwidth = 64.;
 
 inline const double MinDecibel = -120.; // dB
 inline const double MaxDecibel =    0.; // dB
+
+inline const double MinGamma =  0.5;
+inline const double MaxGamma = 10.0;
+
+inline const double MinSmoothingFactor = 0.;
+inline const double MaxSmoothingFactor = 1.;
+
+inline const double MinHoldTime =   0.;
+inline const double MaxHoldTime = 120.;
+
+inline const double MinAcceleration = 0.;
+inline const double MaxAcceleration = 2.;
 
 enum class Transform
 {

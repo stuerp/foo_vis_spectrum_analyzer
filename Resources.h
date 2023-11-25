@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.22) P. Stuer **/
+/** $VER: Resources.h (2023.11.25) P. Stuer **/
 
 #pragma once
 
@@ -97,8 +97,10 @@
 #define IDC_TRANSPOSE_SPIN              IDC_TRANSPOSE + 1
 
 #define IDC_SKEW_FACTOR                 IDC_TRANSPOSE_SPIN + 1
-#define IDC_BANDWIDTH                   IDC_SKEW_FACTOR + 1
-#define IDC_SMOOTHING_FACTOR            IDC_BANDWIDTH + 1
+#define IDC_SKEW_FACTOR_SPIN            IDC_SKEW_FACTOR + 1
+#define IDC_BANDWIDTH                   IDC_SKEW_FACTOR_SPIN + 1
+#define IDC_BANDWIDTH_SPIN              IDC_BANDWIDTH + 1
+#define IDC_SMOOTHING_FACTOR            IDC_BANDWIDTH_SPIN + 1
 #define IDC_KERNEL_SIZE                 IDC_SMOOTHING_FACTOR + 1
 #define IDC_KERNEL_SIZE_SPIN            IDC_KERNEL_SIZE + 1
 #define IDC_GAMMA                       IDC_KERNEL_SIZE_SPIN + 1

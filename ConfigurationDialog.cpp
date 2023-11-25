@@ -105,8 +105,6 @@ void ConfigurationDialog::Initialize()
 
         SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
 
-//      SetDlgItemTextW(IDC_MIN_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MinFrequency)));
-//      SetDlgItemTextW(IDC_MAX_FREQUENCY, pfc::wideFromUTF8(pfc::format_int(_Configuration->_MaxFrequency)));
         {
             UDACCEL Accel[] =
             {
@@ -177,16 +175,18 @@ void ConfigurationDialog::Initialize()
             w.SetPos32((int) (_Configuration->_Pitch * 100.));
         }
 
-//      SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
         {
+            SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
+
             auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
 
             w.SetRange32(MinBandsPerOctave, MaxBandsPerOctave);
             w.SetPos32((int) _Configuration->_BandsPerOctave);
         }
 
-//      SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
         {
+            SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
+
             auto w = CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN));
 
             w.SetRange32(MinTranspose, MaxTranspose);
@@ -206,8 +206,42 @@ void ConfigurationDialog::Initialize()
             w.SetCurSel((int) _Configuration->_ScalingFunction);
         }
 
-        SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 1)));
-        SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
+        {
+            UDACCEL Accel[] =
+            {
+                { 0,    1 }, // 0.01
+                { 1,    5 }, // 0.05
+                { 2,   10 }, // 0.10
+            };
+
+            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_SKEW_FACTOR_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinSkewFactor * 100.), (int) (MaxSkewFactor * 100.));
+            w.SetPos32((int) (_Configuration->_SkewFactor * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 0,   1 }, //  0.1
+                { 1,   5 }, //  0.5
+                { 2,  10 }, //  1.0
+                { 3,  50 }, //  5.0
+            };
+
+            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_BANDWIDTH_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinBandwidth * 10.), (int) (MaxBandwidth * 10.));
+            w.SetPos32((int) (_Configuration->_Bandwidth * 10.));
+        }
     }
     #pragma endregion
 
@@ -241,8 +275,6 @@ void ConfigurationDialog::Initialize()
             w.SetCurSel((int) _Configuration->_YAxisMode);
         }
 
-//      SetDlgItemTextW(IDC_MIN_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MinDecibel, 0, 1)));
-//      SetDlgItemTextW(IDC_MAX_DECIBEL, pfc::wideFromUTF8(pfc::format_float(_Configuration->_MaxDecibel, 0, 1)));
         {
             UDACCEL Accel[] =
             {
@@ -466,7 +498,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 {
                     int Value = ::_wtoi(Text);
 
-                    if (!InInterval(Value, 1, 32768))
+                    if (!InRange(Value, MinFFTSize, MaxFFTSize))
                         return;
 
                     _Configuration->_FFTCustom = (size_t) Value;
@@ -477,7 +509,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 {
                     double Value = ::_wtof(Text);
 
-                    if (!InInterval(Value, 1., 100.))
+                    if (!InRange(Value, MinFFTDuration, MaxFFTDuration))
                         return;
 
                     _Configuration->_FFTDuration= Value;
@@ -492,7 +524,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             int Value = ::_wtoi(Text);
 
-            if (!InInterval(Value, 1, 64))
+            if (!InRange(Value, MinKernelSize, MaxKernelSize))
                 return;
 
             _Configuration->_KernelSize = Value;
@@ -505,86 +537,20 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             int Value = ::_wtoi(Text);
 
-            if (!InInterval(Value, MinBands, MaxBands))
+            if (!InRange(Value, MinBands, MaxBands))
                 return;
 
             _Configuration->_NumBands = (size_t) Value;
             break;
         }
-
-        case IDC_BANDS_PER_OCTAVE:
-        {
-            int Value = ::_wtoi(Text);
-
-            if (!InInterval(Value, MinBandsPerOctave, MaxBandsPerOctave))
-                return;
-
-            _Configuration->_BandsPerOctave = (uint32_t) Value;
-            break;
-        }
-
-        case IDC_TRANSPOSE:
-        {
-            int Value = ::_wtoi(Text);
-
-            if (!InInterval(Value, MinTranspose, MaxTranspose))
-                return;
-
-            _Configuration->_Transpose = Value;
-            break;
-        }
-
-        case IDC_SKEW_FACTOR:
-        {
-            double Value = ::_wtof(Text);
-
-            if (!InInterval(Value, MinSkewFactor, MaxSkewFactor))
-                return;
-
-            _Configuration->_SkewFactor = Value;
-            break;
-        }
-
-        case IDC_BANDWIDTH:
-        {
-            double Value = ::_wtof(Text);
-
-            if (!InInterval(Value, MinBandwidth, MaxBandwidth))
-                return;
-
-            _Configuration->_Bandwidth = Value;
-            break;
-        }
     #pragma endregion
 
     #pragma region Y axis
-        case IDC_MIN_DECIBEL:
-        {
-            double Value = ::_wtof(Text);
-
-            if ((!InInterval(Value, -120., 0.)) || (Value >= _Configuration->_MaxDecibel))
-                return;
-
-            _Configuration->_MinDecibel = Value;
-            break;
-        }
-
-        case IDC_MAX_DECIBEL:
-        {
-            double Value = ::_wtof(Text);
-
-            if ((!InInterval(Value, -120., 0.)) || (Value <= _Configuration->_MinDecibel))
-                return;
-
-            _Configuration->_MaxDecibel = Value;
-            break;
-        }
-
         case IDC_GAMMA:
         {
             double Value = ::_wtof(Text);
 
-            if (!InInterval(Value, 0.5, 10.0))
+            if (!InRange(Value, MinGamma, MaxGamma))
                 return;
 
             _Configuration->_Gamma = Value;
@@ -597,7 +563,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             double Value = ::_wtof(Text);
 
-            if (!InInterval(Value, 0., 1.))
+            if (!InRange(Value, MinSmoothingFactor, MaxSmoothingFactor))
                 return;
 
             _Configuration->_SmoothingFactor = Value;
@@ -608,7 +574,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             double Value = ::_wtof(Text);
 
-            if (!InInterval(Value, 0., 120.))
+            if (!InRange(Value, MinHoldTime, MaxHoldTime))
                 return;
 
             _Configuration->_HoldTime = Value;
@@ -619,7 +585,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             double Value = ::_wtof(Text);
 
-            if (!InInterval(Value, 0., 2.))
+            if (!InRange(Value, MinAcceleration, MaxAcceleration))
                 return;
 
             _Configuration->_Acceleration = Value;
@@ -745,10 +711,22 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_BANDS_PER_OCTAVE_SPIN:
+        {
+            _Configuration->_BandsPerOctave = (uint32_t) Clamp(NewPos, MinBandsPerOctave, MaxBandsPerOctave);
+            break;;
+        }
+
         case IDC_PITCH_SPIN:
         {
-            _Configuration->_Pitch = (double) NewPos / 100.;
+            _Configuration->_Pitch = Clamp((double) NewPos / 100., MinPitch, MaxPitch);
             SetFrequency(IDC_PITCH, _Configuration->_Pitch);
+            break;;
+        }
+
+        case IDC_TRANSPOSE_SPIN:
+        {
+            _Configuration->_Transpose = Clamp(NewPos, MinTranspose, MaxTranspose);
             break;;
         }
 
@@ -767,8 +745,22 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if (((double) NewPos / 10.f) <= _Configuration->_MinDecibel)
                 return 0;
 
-            _Configuration->_MaxDecibel = (double) NewPos / 10.f;
+            _Configuration->_MaxDecibel = (double) NewPos / 10.;
             SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
+            break;
+        }
+
+        case IDC_SKEW_FACTOR_SPIN:
+        {
+            _Configuration->_SkewFactor = Clamp((double) NewPos / 100., MinSkewFactor, MaxSkewFactor);
+            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
+            break;
+        }
+
+        case IDC_BANDWIDTH_SPIN:
+        {
+            _Configuration->_Bandwidth = Clamp((double) NewPos / 10., MinBandwidth, MaxBandwidth);
+            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
             break;
         }
 

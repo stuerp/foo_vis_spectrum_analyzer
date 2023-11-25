@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.22) P. Stuer **/
+/** $VER: Resources.rc (2023.11.25) P. Stuer **/
 
 #include "Resources.h"
 
@@ -116,14 +116,16 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         edittext                            IDC_TRANSPOSE,              X_A32, Y_A32, W_A32, H_A32, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
         control         "",                 IDC_TRANSPOSE_SPIN,         "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
-        rtext           "Scaling:",         IDC_STATIC,             X_A13, Y_A13 + 2, W_A13, H_A13
-        combobox                            IDC_SCALING_FUNCTION,   X_A14, Y_A14,     W_A14, H_A14, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Scaling:",         IDC_STATIC,                 X_A13, Y_A13 + 2, W_A13, H_A13
+        combobox                            IDC_SCALING_FUNCTION,       X_A14, Y_A14,     W_A14, H_A14, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Skew factor:"      IDC_STATIC,             X_A33, Y_A33 + 2, W_A33, H_A33
-        edittext                            IDC_SKEW_FACTOR,        X_A34, Y_A34, W_A34, H_A34, WS_TABSTOP
+        rtext           "Skew factor:"      IDC_STATIC,                 X_A33, Y_A33 + 2, W_A33, H_A33
+        edittext                            IDC_SKEW_FACTOR,            X_A34, Y_A34, W_A34, H_A34, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_SKEW_FACTOR_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
-        rtext           "Bandwidth:"        IDC_STATIC,             X_A35, Y_A35 + 2, W_A35, H_A35
-        edittext                            IDC_BANDWIDTH,          X_A36, Y_A36, W_A36, H_A36, WS_TABSTOP
+        rtext           "Bandwidth:"        IDC_STATIC,                 X_A35, Y_A35 + 2, W_A35, H_A35
+        edittext                            IDC_BANDWIDTH,              X_A36, Y_A36, W_A36, H_A36, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        control         "",                 IDC_BANDWIDTH_SPIN,         "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
     groupbox "X axis", IDC_STATIC, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
