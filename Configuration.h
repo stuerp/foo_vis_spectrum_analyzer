@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.24) P. Stuer **/
+/** $VER: Configuration.h (2023.11.25) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,33 @@
 
 #include "FFT.h"
 #include "Math.h"
+
+inline const int MinBands =   2;
+inline const int MaxBands = 512;
+
+inline const double MinFrequency =     0.; // Hz
+inline const double MaxFrequency = 96000.; // Hz
+
+inline const int MinNote =   0;
+inline const int MaxNote = 143;
+
+inline const int MinBandsPerOctave =  1;
+inline const int MaxBandsPerOctave = 48;
+
+inline const double MinPitch =    16.35; // Hz, C0
+inline const double MaxPitch = 63217.06; // Hz, B11
+
+inline const int MinTranspose = -24;
+inline const int MaxTranspose = -24;
+
+inline const double MinSkewFactor = 0.;
+inline const double MaxSkewFactor = 1.;
+
+inline const double MinBandwidth = 0.;
+inline const double MaxBandwidth = 64.;
+
+inline const double MinDecibel = -120.; // dB
+inline const double MaxDecibel =    0.; // dB
 
 enum class Transform
 {
@@ -194,8 +221,8 @@ public:
 
         // Frequency range
         size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
-        uint32_t _MinFrequency;                                         // Hz, 0 .. 96000
-        uint32_t _MaxFrequency;                                         // Hz, 0 .. 96000
+        double _MinFrequency;                                           // Hz, 0 .. 96000
+        double _MaxFrequency;                                           // Hz, 0 .. 96000
 
         // Note range
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
@@ -281,5 +308,5 @@ public:
     }
 
 private:
-    const size_t _Version = 4;
+    const size_t _CurrentVersion = 5;
 };

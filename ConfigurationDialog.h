@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.24) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.25) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -37,72 +37,10 @@ public:
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
-    #pragma region FFT
-        COMMAND_HANDLER_EX(IDC_TRANSFORM, CBN_SELCHANGE, OnSelectionChanged)
-    #pragma endregion
-
-    #pragma region FFT
-        COMMAND_HANDLER_EX(IDC_FFT_SIZE, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_FFT_SIZE_PARAMETER, EN_CHANGE, OnEditChange)
-
-        COMMAND_HANDLER_EX(IDC_SCALING_FUNCTION, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_SUMMATION_METHOD, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_MAPPING_METHOD, CBN_SELCHANGE, OnSelectionChanged)
-
-        COMMAND_HANDLER_EX(IDC_SMOOTHING_METHOD, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_SMOOTHING_FACTOR, EN_CHANGE, OnEditChange)
-
-        COMMAND_HANDLER_EX(IDC_SMOOTH_LOWER_FREQUENCIES, BN_CLICKED, OnButtonClick)
-        COMMAND_HANDLER_EX(IDC_SMOOTH_GAIN_TRANSITION, BN_CLICKED, OnButtonClick)
-
-        COMMAND_HANDLER_EX(IDC_KERNEL_SIZE, EN_CHANGE, OnEditChange)
-        COMMAND_HANDLER_EX(IDC_GAMMA, EN_CHANGE, OnEditChange)
-    #pragma endregion
-
-    #pragma region Frequencies
-        COMMAND_HANDLER_EX(IDC_DISTRIBUTION, CBN_SELCHANGE, OnSelectionChanged)
-
-        COMMAND_HANDLER_EX(IDC_NUM_BANDS, EN_CHANGE, OnEditChange)
-        NOTIFY_HANDLER_EX(IDC_MIN_FREQUENCY_SPIN, UDN_DELTAPOS, OnMinFrequencyDeltaPos)
-        NOTIFY_HANDLER_EX(IDC_MAX_FREQUENCY_SPIN, UDN_DELTAPOS, OnMaxFrequencyDeltaPos)
-
-        NOTIFY_HANDLER_EX(IDC_MIN_NOTE_SPIN, UDN_DELTAPOS, OnMinNoteDeltaPos)
-        NOTIFY_HANDLER_EX(IDC_MAX_NOTE_SPIN, UDN_DELTAPOS, OnMaxNoteDeltaPos)
-
-        COMMAND_HANDLER_EX(IDC_BANDS_PER_OCTAVE, EN_CHANGE, OnEditChange)
-        NOTIFY_HANDLER_EX(IDC_PITCH_SPIN, UDN_DELTAPOS, OnPitchDeltaPos)
-        COMMAND_HANDLER_EX(IDC_TRANSPOSE, EN_CHANGE, OnEditChange)
-
-        COMMAND_HANDLER_EX(IDC_SKEW_FACTOR, EN_CHANGE, OnEditChange)
-        COMMAND_HANDLER_EX(IDC_BANDWIDTH, EN_CHANGE, OnEditChange)
-    #pragma endregion
-
-    #pragma region X axis
-        COMMAND_HANDLER_EX(IDC_X_AXIS, CBN_SELCHANGE, OnSelectionChanged)
-    #pragma endregion
-
-    #pragma region Y axis
-        COMMAND_HANDLER_EX(IDC_Y_AXIS, CBN_SELCHANGE, OnSelectionChanged)
-
-        NOTIFY_HANDLER_EX(IDC_MIN_DECIBEL_SPIN, UDN_DELTAPOS, OnMinDecibelDeltaPos)
-        NOTIFY_HANDLER_EX(IDC_MAX_DECIBEL_SPIN, UDN_DELTAPOS, OnMaxDecibelDeltaPos)
-
-        COMMAND_HANDLER_EX(IDC_USE_ABSOLUTE, BN_CLICKED, OnButtonClick)
-    #pragma endregion
-
-    #pragma region Rendering
-        COMMAND_HANDLER_EX(IDC_COLOR_SCHEME, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_DRAW_BAND_BACKGROUND, BN_CLICKED, OnButtonClick)
-
-        COMMAND_HANDLER_EX(IDC_PEAK_MODE, CBN_SELCHANGE, OnSelectionChanged)
-        COMMAND_HANDLER_EX(IDC_HOLD_TIME, EN_CHANGE, OnEditChange)
-        COMMAND_HANDLER_EX(IDC_ACCELERATION, EN_CHANGE, OnEditChange)
-    #pragma endregion
-
-        COMMAND_HANDLER_EX(IDC_RESET, BN_CLICKED, OnButtonClick)
-
-        COMMAND_HANDLER_EX(IDOK, BN_CLICKED, OnButton)
-        COMMAND_HANDLER_EX(IDCANCEL, BN_CLICKED, OnButton)
+        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
+        NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
+        COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
 
         CHAIN_MSG_MAP(CDialogResize<ConfigurationDialog>)
     END_MSG_MAP()
@@ -166,60 +104,25 @@ private:
         return (HBRUSH)::GetStockObject(DKGRAY_BRUSH);
     }
 
-    /// <summary>
-    /// Handles the OK or Cancel button.
-    /// </summary>
-    void OnButton(UINT, int id, CWindow)
-    {
-        if (id == IDOK)
-        {
-            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
-        }
-        else
-        if (id == IDCANCEL)
-        {
-            *_Configuration = _OldConfiguration;
-
-            ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-        }
-
-        GetWindowRect(&_Configuration->_DialogBounds);
-
-        DestroyWindow();
-    }
+    void Initialize();
 
     void OnSelectionChanged(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
     void OnButtonClick(UINT, int, CWindow);
+    LRESULT OnDeltaPos(LPNMHDR nmhd);
+
+    void UpdateControls();
 
     /// <summary>
-    /// Handles a notification from an UpDown control.
+    /// Sets the display version of the frequency.
     /// </summary>
-    LRESULT OnMinNoteDeltaPos(LPNMHDR nmhd)
+    void SetFrequency(int id, double frequency)
     {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
+        WCHAR Text[16] = { };
 
-        _Configuration->_MinNote = (uint32_t) nmud->iPos;
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+        ::StringCchPrintfW(Text, _countof(Text), L"%.f", frequency);
 
-        SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnMaxNoteDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_MaxNote = (uint32_t) nmud->iPos;
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
-
-        return 0;
+        SetDlgItemTextW(id, Text);
     }
 
     /// <summary>
@@ -240,107 +143,17 @@ private:
     }
 
     /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnMinFrequencyDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_MinFrequency = (uint32_t) (nmud->iPos / 100);
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnMaxFrequencyDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_MaxFrequency = (uint32_t) (nmud->iPos / 100);
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnPitchDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_Pitch = (double) nmud->iPos / 100.;
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetFrequency(IDC_PITCH, _Configuration->_Pitch);
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Sets the display version of the frequency.
-    /// </summary>
-    void SetFrequency(int id, double frequency)
-    {
-        WCHAR Text[16] = { };
-
-        ::StringCchPrintfW(Text, _countof(Text), L"%.f", frequency);
-
-        SetDlgItemTextW(id, Text);
-    }
-
-    /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnMinDecibelDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_MinDecibel = (double) nmud->iPos / 10.f;
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetDecibel(IDC_MIN_DECIBEL, _Configuration->_MinDecibel);
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Handles a notification from an UpDown control.
-    /// </summary>
-    LRESULT OnMaxDecibelDeltaPos(LPNMHDR nmhd)
-    {
-        LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
-
-        _Configuration->_MaxDecibel = (double) nmud->iPos / 10.f;
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
-
-        SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
-
-        return 0;
-    }
-
-    /// <summary>
     /// Sets the display version of the amplitude.
     /// </summary>
-    void SetDecibel(int id, double frequency)
+    void SetDecibel(int id, double decibel)
     {
         WCHAR Text[16] = { };
 
-        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", frequency);
+        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", decibel);
 
         SetDlgItemTextW(id, Text);
     }
     #pragma endregion
-
-    void Initialize();
-    void UpdateControls();
 
 private:
     HWND _hParent;

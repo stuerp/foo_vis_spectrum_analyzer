@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.11.24) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.11.25) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -17,6 +17,13 @@
 class Spectrum
 {
 public:
+    Spectrum() {}
+
+    Spectrum(const Spectrum &) = delete;
+    Spectrum & operator=(const Spectrum &) = delete;
+    Spectrum(Spectrum &&) = delete;
+    Spectrum & operator=(Spectrum &&) = delete;
+
     void Initialize()
     {
     }

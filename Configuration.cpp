@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.21) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.25) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -67,8 +67,8 @@ void Configuration::Reset() noexcept
 
     // Frequency range
     _NumBands = 320;
-    _MinFrequency = 20;
-    _MaxFrequency = 20000;
+    _MinFrequency = 20.;
+    _MaxFrequency = 20000.;
 
     // Note range
     _MinNote = 0;
@@ -230,102 +230,106 @@ void Configuration::Read(ui_element_config_parser & parser)
 {
     Reset();
 
-    try
+//  try
     {
         size_t Version;
 
         parser >> Version;
 
-        switch (Version)
+        if (Version > _CurrentVersion)
+            return;
+
+        int Integer;
+
+        parser >> _DialogBounds.left;
+        parser >> _DialogBounds.top;
+        parser >> _DialogBounds.right;
+        parser >> _DialogBounds.bottom;
+
+        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+
+        parser >> _UseHardwareRendering;
+        parser >> _UseAntialiasing;
+
+        parser >> _UseZeroTrigger;
+
+        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+
+        parser >> Integer; _Transform = (Transform) Integer;
+
+    #pragma region FFT
+        parser >> Integer; _FFTSize = (FFTSize) Integer;
+        parser >> _FFTCustom;
+        parser >> _FFTDuration;
+
+        parser >> Integer; _MappingMethod = (Mapping) Integer;
+        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+        parser >> _SmoothingFactor;
+        parser >> _KernelSize;
+        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+        parser >> _SmoothLowerFrequencies;
+        parser >> _SmoothGainTransition;
+    #pragma endregion
+
+    #pragma region Frequencies
+        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+
+        parser >> _NumBands;
+
+        if (Version == 4)
         {
-            case 4:
-            {
-                int Integer;
-
-                parser >> _DialogBounds.left;
-                parser >> _DialogBounds.top;
-                parser >> _DialogBounds.right;
-                parser >> _DialogBounds.bottom;
-
-                parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-                parser >> _UseHardwareRendering;
-                parser >> _UseAntialiasing;
-
-                parser >> _UseZeroTrigger;
-
-                parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-                parser >> Integer; _Transform = (Transform) Integer;
-
-            #pragma region FFT
-                parser >> Integer; _FFTSize = (FFTSize) Integer;
-                parser >> _FFTCustom;
-                parser >> _FFTDuration;
-
-                parser >> Integer; _MappingMethod = (Mapping) Integer;
-                parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-                parser >> _SmoothingFactor;
-                parser >> _KernelSize;
-                parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-                parser >> _SmoothLowerFrequencies;
-                parser >> _SmoothGainTransition;
-            #pragma endregion
-
-            #pragma region Frequencies
-                parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
-
-                parser >> _NumBands;
-                parser >> _MinFrequency;
-                parser >> _MaxFrequency;
-
-                parser >> _MinNote;
-                parser >> _MaxNote;
-                parser >> _BandsPerOctave;
-                parser >> _Pitch;
-                parser >> _Transpose;
-
-                parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-                parser >> _SkewFactor;
-                parser >> _Bandwidth;
-            #pragma endregion
-
-            #pragma region Rendering
-                UINT32 Rgb;
-                FLOAT Alpha;
-
-                parser >> Rgb;
-                parser >> Alpha;
-                _BackgroundColor = D2D1::ColorF(Rgb, Alpha);
-
-                parser >> Integer; _XAxisMode = (XAxisMode) Integer;
-
-                parser >> Integer; _YAxisMode = (YAxisMode) Integer;
-
-                parser >> _MinDecibel;
-                parser >> _MaxDecibel;
-                parser >> _UseAbsolute;
-                parser >> _Gamma;
-
-                parser >> Integer; _ColorScheme = (ColorScheme) Integer;
-
-                parser >> _DrawBandBackground;
-
-                parser >> Integer; _PeakMode = (PeakMode) Integer;
-                parser >> _HoldTime;
-                parser >> _Acceleration;
-            #pragma endregion
-                break;
-            }
-
-//          default:
-//                Log(LogLevel::Error, "%s: Unknown configuration format. Version: %d", core_api::get_my_file_name(), Version);
+            parser >> Integer; _MinFrequency = Integer; // In v5 _MinFrequency became double
+            parser >> Integer; _MaxFrequency = Integer; // In v5 _MinFrequency became double
         }
+        else
+        {
+            parser >> _MinFrequency;
+            parser >> _MaxFrequency;
+        }
+
+        parser >> _MinNote;
+        parser >> _MaxNote;
+        parser >> _BandsPerOctave;
+        parser >> _Pitch;
+        parser >> _Transpose;
+
+        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+        parser >> _SkewFactor;
+        parser >> _Bandwidth;
+    #pragma endregion
+
+    #pragma region Rendering
+        UINT32 Rgb;
+        FLOAT Alpha;
+
+        parser >> Rgb;
+        parser >> Alpha;
+        _BackgroundColor = D2D1::ColorF(Rgb, Alpha);
+
+        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+
+        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+
+        parser >> _MinDecibel;
+        parser >> _MaxDecibel;
+        parser >> _UseAbsolute;
+        parser >> _Gamma;
+
+        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+
+        parser >> _DrawBandBackground;
+
+        parser >> Integer; _PeakMode = (PeakMode) Integer;
+        parser >> _HoldTime;
+        parser >> _Acceleration;
+    #pragma endregion
     }
+/*
     catch (exception_io & ex)
     {
-//        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
+*/
 }
 
 /// <summary>
@@ -333,7 +337,7 @@ void Configuration::Read(ui_element_config_parser & parser)
 /// </summary>
 void Configuration::Write(ui_element_config_builder & builder) const
 {
-    builder << _Version;
+    builder << _CurrentVersion;
 
     #pragma region User Interface
         builder << _DialogBounds.left;

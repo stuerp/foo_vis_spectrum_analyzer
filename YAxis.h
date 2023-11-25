@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.24) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.11.25) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class YAxis
 {
 public:
-    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Width(30.f), _Height() { }
+    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;

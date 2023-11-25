@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.24) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.25) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class XAxis
 {
 public:
-    XAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Height(30.f), _Mode() { }
+    XAxis() : _Mode(), _MinFrequency(), _MaxFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;

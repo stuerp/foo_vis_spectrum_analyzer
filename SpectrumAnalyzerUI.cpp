@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.24) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.25) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -336,7 +336,7 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 /// </summary>
 void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 {
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
     // Initialize the frequency bands.
     if (_Configuration._Transform == Transform::FFT)
@@ -404,19 +404,19 @@ void SpectrumAnalyzerUIElement::Resize()
     _FrameCounter.Initialize((FLOAT) _Size.width, (FLOAT) _Size.height);
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, _Size.width, _Size.height);
+        D2D1_RECT_F Rect(dw, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height);
 
         _XAxis.Resize(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(0.f, 0.f, _Size.width, _Size.height - dh);
+        D2D1_RECT_F Rect(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - dh);
 
         _YAxis.Resize(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, _Size.width, _Size.height - dh);
+        D2D1_RECT_F Rect(dw, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - dh);
 
         _Spectrum.Resize(Rect);
     }
