@@ -44,9 +44,10 @@ public:
         if (frequencyBands.size() == 0)
             return;
 
+        _Mode = configuration._XAxisMode;
         _MinFrequency = frequencyBands[0].Ctr;
         _MaxFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
-        _Mode = configuration._XAxisMode;
+        _NumBands = frequencyBands.size();
 
         _Labels.clear();
 
@@ -126,7 +127,7 @@ public:
                 {
                     double Note = -57.; // Frequency of C0 (57 semi-tones lower than A4 at 440Hz)
 
-                    for (int i = 0; i < 13; ++i)
+                    for (int i = 0; i < 12; ++i)
                     {
                         ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
@@ -153,10 +154,15 @@ public:
 
         // Calculate the position of the labels based on the width.
         const FLOAT Width = _Rect.right - _Rect.left;
-        const FLOAT BandWidth = Max((Width / (FLOAT) _Labels.size()), 1.f);
+        const FLOAT BandWidth = Max((Width / (FLOAT) _NumBands), 1.f);
+        const FLOAT x = _Rect.left + (BandWidth / 2.f);
 
         for (Label & Iter : _Labels)
-            Iter.x = (FLOAT) Map(::log2(Iter.Frequency), ::log2(_MinFrequency), ::log2(_MaxFrequency), _Rect.left + (BandWidth / 2.f), Width);
+        {
+            FLOAT dx = Map(log2(Iter.Frequency), ::log2(_MinFrequency), ::log2(_MaxFrequency), 0.f, Width - BandWidth);
+
+            Iter.x = x + dx;
+        }
     }
 
     /// <summary>
@@ -167,15 +173,17 @@ public:
         if (_Mode == XAxisMode::None)
             return S_OK;
 
-        if (_Brush == nullptr)
-            CreateDeviceSpecificResources(renderTarget);
+        CreateDeviceSpecificResources(renderTarget);
 
         const FLOAT StrokeWidth = 1.0f;
         const FLOAT Height = _Rect.bottom - _Rect.top;
 
         for (const Label & Iter : _Labels)
         {
-            // Draw the horizontal grid line.
+            if (Iter.x < _Rect.left)
+                continue;
+
+            // Draw the vertical grid line.
             {
                 _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
 
@@ -259,6 +267,7 @@ private:
     XAxisMode _Mode;
     double _MinFrequency;
     double _MaxFrequency;
+    size_t _NumBands;
 
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.

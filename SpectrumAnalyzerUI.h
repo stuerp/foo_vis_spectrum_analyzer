@@ -66,6 +66,7 @@ public:
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
+        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
 
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)

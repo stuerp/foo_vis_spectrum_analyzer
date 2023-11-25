@@ -78,9 +78,10 @@ inline static T Wrap(T index, T length)
 /// <summary>
 /// Maps a value from one range (srcMin, srcMax) to another (dstMin, dstMax).
 /// </summary>
-inline static double Map(double value, double srcMin, double srcMax, double dstMin, double dstMax)
+template<class T, class U>
+inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
-    return dstMin + ((value - srcMin) * (dstMax - dstMin)) / (srcMax - srcMin);
+    return (U) dstMin + ((value - srcMin) * (dstMax - dstMin)) / (srcMax - srcMin);
 }
 
 /// <summary>

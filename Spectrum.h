@@ -29,6 +29,8 @@ public:
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
     {
         _GradientStops = gradientStops;
+
+        _ForegroundBrush.Release();
     }
 
     void SetDrawBandBackground(bool drawBandBackground)
@@ -41,17 +43,15 @@ public:
     /// </summary>
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Configuration & configuration)
     {
-        if (_BandBackgroundBrush == nullptr)
-            CreateDeviceSpecificResources(renderTarget);
+        CreateDeviceSpecificResources(renderTarget);
 
         const FLOAT Width = _Rect.right - _Rect.left;
-
         const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-        FLOAT x1 = _Rect.left + (Width - ((FLOAT) frequencyBands.size() * BandWidth)) / 2.f;
+        FLOAT x1 = _Rect.left;// + (Width - ((FLOAT) frequencyBands.size() * BandWidth)) / 2.f;
         FLOAT x2 = x1 + BandWidth;
 
-        const FLOAT y1 = 0.f;
+        const FLOAT y1 = _Rect.top;
         const FLOAT y2 = _Rect.bottom - _Rect.top;
 
         for (const FrequencyBand & Iter : frequencyBands)
@@ -60,7 +60,7 @@ public:
 
             // Draw the background.
             if (_DrawBandBackground)
-                renderTarget->FillRectangle(Rect, _BandBackgroundBrush);
+                renderTarget->FillRectangle(Rect, _BackgroundBrush);
 
             // Don't render anything above the Nyquist frequency.
             if (Iter.Ctr < (sampleRate / 2.))
@@ -70,7 +70,7 @@ public:
                 {
                     Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
-                    renderTarget->FillRectangle(Rect, _BandForegroundBrush);
+                    renderTarget->FillRectangle(Rect, _ForegroundBrush);
                 }
 
                 // Draw the peak indicator.
@@ -79,7 +79,7 @@ public:
                     Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
                     Rect.bottom = Rect.top + 1.f;
 
-                    ID2D1Brush * Brush = (configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
+                    ID2D1Brush * Brush = (configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _ForegroundBrush : (ID2D1Brush *) _WhiteBrush;
 
                     if (configuration._PeakMode == PeakMode::FadeOut)
                         Brush->SetOpacity((FLOAT) Iter.Opacity);
@@ -106,10 +106,10 @@ public:
     {
         HRESULT hr = S_OK;
 
-        if ((_BandBackgroundBrush == nullptr) && SUCCEEDED(hr))
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(.2f, .2f, .2f, .7f), &_BandBackgroundBrush); // #1E90FF, 0.3f
+        if ((_BackgroundBrush == nullptr) && SUCCEEDED(hr))
+            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(.2f, .2f, .2f, .7f), &_BackgroundBrush); // #1E90FF, 0.3f
 
-        if ((_BandForegroundBrush == nullptr) && SUCCEEDED(hr))
+        if ((_ForegroundBrush == nullptr) && SUCCEEDED(hr))
         {
             CComPtr<ID2D1GradientStopCollection> Collection;
 
@@ -119,7 +119,7 @@ public:
             {
                 D2D1_SIZE_F Size = renderTarget->GetSize();
 
-                hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_BandForegroundBrush);
+                hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_ForegroundBrush);
             }
         }
 
@@ -134,8 +134,8 @@ public:
     /// </summary>
     void ReleaseDeviceSpecificResources()
     {
-        _BandForegroundBrush.Release();
-        _BandBackgroundBrush.Release();
+        _ForegroundBrush.Release();
+        _BackgroundBrush.Release();
 
         _WhiteBrush.Release();
     }
@@ -151,6 +151,6 @@ private:
 
     CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
 
-    CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
-    CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
+    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
+    CComPtr<ID2D1LinearGradientBrush> _ForegroundBrush;
 };

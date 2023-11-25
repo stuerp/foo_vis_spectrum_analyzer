@@ -336,6 +336,8 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 /// </summary>
 void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 {
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) ? _Configuration._Bandwidth : 0.5;
+
     // Initialize the frequency bands.
     if (_Configuration._Transform == Transform::FFT)
     {
@@ -359,12 +361,9 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     else
         GenerateFrequencyBandsFromNotes();
 
-    const FLOAT XAxisH = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
-    const FLOAT YAxisW = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
-
     _XAxis.Initialize(_FrequencyBands, _Configuration);
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - XAxisH, &_Configuration);
+    _YAxis.Initialize(&_Configuration);
 
     _Spectrum.Initialize();
 
@@ -399,7 +398,7 @@ void SpectrumAnalyzerUIElement::Resize()
     if (_RenderTarget)
         _RenderTarget->Resize(_Size);
 
-    const FLOAT dw = 0.f;
+    const FLOAT dw = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
     const FLOAT dh = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
 
     _FrameCounter.Initialize((FLOAT) _Size.width, (FLOAT) _Size.height);
@@ -410,10 +409,14 @@ void SpectrumAnalyzerUIElement::Resize()
         _XAxis.Resize(Rect);
     }
 
-    _YAxis.Initialize(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - ((_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f), &_Configuration);
+    {
+        D2D1_RECT_F Rect(0.f, 0.f, _Size.width, _Size.height - dh);
+
+        _YAxis.Resize(Rect);
+    }
 
     {
-        D2D1_RECT_F Rect(0, 0, _Size.width, _Size.height - dh);
+        D2D1_RECT_F Rect(dw, 0.f, _Size.width, _Size.height - dh);
 
         _Spectrum.Resize(Rect);
     }
@@ -442,7 +445,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _XAxis.Render(_RenderTarget);
 
-//      _YAxis.Render(_RenderTarget);
+        _YAxis.Render(_RenderTarget);
 
         // Draw the visualization.
         if (_VisualisationStream.is_valid())
@@ -486,7 +489,6 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     uint32_t ChannelCount = chunk.get_channel_count();
 
     _SampleRate = chunk.get_sample_rate();
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) ? _Configuration._Bandwidth : 0.5;
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
