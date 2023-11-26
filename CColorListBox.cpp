@@ -1,10 +1,19 @@
 
-/** $VER: CColorListBox.cpp (2023.11.25) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
 #include "CColorListBox.h"
 
+#pragma hdrstop
+
+/// <summary>
+/// Initializes the control.
+/// </summary>
 void CColorListBox::Initialize(HWND hWnd)
 {
     ATLASSERT(::IsWindow(hWnd));
@@ -12,6 +21,16 @@ void CColorListBox::Initialize(HWND hWnd)
     SubclassWindow(hWnd);
 
     CreateDeviceIndependentResources();
+}
+
+/// <summary>
+/// Terminates the control.
+/// </summary>
+/// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
+void CColorListBox::Terminate()
+{
+    ReleaseDeviceSpecificResources();
+    ReleaseDeviceIndependentResources();
 }
 
 /// <summary>
@@ -141,13 +160,13 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
     if (Index == LB_ERR)
         return 0;
 
-    D2D1_COLOR_F Color = _Colors[Index];
+    D2D1_COLOR_F Color = _Colors[(size_t) Index];
 
     if (SelectColor(m_hWnd, Color))
     {
-        _Colors[Index] = Color;
+        _Colors[(size_t) Index] = Color;
 
-        SendColorsChangedNotification();
+        SendChangedNotification();
     }
 
     return 0;
@@ -163,21 +182,17 @@ void CColorListBox::UpdateItems()
     for (size_t Index = 0; Index < _Colors.size(); ++Index)
         AddString(nullptr);
 
-    SendColorsChangedNotification();
+    SendChangedNotification();
 
     InvalidateRect(NULL);
 }
 
 /// <summary>
-/// Sends a notification that the gradient has changed.
+/// Sends a notification that the content has changed.
 /// </summary>
-void CColorListBox::SendColorsChangedNotification() const noexcept
+void CColorListBox::SendChangedNotification() const noexcept
 {
-    NMHDR nmhdr;
-
-    nmhdr.hwndFrom = m_hWnd;
-    nmhdr.idFrom = GetDlgCtrlID();
-    nmhdr.code = (UINT) NM_RETURN;
+    NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
 
     ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }
@@ -193,7 +208,7 @@ HRESULT CColorListBox::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size
     HRESULT hr = __super::CreateDeviceSpecificResources(hWnd, size);
 
     if (SUCCEEDED(hr) && (_SolidBrush == nullptr))
-        hr = _RenderTarget->CreateSolidColorBrush(_Color, &_SolidBrush);
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1_COLOR_F(), &_SolidBrush);
 
     return hr;
 }

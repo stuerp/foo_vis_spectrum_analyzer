@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.24) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.26) P. Stuer **/
 
 #pragma once
 
@@ -156,7 +156,6 @@ private:
     XAxis _XAxis;
     YAxis _YAxis;
     Spectrum _Spectrum;
-    ConfigurationDialog _ConfigurationDialog;
 
     #pragma endregion
 
@@ -175,6 +174,8 @@ private:
 
 private:
     Configuration _Configuration;
+    ConfigurationDialog _ConfigurationDialog;
+
     SpectrumAnalyzer * _SpectrumAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 

@@ -1,5 +1,7 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.25) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.26) P. Stuer - Implements the configuration dialog. **/
+
+#pragma once
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -34,6 +36,13 @@ class ConfigurationDialog : public CDialogImpl<ConfigurationDialog>, public CDia
 public:
     ConfigurationDialog() : m_bMsgHandled(false), _hParent() { }
 
+    ConfigurationDialog(const ConfigurationDialog &) = delete;
+    ConfigurationDialog & operator=(const ConfigurationDialog &) = delete;
+    ConfigurationDialog(ConfigurationDialog &&) = delete;
+    ConfigurationDialog & operator=(ConfigurationDialog &&) = delete;
+
+    virtual ~ConfigurationDialog() { }
+
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_DPICHANGED(OnDPIChanged)
@@ -45,7 +54,7 @@ public:
         NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
 
-        NOTIFY_HANDLER(IDC_COLORS, NM_COLORS_CHANGED, OnGradientChanged)
+        NOTIFY_CODE_HANDLER(NM_CHANGED, OnChanged)
 
         REFLECT_NOTIFICATIONS() // Required for CColorListBox
 
@@ -53,14 +62,20 @@ public:
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
-        DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-        DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
+        DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
+            DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
+            DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
 
-        DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_PEAK_MODE_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_HOLD_TIME_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -109,6 +124,9 @@ private:
     void OnClose()
     {
         GetWindowRect(&_Configuration->_DialogBounds);
+
+        Terminate();
+
         SetMsgHandled(FALSE);
     }
 
@@ -121,13 +139,14 @@ private:
     }
 
     void Initialize();
+    void Terminate();
 
     void OnSelectionChanged(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
     void OnButtonClick(UINT, int, CWindow);
     LRESULT OnDeltaPos(LPNMHDR nmhd);
 
-    LRESULT OnGradientChanged(int, LPNMHDR, BOOL handled);
+    LRESULT OnChanged(int, LPNMHDR, BOOL handled);
     void OnAddClicked(UINT, int id, CWindow);
     void OnRemoveClicked(UINT, int id, CWindow);
     void OnReverseClicked(UINT, int id, CWindow);
@@ -184,4 +203,6 @@ private:
 
     CColorButton _Gradient;
     CColorListBox _Colors;
+
+    CColorButton _BackColor;
 };

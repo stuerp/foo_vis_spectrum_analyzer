@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.25) P. Stuer **/
+/** $VER: Configuration.h (2023.11.26) P. Stuer **/
 
 #pragma once
 
@@ -259,7 +259,7 @@ public:
     #pragma endregion
 
     #pragma region Rendering
-        D2D1::ColorF _BackgroundColor = D2D1::ColorF(0, 0, 0);          // Background color of the element
+        D2D1::ColorF _BackColor = D2D1::ColorF(0, 0, 0);                // Background color of the element
 
         #pragma region X axis
             XAxisMode _XAxisMode;
@@ -280,6 +280,8 @@ public:
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
 
+            std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops.
+
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
 
@@ -287,6 +289,10 @@ public:
             double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
             double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
         #pragma endregion
+    #pragma endregion
+
+    #pragma region Colors
+
     #pragma endregion
 
     LogLevel _LogLevel;

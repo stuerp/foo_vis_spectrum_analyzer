@@ -77,6 +77,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.4.0.0, 2023-xx-xx
 
+* New: Most colors and color schemes can be modified in the configuration dialog.
 * Improved: Each instance of the component now has its own configuration. Note: The fullscreen version is a separate instance.
 * Improved: Added spin buttons to most numeric controls.
 * Changed: Mel scale mapping is now called Triangular Filter Bank scale mapping.

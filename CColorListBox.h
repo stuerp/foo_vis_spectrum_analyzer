@@ -1,7 +1,11 @@
 
-/** $VER: CColorListBox.h (2023.11.25) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.h (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -22,7 +26,17 @@ public:
         CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
     END_MSG_MAP()
 
+    CColorListBox() { }
+
+    CColorListBox(const CColorListBox &) = delete;
+    CColorListBox & operator=(const CColorListBox &) = delete;
+    CColorListBox(CColorListBox &&) = delete;
+    CColorListBox & operator=(CColorListBox &&) = delete;
+
+    virtual ~CColorListBox() { }
+
     void Initialize(HWND hWnd);
+    void Terminate();
 
     void GetColors(std::vector<D2D1_COLOR_F> & colors) const;
     void SetColors(const std::vector<D2D1_COLOR_F> & colors);
@@ -37,7 +51,7 @@ private:
     LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
 
     void UpdateItems();
-    void SendColorsChangedNotification() const noexcept;
+    void SendChangedNotification() const noexcept;
 
 private:
     #pragma region DirectX
@@ -49,11 +63,8 @@ private:
     #pragma region DirectX
     // Device-specific resources
     CComPtr<ID2D1SolidColorBrush> _SolidBrush;
-    D2D1_COLOR_F _Color;
     #pragma endregion
 
 private:
     std::vector<D2D1_COLOR_F> _Colors;
 };
-
-#define NM_COLORS_CHANGED (NM_RETURN)

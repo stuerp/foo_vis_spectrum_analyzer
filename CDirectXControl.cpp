@@ -1,5 +1,9 @@
 
-/** $VER: CDirectXControl.cpp (2023.11.25) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.cpp (2023.11.26) P. Stuer - Implements a base class for DirectX rendered controls. **/
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -10,14 +14,24 @@
 
 #include "Support.h"
 
+#pragma hdrstop
+
 /// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the window.
 /// </summary>
 HRESULT CDirectXControl::CreateDeviceIndependentResources()
 {
     HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2dFactory);
 
     return hr;
+}
+
+/// <summary>
+/// Deletes the resources which are not bound to any D3D device.
+/// </summary>
+void CDirectXControl::ReleaseDeviceIndependentResources()
+{
+    _Direct2dFactory.Release();
 }
 
 /// <summary>

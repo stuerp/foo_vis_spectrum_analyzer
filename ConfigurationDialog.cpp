@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.25) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.26) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,7 +9,6 @@
 
 #include "ConfigurationDialog.h"
 #include "Math.h"
-
 #include "Gradients.h"
 
 /// <summary>
@@ -379,12 +378,12 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    const std::vector<D2D1_GRADIENT_STOP> & GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+    #pragma region Colors
 
     // Initializes the gradient control.
     {
         _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
-        _Gradient.SetGradientStops(GradientStops);
+        _Gradient.SetGradientStops(_Configuration->_GradientStops);
     }
 
     // Initializes the color list box control.
@@ -393,13 +392,32 @@ void ConfigurationDialog::Initialize()
 
         std::vector<D2D1_COLOR_F> Colors;
 
-        for (const auto & Iter : GradientStops)
+        for (const auto & Iter : _Configuration->_GradientStops)
             Colors.push_back(Iter.color);
 
         _Colors.SetColors(Colors);
     }
 
+    {
+        _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
+        _BackColor.SetColor(_Configuration->_BackColor);
+    }
+
+    #pragma endregion
+
     UpdateControls();
+}
+
+/// <summary>
+/// Terminates the controls of the dialog.
+/// </summary>
+/// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
+void ConfigurationDialog::Terminate()
+{
+    _BackColor.Terminate();
+
+    _Colors.Terminate();
+    _Gradient.Terminate();
 }
 
 /// <summary>
@@ -494,15 +512,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
+            _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
 
-            const std::vector<D2D1_GRADIENT_STOP> & GradientStops = GetGradientStops(_Configuration->_ColorScheme);
-
-            _Gradient.SetGradientStops(GradientStops);
+            _Gradient.SetGradientStops(_Configuration->_GradientStops);
 
             {
                 std::vector<D2D1_COLOR_F> Colors;
 
-                for (const auto & Iter : GradientStops)
+                for (const auto & Iter : _Configuration->_GradientStops)
                     Colors.push_back(Iter.color);
 
                 _Colors.SetColors(Colors);
@@ -717,9 +734,13 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (id == IDCANCEL)
                 *_Configuration = _OldConfiguration;
 
-            GetWindowRect(&_Configuration->_DialogBounds);
+            _BackColor.Terminate();
+
+            _Colors.Terminate();
+            _Gradient.Terminate();
 
             DestroyWindow();
+            break;
         }
 
         default:
@@ -856,30 +877,48 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 }
 
 /// <summary>
-/// Handles a notification from the color list box.
+/// Handles a Change notification.
 /// </summary>
-LRESULT ConfigurationDialog::OnGradientChanged(int, LPNMHDR, BOOL handled)
+LRESULT ConfigurationDialog::OnChanged(int, LPNMHDR nmhd, BOOL handled)
 {
-    std::vector<D2D1_COLOR_F> Colors;
-
-    _Colors.GetColors(Colors);
-
-    if (Colors.empty())
-        return 0;
-
-    std::vector<D2D1_GRADIENT_STOP> GradientStops;
-    FLOAT Position = 0.f;
-
-    for (const auto & Iter : Colors)
+    switch (nmhd->idFrom)
     {
-        D2D1_GRADIENT_STOP gs = { Position, Iter };
+        case IDC_COLORS:
+        {
+            std::vector<D2D1_COLOR_F> Colors;
 
-        GradientStops.push_back(gs);
+            _Colors.GetColors(Colors);
 
-        Position += 1.f / Colors.size();
+            if (Colors.empty())
+                return 0;
+
+            std::vector<D2D1_GRADIENT_STOP> GradientStops;
+            FLOAT Position = 0.f;
+
+            for (const auto & Iter : Colors)
+            {
+                D2D1_GRADIENT_STOP gs = { Position, Iter };
+
+                GradientStops.push_back(gs);
+
+                Position += 1.f / (FLOAT) Colors.size();
+            }
+
+            _Gradient.SetGradientStops(GradientStops);
+            break;
+        }
+
+        case IDC_BACK_COLOR:
+        {
+            _BackColor.GetColor(_Configuration->_BackColor);
+            break;
+        }
+
+        default:
+            return -1;
     }
 
-    _Gradient.SetGradientStops(GradientStops);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 
     return 0;
 }

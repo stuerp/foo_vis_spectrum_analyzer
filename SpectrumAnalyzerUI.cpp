@@ -367,7 +367,7 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 
     _Spectrum.Initialize();
 
-    _Spectrum.SetGradientStops(GetGradientStops(_Configuration._ColorScheme));
+    _Spectrum.SetGradientStops(_Configuration._GradientStops);
     _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
 
     // Forces the recreation of the spectrum analyzer.
@@ -441,7 +441,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _RenderTarget->Clear(_Configuration._BackgroundColor);
+        _RenderTarget->Clear(_Configuration._BackColor);
 
         _XAxis.Render(_RenderTarget);
 

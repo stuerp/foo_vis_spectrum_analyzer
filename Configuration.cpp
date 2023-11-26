@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.25) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.26) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,24 +9,17 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
-#include "Resources.h"
-#include "Math.h"
-
-#include "JSON.h"
-
-using namespace JSON;
-
-#include <tchar.h>
-#include <pathcch.h>
-
-#pragma comment(lib, "pathcch")
-
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
 
 using namespace pfc;
 using namespace stringcvt;
+
+#include "Configuration.h"
+#include "Resources.h"
+#include "Math.h"
+
+#include "Gradients.h"
 
 #pragma hdrstop
 
@@ -92,7 +85,7 @@ void Configuration::Reset() noexcept
     _SmoothGainTransition = true;
 
     // Rendering parameters
-    _BackgroundColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
+    _BackColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
 
     // X axis
     _XAxisMode = XAxisMode::Notes;
@@ -107,8 +100,11 @@ void Configuration::Reset() noexcept
     _Gamma = 1.;
 
     // Band
-    _ColorScheme = ColorScheme::Prism1;
     _DrawBandBackground = true;
+
+    _ColorScheme = ColorScheme::Prism1;
+
+    _GradientStops = GetGradientStops(_ColorScheme);
 
     _PeakMode = PeakMode::Classic;
     _HoldTime = 30.;
@@ -194,7 +190,7 @@ Configuration & Configuration::operator=(const Configuration & other)
     #pragma endregion
 
     #pragma region Rendering
-        _BackgroundColor = other._BackgroundColor;
+        _BackColor = other._BackColor;
 
         // X axis
         _XAxisMode = other._XAxisMode;
@@ -209,8 +205,10 @@ Configuration & Configuration::operator=(const Configuration & other)
         _Gamma = other._Gamma;
 
         // Bands
-        _ColorScheme = other._ColorScheme;
         _DrawBandBackground = other._DrawBandBackground;
+
+        _ColorScheme = other._ColorScheme;
+        _GradientStops = other._GradientStops;
 
         _PeakMode = other._PeakMode;
         _HoldTime = other._HoldTime;
@@ -304,7 +302,7 @@ void Configuration::Read(ui_element_config_parser & parser)
 
         parser >> Rgb;
         parser >> Alpha;
-        _BackgroundColor = D2D1::ColorF(Rgb, Alpha);
+        _BackColor = D2D1::ColorF(Rgb, Alpha);
 
         parser >> Integer; _XAxisMode = (XAxisMode) Integer;
 
@@ -323,6 +321,9 @@ void Configuration::Read(ui_element_config_parser & parser)
         parser >> _HoldTime;
         parser >> _Acceleration;
     #pragma endregion
+
+        if (_ColorScheme != ColorScheme::Custom)
+            _GradientStops = GetGradientStops(_ColorScheme);
     }
 /*
     catch (exception_io & ex)
@@ -389,8 +390,8 @@ void Configuration::Write(ui_element_config_builder & builder) const
     #pragma endregion
 
     #pragma region Rendering
-        builder << RGB((BYTE) (_BackgroundColor.r * 255.f), (BYTE) (_BackgroundColor.g * 255.f), (BYTE) (_BackgroundColor.b * 255.f));
-        builder << _BackgroundColor.a;
+        builder << RGB((BYTE) (_BackColor.r * 255.f), (BYTE) (_BackColor.g * 255.f), (BYTE) (_BackColor.b * 255.f));
+        builder << _BackColor.a;
 
         builder << (int) _XAxisMode;
 
@@ -409,245 +410,4 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _HoldTime;
         builder << _Acceleration;
     #pragma endregion
-}
-
-/// <summary>
-/// Reads the configuration from a JSON file.
-/// </summary>
-void Configuration::Read()
-{
-/*
-    HMODULE hModule = ::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
-
-    WCHAR PathName[MAX_PATH];
-
-    ::GetModuleFileNameW(hModule, PathName, _countof(PathName));
-
-    HRESULT hResult = ::PathCchRenameExtension(PathName, _countof(PathName), L"json");
-
-    if (SUCCEEDED(hResult))
-    {
-        FILE * fp = ::_wfopen(PathName, L"r");
-
-        if (fp != nullptr)
-        {
-            struct _stat64i32 Stat = { };
-
-            ::_wstat(PathName, &Stat);
-
-            char * UTF8 = new char[(size_t) Stat.st_size];
-
-            if (UTF8 != nullptr)
-            {
-                size_t BytesRead = ::fread(UTF8, 1, (size_t) Stat.st_size, fp);
-
-                wchar_t * Text = new wchar_t[BytesRead + 64];
-
-                if (Text != nullptr)
-                {
-                    ::convert_utf8_to_wide(Text, BytesRead + 64, UTF8, BytesRead);
-
-                    Reader Reader(Text);
-
-                    Value Value;
-
-                    try
-                    {
-                        bool Success = Reader.Read(Value);
-
-                        while (Success)
-                        {
-                            if (Value.Contains(L"FFTSize"))
-                            {
-                                size_t v = (size_t) (int) Value[L"FFTSize"];
-
-                                if (v >= (size_t) FFTSize::FFT64 && v <= (size_t) FFTSize::TimeWindow)
-                                    _Configuration._FFTSize = v;
-                            }
-
-                            if (Value.Contains(L"FrequencyDistribution"))
-                            {
-                                FrequencyDistribution v = (FrequencyDistribution) (int) Value[L"FrequencyDistribution"];
-
-                                if (v >= FrequencyDistribution::Frequencies && v <= FrequencyDistribution::AveePlayer)
-                                    _Configuration._FrequencyDistribution = v;
-                            }
-
-                            if (Value.Contains(L"ScalingFunction"))
-                            {
-                                ScalingFunction v = (ScalingFunction) (int) Value[L"ScalingFunction"];
-
-                                if (ScalingFunction::Linear <= v && v <= ScalingFunction::Period)
-                                    _Configuration._ScalingFunction = v;
-                            }
-
-                            if (Value.Contains(L"ScalingFunctionFactor"))
-                            {
-                                double v = Value[L"ScalingFunctionFactor"];
-
-                                if (0.0 <= v && v <= 1.0)
-                                    _Configuration._SkewFactor = v;
-                            }
-
-                            if (Value.Contains(L"Bandwidth"))
-                            {
-                                double v = Value[L"Bandwidth"];
-
-                                if (0.0 <= v && v <= 64.0)
-                                    _Configuration._Bandwidth = v;
-                            }
-
-                            if (Value.Contains(L"NumberOfBands"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"NumberOfBands"];
-
-                                if (2 <= v && v <= 512)
-                                    _Configuration._NumBands = v;
-                            }
-
-                            if (Value.Contains(L"MinFrequency"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"MinFrequency"];
-
-                                if (v <= 96000)
-                                    _Configuration._MinFrequency = v;
-                            }
-
-                            if (Value.Contains(L"MaxFrequency"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"MaxFrequency"];
-
-                                if (v <= 96000)
-                                    _Configuration._MaxFrequency = v;
-                            }
-
-                            if (Value.Contains(L"_BandsPerOctave"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"_BandsPerOctave"];
-
-                                if (1 <= v && v <= 48)
-                                    _Configuration._BandsPerOctave = v;
-                            }
-
-                            if (Value.Contains(L"_MinNote"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"_MinNote"];
-
-                                if (v <= 143)
-                                    _Configuration._MinNote = v;
-                            }
-
-                            if (Value.Contains(L"_MaxNote"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"_MaxNote"];
-
-                                if (v <= 143)
-                                    _Configuration._MaxNote = v;
-                            }
-
-                            if (Value.Contains(L"Detune"))
-                            {
-                                int v = (int) Value[L"Detune"];
-
-                                if (-24 <= v && v <= 24)
-                                    _Configuration._Transpose= v;
-                            }
-
-                            if (Value.Contains(L"Pitch"))
-                            {
-                                double v = (double) Value[L"Pitch"];
-
-                                if (0.0 <= v && v <= 96000)
-                                    _Configuration._Pitch = v;
-                            }
-
-                            if (Value.Contains(L"SummationMethod"))
-                            {
-                                SummationMethod v = (SummationMethod) (int) Value[L"SummationMethod"];
-
-                                if (SummationMethod::Minimum <= v && v <= SummationMethod::Median)
-                                    _Configuration._SummationMethod = v;
-                            }
-
-                            if (Value.Contains(L"SmoothingMethod"))
-                            {
-                                SmoothingMethod v = (SmoothingMethod) (int) Value[L"SmoothingMethod"];
-
-                                if (SmoothingMethod::Average <= v && v <= SmoothingMethod::Peak)
-                                    _Configuration._SmoothingMethod = v;
-                            }
-
-                            if (Value.Contains(L"SmoothingFactor"))
-                            {
-                                double v = Value[L"SmoothingFactor"];
-
-                                if (0.0 <= v && v <= 1.0)
-                                    _Configuration._SmoothingFactor = v;
-                            }
-
-                            if (Value.Contains(L"XAxisMode"))
-                            {
-                                XAxisMode v = (XAxisMode) (int) Value[L"XAxisMode"];
-
-                                if (XAxisMode::Bands <= v && v <= XAxisMode::Notes)
-                                    _Configuration._XAxisMode = v;
-                            }
-
-                            if (Value.Contains(L"YAxisMode"))
-                            {
-                                YAxisMode v = (YAxisMode) (int) Value[L"YAxisMode"];
-
-                                if (YAxisMode::Decibels <= v && v <= YAxisMode::Logarithmic)
-                                    _Configuration._YAxisMode = v;
-                            }
-
-                            if (Value.Contains(L"BackgroundColor"))
-                            {
-                                uint32_t v = (uint32_t) (int) Value[L"BackgroundColor"];
-
-//                              _Configuration._BackgroundColor = v;
-                            }
-
-                            if (Value.Contains(L"ColorScheme"))
-                            {
-                                ColorScheme v = (ColorScheme) (int) Value[L"ColorScheme"];
-
-                                if (ColorScheme::Solid <= v && v <= ColorScheme::foobar2000DarkMode)
-                                    _Configuration._ColorScheme = v;
-                            }
-
-                            if (Value.Contains(L"PeakMode"))
-                            {
-                                PeakMode v = (PeakMode) (int) Value[L"PeakMode"];
-
-                                if (PeakMode::Classic <= v && v <= PeakMode::FadeOut)
-                                    _Configuration._PeakMode = v;
-                            }
-
-                            if (Value.Contains(L"LogLevel"))
-                            {
-                                LogLevel v = (LogLevel) (int) Value[L"LogLevel"];
-
-                                if (LogLevel::Trace <= v && v <= LogLevel::None)
-                                    _Configuration._LogLevel = v;
-                            }
-
-                            Success = Reader.Read(Value);
-                        }
-                    }
-                    catch (JSON::ReaderException e)
-                    {
-                        Log(LogLevel::Error, "%s: JSON Error: %s at position %d.", core_api::get_my_file_name(), ::utf8FromWide(e.GetMessage().c_str()).c_str(), e.GetPosition());
-                    }
-
-                    delete[] Text;
-                }
-            }
-
-            delete[] UTF8;
-
-            ::fclose(fp);
-        }
-    }
-*/
 }

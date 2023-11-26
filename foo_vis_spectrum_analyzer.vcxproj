@@ -190,7 +190,6 @@
     <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="FrameCounter.h" />
     <ClInclude Include="Gradients.h" />
-    <ClInclude Include="JSON.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Resources.h" />
@@ -212,7 +211,6 @@
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="ConfigurationDialog.cpp" />
     <ClCompile Include="ConfigurationDialog.h" />
-    <ClCompile Include="JSON.cpp" />
     <ClCompile Include="SpectrumAnalyzerUI.cpp" />
   </ItemGroup>
   <ItemGroup>

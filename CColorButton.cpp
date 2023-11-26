@@ -1,5 +1,9 @@
 
-/** $VER: CColorButton.cpp (2023.11.25) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -20,27 +24,18 @@ void CColorButton::Initialize(HWND hWnd)
 
     CreateDeviceIndependentResources();
 
-    // Create the tooltip.
-    {
-        _ToolTip.Create(m_hWnd);
-        ATLASSERT(_ToolTip.IsWindow());
-
-        int Id = GetDlgCtrlID();
-
-        RECT rect;
-
-        GetClientRect(&rect);
-
-        CToolInfo ti(0, m_hWnd, -Id, &rect, nullptr);
-
-        _ToolTip.AddTool(&ti);
-
-        _ToolTip.UpdateTipText(L"Hello World", m_hWnd, -Id);
-        _ToolTip.Activate(TRUE);
-    }
-
     Invalidate();
     UpdateWindow();
+}
+
+/// <summary>
+/// Terminates the control.
+/// </summary>
+/// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
+void CColorButton::Terminate()
+{
+    ReleaseDeviceSpecificResources();
+    ReleaseDeviceIndependentResources();
 }
 
 /// <summary>
@@ -72,6 +67,14 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
 
     ReleaseDeviceSpecificResources();
     InvalidateRect(NULL);
+}
+
+/// <summary>
+/// Gets the color.
+/// </summary>
+void CColorButton::GetColor(D2D1_COLOR_F & color) const
+{
+    color = _Color;
 }
 
 /// <summary>
@@ -109,30 +112,26 @@ void CColorButton::OnPaint(HDC)
 /// </summary>
 LRESULT CColorButton::OnLButtonDblClick(UINT, CPoint)
 {
-    if (_GradientStops.size() == 0)
+    if (!_GradientStops.empty())
         return 1;
 
     if (SelectColor(m_hWnd, _Color))
+    {
         SetColor(_Color);
+        SendChangedNotification();
+    }
 
     return 0;
 }
 
 /// <summary>
-/// Passes mouse messages to the tooltip control for processing.
+/// Sends a notification that the content has changed.
 /// </summary>
-LRESULT CColorButton::OnMouseMessage(UINT msg, WPARAM wParam, LPARAM lParam, BOOL & handled)
+void CColorButton::SendChangedNotification() const noexcept
 {
-    if (_ToolTip.IsWindow())
-    {
-        MSG Msg = { m_hWnd, msg, wParam, lParam };
+    NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
 
-        _ToolTip.RelayEvent(&Msg);
-    }
-
-    handled = FALSE;
-
-    return 1;
+    ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }
 
 #pragma region DirectX

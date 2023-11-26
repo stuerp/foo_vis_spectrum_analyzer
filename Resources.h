@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.25) P. Stuer **/
+/** $VER: Resources.h (2023.11.26) P. Stuer **/
 
 #pragma once
 
@@ -68,18 +68,19 @@
 #define IDC_FFT_SIZE_PARAMETER          IDC_FFT_SIZE_PARAMETER_NAME + 1
 #define IDC_FFT_SIZE_PARAMETER_UNIT     IDC_FFT_SIZE_PARAMETER + 1
 
+// X axis
+
 #define IDC_X_AXIS                      IDC_FFT_SIZE_PARAMETER_UNIT + 1
+
+// Y axis
+
 #define IDC_Y_AXIS                      IDC_X_AXIS + 1
 
-#define IDC_COLOR_SCHEME                IDC_Y_AXIS + 1
-#define IDC_PEAK_MODE                   IDC_COLOR_SCHEME + 1
-
-#define IDC_SCALING_FUNCTION            IDC_PEAK_MODE + 1
+#define IDC_SCALING_FUNCTION            IDC_Y_AXIS + 1
 #define IDC_SUMMATION_METHOD            IDC_SCALING_FUNCTION + 1
 #define IDC_MAPPING_METHOD              IDC_SUMMATION_METHOD + 1
-#define IDC_SMOOTHING_METHOD            IDC_MAPPING_METHOD + 1
 
-#define IDC_NUM_BANDS                   IDC_SMOOTHING_METHOD + 1
+#define IDC_NUM_BANDS                   IDC_MAPPING_METHOD + 1
 #define IDC_NUM_BANDS_SPIN              IDC_NUM_BANDS + 1
 #define IDC_MIN_FREQUENCY               IDC_NUM_BANDS_SPIN + 1
 #define IDC_MIN_FREQUENCY_SPIN          IDC_MIN_FREQUENCY + 1
@@ -101,8 +102,7 @@
 #define IDC_SKEW_FACTOR_SPIN            IDC_SKEW_FACTOR + 1
 #define IDC_BANDWIDTH                   IDC_SKEW_FACTOR_SPIN + 1
 #define IDC_BANDWIDTH_SPIN              IDC_BANDWIDTH + 1
-#define IDC_SMOOTHING_FACTOR            IDC_BANDWIDTH_SPIN + 1
-#define IDC_KERNEL_SIZE                 IDC_SMOOTHING_FACTOR + 1
+#define IDC_KERNEL_SIZE                 IDC_BANDWIDTH_SPIN + 1
 #define IDC_KERNEL_SIZE_SPIN            IDC_KERNEL_SIZE + 1
 #define IDC_GAMMA                       IDC_KERNEL_SIZE_SPIN + 1
 
@@ -115,16 +115,36 @@
 #define IDC_MAX_DECIBEL_SPIN            IDC_MAX_DECIBEL + 1
 #define IDC_USE_ABSOLUTE                IDC_MAX_DECIBEL_SPIN + 1
 
-#define IDC_HOLD_TIME                   IDC_USE_ABSOLUTE + 1
-#define IDC_ACCELERATION                IDC_HOLD_TIME + 1
+// Bands
 
-#define IDC_DRAW_BAND_BACKGROUND        IDC_ACCELERATION + 1
+#define IDC_BANDS                       6000
 
-#define IDC_GRADIENT                    IDC_DRAW_BAND_BACKGROUND + 1
+#define IDC_COLOR_SCHEME                6010
+#define IDC_DRAW_BAND_BACKGROUND        6011
 
-#define IDC_COLORS                      IDC_GRADIENT + 1
-#define IDC_ADD                         IDC_COLORS + 1
-#define IDC_REMOVE                      IDC_ADD + 1
-#define IDC_REVERSE                     IDC_REMOVE + 1
+#define IDC_GRADIENT                    6020
+#define IDC_COLORS                      6021
+#define IDC_ADD                         6022
+#define IDC_REMOVE                      6023
+#define IDC_REVERSE                     6024
 
-#define IDC_RESET                       IDC_REVERSE + 1
+#define IDC_SMOOTHING_METHOD            6030
+#define IDC_SMOOTHING_METHOD_LBL        6031
+#define IDC_SMOOTHING_FACTOR            6032
+#define IDC_SMOOTHING_FACTOR_LBL        6033
+
+#define IDC_PEAK_MODE                   6040
+#define IDC_PEAK_MODE_LBL               6041
+
+#define IDC_HOLD_TIME                   6050
+#define IDC_HOLD_TIME_LBL               6051
+#define IDC_ACCELERATION                6052
+#define IDC_ACCELERATION_LBL            6053
+
+// Colors
+
+#define IDC_COLORS_GROUP                7000
+
+#define IDC_BACK_COLOR                  7010
+
+#define IDC_RESET                       9000
