@@ -3,15 +3,18 @@
 
 [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
 
-It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur for foobar2000 64-bit.
+It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
+and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
 ![Screenshot](/Resources/Screenshot.png?raw=true "Screenshot")
 
 ## Features
 
+* Fast Fourier (FFT) and Constant-Q (CQT) transforms
+* Multiple frequency range and smoothing options
+* Color schemes
 * Uses Direct2D rendering.
-* Supports foobar2000 2.0 (32-bit and 64-bit version)
-* Supports dark mode.
+* Supports foobar2000 2.0 and later (32-bit and 64-bit version)
 
 ## Requirements
 
