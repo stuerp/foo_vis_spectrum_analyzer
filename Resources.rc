@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.25) P. Stuer **/
+/** $VER: Resources.rc (2023.11.26) P. Stuer **/
 
 #include "Resources.h"
 
@@ -184,6 +184,21 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
         ltext           "Background:",      IDC_STATIC,             X_A72, Y_A72 + 2, W_A72, H_A72, SS_NOPREFIX
         ltext           "",                 IDC_BACK_COLOR,         X_A73, Y_A73, W_A73, H_A73, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "X-axis Text:"      IDC_STATIC,             X_A74, Y_A74 + 2, W_A74, H_A74, SS_NOPREFIX
+        ltext           "",                 IDC_X_TEXT_COLOR,       X_A75, Y_A75, W_A75, H_A75, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "X-axis Line:"      IDC_STATIC,             X_A76, Y_A76 + 2, W_A76, H_A76, SS_NOPREFIX
+        ltext           "",                 IDC_X_LINE_COLOR,       X_A77, Y_A77, W_A77, H_A77, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "Y-axis Text:",     IDC_STATIC,             X_A78, Y_A78 + 2, W_A78, H_A78, SS_NOPREFIX
+        ltext           "",                 IDC_Y_TEXT_COLOR,       X_A79, Y_A79, W_A79, H_A79, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "Y-axis Line:",     IDC_STATIC,             X_A80, Y_A80 + 2, W_A80, H_A80, SS_NOPREFIX
+        ltext           "",                 IDC_Y_LINE_COLOR,       X_A81, Y_A81, W_A81, H_A81, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "Band background:", IDC_STATIC,             X_A82, Y_A82 + 2, W_A82, H_A82, SS_NOPREFIX
+        ltext           "",                 IDC_BAND_BACK_COLOR,    X_A83, Y_A83, W_A83, H_A83, SS_NOTIFY, WS_EX_STATICEDGE
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98

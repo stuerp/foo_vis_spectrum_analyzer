@@ -16,6 +16,8 @@
 /// </summary>
 void ConfigurationDialog::Initialize()
 {
+    Terminate();
+
     #pragma region Transform
     {
         auto w = (CComboBox) GetDlgItem(IDC_TRANSFORM);
@@ -331,7 +333,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
         {
@@ -380,28 +382,17 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Colors
 
-    // Initializes the gradient control.
-    {
-        _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
-        _Gradient.SetGradientStops(_Configuration->_GradientStops);
-    }
+    _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
+    _Colors.Initialize(GetDlgItem(IDC_COLORS));
 
-    // Initializes the color list box control.
-    {
-        _Colors.Initialize(GetDlgItem(IDC_COLORS));
+    _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
+    _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
+    _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
+    _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
+    _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
+    _BandBackColor.Initialize(GetDlgItem(IDC_BAND_BACK_COLOR));
 
-        std::vector<D2D1_COLOR_F> Colors;
-
-        for (const auto & Iter : _Configuration->_GradientStops)
-            Colors.push_back(Iter.color);
-
-        _Colors.SetColors(Colors);
-    }
-
-    {
-        _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
-        _BackColor.SetColor(_Configuration->_BackColor);
-    }
+    UpdateColorControls();
 
     #pragma endregion
 
@@ -414,6 +405,13 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _BandBackColor.Terminate();
+
+    _YLineColor.Terminate();
+    _YTextColor.Terminate();
+    _XLineColor.Terminate();
+    _XTextColor.Terminate();
+
     _BackColor.Terminate();
 
     _Colors.Terminate();
@@ -512,7 +510,11 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
-            _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+
+            if (_Configuration->_ColorScheme != ColorScheme::Custom)
+                _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+            else
+                _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
 
             _Gradient.SetGradientStops(_Configuration->_GradientStops);
 
@@ -524,6 +526,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
                 _Colors.SetColors(Colors);
             }
+
+            UpdateControls();
             break;
         }
 
@@ -692,31 +696,91 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD:
         {
-            D2D1_COLOR_F Color;
+            int Index = _Colors.GetCurSel();
 
-            if (SelectColor(m_hWnd, Color))
-                _Colors.Add(Color);
+            if (Index == LB_ERR)
+                return;
+
+            D2D1_COLOR_F Color = _Configuration->_GradientStops[(size_t) Index].color;
+
+            if (!SelectColor(m_hWnd, Color))
+                return;
+
+            {
+                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
+
+                D2D1_GRADIENT_STOP gs = { 0.f, Color };
+
+                GradientStops.insert(GradientStops.begin() + Index + 1, gs);
+
+                FLOAT Position = 0.f;
+
+                for (auto & Iter : GradientStops)
+                {
+                    Iter.position = Position;
+                    Position += 1.f / (FLOAT) GradientStops.size();
+                }
+            }
+
+            _Configuration->_ColorScheme = ColorScheme::Custom;
+            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+
+            UpdateColorControls();
             break;
         }
 
         case IDC_REMOVE:
         {
-            _Colors.Remove();
+            // Don't remove the last color.
+            if (_Colors.GetCount() == 1)
+                return;
+
+            int Index = _Colors.GetCurSel();
+
+            if (Index == LB_ERR)
+                return;
+
+            {
+                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
+
+                GradientStops.erase(GradientStops.begin() + Index);
+
+                FLOAT Position = 0.f;
+
+                for (auto & Iter : GradientStops)
+                {
+                    Iter.position = Position;
+                    Position += 1.f / (FLOAT) GradientStops.size();
+                }
+            }
+
+            _Configuration->_ColorScheme = ColorScheme::Custom;
+            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+
+            UpdateColorControls();
             break;
         }
 
         case IDC_REVERSE:
         {
-            std::vector<D2D1_COLOR_F> Colors;
+            std::reverse(_Configuration->_GradientStops.begin(), _Configuration->_GradientStops.end());
 
-            _Colors.GetColors(Colors);
+            {
+                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
 
-            if (Colors.empty())
-                return;
+                FLOAT Position = 0.f;
 
-            std::reverse(Colors.begin(), Colors.end());
+                for (auto & Iter : GradientStops)
+                {
+                    Iter.position = Position;
+                    Position += 1.f / (FLOAT) GradientStops.size();
+                }
+            }
 
-            _Colors.SetColors(Colors);
+            _Configuration->_ColorScheme = ColorScheme::Custom;
+            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+
+            UpdateColorControls();
             break;
         }
 
@@ -734,10 +798,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (id == IDCANCEL)
                 *_Configuration = _OldConfiguration;
 
-            _BackColor.Terminate();
+            GetWindowRect(&_Configuration->_DialogBounds);
 
-            _Colors.Terminate();
-            _Gradient.Terminate();
+            Terminate();
 
             DestroyWindow();
             break;
@@ -892,25 +955,71 @@ LRESULT ConfigurationDialog::OnChanged(int, LPNMHDR nmhd, BOOL handled)
             if (Colors.empty())
                 return 0;
 
-            std::vector<D2D1_GRADIENT_STOP> GradientStops;
-            FLOAT Position = 0.f;
-
-            for (const auto & Iter : Colors)
             {
-                D2D1_GRADIENT_STOP gs = { Position, Iter };
+                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
 
-                GradientStops.push_back(gs);
+                GradientStops.clear();
 
-                Position += 1.f / (FLOAT) Colors.size();
+                FLOAT Position = 0.f;
+
+                for (const auto & Iter : Colors)
+                {
+                    D2D1_GRADIENT_STOP gs = { Position, Iter };
+
+                    GradientStops.push_back(gs);
+
+                    Position += 1.f / (FLOAT) Colors.size();
+                }
             }
 
-            _Gradient.SetGradientStops(GradientStops);
+            _Configuration->_ColorScheme = ColorScheme::Custom;
+            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+
+            {
+                auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
+
+                w.SetCurSel((int) _Configuration->_ColorScheme);
+            }
+
+            {
+                _Gradient.SetGradientStops(_Configuration->_GradientStops);
+            }
             break;
         }
 
         case IDC_BACK_COLOR:
         {
             _BackColor.GetColor(_Configuration->_BackColor);
+            break;
+        }
+
+        case IDC_X_TEXT_COLOR:
+        {
+            _XTextColor.GetColor(_Configuration->_XTextColor);
+            break;
+        }
+
+        case IDC_X_LINE_COLOR:
+        {
+            _XLineColor.GetColor(_Configuration->_XLineColor);
+            break;
+        }
+
+        case IDC_Y_TEXT_COLOR:
+        {
+            _YTextColor.GetColor(_Configuration->_YTextColor);
+            break;
+        }
+
+        case IDC_Y_LINE_COLOR:
+        {
+            _YLineColor.GetColor(_Configuration->_YLineColor);
+            break;
+        }
+
+        case IDC_BAND_BACK_COLOR:
+        {
+            _BandBackColor.GetColor(_Configuration->_BandBackColor);
             break;
         }
 
@@ -921,6 +1030,45 @@ LRESULT ConfigurationDialog::OnChanged(int, LPNMHDR nmhd, BOOL handled)
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
 
     return 0;
+}
+
+/// <summary>
+/// Updates the color controls with the current configuration.
+/// </summary>
+void ConfigurationDialog::UpdateColorControls()
+{
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
+
+        w.SetCurSel((int) _Configuration->_ColorScheme);
+    }
+
+    {
+        _Gradient.SetGradientStops(_Configuration->_GradientStops);
+    }
+
+    {
+        std::vector<D2D1_COLOR_F> Colors;
+
+        for (const auto & Iter : _Configuration->_GradientStops)
+            Colors.push_back(Iter.color);
+
+        _Colors.SetColors(Colors);
+    }
+
+    {
+        _BackColor.SetColor(_Configuration->_BackColor);
+        _XTextColor.SetColor(_Configuration->_XTextColor);
+        _XLineColor.SetColor(_Configuration->_XLineColor);
+        _YTextColor.SetColor(_Configuration->_YTextColor);
+        _YLineColor.SetColor(_Configuration->_YLineColor);
+        _BandBackColor.SetColor(_Configuration->_BandBackColor);
+    }
+
+    bool State = (_Configuration->_GradientStops.size() > 1);
+
+        GetDlgItem(IDC_REMOVE).EnableWindow(State);
+        GetDlgItem(IDC_REVERSE).EnableWindow(State);
 }
 
 /// <summary>
@@ -995,4 +1143,9 @@ void ConfigurationDialog::UpdateControls()
 
         GetDlgItem(IDC_HOLD_TIME).EnableWindow(!State);
         GetDlgItem(IDC_ACCELERATION).EnableWindow(!State);
+
+    State = (_Configuration->_GradientStops.size() > 1);
+
+        GetDlgItem(IDC_REMOVE).EnableWindow(State);
+        GetDlgItem(IDC_REVERSE).EnableWindow(State);
 }

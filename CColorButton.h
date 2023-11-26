@@ -24,7 +24,7 @@ public:
     BEGIN_MSG_MAP(CColorButton)
         MSG_WM_SIZE(OnSize)
         MSG_WM_PAINT(OnPaint)
-        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClick)
+        MSG_WM_LBUTTONDOWN(OnLButtonDown)
     END_MSG_MAP()
 
     CColorButton() : _Color() { }
@@ -47,7 +47,7 @@ public:
 
 private:
     void OnPaint(HDC);
-    LRESULT OnLButtonDblClick(UINT, CPoint);
+    LRESULT OnLButtonDown(UINT, CPoint);
 
     void SendChangedNotification() const noexcept;
 

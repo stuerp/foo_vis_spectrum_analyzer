@@ -146,5 +146,10 @@
 #define IDC_COLORS_GROUP                7000
 
 #define IDC_BACK_COLOR                  7010
+#define IDC_X_TEXT_COLOR                7012
+#define IDC_X_LINE_COLOR                7014
+#define IDC_Y_TEXT_COLOR                7016
+#define IDC_Y_LINE_COLOR                7018
+#define IDC_BAND_BACK_COLOR             7020
 
 #define IDC_RESET                       9000

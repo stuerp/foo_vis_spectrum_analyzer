@@ -72,6 +72,17 @@ static const vector<D2D1_GRADIENT_STOP> GradientStopsFB2KDarkMode =
     { 1.f / 1.f, D2D1::ColorF(0xFFFFFF, 1.f) },
 };
 
+// Fire (https://www.schemecolor.com/fire-gradient.php)
+static const vector<D2D1_GRADIENT_STOP> GradientStopsFire =
+{
+    { 0.f,   D2D1::ColorF(0xFFF75D, 1.f) },
+    { 0.60f, D2D1::ColorF(0xFFC11F, 1.f) },
+    { 0.70f, D2D1::ColorF(0xFE650D, 1.f) },
+    { 0.80f, D2D1::ColorF(0xF33C04, 1.f) },
+    { 0.90f, D2D1::ColorF(0xDA1F05, 1.f) },
+    { 1.f,   D2D1::ColorF(0xA10100, 1.f) },
+};
+
 /// <summary>
 /// Gets a gradient stop vector.
 /// </summary>
@@ -90,5 +101,7 @@ static const vector<D2D1_GRADIENT_STOP> GetGradientStops(ColorScheme colorScheme
 
         case ColorScheme::foobar2000: return GradientStopsFB2K; break;
         case ColorScheme::foobar2000DarkMode: return GradientStopsFB2KDarkMode; break;
+
+        case ColorScheme::Fire: return GradientStopsFire; break;
     };
 }

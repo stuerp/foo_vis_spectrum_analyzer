@@ -361,13 +361,14 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     else
         GenerateFrequencyBandsFromNotes();
 
-    _XAxis.Initialize(_FrequencyBands, _Configuration);
+    _XAxis.Initialize(&_Configuration, _FrequencyBands);
 
     _YAxis.Initialize(&_Configuration);
 
-    _Spectrum.Initialize();
+    _Spectrum.Initialize(&_Configuration);
 
     _Spectrum.SetGradientStops(_Configuration._GradientStops);
+
     _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
 
     // Forces the recreation of the spectrum analyzer.
@@ -914,7 +915,16 @@ void SpectrumAnalyzerUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    _Configuration.Read(Parser);
+    try
+    {
+        _Configuration.Read(Parser);
+    }
+    catch (exception_io & ex)
+    {
+        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+
+        _Configuration.Reset();
+    }
 
     UpdateRefreshRateLimit();
 }

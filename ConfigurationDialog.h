@@ -78,6 +78,7 @@ public:
             DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
@@ -151,6 +152,7 @@ private:
     void OnRemoveClicked(UINT, int id, CWindow);
     void OnReverseClicked(UINT, int id, CWindow);
 
+    void UpdateColorControls();
     void UpdateControls();
 
     /// <summary>
@@ -205,4 +207,9 @@ private:
     CColorListBox _Colors;
 
     CColorButton _BackColor;
+    CColorButton _XTextColor;
+    CColorButton _XLineColor;
+    CColorButton _YTextColor;
+    CColorButton _YLineColor;
+    CColorButton _BandBackColor;
 };

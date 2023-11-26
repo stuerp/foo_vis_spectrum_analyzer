@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.25) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.26) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -39,15 +39,19 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(const std::vector<FrequencyBand> & frequencyBands, const Configuration & configuration)
+    void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
     {
         if (frequencyBands.size() == 0)
             return;
 
-        _Mode = configuration._XAxisMode;
+        _Mode = configuration->_XAxisMode;
+
         _MinFrequency = frequencyBands[0].Ctr;
         _MaxFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
         _NumBands = frequencyBands.size();
+
+        _TextColor = configuration->_XTextColor;
+        _LineColor = configuration->_XLineColor;
 
         _Labels.clear();
 
@@ -185,7 +189,7 @@ public:
 
             // Draw the vertical grid line.
             {
-                _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+                _Brush->SetColor(_LineColor);
 
                 renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), _Brush, StrokeWidth, nullptr);
             }
@@ -194,7 +198,7 @@ public:
             {
                 D2D1_RECT_F TextRect = { Iter.x - 30.f, Height - _Height, Iter.x + 30.f, Height };
 
-                _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+                _Brush->SetColor(_TextColor);
 
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
@@ -265,13 +269,16 @@ public:
 
 private:
     XAxisMode _Mode;
+
     double _MinFrequency;
     double _MaxFrequency;
     size_t _NumBands;
 
+    D2D1_COLOR_F _TextColor;
+    D2D1_COLOR_F _LineColor;
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
-    
+
     std::vector<Label> _Labels;
 
     // Device-independent resources

@@ -161,6 +161,8 @@ enum class ColorScheme
 
     foobar2000 = 5,
     foobar2000DarkMode = 6,
+
+    Fire = 7,
 };
 
 enum class PeakMode
@@ -259,14 +261,20 @@ public:
     #pragma endregion
 
     #pragma region Rendering
-        D2D1::ColorF _BackColor = D2D1::ColorF(0, 0, 0);                // Background color of the element
+        D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
 
         #pragma region X axis
             XAxisMode _XAxisMode;
+
+            D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
         #pragma endregion
 
         #pragma region Y axis
             YAxisMode _YAxisMode;
+
+            D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
 
             double _MinDecibel;                                         // Lower amplitude, -120.0 .. 0.0
             double _MaxDecibel;                                         // Upper amplitude, -120.0 .. 0.0
@@ -277,10 +285,11 @@ public:
 
         #pragma region Bands
             ColorScheme _ColorScheme;
+            std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops. Will not be persisted.
+            std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
-
-            std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops.
+            D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
@@ -308,7 +317,6 @@ public:
     downsample: 0,
     clampPeaks: true,
 
-    color: 'none',
     labelTuning: 440,
 
     showDC: true,

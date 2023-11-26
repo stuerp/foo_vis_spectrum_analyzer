@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.11.25) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.11.26) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -24,8 +24,11 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize()
+    void Initialize(const Configuration * configuration)
     {
+        _Configuration = configuration;
+
+        ReleaseDeviceSpecificResources();
     }
 
     void Resize(const D2D1_RECT_F & rect)
@@ -113,22 +116,25 @@ public:
     {
         HRESULT hr = S_OK;
 
-        if ((_BackgroundBrush == nullptr) && SUCCEEDED(hr))
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(.2f, .2f, .2f, .7f), &_BackgroundBrush); // #1E90FF, 0.3f
-
         if ((_ForegroundBrush == nullptr) && SUCCEEDED(hr))
         {
-            CComPtr<ID2D1GradientStopCollection> Collection;
-
-            hr = renderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-            if (SUCCEEDED(hr))
+            if (!_GradientStops.empty())
             {
-                D2D1_SIZE_F Size = renderTarget->GetSize();
+                CComPtr<ID2D1GradientStopCollection> Collection;
 
-                hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_ForegroundBrush);
+                hr = renderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+
+                if (SUCCEEDED(hr))
+                {
+                    D2D1_SIZE_F Size = renderTarget->GetSize();
+
+                    hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_ForegroundBrush);
+                }
             }
         }
+
+        if ((_BackgroundBrush == nullptr) && SUCCEEDED(hr))
+            hr = renderTarget->CreateSolidColorBrush(_Configuration->_BandBackColor, &_BackgroundBrush);
 
         if ((_WhiteBrush == nullptr) && SUCCEEDED(hr))
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
@@ -141,13 +147,15 @@ public:
     /// </summary>
     void ReleaseDeviceSpecificResources()
     {
-        _ForegroundBrush.Release();
-        _BackgroundBrush.Release();
-
         _WhiteBrush.Release();
+
+        _BackgroundBrush.Release();
+        _ForegroundBrush.Release();
     }
 
 private:
+    const Configuration * _Configuration;
+
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 

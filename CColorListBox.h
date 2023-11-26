@@ -41,16 +41,12 @@ public:
     void GetColors(std::vector<D2D1_COLOR_F> & colors) const;
     void SetColors(const std::vector<D2D1_COLOR_F> & colors);
 
-    bool Add(const D2D1_COLOR_F & Color);
-    bool Remove();
-
     void DrawItem(LPDRAWITEMSTRUCT dis);
     void MeasureItem(LPMEASUREITEMSTRUCT mis);
 
 private:
     LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
 
-    void UpdateItems();
     void SendChangedNotification() const noexcept;
 
 private:

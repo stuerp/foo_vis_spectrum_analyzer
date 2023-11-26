@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.25) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.11.26) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class YAxis
 {
 public:
-    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Width(30.f), _Height() { }
+    YAxis() : _Configuration(nullptr), _TextColor(), _LineColor(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
@@ -39,9 +39,12 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(Configuration * configuration)
+    void Initialize(const Configuration * configuration)
     {
         _Configuration = configuration;
+
+        _TextColor = configuration->_YTextColor;
+        _LineColor = configuration->_YLineColor;
 
         _Labels.clear();
 
@@ -94,7 +97,7 @@ public:
         {
             // Draw the horizontal grid line.
             {
-                _Brush->SetColor(D2D1::ColorF(0x444444, 1.0f));
+                _Brush->SetColor(_LineColor);
 
                 renderTarget->DrawLine(D2D1_POINT_2F(_Rect.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), _Brush, StrokeWidth, nullptr);
             }
@@ -103,7 +106,7 @@ public:
             {
                 D2D1_RECT_F TextRect = { _Rect.left, Iter.y - _Height / 2.f, _Rect.left + _Width - 2.f, Iter.y + _Height / 2.f };
 
-                _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+                _Brush->SetColor(_TextColor);
 
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
@@ -175,6 +178,8 @@ private:
 
     std::vector<Label> _Labels;
 
+    D2D1_COLOR_F _TextColor;
+    D2D1_COLOR_F _LineColor;
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 

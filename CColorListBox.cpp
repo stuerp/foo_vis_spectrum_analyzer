@@ -29,46 +29,13 @@ void CColorListBox::Initialize(HWND hWnd)
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void CColorListBox::Terminate()
 {
+    if (!IsWindow())
+        return;
+
     ReleaseDeviceSpecificResources();
     ReleaseDeviceIndependentResources();
-}
 
-/// <summary>
-/// Adds a color after the selected item.
-/// </summary>
-bool CColorListBox::Add(const D2D1_COLOR_F & color)
-{
-    int Index = GetCurSel();
-
-    if (Index == LB_ERR)
-        return false;
-
-    _Colors.insert(_Colors.begin() + Index + 1, color);
-
-    UpdateItems();
-
-    SetCurSel(Index);
-
-    return true;
-}
-
-/// <summary>
-/// Removes the selected item.
-/// </summary>
-bool CColorListBox::Remove()
-{
-    int Index = GetCurSel();
-
-    if (Index == LB_ERR)
-        return false;
-
-    _Colors.erase(_Colors.begin() + Index);
-
-    UpdateItems();
-
-    SetCurSel(Index);
-
-    return true;
+    UnsubclassWindow(TRUE);
 }
 
 /// <summary>
@@ -147,7 +114,12 @@ void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors)
 {
     _Colors = colors;
 
-    UpdateItems();
+    ResetContent();
+
+    for (size_t Index = 0; Index < _Colors.size(); ++Index)
+        AddString(nullptr);
+
+    InvalidateRect(NULL);
 }
 
 /// <summary>
@@ -170,21 +142,6 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
     }
 
     return 0;
-}
-
-/// <summary>
-/// Updates the list box items.
-/// </summary>
-void CColorListBox::UpdateItems()
-{
-    ResetContent();
-
-    for (size_t Index = 0; Index < _Colors.size(); ++Index)
-        AddString(nullptr);
-
-    SendChangedNotification();
-
-    InvalidateRect(NULL);
 }
 
 /// <summary>

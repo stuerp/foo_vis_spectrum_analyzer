@@ -90,8 +90,14 @@ void Configuration::Reset() noexcept
     // X axis
     _XAxisMode = XAxisMode::Notes;
 
+    _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    _XLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
+
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
+
+    _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    _YLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
 
     _MinDecibel = -90.;
     _MaxDecibel =   0.;
@@ -101,10 +107,12 @@ void Configuration::Reset() noexcept
 
     // Band
     _DrawBandBackground = true;
+    _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
     _ColorScheme = ColorScheme::Prism1;
 
     _GradientStops = GetGradientStops(_ColorScheme);
+    _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _PeakMode = PeakMode::Classic;
     _HoldTime = 30.;
@@ -195,8 +203,14 @@ Configuration & Configuration::operator=(const Configuration & other)
         // X axis
         _XAxisMode = other._XAxisMode;
 
+        _XTextColor = other._XTextColor;
+        _XLineColor = other._XLineColor;
+
         // Y axis
         _YAxisMode = other._YAxisMode;
+
+        _YTextColor = other._YTextColor;
+        _YLineColor = other._YLineColor;
 
         _MinDecibel = other._MinDecibel;
         _MaxDecibel = other._MaxDecibel;
@@ -206,9 +220,12 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Bands
         _DrawBandBackground = other._DrawBandBackground;
+        _BandBackColor = other._BandBackColor;
 
         _ColorScheme = other._ColorScheme;
+
         _GradientStops = other._GradientStops;
+        _CustomGradientStops = other._CustomGradientStops;
 
         _PeakMode = other._PeakMode;
         _HoldTime = other._HoldTime;
@@ -228,109 +245,156 @@ void Configuration::Read(ui_element_config_parser & parser)
 {
     Reset();
 
-//  try
+    size_t Version;
+
+    parser >> Version;
+
+    if (Version > _CurrentVersion)
+        return;
+
+    int Integer;
+
+    parser >> _DialogBounds.left;
+    parser >> _DialogBounds.top;
+    parser >> _DialogBounds.right;
+    parser >> _DialogBounds.bottom;
+
+    parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+
+    parser >> _UseHardwareRendering;
+    parser >> _UseAntialiasing;
+
+    parser >> _UseZeroTrigger;
+
+    parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+
+    parser >> Integer; _Transform = (Transform) Integer;
+
+#pragma region FFT
+    parser >> Integer; _FFTSize = (FFTSize) Integer;
+    parser >> _FFTCustom;
+    parser >> _FFTDuration;
+
+    parser >> Integer; _MappingMethod = (Mapping) Integer;
+    parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+    parser >> _SmoothingFactor;
+    parser >> _KernelSize;
+    parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+    parser >> _SmoothLowerFrequencies;
+    parser >> _SmoothGainTransition;
+#pragma endregion
+
+#pragma region Frequencies
+    parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+
+    parser >> _NumBands;
+
+    if (Version < 5)
     {
-        size_t Version;
+        parser >> Integer; _MinFrequency = Integer; // In v5 _MinFrequency became double
+        parser >> Integer; _MaxFrequency = Integer; // In v5 _MinFrequency became double
+    }
+    else
+    {
+        parser >> _MinFrequency;
+        parser >> _MaxFrequency;
+    }
 
-        parser >> Version;
+    parser >> _MinNote;
+    parser >> _MaxNote;
+    parser >> _BandsPerOctave;
+    parser >> _Pitch;
+    parser >> _Transpose;
 
-        if (Version > _CurrentVersion)
-            return;
+    parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+    parser >> _SkewFactor;
+    parser >> _Bandwidth;
+#pragma endregion
 
-        int Integer;
+#pragma region Rendering
+    if (Version < 5)
+    {
+        UINT32 Rgb; parser >> Rgb;
+        FLOAT Alpha; parser >> Alpha;
 
-        parser >> _DialogBounds.left;
-        parser >> _DialogBounds.top;
-        parser >> _DialogBounds.right;
-        parser >> _DialogBounds.bottom;
-
-        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-        parser >> _UseHardwareRendering;
-        parser >> _UseAntialiasing;
-
-        parser >> _UseZeroTrigger;
-
-        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-        parser >> Integer; _Transform = (Transform) Integer;
-
-    #pragma region FFT
-        parser >> Integer; _FFTSize = (FFTSize) Integer;
-        parser >> _FFTCustom;
-        parser >> _FFTDuration;
-
-        parser >> Integer; _MappingMethod = (Mapping) Integer;
-        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-        parser >> _SmoothingFactor;
-        parser >> _KernelSize;
-        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-        parser >> _SmoothLowerFrequencies;
-        parser >> _SmoothGainTransition;
-    #pragma endregion
-
-    #pragma region Frequencies
-        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
-
-        parser >> _NumBands;
-
-        if (Version == 4)
-        {
-            parser >> Integer; _MinFrequency = Integer; // In v5 _MinFrequency became double
-            parser >> Integer; _MaxFrequency = Integer; // In v5 _MinFrequency became double
-        }
-        else
-        {
-            parser >> _MinFrequency;
-            parser >> _MaxFrequency;
-        }
-
-        parser >> _MinNote;
-        parser >> _MaxNote;
-        parser >> _BandsPerOctave;
-        parser >> _Pitch;
-        parser >> _Transpose;
-
-        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-        parser >> _SkewFactor;
-        parser >> _Bandwidth;
-    #pragma endregion
-
-    #pragma region Rendering
-        UINT32 Rgb;
-        FLOAT Alpha;
-
-        parser >> Rgb;
-        parser >> Alpha;
         _BackColor = D2D1::ColorF(Rgb, Alpha);
-
-        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
-
-        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
-
-        parser >> _MinDecibel;
-        parser >> _MaxDecibel;
-        parser >> _UseAbsolute;
-        parser >> _Gamma;
-
-        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
-
-        parser >> _DrawBandBackground;
-
-        parser >> Integer; _PeakMode = (PeakMode) Integer;
-        parser >> _HoldTime;
-        parser >> _Acceleration;
-    #pragma endregion
-
-        if (_ColorScheme != ColorScheme::Custom)
-            _GradientStops = GetGradientStops(_ColorScheme);
     }
-/*
-    catch (exception_io & ex)
+    else
     {
-        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+        parser >> _BackColor.r;
+        parser >> _BackColor.g;
+        parser >> _BackColor.b;
+        parser >> _BackColor.a;
     }
-*/
+
+    parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+
+    parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+
+    parser >> _MinDecibel;
+    parser >> _MaxDecibel;
+    parser >> _UseAbsolute;
+    parser >> _Gamma;
+
+    parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+
+    parser >> _DrawBandBackground;
+
+    parser >> Integer; _PeakMode = (PeakMode) Integer;
+    parser >> _HoldTime;
+    parser >> _Acceleration;
+#pragma endregion
+
+    // Version 5
+    if (Version >= 5)
+    {
+        _CustomGradientStops.clear();
+
+        size_t Count; parser >> Count;
+
+        for (size_t i = 0; i < Count; ++i)
+        {
+            D2D1_GRADIENT_STOP gs = { };
+
+            parser >> gs.position;
+            parser >> gs.color.r;
+            parser >> gs.color.g;
+            parser >> gs.color.b;
+            parser >> gs.color.a;
+
+            _CustomGradientStops.push_back(gs);
+        }
+    }
+
+    parser >> _XTextColor.r;
+    parser >> _XTextColor.g;
+    parser >> _XTextColor.b;
+    parser >> _XTextColor.a;
+
+    parser >> _XLineColor.r;
+    parser >> _XLineColor.g;
+    parser >> _XLineColor.b;
+    parser >> _XLineColor.a;
+
+    parser >> _YTextColor.r;
+    parser >> _YTextColor.g;
+    parser >> _YTextColor.b;
+    parser >> _YTextColor.a;
+
+    parser >> _YLineColor.r;
+    parser >> _YLineColor.g;
+    parser >> _YLineColor.b;
+    parser >> _YLineColor.a;
+
+    parser >> _BandBackColor.r;
+    parser >> _BandBackColor.g;
+    parser >> _BandBackColor.b;
+    parser >> _BandBackColor.a;
+
+    if (_ColorScheme != ColorScheme::Custom)
+        _GradientStops = GetGradientStops(_ColorScheme);
+    else
+        _GradientStops = _CustomGradientStops;
 }
 
 /// <summary>
@@ -390,7 +454,9 @@ void Configuration::Write(ui_element_config_builder & builder) const
     #pragma endregion
 
     #pragma region Rendering
-        builder << RGB((BYTE) (_BackColor.r * 255.f), (BYTE) (_BackColor.g * 255.f), (BYTE) (_BackColor.b * 255.f));
+        builder << _BackColor.r;
+        builder << _BackColor.g;
+        builder << _BackColor.b;
         builder << _BackColor.a;
 
         builder << (int) _XAxisMode;
@@ -410,4 +476,41 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _HoldTime;
         builder << _Acceleration;
     #pragma endregion
+
+    // Version 5
+    builder << _CustomGradientStops.size();
+
+    for (const auto & Iter : _CustomGradientStops)
+    {
+        builder << Iter.position;
+        builder << Iter.color.r;
+        builder << Iter.color.g;
+        builder << Iter.color.b;
+        builder << Iter.color.a;
+    }
+
+    builder << _XTextColor.r;
+    builder << _XTextColor.g;
+    builder << _XTextColor.b;
+    builder << _XTextColor.a;
+
+    builder << _XLineColor.r;
+    builder << _XLineColor.g;
+    builder << _XLineColor.b;
+    builder << _XLineColor.a;
+
+    builder << _YTextColor.r;
+    builder << _YTextColor.g;
+    builder << _YTextColor.b;
+    builder << _YTextColor.a;
+
+    builder << _YLineColor.r;
+    builder << _YLineColor.g;
+    builder << _YLineColor.b;
+    builder << _YLineColor.a;
+
+    builder << _BandBackColor.r;
+    builder << _BandBackColor.g;
+    builder << _BandBackColor.b;
+    builder << _BandBackColor.a;
 }

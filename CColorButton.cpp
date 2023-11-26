@@ -34,8 +34,13 @@ void CColorButton::Initialize(HWND hWnd)
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void CColorButton::Terminate()
 {
+    if (!IsWindow())
+        return;
+
     ReleaseDeviceSpecificResources();
     ReleaseDeviceIndependentResources();
+
+    UnsubclassWindow(TRUE);
 }
 
 /// <summary>
@@ -110,7 +115,7 @@ void CColorButton::OnPaint(HDC)
 /// <summary>
 /// Handles the WM_LBUTTONDBLCLK message.
 /// </summary>
-LRESULT CColorButton::OnLButtonDblClick(UINT, CPoint)
+LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
 {
     if (!_GradientStops.empty())
         return 1;

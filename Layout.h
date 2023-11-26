@@ -12,7 +12,7 @@
 #define H_CBX       14 // Combo box
 #define H_CHB       10 // Check box
 
-#define W_A00      369 // Dialog width (in dialog units)
+#define W_A00      466 // Dialog width (in dialog units)
 #define H_A00      396 // Dialog height (in dialog units)
 
 #define DX           7
@@ -568,7 +568,7 @@
 #define X_B06   X_B02 + W_B02 + IX
 #define Y_B06   DY
 
-    // Label
+    // Label (Back)
     #define W_A72   40
     #define H_A72   H_LBL
     #define X_A72   X_B06 + 5
@@ -580,11 +580,69 @@
     #define X_A73   X_A72 + W_A72 + IX
     #define Y_A73   Y_A72
 
+    // Label (X Text)
+    #define W_A74   40
+    #define H_A74   H_LBL
+    #define X_A74   X_A72
+    #define Y_A74   Y_A73 + H_A73 + IY
+
+    // Button
+    #define W_A75   40
+    #define H_A75   H_BTN
+    #define X_A75   X_A74 + W_A74 + IX
+    #define Y_A75   Y_A74
+
+    // Label (X Line)
+    #define W_A76   40
+    #define H_A76   H_LBL
+    #define X_A76   X_A74
+    #define Y_A76   Y_A75 + H_A75 + IY
+
+    // Button
+    #define W_A77   40
+    #define H_A77   H_BTN
+    #define X_A77   X_A76 + W_A76 + IX
+    #define Y_A77   Y_A76
+
+    // Label (Y Text)
+    #define W_A78   40
+    #define H_A78   H_LBL
+    #define X_A78   X_A76
+    #define Y_A78   Y_A77 + H_A77 + IY
+
+    // Button
+    #define W_A79   40
+    #define H_A79   H_BTN
+    #define X_A79   X_A78 + W_A78 + IX
+    #define Y_A79   Y_A78
+
+    // Label (Y Line)
+    #define W_A80   40
+    #define H_A80   H_LBL
+    #define X_A80   X_A78
+    #define Y_A80   Y_A79 + H_A79 + IY
+
+    // Button
+    #define W_A81   40
+    #define H_A81   H_BTN
+    #define X_A81   X_A80 + W_A80 + IX
+    #define Y_A81   Y_A80
+
+    // Label (Band background)
+    #define W_A82   40
+    #define H_A82   H_LBL
+    #define X_A82   X_A80
+    #define Y_A82   Y_A81 + H_A81 + IY
+
+    // Button
+    #define W_A83   40
+    #define H_A83   H_BTN
+    #define X_A83   X_A82 + W_A82 + IX
+    #define Y_A83   Y_A82
+
 #define W_B06  5 + W_A72 + IX + W_A73  + 5
-#define H_B06  11 + H_A73 + 7
+#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + 7
 #pragma endregion
-
-
 
 // Cancel button (right-most button)
 #define W_A99   W_BTN
