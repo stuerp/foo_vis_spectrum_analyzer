@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.26) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.11.27) P. Stuer **/
 
 #pragma once
 
@@ -142,6 +142,8 @@ private:
         IDM_REFRESH_RATE_LIMIT_200,
         IDM_CONFIGURE,
     };
+
+    FLOAT _DPI;
 
     ULONGLONG _LastRefresh;
     DWORD _RefreshInterval;

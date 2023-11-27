@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.26) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.27) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #define H_CBX       14 // Combo box
 #define H_CHB       10 // Check box
 
-#define W_A00      466 // Dialog width (in dialog units)
+#define W_A00      486 // Dialog width (in dialog units)
 #define H_A00      396 // Dialog height (in dialog units)
 
 #define DX           7
@@ -569,7 +569,7 @@
 #define Y_B06   DY
 
     // Label (Back)
-    #define W_A72   40
+    #define W_A72   60
     #define H_A72   H_LBL
     #define X_A72   X_B06 + 5
     #define Y_A72   Y_B06 + 11
@@ -581,7 +581,7 @@
     #define Y_A73   Y_A72
 
     // Label (X Text)
-    #define W_A74   40
+    #define W_A74   60
     #define H_A74   H_LBL
     #define X_A74   X_A72
     #define Y_A74   Y_A73 + H_A73 + IY
@@ -593,7 +593,7 @@
     #define Y_A75   Y_A74
 
     // Label (X Line)
-    #define W_A76   40
+    #define W_A76   60
     #define H_A76   H_LBL
     #define X_A76   X_A74
     #define Y_A76   Y_A75 + H_A75 + IY
@@ -605,7 +605,7 @@
     #define Y_A77   Y_A76
 
     // Label (Y Text)
-    #define W_A78   40
+    #define W_A78   60
     #define H_A78   H_LBL
     #define X_A78   X_A76
     #define Y_A78   Y_A77 + H_A77 + IY
@@ -617,7 +617,7 @@
     #define Y_A79   Y_A78
 
     // Label (Y Line)
-    #define W_A80   40
+    #define W_A80   60
     #define H_A80   H_LBL
     #define X_A80   X_A78
     #define Y_A80   Y_A79 + H_A79 + IY
@@ -629,7 +629,7 @@
     #define Y_A81   Y_A80
 
     // Label (Band background)
-    #define W_A82   40
+    #define W_A82   60
     #define H_A82   H_LBL
     #define X_A82   X_A80
     #define Y_A82   Y_A81 + H_A81 + IY

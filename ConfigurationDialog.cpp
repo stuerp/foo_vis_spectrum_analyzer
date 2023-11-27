@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.27) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -835,7 +835,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if (((double) NewPos / 100.) >= _Configuration->_MaxFrequency)
                 return 0;
 
-            _Configuration->_MinFrequency = (double) NewPos / 100.;
+            _Configuration->_MinFrequency = (double) Clamp(NewPos / 100., MinFrequency, MaxFrequency);
             SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
             break;
         }
@@ -845,7 +845,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if (((double) NewPos / 100.) <= _Configuration->_MinFrequency)
                 return -1;
 
-            _Configuration->_MaxFrequency = (double) NewPos / 100.;
+            _Configuration->_MaxFrequency = (double) Clamp(NewPos / 100., MinFrequency, MaxFrequency);
             SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
             break;
         }
@@ -862,7 +862,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if ((uint32_t) NewPos >= _Configuration->_MaxNote)
                 return -1;
 
-            _Configuration->_MinNote = (uint32_t) NewPos;
+            _Configuration->_MinNote = (uint32_t) Clamp(NewPos, MinNote, MaxNote);
             SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
             break;
         }
@@ -872,7 +872,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if ((uint32_t) NewPos <= _Configuration->_MinNote)
                 return -1;
 
-            _Configuration->_MaxNote = (uint32_t) NewPos;
+            _Configuration->_MaxNote = (uint32_t) Clamp(NewPos, MinNote, MaxNote);
             SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
             break;
         }
@@ -901,7 +901,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if (((double) NewPos / 10.) >= _Configuration->_MaxDecibel)
                 return 0;
 
-            _Configuration->_MinDecibel = (double) NewPos / 10.;
+            _Configuration->_MinDecibel = Clamp((double) NewPos / 10., MinDecibel, MaxDecibel);
             SetDecibel(IDC_MIN_DECIBEL, _Configuration->_MinDecibel);
             break;
         }
@@ -911,7 +911,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             if (((double) NewPos / 10.f) <= _Configuration->_MinDecibel)
                 return 0;
 
-            _Configuration->_MaxDecibel = (double) NewPos / 10.;
+            _Configuration->_MaxDecibel = Clamp((double) NewPos / 10., MinDecibel, MaxDecibel);
             SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
             break;
         }

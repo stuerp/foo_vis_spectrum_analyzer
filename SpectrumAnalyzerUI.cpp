@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.25) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.27) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -60,6 +60,8 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    _DPI = (FLOAT) ::GetDpiForWindow(m_hWnd);
+
     // Remove the border of the client area.
     {
         LONG_PTR NewStyle = ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE);
