@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.26) P. Stuer **/
+/** $VER: Resources.h (2023.11.29) P. Stuer **/
 
 #pragma once
 
@@ -26,8 +26,8 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          5
-#define NUM_FILE_PATCH          0
+#define NUM_FILE_MINOR          4
+#define NUM_FILE_PATCH          1
 #define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
@@ -35,8 +35,8 @@
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       5
-#define NUM_PRODUCT_PATCH       0
+#define NUM_PRODUCT_MINOR       4
+#define NUM_PRODUCT_PATCH       1
 #define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -72,22 +72,18 @@
 
 #define IDC_X_AXIS                      IDC_FFT_SIZE_PARAMETER_UNIT + 1
 
-// Y axis
-
-#define IDC_Y_AXIS                      IDC_X_AXIS + 1
-
-#define IDC_SCALING_FUNCTION            IDC_Y_AXIS + 1
+#define IDC_SCALING_FUNCTION            IDC_X_AXIS + 1
 #define IDC_SUMMATION_METHOD            IDC_SCALING_FUNCTION + 1
 #define IDC_MAPPING_METHOD              IDC_SUMMATION_METHOD + 1
 
 #define IDC_NUM_BANDS                   IDC_MAPPING_METHOD + 1
 #define IDC_NUM_BANDS_SPIN              IDC_NUM_BANDS + 1
-#define IDC_MIN_FREQUENCY               IDC_NUM_BANDS_SPIN + 1
-#define IDC_MIN_FREQUENCY_SPIN          IDC_MIN_FREQUENCY + 1
-#define IDC_MAX_FREQUENCY               IDC_MIN_FREQUENCY_SPIN + 1
-#define IDC_MAX_FREQUENCY_SPIN          IDC_MAX_FREQUENCY + 1
+#define IDC_LO_FREQUENCY                IDC_NUM_BANDS_SPIN + 1
+#define IDC_LO_FREQUENCY_SPIN           IDC_LO_FREQUENCY + 1
+#define IDC_HI_FREQUENCY                IDC_LO_FREQUENCY_SPIN + 1
+#define IDC_HI_FREQUENCY_SPIN           IDC_HI_FREQUENCY + 1
 
-#define IDC_MIN_NOTE                    IDC_MAX_FREQUENCY_SPIN + 1
+#define IDC_MIN_NOTE                    IDC_HI_FREQUENCY_SPIN + 1
 #define IDC_MIN_NOTE_SPIN               IDC_MIN_NOTE + 1
 #define IDC_MAX_NOTE                    IDC_MIN_NOTE_SPIN + 1
 #define IDC_MAX_NOTE_SPIN               IDC_MAX_NOTE + 1
@@ -109,11 +105,18 @@
 #define IDC_SMOOTH_LOWER_FREQUENCIES    IDC_GAMMA + 1
 #define IDC_SMOOTH_GAIN_TRANSITION      IDC_SMOOTH_LOWER_FREQUENCIES + 1
 
-#define IDC_MIN_DECIBEL                 IDC_SMOOTH_GAIN_TRANSITION + 1
-#define IDC_MIN_DECIBEL_SPIN            IDC_MIN_DECIBEL + 1
-#define IDC_MAX_DECIBEL                 IDC_MIN_DECIBEL_SPIN + 1
-#define IDC_MAX_DECIBEL_SPIN            IDC_MAX_DECIBEL + 1
-#define IDC_USE_ABSOLUTE                IDC_MAX_DECIBEL_SPIN + 1
+// Y axis
+
+#define IDC_Y_AXIS                      5800
+
+#define IDC_AMPLITUDE_LO                5802
+#define IDC_AMPLITUDE_LO_SPIN           5804
+#define IDC_AMPLITUDE_HI                5806
+#define IDC_AMPLITUDE_HI_SPIN           5808
+#define IDC_AMPLITUDE_STEP              5810
+#define IDC_AMPLITUDE_STEP_SPIN         5812
+
+#define IDC_USE_ABSOLUTE                5814
 
 // Bands
 

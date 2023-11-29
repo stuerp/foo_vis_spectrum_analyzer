@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.11.27) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.11.29) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -82,6 +82,8 @@ void ConfigurationDialog::Initialize()
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _Configuration->_SmoothGainTransition);
     }
     {
+        _KernelSize.Initialize(GetDlgItem(IDC_KERNEL_SIZE));
+
         SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
@@ -114,6 +116,8 @@ void ConfigurationDialog::Initialize()
                 { 2, 50 },
             };
 
+            _NumBands.Initialize(GetDlgItem(IDC_NUM_BANDS));
+
             SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS_SPIN));
@@ -136,23 +140,31 @@ void ConfigurationDialog::Initialize()
                 { 6, 1000000 }, // 10000.0
             };
 
-            SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
+            {
+                _LoFrequency.Initialize(GetDlgItem(IDC_LO_FREQUENCY));
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_FREQUENCY_SPIN));
+                SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
 
-            w.SetAccel(_countof(Accel), Accel);
+                auto w = CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN));
 
-            w.SetRange32((int) (MinFrequency * 100.), (int) (MaxFrequency * 100.));
-            w.SetPos32((int)(_Configuration->_MinFrequency * 100.));
+                w.SetAccel(_countof(Accel), Accel);
 
-            SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
+                w.SetRange32((int) (MinFrequency * 100.), (int) (MaxFrequency * 100.));
+                w.SetPos32((int)(_Configuration->_LoFrequency * 100.));
+            }
 
-            w = CUpDownCtrl(GetDlgItem(IDC_MAX_FREQUENCY_SPIN));
+            {
+                _HiFrequency.Initialize(GetDlgItem(IDC_HI_FREQUENCY));
 
-            w.SetAccel(_countof(Accel), Accel);
+                SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
 
-            w.SetRange32((int) (MinFrequency * 100.), (int) (MaxFrequency * 100.));
-            w.SetPos32((int)(_Configuration->_MaxFrequency * 100.));
+                auto w = CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+
+                w.SetRange32((int) (MinFrequency * 100.), (int) (MaxFrequency * 100.));
+                w.SetPos32((int)(_Configuration->_HiFrequency * 100.));
+            }
         }
 
         {
@@ -183,6 +195,8 @@ void ConfigurationDialog::Initialize()
                 { 4,  5000 }, //  50.0
                 { 5, 10000 }, // 100.0
             };
+
+            _Pitch.Initialize(GetDlgItem(IDC_PITCH));
 
             SetFrequency(IDC_PITCH, _Configuration->_Pitch);
 
@@ -303,23 +317,44 @@ void ConfigurationDialog::Initialize()
                 { 3,    500 }, //  5.0
             };
 
-            SetDecibel(IDC_MIN_DECIBEL, _Configuration->_MinDecibel);
+            {
+                _AmplitudeLo.Initialize(GetDlgItem(IDC_AMPLITUDE_LO));
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_DECIBEL_SPIN));
+                SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
 
-            w.SetAccel(_countof(Accel), Accel);
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
 
-            w.SetRange32((int) (MinDecibel * 10.), (int) (MaxDecibel * 10.));
-            w.SetPos32((int) (_Configuration->_MinDecibel * 10.));
+                w.SetAccel(_countof(Accel), Accel);
 
-            SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
+                w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
+                w.SetPos32((int) (_Configuration->_AmplitudeLo * 10.));
+            }
 
-            w = CUpDownCtrl(GetDlgItem(IDC_MAX_DECIBEL_SPIN));
+            {
+                _AmplitudeHi.Initialize(GetDlgItem(IDC_AMPLITUDE_HI));
 
-            w.SetAccel(_countof(Accel), Accel);
+                SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
 
-            w.SetRange32((int) (MinDecibel * 10), (int) (MaxDecibel * 10.));
-            w.SetPos32((int) (_Configuration->_MaxDecibel * 10.));
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+
+                w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
+                w.SetPos32((int) (_Configuration->_AmplitudeHi * 10.));
+            }
+
+            {
+                _AmplitudeStep.Initialize(GetDlgItem(IDC_AMPLITUDE_STEP));
+
+                SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
+
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+
+                w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
+                w.SetPos32((int) (_Configuration->_AmplitudeStep * 10.));
+            }
         }
 
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration->_UseAbsolute);
@@ -545,7 +580,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 }
 
 /// <summary>
-/// Handles the notification when a control loses focus.
+/// Handles the notification when the content of an edit control has been changed.
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
@@ -569,23 +604,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
                 case FFTSize::FFTCustom:
                 {
-                    int Value = ::_wtoi(Text);
-
-                    if (!InRange(Value, MinFFTSize, MaxFFTSize))
-                        return;
-
-                    _Configuration->_FFTCustom = (size_t) Value;
+                    _Configuration->_FFTCustom = (size_t) Clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize);
                     break;
                 }
 
                 case FFTSize::FFTDuration:
                 {
-                    double Value = ::_wtof(Text);
-
-                    if (!InRange(Value, MinFFTDuration, MaxFFTDuration))
-                        return;
-
-                    _Configuration->_FFTDuration= Value;
+                    _Configuration->_FFTDuration= Clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration);;
                     break;
                 }
             }
@@ -595,25 +620,63 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_KERNEL_SIZE:
         {
-            int Value = ::_wtoi(Text);
+            _Configuration->_KernelSize = Clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize);
+            break;
+        }
+    #pragma endregion
 
-            if (!InRange(Value, MinKernelSize, MaxKernelSize))
-                return;
+    #pragma region Frequencies
+        case IDC_NUM_BANDS:
+        {
+            _Configuration->_NumBands = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands);
+            break;
+        }
 
-            _Configuration->_KernelSize = Value;
+        case IDC_LO_FREQUENCY:
+        {
+            _Configuration->_LoFrequency = Min(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _Configuration->_HiFrequency);
+
+            CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_LoFrequency * 100.));
+            break;
+        }
+
+        case IDC_HI_FREQUENCY:
+        {
+            _Configuration->_HiFrequency = Max(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _Configuration->_LoFrequency);
+
+            CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_HiFrequency * 100.));
+            break;
+        }
+
+        case IDC_PITCH:
+        {
+            _Configuration->_Pitch = Clamp(::_wtof(Text), MinPitch, MaxPitch);
             break;
         }
     #pragma endregion
 
     #pragma region Y axis
+        case IDC_AMPLITUDE_LO:
+        {
+            _Configuration->_AmplitudeLo = Min(Clamp(::_wtof(Text), MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeHi);
+            break;
+        }
+
+        case IDC_AMPLITUDE_HI:
+        {
+            _Configuration->_AmplitudeHi = Max(Clamp(::_wtof(Text), MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeLo);
+            break;
+        }
+
+        case IDC_AMPLITUDE_STEP:
+        {
+            _Configuration->_AmplitudeStep = Max(Clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep), _Configuration->_AmplitudeStep);
+            break;
+        }
+
         case IDC_GAMMA:
         {
-            double Value = ::_wtof(Text);
-
-            if (!InRange(Value, MinGamma, MaxGamma))
-                return;
-
-            _Configuration->_Gamma = Value;
+            _Configuration->_Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
     #pragma endregion
@@ -621,34 +684,19 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     #pragma region Peak indicator
         case IDC_SMOOTHING_FACTOR:
         {
-            double Value = ::_wtof(Text);
-
-            if (!InRange(Value, MinSmoothingFactor, MaxSmoothingFactor))
-                return;
-
-            _Configuration->_SmoothingFactor = Value;
+            _Configuration->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
             break;
         }
 
         case IDC_HOLD_TIME:
         {
-            double Value = ::_wtof(Text);
-
-            if (!InRange(Value, MinHoldTime, MaxHoldTime))
-                return;
-
-            _Configuration->_HoldTime = Value;
+            _Configuration->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
             break;
         }
 
         case IDC_ACCELERATION:
         {
-            double Value = ::_wtof(Text);
-
-            if (!InRange(Value, MinAcceleration, MaxAcceleration))
-                return;
-
-            _Configuration->_Acceleration = Value;
+            _Configuration->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
             break;
         }
     #pragma endregion
@@ -658,6 +706,109 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     }
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+}
+
+/// <summary>
+/// Handles the notification when a control loses focus.
+/// </summary>
+void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
+{
+    switch (id)
+    {
+    #pragma region FFT
+        case IDC_KERNEL_SIZE:
+        {
+            SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Frequencies
+        case IDC_NUM_BANDS:
+        {
+            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration->_NumBands)));
+            break;
+        }
+
+        case IDC_LO_FREQUENCY:
+        {
+            SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
+            break;
+        }
+
+        case IDC_HI_FREQUENCY:
+        {
+            SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
+            break;
+        }
+
+        case IDC_PITCH:
+        {
+            SetFrequency(IDC_PITCH, _Configuration->_Pitch);
+            break;
+        }
+
+        case IDC_SKEW_FACTOR:
+        {
+            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
+            break;
+        }
+
+        case IDC_BANDWIDTH:
+        {
+            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Y axis
+        case IDC_AMPLITUDE_LO:
+        {
+            SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
+            break;
+        }
+
+        case IDC_AMPLITUDE_HI:
+        {
+            SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
+            break;
+        }
+
+        case IDC_AMPLITUDE_STEP:
+        {
+            SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
+            break;
+        }
+
+        case IDC_GAMMA:
+        {
+            SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Peak indicator
+        case IDC_SMOOTHING_FACTOR:
+        {
+            SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1)));
+            break;
+        }
+
+        case IDC_HOLD_TIME:
+        {
+            SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
+            break;
+        }
+    #pragma endregion
+    }
+
+    return;
 }
 
 /// <summary>
@@ -827,26 +978,24 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_KERNEL_SIZE_SPIN:
         {
             _Configuration->_KernelSize = Clamp(NewPos, MinKernelSize, MaxKernelSize);
-            break;;
-        }
-
-        case IDC_MIN_FREQUENCY_SPIN:
-        {
-            if (((double) NewPos / 100.) >= _Configuration->_MaxFrequency)
-                return 0;
-
-            _Configuration->_MinFrequency = (double) Clamp(NewPos / 100., MinFrequency, MaxFrequency);
-            SetFrequency(IDC_MIN_FREQUENCY, _Configuration->_MinFrequency);
             break;
         }
 
-        case IDC_MAX_FREQUENCY_SPIN:
+        case IDC_LO_FREQUENCY_SPIN:
         {
-            if (((double) NewPos / 100.) <= _Configuration->_MinFrequency)
-                return -1;
+            _Configuration->_LoFrequency = Min(Clamp(NewPos / 100., MinFrequency, MaxFrequency), _Configuration->_HiFrequency);
+            SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
 
-            _Configuration->_MaxFrequency = (double) Clamp(NewPos / 100., MinFrequency, MaxFrequency);
-            SetFrequency(IDC_MAX_FREQUENCY, _Configuration->_MaxFrequency);
+            CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_LoFrequency * 100.));
+            break;
+        }
+
+        case IDC_HI_FREQUENCY_SPIN:
+        {
+            _Configuration->_HiFrequency = Max(Clamp(NewPos / 100., MinFrequency, MaxFrequency), _Configuration->_LoFrequency);
+            SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
+
+            CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_HiFrequency * 100.));
             break;
         }
 
@@ -854,65 +1003,78 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         {
             _Configuration->_NumBands = (size_t) Clamp(NewPos, MinBands, MaxBands);
             SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration->_NumBands)));
+
+            CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS)).SetPos32((int)(_Configuration->_NumBands));
             break;
         }
 
         case IDC_MIN_NOTE_SPIN:
         {
-            if ((uint32_t) NewPos >= _Configuration->_MaxNote)
-                return -1;
-
-            _Configuration->_MinNote = (uint32_t) Clamp(NewPos, MinNote, MaxNote);
+            _Configuration->_MinNote = Min((uint32_t) Clamp(NewPos, MinNote, MaxNote), _Configuration->_MaxNote);
             SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
+
+            CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN)).SetPos32((int)(_Configuration->_MinNote));
             break;
         }
 
         case IDC_MAX_NOTE_SPIN:
         {
-            if ((uint32_t) NewPos <= _Configuration->_MinNote)
-                return -1;
-
-            _Configuration->_MaxNote = (uint32_t) Clamp(NewPos, MinNote, MaxNote);
+            _Configuration->_MaxNote = Max((uint32_t) Clamp(NewPos, MinNote, MaxNote), _Configuration->_MinNote);
             SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
+
+            CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN)).SetPos32((int)(_Configuration->_MaxNote));
             break;
         }
 
         case IDC_BANDS_PER_OCTAVE_SPIN:
         {
             _Configuration->_BandsPerOctave = (uint32_t) Clamp(NewPos, MinBandsPerOctave, MaxBandsPerOctave);
-            break;;
+
+            CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN)).SetPos32((int)(_Configuration->_BandsPerOctave));
+            break;
         }
 
         case IDC_PITCH_SPIN:
         {
             _Configuration->_Pitch = Clamp((double) NewPos / 100., MinPitch, MaxPitch);
             SetFrequency(IDC_PITCH, _Configuration->_Pitch);
-            break;;
+
+            CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN)).SetPos32((int)(_Configuration->_Pitch * 10.));
+            break;
         }
 
         case IDC_TRANSPOSE_SPIN:
         {
             _Configuration->_Transpose = Clamp(NewPos, MinTranspose, MaxTranspose);
-            break;;
-        }
 
-        case IDC_MIN_DECIBEL_SPIN:
-        {
-            if (((double) NewPos / 10.) >= _Configuration->_MaxDecibel)
-                return 0;
-
-            _Configuration->_MinDecibel = Clamp((double) NewPos / 10., MinDecibel, MaxDecibel);
-            SetDecibel(IDC_MIN_DECIBEL, _Configuration->_MinDecibel);
+            CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN)).SetPos32((int)(_Configuration->_Transpose));
             break;
         }
 
-        case IDC_MAX_DECIBEL_SPIN:
+        case IDC_AMPLITUDE_LO_SPIN:
         {
-            if (((double) NewPos / 10.f) <= _Configuration->_MinDecibel)
-                return 0;
+            _Configuration->_AmplitudeLo = Min(Clamp((double) NewPos / 10., MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeHi);
+            SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
 
-            _Configuration->_MaxDecibel = Clamp((double) NewPos / 10., MinDecibel, MaxDecibel);
-            SetDecibel(IDC_MAX_DECIBEL, _Configuration->_MaxDecibel);
+            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int)(_Configuration->_AmplitudeLo * 10.));
+            break;
+        }
+
+        case IDC_AMPLITUDE_HI_SPIN:
+        {
+            _Configuration->_AmplitudeHi = Max(Clamp((double) NewPos / 10., MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeLo);
+            SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
+
+            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int)(_Configuration->_AmplitudeHi * 10.));
+            break;
+        }
+
+        case IDC_AMPLITUDE_STEP_SPIN:
+        {
+            _Configuration->_AmplitudeStep = Clamp((double) NewPos / 10., MinAmplitudeStep, MaxAmplitudeStep);
+            SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
+
+            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int)(_Configuration->_AmplitudeStep * 10.));
             break;
         }
 
@@ -1117,8 +1279,8 @@ void ConfigurationDialog::UpdateControls()
     State = (_Configuration->_FrequencyDistribution != FrequencyDistribution::Octaves);
 
         GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_MIN_FREQUENCY).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_MAX_FREQUENCY).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && State);
         GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && State);
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(State);
 

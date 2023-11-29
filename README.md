@@ -78,10 +78,15 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.5.0.0, 2023-xx-xx
+v0.4.1.0, 2023-11-29
 
+* New: Amplitude increment/decrement is configurable.
+* Improved: Some numeric controls are editable again. Range checking has been improved.
+* Improved: The high amplitude label and grid line on the Y axis are now fully visible.
+* Improved: Labels don't overlap anymore.
 * Fixed: The "Band Background" label was cut off.
 * Fixed: Range checking on some configuration panel controls.
+* Fixed: Content scaling should be DPI-aware now.
 
 v0.4.0.0, 2023-11-26
 

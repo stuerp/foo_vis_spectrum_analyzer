@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.26) P. Stuer **/
+/** $VER: Resources.rc (2023.11.29) P. Stuer **/
 
 #include "Resources.h"
 
@@ -64,7 +64,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         combobox                                    IDC_FFT_SIZE,                   X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           ""                          IDC_FFT_SIZE_PARAMETER_NAME,    X_A61, Y_A61 + 2, W_A61, H_A61
-        edittext                                    IDC_FFT_SIZE_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, WS_TABSTOP
+        edittext                                    IDC_FFT_SIZE_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         ltext           "samples",                  IDC_FFT_SIZE_PARAMETER_UNIT,    X_A60, Y_A60 + 2, W_A60, H_A60
 
         rtext           "Summation:",               IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
@@ -77,7 +77,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         control         "Smooth gain transition",   IDC_SMOOTH_GAIN_TRANSITION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A44, Y_A44, W_A44, H_A44
 
         rtext           "Lanczos kernel:"           IDC_STATIC,                     X_A39, Y_A39 + 2, W_A39, H_A39
-        edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, WS_TABSTOP
+        edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_KERNEL_SIZE_SPIN,           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
     groupbox "Frequencies", IDC_STATIC, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
@@ -86,15 +86,15 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         combobox                            IDC_DISTRIBUTION,           X_A02, Y_A02,     W_A02, H_A02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "No. of bands:",    IDC_STATIC,                 X_A19, Y_A19 + 2, W_A19, H_A19
-        edittext                            IDC_NUM_BANDS,              X_A20, Y_A20, W_A20, H_A20, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        edittext                            IDC_NUM_BANDS,              X_A20, Y_A20, W_A20, H_A20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                 IDC_NUM_BANDS_SPIN          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
         rtext           "Frequency range:"  IDC_STATIC,                 X_A21, Y_A21 + 2, W_A21, H_A21
-        edittext                            IDC_MIN_FREQUENCY,          X_A22, Y_A22, W_A22, H_A22, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
-        control         "",                 IDC_MIN_FREQUENCY_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        edittext                            IDC_LO_FREQUENCY,           X_A22, Y_A22, W_A22, H_A22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                 IDC_LO_FREQUENCY_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ctext           "-"                 IDC_STATIC,                 X_A23, Y_A23 + 2, W_A23, H_A23
-        edittext                            IDC_MAX_FREQUENCY,          X_A24, Y_A24, W_A24, H_A24, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
-        control         "",                 IDC_MAX_FREQUENCY_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        edittext                            IDC_HI_FREQUENCY,           X_A24, Y_A24, W_A24, H_A24, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                 IDC_HI_FREQUENCY_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "Hz",               IDC_STATIC,                 X_A24b, Y_A24b + 2, W_A24b, H_A24b
 
         rtext           "Note range:"       IDC_STATIC,                 X_A25, Y_A25 + 2, W_A25, H_A25
@@ -109,7 +109,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         control         "",                 IDC_BANDS_PER_OCTAVE_SPIN,  "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
         rtext           "Pitch:"            IDC_STATIC,                 X_A29, Y_A29 + 2, W_A29, H_A29
-        edittext                            IDC_PITCH,                  X_A30, Y_A30, W_A30, H_A30, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
+        edittext                            IDC_PITCH,                  X_A30, Y_A30, W_A30, H_A30, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                 IDC_PITCH_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "Hz",               IDC_STATIC,                 X_A64, Y_A64 + 2, W_A64, H_A64
 
@@ -130,39 +130,45 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
 
     groupbox "X axis", IDC_STATIC, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Mode:",            IDC_STATIC,             X_A05, Y_A05 + 2, W_A05, H_A05
-        combobox                            IDC_X_AXIS,             X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Mode:",            IDC_STATIC,                 X_A05, Y_A05 + 2, W_A05, H_A05
+        combobox                            IDC_X_AXIS,                 X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     groupbox "Y axis", IDC_STATIC, X_B03, Y_B03, W_B03, H_B03, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Mode:",            IDC_STATIC,             X_A07, Y_A07 + 2, W_A07, H_A07
-        combobox                            IDC_Y_AXIS,             X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Mode:",            IDC_STATIC,                 X_A07, Y_A07 + 2, W_A07, H_A07
+        combobox                            IDC_Y_AXIS,                 X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Amplitude range:"  IDC_STATIC,             X_A45, Y_A45 + 2, W_A45, H_A45
-        edittext                            IDC_MIN_DECIBEL,        X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
-        control         "",                 IDC_MIN_DECIBEL_SPIN    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ctext           "-"                 IDC_STATIC,             X_A47, Y_A47 + 2, W_A47, H_A47
-        edittext                            IDC_MAX_DECIBEL,        X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
-        control         "",                 IDC_MAX_DECIBEL_SPIN    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "dB"                IDC_STATIC,             X_A49, Y_A49 + 2, W_A49, H_A49
+        rtext           "Amplitude range:"  IDC_STATIC,                 X_A45, Y_A45 + 2, W_A45, H_A45
+        edittext                            IDC_AMPLITUDE_LO,           X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                 IDC_AMPLITUDE_LO_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ctext           "-"                 IDC_STATIC,                 X_A47, Y_A47 + 2, W_A47, H_A47
+        edittext                            IDC_AMPLITUDE_HI,           X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                 IDC_AMPLITUDE_HI_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "dB"                IDC_STATIC,                 X_A49, Y_A49 + 2, W_A49, H_A49
+
+        rtext           "Amplitude decr.:"  IDC_STATIC,                 X_A84, Y_A84 + 2, W_A84, H_A84
+        edittext                            IDC_AMPLITUDE_STEP,          X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                 IDC_AMPLITUDE_STEP_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "dB"                IDC_STATIC,                 X_A86, Y_A86 + 2, W_A86, H_A86
+
 
         control         "Use absolute",     IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
 
-        rtext           "Gamma:"            IDC_STATIC,             X_A41, Y_A41 + 2, W_A41, H_A41
-        edittext                            IDC_GAMMA               X_A42, Y_A42, W_A42, H_A42, WS_TABSTOP
+        rtext           "Gamma:"            IDC_STATIC,                 X_A41, Y_A41 + 2, W_A41, H_A41
+        edittext                            IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, WS_TABSTOP
 
     groupbox "Bands", IDC_BANDS, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Color scheme:",    IDC_STATIC,             X_A09, Y_A09 + 2, W_A09, H_A09
-        combobox                            IDC_COLOR_SCHEME,       X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Color scheme:",    IDC_STATIC,                 X_A09, Y_A09 + 2, W_A09, H_A09
+        combobox                            IDC_COLOR_SCHEME,           X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Band background",  IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
 
-        ltext           "",                 IDC_GRADIENT,           X_A67, Y_A67, W_A67, H_A67, SS_NOTIFY, WS_EX_STATICEDGE
-        listbox                             IDC_COLORS,             X_A68, Y_A68, W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
-        pushbutton      "Add",              IDC_ADD,                X_A69, Y_A69, W_A69, H_A69
-        pushbutton      "Remove",           IDC_REMOVE,             X_A70, Y_A70, W_A70, H_A70
-        pushbutton      "Reverse",          IDC_REVERSE,            X_A71, Y_A71, W_A71, H_A71
+        ltext           "",                 IDC_GRADIENT,               X_A67, Y_A67, W_A67, H_A67, SS_NOTIFY, WS_EX_STATICEDGE
+        listbox                             IDC_COLORS,                 X_A68, Y_A68, W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+        pushbutton      "Add",              IDC_ADD,                    X_A69, Y_A69, W_A69, H_A69
+        pushbutton      "Remove",           IDC_REMOVE,                 X_A70, Y_A70, W_A70, H_A70
+        pushbutton      "Reverse",          IDC_REVERSE,                X_A71, Y_A71, W_A71, H_A71
 
         rtext           "Smoothing:",       IDC_SMOOTHING_METHOD_LBL,   X_A17, Y_A17 + 2, W_A17, H_A17
         combobox                            IDC_SMOOTHING_METHOD,       X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP

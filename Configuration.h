@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.26) P. Stuer **/
+/** $VER: Configuration.h (2023.11.29) P. Stuer **/
 
 #pragma once
 
@@ -20,7 +20,7 @@ inline const int MaxKernelSize = 64;
 inline const int MinBands =   2;
 inline const int MaxBands = 512;
 
-inline const double MinFrequency =     0.; // Hz
+inline const double MinFrequency =     1.; // Hz
 inline const double MaxFrequency = 96000.; // Hz
 
 inline const int MinNote =   0;
@@ -41,8 +41,11 @@ inline const double MaxSkewFactor = 1.;
 inline const double MinBandwidth =  0.;
 inline const double MaxBandwidth = 64.;
 
-inline const double MinDecibel = -120.; // dB
-inline const double MaxDecibel =    0.; // dB
+inline const double MinAmplitude = -120.; // dB
+inline const double MaxAmplitude =    0.; // dB
+
+inline const double MinAmplitudeStep = -10.; // dB
+inline const double MaxAmplitudeStep =  -1.; // dB
 
 inline const double MinGamma =  0.5;
 inline const double MaxGamma = 10.0;
@@ -244,8 +247,8 @@ public:
 
         // Frequency range
         size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
-        double _MinFrequency;                                           // Hz, 0 .. 96000
-        double _MaxFrequency;                                           // Hz, 0 .. 96000
+        double _LoFrequency;                                           // Hz, 0 .. 96000
+        double _HiFrequency;                                           // Hz, 0 .. 96000
 
         // Note range
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
@@ -276,8 +279,9 @@ public:
             D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
             D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
 
-            double _MinDecibel;                                         // Lower amplitude, -120.0 .. 0.0
-            double _MaxDecibel;                                         // Upper amplitude, -120.0 .. 0.0
+            double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
+            double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
+            double _AmplitudeStep;
 
             bool _UseAbsolute = true;                                   // Logarithmic scale: Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
             double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
@@ -335,13 +339,13 @@ public:
     double ScaleA(double value) const
     {
         if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
-            return Map(ToDecibel(value), _MinDecibel, _MaxDecibel, 0.0, 1.0);
+            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
 
         double Exponent = 1.0 / _Gamma;
 
-        return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_MinDecibel), Exponent), ::pow(ToMagnitude(_MaxDecibel), Exponent), 0.0, 1.0);
+        return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
 
 private:
-    const size_t _CurrentVersion = 5;
+    const size_t _CurrentVersion = 6;
 };

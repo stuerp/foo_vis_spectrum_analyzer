@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.27) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.11.29) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -12,8 +12,8 @@
 #define H_CBX       14 // Combo box
 #define H_CHB       10 // Check box
 
-#define W_A00      486 // Dialog width (in dialog units)
-#define H_A00      396 // Dialog height (in dialog units)
+#define W_A00      498 // Dialog width (in dialog units)
+#define H_A00      415 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -40,7 +40,7 @@
     #define Y_A63    Y_A62
     #pragma endregion
 
-#define W_B05   174
+#define W_B05   186
 #define H_B05   11 + H_A06 + 7
 #pragma endregion
 
@@ -141,7 +141,7 @@
     #define Y_A40    Y_A39
     #pragma endregion
 
-#define W_B00    5 + W_A15 + IX + W_A16 + 5
+#define W_B00    5 + W_A15 + IX + W_A16 + 12 + 5
 #define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
@@ -186,7 +186,7 @@
     #define Y_A21    Y_A20 + H_A20 + IY
 
     // Textbox (Lo)
-    #define W_A22    40
+    #define W_A22    46
     #define H_A22    H_TBX
     #define X_A22    X_A21 + W_A21 + IX
     #define Y_A22    Y_A21
@@ -198,7 +198,7 @@
     #define Y_A23    Y_A22
 
     // Textbox (Hi)
-    #define W_A24    40
+    #define W_A24    46
     #define H_A24    H_TBX
     #define X_A24    X_A23 + W_A23 + IX
     #define Y_A24    Y_A23
@@ -372,12 +372,12 @@
     #define Y_A08    Y_A07
     #pragma endregion
 
-    #pragma region Amplitude: [Lo] - [Hi] dB
+    #pragma region Amplitude range: [Lo] - [Hi] dB
     // Label
     #define W_A45    60
     #define H_A45    H_LBL
     #define X_A45    X_A07
-    #define Y_A45    Y_A08 + H_A08 + DY
+    #define Y_A45    Y_A08 + H_A08 + IY
 
     // Textbox (Lo)
     #define W_A46    40
@@ -404,12 +404,32 @@
     #define Y_A49    Y_A48
     #pragma endregion
 
+    #pragma region Amplitude increment
+    // Label
+    #define W_A84    60
+    #define H_A84    H_LBL
+    #define X_A84    X_A45
+    #define Y_A84    Y_A45 + H_A45 + IY + 8
+
+    // Textbox (Lo)
+    #define W_A85    40
+    #define H_A85    H_TBX
+    #define X_A85    X_A84 + W_A84 + IX
+    #define Y_A85    Y_A84
+
+    // Label
+    #define W_A86    8
+    #define H_A86    H_LBL
+    #define X_A86    X_A85 + W_A85 + IX
+    #define Y_A86    Y_A85
+    #pragma endregion
+
     #pragma region Use absolute
     // Checkbox
     #define W_A50    100
     #define H_A50    H_CHB
-    #define X_A50    X_A46
-    #define Y_A50    Y_A48 + H_A48 + IY
+    #define X_A50    X_A85
+    #define Y_A50    Y_A85 + H_A85 + IY
     #pragma endregion
 
     #pragma region Gamma
@@ -427,7 +447,7 @@
     #pragma endregion
 
 #define W_B03   176 //  5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
-#define H_B03   11 + H_A08 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
+#define H_B03   11 + H_A08 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
 #pragma region Bands

@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.26) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.11.29) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -53,7 +53,7 @@ public:
 
         // Precalculate the labels and their position.
         {
-            for (double Amplitude = _Configuration->_MinDecibel; Amplitude <= _Configuration->_MaxDecibel; Amplitude += 6.0)
+            for (double Amplitude = _Configuration->_AmplitudeLo; Amplitude <= _Configuration->_AmplitudeHi; Amplitude -= _Configuration->_AmplitudeStep)
             {
                 WCHAR Text[16] = { };
 
@@ -77,7 +77,7 @@ public:
         const FLOAT Height = _Rect.bottom - _Rect.top;
 
         for (Label & Iter : _Labels)
-            Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0.0, 1.0, Height, 0.f);
+            Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0.0, 1.0, Height, _Height / 2.f);
     }
 
     /// <summary>
@@ -93,6 +93,8 @@ public:
         const FLOAT StrokeWidth = 1.0f;
         const FLOAT Width = _Rect.right - _Rect.left;
 
+        FLOAT OldTextTop = _Rect.bottom - _Rect.top + _Height;
+
         for (const Label & Iter : _Labels)
         {
             // Draw the horizontal grid line.
@@ -104,11 +106,16 @@ public:
 
             // Draw the label.
             {
-                D2D1_RECT_F TextRect = { _Rect.left, Iter.y - _Height / 2.f, _Rect.left + _Width - 2.f, Iter.y + _Height / 2.f };
+                D2D1_RECT_F TextRect = { _Rect.left, Iter.y - (_Height / 2.f), _Rect.left + _Width - 2.f, Iter.y + (_Height / 2.f) };
 
-                _Brush->SetColor(_TextColor);
+                if (TextRect.bottom < OldTextTop)
+                {
+                    _Brush->SetColor(_TextColor);
 
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+                    OldTextTop = TextRect.top;
+                }
             }
         }
 
@@ -127,6 +134,12 @@ public:
             static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
             hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+            if (SUCCEEDED(hr))
+            {
+                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
+                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+            }
         }
 
         if (SUCCEEDED(hr))
@@ -137,9 +150,6 @@ public:
 
             if (SUCCEEDED(hr))
             {
-                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
-                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-
                 DWRITE_TEXT_METRICS TextMetrics = { };
 
                 TextLayout->GetMetrics(&TextMetrics);
@@ -185,8 +195,8 @@ private:
 
     // Device-independent resources
     D2D1_RECT_F _Rect;
-    FLOAT _Width;  // Determines the max. width of the label.
-    FLOAT _Height;
+    FLOAT _Width;  // Width of the Y axis area (Font size-dependent).
+    FLOAT _Height; // Height of a label
 
     CComPtr<IDWriteTextFormat> _TextFormat;
 

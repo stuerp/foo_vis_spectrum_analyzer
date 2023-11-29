@@ -53,7 +53,7 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    void Initialize(FLOAT clientWidth, FLOAT clientHeight)
+    void Resize(FLOAT clientWidth, FLOAT clientHeight)
     {
         _ClientWidth = clientWidth;
         _ClientHeight = clientHeight;
@@ -103,6 +103,12 @@ public:
             static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
             hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+            if (SUCCEEDED(hr))
+            {
+                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            }
         }
 
         if (SUCCEEDED(hr))
@@ -115,9 +121,6 @@ public:
 
             if (SUCCEEDED(hr))
             {
-                _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-                _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
                 DWRITE_TEXT_METRICS TextMetrics = { };
 
                 TextLayout->GetMetrics(&TextMetrics);

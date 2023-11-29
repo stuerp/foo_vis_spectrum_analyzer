@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.26) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.11.29) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class XAxis
 {
 public:
-    XAxis() : _Mode(), _MinFrequency(), _MaxFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Height(30.f) { }
+    XAxis() : _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
@@ -46,8 +46,8 @@ public:
 
         _Mode = configuration->_XAxisMode;
 
-        _MinFrequency = frequencyBands[0].Ctr;
-        _MaxFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
+        _LoFrequency = frequencyBands[0].Ctr;
+        _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
         _NumBands = frequencyBands.size();
 
         _TextColor = configuration->_XTextColor;
@@ -163,7 +163,7 @@ public:
 
         for (Label & Iter : _Labels)
         {
-            FLOAT dx = Map(log2(Iter.Frequency), ::log2(_MinFrequency), ::log2(_MaxFrequency), 0.f, Width - BandWidth);
+            FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
 
             Iter.x = x + dx;
         }
@@ -182,6 +182,8 @@ public:
         const FLOAT StrokeWidth = 1.0f;
         const FLOAT Height = _Rect.bottom - _Rect.top;
 
+        FLOAT OldTextRight = -_Width;
+
         for (const Label & Iter : _Labels)
         {
             if (Iter.x < _Rect.left)
@@ -196,11 +198,27 @@ public:
 
             // Draw the label.
             {
-                D2D1_RECT_F TextRect = { Iter.x - 30.f, Height - _Height, Iter.x + 30.f, Height };
+                CComPtr<IDWriteTextLayout> TextLayout;
 
-                _Brush->SetColor(_TextColor);
+                HRESULT hr = _DirectWriteFactory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                if (SUCCEEDED(hr))
+                {
+                    DWRITE_TEXT_METRICS TextMetrics = { };
+
+                    TextLayout->GetMetrics(&TextMetrics);
+
+                    D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), Height - _Height, Iter.x + (TextMetrics.width / 2.f), Height };
+
+                    if (OldTextRight <= TextRect.left)
+                    {
+                        _Brush->SetColor(_TextColor);
+
+                        renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+                        OldTextRight = TextRect.right;
+                    }
+                }
             }
         }
 
@@ -214,30 +232,36 @@ public:
     {
         HRESULT hr = S_OK;
 
+        _DirectWriteFactory = directWriteFactory;
+
         if (SUCCEEDED(hr))
         {
             static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
             hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            CComPtr<IDWriteTextLayout> TextLayout;
-
-            hr = directWriteFactory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
                 _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
                 _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
                 _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            }
+        }
 
+        if (SUCCEEDED(hr))
+        {
+            CComPtr<IDWriteTextLayout> TextLayout;
+
+            hr = directWriteFactory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+
+            if (SUCCEEDED(hr))
+            {
                 DWRITE_TEXT_METRICS TextMetrics = { };
 
                 TextLayout->GetMetrics(&TextMetrics);
 
-                // Calculate the height
+                // Calculate the height.
+                _Width  = TextMetrics.width;
                 _Height = 2.f + TextMetrics.height + 2.f;
             }
         }
@@ -270,8 +294,8 @@ public:
 private:
     XAxisMode _Mode;
 
-    double _MinFrequency;
-    double _MaxFrequency;
+    double _LoFrequency;
+    double _HiFrequency;
     size_t _NumBands;
 
     D2D1_COLOR_F _TextColor;
@@ -283,8 +307,10 @@ private:
 
     // Device-independent resources
     D2D1_RECT_F _Rect;
-    FLOAT _Height;      // Determines the height of the axis (Font size-dependent).
+    FLOAT _Width;       // Width of a label
+    FLOAT _Height;      // Height of the X axis area (Font size-dependent).
 
+    CComPtr<IDWriteFactory> _DirectWriteFactory;
     CComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-specific resources

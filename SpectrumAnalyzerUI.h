@@ -55,6 +55,7 @@ public:
     void OnSize(UINT nType, CSize size);
     void OnContextMenu(CWindow wnd, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
     LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -67,6 +68,7 @@ public:
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+        MSG_WM_DPICHANGED(OnDPIChanged)
 
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
@@ -143,8 +145,6 @@ private:
         IDM_CONFIGURE,
     };
 
-    FLOAT _DPI;
-
     ULONGLONG _LastRefresh;
     DWORD _RefreshInterval;
 
@@ -169,7 +169,6 @@ private:
     CComPtr<IDWriteFactory> _DirectWriteFactory;
 
     // Device-specific resources
-    D2D1_SIZE_U _Size;
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     #pragma endregion

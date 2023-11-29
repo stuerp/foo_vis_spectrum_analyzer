@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.26) P. Stuer **/
+/** $VER: Configuration.cpp (2023.11.29) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -60,8 +60,8 @@ void Configuration::Reset() noexcept
 
     // Frequency range
     _NumBands = 320;
-    _MinFrequency = 20.;
-    _MaxFrequency = 20000.;
+    _LoFrequency = 20.;
+    _HiFrequency = 20000.;
 
     // Note range
     _MinNote = 0;
@@ -99,8 +99,9 @@ void Configuration::Reset() noexcept
     _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
     _YLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
 
-    _MinDecibel = -90.;
-    _MaxDecibel =   0.;
+    _AmplitudeLo = -90.;
+    _AmplitudeHi =   0.;
+    _AmplitudeStep = -6.;
 
     _UseAbsolute = true;
     _Gamma = 1.;
@@ -182,8 +183,8 @@ Configuration & Configuration::operator=(const Configuration & other)
         _FrequencyDistribution = other._FrequencyDistribution;
 
         _NumBands = other._NumBands;
-        _MinFrequency = other._MinFrequency;
-        _MaxFrequency = other._MaxFrequency;
+        _LoFrequency = other._LoFrequency;
+        _HiFrequency = other._HiFrequency;
 
         // Note range
         _MinNote = other._MinNote;
@@ -212,8 +213,10 @@ Configuration & Configuration::operator=(const Configuration & other)
         _YTextColor = other._YTextColor;
         _YLineColor = other._YLineColor;
 
-        _MinDecibel = other._MinDecibel;
-        _MaxDecibel = other._MaxDecibel;
+        _AmplitudeLo = other._AmplitudeLo;
+        _AmplitudeHi = other._AmplitudeHi;
+        _AmplitudeStep = other._AmplitudeStep;
+
         _UseAbsolute = other._UseAbsolute;
 
         _Gamma = other._Gamma;
@@ -291,13 +294,13 @@ void Configuration::Read(ui_element_config_parser & parser)
 
     if (Version < 5)
     {
-        parser >> Integer; _MinFrequency = Integer; // In v5 _MinFrequency became double
-        parser >> Integer; _MaxFrequency = Integer; // In v5 _MinFrequency became double
+        parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
+        parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
     }
     else
     {
-        parser >> _MinFrequency;
-        parser >> _MaxFrequency;
+        parser >> _LoFrequency;
+        parser >> _HiFrequency;
     }
 
     parser >> _MinNote;
@@ -331,8 +334,8 @@ void Configuration::Read(ui_element_config_parser & parser)
 
     parser >> Integer; _YAxisMode = (YAxisMode) Integer;
 
-    parser >> _MinDecibel;
-    parser >> _MaxDecibel;
+    parser >> _AmplitudeLo;
+    parser >> _AmplitudeHi;
     parser >> _UseAbsolute;
     parser >> _Gamma;
 
@@ -391,6 +394,10 @@ void Configuration::Read(ui_element_config_parser & parser)
     parser >> _BandBackColor.b;
     parser >> _BandBackColor.a;
 
+    // Version 6
+    if (Version >= 6)
+        parser >> _AmplitudeStep;
+
     if (_ColorScheme != ColorScheme::Custom)
         _GradientStops = GetGradientStops(_ColorScheme);
     else
@@ -439,8 +446,8 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << (int) _FrequencyDistribution;
 
         builder << _NumBands;
-        builder << _MinFrequency;
-        builder << _MaxFrequency;
+        builder << _LoFrequency;
+        builder << _HiFrequency;
 
         builder << _MinNote;
         builder << _MaxNote;
@@ -463,8 +470,8 @@ void Configuration::Write(ui_element_config_builder & builder) const
 
         builder << (int) _YAxisMode;
 
-        builder << _MinDecibel;
-        builder << _MaxDecibel;
+        builder << _AmplitudeLo;
+        builder << _AmplitudeHi;
         builder << _UseAbsolute;
         builder << _Gamma;
 
@@ -513,4 +520,7 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _BandBackColor.g;
     builder << _BandBackColor.b;
     builder << _BandBackColor.a;
+
+    // Version 6
+    builder << _AmplitudeStep;
 }

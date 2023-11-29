@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.27) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.11.29) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -60,8 +60,6 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
 /// </summary>
 LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 {
-    _DPI = (FLOAT) ::GetDpiForWindow(m_hWnd);
-
     // Remove the border of the client area.
     {
         LONG_PTR NewStyle = ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE);
@@ -158,10 +156,13 @@ void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
 {
-    if (!_RenderTarget)
+    if (_RenderTarget == nullptr)
         return;
 
-    _Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+
+    if (_RenderTarget)
+        _RenderTarget->Resize(Size);
 
     Resize();
 }
@@ -247,6 +248,16 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
 {
     ToggleFullScreen();
+}
+
+/// <summary>
+/// Handles a DPI change.
+/// </summary>
+LRESULT SpectrumAnalyzerUIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
+{
+    ReleaseDeviceSpecificResources();
+
+    return 0;
 }
 
 /// <summary>
@@ -387,7 +398,6 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
         _CQT = nullptr;
     }
 
-    // Force all elements to recalculate in case of a configuration change.
     Resize();
 
     InvalidateRect(NULL);
@@ -398,28 +408,30 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 /// </summary>
 void SpectrumAnalyzerUIElement::Resize()
 {
-    if (_RenderTarget)
-        _RenderTarget->Resize(_Size);
+    if (_RenderTarget == nullptr)
+        return;
+
+    D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
     const FLOAT dw = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
     const FLOAT dh = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
 
-    _FrameCounter.Initialize((FLOAT) _Size.width, (FLOAT) _Size.height);
+    _FrameCounter.Resize(Size.width, Size.height);
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height);
+        D2D1_RECT_F Rect(dw, 0.f, Size.width, Size.height);
 
         _XAxis.Resize(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(0.f, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - dh);
+        D2D1_RECT_F Rect(0.f, 0.f, Size.width, Size.height - dh);
 
         _YAxis.Resize(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, (FLOAT) _Size.width, (FLOAT) _Size.height - dh);
+        D2D1_RECT_F Rect(dw, 0.f, Size.width, Size.height - dh);
 
         _Spectrum.Resize(Rect);
     }
@@ -438,7 +450,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 
     HRESULT hr = CreateDeviceSpecificResources();
 
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
         _RenderTarget->BeginDraw();
 
@@ -495,7 +507,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
 
-    // Create the spectrum analyzer if necessary.
+    // Create the transformer if necessary.
     {
         if (_SpectrumAnalyzer == nullptr)
         {
@@ -586,8 +598,8 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// </summary>
 void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 {
-    const double MinFreq = ScaleF(_Configuration._MinFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
-    const double MaxFreq = ScaleF(_Configuration._MaxFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    const double MinFreq = ScaleF(_Configuration._LoFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    const double MaxFreq = ScaleF(_Configuration._HiFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
     _FrequencyBands.resize(_Configuration._NumBands);
 
@@ -642,12 +654,12 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Lo      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr     = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
 
-//      Iter.LoBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i - 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
-//      Iter.HiBound = LogSpace(_Configuration._MinFrequency, _Configuration._MaxFrequency, (double) i + 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+//      Iter.LoBound = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
+//      Iter.HiBound = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + 0.5,        _Configuration._NumBands - 1, _Configuration._SkewFactor); // FIXME: Why 0.5 and not 64.0 / 2?
     }
 }
 
@@ -815,21 +827,22 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
     // Create the render target.
     if (_RenderTarget == nullptr)
     {
-        CRect ClientRect;
+        CRect rc;
 
-        GetClientRect(ClientRect);
+        GetClientRect(rc);
 
-        _Size = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
-
-        Resize();
+        D2D1_SIZE_U Size = D2D1::SizeU((UINT32) rc.Width(), (UINT32) rc.Height());
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
-        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, _Size);
+        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
         hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        // Resize some elements based on the size of the render target.
+        Resize();
     }
 
     if (SUCCEEDED(hr))

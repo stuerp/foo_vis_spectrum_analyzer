@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.11.29) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -19,6 +19,7 @@
 #include "Resources.h"
 #include "Configuration.h"
 
+#include "CNumericEdit.h"
 #include "CColorButton.h"
 #include "CColorListBox.h"
 
@@ -45,12 +46,12 @@ public:
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
-        MSG_WM_DPICHANGED(OnDPIChanged)
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
+        COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
         NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
 
@@ -106,17 +107,7 @@ private:
         if (_Configuration->_DialogBounds.right != -1)
             MoveWindow(&_Configuration->_DialogBounds);
 
-        _DPI = (FLOAT) ::GetDpiForWindow(m_hWnd);
-
         return TRUE;
-    }
-
-    /// <summary>
-    /// Handles a DPI change.
-    /// </summary>
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
-    {
-        return 0;
     }
 
     /// <summary>
@@ -132,7 +123,7 @@ private:
     }
 
     /// <summary>
-    /// Returns a brush that the system uses to draw the dialog background.
+    /// Returns a brush that the system uses to draw the dialog background. For layout debugging purposes.
     /// </summary>
     HBRUSH OnCtlColorDlg(HDC, HWND)
     {
@@ -144,6 +135,8 @@ private:
 
     void OnSelectionChanged(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
+    void OnEditLostFocus(UINT code, int id, CWindow) noexcept;
+    LRESULT OnSetSel(UINT, WPARAM, LPARAM, BOOL & handled) const noexcept;
     void OnButtonClick(UINT, int, CWindow);
     LRESULT OnDeltaPos(LPNMHDR nmhd);
 
@@ -162,7 +155,7 @@ private:
     {
         WCHAR Text[16] = { };
 
-        ::StringCchPrintfW(Text, _countof(Text), L"%.f", frequency);
+        ::StringCchPrintfW(Text, _countof(Text), L"%.2f", frequency);
 
         SetDlgItemTextW(id, Text);
     }
@@ -199,9 +192,20 @@ private:
 
 private:
     HWND _hParent;
+
     Configuration * _Configuration;
     Configuration _OldConfiguration;
-    float _DPI;
+
+    CNumericEdit _KernelSize;
+
+    CNumericEdit _NumBands;
+    CNumericEdit _LoFrequency;
+    CNumericEdit _HiFrequency;
+    CNumericEdit _Pitch;
+
+    CNumericEdit _AmplitudeLo;
+    CNumericEdit _AmplitudeHi;
+    CNumericEdit _AmplitudeStep;
 
     CColorButton _Gradient;
     CColorListBox _Colors;

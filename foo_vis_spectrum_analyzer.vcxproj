@@ -182,6 +182,7 @@
     <ClInclude Include="CColorButton.h" />
     <ClInclude Include="CColorListBox.h" />
     <ClInclude Include="CDirectXControl.h" />
+    <ClInclude Include="CNumericEdit.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="COwnerDrawnListBox.h" />
     <ClInclude Include="CQTProvider.h" />
