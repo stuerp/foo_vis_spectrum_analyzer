@@ -440,6 +440,17 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _KernelSize.Terminate();
+
+    _AmplitudeStep.Terminate();
+    _AmplitudeHi.Terminate();
+    _AmplitudeLo.Terminate();
+
+    _Pitch.Terminate();
+    _HiFrequency.Terminate();
+    _LoFrequency.Terminate();
+    _NumBands.Terminate();
+
     _BandBackColor.Terminate();
 
     _YLineColor.Terminate();
@@ -726,7 +737,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     #pragma region Frequencies
         case IDC_NUM_BANDS:
         {
-            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration->_NumBands)));
+            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
             break;
         }
 
@@ -940,7 +951,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _Configuration->Reset();
 
             Initialize();
-            break;
+
+            return ;
         }
 
         case IDOK:
@@ -1002,7 +1014,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_NUM_BANDS_SPIN:
         {
             _Configuration->_NumBands = (size_t) Clamp(NewPos, MinBands, MaxBands);
-            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int(_Configuration->_NumBands)));
+            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
 
             CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS)).SetPos32((int)(_Configuration->_NumBands));
             break;

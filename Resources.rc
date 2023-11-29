@@ -146,7 +146,7 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         control         "",                 IDC_AMPLITUDE_HI_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "dB"                IDC_STATIC,                 X_A49, Y_A49 + 2, W_A49, H_A49
 
-        rtext           "Amplitude decr.:"  IDC_STATIC,                 X_A84, Y_A84 + 2, W_A84, H_A84
+        rtext           "Amplitude step:"   IDC_STATIC,                 X_A84, Y_A84 + 2, W_A84, H_A84
         edittext                            IDC_AMPLITUDE_STEP,          X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                 IDC_AMPLITUDE_STEP_SPIN      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "dB"                IDC_STATIC,                 X_A86, Y_A86 + 2, W_A86, H_A86

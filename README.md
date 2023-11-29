@@ -78,7 +78,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.4.1.0, 2023-11-29
+v0.4.1.1, 2023-11-29
 
 * New: Amplitude increment/decrement is configurable.
 * Improved: Some numeric controls are editable again. Range checking has been improved.
@@ -87,6 +87,7 @@ v0.4.1.0, 2023-11-29
 * Fixed: The "Band Background" label was cut off.
 * Fixed: Range checking on some configuration panel controls.
 * Fixed: Content scaling should be DPI-aware now.
+* Fixed regression: Resetting the configuration failed.
 
 v0.4.0.0, 2023-11-26
 

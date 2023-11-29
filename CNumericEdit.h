@@ -16,11 +16,27 @@ public:
         MESSAGE_HANDLER(EM_SETSEL, OnSetSel)
     END_MSG_MAP()
 
+    /// <summary>
+    /// Initializes the control.
+    /// </summary>
     bool Initialize(HWND hWnd)
     {
+        ATLASSERT(::IsWindow(hWnd));
+
         this->SubclassWindow(hWnd);
 
         return true;
+    }
+
+    /// <summary>
+    /// Terminates the control.
+    /// </summary>
+    void Terminate()
+    {
+        if (!IsWindow())
+            return;
+
+        this->UnsubclassWindow(TRUE);
     }
 
     /// <summary>
