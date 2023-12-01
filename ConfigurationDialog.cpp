@@ -568,8 +568,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLORS:
         {
-            auto lb = (CListBox) GetDlgItem(IDC_COLORS);
-
             // Remove and Reverse are only enabled when there is more than 1 color.
             bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
