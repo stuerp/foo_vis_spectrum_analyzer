@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2023.11.18) P. Stuer **/
+/** $VER: FrequencyBand.h (2023.12.01) P. Stuer **/
 
 #pragma once
 
@@ -28,4 +28,6 @@ struct FrequencyBand
     double HoldTime;    // Time to hold the current peak value.
     double DecaySpeed;  // Speed at which the current peak value decays.
     double Opacity;     // The opacity of the indicator (0.0 - 1.0)
+
+    WCHAR Label[16];
 };

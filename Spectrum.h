@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.11.26) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.12.01) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -48,6 +48,10 @@ public:
         _DrawBandBackground = drawBandBackground;
     }
 
+    FLOAT GetLeft() const { return _Rect.left; }
+
+    FLOAT GetRight() const { return _Rect.right; }
+
     /// <summary>
     /// Renders this instance to the specified render target.
     /// </summary>
@@ -58,7 +62,7 @@ public:
         const FLOAT Width = _Rect.right - _Rect.left;
         const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-        FLOAT x1 = _Rect.left;// + (Width - ((FLOAT) frequencyBands.size() * BandWidth)) / 2.f;
+        FLOAT x1 = _Rect.left;
         FLOAT x2 = x1 + BandWidth;
 
         const FLOAT y1 = _Rect.top;

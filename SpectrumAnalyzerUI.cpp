@@ -299,32 +299,29 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
         {
             _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
+            _ToolTip.SetMaxTipWidth(100);
             _ToolTip.TrackActivate(_TrackingToolInfo, TRUE);
         }
 
         _LastMousePos = POINT(-1, -1);
-
-        OutputDebugString(L"Created tooltip\n");
     }
 
     if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
     {
         _LastMousePos = pt;
 
-        WCHAR Text[12];
+        int Index = (int) ::floor(Map((FLOAT) pt.x, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
 
-        ::swprintf_s(Text, _countof(Text), L"%d, %d", pt.x, pt.y);
+        if (InRange(Index, 0, (int) _FrequencyBands.size() - 1))
+        {
+            _TrackingToolInfo->lpszText = _FrequencyBands[(size_t) Index].Label;
 
-        _TrackingToolInfo->lpszText = Text;
+            _ToolTip.SetToolInfo(_TrackingToolInfo);
 
-        _ToolTip.SetToolInfo(_TrackingToolInfo);
+            ::ClientToScreen(m_hWnd, &pt);
 
-        ::ClientToScreen(m_hWnd, &pt);
-
-        _ToolTip.TrackPosition(pt.x + 10, pt.y - 20);
-
-        OutputDebugString(Text);
-        OutputDebugString(L"\n");
+            _ToolTip.TrackPosition(pt.x + 10, pt.y - 20);
+        }
     }
 }
 
@@ -333,8 +330,6 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnMouseLeave()
 {
-    OutputDebugString(L"Mouse Leave\n");
-
     _ToolTip.TrackActivate(_TrackingToolInfo, FALSE);
 
     delete _TrackingToolInfo;
@@ -391,20 +386,6 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering() noexcept
 void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
 {
     _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
-}
-
-void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
-{
-    if (logLevel < _Configuration._LogLevel)
-        return;
-
-    va_list va;
-
-    va_start(va, format);
-
-    console::printfv(format, va);
-
-    va_end(va);
 }
 
 /// <summary>
@@ -515,7 +496,33 @@ void SpectrumAnalyzerUIElement::Resize()
         D2D1_RECT_F Rect(dw, 0.f, Size.width, Size.height - dh);
 
         _Spectrum.Resize(Rect);
+
+        // Adjust the tracking tool tip.
+        {
+            auto ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, (LPWSTR) L"");
+
+            SetRect(&ti.rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+
+            _ToolTip.AddTool(&ti);
+        }
     }
+}
+
+/// <summary>
+/// Writes a message to the console
+/// </summary>
+void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
+{
+    if (logLevel < _Configuration._LogLevel)
+        return;
+
+    va_list va;
+
+    va_start(va, format);
+
+    console::printfv(format, va);
+
+    va_end(va);
 }
 
 #pragma endregion
@@ -691,6 +698,8 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
         Iter.Lo  = DeScaleF(Map((double) i - _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
         Iter.Ctr = DeScaleF(Map((double) i,              0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
         Iter.Hi  = DeScaleF(Map((double) i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+
+        ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
     }
 }
 
@@ -711,6 +720,8 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
 
     _FrequencyBands.clear();
 
+    static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
+
     for (double i = LoNote; i <= HiNote; ++i)
     {
         FrequencyBand fb = 
@@ -719,6 +730,8 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
             C0 * ::pow(Root24,  (i               * NotesGroup + _Configuration._Transpose)),
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
+
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[(int) i % 12], (int) i / 12, fb.Ctr);
 
         _FrequencyBands.push_back(fb);
     }
