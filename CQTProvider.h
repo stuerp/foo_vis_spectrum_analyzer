@@ -53,9 +53,6 @@ private:
 /// <param name="channelCount">Number of channels of the input data</param>
 inline CQTProvider::CQTProvider(size_t channelCount, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample)
 {
-    if (channelCount == 0)
-        throw; // FIXME
-
     _ChannelCount = channelCount;
     _SampleRate = (double) sampleRate;
     _BandwidthOffset = bandwidthOffset;

@@ -63,9 +63,6 @@ private:
 /// <param name="fftSize">The number of bands to use</param>
 inline FFTProvider::FFTProvider(size_t channelCount, size_t fftSize)
 {
-    if (channelCount == 0)
-        throw; // FIXME
-
     _ChannelCount = channelCount;
     _FFTSize = fftSize;
 

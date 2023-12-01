@@ -1,5 +1,5 @@
 
-/** $VER: TransformProvider.h (2023.11.20) P. Stuer **/
+/** $VER: TransformProvider.h (2023.12.01) P. Stuer **/
 
 #pragma once
 
@@ -27,6 +27,9 @@ inline audio_sample TransformProvider::AverageSamples(const audio_sample * sampl
 {
     switch (channelCount)
     {
+        case 0:
+            return 0.; // Should not happen.
+
         case 1:
             return samples[i];
 
