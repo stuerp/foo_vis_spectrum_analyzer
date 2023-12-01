@@ -52,7 +52,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
-        if (dis->itemState & ODS_FOCUS)
+        if (dis->itemState & (ODS_FOCUS | ODS_SELECTED))
             ::SelectObject(hDC, ::GetSysColorBrush(COLOR_HIGHLIGHT));
         else
             ::SelectObject(hDC, ::GetSysColorBrush(COLOR_WINDOW));

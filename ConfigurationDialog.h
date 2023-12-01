@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.11.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.01) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -49,13 +49,13 @@ public:
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
-        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged)
+        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
         COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
-        NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
 
-        NOTIFY_CODE_HANDLER(NM_CHANGED, OnChanged)
+        NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
+        NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
 
         REFLECT_NOTIFICATIONS() // Required for CColorListBox
 
@@ -138,9 +138,10 @@ private:
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept;
     LRESULT OnSetSel(UINT, WPARAM, LPARAM, BOOL & handled) const noexcept;
     void OnButtonClick(UINT, int, CWindow);
-    LRESULT OnDeltaPos(LPNMHDR nmhd);
 
-    LRESULT OnChanged(int, LPNMHDR, BOOL handled);
+    LRESULT OnDeltaPos(LPNMHDR nmhd);
+    LRESULT OnChanged(LPNMHDR nmhd);
+
     void OnAddClicked(UINT, int id, CWindow);
     void OnRemoveClicked(UINT, int id, CWindow);
     void OnReverseClicked(UINT, int id, CWindow);

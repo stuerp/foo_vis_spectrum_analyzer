@@ -78,6 +78,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.4.2.0, 2023-12-xx
+
+* Improved: Made color scheme editing more resilient.
+
+* New: Amplitude increment/decrement is configurable.
 v0.4.1.1, 2023-11-29
 
 * New: Amplitude increment/decrement is configurable.

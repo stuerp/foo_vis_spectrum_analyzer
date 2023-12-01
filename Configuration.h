@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.11.29) P. Stuer **/
+/** $VER: Configuration.h (2023.12.01) P. Stuer **/
 
 #pragma once
 
@@ -345,6 +345,8 @@ public:
 
         return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
+
+    void UpdateGradient();
 
 private:
     const size_t _CurrentVersion = 6;

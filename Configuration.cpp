@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.11.29) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.01) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -523,4 +523,29 @@ void Configuration::Write(ui_element_config_builder & builder) const
 
     // Version 6
     builder << _AmplitudeStep;
+}
+
+/// <summary>
+/// Updates the position of the current gradient colors.
+/// </summary>
+void Configuration::UpdateGradient()
+{
+    if (_GradientStops.size() == 0)
+        return;
+
+    if (_GradientStops.size() > 1)
+    {
+        FLOAT Position = 0.f;
+
+        for (auto & Iter : _GradientStops)
+        {
+            Iter.position = Position / (FLOAT) (_GradientStops.size() - 1);
+            Position++;
+        }
+    }
+    else
+        _GradientStops[0].position = 1.f;
+
+    _ColorScheme = ColorScheme::Custom;
+    _CustomGradientStops = _GradientStops;
 }

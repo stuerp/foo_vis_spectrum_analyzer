@@ -45,6 +45,8 @@ public:
     void MeasureItem(LPMEASUREITEMSTRUCT mis);
 
 private:
+    LRESULT OnSelectionChanged(WORD, WORD, HWND, BOOL & handled);
+
     LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
 
     void SendChangedNotification() const noexcept;
