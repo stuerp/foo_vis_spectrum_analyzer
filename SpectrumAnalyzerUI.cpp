@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.11.29) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.12.01) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -88,6 +88,23 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     SetConfiguration();
+
+    // Create the tooltip control.
+    if (!_ToolTip.IsWindow())
+    {
+        _ToolTip.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP);
+
+        // Adds a tracking tool tip.
+        {
+            auto ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, (LPWSTR) L"");
+
+            GetClientRect(&ti.rect);
+
+            _ToolTip.AddTool(&ti);
+        }
+
+        _ToolTip.Activate(TRUE);
+    }
 
     return 0;
 }
@@ -258,6 +275,70 @@ LRESULT SpectrumAnalyzerUIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newR
     ReleaseDeviceSpecificResources();
 
     return 0;
+}
+
+/// <summary>
+/// Handles mouse move messages.
+/// </summary>
+void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
+{
+    if (!_ToolTip.IsWindow())
+        return;
+
+    if (_TrackingToolInfo == nullptr)
+    {
+        {
+            TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
+
+            tme.dwFlags   = TME_LEAVE;
+            tme.hwndTrack = m_hWnd;
+        
+            ::TrackMouseEvent(&tme);
+        }
+
+        {
+            _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+
+            _ToolTip.TrackActivate(_TrackingToolInfo, TRUE);
+        }
+
+        _LastMousePos = POINT(-1, -1);
+
+        OutputDebugString(L"Created tooltip\n");
+    }
+
+    if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
+    {
+        _LastMousePos = pt;
+
+        WCHAR Text[12];
+
+        ::swprintf_s(Text, _countof(Text), L"%d, %d", pt.x, pt.y);
+
+        _TrackingToolInfo->lpszText = Text;
+
+        _ToolTip.SetToolInfo(_TrackingToolInfo);
+
+        ::ClientToScreen(m_hWnd, &pt);
+
+        _ToolTip.TrackPosition(pt.x + 10, pt.y - 20);
+
+        OutputDebugString(Text);
+        OutputDebugString(L"\n");
+    }
+}
+
+/// <summary>
+/// Turns off the tracking tooltip when the mouse leaves the window.
+/// </summary>
+void SpectrumAnalyzerUIElement::OnMouseLeave()
+{
+    OutputDebugString(L"Mouse Leave\n");
+
+    _ToolTip.TrackActivate(_TrackingToolInfo, FALSE);
+
+    delete _TrackingToolInfo;
+    _TrackingToolInfo = nullptr;
 }
 
 /// <summary>

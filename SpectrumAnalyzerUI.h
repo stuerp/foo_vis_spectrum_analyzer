@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.11.27) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.12.01) P. Stuer **/
 
 #pragma once
 
@@ -32,7 +32,7 @@ public:
     SpectrumAnalyzerUIElement & operator=(SpectrumAnalyzerUIElement &&) = delete;
 
     // Default User Interface
-    #pragma region (ui_element_instance interface)
+    #pragma region ui_element_instance interface
     static void g_get_name(pfc::string_base & p_out);
     static const char * g_get_description();
     static GUID g_get_guid();
@@ -45,20 +45,8 @@ public:
     virtual void notify(const GUID & p_what, t_size p_param1, const void * p_param2, t_size p_param2size);
     #pragma endregion
 
-    #pragma region (CWindowImpl interface)
+    #pragma region CWindowImpl interface
     static CWndClassInfo & GetWndClassInfo();
-
-    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
-    void OnDestroy();
-    void OnTimer(UINT_PTR nIDEvent);
-    void OnPaint(CDCHandle dc);
-    void OnSize(UINT nType, CSize size);
-    void OnContextMenu(CWindow wnd, CPoint point);
-    void OnLButtonDblClk(UINT nFlags, CPoint point);
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
-
-    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
-    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     BEGIN_MSG_MAP_EX(SpectrumAnalyzerUIElement)
         MSG_WM_CREATE(OnCreate)
@@ -70,16 +58,36 @@ public:
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
         MSG_WM_DPICHANGED(OnDPIChanged)
 
+        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
+        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
+
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
+
+    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
+    void OnDestroy();
+    void OnTimer(UINT_PTR nIDEvent);
+    void OnPaint(CDCHandle dc);
+    void OnSize(UINT nType, CSize size);
+    void OnContextMenu(CWindow wnd, CPoint point);
+    void OnLButtonDblClk(UINT nFlags, CPoint point);
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
+
+    void OnMouseEnter();
+    void OnMouseMove(UINT, CPoint);
+    void OnMouseLeave();
+
+    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
     #pragma endregion
 
 protected:
     ui_element_instance_callback::ptr m_callback;
 
 private:
-    #pragma region (Playback callback methods)
+    #pragma region Playback callback methods
+
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
     void on_playback_new_track(metadb_handle_ptr p_track);
     void on_playback_stop(play_control::t_stop_reason p_reason);
@@ -90,6 +98,7 @@ private:
     void on_playback_dynamic_info_track(const file_info& p_info) { }
     void on_playback_time(double p_time) { }
     void on_volume_change(float p_new_val) { }
+
     #pragma endregion
 
     void ToggleFullScreen() noexcept;
@@ -121,11 +130,13 @@ private:
     static double DeScaleF(double x, ScalingFunction function, double factor);
 
     #pragma region DirectX
+
     HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
     CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
+
     #pragma endregion
 
 private:
@@ -176,6 +187,10 @@ private:
 private:
     Configuration _Configuration;
     ConfigurationDialog _ConfigurationDialog;
+
+    CToolTipCtrl _ToolTip;
+    CToolInfo * _TrackingToolInfo = nullptr;
+    POINT _LastMousePos;
 
     SpectrumAnalyzer * _SpectrumAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
