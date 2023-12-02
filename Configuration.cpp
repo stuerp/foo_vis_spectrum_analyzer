@@ -48,7 +48,7 @@ void Configuration::Reset() noexcept
 
     _Transform = Transform::FFT;
 
-    _SelectedChannels = ~0U;
+    _SelectedChannels = AllChannels;
 
     // FFT
     _FFTSize = FFTSize::FFT4096;

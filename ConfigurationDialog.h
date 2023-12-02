@@ -22,6 +22,7 @@
 #include "CNumericEdit.h"
 #include "CColorButton.h"
 #include "CColorListBox.h"
+#include "CButtonMenu.h"
 
 struct DialogParameters
 {
@@ -48,6 +49,8 @@ public:
         MSG_WM_INITDIALOG(OnInitDialog)
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
+
+        COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
@@ -142,12 +145,15 @@ private:
     LRESULT OnDeltaPos(LPNMHDR nmhd);
     LRESULT OnChanged(LPNMHDR nmhd);
 
+    void OnChannels(UINT, int, HWND);
+
     void OnAddClicked(UINT, int id, CWindow);
     void OnRemoveClicked(UINT, int id, CWindow);
     void OnReverseClicked(UINT, int id, CWindow);
 
-    void UpdateColorControls();
     void UpdateControls();
+    void UpdateColorControls();
+    void UpdateChannelsMenu();
 
     /// <summary>
     /// Sets the display version of the frequency.
@@ -196,6 +202,8 @@ private:
 
     Configuration * _Configuration;
     Configuration _OldConfiguration;
+
+    CButtonMenu _Channels;
 
     CNumericEdit _KernelSize;
 

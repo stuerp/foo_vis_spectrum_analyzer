@@ -61,12 +61,14 @@
 #define IDC_TRANSFORM                   2000
 #define IDC_TRANSFORM_TYPE              2002
 
-#define IDC_DISTRIBUTION                2004
+#define IDC_CHANNELS                    2004
 
-#define IDC_FFT_SIZE                    2010
-#define IDC_FFT_SIZE_PARAMETER_NAME     2012
-#define IDC_FFT_SIZE_PARAMETER          2014
-#define IDC_FFT_SIZE_PARAMETER_UNIT     2016
+#define IDC_DISTRIBUTION                2010
+
+#define IDC_FFT_SIZE                    2020
+#define IDC_FFT_SIZE_PARAMETER_NAME     2022
+#define IDC_FFT_SIZE_PARAMETER          2024
+#define IDC_FFT_SIZE_PARAMETER_UNIT     2026
 
 // X axis
 
@@ -156,4 +158,9 @@
 #define IDC_Y_LINE_COLOR                7018
 #define IDC_BAND_BACK_COLOR             7020
 
-#define IDC_RESET                       9000
+#define IDC_RESET                       8000
+
+#define IDM_CHANNELS                    9000
+
+#define IDM_CHANNELS_FIRST              9100
+#define IDM_CHANNELS_LAST               9118

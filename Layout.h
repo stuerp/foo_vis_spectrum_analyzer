@@ -40,8 +40,16 @@
     #define Y_A63    Y_A62
     #pragma endregion
 
+    #pragma region Channels
+    // Button
+    #define W_A88    80
+    #define H_A88    H_BTN
+    #define X_A88    X_A63
+    #define Y_A88    Y_A63 + H_A63 + IY
+    #pragma endregion
+
 #define W_B05   186
-#define H_B05   11 + H_A06 + 7
+#define H_B05   11 + H_A06 + IY + H_A88 + 7
 #pragma endregion
 
 #pragma region FFT

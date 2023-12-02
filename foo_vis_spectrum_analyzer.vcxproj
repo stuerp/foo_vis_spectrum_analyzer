@@ -179,6 +179,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
+    <ClInclude Include="CButtonMenu.h" />
     <ClInclude Include="CColorButton.h" />
     <ClInclude Include="CColorListBox.h" />
     <ClInclude Include="CDirectXControl.h" />

@@ -33,6 +33,16 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    #pragma region Channels
+    {
+        _Channels.Initialize(GetDlgItem(IDC_CHANNELS));
+
+        _Channels.SetExtendedMenuStyle(BMS_EX_CHECKMARKS);
+        _Channels.SetMenu(IDM_CHANNELS);
+
+        UpdateChannelsMenu();
+    }
+
     #pragma region FFT
     {
         auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
@@ -443,6 +453,8 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _Channels.Terminate();
+
     _KernelSize.Terminate();
 
     _AmplitudeStep.Terminate();
@@ -843,6 +855,15 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
     switch (id)
     {
+        case IDC_CHANNELS:
+        {
+            BOOL Handled = TRUE;
+
+            _Channels.OnClicked(0, 0, 0, Handled);
+
+            return;
+        }
+
         case IDC_SMOOTH_LOWER_FREQUENCIES:
         {
             _Configuration->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1185,6 +1206,37 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 }
 
 /// <summary>
+/// Handles a selection from the Channels menu.
+/// </summary>
+void ConfigurationDialog::OnChannels(UINT, int id, HWND)
+{
+    CMenuHandle & Menu = _Channels.GetMenu();
+
+    bool IsChecked = (Menu.GetMenuState((UINT) id, MF_BYCOMMAND) & MF_CHECKED);
+
+    if (id == IDM_CHANNELS_LAST)
+    {
+        _Configuration->_SelectedChannels = IsChecked ? 0 : AllChannels;
+    }
+    else
+    if (InRange(id, IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST - 1))
+    {
+        uint32_t Mask = 1 << (id - IDM_CHANNELS_FIRST);
+
+        if (IsChecked)
+            _Configuration->_SelectedChannels &= ~Mask;
+        else
+            _Configuration->_SelectedChannels |=  Mask;
+    }
+    else
+        return;
+
+    UpdateChannelsMenu();
+
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+}
+
+/// <summary>
 /// Enables or disables controls based on the selection of the user.
 /// </summary>
 void ConfigurationDialog::UpdateControls()
@@ -1306,4 +1358,23 @@ void ConfigurationDialog::UpdateColorControls()
 
         GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
         GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+}
+
+/// <summary>
+/// Updates the Channes menu with the current configuration.
+/// </summary>
+void ConfigurationDialog::UpdateChannelsMenu()
+{
+    CMenuHandle & Menu = _Channels.GetMenu();
+
+    uint32_t SelectedChannels = _Configuration->_SelectedChannels;
+
+    for (UINT i = IDM_CHANNELS_FIRST; i < IDM_CHANNELS_LAST; ++i)
+    {
+        Menu.CheckMenuItem(i, MF_BYCOMMAND | ((SelectedChannels & 1) ? MF_CHECKED : 0));
+
+        SelectedChannels >>= 1;
+    }
+
+    Menu.CheckMenuItem(IDM_CHANNELS_LAST, MF_BYCOMMAND | ((_Configuration->_SelectedChannels == AllChannels) ? MF_CHECKED : 0));
 }

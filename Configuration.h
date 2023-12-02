@@ -59,6 +59,8 @@ inline const double MaxHoldTime = 120.;
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
 
+inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
+
 enum class Transform
 {
     FFT = 0,
@@ -352,5 +354,5 @@ public:
     void UpdateGradient();
 
 private:
-    const size_t _CurrentVersion = 6;
+    const size_t _CurrentVersion = 7;
 };

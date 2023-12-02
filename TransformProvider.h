@@ -41,7 +41,7 @@ inline audio_sample TransformProvider::AverageSamples(const audio_sample * sampl
         }
     }
 
-    return (n > 0) ? Average / (audio_sample) n : 0.;
+    return (n > 0) ? Average / (audio_sample) n : (audio_sample) 0.;
 
 /*
     switch (_ChannelCount)

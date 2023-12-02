@@ -58,6 +58,8 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         rtext           "Method:"                   IDC_STATIC,                     X_A62, Y_A62 + 2, W_A62, H_A62
         combobox                                    IDC_TRANSFORM,                  X_A63, Y_A63,     W_A63, H_A63, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
+        pushbutton      "Channels",                 IDC_CHANNELS,                   X_A88, Y_A88, W_A88, H_A88
+
     groupbox "FFT", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Size:"                     IDC_STATIC,                     X_A03, Y_A03 + 2, W_A03, H_A03
@@ -211,4 +213,31 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98
     pushbutton      "Cancel",   IDCANCEL,   X_A99, Y_A99, W_A99, H_A99
+}
+
+IDM_CHANNELS menu
+{
+    popup ""
+    {
+        menuitem "All Channels",            IDM_CHANNELS_LAST
+        menuitem separator
+        menuitem "Front Left",              IDM_CHANNELS_FIRST +  0
+        menuitem "Front Right",             IDM_CHANNELS_FIRST +  1
+        menuitem "Front Center",            IDM_CHANNELS_FIRST +  2
+        menuitem "Low Frequency",           IDM_CHANNELS_FIRST +  3
+        menuitem "Back Left",               IDM_CHANNELS_FIRST +  4
+        menuitem "Back Right",              IDM_CHANNELS_FIRST +  5
+        menuitem "Front Left of Center",    IDM_CHANNELS_FIRST +  6
+        menuitem "Front Right of Center",   IDM_CHANNELS_FIRST +  7
+        menuitem "Back Center",             IDM_CHANNELS_FIRST +  8
+        menuitem "Side Left",               IDM_CHANNELS_FIRST +  9
+        menuitem "Side Right",              IDM_CHANNELS_FIRST + 10
+        menuitem "Top Center",              IDM_CHANNELS_FIRST + 11
+        menuitem "Front Left Height",       IDM_CHANNELS_FIRST + 12
+        menuitem "Front Center Height",     IDM_CHANNELS_FIRST + 13
+        menuitem "Front Right Height",      IDM_CHANNELS_FIRST + 14
+        menuitem "Rear Left Height",        IDM_CHANNELS_FIRST + 15
+        menuitem "Rear Center Height",      IDM_CHANNELS_FIRST + 16
+        menuitem "Rear Right Height",       IDM_CHANNELS_FIRST + 17
+    }
 }
