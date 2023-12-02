@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.01) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.02) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -379,6 +379,9 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
+    }
+    {
+        SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
@@ -861,6 +864,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_DRAW_BAND_BACKGROUND:
         {
             _Configuration->_DrawBandBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SHOW_TOOLTIPS:
+        {
+            _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 

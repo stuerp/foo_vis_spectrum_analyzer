@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.11.29) P. Stuer **/
+/** $VER: Resources.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -27,8 +27,8 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          4
-#define NUM_FILE_PATCH          1
-#define NUM_FILE_PRERELEASE     1
+#define NUM_FILE_PATCH          2
+#define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
 #define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
@@ -36,8 +36,8 @@
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       4
-#define NUM_PRODUCT_PATCH       1
-#define NUM_PRODUCT_PRERELEASE  1
+#define NUM_PRODUCT_PATCH       2
+#define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
 #define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)
@@ -59,14 +59,14 @@
 #define IDD_CONFIGURATION               1000
 
 #define IDC_TRANSFORM                   2000
-#define IDC_TRANSFORM_TYPE              IDC_TRANSFORM + 1
+#define IDC_TRANSFORM_TYPE              2002
 
-#define IDC_DISTRIBUTION                IDC_TRANSFORM_TYPE + 1
+#define IDC_DISTRIBUTION                2004
 
-#define IDC_FFT_SIZE                    IDC_DISTRIBUTION + 1
-#define IDC_FFT_SIZE_PARAMETER_NAME     IDC_FFT_SIZE + 1
-#define IDC_FFT_SIZE_PARAMETER          IDC_FFT_SIZE_PARAMETER_NAME + 1
-#define IDC_FFT_SIZE_PARAMETER_UNIT     IDC_FFT_SIZE_PARAMETER + 1
+#define IDC_FFT_SIZE                    2010
+#define IDC_FFT_SIZE_PARAMETER_NAME     2012
+#define IDC_FFT_SIZE_PARAMETER          2014
+#define IDC_FFT_SIZE_PARAMETER_UNIT     2016
 
 // X axis
 
@@ -124,6 +124,7 @@
 
 #define IDC_COLOR_SCHEME                6010
 #define IDC_DRAW_BAND_BACKGROUND        6011
+#define IDC_SHOW_TOOLTIPS               6012
 
 #define IDC_GRADIENT                    6020
 #define IDC_COLORS                      6021

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.11.29) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.02) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -13,7 +13,7 @@
 #define H_CHB       10 // Check box
 
 #define W_A00      498 // Dialog width (in dialog units)
-#define H_A00      415 // Dialog height (in dialog units)
+#define H_A00      429 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -477,12 +477,20 @@
     #define Y_A57    Y_A10 + H_A10 + IY
     #pragma endregion
 
+    #pragma region Tool tips
+    // Checkbox
+    #define W_A87    80
+    #define H_A87    H_CHB
+    #define X_A87    X_A57
+    #define Y_A87    Y_A57 + H_A57 + IY
+    #pragma endregion
+
     #pragma region Gradient
     // Label
     #define W_A67   14
     #define H_A67   100
     #define X_A67   X_A10 - W_A67 - IX
-    #define Y_A67   Y_A57 + H_A57 + IY
+    #define Y_A67   Y_A87 + H_A87 + IY
 
     // Listbox
     #define W_A68   45
@@ -580,7 +588,7 @@
     #pragma endregion
 
 #define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
+#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
 #pragma endregion
 
 #pragma region Colors Group

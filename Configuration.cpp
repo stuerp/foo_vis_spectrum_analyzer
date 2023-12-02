@@ -404,6 +404,13 @@ void Configuration::Read(ui_element_config_parser & parser)
     if (Version >= 6)
         parser >> _AmplitudeStep;
 
+    // Version 7
+    if (Version >= 7)
+    {
+        parser >> _SelectedChannels;
+        parser >> _ShowToolTips;
+    }
+
     if (_ColorScheme != ColorScheme::Custom)
         _GradientStops = GetGradientStops(_ColorScheme);
     else

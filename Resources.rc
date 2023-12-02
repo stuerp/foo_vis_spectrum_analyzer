@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.11.29) P. Stuer **/
+/** $VER: Resources.rc (2023.12.02) P. Stuer **/
 
 #include "Resources.h"
 
@@ -163,6 +163,8 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         combobox                            IDC_COLOR_SCHEME,           X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Band background",  IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
+
+        control         "Tool tips",        IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
 
         ltext           "",                 IDC_GRADIENT,               X_A67, Y_A67, W_A67, H_A67, SS_NOTIFY, WS_EX_STATICEDGE
         listbox                             IDC_COLORS,                 X_A68, Y_A68, W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
