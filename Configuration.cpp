@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.01) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.02) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -47,6 +47,8 @@ void Configuration::Reset() noexcept
     _WindowDuration = 100;
 
     _Transform = Transform::FFT;
+
+    _SelectedChannels = ~0U;
 
     // FFT
     _FFTSize = FFTSize::FFT4096;
@@ -109,6 +111,7 @@ void Configuration::Reset() noexcept
     // Band
     _DrawBandBackground = true;
     _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _ShowToolTips = true;
 
     _ColorScheme = ColorScheme::Prism1;
 
@@ -164,6 +167,8 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     // Transform type
     _Transform = other._Transform;
+
+    _SelectedChannels = other._SelectedChannels;
 
     #pragma region FFT
         _FFTSize = other._FFTSize;
@@ -224,6 +229,7 @@ Configuration & Configuration::operator=(const Configuration & other)
         // Bands
         _DrawBandBackground = other._DrawBandBackground;
         _BandBackColor = other._BandBackColor;
+        _ShowToolTips = other._ShowToolTips;
 
         _ColorScheme = other._ColorScheme;
 
@@ -523,6 +529,10 @@ void Configuration::Write(ui_element_config_builder & builder) const
 
     // Version 6
     builder << _AmplitudeStep;
+
+    // Version 7
+    builder << _SelectedChannels;
+    builder << _ShowToolTips;
 }
 
 /// <summary>

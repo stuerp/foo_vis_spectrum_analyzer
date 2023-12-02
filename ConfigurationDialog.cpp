@@ -868,7 +868,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             int Index = _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
                 return;
 
             D2D1_COLOR_F Color = _Configuration->_GradientStops[(size_t) Index].color;
@@ -894,7 +894,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             int Index = _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
                 return;
 
             _Configuration->_GradientStops.erase(_Configuration->_GradientStops.begin() + Index);

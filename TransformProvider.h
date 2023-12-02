@@ -1,5 +1,5 @@
 
-/** $VER: TransformProvider.h (2023.12.01) P. Stuer **/
+/** $VER: TransformProvider.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -17,15 +17,34 @@ using namespace std;
 class TransformProvider
 {
 public:
-    static audio_sample AverageSamples(const audio_sample * samples, size_t i, size_t channelCount);
+    audio_sample AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept;
+
+protected:
+    uint32_t _ChannelCount;
+    uint32_t _ChannelSetup;
 };
 
 /// <summary>
 /// Calculates the average of the specified samples.
 /// </summary>
-inline audio_sample TransformProvider::AverageSamples(const audio_sample * samples, size_t i, size_t channelCount)
+inline audio_sample TransformProvider::AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept
 {
-    switch (channelCount)
+    audio_sample Average = 0.;
+    uint32_t n = 0;
+
+    for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, channelMask >>= 1)
+    {
+        if (channelMask & 1)
+        {
+            Average += *samples;
+            n++;
+        }
+    }
+
+    return (n > 0) ? Average / (audio_sample) n : 0.;
+
+/*
+    switch (_ChannelCount)
     {
         case 0:
             return 0.; // Should not happen.
@@ -52,10 +71,11 @@ inline audio_sample TransformProvider::AverageSamples(const audio_sample * sampl
         {
             audio_sample Average = 0.;
 
-            for (size_t j = 0; j < channelCount; ++j)
+            for (uint32_t j = 0; j < _ChannelCount; ++j)
                 Average += samples[i + j];
 
-            return Average / (audio_sample) channelCount;
+            return Average / (audio_sample) _ChannelCount;
         }
     }
+*/
 }

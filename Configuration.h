@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.01) P. Stuer **/
+/** $VER: Configuration.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -229,6 +229,8 @@ public:
 
     Transform _Transform;                                               // FFT or CQT
 
+    uint32_t _SelectedChannels;
+
     #pragma region FFT
         FFTSize _FFTSize;
         size_t _FFTCustom;                                              // samples, Custom FFT size
@@ -294,6 +296,7 @@ public:
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
             D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+            bool _ShowToolTips;
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0

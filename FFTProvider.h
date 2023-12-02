@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.h (2023.11.20) P. Stuer **/
+/** $VER: FFTProvider.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -21,7 +21,7 @@ class FFTProvider : public TransformProvider
 {
 public:
     FFTProvider() = delete;
-    FFTProvider(size_t channelCount, size_t fftSize);
+    FFTProvider(size_t channelCount, uint32_t channelSetup, size_t fftSize);
 
     FFTProvider(const FFTProvider &) = delete;
     FFTProvider & operator=(const FFTProvider &) = delete;
@@ -40,11 +40,10 @@ public:
         return _FFTSize;
     }
 
-    void Add(const audio_sample * samples, size_t count) noexcept;
+    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
     void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
 private:
-    size_t _ChannelCount;
     size_t _FFTSize;
 
     FFT _FFT;
@@ -59,17 +58,19 @@ private:
 /// <summary>
 /// Initializes a new instance of the class.
 /// </summary>
-/// <param name="channelCount">Number of channels of the input data</param>
+/// <param name="channelCount">Number of channels in the input data</param>
 /// <param name="fftSize">The number of bands to use</param>
-inline FFTProvider::FFTProvider(size_t channelCount, size_t fftSize)
+inline FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, size_t fftSize)
 {
     _ChannelCount = channelCount;
+    _ChannelSetup = channelSetup;
+
     _FFTSize = fftSize;
 
     _FFT.Initialize(fftSize);
     _TimeData.resize((size_t) fftSize);
 
-    // Create the ring buffer for the samples. The size should be a multiple of 2.
+    // Create the ring buffer for the samples.
     _SampleData = new audio_sample[(size_t) fftSize];
     _SampleSize = (size_t) fftSize;
 
@@ -94,9 +95,9 @@ inline FFTProvider::~FFTProvider()
 /// Adds multiple samples to the provider.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-/// <param name="samples">Double array that contains samples</param>
+/// <param name="samples">Array that contains samples</param>
 /// <param name="sampleCount">Number of samples to add to the provider</param>
-inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount) noexcept
+inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, uint32_t channelMask) noexcept
 {
     if (samples == nullptr)
         return;
@@ -107,7 +108,7 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount) n
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _SampleData[_SampleCount++] = AverageSamples(samples, i, _ChannelCount);
+        _SampleData[_SampleCount++] = AverageSamples(&samples[i], channelMask);
 
         // Wrap around the buffer.
         if (_SampleCount >= _SampleSize)

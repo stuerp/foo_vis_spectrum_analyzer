@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.11.21) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.12.02) P. Stuer **/
 
 #include "framework.h"
 
@@ -25,7 +25,7 @@ public:
     /// <param name="channelCount"></param>
     /// <param name="fftSize"></param>
     /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(const Configuration * configuration, uint32_t channelCount, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, fftSize)
+    SpectrumAnalyzer(const Configuration * configuration, uint32_t channelCount, uint32_t channelSetup, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, channelSetup, fftSize)
     {
         if (sampleRate <= 0)
             throw;

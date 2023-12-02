@@ -1,5 +1,5 @@
 
-/** $VER: CQTProvider.h (2023.11.20) P. Stuer **/
+/** $VER: CQTProvider.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -25,7 +25,7 @@ class CQTProvider : public TransformProvider
 {
 public:
     CQTProvider() = delete;
-    CQTProvider(size_t channelCount, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample);
+    CQTProvider(uint32_t channelCount, uint32_t channelSetup, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample);
 
     CQTProvider(const CQTProvider &) = delete;
     CQTProvider & operator=(const CQTProvider &) = delete;
@@ -34,13 +34,12 @@ public:
 
     virtual ~CQTProvider();
 
-    bool GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand) const;
+    bool GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & freqBand) const;
 
 private:
     static double ApplyWindowFunction(double n);
 
 private:
-    size_t _ChannelCount;
     double _SampleRate;
     double _BandwidthOffset;
     double _Alignment;
@@ -51,9 +50,11 @@ private:
 /// Initializes a new instance of the class.
 /// </summary>
 /// <param name="channelCount">Number of channels of the input data</param>
-inline CQTProvider::CQTProvider(size_t channelCount, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample)
+inline CQTProvider::CQTProvider(uint32_t channelCount, uint32_t channelSetup, uint32_t sampleRate, double bandwidthOffset, double alignment, double downSample)
 {
     _ChannelCount = channelCount;
+    _ChannelSetup = channelSetup;
+
     _SampleRate = (double) sampleRate;
     _BandwidthOffset = bandwidthOffset;
     _Alignment = alignment;
@@ -70,7 +71,7 @@ inline CQTProvider::~CQTProvider()
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-inline bool CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & freqBand) const
+inline bool CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & freqBand) const
 {
     for (FrequencyBand & Iter : freqBand)
     {
@@ -96,7 +97,7 @@ inline bool CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size
             Norm += w;
 
             // Goertzel transform
-            Sine = AverageSamples(sampleData, (size_t)(Idx * DownsampleAmount), _ChannelCount) * w + Coeff * f1 - f2;
+            Sine = AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], channelMask) * w + Coeff * f1 - f2;
 
             f2 = f1;
             f1 = Sine;

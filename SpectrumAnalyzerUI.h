@@ -191,6 +191,7 @@ private:
     CToolTipCtrl _ToolTip;
     CToolInfo * _TrackingToolInfo = nullptr;
     POINT _LastMousePos;
+    int _LastIndex;
 
     SpectrumAnalyzer * _SpectrumAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;

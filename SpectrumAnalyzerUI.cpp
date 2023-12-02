@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.12.01) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.12.02) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -87,10 +87,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
         Log(LogLevel::Critical, "%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
     }
 
-    SetConfiguration();
-
     // Create the tooltip control.
-    if (!_ToolTip.IsWindow())
     {
         _ToolTip.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP);
 
@@ -102,9 +99,10 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 
             _ToolTip.AddTool(&ti);
         }
-
-        _ToolTip.Activate(TRUE);
     }
+
+    // Applies the initial configuration.
+    SetConfiguration();
 
     return 0;
 }
@@ -304,16 +302,19 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
         }
 
         _LastMousePos = POINT(-1, -1);
+        _LastIndex = -1;
     }
-
+    else
     if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
     {
         _LastMousePos = pt;
 
         int Index = (int) ::floor(Map((FLOAT) pt.x, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
 
-        if (InRange(Index, 0, (int) _FrequencyBands.size() - 1))
+        if ((Index != _LastIndex) && InRange(Index, 0, (int) _FrequencyBands.size() - 1))
         {
+            _LastIndex = Index;
+
             _TrackingToolInfo->lpszText = _FrequencyBands[(size_t) Index].Label;
 
             _ToolTip.SetToolInfo(_TrackingToolInfo);
@@ -445,6 +446,8 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     _Spectrum.SetGradientStops(_Configuration._GradientStops);
 
     _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
+
+    _ToolTip.Activate(_Configuration._ShowToolTips);
 
     // Forces the recreation of the spectrum analyzer.
     if (_SpectrumAnalyzer != nullptr)
@@ -590,12 +593,13 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
     HRESULT hr = S_OK;
 
     uint32_t ChannelCount = chunk.get_channel_count();
+    uint32_t ChannelSetup = chunk.get_channel_config();
 
     _SampleRate = chunk.get_sample_rate();
 
-    Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, _SampleRate);
+    Log(LogLevel::Trace, "%s: Rendering chunk { ChannelCount: %d, ChannelSetup: 0x%08X, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, ChannelSetup, _SampleRate);
 
-    // Create the transformer if necessary.
+    // Create the transformer when necessary.
     {
         if (_SpectrumAnalyzer == nullptr)
         {
@@ -616,13 +620,13 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             }
             #pragma warning (default: 4061)
 
-            _SpectrumAnalyzer = new SpectrumAnalyzer(&_Configuration, ChannelCount, _SampleRate, _FFTSize);
+            _SpectrumAnalyzer = new SpectrumAnalyzer(&_Configuration, ChannelCount, ChannelSetup, _SampleRate, _FFTSize);
 
             _FrequencyCoefficients.resize(_FFTSize);
         }
 
         if (_CQT == nullptr)
-            _CQT = new CQTProvider(ChannelCount, _SampleRate, 1.0, 1.0, 0.0);
+            _CQT = new CQTProvider(ChannelCount, ChannelSetup, _SampleRate, 1.0, 1.0, 0.0);
     }
 
     // Add the samples to the spectrum analyzer or the CQT.
@@ -636,7 +640,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
         if (_Configuration._Transform == Transform::FFT)
         {
-            _SpectrumAnalyzer->Add(Samples, SampleCount);
+            _SpectrumAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
 
             _SpectrumAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
@@ -647,7 +651,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
                 _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);
         }
         else
-            _CQT->GetFrequencyBands(Samples, SampleCount, _FrequencyBands);
+            _CQT->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
     }
 
     // Smooth the spectrum.
