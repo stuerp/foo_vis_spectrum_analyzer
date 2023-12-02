@@ -201,7 +201,7 @@ private:
 
         ::InflateRect(&tpmp.rcExclude, -1, -1);
 
-        UINT Id = (UINT) ::TrackPopupMenuEx(Menu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD | TPM_VERTICAL | TPM_VERPOSANIMATION, Position.x, Position.y, this->m_hWnd, &tpmp);
+        UINT Id = (UINT) ::TrackPopupMenuEx(Menu, TPM_RETURNCMD | TPM_VERPOSANIMATION | TPM_VERTICAL, Position.x, Position.y, this->m_hWnd, &tpmp);
 
         if (Id == 0)
             return 0;

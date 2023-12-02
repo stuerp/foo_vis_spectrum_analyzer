@@ -210,11 +210,19 @@ private:
     CNumericEdit _NumBands;
     CNumericEdit _LoFrequency;
     CNumericEdit _HiFrequency;
+    CNumericEdit _MinNote;
+    CNumericEdit _MaxNote;
+    CNumericEdit _BandsPerOctave;
     CNumericEdit _Pitch;
+    CNumericEdit _Transpose;
+    CNumericEdit _SkewFactor;
+    CNumericEdit _Bandwidth;
 
     CNumericEdit _AmplitudeLo;
     CNumericEdit _AmplitudeHi;
     CNumericEdit _AmplitudeStep;
+
+    CNumericEdit _Gamma;
 
     CColorButton _Gradient;
     CColorListBox _Colors;

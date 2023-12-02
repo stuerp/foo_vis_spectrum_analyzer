@@ -185,7 +185,7 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
+void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint position)
 {
     if (m_callback->is_edit_mode_enabled())
     {
@@ -198,25 +198,28 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 
         {
             Menu.CreatePopupMenu();
-            Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, TEXT("Configure"));
+
+            Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
             Menu.AppendMenu((UINT) MF_SEPARATOR);
-            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, TEXT("Full-Screen Mode"));
-//          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, TEXT("Hardware Rendering"));
+            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+//          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
             {
                 RefreshRateLimitMenu.CreatePopupMenu();
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  20) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20,  TEXT("20 Hz"));
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  60) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_60,  TEXT("60 Hz"));
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 100) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_100, TEXT("100 Hz"));
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit == 200) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_200, TEXT("200 Hz"));
 
-                Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, TEXT("Refresh Rate Limit"));
+                const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
+
+                for (size_t i = 0; i < _countof(RefreshRates); ++i)
+                    RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
+                        pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
+
+                Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
             }
 
             Menu.SetMenuDefaultItem(IDM_CONFIGURE);
         }
 
-        int CommandId = Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, *this);
+        int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
 
         switch (CommandId)
         {
@@ -230,6 +233,11 @@ void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint point)
 
             case IDM_REFRESH_RATE_LIMIT_20:
                 _Configuration._RefreshRateLimit = 20;
+                UpdateRefreshRateLimit();
+                break;
+
+            case IDM_REFRESH_RATE_LIMIT_30:
+                _Configuration._RefreshRateLimit = 30;
                 UpdateRefreshRateLimit();
                 break;
 

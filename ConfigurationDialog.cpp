@@ -42,6 +42,7 @@ void ConfigurationDialog::Initialize()
 
         UpdateChannelsMenu();
     }
+    #pragma endregion
 
     #pragma region FFT
     {
@@ -178,6 +179,8 @@ void ConfigurationDialog::Initialize()
         }
 
         {
+            _MinNote.Initialize(GetDlgItem(IDC_MIN_NOTE));
+
             SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN));
@@ -187,12 +190,25 @@ void ConfigurationDialog::Initialize()
         }
 
         {
+            _MaxNote.Initialize(GetDlgItem(IDC_MAX_NOTE));
+
             SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN));
 
             w.SetRange32(MinNote, MaxNote);
             w.SetPos32((int) _Configuration->_MaxNote);
+        }
+
+        {
+            _BandsPerOctave.Initialize(GetDlgItem(IDC_BANDS_PER_OCTAVE));
+
+            SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
+
+            w.SetRange32(MinBandsPerOctave, MaxBandsPerOctave);
+            w.SetPos32((int) _Configuration->_BandsPerOctave);
         }
 
         {
@@ -219,15 +235,8 @@ void ConfigurationDialog::Initialize()
         }
 
         {
-            SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
+            _Transpose.Initialize(GetDlgItem(IDC_TRANSPOSE));
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
-
-            w.SetRange32(MinBandsPerOctave, MaxBandsPerOctave);
-            w.SetPos32((int) _Configuration->_BandsPerOctave);
-        }
-
-        {
             SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN));
@@ -257,6 +266,8 @@ void ConfigurationDialog::Initialize()
                 { 2,   10 }, // 0.10
             };
 
+            _SkewFactor.Initialize(GetDlgItem(IDC_SKEW_FACTOR));
+
             SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_SKEW_FACTOR_SPIN));
@@ -275,6 +286,8 @@ void ConfigurationDialog::Initialize()
                 { 2,  10 }, //  1.0
                 { 3,  50 }, //  5.0
             };
+
+            _Bandwidth.Initialize(GetDlgItem(IDC_BANDWIDTH));
 
             SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
 
@@ -368,6 +381,9 @@ void ConfigurationDialog::Initialize()
         }
 
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _Configuration->_UseAbsolute);
+
+        _Gamma.Initialize(GetDlgItem(IDC_GAMMA));
+
         SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
     }
     #pragma endregion
@@ -457,26 +473,35 @@ void ConfigurationDialog::Terminate()
 
     _KernelSize.Terminate();
 
+    _NumBands.Terminate();
+    _LoFrequency.Terminate();
+    _HiFrequency.Terminate();
+    _MinNote.Terminate();
+    _MaxNote.Terminate();
+    _BandsPerOctave.Terminate();
+    _Pitch.Terminate();
+    _Transpose.Terminate();
+    _SkewFactor.Terminate();
+    _Bandwidth.Terminate();
+
+    _Colors.Terminate();
+    _Gradient.Terminate();
+
     _AmplitudeStep.Terminate();
     _AmplitudeHi.Terminate();
     _AmplitudeLo.Terminate();
 
-    _Pitch.Terminate();
-    _HiFrequency.Terminate();
-    _LoFrequency.Terminate();
-    _NumBands.Terminate();
-
-    _BandBackColor.Terminate();
-
-    _YLineColor.Terminate();
-    _YTextColor.Terminate();
-    _XLineColor.Terminate();
-    _XTextColor.Terminate();
+    _Gamma.Terminate();
 
     _BackColor.Terminate();
 
-    _Colors.Terminate();
-    _Gradient.Terminate();
+    _XLineColor.Terminate();
+    _XTextColor.Terminate();
+
+    _YLineColor.Terminate();
+    _YTextColor.Terminate();
+
+    _BandBackColor.Terminate();
 }
 
 /// <summary>

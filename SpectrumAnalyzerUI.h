@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.12.01) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.h (2023.12.02) P. Stuer **/
 
 #pragma once
 
@@ -150,6 +150,7 @@ private:
         IDM_TOGGLE_FULLSCREEN = 1,
         IDM_TOGGLE_HARDWARE_RENDERING,
         IDM_REFRESH_RATE_LIMIT_20,
+        IDM_REFRESH_RATE_LIMIT_30,
         IDM_REFRESH_RATE_LIMIT_60,
         IDM_REFRESH_RATE_LIMIT_100,
         IDM_REFRESH_RATE_LIMIT_200,
