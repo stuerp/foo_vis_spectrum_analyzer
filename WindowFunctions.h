@@ -378,7 +378,7 @@ inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, d
             return new FlatTop(windowSkew, truncate);
 
         // B-spline windows
-        case WindowFunctions::Bartlett: // Triangular
+        case WindowFunctions::Bartlett:
             return new Bartlett(windowSkew, truncate);
 
         case WindowFunctions::Parzen:

@@ -58,6 +58,15 @@ style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_S
         rtext           "Method:"                   IDC_STATIC,                     X_A62, Y_A62 + 2, W_A62, H_A62
         combobox                                    IDC_TRANSFORM,                  X_A63, Y_A63,     W_A63, H_A63, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
+        rtext           "Window Function:"          IDC_STATIC,                     X_C01, Y_C01 + 2, W_C01, H_C01
+        combobox                                    IDC_WINDOW_FUNCTION,            X_C02, Y_C02,     W_C02, H_C02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Window Parameter:"         IDC_STATIC,                     X_C03, Y_C03 + 2, W_C03, H_C03
+        edittext                                    IDC_WINDOW_PARAMETER,           X_C04, Y_C04, W_C04, H_C04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext           "Window Skew:"              IDC_STATIC,                     X_C05, Y_C05 + 2, W_C05, H_C05
+        edittext                                    IDC_WINDOW_SKEW,                X_C06, Y_C06, W_C06, H_C06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
         pushbutton      "Channels",                 IDC_CHANNELS,                   X_A88, Y_A88, W_A88, H_A88
 
     groupbox "FFT", IDC_STATIC, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT

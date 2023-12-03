@@ -338,9 +338,6 @@ public:
 
     showDC: true,
     showNyquist: true,
-
-    diffLabels: false,
-    compensateDelay: false
 */
 public:
     /// <summary>

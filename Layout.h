@@ -13,7 +13,7 @@
 #define H_CHB       10 // Check box
 
 #define W_A00      498 // Dialog width (in dialog units)
-#define H_A00      429 // Dialog height (in dialog units)
+#define H_A00      462 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -28,7 +28,7 @@
 
     #pragma region Method
     // Label
-    #define W_A62    60
+    #define W_A62    62
     #define H_A62    H_LBL
     #define X_A62    X_B05 + 5
     #define Y_A62    Y_B05 + 11
@@ -40,16 +40,54 @@
     #define Y_A63    Y_A62
     #pragma endregion
 
+    #pragma region Window Function
+    // Label
+    #define W_C01    62
+    #define H_C01    H_LBL
+    #define X_C01    X_A62
+    #define Y_C01    Y_A63 + H_A63 + IY
+
+    // Combobox
+    #define W_C02    82
+    #define H_C02    H_CBX
+    #define X_C02    X_C01 + W_C01 + IX
+    #define Y_C02    Y_C01
+
+    // Label
+    #define W_C03    62
+    #define H_C03    H_LBL
+    #define X_C03    X_C01
+    #define Y_C03    Y_C02 + H_C02 + IY
+
+    // Textbox
+    #define W_C04    30
+    #define H_C04    H_CBX
+    #define X_C04    X_C03 + W_C03 + IX
+    #define Y_C04    Y_C03
+
+    // Label
+    #define W_C05    62
+    #define H_C05    H_LBL
+    #define X_C05    X_C03
+    #define Y_C05    Y_C04 + H_C04 + IY
+
+    // Textbox
+    #define W_C06    30
+    #define H_C06    H_CBX
+    #define X_C06    X_C05 + W_C05 + IX
+    #define Y_C06    Y_C05
+    #pragma endregion
+
     #pragma region Channels
     // Button
     #define W_A88    82
     #define H_A88    H_BTN
-    #define X_A88    X_A63
-    #define Y_A88    Y_A63 + H_A63 + IY
+    #define X_A88    X_C06
+    #define Y_A88    Y_C06 + H_C06 + IY
     #pragma endregion
 
 #define W_B05   186
-#define H_B05   11 + H_A06 + IY + H_A88 + 7
+#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_A88 + 7
 #pragma endregion
 
 #pragma region FFT

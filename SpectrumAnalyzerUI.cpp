@@ -429,27 +429,29 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
     // Initialize the frequency bands.
-    if (_Configuration._Transform == Transform::FFT)
     {
-        switch (_Configuration._FrequencyDistribution)
+        if (_Configuration._Transform == Transform::FFT)
         {
-            default:
+            switch (_Configuration._FrequencyDistribution)
+            {
+                default:
 
-            case FrequencyDistribution::Linear:
-                GenerateFrequencyBands();
-                break;
+                case FrequencyDistribution::Linear:
+                    GenerateFrequencyBands();
+                    break;
 
-            case FrequencyDistribution::Octaves:
-                GenerateFrequencyBandsFromNotes();
-                break;
+                case FrequencyDistribution::Octaves:
+                    GenerateFrequencyBandsFromNotes();
+                    break;
 
-            case FrequencyDistribution::AveePlayer:
-                GenerateFrequencyBandsOfAveePlayer();
-                break;
+                case FrequencyDistribution::AveePlayer:
+                    GenerateFrequencyBandsOfAveePlayer();
+                    break;
+            }
         }
+        else
+            GenerateFrequencyBandsFromNotes();
     }
-    else
-        GenerateFrequencyBandsFromNotes();
 
     _XAxis.Initialize(&_Configuration, _FrequencyBands);
 

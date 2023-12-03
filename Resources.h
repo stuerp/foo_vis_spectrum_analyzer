@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.02) P. Stuer **/
+/** $VER: Resources.h (2023.12.03) P. Stuer **/
 
 #pragma once
 
@@ -58,67 +58,80 @@
 
 #define IDD_CONFIGURATION               1000
 
+// Transform
+
 #define IDC_TRANSFORM                   2000
 #define IDC_TRANSFORM_TYPE              2002
 
-#define IDC_CHANNELS                    2004
+#define IDC_WINDOW_FUNCTION             2004
+#define IDC_WINDOW_PARAMETER            2006
+#define IDC_WINDOW_SKEW                 2008
 
-#define IDC_DISTRIBUTION                2010
+#define IDC_CHANNELS                    2010
+
+// FFT
 
 #define IDC_FFT_SIZE                    2020
 #define IDC_FFT_SIZE_PARAMETER_NAME     2022
 #define IDC_FFT_SIZE_PARAMETER          2024
 #define IDC_FFT_SIZE_PARAMETER_UNIT     2026
 
+#define IDC_SUMMATION_METHOD            2028
+#define IDC_MAPPING_METHOD              2030
+
+#define IDC_KERNEL_SIZE                 2032
+#define IDC_KERNEL_SIZE_SPIN            2034
+
+#define IDC_SMOOTH_LOWER_FREQUENCIES    2036
+#define IDC_SMOOTH_GAIN_TRANSITION      2038
+
+// Frequencies
+
+#define IDC_DISTRIBUTION                2100
+
+#define IDC_NUM_BANDS                   2110
+#define IDC_NUM_BANDS_SPIN              2112
+#define IDC_LO_FREQUENCY                2114
+#define IDC_LO_FREQUENCY_SPIN           2116
+#define IDC_HI_FREQUENCY                2118
+#define IDC_HI_FREQUENCY_SPIN           2120
+
+#define IDC_MIN_NOTE                    2130
+#define IDC_MIN_NOTE_SPIN               2132
+#define IDC_MAX_NOTE                    2134
+#define IDC_MAX_NOTE_SPIN               2136
+#define IDC_BANDS_PER_OCTAVE            2138
+#define IDC_BANDS_PER_OCTAVE_SPIN       2140
+#define IDC_PITCH                       2142
+#define IDC_PITCH_SPIN                  2144
+#define IDC_TRANSPOSE                   2146
+#define IDC_TRANSPOSE_SPIN              2148
+
+#define IDC_SCALING_FUNCTION            2150
+
+#define IDC_SKEW_FACTOR                 2152
+#define IDC_SKEW_FACTOR_SPIN            2154
+#define IDC_BANDWIDTH                   2156
+#define IDC_BANDWIDTH_SPIN              2158
+
 // X axis
 
-#define IDC_X_AXIS                      IDC_FFT_SIZE_PARAMETER_UNIT + 1
-
-#define IDC_SCALING_FUNCTION            IDC_X_AXIS + 1
-#define IDC_SUMMATION_METHOD            IDC_SCALING_FUNCTION + 1
-#define IDC_MAPPING_METHOD              IDC_SUMMATION_METHOD + 1
-
-#define IDC_NUM_BANDS                   IDC_MAPPING_METHOD + 1
-#define IDC_NUM_BANDS_SPIN              IDC_NUM_BANDS + 1
-#define IDC_LO_FREQUENCY                IDC_NUM_BANDS_SPIN + 1
-#define IDC_LO_FREQUENCY_SPIN           IDC_LO_FREQUENCY + 1
-#define IDC_HI_FREQUENCY                IDC_LO_FREQUENCY_SPIN + 1
-#define IDC_HI_FREQUENCY_SPIN           IDC_HI_FREQUENCY + 1
-
-#define IDC_MIN_NOTE                    IDC_HI_FREQUENCY_SPIN + 1
-#define IDC_MIN_NOTE_SPIN               IDC_MIN_NOTE + 1
-#define IDC_MAX_NOTE                    IDC_MIN_NOTE_SPIN + 1
-#define IDC_MAX_NOTE_SPIN               IDC_MAX_NOTE + 1
-#define IDC_BANDS_PER_OCTAVE            IDC_MAX_NOTE_SPIN + 1
-#define IDC_BANDS_PER_OCTAVE_SPIN       IDC_BANDS_PER_OCTAVE + 1
-#define IDC_PITCH                       IDC_BANDS_PER_OCTAVE_SPIN + 1
-#define IDC_PITCH_SPIN                  IDC_PITCH + 1
-#define IDC_TRANSPOSE                   IDC_PITCH_SPIN + 1
-#define IDC_TRANSPOSE_SPIN              IDC_TRANSPOSE + 1
-
-#define IDC_SKEW_FACTOR                 IDC_TRANSPOSE_SPIN + 1
-#define IDC_SKEW_FACTOR_SPIN            IDC_SKEW_FACTOR + 1
-#define IDC_BANDWIDTH                   IDC_SKEW_FACTOR_SPIN + 1
-#define IDC_BANDWIDTH_SPIN              IDC_BANDWIDTH + 1
-#define IDC_KERNEL_SIZE                 IDC_BANDWIDTH_SPIN + 1
-#define IDC_KERNEL_SIZE_SPIN            IDC_KERNEL_SIZE + 1
-#define IDC_GAMMA                       IDC_KERNEL_SIZE_SPIN + 1
-
-#define IDC_SMOOTH_LOWER_FREQUENCIES    IDC_GAMMA + 1
-#define IDC_SMOOTH_GAIN_TRANSITION      IDC_SMOOTH_LOWER_FREQUENCIES + 1
+#define IDC_X_AXIS                      2200
 
 // Y axis
 
-#define IDC_Y_AXIS                      5800
+#define IDC_Y_AXIS                      2300
 
-#define IDC_AMPLITUDE_LO                5802
-#define IDC_AMPLITUDE_LO_SPIN           5804
-#define IDC_AMPLITUDE_HI                5806
-#define IDC_AMPLITUDE_HI_SPIN           5808
-#define IDC_AMPLITUDE_STEP              5810
-#define IDC_AMPLITUDE_STEP_SPIN         5812
+#define IDC_AMPLITUDE_LO                2302
+#define IDC_AMPLITUDE_LO_SPIN           2304
+#define IDC_AMPLITUDE_HI                2306
+#define IDC_AMPLITUDE_HI_SPIN           2308
+#define IDC_AMPLITUDE_STEP              2310
+#define IDC_AMPLITUDE_STEP_SPIN         2312
 
-#define IDC_USE_ABSOLUTE                5814
+#define IDC_USE_ABSOLUTE                2314
+
+#define IDC_GAMMA                       2316
 
 // Bands
 

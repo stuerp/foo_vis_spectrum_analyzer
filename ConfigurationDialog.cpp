@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.03) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -30,6 +30,31 @@ void ConfigurationDialog::Initialize()
             w.AddString(Labels[i]);
 
         w.SetCurSel((int) _Configuration->_Transform);
+    }
+    #pragma endregion
+
+    #pragma region Window Function
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_WINDOW_FUNCTION);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"Boxcar", L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top", L"Bartlett", L"Parzen", L"Welch", L"Power-of-sine", L"Gauss", L"Tukey", L"Kaiser", L"Poison", L"Hyperbolic secant", L"Quadratic spline" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_WindowFunction);
+    }
+    {
+        _WindowParameter.Initialize(GetDlgItem(IDC_WINDOW_PARAMETER));
+
+        SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 4, 2)));
+    }
+    {
+        _WindowSkew.Initialize(GetDlgItem(IDC_WINDOW_SKEW));
+
+        SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 4, 2)));
     }
     #pragma endregion
 
@@ -469,6 +494,9 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _WindowParameter.Terminate();
+    _WindowSkew.Terminate();
+
     _Channels.Terminate();
 
     _KernelSize.Terminate();
@@ -522,6 +550,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_TRANSFORM:
         {
             _Configuration->_Transform = (Transform) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+
+        case IDC_WINDOW_FUNCTION:
+        {
+            _Configuration->_WindowFunction = (WindowFunctions) SelectedIndex;
 
             UpdateControls();
             break;
@@ -652,6 +688,20 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
+    #pragma region FFT
+        case IDC_WINDOW_PARAMETER:
+        {
+            _Configuration->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
+            break;
+        }
+
+        case IDC_WINDOW_SKEW:
+        {
+            _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
+            break;
+        }
+    #pragma endregion
+
     #pragma region FFT
         case IDC_FFT_SIZE_PARAMETER:
         {
@@ -1267,6 +1317,15 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 void ConfigurationDialog::UpdateControls()
 {
     // Transform
+    bool HasParameter = (_Configuration->_WindowFunction == WindowFunctions::PowerOfSine)
+                     || (_Configuration->_WindowFunction == WindowFunctions::Gauss)
+                     || (_Configuration->_WindowFunction == WindowFunctions::Tukey)
+                     || (_Configuration->_WindowFunction == WindowFunctions::Kaiser)
+                     || (_Configuration->_WindowFunction == WindowFunctions::Poison)
+                     || (_Configuration->_WindowFunction == WindowFunctions::HyperbolicSecant);
+
+        GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
+
     bool IsFFT = (_Configuration->_Transform == Transform::FFT);
 
         GetDlgItem(IDC_DISTRIBUTION).EnableWindow(IsFFT);
@@ -1274,9 +1333,9 @@ void ConfigurationDialog::UpdateControls()
     // FFT
         GetDlgItem(IDC_FFT_SIZE).EnableWindow(IsFFT);
 
-    bool State = (_Configuration->_FFTSize == FFTSize::FFTCustom) || (_Configuration->_FFTSize == FFTSize::FFTDuration);
+    bool NotFixed = (_Configuration->_FFTSize == FFTSize::FFTCustom) || (_Configuration->_FFTSize == FFTSize::FFTDuration);
 
-        GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && State);
+        GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && NotFixed);
 
         GetDlgItem(IDC_SUMMATION_METHOD).EnableWindow(IsFFT);
         GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
@@ -1304,35 +1363,36 @@ void ConfigurationDialog::UpdateControls()
         #pragma warning (default: 4061)
 
     // Frequencies
-    State = (_Configuration->_FrequencyDistribution != FrequencyDistribution::Octaves);
+    bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);
 
-        GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && State);
-        GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(State);
+        GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && !IsOctaves);
+        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
+        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves);
 
-        GetDlgItem(IDC_MIN_NOTE).EnableWindow(!State);
-        GetDlgItem(IDC_MAX_NOTE).EnableWindow(!State);
-        GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(!State);
-        GetDlgItem(IDC_PITCH).EnableWindow(!State);
-        GetDlgItem(IDC_TRANSPOSE).EnableWindow(!State);
+        GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
-    State = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+        GetDlgItem(IDC_MIN_NOTE).EnableWindow(IsOctaves);
+        GetDlgItem(IDC_MAX_NOTE).EnableWindow(IsOctaves);
+        GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(IsOctaves);
+        GetDlgItem(IDC_PITCH).EnableWindow(IsOctaves);
+        GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
 
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!State);
+    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsAveePlayer);
 
     // Y axis
-    State = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
+    bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
 
-        GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(State);
-        GetDlgItem(IDC_GAMMA).EnableWindow(State);
+        GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(IsLogarithmic);
+        GetDlgItem(IDC_GAMMA).EnableWindow(IsLogarithmic);
 
     // Peak indicators
-    State = (_Configuration->_PeakMode == PeakMode::None);
+    bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
 
-        GetDlgItem(IDC_HOLD_TIME).EnableWindow(!State);
-        GetDlgItem(IDC_ACCELERATION).EnableWindow(!State);
+        GetDlgItem(IDC_HOLD_TIME).EnableWindow(ShowPeaks);
+        GetDlgItem(IDC_ACCELERATION).EnableWindow(ShowPeaks);
  
     UpdateColorControls();
 }

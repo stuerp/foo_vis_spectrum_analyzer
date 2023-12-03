@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.01) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.03) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -202,6 +202,9 @@ private:
 
     Configuration * _Configuration;
     Configuration _OldConfiguration;
+
+    CNumericEdit _WindowParameter;
+    CNumericEdit _WindowSkew;
 
     CButtonMenu _Channels;
 

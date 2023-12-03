@@ -82,6 +82,7 @@ v0.4.2.0, 2023-12-xx
 
 * New: Hovering over the spectrum displays a tooltip with the center frequency and the note name (when applicable) of the band over which the mouse hovers.
 * New: You can select which channels will be used during the transform in the configuration dialog.
+* New:
 * Improved: Made color scheme editing more resilient.
 * Improved: Added 30fps refresh rate.
 
