@@ -39,7 +39,17 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Boxcar", L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top", L"Bartlett", L"Parzen", L"Welch", L"Power-of-sine", L"Gauss", L"Tukey", L"Kaiser", L"Poison", L"Hyperbolic secant", L"Quadratic spline" };
+        const WCHAR * Labels[] =
+        {
+            L"Boxcar",
+            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
+            L"Bartlett", L"Parzen",
+            L"Welch", L"Power-of-sine", L"Power-of-circle",
+            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
+            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine"
+        };
+
+        assert(((size_t) WindowFunctions::Count == _countof(Labels)));
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -1318,6 +1328,7 @@ void ConfigurationDialog::UpdateControls()
 {
     // Transform
     bool HasParameter = (_Configuration->_WindowFunction == WindowFunctions::PowerOfSine)
+                     || (_Configuration->_WindowFunction == WindowFunctions::PowerOfCircle)
                      || (_Configuration->_WindowFunction == WindowFunctions::Gauss)
                      || (_Configuration->_WindowFunction == WindowFunctions::Tukey)
                      || (_Configuration->_WindowFunction == WindowFunctions::Kaiser)

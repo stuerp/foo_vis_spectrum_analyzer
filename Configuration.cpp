@@ -395,6 +395,10 @@ void Configuration::Read(ui_element_config_parser & parser)
     {
         parser >> _SelectedChannels;
         parser >> _ShowToolTips;
+
+        parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
+        parser >> _WindowParameter;
+        parser >> _WindowSkew;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -526,6 +530,10 @@ void Configuration::Write(ui_element_config_builder & builder) const
     // Version 7
     builder << _SelectedChannels;
     builder << _ShowToolTips;
+
+    builder << (int) _WindowFunction;
+    builder << _WindowParameter;
+    builder << _WindowSkew;
 }
 
 /// <summary>

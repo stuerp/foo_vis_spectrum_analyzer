@@ -15,27 +15,33 @@ using namespace std;
 
 enum class WindowFunctions
 {
-    Boxcar = 0,
+    Boxcar = 0,         // Rectangular
 
-    Hann,
-    Hamming,
+    Hann,               // Cosine-squared
+    Hamming,            // Raied cosine
     Blackman,
     Nuttall,
     FlatTop,
 
-    Bartlett,
+    Bartlett,           // Triangular
     Parzen,
 
     Welch,
     PowerOfSine,
+    PowerOfCircle,
 
     Gauss,
-    Tukey,
+    Tukey,              // Tapered cosine
     Kaiser,
-    Poison,
+    Poison,             // Exponential
 
     HyperbolicSecant,
-    QuadraticSpline
+    QuadraticSpline,
+
+    OggVorbis,
+    CascadedSine,
+
+    Count
 };
 
 /// <summary>
@@ -100,7 +106,9 @@ public:
 
     virtual double operator () (double x) const override
     {
-        return ::pow(::cos(__super::operator()(x) * M_PI_2), 2.);
+        x = __super::operator()(x);
+
+        return ::pow(::cos(x * M_PI_2), 2.);
     //  return 0.5 * (1. - ::cos(x * 2. * M_PI));
     }
 };
@@ -117,7 +125,9 @@ public:
 
     virtual double operator () (double x) const override
     {
-        return 0.53836 - (0.46164 * ::cos(__super::operator()(x) * M_PI_2));
+        x = __super::operator()(x);
+
+        return 0.53836 - (0.46164 * ::cos(x * M_PI_2));
     //  return 0.54      + (0.46 * ::cos(x * M_PI));
     //  return (25./46.) + (0.46 * ::cos(x * M_PI));
     }
@@ -135,6 +145,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return 0.42 + (0.5 * ::cos(x * M_PI)) + (0.08 * ::cos(2. * x * M_PI));
     }
 };
@@ -151,6 +163,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return 0.355768 + (0.487396 * ::cos(x * M_PI)) + (0.144232 * ::cos(2. * x * M_PI)) + (0.012604 * ::cos(3. * x * M_PI));
     }
 };
@@ -167,6 +181,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return 0.21557895 + (0.41663158 * ::cos(x * M_PI)) + (0.277263158 * ::cos(2. * x * M_PI)) + (0.083578947 * ::cos(3. * x * M_PI)) + (0.006947368 * ::cos(4. * x * M_PI));
     }
 };
@@ -183,7 +199,9 @@ public:
 
     virtual double operator () (double x) const override
     {
-        return 1. - ::fabs(__super::operator()(x));
+        x = __super::operator()(x);
+
+        return 1. - ::fabs(x);
     }
 };
 
@@ -199,6 +217,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return (::fabs(x) > 0.5) ? (-2. * ::pow((-1. + ::fabs(x)), 3.)) : (1. - 24. * ::pow(::fabs(x / 2.), 2.) + 48. * ::pow(::fabs(x / 2.), 3.));
     }
 };
@@ -215,6 +235,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return 1. - (x * x);
     }
 };
@@ -231,7 +253,30 @@ public:
 
     virtual double operator () (double x) const override
     {
-        return ::pow(::cos(__super::operator()(x) * M_PI_2), _Power);
+        x = __super::operator()(x);
+
+        return ::pow(::cos(x * M_PI_2), _Power);
+    }
+
+private:
+    double _Power;
+};
+
+/// <summary>
+/// Implements the Power-of-Circle window function.
+/// </summary>
+class PowerOfCircle : public WindowFunction
+{
+public:
+    PowerOfCircle(double skew, bool truncate, double power) : WindowFunction(skew, truncate), _Power(power) { }
+
+    virtual ~PowerOfCircle() { }
+
+    virtual double operator () (double x) const override
+    {
+        x = __super::operator()(x);
+
+        return ::pow(::sqrt(1. - (x * x)), _Power);
     }
 
 private:
@@ -250,6 +295,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return ::exp(-(_Sigma * _Sigma) * (x * x));
     }
 
@@ -269,6 +316,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return (::fabs(x) <= 1. - _Parameter) ? 1 : (x > 0. ? ::pow(-::sin((x - 1.) * M_PI / _Parameter / 2.), 2.) : ::pow(::sin((x + 1.) * M_PI / _Parameter / 2.), 2.));
     }
 
@@ -288,6 +337,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return ::cosh(::sqrt(1. - (x * x)) * _AlphaSquared) / ::cosh(_AlphaSquared);
     }
 
@@ -307,6 +358,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return ::exp(-::fabs(x * _ParameterSquared));
     }
 
@@ -326,6 +379,8 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return 1. / ::cosh(x * _ParameterSquared);
     }
 
@@ -345,7 +400,45 @@ public:
 
     virtual double operator () (double x) const override
     {
+        x = __super::operator()(x);
+
         return (::fabs(x) <= 0.5) ? -::pow((x * M_SQRT2), 2.) + 1. : ::pow(::fabs(x * M_SQRT2) - M_SQRT2, 2.);
+    }
+};
+
+/// <summary>
+/// Implements the Ogg Vorbis window function.
+/// </summary>
+class OggVorbis : public WindowFunction
+{
+public:
+    OggVorbis(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+
+    virtual ~OggVorbis() { }
+
+    virtual double operator () (double x) const override
+    {
+        x = __super::operator()(x);
+
+        return ::sin(M_PI_2 * ::pow(::cos(x * M_PI_2), 2.));
+    }
+};
+
+/// <summary>
+/// Implements a cascaded sine / cosine window function.
+/// </summary>
+class CascadedSine : public WindowFunction
+{
+public:
+    CascadedSine(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+
+    virtual ~CascadedSine() { }
+
+    virtual double operator () (double x) const override
+    {
+        x = __super::operator()(x);
+
+        return 1. - ::sin(M_PI_2 * ::pow(::sin(x * M_PI_2), 2.));
     }
 };
 
@@ -391,6 +484,9 @@ inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, d
         case WindowFunctions::PowerOfSine:
             return new PowerOfSine(windowSkew, truncate, windowParameter);
 
+        case WindowFunctions::PowerOfCircle:
+            return new PowerOfSine(windowSkew, truncate, windowParameter);
+
         // Adjustable windows
         case WindowFunctions::Gauss:
             return new Gauss(windowSkew, truncate, windowParameter);
@@ -410,5 +506,14 @@ inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, d
 
         case WindowFunctions::QuadraticSpline:
             return new QuadraticSpline(windowSkew, truncate);
+
+        case WindowFunctions::OggVorbis:
+            return new OggVorbis(windowSkew, truncate);
+
+        case WindowFunctions::CascadedSine:
+            return new CascadedSine(windowSkew, truncate);
+
+        case WindowFunctions::Count:
+            return nullptr;
     }
 }

@@ -27,8 +27,6 @@ SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data
 
 #pragma region User Interface
 
-#pragma region CWindowImpl
-
 /// <summary>
 /// Gets the window class definition.
 /// </summary>
@@ -49,7 +47,7 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
             TEXT(STR_SPECTOGRAM_WINDOW_CLASS), // Class name
             NULL // Small Icon
         },
-        NULL, NULL, IDC_ARROW, TRUE, 0, _T("")
+        NULL, NULL, IDC_ARROW, TRUE, 0, L""
     };
 
     return wci;
@@ -374,8 +372,6 @@ LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wPar
 
     return 0;
 }
-
-#pragma endregion
 
 /// <summary>
 /// Toggles full screen mode.

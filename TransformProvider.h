@@ -44,7 +44,7 @@ public:
         audio_sample Average = 0.;
         uint32_t n = 0;
 
-        for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, channelMask >>= 1)
+        for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, ++samples, channelMask >>= 1)
         {
             if (channelMask & 1)
             {

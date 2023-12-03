@@ -82,11 +82,11 @@ v0.4.2.0, 2023-12-xx
 
 * New: Hovering over the spectrum displays a tooltip with the center frequency and the note name (when applicable) of the band over which the mouse hovers.
 * New: You can select which channels will be used during the transform in the configuration dialog.
-* New:
+* New: You can select the window function that will be applied to the samples.
 * Improved: Made color scheme editing more resilient.
 * Improved: Added 30fps refresh rate.
+* Improved: The configuration dialog does no longer restrict the minimum size. You can resize it to any size no in case some controls are not accessible.
 
-* New: Amplitude increment/decrement is configurable.
 v0.4.1.1, 2023-11-29
 
 * New: Amplitude increment/decrement is configurable.
@@ -162,7 +162,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Acknowledgements / Credits
 
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
-* [TF3RDL](https://hydrogenaud.io/index.php?action=profile;u=160476) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help
+* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component

@@ -103,7 +103,7 @@ private:
 
         _OldConfiguration = *_Configuration;
 
-        DlgResize_Init();
+        DlgResize_Init(true, false, WS_CLIPCHILDREN);
 
         Initialize();
 
