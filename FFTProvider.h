@@ -11,6 +11,7 @@
 
 #include "TransformProvider.h"
 #include "FFT.h"
+#include "Math.h"
 
 using namespace std;
 
@@ -29,7 +30,25 @@ public:
 
     virtual ~FFTProvider();
 
-    FFTProvider(size_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize);
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+    {
+        _FFTSize = fftSize;
+
+        _FFT.Initialize(fftSize);
+        _TimeData.resize((size_t) fftSize);
+
+        // Create the ring buffer for the samples.
+        _Data = new audio_sample[(size_t) fftSize];
+        _Size = (size_t) fftSize;
+
+        ::memset(_Data, 0, sizeof(audio_sample) * _Size);
+
+        _Curr = 0;
+    }
+
     void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
     void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
@@ -49,25 +68,6 @@ private:
 
     vector<complex<double>> _TimeData;
 };
-
-/// <summary>
-/// Initializes a new instance.
-/// </summary>
-inline FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
-{
-    _FFTSize = fftSize;
-
-    _FFT.Initialize(fftSize);
-    _TimeData.resize((size_t) fftSize);
-
-    // Create the ring buffer for the samples.
-    _Data = new audio_sample[(size_t) fftSize];
-    _Size = (size_t) fftSize;
-
-    ::memset(_Data, 0, sizeof(audio_sample) * _Size);
-
-    _Curr = 0;
-}
 
 /// <summary>
 /// Destroys this instance.
@@ -120,7 +120,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
         for (complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _WindowFunction(Map(j, 0U, _FFTSize, -1., 1.));
+            double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
             Iter = complex<double>(_Data[i] * WindowFactor, _Data[i] * WindowFactor);
 

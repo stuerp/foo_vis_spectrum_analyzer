@@ -78,7 +78,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.4.2.0, 2023-12-xx
+v0.4.2.0, 2023-12-03
 
 * New: Hovering over the spectrum displays a tooltip with the center frequency and the note name (when applicable) of the band over which the mouse hovers.
 * New: You can select which channels will be used during the transform in the configuration dialog.

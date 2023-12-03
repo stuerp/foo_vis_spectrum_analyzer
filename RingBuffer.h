@@ -47,7 +47,7 @@ public:
         return _Items[(_Curr + (_Count - 1)) % size];
     }
 
-    T GetCount() const
+    size_t GetCount() const
     {
         return _Count;
     }

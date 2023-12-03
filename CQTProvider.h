@@ -51,7 +51,8 @@ public:
         for (FrequencyBand & Iter : frequencyBands)
         {
             double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + (_SampleRate / (double) sampleCount) * _BandwidthOffset;
-            double TLen = Min(1.0 / Bandwidth, (double) sampleCount / _SampleRate);
+            double TLen = Min(1. / Bandwidth, (double) sampleCount / _SampleRate);
+
             double DownsampleAmount = Max(1.0, ::trunc((_SampleRate * _DownSample) / (Iter.Ctr + TLen)));
             double Coeff = 2. * ::cos(2. * M_PI * Iter.Ctr / _SampleRate * DownsampleAmount);
 
@@ -73,7 +74,7 @@ public:
                 Norm += w;
 
                 // Goertzel transform
-                Sine = AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], channelMask) * w + Coeff * f1 - f2;
+                Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], channelMask) * w) + (Coeff * f1) - f2;
 
                 f2 = f1;
                 f1 = Sine;
