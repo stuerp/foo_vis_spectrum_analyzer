@@ -201,6 +201,7 @@
     <ClInclude Include="SpectrumAnalyzerUI.h" />
     <ClInclude Include="Support.h" />
     <ClInclude Include="TransformProvider.h" />
+    <ClInclude Include="WindowFunctions.h" />
     <ClInclude Include="XAxis.h" />
     <ClInclude Include="YAxis.h" />
   </ItemGroup>

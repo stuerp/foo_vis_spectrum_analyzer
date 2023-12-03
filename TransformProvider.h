@@ -1,5 +1,5 @@
 
-/** $VER: TransformProvider.h (2023.12.02) P. Stuer **/
+/** $VER: TransformProvider.h (2023.12.03) P. Stuer **/
 
 #pragma once
 
@@ -11,71 +11,56 @@
 
 using namespace std;
 
+#include "WindowFunctions.h"
+
 /// <summary>
 /// Provides a base class for transform providers.
 /// </summary>
 class TransformProvider
 {
 public:
-    audio_sample AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept;
+    TransformProvider() = delete;
+
+    TransformProvider(const TransformProvider &) = delete;
+    TransformProvider & operator=(const TransformProvider &) = delete;
+    TransformProvider(TransformProvider &&) = delete;
+    TransformProvider & operator=(TransformProvider &&) = delete;
+
+    virtual ~TransformProvider() { }
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    TransformProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction) : _ChannelCount(channelCount), _ChannelSetup(channelSetup), _SampleRate(sampleRate), _WindowFunction(windowFunction)
+    {
+        _NyquistFrequency = _SampleRate / 2.;
+    }
+
+    /// <summary>
+    /// Calculates the average of the specified samples.
+    /// </summary>
+    audio_sample AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept
+    {
+        audio_sample Average = 0.;
+        uint32_t n = 0;
+
+        for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, channelMask >>= 1)
+        {
+            if (channelMask & 1)
+            {
+                Average += *samples;
+                n++;
+            }
+        }
+
+        return (n > 0) ? Average / (audio_sample) n : (audio_sample) 0.;
+    }
 
 protected:
     uint32_t _ChannelCount;
     uint32_t _ChannelSetup;
+    double _SampleRate;
+    const WindowFunction & _WindowFunction;
+
+    double _NyquistFrequency;
 };
-
-/// <summary>
-/// Calculates the average of the specified samples.
-/// </summary>
-inline audio_sample TransformProvider::AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept
-{
-    audio_sample Average = 0.;
-    uint32_t n = 0;
-
-    for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, channelMask >>= 1)
-    {
-        if (channelMask & 1)
-        {
-            Average += *samples;
-            n++;
-        }
-    }
-
-    return (n > 0) ? Average / (audio_sample) n : (audio_sample) 0.;
-
-/*
-    switch (_ChannelCount)
-    {
-        case 0:
-            return 0.; // Should not happen.
-
-        case 1:
-            return samples[i];
-
-        case 2:
-            return (samples[i] + samples[i + 1]) / (audio_sample) 2.0;
-
-        case 3:
-            return (samples[i] + samples[i + 1] + samples[i + 2]) / (audio_sample) 3.0;
-
-        case 4:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3]) / (audio_sample) 4.0;
-
-        case 5:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4]) / (audio_sample) 5.0;
-
-        case 6:
-            return (samples[i] + samples[i + 1] + samples[i + 2] + samples[i + 3] + samples[i + 4] + samples[i + 5]) / (audio_sample) 6.0;
-
-        default:
-        {
-            audio_sample Average = 0.;
-
-            for (uint32_t j = 0; j < _ChannelCount; ++j)
-                Average += samples[i + j];
-
-            return Average / (audio_sample) _ChannelCount;
-        }
-    }
-*/
-}

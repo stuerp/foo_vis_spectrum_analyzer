@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.h (2023.12.02) P. Stuer **/
+/** $VER: FFTProvider.h (2023.12.03) P. Stuer **/
 
 #pragma once
 
@@ -21,7 +21,6 @@ class FFTProvider : public TransformProvider
 {
 public:
     FFTProvider() = delete;
-    FFTProvider(size_t channelCount, uint32_t channelSetup, size_t fftSize);
 
     FFTProvider(const FFTProvider &) = delete;
     FFTProvider & operator=(const FFTProvider &) = delete;
@@ -30,53 +29,44 @@ public:
 
     virtual ~FFTProvider();
 
-    size_t GetChannelCount() const
-    {
-        return _ChannelCount;
-    }
+    FFTProvider(size_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize);
+    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
+    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
     size_t GetFFTSize() const
     {
         return _FFTSize;
     }
 
-    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
-    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
-
 private:
     size_t _FFTSize;
 
     FFT _FFT;
 
-    audio_sample * _SampleData;
-    size_t _SampleSize;
-    size_t _SampleCount;
+    audio_sample * _Data;
+    size_t _Size;
+    size_t _Curr;
 
     vector<complex<double>> _TimeData;
 };
 
 /// <summary>
-/// Initializes a new instance of the class.
+/// Initializes a new instance.
 /// </summary>
-/// <param name="channelCount">Number of channels in the input data</param>
-/// <param name="fftSize">The number of bands to use</param>
-inline FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, size_t fftSize)
+inline FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
 {
-    _ChannelCount = channelCount;
-    _ChannelSetup = channelSetup;
-
     _FFTSize = fftSize;
 
     _FFT.Initialize(fftSize);
     _TimeData.resize((size_t) fftSize);
 
     // Create the ring buffer for the samples.
-    _SampleData = new audio_sample[(size_t) fftSize];
-    _SampleSize = (size_t) fftSize;
+    _Data = new audio_sample[(size_t) fftSize];
+    _Size = (size_t) fftSize;
 
-    ::memset(_SampleData, 0, sizeof(audio_sample) * _SampleSize);
+    ::memset(_Data, 0, sizeof(audio_sample) * _Size);
 
-    _SampleCount = 0;
+    _Curr = 0;
 }
 
 /// <summary>
@@ -84,10 +74,10 @@ inline FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, si
 /// </summary>
 inline FFTProvider::~FFTProvider()
 {
-    if (_SampleData)
+    if (_Data)
     {
-        delete[] _SampleData;
-        _SampleData = nullptr;
+        delete[] _Data;
+        _Data = nullptr;
     }
 }
 
@@ -108,11 +98,11 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, u
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _SampleData[_SampleCount++] = AverageSamples(&samples[i], channelMask);
+        _Data[_Curr++] = AverageSamples(&samples[i], channelMask);
 
         // Wrap around the buffer.
-        if (_SampleCount >= _SampleSize)
-            _SampleCount = 0;
+        if (_Curr == _Size)
+            _Curr = 0;
     }
 }
 
@@ -121,20 +111,20 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, u
 /// </summary>
 inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
 {
-    double Norm = 0.0;
+    double Norm = 0.;
 
-    // Fill the FFT buffer from the wrap-around sample buffer with Time domain data and apply the windowing function.
+    // Fill the FFT buffer from the sample ring buffer with Time domain data and apply the windowing function.
     {
-        size_t i = _SampleCount;
+        size_t i = _Curr;
         size_t j = 0;
 
         for (complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _FFT.HanningWindow(j);
+            double WindowFactor = _WindowFunction(Map(j, 0U, _FFTSize, -1., 1.));
 
-            Iter.real(_SampleData[i] * WindowFactor);
+            Iter = complex<double>(_Data[i] * WindowFactor);
 
-            if (++i == _SampleSize)
+            if (++i == _Size)
                 i = 0;
 
             Norm += WindowFactor;
@@ -147,13 +137,13 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
         double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
         for (complex<double> & Iter : _TimeData)
-            Iter.real(Iter.real() * Factor);
+            Iter *= Factor;
     }
 
     // Transform the data from the Time domain to the Frequency domain.
     _FFT.Transform(_TimeData, freqCoefficients);
 
-    // Normalize the frequency domain data.
+    // Normalize the Frequency domain data.
     for (complex<double> & Iter : freqCoefficients)
         Iter /= (double) _FFTSize;
 }

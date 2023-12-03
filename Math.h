@@ -81,7 +81,7 @@ inline static T Wrap(T index, T length)
 template<class T, class U>
 inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
-    return dstMin + (U) (((value - srcMin) * (T) (dstMax - dstMin)) / (srcMax - srcMin));
+    return dstMin + (U) (((U) (value - srcMin) * (dstMax - dstMin)) / (srcMax - srcMin));
 }
 
 /// <summary>

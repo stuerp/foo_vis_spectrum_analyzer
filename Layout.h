@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.02) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.03) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -42,7 +42,7 @@
 
     #pragma region Channels
     // Button
-    #define W_A88    80
+    #define W_A88    82
     #define H_A88    H_BTN
     #define X_A88    X_A63
     #define Y_A88    Y_A63 + H_A63 + IY

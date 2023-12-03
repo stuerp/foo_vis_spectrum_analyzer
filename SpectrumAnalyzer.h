@@ -19,28 +19,20 @@ class SpectrumAnalyzer : public FFTProvider
 public:
     SpectrumAnalyzer() = delete;
 
-    /// <summary>
-    /// Initializes an instance of the class.
-    /// </summary>
-    /// <param name="channelCount"></param>
-    /// <param name="fftSize"></param>
-    /// <param name="sampleRate"></param>
-    SpectrumAnalyzer(const Configuration * configuration, uint32_t channelCount, uint32_t channelSetup, uint32_t sampleRate, size_t fftSize) : FFTProvider(channelCount, channelSetup, fftSize)
-    {
-        if (sampleRate <= 0)
-            throw;
-
-        _Configuration = configuration;
-        _SampleRate = sampleRate;
-        _NyquistFrequency = _SampleRate / 2.;
-    }
-
     SpectrumAnalyzer(const SpectrumAnalyzer &) = delete;
     SpectrumAnalyzer & operator=(const SpectrumAnalyzer &) = delete;
     SpectrumAnalyzer(SpectrumAnalyzer &&) = delete;
     SpectrumAnalyzer & operator=(SpectrumAnalyzer &&) = delete;
 
     virtual ~SpectrumAnalyzer() { };
+
+    /// <summary>
+    /// Initializes an instance of the class.
+    /// </summary>
+    SpectrumAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration) : FFTProvider(channelCount, channelSetup, sampleRate, windowFunction, fftSize)
+    {
+        _Configuration = configuration;
+    }
 
     /// <summary>
     /// Gets the band index of the specified frequency.
@@ -305,6 +297,4 @@ public:
 
 private:
     const Configuration * _Configuration;
-    uint32_t _SampleRate;
-    double _NyquistFrequency;
 };

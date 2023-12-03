@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.12.02) P. Stuer **/
+/** $VER: SpectrumAnalyzerUI.cpp (2023.12.03) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -112,6 +112,12 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnDestroy()
 {
+    if (_WindowFunction)
+    {
+        delete _WindowFunction;
+        _WindowFunction = nullptr;
+    }
+
     if (_SpectrumAnalyzer)
     {
         delete _SpectrumAnalyzer;
@@ -457,6 +463,13 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 
     _ToolTip.Activate(_Configuration._ShowToolTips);
 
+    // Forces the recreation of the window function.
+    if (_WindowFunction != nullptr)
+    {
+        delete _WindowFunction;
+        _WindowFunction = nullptr;
+    }
+
     // Forces the recreation of the spectrum analyzer.
     if (_SpectrumAnalyzer != nullptr)
     {
@@ -609,6 +622,9 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 
     // Create the transformer when necessary.
     {
+        if (_WindowFunction == nullptr)
+            _WindowFunction = WindowFunction::Create(_Configuration._WindowFunction, _Configuration._WindowParameter, _Configuration._WindowSkew, _Configuration._Truncate);
+
         if (_SpectrumAnalyzer == nullptr)
         {
             #pragma warning (disable: 4061)
@@ -628,13 +644,13 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
             }
             #pragma warning (default: 4061)
 
-            _SpectrumAnalyzer = new SpectrumAnalyzer(&_Configuration, ChannelCount, ChannelSetup, _SampleRate, _FFTSize);
+            _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _FFTSize, &_Configuration);
 
             _FrequencyCoefficients.resize(_FFTSize);
         }
 
         if (_CQT == nullptr)
-            _CQT = new CQTProvider(ChannelCount, ChannelSetup, _SampleRate, 1.0, 1.0, 0.0);
+            _CQT = new CQTProvider(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0);
     }
 
     // Add the samples to the spectrum analyzer or the CQT.

@@ -1,49 +1,65 @@
+
+/** $VER: RingBuffer.h (2023.12.03) P. Stuer **/
+
 #pragma once
 
-#include <WinBase.h>
+#include <CppCoreCheck/Warnings.h>
 
-template<typename T, UINT size>
+#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include "framework.h"
+
+#pragma once
+
+//#include <WinBase.h>
+
+template<typename T, size_t size>
 class RingBuffer
 {
 public:
-    RingBuffer() : _StartIndex(0), _ItemCount(0)
+    RingBuffer() : _Curr(0), _Count(0)
     {
         ::memset(_Items, 0, sizeof(T) * size);
     }
 
+    T operator [](size_t index) const
+    {
+        return _Items[(_Curr + index) % size];
+    }
+
     void Add(T item)
     {
-        _Items[(_StartIndex + _ItemCount) % size] = item;
+        _Items[(_Curr + _Count) % size] = item;
 
-        if (_ItemCount < size)
-            _ItemCount++;
+        if (_Count < size)
+            _Count++;
         else
-            _StartIndex = (_StartIndex + 1) % size;
+            _Curr = (_Curr + 1) % size;
     }
 
     T GetFirst() const
     {
-        return _Items[_StartIndex];
+        return _Items[_Curr];
     }
 
     T GetLast() const
     {
-        return _Items[(_StartIndex + _ItemCount-1) % size];
+        return _Items[(_Curr + (_Count - 1)) % size];
     }
 
     T GetCount() const
     {
-        return _ItemCount;
+        return _Count;
     }
 
     void Reset()
     {
-        _StartIndex = 0;
-        _ItemCount = 0;
+        _Curr = 0;
+        _Count = 0;
     }
 
 private:
-    UINT _StartIndex;
-    UINT _ItemCount;
+    size_t _Curr;
+    size_t _Count;
     T _Items[size];
 };

@@ -484,22 +484,22 @@ void ConfigurationDialog::Terminate()
     _SkewFactor.Terminate();
     _Bandwidth.Terminate();
 
-    _Colors.Terminate();
-    _Gradient.Terminate();
-
     _AmplitudeStep.Terminate();
     _AmplitudeHi.Terminate();
     _AmplitudeLo.Terminate();
 
     _Gamma.Terminate();
 
+    _Colors.Terminate();
+    _Gradient.Terminate();
+
     _BackColor.Terminate();
 
-    _XLineColor.Terminate();
     _XTextColor.Terminate();
+    _XLineColor.Terminate();
 
-    _YLineColor.Terminate();
     _YTextColor.Terminate();
+    _YLineColor.Terminate();
 
     _BandBackColor.Terminate();
 }
@@ -1246,7 +1246,7 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
     else
     if (InRange(id, IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST - 1))
     {
-        uint32_t Mask = 1 << (id - IDM_CHANNELS_FIRST);
+        uint32_t Mask = 1U << (id - IDM_CHANNELS_FIRST);
 
         if (IsChecked)
             _Configuration->_SelectedChannels &= ~Mask;
@@ -1396,10 +1396,10 @@ void ConfigurationDialog::UpdateChannelsMenu()
 
     for (UINT i = IDM_CHANNELS_FIRST; i < IDM_CHANNELS_LAST; ++i)
     {
-        Menu.CheckMenuItem(i, MF_BYCOMMAND | ((SelectedChannels & 1) ? MF_CHECKED : 0));
+        Menu.CheckMenuItem(i, (UINT) (MF_BYCOMMAND | ((SelectedChannels & 1) ? MF_CHECKED : 0)));
 
         SelectedChannels >>= 1;
     }
 
-    Menu.CheckMenuItem(IDM_CHANNELS_LAST, MF_BYCOMMAND | ((_Configuration->_SelectedChannels == AllChannels) ? MF_CHECKED : 0));
+    Menu.CheckMenuItem(IDM_CHANNELS_LAST, (UINT) (MF_BYCOMMAND | ((_Configuration->_SelectedChannels == AllChannels) ? MF_CHECKED : 0)));
 }

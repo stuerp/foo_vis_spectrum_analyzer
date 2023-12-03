@@ -1,12 +1,18 @@
 
-/** $VER: Configuration.h (2023.12.02) P. Stuer **/
+/** $VER: Configuration.h (2023.12.03) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "FFT.h"
 #include "Math.h"
+#include "WindowFunctions.h"
+
+inline const double MinWindowSkew = -1.;
+inline const double MaxWindowSkew =  1.;
+
+inline const double MinWindowParameter =  0.;
+inline const double MaxWindowParameter = 10.;
 
 inline const int MinFFTSize =     1;
 inline const int MaxFFTSize = 32768;
@@ -229,9 +235,16 @@ public:
     size_t _WindowDuration;
     size_t _RefreshRateLimit;                                           // Hz
 
-    Transform _Transform;                                               // FFT or CQT
+    #pragma region Transform
+        Transform _Transform;                                           // FFT or CQT
 
-    uint32_t _SelectedChannels;
+        WindowFunctions _WindowFunction;
+        double _WindowParameter;                                        // 0 .. 10
+        double _WindowSkew;                                             // -1 .. 1
+        bool _Truncate;
+
+        uint32_t _SelectedChannels;
+    #pragma endregion
 
     #pragma region FFT
         FFTSize _FFTSize;
@@ -251,8 +264,8 @@ public:
 
         // Frequency range
         size_t _NumBands;                                               // Number of frequency bands, 2 .. 512
-        double _LoFrequency;                                           // Hz, 0 .. 96000
-        double _HiFrequency;                                           // Hz, 0 .. 96000
+        double _LoFrequency;                                            // Hz, 0 .. 96000
+        double _HiFrequency;                                            // Hz, 0 .. 96000
 
         // Note range
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
@@ -315,12 +328,7 @@ public:
 
     LogLevel _LogLevel;
 /*
-    type: 'fft',
     bandwidthOffset: 1,
-
-    windowFunction: 'hann',
-    windowParameter: 1,
-    windowSkew: 0,
 
     timeAlignment: 1,
     downsample: 0,
@@ -332,10 +340,8 @@ public:
     showNyquist: true,
 
     diffLabels: false,
-    darkMode: false,
     compensateDelay: false
 */
-
 public:
     /// <summary>
     /// Scales the specified value to a relative amplitude between 0.0 and 1.0.

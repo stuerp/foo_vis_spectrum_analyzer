@@ -194,6 +194,7 @@ private:
     POINT _LastMousePos;
     int _LastIndex;
 
+    const WindowFunction * _WindowFunction;
     SpectrumAnalyzer * _SpectrumAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 

@@ -1,11 +1,9 @@
 
-/** $VER: Configuration.cpp (2023.12.02) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.03) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#define _CRT_SECURE_NO_WARNINGS
 
 #include "framework.h"
 
@@ -36,7 +34,7 @@ Configuration::Configuration()
 /// </summary>
 void Configuration::Reset() noexcept
 {
-    _DialogBounds = {  };
+    _DialogBounds = { };
 
     _RefreshRateLimit = 20;
 
@@ -46,7 +44,13 @@ void Configuration::Reset() noexcept
     _UseZeroTrigger = false;
     _WindowDuration = 100;
 
+    // Transform
     _Transform = Transform::FFT;
+
+    _WindowFunction = WindowFunctions::Hann;
+    _WindowParameter = 1.;
+    _WindowSkew = 0.;
+    _Truncate = true;
 
     _SelectedChannels = AllChannels;
 
@@ -124,30 +128,6 @@ void Configuration::Reset() noexcept
 
     // Logging
     _LogLevel = LogLevel::None;
-/*
-    bandwidthOffset: 1,
-
-    windowFunction: 'hann',
-    windowParameter: 1,
-    windowSkew: 0,
-
-    timeAlignment: 1,
-    downsample: 0,
-
-    color: 'none',
-
-    showLabels: true,
-    showLabelsY: true,
-
-    labelTuning: 440,
-
-    showDC: true,
-    showNyquist: true,
-
-    mirrorLabels: true,
-    diffLabels: false,
-    compensateDelay: false
-*/
 }
 
 /// <summary>
@@ -165,10 +145,16 @@ Configuration & Configuration::operator=(const Configuration & other)
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
 
-    // Transform type
-    _Transform = other._Transform;
+    #pragma region Transform
+        _Transform = other._Transform;
 
-    _SelectedChannels = other._SelectedChannels;
+        _WindowFunction = other._WindowFunction;
+        _WindowParameter = other._WindowParameter;
+        _WindowSkew = other._WindowSkew;
+        _Truncate = other._Truncate;
+
+        _SelectedChannels = other._SelectedChannels;
+    #pragma endregion
 
     #pragma region FFT
         _FFTSize = other._FFTSize;
