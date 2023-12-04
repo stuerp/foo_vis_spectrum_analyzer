@@ -20,7 +20,7 @@
 /// <summary>
 /// Constructor
 /// </summary>
-SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10)
+SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10), _TrackingToolInfo()
 {
     set_configuration(data);
 }
@@ -86,18 +86,11 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     // Create the tooltip control.
-    {
-        _ToolTip.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP);
+    _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
-        // Adds a tracking tool tip.
-        {
-            auto ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, (LPWSTR) L"");
+    _ToolTipControl.SetMaxTipWidth(100);
 
-            GetClientRect(&ti.rect);
-
-            _ToolTip.AddTool(&ti);
-        }
-    }
+    _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
     // Applies the initial configuration.
     SetConfiguration();
@@ -292,10 +285,10 @@ LRESULT SpectrumAnalyzerUIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newR
 /// </summary>
 void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 {
-    if (!_ToolTip.IsWindow())
+    if (!_ToolTipControl.IsWindow())
         return;
 
-    if (_TrackingToolInfo == nullptr)
+    if (!_IsTracking)
     {
         {
             TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
@@ -306,15 +299,11 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
             ::TrackMouseEvent(&tme);
         }
 
-        {
-            _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
-
-            _ToolTip.SetMaxTipWidth(100);
-            _ToolTip.TrackActivate(_TrackingToolInfo, TRUE);
-        }
-
         _LastMousePos = POINT(-1, -1);
         _LastIndex = -1;
+
+        _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
+        _IsTracking = true;
     }
     else
     if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
@@ -329,12 +318,12 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 
             _TrackingToolInfo->lpszText = _FrequencyBands[(size_t) Index].Label;
 
-            _ToolTip.SetToolInfo(_TrackingToolInfo);
-
-            ::ClientToScreen(m_hWnd, &pt);
-
-            _ToolTip.TrackPosition(pt.x + 10, pt.y - 20);
+            _ToolTipControl.UpdateTipText(_TrackingToolInfo);
         }
+
+        ::ClientToScreen(m_hWnd, &pt);
+
+        _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 20);
     }
 }
 
@@ -343,10 +332,8 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 /// </summary>
 void SpectrumAnalyzerUIElement::OnMouseLeave()
 {
-    _ToolTip.TrackActivate(_TrackingToolInfo, FALSE);
-
-    delete _TrackingToolInfo;
-    _TrackingToolInfo = nullptr;
+    _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
+    _IsTracking = false;
 }
 
 /// <summary>
@@ -459,7 +446,7 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 
     _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
 
-    _ToolTip.Activate(_Configuration._ShowToolTips);
+    _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
     // Forces the recreation of the window function.
     if (_WindowFunction != nullptr)
@@ -521,11 +508,18 @@ void SpectrumAnalyzerUIElement::Resize()
 
         // Adjust the tracking tool tip.
         {
-            auto ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, (LPWSTR) L"");
+            if (_TrackingToolInfo != nullptr)
+            {
+                _ToolTipControl.DelTool(_TrackingToolInfo);
 
-            SetRect(&ti.rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+                delete _TrackingToolInfo;
+            }
 
-            _ToolTip.AddTool(&ti);
+            _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+
+            SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+
+            _ToolTipControl.AddTool(_TrackingToolInfo);
         }
     }
 }

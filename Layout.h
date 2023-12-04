@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.03) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.04) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -12,8 +12,8 @@
 #define H_CBX       14 // Combo box
 #define H_CHB       10 // Check box
 
-#define W_A00      498 // Dialog width (in dialog units)
-#define H_A00      462 // Dialog height (in dialog units)
+#define W_A00      510 // Dialog width (in dialog units)
+#define H_A00      476 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7

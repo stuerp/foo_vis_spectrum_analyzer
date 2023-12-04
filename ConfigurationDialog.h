@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.03) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.04) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -17,6 +17,7 @@
 #include <atlframe.h>
 
 #include "Resources.h"
+#include "Layout.h"
 #include "Configuration.h"
 
 #include "CNumericEdit.h"
@@ -101,14 +102,21 @@ private:
         _hParent = dp->_hWnd;
         _Configuration = dp->_Configuration;
 
+        if (IsRectEmpty(&_Configuration->_DialogBounds))
+        {
+            _Configuration->_DialogBounds.right  = W_A00;
+            _Configuration->_DialogBounds.bottom = H_A00;
+
+            ::MapDialogRect(m_hWnd, &_Configuration->_DialogBounds);
+        }
+
         _OldConfiguration = *_Configuration;
 
         DlgResize_Init(true, false, WS_CLIPCHILDREN);
 
         Initialize();
 
-        if (_Configuration->_DialogBounds.right != -1)
-            MoveWindow(&_Configuration->_DialogBounds);
+        MoveWindow(&_Configuration->_DialogBounds);
 
         return TRUE;
     }

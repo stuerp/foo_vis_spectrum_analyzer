@@ -38,7 +38,7 @@ The code builds out-of-the box with Visual Studio.
 To build the code:
 
 * [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later.
-* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-05-10
+* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-09-23
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320.
 
 The following library is included:
@@ -62,8 +62,8 @@ Create the following directory structure:
     sdk
 
 * `3rdParty/WTL10_10320` contains WTL 10.0.10320.
-* `bin` contains a portable version of foobar2000 2.0 for debugging purposes.
-* `bin/x86` contains a portable version of foobar2000 1.6 for debugging purposes.
+* `bin` contains a portable version of foobar2000 x64 for debugging purposes.
+* `bin/x86` contains a portable version of foobar2000 x86 for debugging purposes.
 * `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
 * `out` receives a deployable version of the component.
 * `sdk` contains the foobar2000 SDK.
@@ -77,6 +77,10 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.4.2.1, 2023-12-xx
+
+* Fixed: The default size of the configuration dialog was not initialized.
 
 v0.4.2.0, 2023-12-03
 

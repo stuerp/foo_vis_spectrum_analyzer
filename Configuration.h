@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.03) P. Stuer **/
+/** $VER: Configuration.h (2023.12.04) P. Stuer **/
 
 #pragma once
 
@@ -226,7 +226,7 @@ public:
     }
 
 public:
-    RECT _DialogBounds;
+    RECT _DialogBounds;                                                 // Will be initialized in OnInitDialog()
 
     bool _UseHardwareRendering;
     bool _UseZeroTrigger;
@@ -247,8 +247,8 @@ public:
     #pragma endregion
 
     #pragma region FFT
-        FFTSize _FFTSize;
-        size_t _FFTCustom;                                              // samples, Custom FFT size
+        FFTSize _FFTSize;                                               // bins
+        size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
         int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64

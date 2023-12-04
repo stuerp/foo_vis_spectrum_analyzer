@@ -74,7 +74,6 @@ public:
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
-    void OnMouseEnter();
     void OnMouseMove(UINT, CPoint);
     void OnMouseLeave();
 
@@ -191,8 +190,9 @@ private:
     Configuration _Configuration;
     ConfigurationDialog _ConfigurationDialog;
 
-    CToolTipCtrl _ToolTip;
-    CToolInfo * _TrackingToolInfo = nullptr;
+    CToolTipCtrl _ToolTipControl;
+    CToolInfo * _TrackingToolInfo;
+    bool _IsTracking;
     POINT _LastMousePos;
     int _LastIndex;
 
