@@ -122,7 +122,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
         {
             double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
-            Iter = complex<double>(_Data[i] * WindowFactor, _Data[i] * WindowFactor);
+            Iter = complex<double>(_Data[i] * WindowFactor, 0.);
 
             if (++i == _Size)
                 i = 0;

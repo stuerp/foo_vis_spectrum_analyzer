@@ -80,6 +80,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.4.2.1, 2023-12-xx
 
+* Improved: A couple internal tweaks and fixes.
 * Fixed: The default size of the configuration dialog was not initialized.
 
 v0.4.2.0, 2023-12-03
