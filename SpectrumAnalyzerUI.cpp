@@ -323,7 +323,7 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 
         ::ClientToScreen(m_hWnd, &pt);
 
-        _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 20);
+        _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
     }
 }
 
