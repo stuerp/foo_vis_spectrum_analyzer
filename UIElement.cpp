@@ -56,6 +56,8 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    _DPI = GetDpiForWindow(m_hWnd);
+
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -257,6 +259,8 @@ void UIElement::OnLButtonDblClk(UINT flags, CPoint point)
 /// </summary>
 LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 {
+    _DPI = dpiX;
+
     ReleaseDeviceSpecificResources();
 
     return 0;
@@ -291,8 +295,10 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
     {
         _LastMousePos = pt;
+    
+        FLOAT ScaledX = (FLOAT) ::MulDiv(pt.x, USER_DEFAULT_SCREEN_DPI, _DPI);
 
-        int Index = (int) ::floor(Map((FLOAT) pt.x, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
+        int Index = (int) ::floor(Map(ScaledX, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
 
         if ((Index != _LastIndex) && InRange(Index, 0, (int) _FrequencyBands.size() - 1))
         {

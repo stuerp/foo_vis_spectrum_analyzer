@@ -201,4 +201,6 @@ private:
     size_t _FFTSize;
     uint32_t _SampleRate;
     double _Bandwidth;
+
+    UINT _DPI;
 };
