@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.cpp (2023.12.03) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.06) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,22 +7,20 @@
 
 #include "framework.h"
 
-#include <complex>
+#include "UIElement.h"
 
-#include "Configuration.h"
 #include "Resources.h"
-#include "SpectrumAnalyzerUI.h"
-
 #include "Gradients.h"
+
+#include <complex>
 
 #pragma hdrstop
 
 /// <summary>
-/// Constructor
+/// Initializes a new instance.
 /// </summary>
-SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback), _LastRefresh(0), _RefreshInterval(10), _TrackingToolInfo()
+UIElement::UIElement(): _LastRefresh(0), _RefreshInterval(10), _TrackingToolInfo()
 {
-    set_configuration(data);
 }
 
 #pragma region User Interface
@@ -30,7 +28,7 @@ SpectrumAnalyzerUIElement::SpectrumAnalyzerUIElement(ui_element_config::ptr data
 /// <summary>
 /// Gets the window class definition.
 /// </summary>
-CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
+CWndClassInfo & UIElement::GetWndClassInfo()
 {
     static ATL::CWndClassInfo wci =
     {
@@ -56,17 +54,8 @@ CWndClassInfo & SpectrumAnalyzerUIElement::GetWndClassInfo()
 /// <summary>
 /// Creates the window.
 /// </summary>
-LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
+LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
-    // Remove the border of the client area.
-    {
-        LONG_PTR NewStyle = ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE);
-
-        NewStyle &= ~WS_EX_STATICEDGE;
-
-        ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, NewStyle);
-    }
-
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -101,7 +90,7 @@ LRESULT SpectrumAnalyzerUIElement::OnCreate(LPCREATESTRUCT cs)
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnDestroy()
+void UIElement::OnDestroy()
 {
     if (_WindowFunction)
     {
@@ -131,7 +120,7 @@ void SpectrumAnalyzerUIElement::OnDestroy()
 /// <summary>
 /// Handles the WM_TIMER message.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnTimer(UINT_PTR timerID)
+void UIElement::OnTimer(UINT_PTR timerID)
 {
     KillTimer(ID_REFRESH_TIMER);
 
@@ -141,7 +130,7 @@ void SpectrumAnalyzerUIElement::OnTimer(UINT_PTR timerID)
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
+void UIElement::OnPaint(CDCHandle hDC)
 {
     RenderFrame();
 
@@ -166,7 +155,7 @@ void SpectrumAnalyzerUIElement::OnPaint(CDCHandle hDC)
 /// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
+void UIElement::OnSize(UINT type, CSize size)
 {
     if (_RenderTarget == nullptr)
         return;
@@ -182,90 +171,83 @@ void SpectrumAnalyzerUIElement::OnSize(UINT type, CSize size)
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnContextMenu(CWindow wnd, CPoint position)
+void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 {
-    if (m_callback->is_edit_mode_enabled())
+    CMenu Menu;
+    CMenu RefreshRateLimitMenu;
+
     {
-        SetMsgHandled(FALSE);
-    }
-    else
-    {
-        CMenu Menu;
-        CMenu RefreshRateLimitMenu;
+        Menu.CreatePopupMenu();
+
+        Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
+        Menu.AppendMenu((UINT) MF_SEPARATOR);
+        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+//      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
         {
-            Menu.CreatePopupMenu();
+            RefreshRateLimitMenu.CreatePopupMenu();
 
-            Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
-            Menu.AppendMenu((UINT) MF_SEPARATOR);
-            Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
-//          Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
+            const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
-            {
-                RefreshRateLimitMenu.CreatePopupMenu();
+            for (size_t i = 0; i < _countof(RefreshRates); ++i)
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
+                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
 
-                const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
-
-                for (size_t i = 0; i < _countof(RefreshRates); ++i)
-                    RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
-                        pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
-
-                Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
-            }
-
-            Menu.SetMenuDefaultItem(IDM_CONFIGURE);
+            Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
 
-        int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
-
-        switch (CommandId)
-        {
-            case IDM_TOGGLE_FULLSCREEN:
-                ToggleFullScreen();
-                break;
-
-            case IDM_TOGGLE_HARDWARE_RENDERING:
-                ToggleHardwareRendering();
-                break;
-
-            case IDM_REFRESH_RATE_LIMIT_20:
-                _Configuration._RefreshRateLimit = 20;
-                UpdateRefreshRateLimit();
-                break;
-
-            case IDM_REFRESH_RATE_LIMIT_30:
-                _Configuration._RefreshRateLimit = 30;
-                UpdateRefreshRateLimit();
-                break;
-
-            case IDM_REFRESH_RATE_LIMIT_60:
-                _Configuration._RefreshRateLimit = 60;
-                UpdateRefreshRateLimit();
-                break;
-
-            case IDM_REFRESH_RATE_LIMIT_100:
-                _Configuration._RefreshRateLimit = 100;
-                UpdateRefreshRateLimit();
-                break;
-
-            case IDM_REFRESH_RATE_LIMIT_200:
-                _Configuration._RefreshRateLimit = 200;
-                UpdateRefreshRateLimit();
-                break;
-
-            case IDM_CONFIGURE:
-                Configure();
-                break;
-        }
-
-        Invalidate();
+        Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
+
+    int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
+
+    switch (CommandId)
+    {
+        case IDM_TOGGLE_FULLSCREEN:
+            ToggleFullScreen();
+            break;
+
+        case IDM_TOGGLE_HARDWARE_RENDERING:
+            ToggleHardwareRendering();
+            break;
+
+        case IDM_REFRESH_RATE_LIMIT_20:
+            _Configuration._RefreshRateLimit = 20;
+            UpdateRefreshRateLimit();
+            break;
+
+        case IDM_REFRESH_RATE_LIMIT_30:
+            _Configuration._RefreshRateLimit = 30;
+            UpdateRefreshRateLimit();
+            break;
+
+        case IDM_REFRESH_RATE_LIMIT_60:
+            _Configuration._RefreshRateLimit = 60;
+            UpdateRefreshRateLimit();
+            break;
+
+        case IDM_REFRESH_RATE_LIMIT_100:
+            _Configuration._RefreshRateLimit = 100;
+            UpdateRefreshRateLimit();
+            break;
+
+        case IDM_REFRESH_RATE_LIMIT_200:
+            _Configuration._RefreshRateLimit = 200;
+            UpdateRefreshRateLimit();
+            break;
+
+        case IDM_CONFIGURE:
+            Configure();
+            break;
+    }
+
+    Invalidate();
 }
 
 /// <summary>
 /// Toggles between panel and full screen mode.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
+void UIElement::OnLButtonDblClk(UINT flags, CPoint point)
 {
     ToggleFullScreen();
 }
@@ -273,7 +255,7 @@ void SpectrumAnalyzerUIElement::OnLButtonDblClk(UINT flags, CPoint point)
 /// <summary>
 /// Handles a DPI change.
 /// </summary>
-LRESULT SpectrumAnalyzerUIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
+LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 {
     ReleaseDeviceSpecificResources();
 
@@ -283,7 +265,7 @@ LRESULT SpectrumAnalyzerUIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newR
 /// <summary>
 /// Handles mouse move messages.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
+void UIElement::OnMouseMove(UINT, CPoint pt)
 {
     if (!_ToolTipControl.IsWindow())
         return;
@@ -330,7 +312,7 @@ void SpectrumAnalyzerUIElement::OnMouseMove(UINT, CPoint pt)
 /// <summary>
 /// Turns off the tracking tooltip when the mouse leaves the window.
 /// </summary>
-void SpectrumAnalyzerUIElement::OnMouseLeave()
+void UIElement::OnMouseLeave()
 {
     _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
     _IsTracking = false;
@@ -339,7 +321,7 @@ void SpectrumAnalyzerUIElement::OnMouseLeave()
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT UIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     SetConfiguration();
 
@@ -347,31 +329,16 @@ LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanging(UINT uMsg, WPARAM wPa
 }
 
 /// <summary>
-/// Called when the configuration dialog is closed by a click on the OK button.
-/// </summary>
-LRESULT SpectrumAnalyzerUIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    ui_element_config_builder Builder;
-
-    _Configuration.Write(Builder);
-
-    Builder.finish(g_get_guid());
-
-    return 0;
-}
-
-/// <summary>
 /// Toggles full screen mode.
 /// </summary>
-void SpectrumAnalyzerUIElement::ToggleFullScreen() noexcept
+void UIElement::ToggleFullScreen() noexcept
 {
-    static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
 }
 
 /// <summary>
 /// Toggles hardware/software rendering.
 /// </summary>
-void SpectrumAnalyzerUIElement::ToggleHardwareRendering() noexcept
+void UIElement::ToggleHardwareRendering() noexcept
 {
     _Configuration._UseHardwareRendering = !_Configuration._UseHardwareRendering;
 
@@ -381,7 +348,7 @@ void SpectrumAnalyzerUIElement::ToggleHardwareRendering() noexcept
 /// <summary>
 /// Updates the refresh rate.
 /// </summary>
-void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
+void UIElement::UpdateRefreshRateLimit() noexcept
 {
     _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
 }
@@ -389,7 +356,7 @@ void SpectrumAnalyzerUIElement::UpdateRefreshRateLimit() noexcept
 /// <summary>
 /// Shows the Options dialog.
 /// </summary>
-void SpectrumAnalyzerUIElement::Configure() noexcept
+void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
@@ -407,7 +374,7 @@ void SpectrumAnalyzerUIElement::Configure() noexcept
 /// <summary>
 /// Sets the current configuration.
 /// </summary>
-void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
+void UIElement::SetConfiguration() noexcept
 {
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
@@ -477,7 +444,7 @@ void SpectrumAnalyzerUIElement::SetConfiguration() noexcept
 /// <summary>
 /// Resizes all render targets.
 /// </summary>
-void SpectrumAnalyzerUIElement::Resize()
+void UIElement::Resize()
 {
     if (_RenderTarget == nullptr)
         return;
@@ -527,7 +494,7 @@ void SpectrumAnalyzerUIElement::Resize()
 /// <summary>
 /// Writes a message to the console
 /// </summary>
-void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
+void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
 {
     if (logLevel < _Configuration._LogLevel)
         return;
@@ -548,7 +515,7 @@ void SpectrumAnalyzerUIElement::Log(LogLevel logLevel, const char * format, ...)
 /// <summary>
 /// Renders a frame.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderFrame()
+HRESULT UIElement::RenderFrame()
 {
     _FrameCounter.NewFrame();
 
@@ -601,7 +568,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderFrame()
 /// <summary>
 /// Renders an audio chunk.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
+HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
 {
     HRESULT hr = S_OK;
 
@@ -704,7 +671,7 @@ HRESULT SpectrumAnalyzerUIElement::RenderChunk(const audio_chunk & chunk)
 /// <summary>
 /// Generates frequency bands.
 /// </summary>
-void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
+void UIElement::GenerateFrequencyBands()
 {
     const double MinFreq = ScaleF(_Configuration._LoFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
     const double MaxFreq = ScaleF(_Configuration._HiFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
@@ -726,7 +693,7 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBands()
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
+void UIElement::GenerateFrequencyBandsFromNotes()
 {
     const double Root24 = ::exp2(1. / 24.);
 
@@ -760,7 +727,7 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsFromNotes()
 /// <summary>
 /// Generates frequency bands of AveePlayer.
 /// </summary>
-void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
+void UIElement::GenerateFrequencyBandsOfAveePlayer()
 {
     _FrequencyBands.resize(_Configuration._NumBands);
 
@@ -777,7 +744,7 @@ void SpectrumAnalyzerUIElement::GenerateFrequencyBandsOfAveePlayer()
 /// <summary>
 /// Scales the frequency.
 /// </summary>
-double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunction function, double skewFactor)
+double UIElement::ScaleF(double x, ScalingFunction function, double skewFactor)
 {
     switch (function)
     {
@@ -824,7 +791,7 @@ double SpectrumAnalyzerUIElement::ScaleF(double x, ScalingFunction function, dou
 /// <summary>
 /// Descales the frequency.
 /// </summary>
-double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunction function, double skewFactor)
+double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor)
 {
     switch (function)
     {
@@ -871,7 +838,7 @@ double SpectrumAnalyzerUIElement::DeScaleF(double x, ScalingFunction function, d
 /// <summary>
 /// Smooths the spectrum using averages.
 /// </summary>
-void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
+void UIElement::ApplyAverageSmoothing(double factor)
 {
     if (factor != 0.0)
     {
@@ -889,7 +856,7 @@ void SpectrumAnalyzerUIElement::ApplyAverageSmoothing(double factor)
 /// <summary>
 /// Smooths the spectrum using peak decay.
 /// </summary>
-void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
+void UIElement::ApplyPeakSmoothing(double factor)
 {
     for (FrequencyBand & Iter : _FrequencyBands)
         Iter.CurValue = Max(::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0, ::isfinite(Iter.NewValue) ? Iter.NewValue : 0.0);
@@ -901,7 +868,7 @@ void SpectrumAnalyzerUIElement::ApplyPeakSmoothing(double factor)
 /// <summary>
 /// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
+HRESULT UIElement::CreateDeviceIndependentResources()
 {
     Log(LogLevel::Trace, "%s: Creating device independent resource", core_api::get_my_file_name());
 
@@ -928,7 +895,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
+HRESULT UIElement::CreateDeviceSpecificResources()
 {
     if (_Direct2dFactory == nullptr)
         return E_FAIL;
@@ -965,7 +932,7 @@ HRESULT SpectrumAnalyzerUIElement::CreateDeviceSpecificResources()
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
+void UIElement::ReleaseDeviceSpecificResources()
 {
     _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();
@@ -976,114 +943,12 @@ void SpectrumAnalyzerUIElement::ReleaseDeviceSpecificResources()
 }
 #pragma endregion
 
-#pragma region ui_element_instance
-
-/// <summary>
-/// Retrieves the name of the element.
-/// </summary>
-void SpectrumAnalyzerUIElement::g_get_name(pfc::string_base & p_out)
-{
-    p_out = STR_COMPONENT_NAME;
-}
-
-/// <summary>
-/// Retrieves the description of the element.
-/// </summary>
-const char * SpectrumAnalyzerUIElement::g_get_description()
-{
-    return "Spectum analyzer visualization using DirectX";
-}
-
-/// <summary>
-/// Retrieves the GUID of the element.
-/// </summary>
-GUID SpectrumAnalyzerUIElement::g_get_guid()
-{
-    static const GUID guid = GUID_UI_ELEMENT_SPECTOGRAM;
-
-    return guid;
-}
-
-/// <summary>
-/// Retrieves the subclass GUID of the element.
-/// </summary>
-GUID SpectrumAnalyzerUIElement::g_get_subclass()
-{
-    return ui_element_subclass_playback_visualisation;
-}
-
-/// <summary>
-/// Retrieves the default configuration of the element.
-/// </summary>
-ui_element_config::ptr SpectrumAnalyzerUIElement::g_get_default_configuration()
-{
-    Configuration DefaultConfiguration;
-
-    ui_element_config_builder Builder;
-
-    DefaultConfiguration.Write(Builder);
-
-    return Builder.finish(g_get_guid());
-}
-
-/// <summary>
-/// Initializes the element's windows.
-/// </summary>
-void SpectrumAnalyzerUIElement::initialize_window(HWND p_parent)
-{
-    this->Create(p_parent, nullptr, nullptr, 0, WS_EX_STATICEDGE);
-}
-
-/// <summary>
-/// Alters element's current configuration. Specified ui_element_config's GUID must be the same as this element's GUID.
-/// </summary>
-void SpectrumAnalyzerUIElement::set_configuration(ui_element_config::ptr data)
-{
-    ui_element_config_parser Parser(data);
-
-    try
-    {
-        _Configuration.Read(Parser);
-    }
-    catch (exception_io & ex)
-    {
-        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
-
-        _Configuration.Reset();
-    }
-
-    UpdateRefreshRateLimit();
-}
-
-/// <summary>
-/// Retrieves element's current configuration. Returned object's GUID must be set to your element's GUID so your element can be re-instantiated with stored settings.
-/// </summary>
-ui_element_config::ptr SpectrumAnalyzerUIElement::get_configuration()
-{
-    ui_element_config_builder Builder;
-
-    _Configuration.Write(Builder);
-
-    return Builder.finish(g_get_guid());
-}
-
-/// <summary>
-/// Used by host to notify the element about various events. See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value. Container classes should dispatch all notifications to their children.
-/// </summary>
-void SpectrumAnalyzerUIElement::notify(const GUID & what, t_size p_param1, const void * p_param2, t_size p_param2size)
-{
-    if (what == ui_element_notify_colors_changed)
-        Invalidate();
-}
-
-#pragma endregion
-
 #pragma region play_callback_impl_base
 
 /// <summary>
 /// Playback advanced to new track.
 /// </summary>
-void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
+void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     SetConfiguration();
 
@@ -1093,7 +958,7 @@ void SpectrumAnalyzerUIElement::on_playback_new_track(metadb_handle_ptr track)
 /// <summary>
 /// Playback stopped.
 /// </summary>
-void SpectrumAnalyzerUIElement::on_playback_stop(play_control::t_stop_reason reason)
+void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
     Invalidate();
 }
@@ -1101,11 +966,9 @@ void SpectrumAnalyzerUIElement::on_playback_stop(play_control::t_stop_reason rea
 /// <summary>
 /// Playback paused/resumed.
 /// </summary>
-void SpectrumAnalyzerUIElement::on_playback_pause(bool)
+void UIElement::on_playback_pause(bool)
 {
     Invalidate();
 }
 
 #pragma endregion
-
-static service_factory_single_t<ui_element_impl_visualisation<SpectrumAnalyzerUIElement>> _Factory;

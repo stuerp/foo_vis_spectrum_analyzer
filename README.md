@@ -14,11 +14,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 * Multiple frequency range and smoothing options
 * Color schemes
 * Uses Direct2D rendering.
+* Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
 * Supports foobar2000 2.0 and later (32-bit and 64-bit version)
 
 ## Requirements
 
 * Tested on Microsoft Windows 10 and later.
+* Tested with [Columns UI](https://yuo.be/columns-ui) 2.1.0.
 * [foobar2000](https://www.foobar2000.org/download) v2.0 or later (32 or 64-bit). ![foobar2000](https://www.foobar2000.org/button-small.png)
 
 ## Getting started
@@ -39,6 +41,7 @@ To build the code:
 
 * [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later.
 * [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-09-23
+* [Columns UI SDK](https://yuo.be/columns-ui-sdk) 7.0.0.
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320.
 
 The following library is included:
@@ -54,6 +57,7 @@ To create the deployment package:
 Create the following directory structure:
 
     3rdParty
+        columns_ui-sdk
         WTL10_10320
     bin
         x86
@@ -61,6 +65,7 @@ Create the following directory structure:
     out
     sdk
 
+* `columns_ui-sdk` contains the Columns UI SDK 7.0.0.
 * `3rdParty/WTL10_10320` contains WTL 10.0.10320.
 * `bin` contains a portable version of foobar2000 x64 for debugging purposes.
 * `bin/x86` contains a portable version of foobar2000 x86 for debugging purposes.
@@ -77,6 +82,10 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.5.0.0, 2023-12-xx
+
+* New: Columns UI support.
 
 v0.4.2.1, 2023-12-05
 
@@ -159,10 +168,6 @@ v0.1.0.1, 2023-11-12
 v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 
 * Initial release.
-
-## To Do
-
-* Support ColumnsUI.
 
 ## Acknowledgements / Credits
 

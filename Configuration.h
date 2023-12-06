@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.04) P. Stuer **/
+/** $VER: Configuration.h (2023.12.06) P. Stuer **/
 
 #pragma once
 
@@ -215,7 +215,8 @@ public:
     void Read(ui_element_config_parser & parser);
     void Write(ui_element_config_builder & builder) const;
 
-    void Read();
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler);
+    void Write(stream_writer * writer, abort_callback & abortHandler) const;
 
     /// <summary>
     /// Gets the duration (in ms) of the window that will be rendered.

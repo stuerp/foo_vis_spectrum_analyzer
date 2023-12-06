@@ -10,7 +10,6 @@
 
 #include <helpers/foobar2000+atl.h>
 #include <helpers/helpers.h>
-#include <helpers/BumpableElem.h>
 
 #include <d2d1.h>
 #include <d2d1helper.h>

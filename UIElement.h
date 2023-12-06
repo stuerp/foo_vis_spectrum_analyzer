@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzerUI.h (2023.12.03) P. Stuer **/
+/** $VER: UIElement.h (2023.12.06) P. Stuer **/
 
 #pragma once
 
@@ -20,35 +20,20 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class SpectrumAnalyzerUIElement : public ui_element_instance, public CWindowImpl<SpectrumAnalyzerUIElement>, private play_callback_impl_base
+class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base
 {
 public:
-    SpectrumAnalyzerUIElement() = delete;
-    SpectrumAnalyzerUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
+    UIElement();
 
-    SpectrumAnalyzerUIElement(const SpectrumAnalyzerUIElement &) = delete;
-    SpectrumAnalyzerUIElement & operator=(const SpectrumAnalyzerUIElement &) = delete;
-    SpectrumAnalyzerUIElement(SpectrumAnalyzerUIElement &&) = delete;
-    SpectrumAnalyzerUIElement & operator=(SpectrumAnalyzerUIElement &&) = delete;
-
-    // Default User Interface
-    #pragma region ui_element_instance interface
-    static void g_get_name(pfc::string_base & p_out);
-    static const char * g_get_description();
-    static GUID g_get_guid();
-    static GUID g_get_subclass();
-    static ui_element_config::ptr g_get_default_configuration();
-
-    void initialize_window(HWND p_parent);
-    virtual void set_configuration(ui_element_config::ptr p_data);
-    virtual ui_element_config::ptr get_configuration();
-    virtual void notify(const GUID & p_what, t_size p_param1, const void * p_param2, t_size p_param2size);
-    #pragma endregion
+    UIElement(const UIElement &) = delete;
+    UIElement & operator=(const UIElement &) = delete;
+    UIElement(UIElement &&) = delete;
+    UIElement & operator=(UIElement &&) = delete;
 
     #pragma region CWindowImpl interface
     static CWndClassInfo & GetWndClassInfo();
 
-    BEGIN_MSG_MAP_EX(SpectrumAnalyzerUIElement)
+    BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_TIMER(OnTimer)
@@ -62,7 +47,6 @@ public:
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -70,7 +54,7 @@ public:
     void OnTimer(UINT_PTR nIDEvent);
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
-    void OnContextMenu(CWindow wnd, CPoint point);
+    virtual void OnContextMenu(CWindow wnd, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
@@ -82,7 +66,18 @@ public:
     #pragma endregion
 
 protected:
-    ui_element_instance_callback::ptr m_callback;
+    /// <summary>
+    /// Retrieves the GUID of the element.
+    /// </summary>
+    static GUID GetGUID() noexcept
+    {
+        static const GUID guid = GUID_UI_ELEMENT_SPECTOGRAM;
+
+        return guid;
+    }
+
+    void UpdateRefreshRateLimit() noexcept;
+    void Log(LogLevel logLevel, const char * format, ...) const noexcept;
 
 private:
     #pragma region Playback callback methods
@@ -100,10 +95,8 @@ private:
 
     #pragma endregion
 
-    void ToggleFullScreen() noexcept;
+    virtual void ToggleFullScreen() noexcept;
     void ToggleHardwareRendering() noexcept;
-    void UpdateRefreshRateLimit() noexcept;
-    void Log(LogLevel logLevel, const char * format, ...) const noexcept;
 
     void Configure() noexcept;
     void SetConfiguration() noexcept;
@@ -137,6 +130,9 @@ private:
     CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
     #pragma endregion
+
+protected:
+    Configuration _Configuration;
 
 private:
     enum
@@ -187,7 +183,6 @@ private:
     #pragma endregion
 
 private:
-    Configuration _Configuration;
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
