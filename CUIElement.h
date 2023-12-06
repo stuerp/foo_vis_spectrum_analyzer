@@ -44,7 +44,7 @@ public:
     /// <summary>
     /// Creates or transfers the window.
     /// </summary>
-    HWND create_or_transfer_window(HWND parent, const window_host_ptr & new_host, const ui_helpers::window_position_t & position)
+    HWND create_or_transfer_window(HWND parent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
     {
         if ((HWND) *this)
         {
@@ -52,13 +52,13 @@ public:
             SetParent(parent);
 
             _Host->relinquish_ownership(*this);
-            _Host = new_host;
+            _Host = newHost;
 
             SetWindowPos(0, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
         }
         else
         {
-            _Host = new_host;
+            _Host = newHost;
 
             CRect r;
 

@@ -296,7 +296,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     {
         _LastMousePos = pt;
     
-        FLOAT ScaledX = (FLOAT) ::MulDiv(pt.x, USER_DEFAULT_SCREEN_DPI, _DPI);
+        FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
         int Index = (int) ::floor(Map(ScaledX, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
 
