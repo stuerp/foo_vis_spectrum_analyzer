@@ -71,7 +71,7 @@ protected:
     /// </summary>
     static GUID GetGUID() noexcept
     {
-        static const GUID guid = GUID_UI_ELEMENT_SPECTOGRAM;
+        static const GUID guid = GUID_UI_ELEMENT_SPECTRUM_ANALYZER;
 
         return guid;
     }
