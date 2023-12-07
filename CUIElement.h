@@ -98,12 +98,12 @@ public:
     #pragma endregion
 
     #pragma region container_uie_window_v3_t interface
-
+/*
     const window_host_ptr & get_host() const
     {
         return _Host;
     }
-
+*/
     #pragma endregion
 
     #pragma region extension_base interface
