@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.06) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.08) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
