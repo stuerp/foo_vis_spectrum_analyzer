@@ -83,7 +83,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.5.0.0, 2023-12-xx
+v0.5.0.0, 2023-12-08
 
 * New: Columns UI support.
 * Fixed: Tooltips display at the correct position on installations scaled higher than 100%.

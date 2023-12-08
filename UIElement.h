@@ -69,7 +69,7 @@ protected:
     /// <summary>
     /// Retrieves the GUID of the element.
     /// </summary>
-    static GUID GetGUID() noexcept
+    static const GUID & GetGUID() noexcept
     {
         static const GUID guid = GUID_UI_ELEMENT_SPECTRUM_ANALYZER;
 
