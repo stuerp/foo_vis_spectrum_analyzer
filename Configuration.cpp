@@ -583,7 +583,7 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
     reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
 
     reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-    reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+    reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
 
     reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
     reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
