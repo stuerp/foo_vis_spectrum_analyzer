@@ -9,8 +9,6 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
-
 using namespace std;
 
 enum class WindowFunctions

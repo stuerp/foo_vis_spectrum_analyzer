@@ -83,6 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.5.1.0, 2023-12-xx
+
+* Improved: Rendering occurs on a separate thread resulting in smoother animation.
+
 v0.5.0.0, 2023-12-08
 
 * New: Columns UI support.

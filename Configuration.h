@@ -240,8 +240,8 @@ public:
         Transform _Transform;                                           // FFT or CQT
 
         WindowFunctions _WindowFunction;
-        double _WindowParameter;                                        // 0 .. 10
-        double _WindowSkew;                                             // -1 .. 1
+        double _WindowParameter;                                        // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
+        double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
 
         uint32_t _SelectedChannels;

@@ -12,14 +12,12 @@
 #include "Resources.h"
 #include "Gradients.h"
 
-#include <complex>
-
 #pragma hdrstop
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _LastRefresh(0), _RefreshInterval(10), _TrackingToolInfo()
+UIElement::UIElement(): _TrackingToolInfo()
 {
 }
 
@@ -56,6 +54,8 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    ::InitializeCriticalSection(&_Lock);
+
     _DPI = GetDpiForWindow(m_hWnd);
 
     HRESULT hr = CreateDeviceIndependentResources();
@@ -85,8 +85,44 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     // Applies the initial configuration.
     SetConfiguration();
+/*
+    // Start the timer.
+    {
+        _TimerData.hWnd = m_hWnd;
+        _TimerData.Configuration = &_Configuration;
+
+        DWORD ThreadId = 0;
+
+        HANDLE hThread = ::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) TimerMain, &_TimerData, STANDARD_RIGHTS_REQUIRED, &ThreadId);
+
+        if (hThread != NULL)
+            ::CloseHandle(hThread); 
+    }
+*/
+    {
+        _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+
+        if (_ThreadPoolTimer)
+        {
+            FILETIME DueTime = { };
+
+            ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
+        }
+    }
 
     return 0;
+}
+
+/// <summary>
+/// Handles a timer tick.
+/// </summary>
+VOID CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
+{
+    SYSTEMTIME st; ::GetSystemTime(&st);
+
+//  ::OutputDebugStringA(pfc::format(st.wHour, ":", st.wMinute, ":", st.wSecond, ".", st.wMilliseconds, "\n"));
+
+    ((UIElement *) context)->RenderFrame();
 }
 
 /// <summary>
@@ -94,6 +130,14 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 /// </summary>
 void UIElement::OnDestroy()
 {
+    ::EnterCriticalSection(&_Lock);
+
+    if (_ThreadPoolTimer)
+    {
+        ::CloseThreadpoolTimer(_ThreadPoolTimer);
+        _ThreadPoolTimer = nullptr;
+    }
+
     if (_WindowFunction)
     {
         delete _WindowFunction;
@@ -117,8 +161,10 @@ void UIElement::OnDestroy()
     ReleaseDeviceSpecificResources();
 
     _Direct2dFactory.Release();
-}
 
+    ::LeaveCriticalSection(&_Lock);
+}
+/*
 /// <summary>
 /// Handles the WM_TIMER message.
 /// </summary>
@@ -128,7 +174,7 @@ void UIElement::OnTimer(UINT_PTR timerID)
 
     Invalidate();
 }
-
+*/
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
@@ -137,21 +183,6 @@ void UIElement::OnPaint(CDCHandle hDC)
     RenderFrame();
 
     ValidateRect(nullptr);
-
-    ULONGLONG Now = ::GetTickCount64(); // in ms, with a resolution of the system timer, which is typically in the range of 10ms to 16ms.
-
-    if (_VisualisationStream.is_valid())
-    {
-        ULONGLONG NextRefresh = _LastRefresh + _RefreshInterval;
-
-        if (NextRefresh < Now)
-            NextRefresh = Now;
-
-        // Schedule the next refresh. Limited to USER_TIMER_MINIMUM (10ms / 100Hz).
-        SetTimer(ID_REFRESH_TIMER, (UINT)(NextRefresh - Now));
-    }
-
-    _LastRefresh = Now;
 }
 
 /// <summary>
@@ -356,7 +387,12 @@ void UIElement::ToggleHardwareRendering() noexcept
 /// </summary>
 void UIElement::UpdateRefreshRateLimit() noexcept
 {
-    _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
+    if (_ThreadPoolTimer)
+    {
+        FILETIME DueTime = { };
+
+        ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
+    }
 }
 
 /// <summary>
@@ -366,12 +402,14 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
+        ::EnterCriticalSection(&_Lock);
+
         DialogParameters dp = { m_hWnd, &_Configuration };
 
-        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) == NULL)
-            return;
+        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
+            _ConfigurationDialog.ShowWindow(SW_SHOW);
 
-        _ConfigurationDialog.ShowWindow(SW_SHOW);
+        ::LeaveCriticalSection(&_Lock);
     }
     else
         _ConfigurationDialog.BringWindowToTop();
@@ -382,6 +420,8 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::SetConfiguration() noexcept
 {
+    ::EnterCriticalSection(&_Lock);
+
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
     // Initialize the frequency bands.
@@ -444,7 +484,9 @@ void UIElement::SetConfiguration() noexcept
 
     Resize();
 
-    InvalidateRect(NULL);
+    ::LeaveCriticalSection(&_Lock);
+
+//  InvalidateRect(NULL);
 }
 
 /// <summary>
@@ -514,6 +556,44 @@ void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
     va_end(va);
 }
 
+/// <summary>
+/// Drives the refresh.
+/// </summary>
+/*
+DWORD WINAPI UIElement::TimerMain(LPVOID parameter)
+{
+    TimerData * td = (TimerData *) parameter;
+
+    if (HANDLE hTimer = ::CreateWaitableTimerW(NULL, FALSE, NULL))
+    {
+        LARGE_INTEGER li = { };
+
+        if (::SetWaitableTimer(hTimer, &li, (1000L / (LONG) td->Configuration->_RefreshRateLimit), nullptr, nullptr, FALSE))
+        {
+            MSG Msg = { };
+
+            while (Msg.message != WM_QUIT)
+            {
+                if (::PeekMessageW(&Msg, NULL, 0, 0, PM_REMOVE))
+                {
+                    ::TranslateMessage(&Msg);
+                    ::DispatchMessageW(&Msg);
+                }
+                else
+                if (::MsgWaitForMultipleObjects(1, &hTimer, FALSE, INFINITE, QS_ALLINPUT) == WAIT_OBJECT_0)
+                {
+//                  ::InvalidateRect(td->hWnd, nullptr, TRUE);
+                }
+            }
+
+            ::CloseHandle(hTimer);
+            hTimer = NULL;
+        }
+    }
+
+    return TRUE;
+}
+*/
 #pragma endregion
 
 #pragma region Rendering
@@ -523,6 +603,9 @@ void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
 /// </summary>
 HRESULT UIElement::RenderFrame()
 {
+    if (!TryEnterCriticalSection(&_Lock))
+        return E_ABORT;
+
     _FrameCounter.NewFrame();
 
     HRESULT hr = CreateDeviceSpecificResources();
@@ -555,7 +638,7 @@ HRESULT UIElement::RenderFrame()
             }
         }
 
-        if (_Configuration._LogLevel != LogLevel::None)
+//      if (_Configuration._LogLevel != LogLevel::None)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
@@ -567,6 +650,8 @@ HRESULT UIElement::RenderFrame()
             hr = S_OK;
         }
     }
+
+    ::LeaveCriticalSection(&_Lock);
 
     return hr;
 }

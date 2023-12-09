@@ -42,7 +42,7 @@ void Configuration::Reset() noexcept
     _UseAntialiasing = true;
 
     _UseZeroTrigger = false;
-    _WindowDuration = 100;
+    _WindowDuration = 50;
 
     // Transform
     _Transform = Transform::FFT;
