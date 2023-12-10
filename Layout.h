@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.09) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.10) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -12,8 +12,8 @@
 #define H_CBX       14 // Combo box
 #define H_CHB       10 // Check box
 
-#define W_A00      510 // Dialog width (in dialog units)
-#define H_A00      476 // Dialog height (in dialog units)
+#define W_A00      442 // Dialog width (in dialog units)
+#define H_A00      294 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -91,7 +91,7 @@
     #define Y_A88    Y_C06 + H_C06 + IY
     #pragma endregion
 
-#define W_B05   186
+#define W_B05   174
 #define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_A88 + 7
 #pragma endregion
 
@@ -192,7 +192,7 @@
     #define Y_A40    Y_A39
     #pragma endregion
 
-#define W_B00    5 + W_A15 + IX + W_A16 + 12 + 5
+#define W_B00   W_B05
 #define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
@@ -377,7 +377,7 @@
     #define Y_A36    Y_A35
     #pragma endregion
 
-#define W_B01   W_B00 // 5 + W_A01 + IX + W_A02 + 5
+#define W_B01   186
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 

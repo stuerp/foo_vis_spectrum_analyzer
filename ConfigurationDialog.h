@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.09) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.10) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -17,7 +17,6 @@
 #include <atlframe.h>
 
 #include "Resources.h"
-//#include "Layout.h"
 #include "Configuration.h"
 
 #include "CMenuListBox.h"
@@ -109,13 +108,15 @@ private:
         SetMsgHandled(FALSE);
     }
 
+#ifdef _DEBUG
     /// <summary>
     /// Returns a brush that the system uses to draw the dialog background. For layout debugging purposes.
     /// </summary>
-    HBRUSH OnCtlColorDlg(HDC, HWND)
+    HBRUSH OnCtlColorDlg(HDC, HWND) const noexcept
     {
         return (HBRUSH)::GetStockObject(DKGRAY_BRUSH);
     }
+#endif
 
     void Initialize();
     void Terminate();

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.12.09) P. Stuer **/
+/** $VER: Resources.rc (2023.12.10) P. Stuer **/
 
 #include "Resources.h"
 
@@ -51,7 +51,7 @@ filesubtype     VFT2_UNKNOWN
 IDD_CONFIGURATION dialogex 0, 0, W_A00, H_A00
 caption "Spectrum Analyzer Configuration"
 font 8, "MS Shell Dlg", 400, 0, 0x1
-style DS_SETFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW
 {
     listbox IDC_MENULIST, X_D01, Y_D01, W_D01, H_D01, LBS_OWNERDRAWVARIABLE | LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 

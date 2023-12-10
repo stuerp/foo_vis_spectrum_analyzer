@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.08) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.10) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -253,6 +253,13 @@ void Configuration::Read(ui_element_config_parser & parser)
     parser >> _DialogBounds.top;
     parser >> _DialogBounds.right;
     parser >> _DialogBounds.bottom;
+
+    // Reduce the size to make sure it fits on screens scaled to 150%.
+    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+        _DialogBounds.right = _DialogBounds.left + 1910;
+
+    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+        _DialogBounds.bottom = _DialogBounds.top + 995;
 
     parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 

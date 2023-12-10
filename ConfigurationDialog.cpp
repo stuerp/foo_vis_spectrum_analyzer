@@ -17,7 +17,7 @@
 /// </summary>
 BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 {
-    DlgResize_Init(true, false, WS_CLIPCHILDREN);
+    DlgResize_Init(true, true, WS_CLIPCHILDREN);
 
     DialogParameters * dp = (DialogParameters *) lParam;
 
@@ -48,9 +48,6 @@ void ConfigurationDialog::Initialize()
 {
     Terminate();
 
-    UpdatePage1(SW_HIDE);
-    UpdatePage2(SW_HIDE);
-
     // Initializes the menu list.
     {
         _MenuList.Initialize(GetDlgItem(IDC_MENULIST));
@@ -65,6 +62,7 @@ void ConfigurationDialog::Initialize()
         _MenuList.SetCurSel(0);
 
         UpdatePage1(SW_SHOW);
+        UpdatePage2(SW_HIDE);
     }
 
     #pragma region Transform
