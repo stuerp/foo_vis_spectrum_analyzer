@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.06) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.10) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -10,6 +10,36 @@
 #include "ConfigurationDialog.h"
 #include "Math.h"
 #include "Gradients.h"
+#include "Layout.h"
+
+/// <summary>
+/// Initializes the dialog.
+/// </summary>
+BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
+{
+    DlgResize_Init(true, false, WS_CLIPCHILDREN);
+
+    DialogParameters * dp = (DialogParameters *) lParam;
+
+    _hParent = dp->_hWnd;
+    _Configuration = dp->_Configuration;
+
+    if (IsRectEmpty(&_Configuration->_DialogBounds))
+    {
+        _Configuration->_DialogBounds.right  = W_A00;
+        _Configuration->_DialogBounds.bottom = H_A00;
+
+        ::MapDialogRect(m_hWnd, &_Configuration->_DialogBounds);
+    }
+
+    _OldConfiguration = *_Configuration;
+
+    Initialize();
+
+    MoveWindow(&_Configuration->_DialogBounds);
+
+    return TRUE;
+}
 
 /// <summary>
 /// Initializes the controls of the dialog.
@@ -18,9 +48,28 @@ void ConfigurationDialog::Initialize()
 {
     Terminate();
 
+    UpdatePage1(SW_HIDE);
+    UpdatePage2(SW_HIDE);
+
+    // Initializes the menu list.
+    {
+        _MenuList.Initialize(GetDlgItem(IDC_MENULIST));
+
+        _MenuList.ResetContent();
+
+        const WCHAR * Labels[] = { L"Transform", L"Spectrum" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            _MenuList.AddString(Labels[i]);
+
+        _MenuList.SetCurSel(0);
+
+        UpdatePage1(SW_SHOW);
+    }
+
     #pragma region Transform
     {
-        auto w = (CComboBox) GetDlgItem(IDC_TRANSFORM);
+        auto w = (CComboBox) GetDlgItem(IDC_METHOD);
 
         w.ResetContent();
 
@@ -338,7 +387,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region X Axis
     {
-        auto w = (CComboBox) GetDlgItem(IDC_X_AXIS);
+        auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
 
         w.ResetContent();
 
@@ -354,7 +403,7 @@ void ConfigurationDialog::Initialize()
     #pragma region Y Axis
     {
         {
-            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
+            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
 
             w.ResetContent();
 
@@ -504,6 +553,8 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _MenuList.Terminate();
+
     _WindowParameter.Terminate();
     _WindowSkew.Terminate();
 
@@ -556,8 +607,18 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
+        case IDC_MENULIST:
+        {
+            int Selection = _MenuList.GetCurSel();
+
+            UpdatePage1((Selection == 0) ? SW_SHOW : SW_HIDE);
+            UpdatePage2((Selection == 0) ? SW_HIDE : SW_SHOW);
+
+            return;
+        }
+
     #pragma region Transform
-        case IDC_TRANSFORM:
+        case IDC_METHOD:
         {
             _Configuration->_Transform = (Transform) SelectedIndex;
 
@@ -621,7 +682,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
 
     #pragma region X axis
-        case IDC_X_AXIS:
+        case IDC_X_AXIS_MODE:
         {
             _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
             break;
@@ -629,7 +690,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
 
     #pragma region Y axis
-        case IDC_Y_AXIS:
+        case IDC_Y_AXIS_MODE:
         {
             _Configuration->_YAxisMode = (YAxisMode) SelectedIndex;
 
@@ -689,7 +750,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if ((code != EN_CHANGE) || (_Configuration == nullptr))
+    if ((_Configuration == nullptr) || (code != EN_CHANGE))
         return;
 
     WCHAR Text[MAX_PATH];
@@ -710,9 +771,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
             break;
         }
-    #pragma endregion
 
-    #pragma region FFT
         case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -832,6 +891,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 /// </summary>
 void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 {
+    if (_Configuration == nullptr)
+        return;
+
     switch (id)
     {
     #pragma region FFT
@@ -1050,6 +1112,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             Terminate();
 
             DestroyWindow();
+
+            _Configuration = nullptr;
             break;
         }
 
@@ -1065,6 +1129,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 /// </summary>
 LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 {
+    if (_Configuration == nullptr)
+        return -1;
+
     LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
     int NewPos = nmud->iPos + nmud->iDelta;
@@ -1202,6 +1269,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 /// </summary>
 LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 {
+    if (_Configuration == nullptr)
+        return -1;
+
     switch (nmhd->idFrom)
     {
         case IDC_COLORS:
@@ -1319,6 +1389,94 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
     UpdateChannelsMenu();
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+}
+
+/// <summary>
+/// Update page 1.
+/// </summary>
+void ConfigurationDialog::UpdatePage1(int mode)
+{
+    static const int Page1[] =
+    {
+        // Transform
+        IDC_TRANSFORM_GROUP,
+            IDC_METHOD_LBL, IDC_METHOD,
+            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
+            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
+            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+            IDC_CHANNELS,
+        // FFT
+        IDC_FFT_GROUP,
+            IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
+            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
+            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
+            IDC_SMOOTH_LOWER_FREQUENCIES,
+            IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+        // Frequencies
+        IDC_FREQUENCIES_GROUP,
+            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
+            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
+            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
+            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
+            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+    };
+
+    for (size_t i = 0; i < _countof(Page1); ++i)
+    {
+        auto w = GetDlgItem(Page1[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(mode);
+    }
+}
+
+/// <summary>
+/// Update page 2.
+/// </summary>
+void ConfigurationDialog::UpdatePage2(int mode)
+{
+    static const int Page2[] =
+    {
+        // Bands
+        IDC_BANDS,
+            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_SHOW_TOOLTIPS,
+            IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
+            IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
+            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+        // X axis
+        IDC_X_AXIS,
+            IDC_X_AXIS_MODE_LBL, IDC_X_AXIS_MODE,
+        // Y axis
+        IDC_Y_AXIS,
+            IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
+            IDC_AMPLITUDE_LBL_1, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_LO_SPIN, IDC_AMPLITUDE_LBL_2, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_HI_SPIN, IDC_AMPLITUDE_LBL_3,
+            IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
+            IDC_USE_ABSOLUTE,
+            IDC_GAMMA_LBL, IDC_GAMMA,
+        // Colors
+        IDC_COLORS_GROUP,
+            IDC_BACK_COLOR_LBL, IDC_BACK_COLOR,
+            IDC_X_TEXT_COLOR_LBL, IDC_X_TEXT_COLOR,
+            IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR,
+            IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR,
+            IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR,
+            IDC_BAND_BACK_COLOR_LBL, IDC_BAND_BACK_COLOR,
+    };
+
+    for (size_t i = 0; i < _countof(Page2); ++i)
+    {
+        auto w = GetDlgItem(Page2[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(mode);
+    }
 }
 
 /// <summary>

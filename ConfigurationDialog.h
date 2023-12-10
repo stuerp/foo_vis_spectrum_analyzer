@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.04) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.09) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -17,9 +17,10 @@
 #include <atlframe.h>
 
 #include "Resources.h"
-#include "Layout.h"
+//#include "Layout.h"
 #include "Configuration.h"
 
+#include "CMenuListBox.h"
 #include "CNumericEdit.h"
 #include "CColorButton.h"
 #include "CColorListBox.h"
@@ -67,6 +68,8 @@ public:
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
+        DLGRESIZE_CONTROL(IDC_MENULIST, DLSZ_SIZE_Y)
+/*
         DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
             DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
             DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
@@ -81,7 +84,7 @@ public:
             DLGRESIZE_CONTROL(IDC_HOLD_TIME_LBL, DLSZ_MOVE_Y)
             DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
             DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
-
+*/
         DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -92,34 +95,7 @@ public:
 
 private:
     #pragma region CDialogImpl
-    /// <summary>
-    /// Initializes the dialog.
-    /// </summary>
-    BOOL OnInitDialog(CWindow w, LPARAM lParam)
-    {
-        DialogParameters * dp = (DialogParameters *) lParam;
-
-        _hParent = dp->_hWnd;
-        _Configuration = dp->_Configuration;
-
-        if (IsRectEmpty(&_Configuration->_DialogBounds))
-        {
-            _Configuration->_DialogBounds.right  = W_A00;
-            _Configuration->_DialogBounds.bottom = H_A00;
-
-            ::MapDialogRect(m_hWnd, &_Configuration->_DialogBounds);
-        }
-
-        _OldConfiguration = *_Configuration;
-
-        DlgResize_Init(true, false, WS_CLIPCHILDREN);
-
-        Initialize();
-
-        MoveWindow(&_Configuration->_DialogBounds);
-
-        return TRUE;
-    }
+    BOOL OnInitDialog(CWindow w, LPARAM lParam);
 
     /// <summary>
     /// Handles the Close message.
@@ -162,6 +138,8 @@ private:
     void UpdateControls();
     void UpdateColorControls();
     void UpdateChannelsMenu();
+    void UpdatePage2(int mode);
+    void UpdatePage1(int mode);
 
     /// <summary>
     /// Sets the display version of the frequency.
@@ -210,6 +188,8 @@ private:
 
     Configuration * _Configuration;
     Configuration _OldConfiguration;
+
+    CMenuListBox _MenuList;
 
     CNumericEdit _WindowParameter;
     CNumericEdit _WindowSkew;

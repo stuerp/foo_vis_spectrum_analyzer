@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2023.12.06) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.09) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -104,25 +104,13 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
         if (_ThreadPoolTimer)
         {
-            FILETIME DueTime = { };
+            FILETIME DueTime = { 1000, 0 };
 
-            ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
+//          ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
         }
     }
 
     return 0;
-}
-
-/// <summary>
-/// Handles a timer tick.
-/// </summary>
-VOID CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
-{
-    SYSTEMTIME st; ::GetSystemTime(&st);
-
-//  ::OutputDebugStringA(pfc::format(st.wHour, ":", st.wMinute, ":", st.wSecond, ".", st.wMilliseconds, "\n"));
-
-    ((UIElement *) context)->RenderFrame();
 }
 
 /// <summary>
@@ -183,6 +171,8 @@ void UIElement::OnPaint(CDCHandle hDC)
     RenderFrame();
 
     ValidateRect(nullptr);
+
+    UpdateRefreshRateLimit();
 }
 
 /// <summary>
@@ -554,6 +544,14 @@ void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
     console::printfv(format, va);
 
     va_end(va);
+}
+
+/// <summary>
+/// Handles a timer tick.
+/// </summary>
+void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
+{
+    ((UIElement *) context)->RenderFrame();
 }
 
 /// <summary>
