@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.cpp (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2023.12.10) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -51,7 +51,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
     _GradientStops = gradientStops;
 
     ReleaseDeviceSpecificResources();
-    InvalidateRect(NULL);
+    Invalidate();
 }
 
 /// <summary>
@@ -71,7 +71,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
     _GradientStops.clear();
 
     ReleaseDeviceSpecificResources();
-    InvalidateRect(NULL);
+    Invalidate();
 }
 
 /// <summary>

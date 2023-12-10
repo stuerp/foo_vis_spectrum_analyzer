@@ -205,18 +205,23 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW
 
         ltext           "Background:",      IDC_BACK_COLOR_LBL,         X_A72, Y_A72 + 2, W_A72, H_A72, SS_NOPREFIX
         ltext           "",                 IDC_BACK_COLOR,             X_A73, Y_A73, W_A73, H_A73, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                 IDC_BACK_COLOR_DEF,         "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C07, Y_C07, W_C07, H_C07
 
         ltext           "X-axis Text:"      IDC_X_TEXT_COLOR_LBL,       X_A74, Y_A74 + 2, W_A74, H_A74, SS_NOPREFIX
         ltext           "",                 IDC_X_TEXT_COLOR,           X_A75, Y_A75, W_A75, H_A75, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                 IDC_X_TEXT_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C08, Y_C08, W_C08, H_C08
 
         ltext           "X-axis Line:"      IDC_X_LINE_COLOR_LBL,       X_A76, Y_A76 + 2, W_A76, H_A76, SS_NOPREFIX
         ltext           "",                 IDC_X_LINE_COLOR,           X_A77, Y_A77, W_A77, H_A77, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                 IDC_X_LINE_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C09, Y_C09, W_C09, H_C09
 
         ltext           "Y-axis Text:",     IDC_Y_TEXT_COLOR_LBL,       X_A78, Y_A78 + 2, W_A78, H_A78, SS_NOPREFIX
         ltext           "",                 IDC_Y_TEXT_COLOR,           X_A79, Y_A79, W_A79, H_A79, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                 IDC_Y_TEXT_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C10, Y_C10, W_C10, H_C10
 
         ltext           "Y-axis Line:",     IDC_Y_LINE_COLOR_LBL,       X_A80, Y_A80 + 2, W_A80, H_A80, SS_NOPREFIX
         ltext           "",                 IDC_Y_LINE_COLOR,           X_A81, Y_A81, W_A81, H_A81, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                 IDC_Y_LINE_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C11, Y_C11, W_C11, H_C11
 
         ltext           "Band background:", IDC_BAND_BACK_COLOR_LBL,    X_A82, Y_A82 + 2, W_A82, H_A82, SS_NOPREFIX
         ltext           "",                 IDC_BAND_BACK_COLOR,        X_A83, Y_A83, W_A83, H_A83, SS_NOTIFY, WS_EX_STATICEDGE

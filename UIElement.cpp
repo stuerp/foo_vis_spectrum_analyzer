@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2023.12.09) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.10) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -445,10 +445,6 @@ void UIElement::SetConfiguration() noexcept
 
     _Spectrum.Initialize(&_Configuration);
 
-    _Spectrum.SetGradientStops(_Configuration._GradientStops);
-
-    _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
-
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
     // Forces the recreation of the window function.
@@ -614,7 +610,7 @@ HRESULT UIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _RenderTarget->Clear(_Configuration._BackColor);
+        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
         _XAxis.Render(_RenderTarget);
 

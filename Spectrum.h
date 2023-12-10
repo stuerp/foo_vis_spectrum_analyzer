@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.12.01) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.12.10) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -28,6 +28,9 @@ public:
     {
         _Configuration = configuration;
 
+        SetGradientStops(_Configuration->_GradientStops);
+        SetDrawBandBackground(_Configuration->_DrawBandBackground);
+
         ReleaseDeviceSpecificResources();
     }
 
@@ -40,7 +43,7 @@ public:
     {
         _GradientStops = gradientStops;
 
-        _ForegroundBrush.Release();
+        _BandForegroundBrush.Release();
     }
 
     void SetDrawBandBackground(bool drawBandBackground)
@@ -74,7 +77,7 @@ public:
 
             // Draw the background.
             if (_DrawBandBackground)
-                renderTarget->FillRectangle(Rect, _BackgroundBrush);
+                renderTarget->FillRectangle(Rect, _BandBackgroundBrush);
 
             // Don't render anything above the Nyquist frequency.
             if (Iter.Ctr < (sampleRate / 2.))
@@ -84,7 +87,7 @@ public:
                 {
                     Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
-                    renderTarget->FillRectangle(Rect, _ForegroundBrush);
+                    renderTarget->FillRectangle(Rect, _BandForegroundBrush);
                 }
 
                 // Draw the peak indicator.
@@ -93,7 +96,7 @@ public:
                     Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
                     Rect.bottom = Rect.top + 1.f;
 
-                    ID2D1Brush * Brush = (configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _ForegroundBrush : (ID2D1Brush *) _WhiteBrush;
+                    ID2D1Brush * Brush = (configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
 
                     if (configuration._PeakMode == PeakMode::FadeOut)
                         Brush->SetOpacity((FLOAT) Iter.Opacity);
@@ -120,7 +123,7 @@ public:
     {
         HRESULT hr = S_OK;
 
-        if ((_ForegroundBrush == nullptr) && SUCCEEDED(hr))
+        if ((_BandForegroundBrush == nullptr) && SUCCEEDED(hr))
         {
             if (!_GradientStops.empty())
             {
@@ -132,13 +135,13 @@ public:
                 {
                     D2D1_SIZE_F Size = renderTarget->GetSize();
 
-                    hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_ForegroundBrush);
+                    hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_BandForegroundBrush);
                 }
             }
         }
 
-        if ((_BackgroundBrush == nullptr) && SUCCEEDED(hr))
-            hr = renderTarget->CreateSolidColorBrush(_Configuration->_BandBackColor, &_BackgroundBrush);
+        if ((_BandBackgroundBrush == nullptr) && SUCCEEDED(hr))
+            hr = renderTarget->CreateSolidColorBrush(_Configuration->_BandBackColor, &_BandBackgroundBrush);
 
         if ((_WhiteBrush == nullptr) && SUCCEEDED(hr))
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
@@ -153,8 +156,8 @@ public:
     {
         _WhiteBrush.Release();
 
-        _BackgroundBrush.Release();
-        _ForegroundBrush.Release();
+        _BandBackgroundBrush.Release();
+        _BandForegroundBrush.Release();
     }
 
 private:
@@ -170,6 +173,6 @@ private:
 
     CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
 
-    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
-    CComPtr<ID2D1LinearGradientBrush> _ForegroundBrush;
+    CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
+    CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
 };

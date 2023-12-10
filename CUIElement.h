@@ -17,7 +17,7 @@ namespace uie
 class CUIElement : public UIElement, public window
 {
 public:
-    CUIElement() { }
+    CUIElement();
 
     CUIElement(const CUIElement &) = delete;
     CUIElement & operator=(const CUIElement &) = delete;

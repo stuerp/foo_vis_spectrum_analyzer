@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.06) P. Stuer **/
+/** $VER: Configuration.h (2023.12.10) P. Stuer **/
 
 #pragma once
 
@@ -283,19 +283,26 @@ public:
 
     #pragma region Rendering
         D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
+        bool _UseCustomBackColor;
 
         #pragma region X axis
             XAxisMode _XAxisMode;
 
             D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomXTextColor;
+
             D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomXLineColor;
         #pragma endregion
 
         #pragma region Y axis
             YAxisMode _YAxisMode;
 
             D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomYTextColor;
+
             D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomYLineColor;
 
             double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
             double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
@@ -327,7 +334,12 @@ public:
 
     #pragma endregion
 
+    #pragma region Not Serialized
     LogLevel _LogLevel;
+
+    t_ui_color _DefBackColor;
+    t_ui_color _DefTextColor;
+    #pragma endregion
 /*
     bandwidthOffset: 1,
 
@@ -336,9 +348,6 @@ public:
     clampPeaks: true,
 
     labelTuning: 440,
-
-    showDC: true,
-    showNyquist: true,
 */
 public:
     /// <summary>
@@ -358,5 +367,5 @@ public:
     void UpdateGradient();
 
 private:
-    const size_t _CurrentVersion = 7;
+    const size_t _CurrentVersion = 8;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.09) P. Stuer **/
+/** $VER: Resources.h (2023.12.10) P. Stuer **/
 
 #pragma once
 
@@ -76,6 +76,11 @@
 #define IDC_WINDOW_SKEW                 2030
 
 #define IDC_CHANNELS                    2036
+
+#define IDM_CHANNELS                    9000
+
+#define IDM_CHANNELS_FIRST              9100
+#define IDM_CHANNELS_LAST               9118
 
 // FFT
 
@@ -215,20 +220,26 @@
 
 #define IDC_BACK_COLOR_LBL              7010
 #define IDC_BACK_COLOR                  7012
-#define IDC_X_TEXT_COLOR_LBL            7014
-#define IDC_X_TEXT_COLOR                7016
-#define IDC_X_LINE_COLOR_LBL            7018
-#define IDC_X_LINE_COLOR                7020
-#define IDC_Y_TEXT_COLOR_LBL            7022
-#define IDC_Y_TEXT_COLOR                7024
-#define IDC_Y_LINE_COLOR_LBL            7026
-#define IDC_Y_LINE_COLOR                7028
-#define IDC_BAND_BACK_COLOR_LBL         7030
-#define IDC_BAND_BACK_COLOR             7032
+#define IDC_BACK_COLOR_DEF              7014
+
+#define IDC_X_TEXT_COLOR_LBL            7016
+#define IDC_X_TEXT_COLOR                7018
+#define IDC_X_TEXT_COLOR_DEF            7020
+
+#define IDC_X_LINE_COLOR_LBL            7022
+#define IDC_X_LINE_COLOR                7024
+#define IDC_X_LINE_COLOR_DEF            7026
+
+#define IDC_Y_TEXT_COLOR_LBL            7028
+#define IDC_Y_TEXT_COLOR                7030
+#define IDC_Y_TEXT_COLOR_DEF            7032
+
+#define IDC_Y_LINE_COLOR_LBL            7034
+#define IDC_Y_LINE_COLOR                7036
+#define IDC_Y_LINE_COLOR_DEF            7038
+
+#define IDC_BAND_BACK_COLOR_LBL         7040
+#define IDC_BAND_BACK_COLOR             7042
+#define IDC_BAND_BACK_COLOR_DEF         7044
 
 #define IDC_RESET                       8000
-
-#define IDM_CHANNELS                    9000
-
-#define IDM_CHANNELS_FIRST              9100
-#define IDM_CHANNELS_LAST               9118

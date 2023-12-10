@@ -538,6 +538,12 @@ void ConfigurationDialog::Initialize()
     _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
     _BandBackColor.Initialize(GetDlgItem(IDC_BAND_BACK_COLOR));
 
+    SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
+    SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
+    SendDlgItemMessageW(IDC_X_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXLineColor);
+    SendDlgItemMessageW(IDC_Y_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYTextColor);
+    SendDlgItemMessageW(IDC_Y_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYLineColor);
+
     UpdateColorControls();
 
     #pragma endregion
@@ -1090,6 +1096,41 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_BACK_COLOR_DEF:
+        {
+            _Configuration->_UseCustomBackColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_X_TEXT_COLOR_DEF:
+        {
+            _Configuration->_UseCustomXTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_X_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomXLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_Y_TEXT_COLOR_DEF:
+        {
+            _Configuration->_UseCustomYTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_Y_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomYLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
         case IDC_RESET:
         {
             _Configuration->Reset();
@@ -1460,11 +1501,11 @@ void ConfigurationDialog::UpdatePage2(int mode)
             IDC_GAMMA_LBL, IDC_GAMMA,
         // Colors
         IDC_COLORS_GROUP,
-            IDC_BACK_COLOR_LBL, IDC_BACK_COLOR,
-            IDC_X_TEXT_COLOR_LBL, IDC_X_TEXT_COLOR,
-            IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR,
-            IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR,
-            IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR,
+            IDC_BACK_COLOR_LBL, IDC_BACK_COLOR, IDC_BACK_COLOR_DEF,
+            IDC_X_TEXT_COLOR_LBL, IDC_X_TEXT_COLOR, IDC_X_TEXT_COLOR_DEF,
+            IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR, IDC_X_LINE_COLOR_DEF,
+            IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR, IDC_Y_TEXT_COLOR_DEF,
+            IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
             IDC_BAND_BACK_COLOR_LBL, IDC_BAND_BACK_COLOR,
     };
 
@@ -1589,12 +1630,23 @@ void ConfigurationDialog::UpdateColorControls()
     }
 
     {
-        _BackColor.SetColor(_Configuration->_BackColor);
-        _XTextColor.SetColor(_Configuration->_XTextColor);
-        _XLineColor.SetColor(_Configuration->_XLineColor);
-        _YTextColor.SetColor(_Configuration->_YTextColor);
-        _YLineColor.SetColor(_Configuration->_YLineColor);
+        _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
+        _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
+
+        _XTextColor.SetColor(_Configuration->_UseCustomXTextColor ? _Configuration->_XTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+        _XTextColor.EnableWindow(_Configuration->_UseCustomXTextColor);
+
+        _XLineColor.SetColor(_Configuration->_UseCustomXLineColor ? _Configuration->_XLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+        _XLineColor.EnableWindow(_Configuration->_UseCustomXLineColor);
+
+        _YTextColor.SetColor(_Configuration->_UseCustomYTextColor ? _Configuration->_YTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+        _YTextColor.EnableWindow(_Configuration->_UseCustomYTextColor);
+
+        _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+        _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
+
         _BandBackColor.SetColor(_Configuration->_BandBackColor);
+        _BandBackColor.Invalidate();
     }
 
     // Remove and Reverse are only enabled when there is more than 1 color.

@@ -10,6 +10,8 @@
 
 #define H_TBX       14 // Edit box
 #define H_CBX       14 // Combo box
+
+#define W_CHB       10 // Check box
 #define H_CHB       10 // Check box
 
 #define W_A00      442 // Dialog width (in dialog units)
@@ -659,6 +661,12 @@
     #define X_A73   X_A72 + W_A72 + IX
     #define Y_A73   Y_A72
 
+    // Checkbox
+    #define W_C07   W_CHB
+    #define H_C07   H_CHB
+    #define X_C07   X_A73 + W_A73 + IX
+    #define Y_C07   Y_A73 + 2
+
     // Label (X Text)
     #define W_A74   60
     #define H_A74   H_LBL
@@ -670,6 +678,12 @@
     #define H_A75   H_BTN
     #define X_A75   X_A74 + W_A74 + IX
     #define Y_A75   Y_A74
+
+    // Checkbox
+    #define W_C08   W_CHB
+    #define H_C08   H_CHB
+    #define X_C08   X_A75 + W_A75 + IX
+    #define Y_C08   Y_A75 + 2
 
     // Label (X Line)
     #define W_A76   60
@@ -683,6 +697,12 @@
     #define X_A77   X_A76 + W_A76 + IX
     #define Y_A77   Y_A76
 
+    // Checkbox
+    #define W_C09   W_CHB
+    #define H_C09   H_CHB
+    #define X_C09   X_A77 + W_A77 + IX
+    #define Y_C09   Y_A77 + 2
+
     // Label (Y Text)
     #define W_A78   60
     #define H_A78   H_LBL
@@ -694,6 +714,12 @@
     #define H_A79   H_BTN
     #define X_A79   X_A78 + W_A78 + IX
     #define Y_A79   Y_A78
+
+    // Checkbox
+    #define W_C10   W_CHB
+    #define H_C10   H_CHB
+    #define X_C10   X_A79 + W_A79 + IX
+    #define Y_C10   Y_A79 + 2
 
     // Label (Y Line)
     #define W_A80   60
@@ -707,6 +733,12 @@
     #define X_A81   X_A80 + W_A80 + IX
     #define Y_A81   Y_A80
 
+    // Checkbox
+    #define W_C11   W_CHB
+    #define H_C11   H_CHB
+    #define X_C11   X_A81 + W_A81 + IX
+    #define Y_C11   Y_A81 + 2
+
     // Label (Band background)
     #define W_A82   60
     #define H_A82   H_LBL
@@ -719,7 +751,7 @@
     #define X_A83   X_A82 + W_A82 + IX
     #define Y_A83   Y_A82
 
-#define W_B06  5 + W_A72 + IX + W_A73  + 5
+#define W_B06  5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
 #define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + 7
 #pragma endregion
 

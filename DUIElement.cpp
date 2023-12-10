@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2023.12.06) P. Stuer **/
+/** $VER: DUIElement.cpp (2023.12.10) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -18,6 +18,9 @@
 /// </summary>
 DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
+    _Configuration._DefBackColor = m_callback->query_std_color(ui_color_background);
+    _Configuration._DefTextColor = m_callback->query_std_color(ui_color_text);
+
     set_configuration(data);
 }
 
@@ -114,7 +117,12 @@ ui_element_config::ptr DUIElement::get_configuration()
 void DUIElement::notify(const GUID & what, t_size p_param1, const void * p_param2, t_size p_param2size)
 {
     if (what == ui_element_notify_colors_changed)
+    {
+        _Configuration._DefBackColor = m_callback->query_std_color(ui_color_background);
+        _Configuration._DefTextColor = m_callback->query_std_color(ui_color_text);
+
         Invalidate();
+    }
 }
 
 static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Factory;
