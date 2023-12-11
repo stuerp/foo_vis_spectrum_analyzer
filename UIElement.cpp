@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2023.12.10) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.11) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -83,32 +83,11 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
+    // Create the timer.
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+
     // Applies the initial configuration.
     SetConfiguration();
-/*
-    // Start the timer.
-    {
-        _TimerData.hWnd = m_hWnd;
-        _TimerData.Configuration = &_Configuration;
-
-        DWORD ThreadId = 0;
-
-        HANDLE hThread = ::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE) TimerMain, &_TimerData, STANDARD_RIGHTS_REQUIRED, &ThreadId);
-
-        if (hThread != NULL)
-            ::CloseHandle(hThread); 
-    }
-*/
-    {
-        _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
-
-        if (_ThreadPoolTimer)
-        {
-            FILETIME DueTime = { 1000, 0 };
-
-//          ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
-        }
-    }
 
     return 0;
 }
@@ -152,17 +131,7 @@ void UIElement::OnDestroy()
 
     ::LeaveCriticalSection(&_Lock);
 }
-/*
-/// <summary>
-/// Handles the WM_TIMER message.
-/// </summary>
-void UIElement::OnTimer(UINT_PTR timerID)
-{
-    KillTimer(ID_REFRESH_TIMER);
 
-    Invalidate();
-}
-*/
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
@@ -518,7 +487,7 @@ void UIElement::Resize()
 
             _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
-            SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+            ::SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
 
             _ToolTipControl.AddTool(_TrackingToolInfo);
         }
@@ -550,44 +519,6 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     ((UIElement *) context)->RenderFrame();
 }
 
-/// <summary>
-/// Drives the refresh.
-/// </summary>
-/*
-DWORD WINAPI UIElement::TimerMain(LPVOID parameter)
-{
-    TimerData * td = (TimerData *) parameter;
-
-    if (HANDLE hTimer = ::CreateWaitableTimerW(NULL, FALSE, NULL))
-    {
-        LARGE_INTEGER li = { };
-
-        if (::SetWaitableTimer(hTimer, &li, (1000L / (LONG) td->Configuration->_RefreshRateLimit), nullptr, nullptr, FALSE))
-        {
-            MSG Msg = { };
-
-            while (Msg.message != WM_QUIT)
-            {
-                if (::PeekMessageW(&Msg, NULL, 0, 0, PM_REMOVE))
-                {
-                    ::TranslateMessage(&Msg);
-                    ::DispatchMessageW(&Msg);
-                }
-                else
-                if (::MsgWaitForMultipleObjects(1, &hTimer, FALSE, INFINITE, QS_ALLINPUT) == WAIT_OBJECT_0)
-                {
-//                  ::InvalidateRect(td->hWnd, nullptr, TRUE);
-                }
-            }
-
-            ::CloseHandle(hTimer);
-            hTimer = NULL;
-        }
-    }
-
-    return TRUE;
-}
-*/
 #pragma endregion
 
 #pragma region Rendering

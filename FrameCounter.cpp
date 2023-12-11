@@ -48,8 +48,9 @@ HRESULT FrameCounter::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 
     if (SUCCEEDED(hr))
     {
-        static const D2D1_RECT_F Rect = { _ClientWidth - 2.f - _TextWidth, 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
         static const FLOAT Inset = 4.f;
+
+        const D2D1_RECT_F Rect = { _ClientWidth - 2.f - _TextWidth, 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
 
         // Draw the background.
         {

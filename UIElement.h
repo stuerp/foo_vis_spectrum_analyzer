@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2023.12.09) P. Stuer **/
+/** $VER: UIElement.h (2023.12.11) P. Stuer **/
 
 #pragma once
 
@@ -31,13 +31,12 @@ public:
     UIElement(UIElement &&) = delete;
     UIElement & operator=(UIElement &&) = delete;
 
-    #pragma region CWindowImpl interface
+    #pragma region CWindowImpl
     static CWndClassInfo & GetWndClassInfo();
 
     BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
-//      MSG_WM_TIMER(OnTimer)
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
@@ -52,7 +51,6 @@ public:
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
-//  void OnTimer(UINT_PTR nIDEvent);
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     virtual void OnContextMenu(CWindow wnd, CPoint point);
@@ -138,12 +136,6 @@ protected:
     Configuration _Configuration;
 
 private:
-/*
-    enum
-    {
-        ID_REFRESH_TIMER = 1
-    };
-*/
     enum
     {
         IDM_TOGGLE_FULLSCREEN = 1,
