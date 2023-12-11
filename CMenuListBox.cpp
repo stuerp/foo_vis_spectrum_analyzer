@@ -1,11 +1,5 @@
 
-/** $VER: CMenuListBox.cpp (2023.12.09) P. Stuer - Implements a list box acts like a menu using WTL. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
+/** $VER: CMenuListBox.cpp (2023.12.11) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #include "CMenuListBox.h"
 
@@ -90,27 +84,4 @@ void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 void CMenuListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 {
     lpMeasureItemStruct->itemHeight = 32;
-}
-
-/// <summary>
-/// Handles a double-click on an item.
-/// </summary>
-LRESULT CMenuListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
-{
-    int Index = GetCurSel();
-
-    if (Index == LB_ERR)
-        return 0;
-
-    return 0;
-}
-
-/// <summary>
-/// Sends a notification that the content has changed.
-/// </summary>
-void CMenuListBox::SendChangedNotification() const noexcept
-{
-    NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
-
-    ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }

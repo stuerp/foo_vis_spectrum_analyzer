@@ -1,5 +1,5 @@
 
-/** $VER: CMenuListBox.h (2023.12.09) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.h (2023.12.11) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #pragma once
 
@@ -32,15 +32,6 @@ public:
     void MeasureItem(LPMEASUREITEMSTRUCT mis);
 
     BEGIN_MSG_MAP(CMenuListBox)
-        REFLECTED_COMMAND_CODE_HANDLER(LBN_DBLCLK, OnDblClick)
-
         CHAIN_MSG_MAP(COwnerDrawnListBox<CMenuListBox>)
     END_MSG_MAP()
-
-private:
-    LRESULT OnSelectionChanged(WORD, WORD, HWND, BOOL & handled);
-
-    LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
-
-    void SendChangedNotification() const noexcept;
 };

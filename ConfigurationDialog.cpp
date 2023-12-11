@@ -1630,23 +1630,22 @@ void ConfigurationDialog::UpdateColorControls()
     }
 
     {
-        _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
         _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
+        _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
 
-        _XTextColor.SetColor(_Configuration->_UseCustomXTextColor ? _Configuration->_XTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
         _XTextColor.EnableWindow(_Configuration->_UseCustomXTextColor);
+        _XTextColor.SetColor(_Configuration->_UseCustomXTextColor ? _Configuration->_XTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-        _XLineColor.SetColor(_Configuration->_UseCustomXLineColor ? _Configuration->_XLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
         _XLineColor.EnableWindow(_Configuration->_UseCustomXLineColor);
+        _XLineColor.SetColor(_Configuration->_UseCustomXLineColor ? _Configuration->_XLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-        _YTextColor.SetColor(_Configuration->_UseCustomYTextColor ? _Configuration->_YTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
         _YTextColor.EnableWindow(_Configuration->_UseCustomYTextColor);
+        _YTextColor.SetColor(_Configuration->_UseCustomYTextColor ? _Configuration->_YTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-        _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
         _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
+        _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
         _BandBackColor.SetColor(_Configuration->_BandBackColor);
-        _BandBackColor.Invalidate();
     }
 
     // Remove and Reverse are only enabled when there is more than 1 color.
