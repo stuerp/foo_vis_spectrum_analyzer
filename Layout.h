@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.10) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.11) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -410,12 +410,20 @@
     #define Y_A57    Y_A10 + H_A10 + IY
     #pragma endregion
 
+    #pragma region LED mode
+    // Checkbox
+    #define W_C12    80
+    #define H_C12    H_CHB
+    #define X_C12    X_A57
+    #define Y_C12    Y_A57 + H_A57 + IY
+    #pragma endregion
+
     #pragma region Tool tips
     // Checkbox
     #define W_A87    80
     #define H_A87    H_CHB
-    #define X_A87    X_A57
-    #define Y_A87    Y_A57 + H_A57 + IY
+    #define X_A87    X_C12
+    #define Y_A87    Y_C12 + H_C12 + IY
     #pragma endregion
 
     #pragma region Gradient
@@ -521,7 +529,7 @@
     #pragma endregion
 
 #define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
+#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_C12 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
 #pragma endregion
 
 #pragma region X axis

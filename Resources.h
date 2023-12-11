@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.10) P. Stuer **/
+/** $VER: Resources.h (2023.12.11) P. Stuer **/
 
 #pragma once
 
@@ -161,7 +161,8 @@
 #define IDC_COLOR_SCHEME_LBL            6010
 #define IDC_COLOR_SCHEME                6012
 #define IDC_DRAW_BAND_BACKGROUND        6014
-#define IDC_SHOW_TOOLTIPS               6016
+#define IDC_LED_MODE                    6016
+#define IDC_SHOW_TOOLTIPS               6018
 
 #define IDC_GRADIENT                    6020
 #define IDC_COLORS                      6021

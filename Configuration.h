@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.10) P. Stuer **/
+/** $VER: Configuration.h (2023.12.11) P. Stuer **/
 
 #pragma once
 
@@ -319,6 +319,8 @@ public:
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
             D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
+            bool _LEDMode;
             bool _ShowToolTips;
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
@@ -328,10 +330,6 @@ public:
             double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
             double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
         #pragma endregion
-    #pragma endregion
-
-    #pragma region Colors
-
     #pragma endregion
 
     #pragma region Not Serialized

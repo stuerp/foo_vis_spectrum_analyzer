@@ -220,6 +220,7 @@
     <ClCompile Include="CUIElement.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="FrameCounter.cpp" />
+    <ClCompile Include="Spectrum.cpp" />
     <ClCompile Include="UIElement.cpp" />
   </ItemGroup>
   <ItemGroup>

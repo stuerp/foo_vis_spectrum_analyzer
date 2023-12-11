@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.10) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.11) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -487,6 +487,9 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
+    }
+    {
+        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
     }
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
@@ -1039,6 +1042,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_LED_MODE:
+        {
+            _Configuration->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_SHOW_TOOLTIPS:
         {
             _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1484,7 +1493,7 @@ void ConfigurationDialog::UpdatePage2(int mode)
     {
         // Bands
         IDC_BANDS,
-            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_SHOW_TOOLTIPS,
+            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
             IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,

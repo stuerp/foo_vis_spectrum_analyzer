@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.10) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.11) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -122,6 +122,7 @@ void Configuration::Reset() noexcept
     // Band
     _DrawBandBackground = true;
     _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LEDMode = false;
     _ShowToolTips = true;
 
     _ColorScheme = ColorScheme::Prism1;
@@ -229,6 +230,7 @@ Configuration & Configuration::operator=(const Configuration & other)
         // Bands
         _DrawBandBackground = other._DrawBandBackground;
         _BandBackColor = other._BandBackColor;
+        _LEDMode = other._LEDMode;
         _ShowToolTips = other._ShowToolTips;
 
         _ColorScheme = other._ColorScheme;
@@ -430,6 +432,8 @@ void Configuration::Read(ui_element_config_parser & parser)
         parser >> _UseCustomXLineColor;
         parser >> _UseCustomYTextColor;
         parser >> _UseCustomYLineColor;
+
+        parser >> _LEDMode;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -572,6 +576,8 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _UseCustomXLineColor;
     builder << _UseCustomYTextColor;
     builder << _UseCustomYLineColor;
+
+    builder << _LEDMode;
 }
 
 /// <summary>
@@ -691,6 +697,8 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
         reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
         reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
         reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+        reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -804,6 +812,8 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
     writer->write(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
     writer->write(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+    writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
 }
 
 /// <summary>

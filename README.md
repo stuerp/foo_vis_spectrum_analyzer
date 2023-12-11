@@ -86,6 +86,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.5.1.0, 2023-12-xx
 
 * New: Support for DUI and CUI default user interface colors.
+* New: LED mode.
 * Improved: Rendering occurs on a separate thread resulting in smoother animation.
 * Improved: Re-designed configuration dialog to fit on installations scaled higher than 100%.
 * Fixed: Some settings were reset when the configuration dialog re-opened during the same session.

@@ -1,10 +1,15 @@
 
-/** $VER: Spectrum.h (2023.12.10) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.12.11) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4211 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
 #include "framework.h"
 
+#include "FrequencyBand.h"
 #include "Configuration.h"
 #include "Math.h"
 
@@ -55,110 +60,11 @@ public:
 
     FLOAT GetRight() const { return _Rect.right; }
 
-    /// <summary>
-    /// Renders this instance to the specified render target.
-    /// </summary>
-    HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Configuration & configuration)
-    {
-        CreateDeviceSpecificResources(renderTarget);
+    HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Configuration & configuration);
+    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
-        const FLOAT Width = _Rect.right - _Rect.left;
-        const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
-
-        FLOAT x1 = _Rect.left;
-        FLOAT x2 = x1 + BandWidth;
-
-        const FLOAT y1 = _Rect.top;
-        const FLOAT y2 = _Rect.bottom - _Rect.top;
-
-        for (const FrequencyBand & Iter : frequencyBands)
-        {
-            D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
-
-            // Draw the background.
-            if (_DrawBandBackground)
-                renderTarget->FillRectangle(Rect, _BandBackgroundBrush);
-
-            // Don't render anything above the Nyquist frequency.
-            if (Iter.Ctr < (sampleRate / 2.))
-            {
-                // Draw the foreground.
-                if (Iter.CurValue > 0.0)
-                {
-                    Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
-
-                    renderTarget->FillRectangle(Rect, _BandForegroundBrush);
-                }
-
-                // Draw the peak indicator.
-                if ((configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
-                {
-                    Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
-                    Rect.bottom = Rect.top + 1.f;
-
-                    ID2D1Brush * Brush = (configuration._PeakMode != PeakMode::FadeOut) ? (ID2D1Brush *) _BandForegroundBrush : (ID2D1Brush *) _WhiteBrush;
-
-                    if (configuration._PeakMode == PeakMode::FadeOut)
-                        Brush->SetOpacity((FLOAT) Iter.Opacity);
-
-                    renderTarget->FillRectangle(Rect, Brush);
-
-                    if (configuration._PeakMode == PeakMode::FadeOut)
-                        Brush->SetOpacity(1.f);
-                }
-            }
-
-            x1  = x2;
-            x2 += BandWidth;
-        }
-
-        return S_OK;
-    }
-
-    /// <summary>
-    /// Creates resources which are bound to a particular D3D device.
-    /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
-    /// </summary>
-    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
-    {
-        HRESULT hr = S_OK;
-
-        if ((_BandForegroundBrush == nullptr) && SUCCEEDED(hr))
-        {
-            if (!_GradientStops.empty())
-            {
-                CComPtr<ID2D1GradientStopCollection> Collection;
-
-                hr = renderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-                if (SUCCEEDED(hr))
-                {
-                    D2D1_SIZE_F Size = renderTarget->GetSize();
-
-                    hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_BandForegroundBrush);
-                }
-            }
-        }
-
-        if ((_BandBackgroundBrush == nullptr) && SUCCEEDED(hr))
-            hr = renderTarget->CreateSolidColorBrush(_Configuration->_BandBackColor, &_BandBackgroundBrush);
-
-        if ((_WhiteBrush == nullptr) && SUCCEEDED(hr))
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
-
-        return hr;
-    }
-
-    /// <summary>
-    /// Releases the device specific resources.
-    /// </summary>
-    void ReleaseDeviceSpecificResources()
-    {
-        _WhiteBrush.Release();
-
-        _BandBackgroundBrush.Release();
-        _BandForegroundBrush.Release();
-    }
+    void ReleaseDeviceSpecificResources();
 
 private:
     const Configuration * _Configuration;
@@ -175,4 +81,6 @@ private:
 
     CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
     CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
+
+    CComPtr<ID2D1BitmapBrush> _PatternBrush;
 };

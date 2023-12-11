@@ -1,10 +1,6 @@
 
 /** $VER: FrameCounter.cpp (2023.12.09) P. Stuer **/
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
 #include "FrameCounter.h"
 
 #pragma hdrstop
