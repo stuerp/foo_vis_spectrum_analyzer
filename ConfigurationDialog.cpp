@@ -93,7 +93,7 @@ void ConfigurationDialog::Initialize()
             L"Bartlett", L"Parzen",
             L"Welch", L"Power-of-sine", L"Power-of-circle",
             L"Gauss", L"Tukey", L"Kaiser", L"Poison",
-            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine"
+            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
         };
 
         assert(((size_t) WindowFunctions::Count == _countof(Labels)));
