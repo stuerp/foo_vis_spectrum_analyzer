@@ -320,7 +320,9 @@ public:
             std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
-            D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
+            D2D1::ColorF _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+            D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
             bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
             bool _ShowToolTips;                                         // True if tooltips should be displayed.

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.12.11) P. Stuer **/
+/** $VER: Resources.rc (2023.12.14) P. Stuer **/
 
 #include "Resources.h"
 
@@ -226,8 +226,11 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         ltext           "",                 IDC_Y_LINE_COLOR,           X_A81, Y_A81, W_A81, H_A81, SS_NOTIFY, WS_EX_STATICEDGE
         control         "",                 IDC_Y_LINE_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C11, Y_C11, W_C11, H_C11
 
-        ltext           "Band background:", IDC_BAND_BACK_COLOR_LBL,    X_A82, Y_A82 + 2, W_A82, H_A82, SS_NOPREFIX
-        ltext           "",                 IDC_BAND_BACK_COLOR,        X_A83, Y_A83, W_A83, H_A83, SS_NOTIFY, WS_EX_STATICEDGE
+        ltext           "White keys:",      IDC_WHITE_KEYS_LBL,         X_A82, Y_A82 + 2, W_A82, H_A82, SS_NOPREFIX
+        ltext           "",                 IDC_WHITE_KEYS,             X_A83, Y_A83, W_A83, H_A83, SS_NOTIFY, WS_EX_STATICEDGE
+
+        ltext           "Black keys:",      IDC_BLACK_KEYS_LBL,         X_C14, Y_C14 + 2, W_C14, H_C14, SS_NOPREFIX
+        ltext           "",                 IDC_BLACK_KEYS,             X_C15, Y_C15, W_C15, H_C15, SS_NOTIFY, WS_EX_STATICEDGE
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98

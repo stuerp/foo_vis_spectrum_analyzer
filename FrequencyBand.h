@@ -28,5 +28,6 @@ struct FrequencyBand
 
     WCHAR Label[16];
 
-    D2D1_COLOR_F Color;
+    D2D1_COLOR_F ForeColor;
+    D2D1_COLOR_F BackColor;
 };

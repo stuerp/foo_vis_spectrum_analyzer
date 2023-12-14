@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2023.12.11) P. Stuer **/
+/** $VER: Spectrum.cpp (2023.12.14) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -26,16 +26,20 @@ HRESULT Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const st
         D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
 
         // Draw the background.
-        if (_DrawBandBackground)
-            renderTarget->FillRectangle(Rect, _BackBrush);
+        if (_Configuration->_DrawBandBackground)
+        {
+            _SolidBrush->SetColor(Iter.BackColor);
+
+            renderTarget->FillRectangle(Rect, _SolidBrush);
+        }
 
         // Don't render anything above the Nyquist frequency.
         if (Iter.Ctr < (sampleRate / 2.))
         {
-            ID2D1Brush * ForeBrush = _Configuration->_HorizontalGradient ? _ForeBrush : (ID2D1Brush *) _GradientBrush;
+            ID2D1Brush * ForeBrush = _Configuration->_HorizontalGradient ? _SolidBrush : (ID2D1Brush *) _GradientBrush;
 
             if (_Configuration->_HorizontalGradient)
-                _ForeBrush->SetColor(Iter.Color);
+                _SolidBrush->SetColor(Iter.ForeColor);
 
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
@@ -98,11 +102,11 @@ HRESULT Spectrum::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> &
         }
     }
 
-    if ((_ForeBrush == nullptr) && SUCCEEDED(hr))
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_ForeBrush);
+    if ((_SolidBrush == nullptr) && SUCCEEDED(hr))
+        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
 
     if ((_BackBrush == nullptr) && SUCCEEDED(hr))
-        hr = renderTarget->CreateSolidColorBrush(_Configuration->_BandBackColor, &_BackBrush);
+        hr = renderTarget->CreateSolidColorBrush(_Configuration->_DarkBandColor, &_BackBrush);
 
     if ((_WhiteBrush == nullptr) && SUCCEEDED(hr))
         hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
@@ -171,6 +175,6 @@ void Spectrum::ReleaseDeviceSpecificResources()
     _WhiteBrush.Release();
 
     _BackBrush.Release();
-    _ForeBrush.Release();
+    _SolidBrush.Release();
     _GradientBrush.Release();
 }

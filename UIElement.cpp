@@ -416,6 +416,7 @@ void UIElement::SetConfiguration() noexcept
     }
 
     // Generate the horizontal color gradient, if required.
+    if (_Configuration._HorizontalGradient)
     {
         if (_Configuration._GradientStops.size() > 1)
         {
@@ -429,7 +430,7 @@ void UIElement::SetConfiguration() noexcept
 
             for (FrequencyBand & Iter : _FrequencyBands)
             {
-                Iter.Color = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
+                Iter.ForeColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
                 i++;
 
                 if (i >= n)
@@ -450,7 +451,7 @@ void UIElement::SetConfiguration() noexcept
         else
         {
             for (FrequencyBand & Iter : _FrequencyBands)
-                Iter.Color = _Configuration._GradientStops[0].color;
+                Iter.ForeColor = _Configuration._GradientStops[0].color;
         }
     }
 
@@ -587,30 +588,32 @@ HRESULT UIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
-
-        _XAxis.Render(_RenderTarget);
-
-        _YAxis.Render(_RenderTarget);
-
-        // Draw the visualization.
-        if (_VisualisationStream.is_valid())
         {
-            double PlaybackTime; // in ms
+            _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
-            if (_VisualisationStream->get_absolute_time(PlaybackTime))
+            _XAxis.Render(_RenderTarget);
+
+            _YAxis.Render(_RenderTarget);
+
+            // Draw the spectrum.
+            if (_VisualisationStream.is_valid())
             {
-                double WindowDuration = _Configuration.GetWindowDurationInMs();
+                double PlaybackTime; // in ms
 
-                audio_chunk_impl Chunk;
+                if (_VisualisationStream->get_absolute_time(PlaybackTime))
+                {
+                    double WindowDuration = _Configuration.GetWindowDurationInMs();
 
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
-                    RenderChunk(Chunk);
+                    audio_chunk_impl Chunk;
+
+                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
+                        RenderChunk(Chunk);
+                }
             }
-        }
 
-        if (_Configuration._ShowFrameCounter)
-            _FrameCounter.Render(_RenderTarget);
+            if (_Configuration._ShowFrameCounter)
+                _FrameCounter.Render(_RenderTarget);
+        }
 
         hr = _RenderTarget->EndDraw();
 
@@ -749,6 +752,8 @@ void UIElement::GenerateLinearFrequencyBands()
         Iter.Hi  = DeScaleF(Map((double) i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
         ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
+
+        Iter.BackColor = _Configuration._DarkBandColor;
     }
 }
 
@@ -780,7 +785,11 @@ void UIElement::GenerateOctaveFrequencyBands()
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[(int) i % 12], (int) i / 12, fb.Ctr);
+        int n = (int) i % 12;
+
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], (int) i / 12, fb.Ctr);
+
+        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LiteBandColor;
 
         _FrequencyBands.push_back(fb);
     }
@@ -800,6 +809,8 @@ void UIElement::GenerateAveePlayerFrequencyBands()
         Iter.Lo  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
         Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
         Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+
+        Iter.BackColor = _Configuration._DarkBandColor;
     }
 }
 

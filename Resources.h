@@ -240,8 +240,10 @@
 #define IDC_Y_LINE_COLOR                7036
 #define IDC_Y_LINE_COLOR_DEF            7038
 
-#define IDC_BAND_BACK_COLOR_LBL         7040
-#define IDC_BAND_BACK_COLOR             7042
-#define IDC_BAND_BACK_COLOR_DEF         7044
+#define IDC_WHITE_KEYS_LBL              7040
+#define IDC_WHITE_KEYS                  7042
+
+#define IDC_BLACK_KEYS_LBL              7050
+#define IDC_BLACK_KEYS                  7052
 
 #define IDC_RESET                       8000

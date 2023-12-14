@@ -15,7 +15,7 @@
 #define H_CHB       10 // Check box
 
 #define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      294 // Dialog height (in dialog units)
+#define H_A00      308 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -755,7 +755,7 @@
     #define X_C11   X_A81 + W_A81 + IX
     #define Y_C11   Y_A81 + 2
 
-    // Label (Band background)
+    // Label (White keys)
     #define W_A82   60
     #define H_A82   H_LBL
     #define X_A82   X_A80
@@ -767,8 +767,20 @@
     #define X_A83   X_A82 + W_A82 + IX
     #define Y_A83   Y_A82
 
+    // Label (Black keys)
+    #define W_C14   60
+    #define H_C14   H_LBL
+    #define X_C14   X_A82
+    #define Y_C14   Y_A83 + H_A83 + IY
+
+    // Button
+    #define W_C15   40
+    #define H_C15   H_BTN
+    #define X_C15   X_C14 + W_C14 + IX
+    #define Y_C15   Y_C14
+
 #define W_B06  5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
-#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + 7
+#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + IY + H_C15 + 5
 #pragma endregion
 
 // Cancel button (right-most button)

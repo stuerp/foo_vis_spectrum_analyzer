@@ -121,7 +121,8 @@ void Configuration::Reset() noexcept
 
     // Band
     _DrawBandBackground = true;
-    _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
     _ShowToolTips = true;
     _HorizontalGradient = false;
@@ -230,7 +231,8 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Bands
         _DrawBandBackground = other._DrawBandBackground;
-        _BandBackColor = other._BandBackColor;
+        _LiteBandColor = other._LiteBandColor;
+        _DarkBandColor = other._DarkBandColor;
         _LEDMode = other._LEDMode;
         _ShowToolTips = other._ShowToolTips;
         _HorizontalGradient = other._HorizontalGradient;
@@ -406,10 +408,10 @@ void Configuration::Read(ui_element_config_parser & parser)
     parser >> _YLineColor.b;
     parser >> _YLineColor.a;
 
-    parser >> _BandBackColor.r;
-    parser >> _BandBackColor.g;
-    parser >> _BandBackColor.b;
-    parser >> _BandBackColor.a;
+    parser >> _DarkBandColor.r;
+    parser >> _DarkBandColor.g;
+    parser >> _DarkBandColor.b;
+    parser >> _DarkBandColor.a;
 
     // Version 6
     if (Version >= 6)
@@ -438,6 +440,11 @@ void Configuration::Read(ui_element_config_parser & parser)
         parser >> _LEDMode;
 
         parser >> _HorizontalGradient;
+
+        parser >> _LiteBandColor.r;
+        parser >> _LiteBandColor.g;
+        parser >> _LiteBandColor.b;
+        parser >> _LiteBandColor.a;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -558,10 +565,10 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _YLineColor.b;
     builder << _YLineColor.a;
 
-    builder << _BandBackColor.r;
-    builder << _BandBackColor.g;
-    builder << _BandBackColor.b;
-    builder << _BandBackColor.a;
+    builder << _DarkBandColor.r;
+    builder << _DarkBandColor.g;
+    builder << _DarkBandColor.b;
+    builder << _DarkBandColor.a;
 
     // Version 6
     builder << _AmplitudeStep;
@@ -584,6 +591,11 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _LEDMode;
 
     builder << _HorizontalGradient;
+
+    builder << _LiteBandColor.r;
+    builder << _LiteBandColor.g;
+    builder << _LiteBandColor.b;
+    builder << _LiteBandColor.a;
 }
 
 /// <summary>
@@ -685,7 +697,7 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
     reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
     reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
     reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    reader->read(&_BandBackColor, sizeof(_BandBackColor), abortHandler);
+    reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
 
     reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
 
@@ -707,6 +719,8 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
         reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
 
         reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+        reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -803,7 +817,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_XLineColor, sizeof(_XLineColor), abortHandler);
     writer->write(&_YTextColor, sizeof(_YTextColor), abortHandler);
     writer->write(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    writer->write(&_BandBackColor, sizeof(_BandBackColor), abortHandler);
+    writer->write(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
 
     writer->write(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
 
@@ -824,6 +838,8 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
 
     writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+    writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
 }
 
 /// <summary>

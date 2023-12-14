@@ -532,11 +532,15 @@ void ConfigurationDialog::Initialize()
     _Colors.Initialize(GetDlgItem(IDC_COLORS));
 
     _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
+
     _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
     _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
+
     _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
     _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
-    _BandBackColor.Initialize(GetDlgItem(IDC_BAND_BACK_COLOR));
+
+    _LiteBandColor.Initialize(GetDlgItem(IDC_WHITE_KEYS));
+    _DarkBandColor.Initialize(GetDlgItem(IDC_BLACK_KEYS));
 
     SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
     SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
@@ -594,7 +598,8 @@ void ConfigurationDialog::Terminate()
     _YTextColor.Terminate();
     _YLineColor.Terminate();
 
-    _BandBackColor.Terminate();
+    _LiteBandColor.Terminate();
+    _DarkBandColor.Terminate();
 }
 
 /// <summary>
@@ -1396,9 +1401,15 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_BAND_BACK_COLOR:
+        case IDC_WHITE_KEYS:
         {
-            _BandBackColor.GetColor(_Configuration->_BandBackColor);
+            _LiteBandColor.GetColor(_Configuration->_LiteBandColor);
+            break;
+        }
+
+        case IDC_BLACK_KEYS:
+        {
+            _DarkBandColor.GetColor(_Configuration->_DarkBandColor);
             break;
         }
 
@@ -1518,7 +1529,8 @@ void ConfigurationDialog::UpdatePage2(int mode)
             IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR, IDC_X_LINE_COLOR_DEF,
             IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR, IDC_Y_TEXT_COLOR_DEF,
             IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
-            IDC_BAND_BACK_COLOR_LBL, IDC_BAND_BACK_COLOR,
+            IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
+            IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
     };
 
     for (size_t i = 0; i < _countof(Page2); ++i)
@@ -1654,7 +1666,8 @@ void ConfigurationDialog::UpdateColorControls()
         _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
         _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-        _BandBackColor.SetColor(_Configuration->_BandBackColor);
+        _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
+        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
 
     // Remove and Reverse are only enabled when there is more than 1 color.
