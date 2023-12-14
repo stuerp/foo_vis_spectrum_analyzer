@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.12.02) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.12.14) P. Stuer **/
 
 #include "framework.h"
 
@@ -55,6 +55,11 @@ public:
     /// </summary>
     void GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod)
     {
+        const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
+        const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
+
+        std::vector<double> Values(16);
+
         for (FrequencyBand & Iter : freqBands)
         {
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
@@ -63,10 +68,7 @@ public:
             const int LoIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
             const int HiIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
 
-            const bool SmoothGainTransition = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
-            const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
-
-            const double BandGain =  SmoothGainTransition ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) coefficients.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+            const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) coefficients.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
             if (LoIdx <= HiIdx)
             {
@@ -74,54 +76,54 @@ public:
 
                 double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
-                std::vector<double> Values(16);
+                Values.clear();
+
                 int Count = 0;
 
                 for (int Idx = LoIdx; Idx <= HiIdx - OverflowCompensation; ++Idx)
                 {
-//                  size_t CoefIdx = ((size_t) Idx % coefficients.size() + coefficients.size()) % coefficients.size();
                     size_t CoefIdx = Wrap((size_t) Idx, coefficients.size());
 
-                    double data = std::abs(coefficients[CoefIdx]);
+                    double Coef = std::abs(coefficients[CoefIdx]);
 
                     switch (summationMethod)
                     {
                         case SummationMethod::Minimum:
-                            Value = Min(data, Value);
+                            Value = Min(Coef, Value);
                             break;
 
                         case SummationMethod::Maximum:
-                            Value = Max(data, Value);
+                            Value = Max(Coef, Value);
                             break;
 
                         case SummationMethod::Sum:
+                        case SummationMethod::Average:
+                            Value += Coef;
+                            break;
+
                         case SummationMethod::RMS:
                         case SummationMethod::RMSSum:
-                        case SummationMethod::Average:
-                            Value += ::pow(data, (1.0 + (double) IsRMS));
+                            Value += Coef * Coef;
                             break;
 
                         case SummationMethod::Median:
-                            Values.push_back(data);
+                            Values.push_back(Coef);
                             break;
 
                         default:
-                            Value = data;
+                            Value = Coef;
                     }
 
                     ++Count;
                 }
 
-                if (((summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || SmoothGainTransition) && (Count != 0))
+                if (((summationMethod == SummationMethod::Average || summationMethod == SummationMethod::RMS) || UseBandGain) && (Count != 0))
                     Value /= Count;
-                else
-                if (IsRMS)
-                    Value = ::sqrt(Value);
                 else
                 if (summationMethod == SummationMethod::Median)
                     Value = Median(Values);
 
-                Iter.NewValue = Value * BandGain;
+                Iter.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
             }
             else
             {
@@ -149,10 +151,10 @@ public:
             const double overflowCompensation = Max(0., maxBin - minBin - (double) coefficients.size());
 
             for (double i = ::floor(midBin); i >= ::floor(minBin + overflowCompensation); --i)
-                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, minBin, midBin, 0., 1.), 0.), 2.0);
+                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, minBin, midBin, 0., 1.), 0.), 2.);
 
             for (double i = ::ceil(midBin); i <= ::ceil(maxBin - overflowCompensation); ++i)
-                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, maxBin, midBin, 0., 1.), 0.), 2.0);
+                Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, maxBin, midBin, 0., 1.), 0.), 2.);
 
             Iter.NewValue = ::sqrt(Sum);
         }
@@ -173,11 +175,8 @@ public:
 
             double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-//          size_t CoefIdx = ((size_t) Pos % fftCoeffs.size() + fftCoeffs.size()) % fftCoeffs.size();
             size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size());
 
-//          re += fftCoeffs[CoefIdx].real() * w * (-1 + (i % 2 + 2) % 2 * 2);
-//          im += fftCoeffs[CoefIdx].imag() * w * (-1 + (i % 2 + 2) % 2 * 2);
             re += fftCoeffs[CoefIdx].real() * w * (-1 + Wrap(i, 2) * 2);
             im += fftCoeffs[CoefIdx].imag() * w * (-1 + Wrap(i, 2) * 2);
         }
@@ -190,19 +189,17 @@ public:
     /// </summary>
     double Median(std::vector<double> & data)
     {
-        if (data.size())
-            return NAN;
+        if (data.size() == 0)
+            return DBL_MIN;
 
-        if (data.size() <= 1)
+        if (data.size() == 1)
             return data[0];
 
-        std::vector<double> SortedData = data;
+        std::sort(data.begin(), data.end());
 
-        std::sort(SortedData.begin(), SortedData.end());
+        size_t Mid = data.size() / 2;
 
-        size_t Half = data.size() / 2;
-
-        return (data.size() % 2) ? SortedData[Half] : (SortedData[Half - 1] + SortedData[Half]) / 2;
+        return (data.size() % 2) ? data[Mid] : (data[Mid - 1] + data[Mid]) / 2.;
     }
 
     /// <summary>

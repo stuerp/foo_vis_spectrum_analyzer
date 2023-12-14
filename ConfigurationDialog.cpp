@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.11) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.14) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -151,7 +151,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"Residual Mean Square (RMS)", L"RMS Sum", L"Average", L"Median" };
+        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -1581,11 +1581,12 @@ void ConfigurationDialog::UpdateControls()
 
     // Frequencies
     bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);
+    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
         GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && !IsOctaves);
         GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
         GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves);
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves && !IsAveePlayer);
 
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
@@ -1594,10 +1595,6 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(IsOctaves);
         GetDlgItem(IDC_PITCH).EnableWindow(IsOctaves);
         GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
-
-    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
-
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsAveePlayer);
 
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
