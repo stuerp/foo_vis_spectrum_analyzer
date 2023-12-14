@@ -1,25 +1,17 @@
 
-/** $VER: UIElement.cpp (2023.12.06) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
+/** $VER: UIElement.cpp (2023.12.14) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "Resources.h"
 #include "Gradients.h"
 
-#include <complex>
-
 #pragma hdrstop
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _LastRefresh(0), _RefreshInterval(10), _TrackingToolInfo()
+UIElement::UIElement(): _TrackingToolInfo()
 {
 }
 
@@ -56,6 +48,8 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    ::InitializeCriticalSection(&_Lock);
+
     _DPI = GetDpiForWindow(m_hWnd);
 
     HRESULT hr = CreateDeviceIndependentResources();
@@ -83,6 +77,9 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
+    // Create the timer.
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+
     // Applies the initial configuration.
     SetConfiguration();
 
@@ -94,6 +91,14 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 /// </summary>
 void UIElement::OnDestroy()
 {
+    ::EnterCriticalSection(&_Lock);
+
+    if (_ThreadPoolTimer)
+    {
+        ::CloseThreadpoolTimer(_ThreadPoolTimer);
+        _ThreadPoolTimer = nullptr;
+    }
+
     if (_WindowFunction)
     {
         delete _WindowFunction;
@@ -117,16 +122,8 @@ void UIElement::OnDestroy()
     ReleaseDeviceSpecificResources();
 
     _Direct2dFactory.Release();
-}
 
-/// <summary>
-/// Handles the WM_TIMER message.
-/// </summary>
-void UIElement::OnTimer(UINT_PTR timerID)
-{
-    KillTimer(ID_REFRESH_TIMER);
-
-    Invalidate();
+    ::LeaveCriticalSection(&_Lock);
 }
 
 /// <summary>
@@ -138,20 +135,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 
     ValidateRect(nullptr);
 
-    ULONGLONG Now = ::GetTickCount64(); // in ms, with a resolution of the system timer, which is typically in the range of 10ms to 16ms.
-
-    if (_VisualisationStream.is_valid())
-    {
-        ULONGLONG NextRefresh = _LastRefresh + _RefreshInterval;
-
-        if (NextRefresh < Now)
-            NextRefresh = Now;
-
-        // Schedule the next refresh. Limited to USER_TIMER_MINIMUM (10ms / 100Hz).
-        SetTimer(ID_REFRESH_TIMER, (UINT)(NextRefresh - Now));
-    }
-
-    _LastRefresh = Now;
+    UpdateRefreshRateLimit();
 }
 
 /// <summary>
@@ -184,6 +168,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+        Menu.AppendMenu((UINT) MF_STRING | (_Configuration._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 //      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
         {
@@ -207,6 +192,10 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
     {
         case IDM_TOGGLE_FULLSCREEN:
             ToggleFullScreen();
+            break;
+
+        case IDM_TOGGLE_FRAME_COUNTER:
+            ToggleFrameCounter();
             break;
 
         case IDM_TOGGLE_HARDWARE_RENDERING:
@@ -342,6 +331,14 @@ void UIElement::ToggleFullScreen() noexcept
 }
 
 /// <summary>
+/// Toggles the frame counter display.
+/// </summary>
+void UIElement::ToggleFrameCounter() noexcept
+{
+    _Configuration._ShowFrameCounter = !_Configuration._ShowFrameCounter;
+}
+
+/// <summary>
 /// Toggles hardware/software rendering.
 /// </summary>
 void UIElement::ToggleHardwareRendering() noexcept
@@ -356,7 +353,12 @@ void UIElement::ToggleHardwareRendering() noexcept
 /// </summary>
 void UIElement::UpdateRefreshRateLimit() noexcept
 {
-    _RefreshInterval = Clamp<DWORD>(1000 / (DWORD) _Configuration._RefreshRateLimit, 5, 1000);
+    if (_ThreadPoolTimer)
+    {
+        FILETIME DueTime = { };
+
+        ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
+    }
 }
 
 /// <summary>
@@ -366,12 +368,14 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
+        ::EnterCriticalSection(&_Lock);
+
         DialogParameters dp = { m_hWnd, &_Configuration };
 
-        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) == NULL)
-            return;
+        if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
+            _ConfigurationDialog.ShowWindow(SW_SHOW);
 
-        _ConfigurationDialog.ShowWindow(SW_SHOW);
+        ::LeaveCriticalSection(&_Lock);
     }
     else
         _ConfigurationDialog.BringWindowToTop();
@@ -382,6 +386,8 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::SetConfiguration() noexcept
 {
+    ::EnterCriticalSection(&_Lock);
+
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
     // Initialize the frequency bands.
@@ -393,20 +399,60 @@ void UIElement::SetConfiguration() noexcept
                 default:
 
                 case FrequencyDistribution::Linear:
-                    GenerateFrequencyBands();
+                    GenerateLinearFrequencyBands();
                     break;
 
                 case FrequencyDistribution::Octaves:
-                    GenerateFrequencyBandsFromNotes();
+                    GenerateOctaveFrequencyBands();
                     break;
 
                 case FrequencyDistribution::AveePlayer:
-                    GenerateFrequencyBandsOfAveePlayer();
+                    GenerateAveePlayerFrequencyBands();
                     break;
             }
         }
         else
-            GenerateFrequencyBandsFromNotes();
+            GenerateOctaveFrequencyBands();
+    }
+
+    // Generate the horizontal color gradient, if required.
+    if (_Configuration._HorizontalGradient)
+    {
+        if (_Configuration._GradientStops.size() > 1)
+        {
+            size_t j = 0;
+
+            D2D1_COLOR_F Color1 = _Configuration._GradientStops[0].color;
+            D2D1_COLOR_F Color2 = _Configuration._GradientStops[1].color;
+
+            float i =  0.f;
+            float n = (_Configuration._GradientStops[1].position - _Configuration._GradientStops[0].position) * (float) _FrequencyBands.size();
+
+            for (FrequencyBand & Iter : _FrequencyBands)
+            {
+                Iter.ForeColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
+                i++;
+
+                if (i >= n)
+                {
+                    j++;
+
+                    if (j == _Configuration._GradientStops.size() - 1)
+                        break;
+
+                    Color1 = _Configuration._GradientStops[j].color;
+                    Color2 = _Configuration._GradientStops[j + 1].color;
+
+                    i = 0.f;
+                    n = (_Configuration._GradientStops[j + 1].position - _Configuration._GradientStops[j].position) * (float) _FrequencyBands.size();;
+                }
+            }
+        }
+        else
+        {
+            for (FrequencyBand & Iter : _FrequencyBands)
+                Iter.ForeColor = _Configuration._GradientStops[0].color;
+        }
     }
 
     _XAxis.Initialize(&_Configuration, _FrequencyBands);
@@ -414,10 +460,6 @@ void UIElement::SetConfiguration() noexcept
     _YAxis.Initialize(&_Configuration);
 
     _Spectrum.Initialize(&_Configuration);
-
-    _Spectrum.SetGradientStops(_Configuration._GradientStops);
-
-    _Spectrum.SetDrawBandBackground(_Configuration._DrawBandBackground);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
@@ -444,7 +486,9 @@ void UIElement::SetConfiguration() noexcept
 
     Resize();
 
-    InvalidateRect(NULL);
+    ::LeaveCriticalSection(&_Lock);
+
+//  InvalidateRect(NULL);
 }
 
 /// <summary>
@@ -490,7 +534,7 @@ void UIElement::Resize()
 
             _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
 
-            SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+            ::SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
 
             _ToolTipControl.AddTool(_TrackingToolInfo);
         }
@@ -514,6 +558,14 @@ void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
     va_end(va);
 }
 
+/// <summary>
+/// Handles a timer tick.
+/// </summary>
+void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
+{
+    ((UIElement *) context)->RenderFrame();
+}
+
 #pragma endregion
 
 #pragma region Rendering
@@ -523,6 +575,9 @@ void UIElement::Log(LogLevel logLevel, const char * format, ...) const noexcept
 /// </summary>
 HRESULT UIElement::RenderFrame()
 {
+    if (!TryEnterCriticalSection(&_Lock))
+        return E_ABORT;
+
     _FrameCounter.NewFrame();
 
     HRESULT hr = CreateDeviceSpecificResources();
@@ -533,30 +588,32 @@ HRESULT UIElement::RenderFrame()
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _RenderTarget->Clear(_Configuration._BackColor);
-
-        _XAxis.Render(_RenderTarget);
-
-        _YAxis.Render(_RenderTarget);
-
-        // Draw the visualization.
-        if (_VisualisationStream.is_valid())
         {
-            double PlaybackTime; // in ms
+            _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
-            if (_VisualisationStream->get_absolute_time(PlaybackTime))
+            _XAxis.Render(_RenderTarget);
+
+            _YAxis.Render(_RenderTarget);
+
+            // Draw the spectrum.
+            if (_VisualisationStream.is_valid())
             {
-                double WindowDuration = _Configuration.GetWindowDurationInMs();
+                double PlaybackTime; // in ms
 
-                audio_chunk_impl Chunk;
+                if (_VisualisationStream->get_absolute_time(PlaybackTime))
+                {
+                    double WindowDuration = _Configuration.GetWindowDurationInMs();
 
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
-                    RenderChunk(Chunk);
+                    audio_chunk_impl Chunk;
+
+                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
+                        RenderChunk(Chunk);
+                }
             }
-        }
 
-        if (_Configuration._LogLevel != LogLevel::None)
-            _FrameCounter.Render(_RenderTarget);
+            if (_Configuration._ShowFrameCounter)
+                _FrameCounter.Render(_RenderTarget);
+        }
 
         hr = _RenderTarget->EndDraw();
 
@@ -567,6 +624,8 @@ HRESULT UIElement::RenderFrame()
             hr = S_OK;
         }
     }
+
+    ::LeaveCriticalSection(&_Lock);
 
     return hr;
 }
@@ -677,7 +736,7 @@ HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
 /// <summary>
 /// Generates frequency bands.
 /// </summary>
-void UIElement::GenerateFrequencyBands()
+void UIElement::GenerateLinearFrequencyBands()
 {
     const double MinFreq = ScaleF(_Configuration._LoFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
     const double MaxFreq = ScaleF(_Configuration._HiFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
@@ -693,13 +752,15 @@ void UIElement::GenerateFrequencyBands()
         Iter.Hi  = DeScaleF(Map((double) i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
         ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
+
+        Iter.BackColor = _Configuration._DarkBandColor;
     }
 }
 
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void UIElement::GenerateFrequencyBandsFromNotes()
+void UIElement::GenerateOctaveFrequencyBands()
 {
     const double Root24 = ::exp2(1. / 24.);
 
@@ -724,7 +785,11 @@ void UIElement::GenerateFrequencyBandsFromNotes()
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[(int) i % 12], (int) i / 12, fb.Ctr);
+        int n = (int) i % 12;
+
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], (int) i / 12, fb.Ctr);
+
+        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LiteBandColor;
 
         _FrequencyBands.push_back(fb);
     }
@@ -733,7 +798,7 @@ void UIElement::GenerateFrequencyBandsFromNotes()
 /// <summary>
 /// Generates frequency bands of AveePlayer.
 /// </summary>
-void UIElement::GenerateFrequencyBandsOfAveePlayer()
+void UIElement::GenerateAveePlayerFrequencyBands()
 {
     _FrequencyBands.resize(_Configuration._NumBands);
 
@@ -741,9 +806,11 @@ void UIElement::GenerateFrequencyBandsOfAveePlayer()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Lo  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+
+        Iter.BackColor = _Configuration._DarkBandColor;
     }
 }
 

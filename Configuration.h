@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.06) P. Stuer **/
+/** $VER: Configuration.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -174,6 +174,7 @@ enum class ColorScheme
     foobar2000DarkMode = 6,
 
     Fire = 7,
+    Rainbow = 8,
 };
 
 enum class PeakMode
@@ -229,6 +230,7 @@ public:
 public:
     RECT _DialogBounds;                                                 // Will be initialized in OnInitDialog()
 
+    bool _ShowFrameCounter;
     bool _UseHardwareRendering;
     bool _UseZeroTrigger;
     bool _UseAntialiasing;
@@ -240,8 +242,8 @@ public:
         Transform _Transform;                                           // FFT or CQT
 
         WindowFunctions _WindowFunction;
-        double _WindowParameter;                                        // 0 .. 10
-        double _WindowSkew;                                             // -1 .. 1
+        double _WindowParameter;                                        // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
+        double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
 
         uint32_t _SelectedChannels;
@@ -283,19 +285,26 @@ public:
 
     #pragma region Rendering
         D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
+        bool _UseCustomBackColor;
 
         #pragma region X axis
             XAxisMode _XAxisMode;
 
             D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomXTextColor;
+
             D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomXLineColor;
         #pragma endregion
 
         #pragma region Y axis
             YAxisMode _YAxisMode;
 
             D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomYTextColor;
+
             D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
+            bool _UseCustomYLineColor;
 
             double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
             double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
@@ -311,8 +320,14 @@ public:
             std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
 
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
-            D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-            bool _ShowToolTips;
+
+            D2D1::ColorF _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+            D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
+            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
+            bool _ShowToolTips;                                         // True if tooltips should be displayed.
+
+            bool _HorizontalGradient;                                   // True if the gradient will be used to paint horizontally.
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
@@ -323,11 +338,12 @@ public:
         #pragma endregion
     #pragma endregion
 
-    #pragma region Colors
-
-    #pragma endregion
-
+    #pragma region Not Serialized
     LogLevel _LogLevel;
+
+    t_ui_color _DefBackColor;
+    t_ui_color _DefTextColor;
+    #pragma endregion
 /*
     bandwidthOffset: 1,
 
@@ -336,9 +352,6 @@ public:
     clampPeaks: true,
 
     labelTuning: 440,
-
-    showDC: true,
-    showNyquist: true,
 */
 public:
     /// <summary>
@@ -358,5 +371,5 @@ public:
     void UpdateGradient();
 
 private:
-    const size_t _CurrentVersion = 7;
+    const size_t _CurrentVersion = 8;
 };

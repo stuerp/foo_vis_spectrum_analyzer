@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.06) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.14) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -10,6 +10,36 @@
 #include "ConfigurationDialog.h"
 #include "Math.h"
 #include "Gradients.h"
+#include "Layout.h"
+
+/// <summary>
+/// Initializes the dialog.
+/// </summary>
+BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
+{
+    DlgResize_Init(true, true, WS_CLIPCHILDREN);
+
+    DialogParameters * dp = (DialogParameters *) lParam;
+
+    _hParent = dp->_hWnd;
+    _Configuration = dp->_Configuration;
+
+    if (IsRectEmpty(&_Configuration->_DialogBounds))
+    {
+        _Configuration->_DialogBounds.right  = W_A00;
+        _Configuration->_DialogBounds.bottom = H_A00;
+
+        ::MapDialogRect(m_hWnd, &_Configuration->_DialogBounds);
+    }
+
+    _OldConfiguration = *_Configuration;
+
+    Initialize();
+
+    MoveWindow(&_Configuration->_DialogBounds);
+
+    return TRUE;
+}
 
 /// <summary>
 /// Initializes the controls of the dialog.
@@ -18,9 +48,26 @@ void ConfigurationDialog::Initialize()
 {
     Terminate();
 
+    // Initializes the menu list.
+    {
+        _MenuList.Initialize(GetDlgItem(IDC_MENULIST));
+
+        _MenuList.ResetContent();
+
+        const WCHAR * Labels[] = { L"Transform", L"Spectrum" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            _MenuList.AddString(Labels[i]);
+
+        _MenuList.SetCurSel(0);
+
+        UpdatePage1(SW_SHOW);
+        UpdatePage2(SW_HIDE);
+    }
+
     #pragma region Transform
     {
-        auto w = (CComboBox) GetDlgItem(IDC_TRANSFORM);
+        auto w = (CComboBox) GetDlgItem(IDC_METHOD);
 
         w.ResetContent();
 
@@ -46,7 +93,7 @@ void ConfigurationDialog::Initialize()
             L"Bartlett", L"Parzen",
             L"Welch", L"Power-of-sine", L"Power-of-circle",
             L"Gauss", L"Tukey", L"Kaiser", L"Poison",
-            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine"
+            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
         };
 
         assert(((size_t) WindowFunctions::Count == _countof(Labels)));
@@ -104,7 +151,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"Residual Mean Square (RMS)", L"RMS Sum", L"Average", L"Median" };
+        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -338,7 +385,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region X Axis
     {
-        auto w = (CComboBox) GetDlgItem(IDC_X_AXIS);
+        auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
 
         w.ResetContent();
 
@@ -354,7 +401,7 @@ void ConfigurationDialog::Initialize()
     #pragma region Y Axis
     {
         {
-            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS);
+            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
 
             w.ResetContent();
 
@@ -429,7 +476,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
         {
@@ -440,8 +487,8 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
-    }
-    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, _Configuration->_HorizontalGradient);
+        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
     }
     {
@@ -485,11 +532,21 @@ void ConfigurationDialog::Initialize()
     _Colors.Initialize(GetDlgItem(IDC_COLORS));
 
     _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
+
     _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
     _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
+
     _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
     _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
-    _BandBackColor.Initialize(GetDlgItem(IDC_BAND_BACK_COLOR));
+
+    _LiteBandColor.Initialize(GetDlgItem(IDC_WHITE_KEYS));
+    _DarkBandColor.Initialize(GetDlgItem(IDC_BLACK_KEYS));
+
+    SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
+    SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
+    SendDlgItemMessageW(IDC_X_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXLineColor);
+    SendDlgItemMessageW(IDC_Y_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYTextColor);
+    SendDlgItemMessageW(IDC_Y_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYLineColor);
 
     UpdateColorControls();
 
@@ -504,6 +561,8 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    _MenuList.Terminate();
+
     _WindowParameter.Terminate();
     _WindowSkew.Terminate();
 
@@ -539,7 +598,8 @@ void ConfigurationDialog::Terminate()
     _YTextColor.Terminate();
     _YLineColor.Terminate();
 
-    _BandBackColor.Terminate();
+    _LiteBandColor.Terminate();
+    _DarkBandColor.Terminate();
 }
 
 /// <summary>
@@ -556,8 +616,18 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
+        case IDC_MENULIST:
+        {
+            int Selection = _MenuList.GetCurSel();
+
+            UpdatePage1((Selection == 0) ? SW_SHOW : SW_HIDE);
+            UpdatePage2((Selection == 0) ? SW_HIDE : SW_SHOW);
+
+            return;
+        }
+
     #pragma region Transform
-        case IDC_TRANSFORM:
+        case IDC_METHOD:
         {
             _Configuration->_Transform = (Transform) SelectedIndex;
 
@@ -621,7 +691,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
 
     #pragma region X axis
-        case IDC_X_AXIS:
+        case IDC_X_AXIS_MODE:
         {
             _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
             break;
@@ -629,7 +699,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     #pragma endregion
 
     #pragma region Y axis
-        case IDC_Y_AXIS:
+        case IDC_Y_AXIS_MODE:
         {
             _Configuration->_YAxisMode = (YAxisMode) SelectedIndex;
 
@@ -689,7 +759,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if ((code != EN_CHANGE) || (_Configuration == nullptr))
+    if ((_Configuration == nullptr) || (code != EN_CHANGE))
         return;
 
     WCHAR Text[MAX_PATH];
@@ -710,9 +780,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
             break;
         }
-    #pragma endregion
 
-    #pragma region FFT
         case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -832,6 +900,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 /// </summary>
 void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 {
+    if (_Configuration == nullptr)
+        return;
+
     switch (id)
     {
     #pragma region FFT
@@ -973,6 +1044,18 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_HORIZONTAL_GRADIENT:
+        {
+            _Configuration->_HorizontalGradient = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_LED_MODE:
+        {
+            _Configuration->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_SHOW_TOOLTIPS:
         {
             _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1030,6 +1113,41 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_BACK_COLOR_DEF:
+        {
+            _Configuration->_UseCustomBackColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_X_TEXT_COLOR_DEF:
+        {
+            _Configuration->_UseCustomXTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_X_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomXLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_Y_TEXT_COLOR_DEF:
+        {
+            _Configuration->_UseCustomYTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_Y_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomYLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
         case IDC_RESET:
         {
             _Configuration->Reset();
@@ -1050,6 +1168,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             Terminate();
 
             DestroyWindow();
+
+            _Configuration = nullptr;
             break;
         }
 
@@ -1065,6 +1185,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 /// </summary>
 LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 {
+    if (_Configuration == nullptr)
+        return -1;
+
     LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
     int NewPos = nmud->iPos + nmud->iDelta;
@@ -1202,6 +1325,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 /// </summary>
 LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 {
+    if (_Configuration == nullptr)
+        return -1;
+
     switch (nmhd->idFrom)
     {
         case IDC_COLORS:
@@ -1275,9 +1401,15 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_BAND_BACK_COLOR:
+        case IDC_WHITE_KEYS:
         {
-            _BandBackColor.GetColor(_Configuration->_BandBackColor);
+            _LiteBandColor.GetColor(_Configuration->_LiteBandColor);
+            break;
+        }
+
+        case IDC_BLACK_KEYS:
+        {
+            _DarkBandColor.GetColor(_Configuration->_DarkBandColor);
             break;
         }
 
@@ -1319,6 +1451,95 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
     UpdateChannelsMenu();
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+}
+
+/// <summary>
+/// Update page 1.
+/// </summary>
+void ConfigurationDialog::UpdatePage1(int mode)
+{
+    static const int Page1[] =
+    {
+        // Transform
+        IDC_TRANSFORM_GROUP,
+            IDC_METHOD_LBL, IDC_METHOD,
+            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
+            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
+            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+            IDC_CHANNELS,
+        // FFT
+        IDC_FFT_GROUP,
+            IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
+            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
+            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
+            IDC_SMOOTH_LOWER_FREQUENCIES,
+            IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+        // Frequencies
+        IDC_FREQUENCIES_GROUP,
+            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
+            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
+            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
+            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
+            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+    };
+
+    for (size_t i = 0; i < _countof(Page1); ++i)
+    {
+        auto w = GetDlgItem(Page1[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(mode);
+    }
+}
+
+/// <summary>
+/// Update page 2.
+/// </summary>
+void ConfigurationDialog::UpdatePage2(int mode)
+{
+    static const int Page2[] =
+    {
+        // Bands
+        IDC_BANDS,
+            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
+            IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
+            IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
+            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+        // X axis
+        IDC_X_AXIS,
+            IDC_X_AXIS_MODE_LBL, IDC_X_AXIS_MODE,
+        // Y axis
+        IDC_Y_AXIS,
+            IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
+            IDC_AMPLITUDE_LBL_1, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_LO_SPIN, IDC_AMPLITUDE_LBL_2, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_HI_SPIN, IDC_AMPLITUDE_LBL_3,
+            IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
+            IDC_USE_ABSOLUTE,
+            IDC_GAMMA_LBL, IDC_GAMMA,
+        // Colors
+        IDC_COLORS_GROUP,
+            IDC_BACK_COLOR_LBL, IDC_BACK_COLOR, IDC_BACK_COLOR_DEF,
+            IDC_X_TEXT_COLOR_LBL, IDC_X_TEXT_COLOR, IDC_X_TEXT_COLOR_DEF,
+            IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR, IDC_X_LINE_COLOR_DEF,
+            IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR, IDC_Y_TEXT_COLOR_DEF,
+            IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
+            IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
+            IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
+    };
+
+    for (size_t i = 0; i < _countof(Page2); ++i)
+    {
+        auto w = GetDlgItem(Page2[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(mode);
+    }
 }
 
 /// <summary>
@@ -1375,11 +1596,12 @@ void ConfigurationDialog::UpdateControls()
 
     // Frequencies
     bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);
+    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
         GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && !IsOctaves);
         GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
         GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves);
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves && !IsAveePlayer);
 
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
@@ -1388,10 +1610,6 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(IsOctaves);
         GetDlgItem(IDC_PITCH).EnableWindow(IsOctaves);
         GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
-
-    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
-
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsAveePlayer);
 
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
@@ -1433,12 +1651,23 @@ void ConfigurationDialog::UpdateColorControls()
     }
 
     {
-        _BackColor.SetColor(_Configuration->_BackColor);
-        _XTextColor.SetColor(_Configuration->_XTextColor);
-        _XLineColor.SetColor(_Configuration->_XLineColor);
-        _YTextColor.SetColor(_Configuration->_YTextColor);
-        _YLineColor.SetColor(_Configuration->_YLineColor);
-        _BandBackColor.SetColor(_Configuration->_BandBackColor);
+        _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
+        _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
+
+        _XTextColor.EnableWindow(_Configuration->_UseCustomXTextColor);
+        _XTextColor.SetColor(_Configuration->_UseCustomXTextColor ? _Configuration->_XTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+
+        _XLineColor.EnableWindow(_Configuration->_UseCustomXLineColor);
+        _XLineColor.SetColor(_Configuration->_UseCustomXLineColor ? _Configuration->_XLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+
+        _YTextColor.EnableWindow(_Configuration->_UseCustomYTextColor);
+        _YTextColor.SetColor(_Configuration->_UseCustomYTextColor ? _Configuration->_YTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+
+        _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
+        _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+
+        _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
+        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
 
     // Remove and Reverse are only enabled when there is more than 1 color.

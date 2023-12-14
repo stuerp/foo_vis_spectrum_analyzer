@@ -1,7 +1,11 @@
 
-/** $VER: UIElement.h (2023.12.06) P. Stuer **/
+/** $VER: UIElement.h (2023.12.14) P. Stuer **/
 
 #pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -16,6 +20,7 @@
 #include "Spectrum.h"
 
 #include <vector>
+#include <complex>
 
 /// <summary>
 /// Implements the UIElement and Playback interface.
@@ -30,13 +35,12 @@ public:
     UIElement(UIElement &&) = delete;
     UIElement & operator=(UIElement &&) = delete;
 
-    #pragma region CWindowImpl interface
+    #pragma region CWindowImpl
     static CWndClassInfo & GetWndClassInfo();
 
     BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
-        MSG_WM_TIMER(OnTimer)
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
@@ -51,7 +55,6 @@ public:
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
-    void OnTimer(UINT_PTR nIDEvent);
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     virtual void OnContextMenu(CWindow wnd, CPoint point);
@@ -62,7 +65,6 @@ public:
     void OnMouseLeave();
 
     LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
-    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
     #pragma endregion
 
 protected:
@@ -96,6 +98,7 @@ private:
     #pragma endregion
 
     virtual void ToggleFullScreen() noexcept;
+    void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
 
     void Configure() noexcept;
@@ -111,9 +114,9 @@ private:
     HRESULT RenderSpectrum();
     HRESULT RenderFrameCounter();
 
-    void GenerateFrequencyBands();
-    void GenerateFrequencyBandsFromNotes();
-    void GenerateFrequencyBandsOfAveePlayer();
+    void GenerateLinearFrequencyBands();
+    void GenerateOctaveFrequencyBands();
+    void GenerateAveePlayerFrequencyBands();
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
@@ -131,18 +134,17 @@ private:
 
     #pragma endregion
 
+//  static DWORD WINAPI TimerMain(LPVOID Parameter);
+    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
 protected:
     Configuration _Configuration;
 
 private:
     enum
     {
-        ID_REFRESH_TIMER = 1
-    };
-
-    enum
-    {
         IDM_TOGGLE_FULLSCREEN = 1,
+        IDM_TOGGLE_FRAME_COUNTER,
         IDM_TOGGLE_HARDWARE_RENDERING,
 
         IDM_REFRESH_RATE_LIMIT_20,
@@ -154,8 +156,16 @@ private:
         IDM_CONFIGURE,
     };
 
-    ULONGLONG _LastRefresh;
-    DWORD _RefreshInterval;
+    HANDLE _hMutex;
+
+    CRITICAL_SECTION _Lock;
+    PTP_TIMER _ThreadPoolTimer;
+
+    struct TimerData
+    {
+        HWND hWnd;
+        Configuration * Configuration;
+    } _TimerData;
 
     bool _UseFullScreen;
 

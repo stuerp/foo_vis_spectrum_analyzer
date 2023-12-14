@@ -83,6 +83,19 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.5.1.0, 2023-12-14
+
+* New: Support for DUI and CUI default user interface colors.
+* New: LED mode.
+* New: The color scheme can be used as a horizontal gradient.
+* New: The color for the background of white and black 'keys' can be selected separately.
+* New: ([Galss](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200)) window function.
+* Improved: Rendering occurs on a separate thread resulting in smoother animation.
+* Improved: Re-designed configuration dialog to fit on installations scaled higher than 100%.
+* Fixed: Some settings were reset when the configuration dialog re-opened during the same session.
+* Fixed: Scaling method was available when other than Linear distribution was selected.
+* Fixed: Bug in Median, RMS and RMS Sum summation method.
+
 v0.5.0.0, 2023-12-08
 
 * New: Columns UI support.

@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2023.12.01) P. Stuer **/
+/** $VER: FrequencyBand.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -18,9 +18,6 @@ struct FrequencyBand
     double Ctr;
     double Hi;
 
-//  double LoBound;
-//  double HiBound;
-
     double NewValue;
     double CurValue;
 
@@ -30,4 +27,7 @@ struct FrequencyBand
     double Opacity;     // The opacity of the indicator (0.0 - 1.0)
 
     WCHAR Label[16];
+
+    D2D1_COLOR_F ForeColor;
+    D2D1_COLOR_F BackColor;
 };

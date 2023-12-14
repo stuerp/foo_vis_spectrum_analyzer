@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.11.29) P. Stuer - Represents and renders the X axis. **/
+/** $VER: XAxis.h (2023.12.10) P. Stuer - Represents and renders the X axis. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class XAxis
 {
 public:
-    XAxis() : _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Height(30.f) { }
+    XAxis() : _Configuration(nullptr), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Rect(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
@@ -41,17 +41,19 @@ public:
     /// </summary>
     void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
     {
+        _Configuration = configuration;
+
         if (frequencyBands.size() == 0)
             return;
 
-        _Mode = configuration->_XAxisMode;
+        _Mode = _Configuration->_XAxisMode;
 
         _LoFrequency = frequencyBands[0].Ctr;
         _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
         _NumBands = frequencyBands.size();
 
-        _TextColor = configuration->_XTextColor;
-        _LineColor = configuration->_XLineColor;
+        _TextColor = _Configuration->_XTextColor;
+        _LineColor = _Configuration->_XLineColor;
 
         _Labels.clear();
 
@@ -191,7 +193,7 @@ public:
 
             // Draw the vertical grid line.
             {
-                _Brush->SetColor(_LineColor);
+                _Brush->SetColor(_Configuration->_UseCustomXLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
                 renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), _Brush, StrokeWidth, nullptr);
             }
@@ -212,7 +214,7 @@ public:
 
                     if (OldTextRight <= TextRect.left)
                     {
-                        _Brush->SetColor(_TextColor);
+                        _Brush->SetColor(_Configuration->_UseCustomXTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
                         renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
@@ -292,6 +294,8 @@ public:
     }
 
 private:
+    const Configuration * _Configuration;
+
     XAxisMode _Mode;
 
     double _LoFrequency;

@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2023.12.03) P. Stuer **/
+/** $VER: WindowFunctions.h (2023.12.11) P. Stuer **/
 
 #pragma once
 
@@ -8,8 +8,6 @@
 #pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
-
-#include "Configuration.h"
 
 using namespace std;
 
@@ -40,6 +38,8 @@ enum class WindowFunctions
 
     OggVorbis,
     CascadedSine,
+
+    Galss,              // https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200
 
     Count
 };
@@ -229,7 +229,7 @@ public:
 class Welch : public WindowFunction
 {
 public:
-    Welch(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Welch(double skew, bool truncate, double power) : WindowFunction(skew, truncate), _Power(power) { }
 
     virtual ~Welch() { }
 
@@ -237,8 +237,11 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. - (x * x);
+        return ::pow(1. - (x * x), _Power);
     }
+
+private:
+    double _Power;
 };
 
 /// <summary>
@@ -443,6 +446,27 @@ public:
 };
 
 /// <summary>
+/// Implements a Galss window function.
+/// </summary>
+class Galss : public WindowFunction
+{
+public:
+    Galss(double skew, bool truncate) : WindowFunction(skew, truncate) { _Denominator = ::pow(::tanh(M_SQRT2), 2.); }
+
+    virtual ~Galss() { }
+
+    virtual double operator () (double x) const override
+    {
+        x = __super::operator()(x);
+
+        return ::pow(((1. - 1. /(x + 2.)) * (1. - 1. / (-x + 2.))) * 4., 2.) * -(::tanh(M_SQRT2 * (-x + 1.)) * ::tanh(M_SQRT2 * (-x - 1.))) / _Denominator;
+    }
+
+private:
+    double _Denominator;
+};
+
+/// <summary>
 /// Creates the specified window function.
 /// </summary>
 inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, double windowParameter, double windowSkew, bool truncate)
@@ -479,7 +503,7 @@ inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, d
 
         // Polynomial windows
         case WindowFunctions::Welch:
-            return new Welch(windowSkew, truncate);
+            return new Welch(windowSkew, truncate, windowParameter);
 
         case WindowFunctions::PowerOfSine:
             return new PowerOfSine(windowSkew, truncate, windowParameter);
@@ -512,6 +536,9 @@ inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, d
 
         case WindowFunctions::CascadedSine:
             return new CascadedSine(windowSkew, truncate);
+
+        case WindowFunctions::Galss:
+            return new Galss(windowSkew, truncate);
 
         case WindowFunctions::Count:
             return nullptr;

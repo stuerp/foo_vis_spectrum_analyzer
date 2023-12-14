@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.11.29) P. Stuer - Represents and renders the Y axis. **/
+/** $VER: YAxis.h (2023.12.10) P. Stuer - Represents and renders the Y axis. **/
 
 #pragma once
 
@@ -99,7 +99,7 @@ public:
         {
             // Draw the horizontal grid line.
             {
-                _Brush->SetColor(_LineColor);
+                _Brush->SetColor(_Configuration->_UseCustomYLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
                 renderTarget->DrawLine(D2D1_POINT_2F(_Rect.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), _Brush, StrokeWidth, nullptr);
             }
@@ -110,7 +110,7 @@ public:
 
                 if (TextRect.bottom < OldTextTop)
                 {
-                    _Brush->SetColor(_TextColor);
+                    _Brush->SetColor(_Configuration->_UseCustomYTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 

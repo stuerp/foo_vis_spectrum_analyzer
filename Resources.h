@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.08) P. Stuer **/
+/** $VER: Resources.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -27,8 +27,8 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          5
-#define NUM_FILE_PATCH          0
-#define NUM_FILE_PRERELEASE     1
+#define NUM_FILE_PATCH          1
+#define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
 #define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
@@ -36,8 +36,8 @@
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       5
-#define NUM_PRODUCT_PATCH       0
-#define NUM_PRODUCT_PRERELEASE  1
+#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
 #define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)
@@ -57,99 +57,124 @@
 
 #define IDD_CONFIGURATION               1000
 
+// Menu List
+
+#define IDC_MENULIST                    1500
+
 // Transform
 
-#define IDC_TRANSFORM                   2000
-#define IDC_TRANSFORM_TYPE              2002
+#define IDC_TRANSFORM_GROUP             2000
 
-#define IDC_WINDOW_FUNCTION             2004
-#define IDC_WINDOW_PARAMETER            2006
-#define IDC_WINDOW_SKEW                 2008
+#define IDC_METHOD_LBL                  2010
+#define IDC_METHOD                      2012
 
-#define IDC_CHANNELS                    2010
+#define IDC_WINDOW_FUNCTION_LBL         2020
+#define IDC_WINDOW_FUNCTION             2022
+#define IDC_WINDOW_PARAMETER_LBL        2024
+#define IDC_WINDOW_PARAMETER            2026
+#define IDC_WINDOW_SKEW_LBL             2028
+#define IDC_WINDOW_SKEW                 2030
+
+#define IDC_CHANNELS                    2036
+
+#define IDM_CHANNELS                    9000
+
+#define IDM_CHANNELS_FIRST              9100
+#define IDM_CHANNELS_LAST               9118
 
 // FFT
 
-#define IDC_FFT_SIZE                    2020
-#define IDC_FFT_SIZE_PARAMETER_NAME     2022
-#define IDC_FFT_SIZE_PARAMETER          2024
-#define IDC_FFT_SIZE_PARAMETER_UNIT     2026
+#define IDC_FFT_GROUP                   2040
 
-#define IDC_SUMMATION_METHOD            2028
-#define IDC_MAPPING_METHOD              2030
+#define IDC_FFT_SIZE_LBL                2050
+#define IDC_FFT_SIZE                    2052
+#define IDC_FFT_SIZE_PARAMETER_NAME     2054
+#define IDC_FFT_SIZE_PARAMETER          2056
+#define IDC_FFT_SIZE_PARAMETER_UNIT     2058
 
-#define IDC_KERNEL_SIZE                 2032
-#define IDC_KERNEL_SIZE_SPIN            2034
+#define IDC_SUMMATION_METHOD_LBL        2060
+#define IDC_SUMMATION_METHOD            2062
+#define IDC_MAPPING_METHOD_LBL          2064
+#define IDC_MAPPING_METHOD              2066
 
-#define IDC_SMOOTH_LOWER_FREQUENCIES    2036
-#define IDC_SMOOTH_GAIN_TRANSITION      2038
+#define IDC_SMOOTH_LOWER_FREQUENCIES    2070
+#define IDC_SMOOTH_GAIN_TRANSITION      2072
+
+#define IDC_KERNEL_SIZE_LBL             2080
+#define IDC_KERNEL_SIZE                 2082
+#define IDC_KERNEL_SIZE_SPIN            2084
 
 // Frequencies
 
-#define IDC_DISTRIBUTION                2100
+#define IDC_FREQUENCIES_GROUP           2100
 
-#define IDC_NUM_BANDS                   2110
-#define IDC_NUM_BANDS_SPIN              2112
-#define IDC_LO_FREQUENCY                2114
-#define IDC_LO_FREQUENCY_SPIN           2116
-#define IDC_HI_FREQUENCY                2118
-#define IDC_HI_FREQUENCY_SPIN           2120
+#define IDC_DISTRIBUTION_LBL            2110
+#define IDC_DISTRIBUTION                2112
 
-#define IDC_MIN_NOTE                    2130
-#define IDC_MIN_NOTE_SPIN               2132
-#define IDC_MAX_NOTE                    2134
-#define IDC_MAX_NOTE_SPIN               2136
-#define IDC_BANDS_PER_OCTAVE            2138
-#define IDC_BANDS_PER_OCTAVE_SPIN       2140
-#define IDC_PITCH                       2142
-#define IDC_PITCH_SPIN                  2144
-#define IDC_TRANSPOSE                   2146
-#define IDC_TRANSPOSE_SPIN              2148
+#define IDC_NUM_BANDS_LBL               2120
+#define IDC_NUM_BANDS                   2122
+#define IDC_NUM_BANDS_SPIN              2124
 
-#define IDC_SCALING_FUNCTION            2150
+#define IDC_RANGE_LBL_1                 2130
+#define IDC_LO_FREQUENCY                2132
+#define IDC_LO_FREQUENCY_SPIN           2134
+#define IDC_RANGE_LBL_2                 2136
+#define IDC_HI_FREQUENCY                2138
+#define IDC_HI_FREQUENCY_SPIN           2140
+#define IDC_RANGE_LBL_3                 2142
 
-#define IDC_SKEW_FACTOR                 2152
-#define IDC_SKEW_FACTOR_SPIN            2154
-#define IDC_BANDWIDTH                   2156
-#define IDC_BANDWIDTH_SPIN              2158
+#define IDC_MIN_NOTE_LBL                2150
+#define IDC_MIN_NOTE                    2152
+#define IDC_MIN_NOTE_SPIN               2154
+#define IDC_MAX_NOTE_LBL                2156
+#define IDC_MAX_NOTE                    2158
+#define IDC_MAX_NOTE_SPIN               2160
 
-// X axis
+#define IDC_BANDS_PER_OCTAVE_LBL        2170
+#define IDC_BANDS_PER_OCTAVE            2172
+#define IDC_BANDS_PER_OCTAVE_SPIN       2174
 
-#define IDC_X_AXIS                      2200
+#define IDC_PITCH_LBL_1                 2180
+#define IDC_PITCH                       2182
+#define IDC_PITCH_SPIN                  2184
+#define IDC_PITCH_LBL_2                 2186
 
-// Y axis
+#define IDC_TRANSPOSE_LBL               2200
+#define IDC_TRANSPOSE                   2202
+#define IDC_TRANSPOSE_SPIN              2204
 
-#define IDC_Y_AXIS                      2300
+#define IDC_SCALING_FUNCTION_LBL        2210
+#define IDC_SCALING_FUNCTION            2212
 
-#define IDC_AMPLITUDE_LO                2302
-#define IDC_AMPLITUDE_LO_SPIN           2304
-#define IDC_AMPLITUDE_HI                2306
-#define IDC_AMPLITUDE_HI_SPIN           2308
-#define IDC_AMPLITUDE_STEP              2310
-#define IDC_AMPLITUDE_STEP_SPIN         2312
+#define IDC_SKEW_FACTOR_LBL             2220
+#define IDC_SKEW_FACTOR                 2222
+#define IDC_SKEW_FACTOR_SPIN            2224
 
-#define IDC_USE_ABSOLUTE                2314
-
-#define IDC_GAMMA                       2316
+#define IDC_BANDWIDTH_LBL               2230
+#define IDC_BANDWIDTH                   2232
+#define IDC_BANDWIDTH_SPIN              2234
 
 // Bands
 
 #define IDC_BANDS                       6000
 
-#define IDC_COLOR_SCHEME                6010
-#define IDC_DRAW_BAND_BACKGROUND        6011
-#define IDC_SHOW_TOOLTIPS               6012
+#define IDC_COLOR_SCHEME_LBL            6010
+#define IDC_COLOR_SCHEME                6012
+#define IDC_DRAW_BAND_BACKGROUND        6014
+#define IDC_LED_MODE                    6016
+#define IDC_SHOW_TOOLTIPS               6018
+#define IDC_HORIZONTAL_GRADIENT         6020
 
-#define IDC_GRADIENT                    6020
-#define IDC_COLORS                      6021
-#define IDC_ADD                         6022
-#define IDC_REMOVE                      6023
-#define IDC_REVERSE                     6024
+#define IDC_GRADIENT                    6022
+#define IDC_COLORS                      6024
+#define IDC_ADD                         6026
+#define IDC_REMOVE                      6028
+#define IDC_REVERSE                     6030
 
-#define IDC_SMOOTHING_METHOD            6030
-#define IDC_SMOOTHING_METHOD_LBL        6031
-#define IDC_SMOOTHING_FACTOR            6032
-#define IDC_SMOOTHING_FACTOR_LBL        6033
+#define IDC_SMOOTHING_METHOD            6032
+#define IDC_SMOOTHING_METHOD_LBL        6033
+#define IDC_SMOOTHING_FACTOR            6034
+#define IDC_SMOOTHING_FACTOR_LBL        6035
 
 #define IDC_PEAK_MODE                   6040
 #define IDC_PEAK_MODE_LBL               6041
@@ -159,20 +184,66 @@
 #define IDC_ACCELERATION                6052
 #define IDC_ACCELERATION_LBL            6053
 
+// X axis
+
+#define IDC_X_AXIS                      4000
+
+#define IDC_X_AXIS_MODE_LBL             4002
+#define IDC_X_AXIS_MODE                 4004
+
+// Y axis
+
+#define IDC_Y_AXIS                      5000
+
+#define IDC_Y_AXIS_MODE_LBL             5002
+#define IDC_Y_AXIS_MODE                 5004
+
+#define IDC_AMPLITUDE_LBL_1             5010
+#define IDC_AMPLITUDE_LO                5012
+#define IDC_AMPLITUDE_LO_SPIN           5014
+#define IDC_AMPLITUDE_LBL_2             5016
+#define IDC_AMPLITUDE_HI                5018
+#define IDC_AMPLITUDE_HI_SPIN           5020
+#define IDC_AMPLITUDE_LBL_3             5022
+
+#define IDC_AMPLITUDE_STEP_LBL_1        5030
+#define IDC_AMPLITUDE_STEP              5032
+#define IDC_AMPLITUDE_STEP_SPIN         5034
+#define IDC_AMPLITUDE_STEP_LBL_2        5036
+
+#define IDC_USE_ABSOLUTE                5040
+
+#define IDC_GAMMA_LBL                   5050
+#define IDC_GAMMA                       5052
+
 // Colors
 
 #define IDC_COLORS_GROUP                7000
 
-#define IDC_BACK_COLOR                  7010
-#define IDC_X_TEXT_COLOR                7012
-#define IDC_X_LINE_COLOR                7014
-#define IDC_Y_TEXT_COLOR                7016
-#define IDC_Y_LINE_COLOR                7018
-#define IDC_BAND_BACK_COLOR             7020
+#define IDC_BACK_COLOR_LBL              7010
+#define IDC_BACK_COLOR                  7012
+#define IDC_BACK_COLOR_DEF              7014
+
+#define IDC_X_TEXT_COLOR_LBL            7016
+#define IDC_X_TEXT_COLOR                7018
+#define IDC_X_TEXT_COLOR_DEF            7020
+
+#define IDC_X_LINE_COLOR_LBL            7022
+#define IDC_X_LINE_COLOR                7024
+#define IDC_X_LINE_COLOR_DEF            7026
+
+#define IDC_Y_TEXT_COLOR_LBL            7028
+#define IDC_Y_TEXT_COLOR                7030
+#define IDC_Y_TEXT_COLOR_DEF            7032
+
+#define IDC_Y_LINE_COLOR_LBL            7034
+#define IDC_Y_LINE_COLOR                7036
+#define IDC_Y_LINE_COLOR_DEF            7038
+
+#define IDC_WHITE_KEYS_LBL              7040
+#define IDC_WHITE_KEYS                  7042
+
+#define IDC_BLACK_KEYS_LBL              7050
+#define IDC_BLACK_KEYS                  7052
 
 #define IDC_RESET                       8000
-
-#define IDM_CHANNELS                    9000
-
-#define IDM_CHANNELS_FIRST              9100
-#define IDM_CHANNELS_LAST               9118

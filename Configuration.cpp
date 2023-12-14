@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.08) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.14) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -42,7 +42,7 @@ void Configuration::Reset() noexcept
     _UseAntialiasing = true;
 
     _UseZeroTrigger = false;
-    _WindowDuration = 100;
+    _WindowDuration = 50;
 
     // Transform
     _Transform = Transform::FFT;
@@ -92,18 +92,25 @@ void Configuration::Reset() noexcept
 
     // Rendering parameters
     _BackColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
+    _UseCustomBackColor = true;
 
     // X axis
     _XAxisMode = XAxisMode::Notes;
 
     _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    _UseCustomXTextColor = true;
+
     _XLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
+    _UseCustomXLineColor = true;
 
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
 
     _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    _UseCustomYTextColor = true;
+
     _YLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
+    _UseCustomYLineColor = true;
 
     _AmplitudeLo = -90.;
     _AmplitudeHi =   0.;
@@ -114,8 +121,11 @@ void Configuration::Reset() noexcept
 
     // Band
     _DrawBandBackground = true;
-    _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LEDMode = false;
     _ShowToolTips = true;
+    _HorizontalGradient = false;
 
     _ColorScheme = ColorScheme::Prism1;
 
@@ -191,18 +201,25 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     #pragma region Rendering
         _BackColor = other._BackColor;
+        _UseCustomBackColor = other._UseCustomBackColor;
 
         // X axis
         _XAxisMode = other._XAxisMode;
 
         _XTextColor = other._XTextColor;
+        _UseCustomXTextColor = other._UseCustomXTextColor;
+
         _XLineColor = other._XLineColor;
+        _UseCustomXLineColor = other._UseCustomXLineColor;
 
         // Y axis
         _YAxisMode = other._YAxisMode;
 
         _YTextColor = other._YTextColor;
+        _UseCustomYTextColor = other._UseCustomYTextColor;
+
         _YLineColor = other._YLineColor;
+        _UseCustomYLineColor = other._UseCustomYLineColor;
 
         _AmplitudeLo = other._AmplitudeLo;
         _AmplitudeHi = other._AmplitudeHi;
@@ -214,8 +231,11 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Bands
         _DrawBandBackground = other._DrawBandBackground;
-        _BandBackColor = other._BandBackColor;
+        _LiteBandColor = other._LiteBandColor;
+        _DarkBandColor = other._DarkBandColor;
+        _LEDMode = other._LEDMode;
         _ShowToolTips = other._ShowToolTips;
+        _HorizontalGradient = other._HorizontalGradient;
 
         _ColorScheme = other._ColorScheme;
 
@@ -253,6 +273,13 @@ void Configuration::Read(ui_element_config_parser & parser)
     parser >> _DialogBounds.top;
     parser >> _DialogBounds.right;
     parser >> _DialogBounds.bottom;
+
+    // Reduce the size to make sure it fits on screens scaled to 150%.
+    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+        _DialogBounds.right = _DialogBounds.left + 1910;
+
+    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+        _DialogBounds.bottom = _DialogBounds.top + 995;
 
     parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
@@ -381,10 +408,10 @@ void Configuration::Read(ui_element_config_parser & parser)
     parser >> _YLineColor.b;
     parser >> _YLineColor.a;
 
-    parser >> _BandBackColor.r;
-    parser >> _BandBackColor.g;
-    parser >> _BandBackColor.b;
-    parser >> _BandBackColor.a;
+    parser >> _DarkBandColor.r;
+    parser >> _DarkBandColor.g;
+    parser >> _DarkBandColor.b;
+    parser >> _DarkBandColor.a;
 
     // Version 6
     if (Version >= 6)
@@ -399,6 +426,25 @@ void Configuration::Read(ui_element_config_parser & parser)
         parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
         parser >> _WindowParameter;
         parser >> _WindowSkew;
+    }
+
+    // Version 8
+    if (Version >= 8)
+    {
+        parser >> _UseCustomBackColor;
+        parser >> _UseCustomXTextColor;
+        parser >> _UseCustomXLineColor;
+        parser >> _UseCustomYTextColor;
+        parser >> _UseCustomYLineColor;
+
+        parser >> _LEDMode;
+
+        parser >> _HorizontalGradient;
+
+        parser >> _LiteBandColor.r;
+        parser >> _LiteBandColor.g;
+        parser >> _LiteBandColor.b;
+        parser >> _LiteBandColor.a;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -519,10 +565,10 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _YLineColor.b;
     builder << _YLineColor.a;
 
-    builder << _BandBackColor.r;
-    builder << _BandBackColor.g;
-    builder << _BandBackColor.b;
-    builder << _BandBackColor.a;
+    builder << _DarkBandColor.r;
+    builder << _DarkBandColor.g;
+    builder << _DarkBandColor.b;
+    builder << _DarkBandColor.a;
 
     // Version 6
     builder << _AmplitudeStep;
@@ -534,6 +580,22 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << (int) _WindowFunction;
     builder << _WindowParameter;
     builder << _WindowSkew;
+
+    // Version 8
+    builder << _UseCustomBackColor;
+    builder << _UseCustomXTextColor;
+    builder << _UseCustomXLineColor;
+    builder << _UseCustomYTextColor;
+    builder << _UseCustomYLineColor;
+
+    builder << _LEDMode;
+
+    builder << _HorizontalGradient;
+
+    builder << _LiteBandColor.r;
+    builder << _LiteBandColor.g;
+    builder << _LiteBandColor.b;
+    builder << _LiteBandColor.a;
 }
 
 /// <summary>
@@ -635,7 +697,7 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
     reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
     reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
     reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    reader->read(&_BandBackColor, sizeof(_BandBackColor), abortHandler);
+    reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
 
     reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
 
@@ -645,6 +707,21 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
     reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
     reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
     reader->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
+
+    if (Version >= 8)
+    {
+        reader->read(&_UseCustomBackColor, sizeof(_UseCustomBackColor), abortHandler);
+        reader->read(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
+        reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
+        reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
+        reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+        reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+        reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+        reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+    }
 
     if (_ColorScheme != ColorScheme::Custom)
         _GradientStops = GetGradientStops(_ColorScheme);
@@ -740,7 +817,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_XLineColor, sizeof(_XLineColor), abortHandler);
     writer->write(&_YTextColor, sizeof(_YTextColor), abortHandler);
     writer->write(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    writer->write(&_BandBackColor, sizeof(_BandBackColor), abortHandler);
+    writer->write(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
 
     writer->write(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
 
@@ -750,6 +827,19 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
     writer->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
     writer->write(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
+
+    // Version 8
+    writer->write(&_UseCustomBackColor,  sizeof(_UseCustomBackColor), abortHandler);
+    writer->write(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
+    writer->write(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
+    writer->write(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
+    writer->write(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+    writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+    writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+    writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
 }
 
 /// <summary>
