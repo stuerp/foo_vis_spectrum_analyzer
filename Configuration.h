@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.11) P. Stuer **/
+/** $VER: Configuration.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -174,6 +174,7 @@ enum class ColorScheme
     foobar2000DarkMode = 6,
 
     Fire = 7,
+    Rainbow = 8,
 };
 
 enum class PeakMode
@@ -320,8 +321,10 @@ public:
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
             D2D1::ColorF _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
-            bool _LEDMode;
-            bool _ShowToolTips;
+            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
+            bool _ShowToolTips;                                         // True if tooltips should be displayed.
+
+            bool _HorizontalGradient;                                   // True if the gradient will be used to paint horizontally.
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0

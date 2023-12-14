@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.11) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.14) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -406,8 +406,16 @@
     // Checkbox
     #define W_A57    80
     #define H_A57    H_CHB
-    #define X_A57    X_A10
+    #define X_A57    X_A09
     #define Y_A57    Y_A10 + H_A10 + IY
+    #pragma endregion
+
+    #pragma region Horizontal gradient
+    // Checkbox
+    #define W_C13    80
+    #define H_C13    H_CHB
+    #define X_C13    X_A57 + W_A57 + IX
+    #define Y_C13    Y_A57
     #pragma endregion
 
     #pragma region LED mode

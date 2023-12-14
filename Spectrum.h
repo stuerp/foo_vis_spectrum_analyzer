@@ -48,7 +48,7 @@ public:
     {
         _GradientStops = gradientStops;
 
-        _BandForegroundBrush.Release();
+        _GradientBrush.Release();
     }
 
     void SetDrawBandBackground(bool drawBandBackground)
@@ -79,8 +79,9 @@ private:
 
     CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
 
-    CComPtr<ID2D1SolidColorBrush> _BandBackgroundBrush;
-    CComPtr<ID2D1LinearGradientBrush> _BandForegroundBrush;
+    CComPtr<ID2D1SolidColorBrush> _BackBrush;
+    CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
+    CComPtr<ID2D1SolidColorBrush> _ForeBrush;
 
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
 };

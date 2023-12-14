@@ -113,9 +113,9 @@ private:
     HRESULT RenderSpectrum();
     HRESULT RenderFrameCounter();
 
-    void GenerateFrequencyBands();
-    void GenerateFrequencyBandsFromNotes();
-    void GenerateFrequencyBandsOfAveePlayer();
+    void GenerateLinearFrequencyBands();
+    void GenerateOctaveFrequencyBands();
+    void GenerateAveePlayerFrequencyBands();
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);

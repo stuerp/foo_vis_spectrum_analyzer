@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.h (2023.11.26) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.h (2023.12.14) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -83,6 +83,22 @@ static const vector<D2D1_GRADIENT_STOP> GradientStopsFire =
     { 1.f,   D2D1::ColorF(0xA10100, 1.f) },
 };
 
+static const vector<D2D1_GRADIENT_STOP> GradientStopsRainbow =
+{
+    {  0.f / 11.f, D2D1::ColorF(0x881177, 1.f) },
+    {  1.f / 11.f, D2D1::ColorF(0xAA3355, 1.f) },
+    {  2.f / 11.f, D2D1::ColorF(0xCC6666, 1.f) },
+    {  3.f / 11.f, D2D1::ColorF(0xEE9944, 1.f) },
+    {  4.f / 11.f, D2D1::ColorF(0xEEDD00, 1.f) },
+    {  5.f / 11.f, D2D1::ColorF(0x99DD55, 1.f) },
+    {  6.f / 11.f, D2D1::ColorF(0x44DD88, 1.f) },
+    {  7.f / 11.f, D2D1::ColorF(0x22CCBB, 1.f) },
+    {  8.f / 11.f, D2D1::ColorF(0x00BBCC, 1.f) },
+    {  9.f / 11.f, D2D1::ColorF(0x0099CC, 1.f) },
+    { 10.f / 11.f, D2D1::ColorF(0x3366BB, 1.f) },
+    { 11.f / 11.f, D2D1::ColorF(0x663399, 1.f) },
+};
+
 /// <summary>
 /// Gets a gradient stop vector.
 /// </summary>
@@ -103,5 +119,6 @@ static const vector<D2D1_GRADIENT_STOP> GetGradientStops(ColorScheme colorScheme
         case ColorScheme::foobar2000DarkMode: return GradientStopsFB2KDarkMode; break;
 
         case ColorScheme::Fire: return GradientStopsFire; break;
+        case ColorScheme::Rainbow: return GradientStopsRainbow; break;
     };
 }

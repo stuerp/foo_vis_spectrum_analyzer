@@ -386,20 +386,59 @@ void UIElement::SetConfiguration() noexcept
                 default:
 
                 case FrequencyDistribution::Linear:
-                    GenerateFrequencyBands();
+                    GenerateLinearFrequencyBands();
                     break;
 
                 case FrequencyDistribution::Octaves:
-                    GenerateFrequencyBandsFromNotes();
+                    GenerateOctaveFrequencyBands();
                     break;
 
                 case FrequencyDistribution::AveePlayer:
-                    GenerateFrequencyBandsOfAveePlayer();
+                    GenerateAveePlayerFrequencyBands();
                     break;
             }
         }
         else
-            GenerateFrequencyBandsFromNotes();
+            GenerateOctaveFrequencyBands();
+    }
+
+    // Generate the horizontal color gradient, if required.
+    {
+        if (_Configuration._GradientStops.size() > 1)
+        {
+            size_t j = 0;
+
+            D2D1_COLOR_F Color1 = _Configuration._GradientStops[0].color;
+            D2D1_COLOR_F Color2 = _Configuration._GradientStops[1].color;
+
+            float i =  0.f;
+            float n = (_Configuration._GradientStops[1].position - _Configuration._GradientStops[0].position) * (float) _FrequencyBands.size();
+
+            for (FrequencyBand & Iter : _FrequencyBands)
+            {
+                Iter.Color = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
+                i++;
+
+                if (i >= n)
+                {
+                    j++;
+
+                    if (j == _Configuration._GradientStops.size() - 1)
+                        break;
+
+                    Color1 = _Configuration._GradientStops[j].color;
+                    Color2 = _Configuration._GradientStops[j + 1].color;
+
+                    i = 0.f;
+                    n = (_Configuration._GradientStops[j + 1].position - _Configuration._GradientStops[j].position) * (float) _FrequencyBands.size();;
+                }
+            }
+        }
+        else
+        {
+            for (FrequencyBand & Iter : _FrequencyBands)
+                Iter.Color = _Configuration._GradientStops[0].color;
+        }
     }
 
     _XAxis.Initialize(&_Configuration, _FrequencyBands);
@@ -681,7 +720,7 @@ HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
 /// <summary>
 /// Generates frequency bands.
 /// </summary>
-void UIElement::GenerateFrequencyBands()
+void UIElement::GenerateLinearFrequencyBands()
 {
     const double MinFreq = ScaleF(_Configuration._LoFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
     const double MaxFreq = ScaleF(_Configuration._HiFrequency, _Configuration._ScalingFunction, _Configuration._SkewFactor);
@@ -703,7 +742,7 @@ void UIElement::GenerateFrequencyBands()
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void UIElement::GenerateFrequencyBandsFromNotes()
+void UIElement::GenerateOctaveFrequencyBands()
 {
     const double Root24 = ::exp2(1. / 24.);
 
@@ -737,7 +776,7 @@ void UIElement::GenerateFrequencyBandsFromNotes()
 /// <summary>
 /// Generates frequency bands of AveePlayer.
 /// </summary>
-void UIElement::GenerateFrequencyBandsOfAveePlayer()
+void UIElement::GenerateAveePlayerFrequencyBands()
 {
     _FrequencyBands.resize(_Configuration._NumBands);
 
@@ -745,9 +784,9 @@ void UIElement::GenerateFrequencyBandsOfAveePlayer()
     {
         FrequencyBand& Iter = _FrequencyBands[i];
 
-        Iter.Lo      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr     = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi      = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Lo  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
     }
 }
 

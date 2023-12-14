@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.11) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.14) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -124,6 +124,7 @@ void Configuration::Reset() noexcept
     _BandBackColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
     _ShowToolTips = true;
+    _HorizontalGradient = false;
 
     _ColorScheme = ColorScheme::Prism1;
 
@@ -232,6 +233,7 @@ Configuration & Configuration::operator=(const Configuration & other)
         _BandBackColor = other._BandBackColor;
         _LEDMode = other._LEDMode;
         _ShowToolTips = other._ShowToolTips;
+        _HorizontalGradient = other._HorizontalGradient;
 
         _ColorScheme = other._ColorScheme;
 
@@ -434,6 +436,8 @@ void Configuration::Read(ui_element_config_parser & parser)
         parser >> _UseCustomYLineColor;
 
         parser >> _LEDMode;
+
+        parser >> _HorizontalGradient;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -578,6 +582,8 @@ void Configuration::Write(ui_element_config_builder & builder) const
     builder << _UseCustomYLineColor;
 
     builder << _LEDMode;
+
+    builder << _HorizontalGradient;
 }
 
 /// <summary>
@@ -699,6 +705,8 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
         reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
 
         reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+        reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -814,6 +822,8 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
     writer->write(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
 
     writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+    writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
 }
 
 /// <summary>

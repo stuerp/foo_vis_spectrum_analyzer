@@ -476,7 +476,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
         {
@@ -487,11 +487,8 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
-    }
-    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, _Configuration->_HorizontalGradient);
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
-    }
-    {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
     }
     {
@@ -1042,6 +1039,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_HORIZONTAL_GRADIENT:
+        {
+            _Configuration->_HorizontalGradient = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_LED_MODE:
         {
             _Configuration->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1493,7 +1496,7 @@ void ConfigurationDialog::UpdatePage2(int mode)
     {
         // Bands
         IDC_BANDS,
-            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
+            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
             IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.11) P. Stuer **/
+/** $VER: Resources.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -27,8 +27,8 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          5
-#define NUM_FILE_PATCH          0
-#define NUM_FILE_PRERELEASE     1
+#define NUM_FILE_PATCH          1
+#define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
 #define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
@@ -36,8 +36,8 @@
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       5
-#define NUM_PRODUCT_PATCH       0
-#define NUM_PRODUCT_PRERELEASE  1
+#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
 #define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)
@@ -163,17 +163,18 @@
 #define IDC_DRAW_BAND_BACKGROUND        6014
 #define IDC_LED_MODE                    6016
 #define IDC_SHOW_TOOLTIPS               6018
+#define IDC_HORIZONTAL_GRADIENT         6020
 
-#define IDC_GRADIENT                    6020
-#define IDC_COLORS                      6021
-#define IDC_ADD                         6022
-#define IDC_REMOVE                      6023
-#define IDC_REVERSE                     6024
+#define IDC_GRADIENT                    6022
+#define IDC_COLORS                      6024
+#define IDC_ADD                         6026
+#define IDC_REMOVE                      6028
+#define IDC_REVERSE                     6030
 
-#define IDC_SMOOTHING_METHOD            6030
-#define IDC_SMOOTHING_METHOD_LBL        6031
-#define IDC_SMOOTHING_FACTOR            6032
-#define IDC_SMOOTHING_FACTOR_LBL        6033
+#define IDC_SMOOTHING_METHOD            6032
+#define IDC_SMOOTHING_METHOD_LBL        6033
+#define IDC_SMOOTHING_FACTOR            6034
+#define IDC_SMOOTHING_FACTOR_LBL        6035
 
 #define IDC_PEAK_MODE                   6040
 #define IDC_PEAK_MODE_LBL               6041
