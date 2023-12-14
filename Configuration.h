@@ -230,6 +230,7 @@ public:
 public:
     RECT _DialogBounds;                                                 // Will be initialized in OnInitDialog()
 
+    bool _ShowFrameCounter;
     bool _UseHardwareRendering;
     bool _UseZeroTrigger;
     bool _UseAntialiasing;

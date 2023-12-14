@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2023.12.11) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.14) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -168,6 +168,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+        Menu.AppendMenu((UINT) MF_STRING | (_Configuration._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 //      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
         {
@@ -191,6 +192,10 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
     {
         case IDM_TOGGLE_FULLSCREEN:
             ToggleFullScreen();
+            break;
+
+        case IDM_TOGGLE_FRAME_COUNTER:
+            ToggleFrameCounter();
             break;
 
         case IDM_TOGGLE_HARDWARE_RENDERING:
@@ -323,6 +328,14 @@ LRESULT UIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lPar
 /// </summary>
 void UIElement::ToggleFullScreen() noexcept
 {
+}
+
+/// <summary>
+/// Toggles the frame counter display.
+/// </summary>
+void UIElement::ToggleFrameCounter() noexcept
+{
+    _Configuration._ShowFrameCounter = !_Configuration._ShowFrameCounter;
 }
 
 /// <summary>
@@ -596,7 +609,7 @@ HRESULT UIElement::RenderFrame()
             }
         }
 
-//      if (_Configuration._LogLevel != LogLevel::None)
+        if (_Configuration._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();

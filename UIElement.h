@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2023.12.11) P. Stuer **/
+/** $VER: UIElement.h (2023.12.14) P. Stuer **/
 
 #pragma once
 
@@ -98,6 +98,7 @@ private:
     #pragma endregion
 
     virtual void ToggleFullScreen() noexcept;
+    void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
 
     void Configure() noexcept;
@@ -143,6 +144,7 @@ private:
     enum
     {
         IDM_TOGGLE_FULLSCREEN = 1,
+        IDM_TOGGLE_FRAME_COUNTER,
         IDM_TOGGLE_HARDWARE_RENDERING,
 
         IDM_REFRESH_RATE_LIMIT_20,
