@@ -37,12 +37,12 @@ public:
     {
         _FFTSize = fftSize;
 
-        _FFT.Initialize(fftSize);
-        _TimeData.resize((size_t) fftSize);
+        _FFT.Initialize(_FFTSize);
+        _TimeData.resize(_FFTSize);
 
         // Create the ring buffer for the samples.
-        _Data = new audio_sample[(size_t) fftSize];
-        _Size = (size_t) fftSize;
+        _Size = _FFTSize;
+        _Data = new audio_sample[_Size];
 
         ::memset(_Data, 0, sizeof(audio_sample) * _Size);
 
@@ -58,9 +58,8 @@ public:
     }
 
 private:
-    size_t _FFTSize;
-
     FFT _FFT;
+    size_t _FFTSize;
 
     audio_sample * _Data;
     size_t _Size;
@@ -120,7 +119,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
         for (complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            double WindowFactor = _WindowFunction(Map(j, 0U, _FFTSize, -1., 1.));
 
             Iter = complex<double>(_Data[i] * WindowFactor, 0.);
 
@@ -134,7 +133,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
     // Normalize the Time domain data.
     {
-        double Factor = (double) _FFTSize / Norm / M_SQRT2;
+        const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
         for (complex<double> & Iter : _TimeData)
             Iter *= Factor;

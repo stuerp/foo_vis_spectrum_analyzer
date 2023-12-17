@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.12.14) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.12.17) P. Stuer **/
 
 #include "framework.h"
 
@@ -37,17 +37,17 @@ public:
     /// <summary>
     /// Gets the band index of the specified frequency.
     /// </summary>
-    int GetFFTIndex(double frequency) const
+    size_t GetFFTIndex(double frequency) const
     {
-        return (int)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.0));
+        return (size_t)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.));
     }
 
     /// <summary>
     /// Gets the frequency of the band specfied by the index.
     /// </summary>
-    int GetFrequency(int index) const
+    double GetFrequency(int index) const
     {
-        return (int)(index * _NyquistFrequency / ((double) GetFFTSize() / 2.0));
+        return ((double) index * _NyquistFrequency) / ((double) GetFFTSize() / 2.);
     }
 
     /// <summary>
