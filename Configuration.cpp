@@ -601,132 +601,141 @@ void Configuration::Write(ui_element_config_builder & builder) const
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortHandler)
+void Configuration::Read(stream_reader * reader, size_t size, abort_callback & abortHandler)
 {
     Reset();
 
-    size_t Version;
+    if (size < sizeof(size_t)) return;
 
-    reader->read(&Version, sizeof(Version), abortHandler);
+    try
+    {
+        size_t Version;
 
-    if (Version > _CurrentVersion)
-        return;
+        reader->read(&Version, sizeof(Version), abortHandler);
 
-    reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
+        if (Version > _CurrentVersion)
+            return;
 
-    reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+        reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-    reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
-    reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
-    reader->read(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
+        reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
+        reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
 
-    reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+        reader->read(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
 
-    reader->read(&_Transform, sizeof(_Transform), abortHandler);
+        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+
+        reader->read(&_Transform, sizeof(_Transform), abortHandler);
 
 #pragma region FFT
-    reader->read(&_FFTSize, sizeof(_FFTSize), abortHandler);
-    reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
-    reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
+        reader->read(&_FFTSize, sizeof(_FFTSize), abortHandler);
+        reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
+        reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
 
-    reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
-    reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
-    reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
-    reader->read(&_KernelSize, sizeof(_KernelSize), abortHandler);
-    reader->read(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
-    reader->read(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
-    reader->read(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+        reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
+        reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+        reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
+        reader->read(&_KernelSize, sizeof(_KernelSize), abortHandler);
+        reader->read(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
+        reader->read(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
+        reader->read(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
 #pragma endregion
 
 #pragma region Frequencies
-    reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
+        reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-    reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
+        reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
 
-    reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-    reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
+        reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+        reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
 
-    reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
-    reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
-    reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-    reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
-    reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
+        reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
+        reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
+        reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
+        reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
+        reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
 
-    reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
-    reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
-    reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+        reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
+        reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
+        reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
 #pragma endregion
 
 #pragma region Rendering
-    reader->read(&_BackColor, sizeof(_BackColor), abortHandler);
+        reader->read(&_BackColor, sizeof(_BackColor), abortHandler);
 
-    reader->read(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
+        reader->read(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
 
-    reader->read(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
+        reader->read(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
 
-    reader->read(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
-    reader->read(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
-    reader->read(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
-    reader->read(&_Gamma, sizeof(_Gamma), abortHandler);
+        reader->read(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
+        reader->read(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
+        reader->read(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
+        reader->read(&_Gamma, sizeof(_Gamma), abortHandler);
 
-    reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
+        reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
-    reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+        reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
 
-    reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
-    reader->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
-    reader->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
+        reader->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
+        reader->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
 #pragma endregion
 
-    _CustomGradientStops.clear();
+        _CustomGradientStops.clear();
 
-    size_t Count; reader->read(&Count, sizeof(Count), abortHandler);
+        size_t Count; reader->read(&Count, sizeof(Count), abortHandler);
 
-    for (size_t i = 0; i < Count; ++i)
-    {
-        D2D1_GRADIENT_STOP gs = { };
+        for (size_t i = 0; i < Count; ++i)
+        {
+            D2D1_GRADIENT_STOP gs = { };
 
-        reader->read(&gs.position, sizeof(gs.position), abortHandler);
-        reader->read(&gs.color, sizeof(gs.color), abortHandler);
+            reader->read(&gs.position, sizeof(gs.position), abortHandler);
+            reader->read(&gs.color, sizeof(gs.color), abortHandler);
 
-        _CustomGradientStops.push_back(gs);
+            _CustomGradientStops.push_back(gs);
+        }
+
+        reader->read(&_XTextColor, sizeof(_XTextColor), abortHandler);
+        reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
+        reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
+        reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
+        reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
+
+        reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
+
+        reader->read(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
+        reader->read(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
+
+        reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
+        reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
+        reader->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
+
+        if (Version >= 8)
+        {
+            reader->read(&_UseCustomBackColor, sizeof(_UseCustomBackColor), abortHandler);
+            reader->read(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
+            reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
+            reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
+            reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+            reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+            reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+            reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+        }
+
+        if (_ColorScheme != ColorScheme::Custom)
+            _GradientStops = GetGradientStops(_ColorScheme);
+        else
+            _GradientStops = _CustomGradientStops;
     }
-
-    reader->read(&_XTextColor, sizeof(_XTextColor), abortHandler);
-    reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
-    reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
-    reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
-
-    reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
-
-    reader->read(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
-    reader->read(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
-
-    reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
-    reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
-    reader->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
-
-    if (Version >= 8)
+    catch (...)
     {
-        reader->read(&_UseCustomBackColor, sizeof(_UseCustomBackColor), abortHandler);
-        reader->read(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
-        reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
-        reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
-        reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
-
-        reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
-
-        reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
-
-        reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+        Reset();
     }
-
-    if (_ColorScheme != ColorScheme::Custom)
-        _GradientStops = GetGradientStops(_ColorScheme);
-    else
-        _GradientStops = _CustomGradientStops;
 }
 
 /// <summary>
