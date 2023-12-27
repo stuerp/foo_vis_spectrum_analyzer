@@ -97,10 +97,10 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, u
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _Data[_Curr++] = AverageSamples(&samples[i], channelMask);
+        _Data[_Curr] = AverageSamples(&samples[i], channelMask);
 
-        // Wrap around the buffer.
-        if (_Curr == _Size)
+        // Wrap around the buffer index.
+        if (++_Curr == _Size)
             _Curr = 0;
     }
 }
@@ -119,7 +119,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
         for (complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _WindowFunction(Map(j, 0U, _FFTSize, -1., 1.));
+            double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
             Iter = complex<double>(_Data[i] * WindowFactor, 0.);
 
