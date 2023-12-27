@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.14) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.27) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -256,195 +256,201 @@ Configuration & Configuration::operator=(const Configuration & other)
 /// <summary>
 /// Reads this instance from the specified parser. (DUI version)
 /// </summary>
-void Configuration::Read(ui_element_config_parser & parser)
+void Configuration::Read(ui_element_config_parser & parser) noexcept
 {
     Reset();
 
-    size_t Version;
-
-    parser >> Version;
-
-    if (Version > _CurrentVersion)
-        return;
-
-    int Integer;
-
-    parser >> _DialogBounds.left;
-    parser >> _DialogBounds.top;
-    parser >> _DialogBounds.right;
-    parser >> _DialogBounds.bottom;
-
-    // Reduce the size to make sure it fits on screens scaled to 150%.
-    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
-        _DialogBounds.right = _DialogBounds.left + 1910;
-
-    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
-        _DialogBounds.bottom = _DialogBounds.top + 995;
-
-    parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-    parser >> _UseHardwareRendering;
-    parser >> _UseAntialiasing;
-
-    parser >> _UseZeroTrigger;
-
-    parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-    parser >> Integer; _Transform = (Transform) Integer;
-
-#pragma region FFT
-    parser >> Integer; _FFTSize = (FFTSize) Integer;
-    parser >> _FFTCustom;
-    parser >> _FFTDuration;
-
-    parser >> Integer; _MappingMethod = (Mapping) Integer;
-    parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-    parser >> _SmoothingFactor;
-    parser >> _KernelSize;
-    parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-    parser >> _SmoothLowerFrequencies;
-    parser >> _SmoothGainTransition;
-#pragma endregion
-
-#pragma region Frequencies
-    parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
-
-    parser >> _NumBands;
-
-    if (Version < 5)
+    try
     {
-        parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
-        parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
-    }
-    else
-    {
-        parser >> _LoFrequency;
-        parser >> _HiFrequency;
-    }
+        size_t Version;
 
-    parser >> _MinNote;
-    parser >> _MaxNote;
-    parser >> _BandsPerOctave;
-    parser >> _Pitch;
-    parser >> _Transpose;
+        parser >> Version;
 
-    parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-    parser >> _SkewFactor;
-    parser >> _Bandwidth;
-#pragma endregion
+        if (Version > _CurrentVersion)
+            return;
 
-#pragma region Rendering
-    if (Version < 5)
-    {
-        UINT32 Rgb; parser >> Rgb;
-        FLOAT Alpha; parser >> Alpha;
+        int Integer;
 
-        _BackColor = D2D1::ColorF(Rgb, Alpha);
-    }
-    else
-    {
-        parser >> _BackColor.r;
-        parser >> _BackColor.g;
-        parser >> _BackColor.b;
-        parser >> _BackColor.a;
-    }
+        parser >> _DialogBounds.left;
+        parser >> _DialogBounds.top;
+        parser >> _DialogBounds.right;
+        parser >> _DialogBounds.bottom;
 
-    parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+        // Reduce the size to make sure it fits on screens scaled to 150%.
+        if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+            _DialogBounds.right = _DialogBounds.left + 1910;
 
-    parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+        if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+            _DialogBounds.bottom = _DialogBounds.top + 995;
 
-    parser >> _AmplitudeLo;
-    parser >> _AmplitudeHi;
-    parser >> _UseAbsolute;
-    parser >> _Gamma;
+        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
-    parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+        parser >> _UseHardwareRendering;
+        parser >> _UseAntialiasing;
 
-    parser >> _DrawBandBackground;
+        parser >> _UseZeroTrigger;
 
-    parser >> Integer; _PeakMode = (PeakMode) Integer;
-    parser >> _HoldTime;
-    parser >> _Acceleration;
-#pragma endregion
+        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
-    // Version 5
-    if (Version >= 5)
-    {
-        _CustomGradientStops.clear();
+        parser >> Integer; _Transform = (Transform) Integer;
 
-        size_t Count; parser >> Count;
+    #pragma region FFT
+        parser >> Integer; _FFTSize = (FFTSize) Integer;
+        parser >> _FFTCustom;
+        parser >> _FFTDuration;
 
-        for (size_t i = 0; i < Count; ++i)
+        parser >> Integer; _MappingMethod = (Mapping) Integer;
+        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+        parser >> _SmoothingFactor;
+        parser >> _KernelSize;
+        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+        parser >> _SmoothLowerFrequencies;
+        parser >> _SmoothGainTransition;
+    #pragma endregion
+
+    #pragma region Frequencies
+        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+
+        parser >> _NumBands;
+
+        if (Version < 5)
         {
-            D2D1_GRADIENT_STOP gs = { };
+            parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
+            parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
+        }
+        else
+        {
+            parser >> _LoFrequency;
+            parser >> _HiFrequency;
+        }
 
-            parser >> gs.position;
-            parser >> gs.color.r;
-            parser >> gs.color.g;
-            parser >> gs.color.b;
-            parser >> gs.color.a;
+        parser >> _MinNote;
+        parser >> _MaxNote;
+        parser >> _BandsPerOctave;
+        parser >> _Pitch;
+        parser >> _Transpose;
 
-            _CustomGradientStops.push_back(gs);
+        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+        parser >> _SkewFactor;
+        parser >> _Bandwidth;
+    #pragma endregion
+
+    #pragma region Rendering
+        if (Version < 5)
+        {
+            UINT32 Rgb; parser >> Rgb;
+            FLOAT Alpha; parser >> Alpha;
+
+            _BackColor = D2D1::ColorF(Rgb, Alpha);
+        }
+        else
+        {
+            parser >> _BackColor.r;
+            parser >> _BackColor.g;
+            parser >> _BackColor.b;
+            parser >> _BackColor.a;
+        }
+
+        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+
+        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+
+        parser >> _AmplitudeLo;
+        parser >> _AmplitudeHi;
+        parser >> _UseAbsolute;
+        parser >> _Gamma;
+
+        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+
+        parser >> _DrawBandBackground;
+
+        parser >> Integer; _PeakMode = (PeakMode) Integer;
+        parser >> _HoldTime;
+        parser >> _Acceleration;
+    #pragma endregion
+
+        // Version 5
+        if (Version >= 5)
+        {
+            _CustomGradientStops.clear();
+
+            size_t Count; parser >> Count;
+
+            for (size_t i = 0; i < Count; ++i)
+            {
+                D2D1_GRADIENT_STOP gs = { };
+
+                parser >> gs.position;
+                parser >> gs.color.r;
+                parser >> gs.color.g;
+                parser >> gs.color.b;
+                parser >> gs.color.a;
+
+                _CustomGradientStops.push_back(gs);
+            }
+        }
+
+        parser >> _XTextColor.r;
+        parser >> _XTextColor.g;
+        parser >> _XTextColor.b;
+        parser >> _XTextColor.a;
+
+        parser >> _XLineColor.r;
+        parser >> _XLineColor.g;
+        parser >> _XLineColor.b;
+        parser >> _XLineColor.a;
+
+        parser >> _YTextColor.r;
+        parser >> _YTextColor.g;
+        parser >> _YTextColor.b;
+        parser >> _YTextColor.a;
+
+        parser >> _YLineColor.r;
+        parser >> _YLineColor.g;
+        parser >> _YLineColor.b;
+        parser >> _YLineColor.a;
+
+        parser >> _DarkBandColor.r;
+        parser >> _DarkBandColor.g;
+        parser >> _DarkBandColor.b;
+        parser >> _DarkBandColor.a;
+
+        // Version 6
+        if (Version >= 6)
+            parser >> _AmplitudeStep;
+
+        // Version 7
+        if (Version >= 7)
+        {
+            parser >> _SelectedChannels;
+            parser >> _ShowToolTips;
+
+            parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
+            parser >> _WindowParameter;
+            parser >> _WindowSkew;
+        }
+
+        // Version 8
+        if (Version >= 8)
+        {
+            parser >> _UseCustomBackColor;
+            parser >> _UseCustomXTextColor;
+            parser >> _UseCustomXLineColor;
+            parser >> _UseCustomYTextColor;
+            parser >> _UseCustomYLineColor;
+
+            parser >> _LEDMode;
+
+            parser >> _HorizontalGradient;
+
+            parser >> _LiteBandColor.r;
+            parser >> _LiteBandColor.g;
+            parser >> _LiteBandColor.b;
+            parser >> _LiteBandColor.a;
         }
     }
-
-    parser >> _XTextColor.r;
-    parser >> _XTextColor.g;
-    parser >> _XTextColor.b;
-    parser >> _XTextColor.a;
-
-    parser >> _XLineColor.r;
-    parser >> _XLineColor.g;
-    parser >> _XLineColor.b;
-    parser >> _XLineColor.a;
-
-    parser >> _YTextColor.r;
-    parser >> _YTextColor.g;
-    parser >> _YTextColor.b;
-    parser >> _YTextColor.a;
-
-    parser >> _YLineColor.r;
-    parser >> _YLineColor.g;
-    parser >> _YLineColor.b;
-    parser >> _YLineColor.a;
-
-    parser >> _DarkBandColor.r;
-    parser >> _DarkBandColor.g;
-    parser >> _DarkBandColor.b;
-    parser >> _DarkBandColor.a;
-
-    // Version 6
-    if (Version >= 6)
-        parser >> _AmplitudeStep;
-
-    // Version 7
-    if (Version >= 7)
+    catch (exception)
     {
-        parser >> _SelectedChannels;
-        parser >> _ShowToolTips;
-
-        parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
-        parser >> _WindowParameter;
-        parser >> _WindowSkew;
-    }
-
-    // Version 8
-    if (Version >= 8)
-    {
-        parser >> _UseCustomBackColor;
-        parser >> _UseCustomXTextColor;
-        parser >> _UseCustomXLineColor;
-        parser >> _UseCustomYTextColor;
-        parser >> _UseCustomYLineColor;
-
-        parser >> _LEDMode;
-
-        parser >> _HorizontalGradient;
-
-        parser >> _LiteBandColor.r;
-        parser >> _LiteBandColor.g;
-        parser >> _LiteBandColor.b;
-        parser >> _LiteBandColor.a;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -456,9 +462,11 @@ void Configuration::Read(ui_element_config_parser & parser)
 /// <summary>
 /// Writes this instance to the specified builder. (DUI version)
 /// </summary>
-void Configuration::Write(ui_element_config_builder & builder) const
+void Configuration::Write(ui_element_config_builder & builder) const noexcept
 {
-    builder << _CurrentVersion;
+    try
+    {
+        builder << _CurrentVersion;
 
     #pragma region User Interface
         builder << _DialogBounds.left;
@@ -509,218 +517,232 @@ void Configuration::Write(ui_element_config_builder & builder) const
         builder << _Bandwidth;
     #pragma endregion
 
-    #pragma region Rendering
-        builder << _BackColor.r;
-        builder << _BackColor.g;
-        builder << _BackColor.b;
-        builder << _BackColor.a;
+        #pragma region Rendering
+            builder << _BackColor.r;
+            builder << _BackColor.g;
+            builder << _BackColor.b;
+            builder << _BackColor.a;
 
-        builder << (int) _XAxisMode;
+            builder << (int) _XAxisMode;
 
-        builder << (int) _YAxisMode;
+            builder << (int) _YAxisMode;
 
-        builder << _AmplitudeLo;
-        builder << _AmplitudeHi;
-        builder << _UseAbsolute;
-        builder << _Gamma;
+            builder << _AmplitudeLo;
+            builder << _AmplitudeHi;
+            builder << _UseAbsolute;
+            builder << _Gamma;
 
-        builder << (int) _ColorScheme;
+            builder << (int) _ColorScheme;
 
-        builder << _DrawBandBackground;
+            builder << _DrawBandBackground;
 
-        builder << (int) _PeakMode;
-        builder << _HoldTime;
-        builder << _Acceleration;
-    #pragma endregion
+            builder << (int) _PeakMode;
+            builder << _HoldTime;
+            builder << _Acceleration;
+        #pragma endregion
 
-    // Version 5
-    builder << _CustomGradientStops.size();
+        // Version 5
+        builder << _CustomGradientStops.size();
 
-    for (const auto & Iter : _CustomGradientStops)
-    {
-        builder << Iter.position;
-        builder << Iter.color.r;
-        builder << Iter.color.g;
-        builder << Iter.color.b;
-        builder << Iter.color.a;
+        for (const auto & Iter : _CustomGradientStops)
+        {
+            builder << Iter.position;
+            builder << Iter.color.r;
+            builder << Iter.color.g;
+            builder << Iter.color.b;
+            builder << Iter.color.a;
+        }
+
+        builder << _XTextColor.r;
+        builder << _XTextColor.g;
+        builder << _XTextColor.b;
+        builder << _XTextColor.a;
+
+        builder << _XLineColor.r;
+        builder << _XLineColor.g;
+        builder << _XLineColor.b;
+        builder << _XLineColor.a;
+
+        builder << _YTextColor.r;
+        builder << _YTextColor.g;
+        builder << _YTextColor.b;
+        builder << _YTextColor.a;
+
+        builder << _YLineColor.r;
+        builder << _YLineColor.g;
+        builder << _YLineColor.b;
+        builder << _YLineColor.a;
+
+        builder << _DarkBandColor.r;
+        builder << _DarkBandColor.g;
+        builder << _DarkBandColor.b;
+        builder << _DarkBandColor.a;
+
+        // Version 6
+        builder << _AmplitudeStep;
+
+        // Version 7
+        builder << _SelectedChannels;
+        builder << _ShowToolTips;
+
+        builder << (int) _WindowFunction;
+        builder << _WindowParameter;
+        builder << _WindowSkew;
+
+        // Version 8
+        builder << _UseCustomBackColor;
+        builder << _UseCustomXTextColor;
+        builder << _UseCustomXLineColor;
+        builder << _UseCustomYTextColor;
+        builder << _UseCustomYLineColor;
+
+        builder << _LEDMode;
+
+        builder << _HorizontalGradient;
+
+        builder << _LiteBandColor.r;
+        builder << _LiteBandColor.g;
+        builder << _LiteBandColor.b;
+        builder << _LiteBandColor.a;
     }
-
-    builder << _XTextColor.r;
-    builder << _XTextColor.g;
-    builder << _XTextColor.b;
-    builder << _XTextColor.a;
-
-    builder << _XLineColor.r;
-    builder << _XLineColor.g;
-    builder << _XLineColor.b;
-    builder << _XLineColor.a;
-
-    builder << _YTextColor.r;
-    builder << _YTextColor.g;
-    builder << _YTextColor.b;
-    builder << _YTextColor.a;
-
-    builder << _YLineColor.r;
-    builder << _YLineColor.g;
-    builder << _YLineColor.b;
-    builder << _YLineColor.a;
-
-    builder << _DarkBandColor.r;
-    builder << _DarkBandColor.g;
-    builder << _DarkBandColor.b;
-    builder << _DarkBandColor.a;
-
-    // Version 6
-    builder << _AmplitudeStep;
-
-    // Version 7
-    builder << _SelectedChannels;
-    builder << _ShowToolTips;
-
-    builder << (int) _WindowFunction;
-    builder << _WindowParameter;
-    builder << _WindowSkew;
-
-    // Version 8
-    builder << _UseCustomBackColor;
-    builder << _UseCustomXTextColor;
-    builder << _UseCustomXLineColor;
-    builder << _UseCustomYTextColor;
-    builder << _UseCustomYLineColor;
-
-    builder << _LEDMode;
-
-    builder << _HorizontalGradient;
-
-    builder << _LiteBandColor.r;
-    builder << _LiteBandColor.g;
-    builder << _LiteBandColor.b;
-    builder << _LiteBandColor.a;
+    catch (exception)
+    {
+    }
 }
 
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortHandler)
+void Configuration::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
 {
     Reset();
 
     size_t Version;
 
-    reader->read(&Version, sizeof(Version), abortHandler);
-
-    if (Version > _CurrentVersion)
+    if (size < sizeof(Version))
         return;
 
-    reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
-
-    reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-    reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
-    reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
-
-    reader->read(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
-
-    reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-    reader->read(&_Transform, sizeof(_Transform), abortHandler);
-
-#pragma region FFT
-    reader->read(&_FFTSize, sizeof(_FFTSize), abortHandler);
-    reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
-    reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
-
-    reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
-    reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
-    reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
-    reader->read(&_KernelSize, sizeof(_KernelSize), abortHandler);
-    reader->read(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
-    reader->read(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
-    reader->read(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
-#pragma endregion
-
-#pragma region Frequencies
-    reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
-
-    reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
-
-    reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-    reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
-
-    reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
-    reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
-    reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-    reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
-    reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
-
-    reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
-    reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
-    reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
-#pragma endregion
-
-#pragma region Rendering
-    reader->read(&_BackColor, sizeof(_BackColor), abortHandler);
-
-    reader->read(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
-
-    reader->read(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
-
-    reader->read(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
-    reader->read(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
-    reader->read(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
-    reader->read(&_Gamma, sizeof(_Gamma), abortHandler);
-
-    reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
-
-    reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
-
-    reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
-    reader->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
-    reader->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
-#pragma endregion
-
-    _CustomGradientStops.clear();
-
-    size_t Count; reader->read(&Count, sizeof(Count), abortHandler);
-
-    for (size_t i = 0; i < Count; ++i)
+    try
     {
-        D2D1_GRADIENT_STOP gs = { };
+        reader->read(&Version, sizeof(Version), abortHandler);
 
-        reader->read(&gs.position, sizeof(gs.position), abortHandler);
-        reader->read(&gs.color, sizeof(gs.color), abortHandler);
+        if (Version > _CurrentVersion)
+            return;
 
-        _CustomGradientStops.push_back(gs);
+        reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
+
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+
+        reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
+        reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+
+        reader->read(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
+
+        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+
+        reader->read(&_Transform, sizeof(_Transform), abortHandler);
+
+    #pragma region FFT
+        reader->read(&_FFTSize, sizeof(_FFTSize), abortHandler);
+        reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
+        reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
+
+        reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
+        reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+        reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
+        reader->read(&_KernelSize, sizeof(_KernelSize), abortHandler);
+        reader->read(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
+        reader->read(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
+        reader->read(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+    #pragma endregion
+
+    #pragma region Frequencies
+        reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
+
+        reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
+
+        reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+        reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
+
+        reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
+        reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
+        reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
+        reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
+        reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
+
+        reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
+        reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
+        reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+    #pragma endregion
+
+    #pragma region Rendering
+        reader->read(&_BackColor, sizeof(_BackColor), abortHandler);
+
+        reader->read(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
+
+        reader->read(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
+
+        reader->read(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
+        reader->read(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
+        reader->read(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
+        reader->read(&_Gamma, sizeof(_Gamma), abortHandler);
+
+        reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
+
+        reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+
+        reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
+        reader->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
+        reader->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
+    #pragma endregion
+
+        _CustomGradientStops.clear();
+
+        size_t Count; reader->read(&Count, sizeof(Count), abortHandler);
+
+        for (size_t i = 0; i < Count; ++i)
+        {
+            D2D1_GRADIENT_STOP gs = { };
+
+            reader->read(&gs.position, sizeof(gs.position), abortHandler);
+            reader->read(&gs.color, sizeof(gs.color), abortHandler);
+
+            _CustomGradientStops.push_back(gs);
+        }
+
+        reader->read(&_XTextColor, sizeof(_XTextColor), abortHandler);
+        reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
+        reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
+        reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
+        reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
+
+        reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
+
+        reader->read(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
+        reader->read(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
+
+        reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
+        reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
+        reader->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
+
+        if (Version >= 8)
+        {
+            reader->read(&_UseCustomBackColor, sizeof(_UseCustomBackColor), abortHandler);
+            reader->read(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
+            reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
+            reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
+            reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+            reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+            reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+            reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+        }
     }
-
-    reader->read(&_XTextColor, sizeof(_XTextColor), abortHandler);
-    reader->read(&_XLineColor, sizeof(_XLineColor), abortHandler);
-    reader->read(&_YTextColor, sizeof(_YTextColor), abortHandler);
-    reader->read(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    reader->read(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
-
-    reader->read(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
-
-    reader->read(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
-    reader->read(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
-
-    reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
-    reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
-    reader->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
-
-    if (Version >= 8)
+    catch (exception)
     {
-        reader->read(&_UseCustomBackColor, sizeof(_UseCustomBackColor), abortHandler);
-        reader->read(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
-        reader->read(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
-        reader->read(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
-        reader->read(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
-
-        reader->read(&_LEDMode, sizeof(_LEDMode), abortHandler);
-
-        reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
-
-        reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+        Reset();
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -732,114 +754,120 @@ void Configuration::Read(stream_reader * reader, size_t, abort_callback & abortH
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void Configuration::Write(stream_writer * writer, abort_callback & abortHandler) const
+void Configuration::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
 {
-    writer->write(&_CurrentVersion, sizeof(_CurrentVersion), abortHandler);
-
-    #pragma region User Interface
-        writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
-
-        writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
-
-        writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
-        writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
-
-        writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
-        writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
-    #pragma endregion
-
-        writer->write(&_Transform, sizeof(_Transform), abortHandler);
-
-    #pragma region FFT
-        writer->write(&_FFTSize, sizeof(_FFTSize), abortHandler);
-        writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
-        writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
-        writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
-
-        writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
-        writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
-        writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
-        writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
-        writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
-        writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
-    #pragma endregion
-
-    #pragma region Frequencies
-        writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
-
-        writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
-        writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-        writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
-
-        writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
-        writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
-        writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-        writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
-        writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
-
-        writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
-        writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
-        writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
-    #pragma endregion
-
-    #pragma region Rendering
-        writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
-
-        writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
-
-        writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
-
-        writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
-        writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
-        writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
-        writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
-
-        writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
-
-        writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
-
-        writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
-        writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
-    #pragma endregion
-
-    size_t Size = _CustomGradientStops.size();
-
-    writer->write(&Size, sizeof(Size), abortHandler);
-
-    for (const auto & Iter : _CustomGradientStops)
+    try
     {
-        writer->write(&Iter.position, sizeof(Iter.position), abortHandler);
-        writer->write(&Iter.color, sizeof(Iter.color), abortHandler);
+        writer->write(&_CurrentVersion, sizeof(_CurrentVersion), abortHandler);
+
+        #pragma region User Interface
+            writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
+
+            writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+
+            writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
+            writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+
+            writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
+            writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
+        #pragma endregion
+
+            writer->write(&_Transform, sizeof(_Transform), abortHandler);
+
+        #pragma region FFT
+            writer->write(&_FFTSize, sizeof(_FFTSize), abortHandler);
+            writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
+            writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
+            writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
+
+            writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+            writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
+            writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
+            writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
+            writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
+            writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+        #pragma endregion
+
+        #pragma region Frequencies
+            writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
+
+            writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
+            writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+            writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
+
+            writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
+            writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
+            writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
+            writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
+            writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
+
+            writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
+            writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
+            writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+        #pragma endregion
+
+        #pragma region Rendering
+            writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
+
+            writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
+
+            writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
+
+            writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
+            writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
+            writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
+            writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
+
+            writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
+
+            writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+
+            writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
+            writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
+            writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        #pragma endregion
+
+        size_t Size = _CustomGradientStops.size();
+
+        writer->write(&Size, sizeof(Size), abortHandler);
+
+        for (const auto & Iter : _CustomGradientStops)
+        {
+            writer->write(&Iter.position, sizeof(Iter.position), abortHandler);
+            writer->write(&Iter.color, sizeof(Iter.color), abortHandler);
+        }
+
+        writer->write(&_XTextColor, sizeof(_XTextColor), abortHandler);
+        writer->write(&_XLineColor, sizeof(_XLineColor), abortHandler);
+        writer->write(&_YTextColor, sizeof(_YTextColor), abortHandler);
+        writer->write(&_YLineColor, sizeof(_YLineColor), abortHandler);
+        writer->write(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
+
+        writer->write(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
+
+        writer->write(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
+        writer->write(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
+
+        writer->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
+        writer->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
+        writer->write(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
+
+        // Version 8
+        writer->write(&_UseCustomBackColor,  sizeof(_UseCustomBackColor), abortHandler);
+        writer->write(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
+        writer->write(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
+        writer->write(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
+        writer->write(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
+
+        writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
+
+        writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
+
+        writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
     }
-
-    writer->write(&_XTextColor, sizeof(_XTextColor), abortHandler);
-    writer->write(&_XLineColor, sizeof(_XLineColor), abortHandler);
-    writer->write(&_YTextColor, sizeof(_YTextColor), abortHandler);
-    writer->write(&_YLineColor, sizeof(_YLineColor), abortHandler);
-    writer->write(&_DarkBandColor, sizeof(_DarkBandColor), abortHandler);
-
-    writer->write(&_AmplitudeStep, sizeof(_AmplitudeStep), abortHandler);
-
-    writer->write(&_SelectedChannels, sizeof(_SelectedChannels), abortHandler);
-    writer->write(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
-
-    writer->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
-    writer->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
-    writer->write(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
-
-    // Version 8
-    writer->write(&_UseCustomBackColor,  sizeof(_UseCustomBackColor), abortHandler);
-    writer->write(&_UseCustomXTextColor, sizeof(_UseCustomXTextColor), abortHandler);
-    writer->write(&_UseCustomXLineColor, sizeof(_UseCustomXLineColor), abortHandler);
-    writer->write(&_UseCustomYTextColor, sizeof(_UseCustomYTextColor), abortHandler);
-    writer->write(&_UseCustomYLineColor, sizeof(_UseCustomYLineColor), abortHandler);
-
-    writer->write(&_LEDMode, sizeof(_LEDMode), abortHandler);
-
-    writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
-
-    writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+    catch (exception)
+    {
+    }
 }
 
 /// <summary>

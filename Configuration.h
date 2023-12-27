@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.14) P. Stuer **/
+/** $VER: Configuration.h (2023.12.27) P. Stuer **/
 
 #pragma once
 
@@ -213,11 +213,11 @@ public:
 
     void Reset() noexcept;
 
-    void Read(ui_element_config_parser & parser);
-    void Write(ui_element_config_builder & builder) const;
+    void Read(ui_element_config_parser & parser) noexcept;
+    void Write(ui_element_config_builder & builder) const noexcept;
 
-    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler);
-    void Write(stream_writer * writer, abort_callback & abortHandler) const;
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept;
+    void Write(stream_writer * writer, abort_callback & abortHandler) const noexcept;
 
     /// <summary>
     /// Gets the duration (in ms) of the window that will be rendered.
