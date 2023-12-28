@@ -64,11 +64,13 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
 
             case XAxisMode::Decades:
             {
-                const double FrequenciesDecades[] = { 10., 20., 30., 40., 50., 60., 70., 80., 90., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 9000., 10000., 20000. };
+                double Frequency = 0.;
+                int i = 1;
+                int j = 10;
 
-                for (size_t i = 0; i < _countof(FrequenciesDecades); ++i)
+                while (Frequency < frequencyBands.back().Lo)
                 {
-                    double Frequency = FrequenciesDecades[i];
+                    Frequency = j * i;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
@@ -78,39 +80,35 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
                     Label lb = { Frequency, Text, 0.f };
 
                     _Labels.push_back(lb);
+
+                    if (++i == 10)
+                    {
+                        i = 1;
+                        j *= 10;
+                    }
                 }
                 break;
             }
 
             case XAxisMode::Octaves:
-            {
-                const double FrequenciesOctaves[] = { 32.7, 65.41, 130.81, 261.63, 523.25, 1108.73, 2093.00, 4186.01, 8372.02, 16744.04, 33488.07 };
-
-                for (size_t i = 0; i < _countof(FrequenciesOctaves); ++i)
-                {
-                    double Frequency = FrequenciesOctaves[i];
-
-                    if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
-                    else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
-
-                    Label lb = { Frequency, Text, 0.f };
-
-                    _Labels.push_back(lb);
-                }
-                break;
-            }
-
             case XAxisMode::Notes:
             {
-                double Note = -57.; // Frequency of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Note = -57.; // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = 0.;
 
-                for (int i = 0; i < 12; ++i)
+                for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
-                    ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
+                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
 
-                    double Frequency = 440. * ::exp2(Note / 12.); // Frequency of C0 (57 semi-tones lower than A4 at 440Hz)
+                    if (_Mode == XAxisMode::Octaves)
+                    {
+                        if (Frequency < 1000.)
+                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
+                        else
+                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
+                    }
+                    else
+                        ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
                     Label lb = { Frequency, Text, 0.f };
 
@@ -118,6 +116,7 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
 
                     Note += 12.;
                 }
+
                 break;
             }
         }

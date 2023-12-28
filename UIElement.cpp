@@ -145,6 +145,16 @@ void UIElement::OnPaint(CDCHandle hDC)
 }
 
 /// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
+{
+    RenderFrame();
+
+    return TRUE;
+}
+
+/// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)

@@ -40,10 +40,25 @@ public:
 
     static CWndClassInfo & GetWndClassInfo();
 
+    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
+    void OnDestroy();
+    void OnPaint(CDCHandle dc);
+    LRESULT OnEraseBackground(CDCHandle dc);
+    void OnSize(UINT nType, CSize size);
+    virtual void OnContextMenu(CWindow wnd, CPoint point);
+    void OnLButtonDblClk(UINT nFlags, CPoint point);
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
+
+    void OnMouseMove(UINT, CPoint);
+    void OnMouseLeave();
+
+    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
     BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_PAINT(OnPaint)
+        MSG_WM_ERASEBKGND(OnEraseBackground)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
@@ -54,19 +69,6 @@ public:
 
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
     END_MSG_MAP()
-
-    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
-    void OnDestroy();
-    void OnPaint(CDCHandle dc);
-    void OnSize(UINT nType, CSize size);
-    virtual void OnContextMenu(CWindow wnd, CPoint point);
-    void OnLButtonDblClk(UINT nFlags, CPoint point);
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
-
-    void OnMouseMove(UINT, CPoint);
-    void OnMouseLeave();
-
-    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     #pragma endregion
 
