@@ -11,8 +11,6 @@
 
 #pragma once
 
-//#include <WinBase.h>
-
 template<typename T, size_t size>
 class RingBuffer
 {

@@ -83,6 +83,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.5.2.0, 2024-xx-xx
+
+* Improved: Various small optimizations with focus on stability and future expansion
+  * The graph is drawn completely even when there is no track playing.
+  * The peak indicators animation continues when the track stops playing or when it is paused.
+
 v0.5.1.0, 2023-12-14
 
 * New: Support for DUI and CUI default user interface colors.

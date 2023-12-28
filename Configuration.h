@@ -4,8 +4,8 @@
 #pragma once
 
 #include "framework.h"
+#include "Support.h"
 
-#include "Math.h"
 #include "WindowFunctions.h"
 
 inline const double MinWindowSkew = -1.;

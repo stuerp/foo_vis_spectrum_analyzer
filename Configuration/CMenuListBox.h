@@ -8,10 +8,10 @@
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
+#include "Support.h"
 
 #include "CDirectXControl.h"
 #include "COwnerDrawnListBox.h"
-#include "Support.h"
 
 class CMenuListBox : public COwnerDrawnListBox<CMenuListBox>
 {

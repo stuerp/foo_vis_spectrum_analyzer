@@ -6,13 +6,12 @@
 #pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
-
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "comdlg32")
+#include "Support.h"
 
 #include "CDirectXControl.h"
 
-#include "Support.h"
+#pragma comment(lib, "d2d1")
+#pragma comment(lib, "comdlg32")
 
 #pragma hdrstop
 

@@ -1,14 +1,32 @@
 
-/** $VER: Spectrum.cpp (2023.12.14) P. Stuer **/
+/** $VER: Spectrum.cpp (2023.12.28) P. Stuer **/
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "Spectrum.h"
 
 #pragma hdrstop
 
+void Spectrum::Initialize(const Configuration * configuration)
+{
+    _Configuration = configuration;
+
+    SetGradientStops(_Configuration->_GradientStops);
+
+    ReleaseDeviceSpecificResources();
+}
+
+void Spectrum::Move(const D2D1_RECT_F & rect)
+{
+    _Rect = rect;
+}
+
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Configuration & configuration)
+void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     CreateDeviceSpecificResources(renderTarget);
 
@@ -44,7 +62,7 @@ HRESULT Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const st
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
             {
-                Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * configuration.ScaleA(Iter.CurValue))), y1, Rect.bottom);
+                Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * _Configuration->ScaleA(Iter.CurValue))), y1, Rect.bottom);
 
                 renderTarget->FillRectangle(Rect, ForeBrush);
 
@@ -53,19 +71,19 @@ HRESULT Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const st
             }
 
             // Draw the peak indicator.
-            if ((configuration._PeakMode != PeakMode::None) && (Iter.Peak > 0.))
+            if ((_Configuration->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
                 Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
                 Rect.bottom = Rect.top + 1.f;
 
-                ID2D1Brush * PeakBrush = (configuration._PeakMode != PeakMode::FadeOut) ? ForeBrush : _WhiteBrush;
+                ID2D1Brush * PeakBrush = (_Configuration->_PeakMode != PeakMode::FadeOut) ? ForeBrush : _WhiteBrush;
 
-                if (configuration._PeakMode == PeakMode::FadeOut)
+                if (_Configuration->_PeakMode == PeakMode::FadeOut)
                     PeakBrush->SetOpacity((FLOAT) Iter.Opacity);
 
                 renderTarget->FillRectangle(Rect, PeakBrush);
 
-                if (configuration._PeakMode == PeakMode::FadeOut)
+                if (_Configuration->_PeakMode == PeakMode::FadeOut)
                     PeakBrush->SetOpacity(1.f);
             }
         }
@@ -73,8 +91,6 @@ HRESULT Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const st
         x1  = x2;
         x2 += BandWidth;
     }
-
-    return S_OK;
 }
 
 /// <summary>
@@ -176,5 +192,12 @@ void Spectrum::ReleaseDeviceSpecificResources()
 
     _BackBrush.Release();
     _SolidBrush.Release();
+    _GradientBrush.Release();
+}
+
+void Spectrum::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
+{
+    _GradientStops = gradientStops;
+
     _GradientBrush.Release();
 }

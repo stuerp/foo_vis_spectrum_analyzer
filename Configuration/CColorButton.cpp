@@ -3,8 +3,6 @@
 
 #include "CColorButton.h"
 
-#include "Support.h"
-
 #pragma hdrstop
 
 /// <summary>

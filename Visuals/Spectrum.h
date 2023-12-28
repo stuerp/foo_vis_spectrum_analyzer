@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.12.14) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.12.28) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -8,10 +8,10 @@
 #pragma warning(disable: 4100 4211 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
+#include "Support.h"
+#include "Configuration.h"
 
 #include "FrequencyBand.h"
-#include "Configuration.h"
-#include "Math.h"
 
 #include <vector>
 #include <string>
@@ -22,43 +22,29 @@
 class Spectrum
 {
 public:
-    Spectrum() {}
+    Spectrum() : _Configuration() {}
 
     Spectrum(const Spectrum &) = delete;
     Spectrum & operator=(const Spectrum &) = delete;
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(const Configuration * configuration)
-    {
-        _Configuration = configuration;
+    void Initialize(const Configuration * configuration);
 
-        SetGradientStops(_Configuration->_GradientStops);
+    void Move(const D2D1_RECT_F & rect);
 
-        ReleaseDeviceSpecificResources();
-    }
+    void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
-    void Resize(const D2D1_RECT_F & rect)
-    {
-        _Rect = rect;
-    }
-
-    void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
-    {
-        _GradientStops = gradientStops;
-
-        _GradientBrush.Release();
-    }
+    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    void ReleaseDeviceSpecificResources();
 
     FLOAT GetLeft() const { return _Rect.left; }
-
     FLOAT GetRight() const { return _Rect.right; }
 
-    HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Configuration & configuration);
-    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+private:
     HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
-    void ReleaseDeviceSpecificResources();
+    void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
 private:
     const Configuration * _Configuration;

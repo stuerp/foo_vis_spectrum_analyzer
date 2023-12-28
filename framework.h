@@ -16,3 +16,4 @@
 #include <dwrite.h>
 
 #include <strsafe.h>
+#include <math.h>

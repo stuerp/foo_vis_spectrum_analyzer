@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2023.12.14) P. Stuer **/
+/** $VER: UIElement.h (2023.12.28) P. Stuer **/
 
 #pragma once
 
@@ -15,6 +15,7 @@
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
+#include "Graph.h"
 #include "XAxis.h"
 #include "YAxis.h"
 #include "Spectrum.h"
@@ -36,6 +37,7 @@ public:
     UIElement & operator=(UIElement &&) = delete;
 
     #pragma region CWindowImpl
+
     static CWndClassInfo & GetWndClassInfo();
 
     BEGIN_MSG_MAP_EX(UIElement)
@@ -65,6 +67,7 @@ public:
     void OnMouseLeave();
 
     LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
     #pragma endregion
 
 protected:
@@ -106,13 +109,8 @@ private:
 
     void Resize();
 
-    HRESULT RenderFrame();
-    HRESULT RenderChunk(const audio_chunk & chunk);
-    HRESULT RenderXAxisFreq(FLOAT, FLOAT, FLOAT, FLOAT, double frequency);
-    HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
-    HRESULT RenderYAxis();
-    HRESULT RenderSpectrum();
-    HRESULT RenderFrameCounter();
+    void RenderFrame();
+    void RenderChunk(const audio_chunk & chunk);
 
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
@@ -130,15 +128,15 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
-    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
-
     #pragma endregion
 
-//  static DWORD WINAPI TimerMain(LPVOID Parameter);
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
 protected:
     Configuration _Configuration;
+
+private:
+    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
 private:
     enum
@@ -174,9 +172,7 @@ private:
     #pragma region Rendering
 
     FrameCounter _FrameCounter;
-    XAxis _XAxis;
-    YAxis _YAxis;
-    Spectrum _Spectrum;
+    Graph _Graph;
 
     #pragma endregion
 
