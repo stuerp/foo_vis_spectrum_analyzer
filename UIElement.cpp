@@ -482,7 +482,7 @@ void UIElement::SetConfiguration() noexcept
         }
     }
 
-    _Graph.Initialize(&_Configuration, _FrequencyBands);
+    _Graph.Initialize(&_Configuration, _FrequencyBands, _Direct2dFactory);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
@@ -931,6 +931,7 @@ void UIElement::ApplyPeakSmoothing(double factor)
 #pragma endregion
 
 #pragma region DirectX
+
 /// <summary>
 /// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>

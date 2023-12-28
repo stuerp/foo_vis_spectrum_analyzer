@@ -20,7 +20,7 @@ public:
     Graph();
     virtual ~Graph() { }
 
-    void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands, CComPtr<ID2D1Factory> & direct2dFactory);
 
     void Move(const D2D1_RECT_F & rect);
 

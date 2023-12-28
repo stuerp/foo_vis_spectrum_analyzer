@@ -85,7 +85,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.5.2.0, 2024-xx-xx
 
-* Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary...
+* Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
 * Improved: Hardened the reading and writing of the configuration.
 * Improved: Various minor tweaks with focus on stability and future expandability:
   * The graph is drawn completely even when there is no track playing.

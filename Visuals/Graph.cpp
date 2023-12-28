@@ -13,11 +13,11 @@ Graph::Graph() : _Bounds()
 {
 }
 
-void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands, CComPtr<ID2D1Factory> & direct2dFactory)
 {
     _Configuration = configuration;
 
-    _Spectrum.Initialize(configuration);
+    _Spectrum.Initialize(configuration, direct2dFactory);
 
     _XAxis.Initialize(configuration, frequencyBands);
     

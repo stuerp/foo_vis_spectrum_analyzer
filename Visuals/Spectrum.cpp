@@ -9,8 +9,12 @@
 
 #pragma hdrstop
 
-void Spectrum::Initialize(const Configuration * configuration)
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+void Spectrum::Initialize(const Configuration * configuration, CComPtr<ID2D1Factory> & direct2DFactory)
 {
+    _Direct2DFactory = direct2DFactory;
     _Configuration = configuration;
 
     SetGradientStops(_Configuration->_GradientStops);
@@ -18,6 +22,9 @@ void Spectrum::Initialize(const Configuration * configuration)
     ReleaseDeviceSpecificResources();
 }
 
+/// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
     _Rect = rect;
@@ -31,27 +38,25 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
     CreateDeviceSpecificResources(renderTarget);
 
     const FLOAT Width = _Rect.right - _Rect.left;
+    const FLOAT Height = _Rect.bottom - _Rect.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
     FLOAT x1 = _Rect.left;
     FLOAT x2 = x1 + BandWidth;
 
-    const FLOAT y1 = _Rect.top;
-    const FLOAT y2 = _Rect.bottom - _Rect.top;
-
     for (const FrequencyBand & Iter : frequencyBands)
     {
-        D2D1_RECT_F Rect = { x1, y1, x2 - PaddingX, y2 - PaddingY };
+        D2D1_RECT_F Rect = { x1, _Rect.top, x2 - PaddingX, Height - PaddingY };
 
-        // Draw the background.
+        // Draw the bar background.
         if (_Configuration->_DrawBandBackground)
         {
             _SolidBrush->SetColor(Iter.BackColor);
 
             renderTarget->FillRectangle(Rect, _SolidBrush);
         }
-
-        // Don't render anything above the Nyquist frequency.
+/*
+        // Don't render bar foreground above the Nyquist frequency.
         if (Iter.Ctr < (sampleRate / 2.))
         {
             ID2D1Brush * ForeBrush = _Configuration->_HorizontalGradient ? _SolidBrush : (ID2D1Brush *) _GradientBrush;
@@ -62,7 +67,7 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
             {
-                Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * _Configuration->ScaleA(Iter.CurValue))), y1, Rect.bottom);
+                Rect.top = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
 
                 renderTarget->FillRectangle(Rect, ForeBrush);
 
@@ -73,7 +78,7 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
             // Draw the peak indicator.
             if ((_Configuration->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top = Clamp((FLOAT)(y2 - ((y2 - y1) * Iter.Peak)), y1, Rect.bottom);
+                Rect.top = Clamp((FLOAT)(_Rect.bottom - (Height * Iter.Peak)), _Rect.top, _Rect.bottom);
                 Rect.bottom = Rect.top + 1.f;
 
                 ID2D1Brush * PeakBrush = (_Configuration->_PeakMode != PeakMode::FadeOut) ? ForeBrush : _WhiteBrush;
@@ -86,10 +91,25 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
                 if (_Configuration->_PeakMode == PeakMode::FadeOut)
                     PeakBrush->SetOpacity(1.f);
             }
-        }
+        }*/
 
         x1  = x2;
         x2 += BandWidth;
+    }
+
+    // Draw the spline.
+    HRESULT hr = CreateSpline(frequencyBands, sampleRate);
+
+    if (SUCCEEDED(hr))
+    {
+/*
+        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightSkyBlue, 1.f));
+        renderTarget->FillGeometry(_Spline, _SolidBrush);
+*/
+        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 1.f));
+        renderTarget->DrawGeometry(_Spline, _SolidBrush, 2.f);
+
+        _Spline.Release();
     }
 }
 
@@ -101,23 +121,6 @@ HRESULT Spectrum::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> &
 {
     HRESULT hr = S_OK;
 
-    if ((_GradientBrush == nullptr) && SUCCEEDED(hr))
-    {
-        if (!_GradientStops.empty())
-        {
-            CComPtr<ID2D1GradientStopCollection> Collection;
-
-            hr = renderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-            if (SUCCEEDED(hr))
-            {
-                D2D1_SIZE_F Size = renderTarget->GetSize();
-
-                hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_GradientBrush);
-            }
-        }
-    }
-
     if ((_SolidBrush == nullptr) && SUCCEEDED(hr))
         hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
 
@@ -127,8 +130,33 @@ HRESULT Spectrum::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> &
     if ((_WhiteBrush == nullptr) && SUCCEEDED(hr))
         hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_WhiteBrush);
 
+    if ((_GradientBrush == nullptr) && SUCCEEDED(hr))
+        hr = CreateGradientBrush(renderTarget);
+
     if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
         hr = CreatePatternBrush(renderTarget);
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a gradient brush for rendering the bars.
+/// </summary>
+HRESULT Spectrum::CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+{
+    if (_GradientStops.empty())
+        return E_FAIL;
+
+    CComPtr<ID2D1GradientStopCollection> Collection;
+
+    HRESULT hr = renderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+
+    if (SUCCEEDED(hr))
+    {
+        D2D1_SIZE_F Size = renderTarget->GetSize();
+
+        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_GradientBrush);
+    }
 
     return hr;
 }
@@ -182,6 +210,59 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
 }
 
 /// <summary>
+/// 
+/// </summary>
+HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+{
+    HRESULT hr = _Direct2DFactory->CreatePathGeometry(&_Spline);
+
+    if (SUCCEEDED(hr))
+    {
+        CComPtr<ID2D1GeometrySink> _Sink;
+
+        hr = _Spline->Open(&_Sink);
+
+        if (SUCCEEDED(hr))
+        {
+            const FLOAT Width = _Rect.right - _Rect.left;
+            const FLOAT Height = _Rect.bottom - _Rect.top;
+            const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
+
+            _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+            _Sink->BeginFigure(D2D1::Point2F(_Rect.left, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
+
+            FLOAT x = _Rect.left;
+            FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
+
+            _Sink->AddLine(D2D1::Point2F(x, y));
+
+            for (const FrequencyBand & Iter : frequencyBands)
+            {
+                y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
+
+                // Don't render anything above the Nyquist frequency.
+                if (Iter.Ctr > (sampleRate / 2.))
+                    break;
+
+                x += BandWidth;
+
+                _Sink->AddBezier(D2D1::BezierSegment(D2D1::Point2F(x, y), D2D1::Point2F(x, y), D2D1::Point2F(x, y)));
+            }
+
+            _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
+            _Sink->AddLine(D2D1::Point2F(_Rect.left, _Rect.bottom));
+
+            _Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            _Sink->Close();
+        }
+    }
+
+    return hr;
+}
+
+/// <summary>
 /// Releases the device specific resources.
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
@@ -195,6 +276,9 @@ void Spectrum::ReleaseDeviceSpecificResources()
     _GradientBrush.Release();
 }
 
+/// <summary>
+/// 
+/// </summary>
 void Spectrum::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
 {
     _GradientStops = gradientStops;

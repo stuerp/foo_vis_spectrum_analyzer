@@ -29,7 +29,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(const Configuration * configuration);
+    void Initialize(const Configuration * configuration, CComPtr<ID2D1Factory> & direct2DFactory);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -42,7 +42,9 @@ public:
     FLOAT GetRight() const { return _Rect.right; }
 
 private:
+    HRESULT CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
@@ -54,13 +56,17 @@ private:
 
     D2D1_RECT_F _Rect;
 
+    // Device-independent resources
+    CComPtr<ID2D1Factory> _Direct2DFactory;
+    CComPtr<ID2D1PathGeometry> _Spline;
+
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;
 
+    // Device-dependent resources
+    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
+    CComPtr<ID2D1SolidColorBrush> _BackBrush;
     CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
 
-    CComPtr<ID2D1SolidColorBrush> _BackBrush;
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
-
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
-};
+ };
