@@ -510,8 +510,6 @@ void UIElement::SetConfiguration() noexcept
     Resize();
 
     ::LeaveCriticalSection(&_Lock);
-
-//  InvalidateRect(NULL);
 }
 
 /// <summary>

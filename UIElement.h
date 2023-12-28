@@ -156,18 +156,8 @@ private:
         IDM_CONFIGURE,
     };
 
-    HANDLE _hMutex;
-
     CRITICAL_SECTION _Lock;
     PTP_TIMER _ThreadPoolTimer;
-
-    struct TimerData
-    {
-        HWND hWnd;
-        Configuration * Configuration;
-    } _TimerData;
-
-    bool _UseFullScreen;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
