@@ -54,12 +54,23 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
     ::InitializeCriticalSection(&_Lock);
 
-    _DPI = GetDpiForWindow(m_hWnd);
-
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
         Log(LogLevel::Critical, "%s: Unable to create Direct2D device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
+
+    if (::IsWindows10OrGreater())
+        _DPI = ::GetDpiForWindow(m_hWnd);
+    else
+    {
+        FLOAT DPIX, DPIY;
+
+        #pragma warning(disable: 4996)
+        _Direct2dFactory->GetDesktopDpi(&DPIX, &DPIY);
+        #pragma warning(default: 4996)
+
+        _DPI = (UINT) DPIX;
+    }
 
     try
     {

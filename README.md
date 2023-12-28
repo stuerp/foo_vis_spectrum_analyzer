@@ -85,11 +85,15 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.5.2.0, 2024-xx-xx
 
+* Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary...
 * Improved: Hardened the reading and writing of the configuration.
 * Improved: Various minor tweaks with focus on stability and future expandability:
   * The graph is drawn completely even when there is no track playing.
   * The peak indicators animation continues when the track stops playing or when it is paused.
 * Improved: The x axis shows labels for the complete specified frequency range.
+* Fixed: Removed background 'flash' when the element gets created.
+* Fixed: The spin controls of the Pitch setting used a wrong divider.
+* Fixed: Rewrote the handling of the spin controls to fix range checking and acceleration handling.
 
 v0.5.1.0, 2023-12-14
 

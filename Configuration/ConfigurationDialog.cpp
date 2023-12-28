@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.14) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.28) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -205,9 +205,9 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,  1 },
-                { 1, 10 },
-                { 2, 50 },
+                { 1,  5 },
+                { 2, 10 },
+                { 3, 50 },
             };
 
             _NumBands.Initialize(GetDlgItem(IDC_NUM_BANDS));
@@ -225,13 +225,13 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,     100 }, //     1.0
-                { 1,    1000 }, //    10.0
-                { 2,    2500 }, //    25.0
-                { 3,    5000 }, //    50.0
-                { 4,   10000 }, //   100.0
-                { 5,  100000 }, //  1000.0
-                { 6, 1000000 }, // 10000.0
+                { 1,     100 }, //     1.0
+                { 2,    1000 }, //    10.0
+                { 3,    2500 }, //    25.0
+                { 4,    5000 }, //    50.0
+                { 5,   10000 }, //   100.0
+                { 6,  100000 }, //  1000.0
+                { 7, 1000000 }, // 10000.0
             };
 
             {
@@ -297,12 +297,12 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,    50 }, //   0.5
-                { 1,   100 }, //   1.0
-                { 2,  1000 }, //  10.0
-                { 3,  2500 }, //  25.0
-                { 4,  5000 }, //  50.0
-                { 5, 10000 }, // 100.0
+                { 1,    50 }, //   0.5
+                { 2,   100 }, //   1.0
+                { 3,  1000 }, //  10.0
+                { 4,  2500 }, //  25.0
+                { 5,  5000 }, //  50.0
+                { 6, 10000 }, // 100.0
             };
 
             _Pitch.Initialize(GetDlgItem(IDC_PITCH));
@@ -344,9 +344,9 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,    1 }, // 0.01
-                { 1,    5 }, // 0.05
-                { 2,   10 }, // 0.10
+                { 1,    1 }, // 0.01
+                { 2,    5 }, // 0.05
+                { 3,   10 }, // 0.10
             };
 
             _SkewFactor.Initialize(GetDlgItem(IDC_SKEW_FACTOR));
@@ -364,10 +364,10 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,   1 }, //  0.1
-                { 1,   5 }, //  0.5
-                { 2,  10 }, //  1.0
-                { 3,  50 }, //  5.0
+                { 1,   1 }, //  0.1
+                { 2,   5 }, //  0.5
+                { 3,  10 }, //  1.0
+                { 4,  50 }, //  5.0
             };
 
             _Bandwidth.Initialize(GetDlgItem(IDC_BANDWIDTH));
@@ -376,10 +376,9 @@ void ConfigurationDialog::Initialize()
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_BANDWIDTH_SPIN));
 
-            w.SetAccel(_countof(Accel), Accel);
-
             w.SetRange32((int) (MinBandwidth * 10.), (int) (MaxBandwidth * 10.));
             w.SetPos32((int) (_Configuration->_Bandwidth * 10.));
+            w.SetAccel(_countof(Accel), Accel);
         }
     }
     #pragma endregion
@@ -417,10 +416,10 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 0,     10 }, //  0.1
-                { 1,    100 }, //  1.0
-                { 2,    250 }, //  2.5
-                { 3,    500 }, //  5.0
+                { 1,     10 }, //  0.1
+                { 2,    100 }, //  1.0
+                { 3,    250 }, //  2.5
+                { 4,    500 }, //  5.0
             };
 
             {
@@ -1191,123 +1190,99 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
     LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
-    int NewPos = nmud->iPos + nmud->iDelta;
-
     switch (nmhd->idFrom)
     {
         case IDC_KERNEL_SIZE_SPIN:
         {
-            _Configuration->_KernelSize = Clamp(NewPos, MinKernelSize, MaxKernelSize);
+            _Configuration->_KernelSize = ClampNewSpinPosition(nmud, MinKernelSize, MaxKernelSize);
             break;
         }
 
         case IDC_LO_FREQUENCY_SPIN:
         {
-            _Configuration->_LoFrequency = Min(Clamp(NewPos / 100., MinFrequency, MaxFrequency), _Configuration->_HiFrequency);
+            _Configuration->_LoFrequency = Min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _Configuration->_HiFrequency);
             SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
-
-            CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_LoFrequency * 100.));
             break;
         }
 
         case IDC_HI_FREQUENCY_SPIN:
         {
-            _Configuration->_HiFrequency = Max(Clamp(NewPos / 100., MinFrequency, MaxFrequency), _Configuration->_LoFrequency);
+            _Configuration->_HiFrequency = Max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _Configuration->_LoFrequency);
             SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
-
-            CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_Configuration->_HiFrequency * 100.));
             break;
         }
 
         case IDC_NUM_BANDS_SPIN:
         {
-            _Configuration->_NumBands = (size_t) Clamp(NewPos, MinBands, MaxBands);
+            _Configuration->_NumBands = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
             SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
-
-            CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS)).SetPos32((int)(_Configuration->_NumBands));
             break;
         }
 
         case IDC_MIN_NOTE_SPIN:
         {
-            _Configuration->_MinNote = Min((uint32_t) Clamp(NewPos, MinNote, MaxNote), _Configuration->_MaxNote);
+            _Configuration->_MinNote = Min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _Configuration->_MaxNote);
             SetNote(IDC_MIN_NOTE, _Configuration->_MinNote);
-
-            CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN)).SetPos32((int)(_Configuration->_MinNote));
             break;
         }
 
         case IDC_MAX_NOTE_SPIN:
         {
-            _Configuration->_MaxNote = Max((uint32_t) Clamp(NewPos, MinNote, MaxNote), _Configuration->_MinNote);
+            _Configuration->_MaxNote = Max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _Configuration->_MinNote);
             SetNote(IDC_MAX_NOTE, _Configuration->_MaxNote);
-
-            CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN)).SetPos32((int)(_Configuration->_MaxNote));
             break;
         }
 
         case IDC_BANDS_PER_OCTAVE_SPIN:
         {
-            _Configuration->_BandsPerOctave = (uint32_t) Clamp(NewPos, MinBandsPerOctave, MaxBandsPerOctave);
-
-            CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN)).SetPos32((int)(_Configuration->_BandsPerOctave));
+            _Configuration->_BandsPerOctave = (uint32_t) ClampNewSpinPosition(nmud, MinBandsPerOctave, MaxBandsPerOctave);
             break;
         }
 
         case IDC_PITCH_SPIN:
         {
-            _Configuration->_Pitch = Clamp((double) NewPos / 100., MinPitch, MaxPitch);
+            _Configuration->_Pitch = ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.);
             SetFrequency(IDC_PITCH, _Configuration->_Pitch);
-
-            CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN)).SetPos32((int)(_Configuration->_Pitch * 10.));
             break;
         }
 
         case IDC_TRANSPOSE_SPIN:
         {
-            _Configuration->_Transpose = Clamp(NewPos, MinTranspose, MaxTranspose);
-
-            CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN)).SetPos32((int)(_Configuration->_Transpose));
+            _Configuration->_Transpose = ClampNewSpinPosition(nmud, MinTranspose, MaxTranspose);
             break;
         }
 
         case IDC_AMPLITUDE_LO_SPIN:
         {
-            _Configuration->_AmplitudeLo = Min(Clamp((double) NewPos / 10., MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeHi);
+            _Configuration->_AmplitudeLo = Min(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _Configuration->_AmplitudeHi);
             SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
-
-            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int)(_Configuration->_AmplitudeLo * 10.));
             break;
         }
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
-            _Configuration->_AmplitudeHi = Max(Clamp((double) NewPos / 10., MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeLo);
+            _Configuration->_AmplitudeHi = Max(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _Configuration->_AmplitudeLo);
             SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
-
-            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int)(_Configuration->_AmplitudeHi * 10.));
             break;
         }
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
-            _Configuration->_AmplitudeStep = Clamp((double) NewPos / 10., MinAmplitudeStep, MaxAmplitudeStep);
+            _Configuration->_AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
             SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
-
-            CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int)(_Configuration->_AmplitudeStep * 10.));
             break;
         }
 
         case IDC_SKEW_FACTOR_SPIN:
         {
-            _Configuration->_SkewFactor = Clamp((double) NewPos / 100., MinSkewFactor, MaxSkewFactor);
+            _Configuration->_SkewFactor = ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.);
             SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
             break;
         }
 
         case IDC_BANDWIDTH_SPIN:
         {
-            _Configuration->_Bandwidth = Clamp((double) NewPos / 10., MinBandwidth, MaxBandwidth);
+            _Configuration->_Bandwidth = ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.);
             SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
             break;
         }
@@ -1703,4 +1678,44 @@ void ConfigurationDialog::UpdateChannelsMenu()
     }
 
     Menu.CheckMenuItem(IDM_CHANNELS_LAST, (UINT) (MF_BYCOMMAND | ((_Configuration->_SelectedChannels == AllChannels) ? MF_CHECKED : 0)));
+}
+
+/// <summary>
+/// Validates and updates the notification from the up-down control.
+/// </summary>
+int ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept
+{
+    if ((nmud->iPos + nmud->iDelta) < minValue)
+    {
+        nmud->iPos   = minValue;
+        nmud->iDelta = 0;
+    }
+    else
+    if ((nmud->iPos + nmud->iDelta) > maxValue)
+    {
+        nmud->iPos   = maxValue;
+        nmud->iDelta = 0;
+    }
+
+    return nmud->iPos + nmud->iDelta;
+}
+
+/// <summary>
+/// Validates and updates the notification from the up-down control.
+/// </summary>
+double ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scaleFactor) noexcept
+{
+    if ((nmud->iPos + nmud->iDelta) / scaleFactor < minValue)
+    {
+        nmud->iPos   = (int) (minValue * scaleFactor);
+        nmud->iDelta = 0;
+    }
+    else
+    if ((nmud->iPos + nmud->iDelta) / scaleFactor > maxValue)
+    {
+        nmud->iPos   = (int) (maxValue * scaleFactor);
+        nmud->iDelta = 0;
+    }
+
+    return (double) (nmud->iPos + nmud->iDelta) / scaleFactor;
 }

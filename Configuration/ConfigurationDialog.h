@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.14) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.28) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -182,6 +182,9 @@ private:
 
         SetDlgItemTextW(id, Text);
     }
+
+    static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
+    static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
     #pragma endregion
 
 private:
