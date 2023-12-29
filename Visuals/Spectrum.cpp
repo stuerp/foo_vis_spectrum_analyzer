@@ -214,6 +214,9 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
 /// </summary>
 HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
+    if (frequencyBands.size() < 2)
+        return E_FAIL;
+
     HRESULT hr = _Direct2DFactory->CreatePathGeometry(&_Spline);
 
     if (SUCCEEDED(hr))
@@ -231,45 +234,43 @@ HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
             _Sink->BeginFigure(D2D1::Point2F(_Rect.left, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
 
+            FLOAT x = _Rect.left;
+            FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
+
+            _Sink->AddLine(D2D1::Point2F(x, y));
+
+            const size_t n = frequencyBands.size() - 1; // Determine how many knots will be used to calculate control points
+
+            std::vector<D2D1_POINT_2F> Knots(n);
+
+            std::vector<D2D1_POINT_2F> FirstControlPoints(n - 2);
+            std::vector<D2D1_POINT_2F> SecondControlPoints(n - 2);
+
+            for (size_t i = 1; i < n;)
             {
-                FLOAT x = _Rect.left;
-                FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
+                // Don't render anything above the Nyquist frequency.
+                if (frequencyBands[i].Ctr > (sampleRate / 2.))
+                    break;
 
-                _Sink->AddLine(D2D1::Point2F(x, y));
+                size_t j = 0;
 
-                const size_t n = frequencyBands.size(); // Determine how many knots will be used to calculate control points
-
-                std::vector<D2D1_POINT_2F> Knots(n);
-
-                for (size_t i = 1; i < frequencyBands.size();)
+                for (; (j < n) && (i < n); ++j, ++i)
                 {
-                    // Don't render anything above the Nyquist frequency.
-                    if (frequencyBands[i].Ctr > (sampleRate / 2.))
-                        break;
+                    y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[i].CurValue))), _Rect.top, _Rect.bottom);
+                    Knots[j] = D2D1::Point2F(x, y);
 
-                    size_t j = 0;
-
-                    for (; (j < n) && (i < frequencyBands.size()); ++j, ++i)
-                    {
-                        y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[i].CurValue))), _Rect.top, _Rect.bottom);
-                        Knots[j] = D2D1::Point2F(x, y);
-
-                        x += BandWidth;
-                    }
-
-                    Knots.resize(j);
-
-                    std::vector<D2D1_POINT_2F> FirstControlPoints;
-                    std::vector<D2D1_POINT_2F> SecondControlPoints;
-
-                    BezierSpline::GetControlPoints(Knots, FirstControlPoints, SecondControlPoints);
-
-                    for (size_t j = 0; j < FirstControlPoints.size(); ++j)
-                        _Sink->AddBezier(D2D1::BezierSegment(FirstControlPoints[j], SecondControlPoints[j], Knots[j + 1]));
+                    x += BandWidth;
                 }
 
-                _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
+                Knots.resize(j);
+
+                BezierSpline::GetControlPoints(Knots, FirstControlPoints, SecondControlPoints);
+
+                for (size_t k = 0; k < FirstControlPoints.size(); ++k)
+                    _Sink->AddBezier(D2D1::BezierSegment(FirstControlPoints[k], SecondControlPoints[k], Knots[k + 1]));
             }
+
+            _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
 
             _Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 

@@ -22,13 +22,9 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std:
     // Special case: Bezier curve should be a straight line.
     if (n == 1)
     {
-        firstControlPoints.resize(1);
-
         // 3P1 = 2P0 + P3
         firstControlPoints[0].x = (2 * knots[0].x + knots[1].x) / 3;
         firstControlPoints[0].y = (2 * knots[0].y + knots[1].y) / 3;
-
-        secondControlPoints.resize(1);
 
         // P2 = 2P1 – P0
         secondControlPoints[0].x = 2 * firstControlPoints[0].x - knots[0].x;
@@ -63,9 +59,6 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std:
     std::vector<FLOAT> y = GetFirstControlPoints(rhs);
 
     // Fill output arrays.
-    firstControlPoints.resize(n);
-    secondControlPoints.resize(n);
-
     for (size_t i = 0; i < n; ++i)
     {
         // First control point

@@ -69,4 +69,8 @@ private:
 
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
+
+    std::vector<D2D1_POINT_2F> _Knots;
+    std::vector<D2D1_POINT_2F> _FirstControlPoints;
+    std::vector<D2D1_POINT_2F> _SecondControlPoints;
  };
