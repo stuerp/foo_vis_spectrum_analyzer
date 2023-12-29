@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2023.12.28) P. Stuer **/
+/** $VER: Spectrum.cpp (2023.12.29) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -38,6 +38,15 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 {
     CreateDeviceSpecificResources(renderTarget);
 
+    RenderBars(renderTarget, frequencyBands, sampleRate);
+    RenderCurve(renderTarget, frequencyBands, sampleRate);
+}
+
+/// <summary>
+/// Renders the spectrum analysis as bars.
+/// </summary>
+void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+{
     const FLOAT Width = _Rect.right - _Rect.left;
     const FLOAT Height = _Rect.bottom - _Rect.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
@@ -56,7 +65,7 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 
             renderTarget->FillRectangle(Rect, _SolidBrush);
         }
-/*
+
         // Don't render bar foreground above the Nyquist frequency.
         if (Iter.Ctr < (sampleRate / 2.))
         {
@@ -92,24 +101,29 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
                 if (_Configuration->_PeakMode == PeakMode::FadeOut)
                     PeakBrush->SetOpacity(1.f);
             }
-        }*/
+        }
 
         x1  = x2;
         x2 += BandWidth;
     }
+}
 
-    // Draw the spline.
-    HRESULT hr = CreateSpline(frequencyBands, sampleRate);
+/// <summary>
+/// Renders the spectrum analysis as a curve.
+/// </summary>
+void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+{
+    HRESULT hr = CreateCurve(frequencyBands, sampleRate);
 
     if (SUCCEEDED(hr))
     {
         _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 0.5f));
-        renderTarget->FillGeometry(_Spline, _SolidBrush);
+        renderTarget->FillGeometry(_Curve, _SolidBrush);
 
         _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 1.f));
-        renderTarget->DrawGeometry(_Spline, _SolidBrush, 2.f);
+        renderTarget->DrawGeometry(_Curve, _SolidBrush, 2.f);
 
-        _Spline.Release();
+        _Curve.Release();
     }
 }
 
@@ -212,18 +226,18 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
 /// <summary>
 /// Creates a curve from the power values.
 /// </summary>
-HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     if (frequencyBands.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2DFactory->CreatePathGeometry(&_Spline);
+    HRESULT hr = _Direct2DFactory->CreatePathGeometry(&_Curve);
 
     if (SUCCEEDED(hr))
     {
         CComPtr<ID2D1GeometrySink> _Sink;
 
-        hr = _Spline->Open(&_Sink);
+        hr = _Curve->Open(&_Sink);
 
         if (SUCCEEDED(hr))
         {
@@ -232,12 +246,16 @@ HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands
             const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
             _Sink->BeginFigure(D2D1::Point2F(_Rect.left, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
 
+            // Start with a vertical line.
             FLOAT x = _Rect.left;
             FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
 
             _Sink->AddLine(D2D1::Point2F(x, y));
+
+            x -= BandWidth / 2.f; // Make sure the knots are nicely centered in the bar rectangle.
 
             const size_t n = frequencyBands.size() - 1; // Determine how many knots will be used to calculate control points
 
@@ -256,10 +274,9 @@ HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands
 
                 for (; (j < n) && (i < n); ++j, ++i)
                 {
+                    x += BandWidth;
                     y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[i].CurValue))), _Rect.top, _Rect.bottom);
                     Knots[j] = D2D1::Point2F(x, y);
-
-                    x += BandWidth;
                 }
 
                 Knots.resize(j);
@@ -270,6 +287,7 @@ HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands
                     _Sink->AddBezier(D2D1::BezierSegment(FirstControlPoints[k], SecondControlPoints[k], Knots[k + 1]));
             }
 
+            // End with a vertical line.
             _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
 
             _Sink->EndFigure(D2D1_FIGURE_END_OPEN);

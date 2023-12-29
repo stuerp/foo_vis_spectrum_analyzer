@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.12.28) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2023.12.29) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -44,9 +44,12 @@ public:
 private:
     HRESULT CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
-    HRESULT CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
+
+    void RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
 private:
     const Configuration * _Configuration;
@@ -58,7 +61,7 @@ private:
 
     // Device-independent resources
     CComPtr<ID2D1Factory> _Direct2DFactory;
-    CComPtr<ID2D1PathGeometry> _Spline;
+    CComPtr<ID2D1PathGeometry> _Curve;
 
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;
 

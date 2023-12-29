@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2023.12.28) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2023.12.29) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -9,15 +9,21 @@
 
 #pragma hdrstop
 
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
 Graph::Graph() : _Bounds()
 {
 }
 
-void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands, CComPtr<ID2D1Factory> & direct2dFactory)
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands, CComPtr<ID2D1Factory> & direct2DFactory)
 {
     _Configuration = configuration;
 
-    _Spectrum.Initialize(configuration, direct2dFactory);
+    _Spectrum.Initialize(configuration, direct2DFactory);
 
     _XAxis.Initialize(configuration, frequencyBands);
     

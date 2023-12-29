@@ -33,8 +33,6 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std:
         return;
     }
 
-    // Calculate first Bezier control points.
-
     // Right hand side vector
     std::vector<FLOAT> rhs(n);
 
