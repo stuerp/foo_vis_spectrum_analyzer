@@ -190,6 +190,7 @@
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
+    <ClInclude Include="Visuals\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
     <ClInclude Include="Visuals\Gradients.h" />
     <ClInclude Include="Visuals\Graph.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
     <ClCompile Include="DUIElement.cpp" />
+    <ClCompile Include="Visuals\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />
     <ClCompile Include="Visuals\Graph.cpp" />
     <ClCompile Include="Visuals\Spectrum.cpp" />

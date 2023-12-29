@@ -6,6 +6,7 @@
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "Spectrum.h"
+#include "BezierSpline.h"
 
 #pragma hdrstop
 
@@ -102,10 +103,9 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 
     if (SUCCEEDED(hr))
     {
-/*
-        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightSkyBlue, 1.f));
+        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 0.5f));
         renderTarget->FillGeometry(_Spline, _SolidBrush);
-*/
+
         _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 1.f));
         renderTarget->DrawGeometry(_Spline, _SolidBrush, 2.f);
 
@@ -210,7 +210,7 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
 }
 
 /// <summary>
-/// 
+/// Creates a curve from the power values.
 /// </summary>
 HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
@@ -229,29 +229,47 @@ HRESULT Spectrum::CreateSpline(const std::vector<FrequencyBand> & frequencyBands
             const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
-
             _Sink->BeginFigure(D2D1::Point2F(_Rect.left, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
 
-            FLOAT x = _Rect.left;
-            FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
-
-            _Sink->AddLine(D2D1::Point2F(x, y));
-
-            for (const FrequencyBand & Iter : frequencyBands)
             {
-                y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
+                FLOAT x = _Rect.left;
+                FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
 
-                // Don't render anything above the Nyquist frequency.
-                if (Iter.Ctr > (sampleRate / 2.))
-                    break;
+                _Sink->AddLine(D2D1::Point2F(x, y));
 
-                x += BandWidth;
+                const size_t n = frequencyBands.size(); // Determine how many knots will be used to calculate control points
 
-                _Sink->AddBezier(D2D1::BezierSegment(D2D1::Point2F(x, y), D2D1::Point2F(x, y), D2D1::Point2F(x, y)));
+                std::vector<D2D1_POINT_2F> Knots(n);
+
+                for (size_t i = 1; i < frequencyBands.size();)
+                {
+                    // Don't render anything above the Nyquist frequency.
+                    if (frequencyBands[i].Ctr > (sampleRate / 2.))
+                        break;
+
+                    size_t j = 0;
+
+                    for (; (j < n) && (i < frequencyBands.size()); ++j, ++i)
+                    {
+                        y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[i].CurValue))), _Rect.top, _Rect.bottom);
+                        Knots[j] = D2D1::Point2F(x, y);
+
+                        x += BandWidth;
+                    }
+
+                    Knots.resize(j);
+
+                    std::vector<D2D1_POINT_2F> FirstControlPoints;
+                    std::vector<D2D1_POINT_2F> SecondControlPoints;
+
+                    BezierSpline::GetControlPoints(Knots, FirstControlPoints, SecondControlPoints);
+
+                    for (size_t j = 0; j < FirstControlPoints.size(); ++j)
+                        _Sink->AddBezier(D2D1::BezierSegment(FirstControlPoints[j], SecondControlPoints[j], Knots[j + 1]));
+                }
+
+                _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
             }
-
-            _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
-            _Sink->AddLine(D2D1::Point2F(_Rect.left, _Rect.bottom));
 
             _Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 

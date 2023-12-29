@@ -85,6 +85,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.5.2.0, 2024-xx-xx
 
+* New: Curve visualization
 * Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
 * Improved: Hardened the reading and writing of the configuration.
 * Improved: Various minor tweaks with focus on stability and future expandability:
@@ -198,10 +199,11 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Acknowledgements / Credits
 
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
-* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help
+* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help.
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
-* fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component
+* fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
+* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
 
 ## Reference Material
 
