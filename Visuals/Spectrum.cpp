@@ -28,7 +28,7 @@ void Spectrum::Initialize(const Configuration * configuration, CComPtr<ID2D1Fact
 /// </summary>
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
-    _Rect = rect;
+    _Bounds = rect;
 }
 
 /// <summary>
@@ -38,7 +38,7 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 {
     CreateDeviceSpecificResources(renderTarget);
 
-    RenderBars(renderTarget, frequencyBands, sampleRate);
+//  RenderBars(renderTarget, frequencyBands, sampleRate);
     RenderCurve(renderTarget, frequencyBands, sampleRate);
 }
 
@@ -47,16 +47,16 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 /// </summary>
 void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
-    const FLOAT Width = _Rect.right - _Rect.left;
-    const FLOAT Height = _Rect.bottom - _Rect.top;
+    const FLOAT Width = _Bounds.right - _Bounds.left;
+    const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-    FLOAT x1 = _Rect.left;
+    FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
-        D2D1_RECT_F Rect = { x1, _Rect.top, x2 - PaddingX, Height - PaddingY };
+        D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, Height - PaddingY };
 
         // Draw the bar background.
         if (_Configuration->_DrawBandBackground)
@@ -77,7 +77,7 @@ void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const s
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
             {
-                Rect.top = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
+                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
 
                 renderTarget->FillRectangle(Rect, ForeBrush);
 
@@ -88,7 +88,7 @@ void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const s
             // Draw the peak indicator.
             if ((_Configuration->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top = Clamp((FLOAT)(_Rect.bottom - (Height * Iter.Peak)), _Rect.top, _Rect.bottom);
+                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak)), _Bounds.top, _Bounds.bottom);
                 Rect.bottom = Rect.top + 1.f;
 
                 ID2D1Brush * PeakBrush = (_Configuration->_PeakMode != PeakMode::FadeOut) ? ForeBrush : _WhiteBrush;
@@ -117,11 +117,13 @@ void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const 
 
     if (SUCCEEDED(hr))
     {
-        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 0.5f));
-//        renderTarget->FillGeometry(_Curve, _SolidBrush);
+        _GradientBrush->SetOpacity(0.5f);
 
-        _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 1.f));
-        renderTarget->DrawGeometry(_Curve, _SolidBrush, 2.f);
+        renderTarget->FillGeometry(_Curve, _GradientBrush);
+
+        _GradientBrush->SetOpacity(1.0f);
+
+        renderTarget->DrawGeometry(_Curve, _GradientBrush, 2.f);
 
         _Curve.Release();
     }
@@ -241,18 +243,18 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
         if (SUCCEEDED(hr))
         {
-            const FLOAT Width = _Rect.right - _Rect.left;
-            const FLOAT Height = _Rect.bottom - _Rect.top;
+            const FLOAT Width = _Bounds.right - _Bounds.left;
+            const FLOAT Height = _Bounds.bottom - _Bounds.top;
             const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
 
-            FLOAT x = _Rect.left + BandWidth / 2.f; // Make sure the knots are nicely centered in the bar rectangle.
+            FLOAT x = _Bounds.left + BandWidth / 2.f; // Make sure the knots are nicely centered in the bar rectangle.
 
-            _Sink->BeginFigure(D2D1::Point2F(x, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
+            _Sink->BeginFigure(D2D1::Point2F(x, _Bounds.bottom), D2D1_FIGURE_BEGIN_FILLED);
 
             // Start with a vertical line going up.
-            FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
+            FLOAT y = Clamp((FLOAT)(_Bounds.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Bounds.top, _Bounds.bottom);
 
             _Sink->AddLine(D2D1::Point2F(x, y));
 
@@ -270,7 +272,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
                 if (Iter.Ctr > (sampleRate / 2.))
                     break;
 
-                y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
+                y = Clamp((FLOAT)(_Bounds.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
 
                 p0[n++] = D2D1::Point2F(x, y);
 
@@ -283,14 +285,14 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
                 for (size_t i = 0; i < (n - 1); ++i)
                 {
-                    p1[i].y = Clamp(p1[i].y, _Rect.top, _Rect.bottom);
-                    p2[i].y = Clamp(p2[i].y, _Rect.top, _Rect.bottom);
+                    p1[i].y = Clamp(p1[i].y, _Bounds.top, _Bounds.bottom);
+                    p2[i].y = Clamp(p2[i].y, _Bounds.top, _Bounds.bottom);
 
                     _Sink->AddBezier(D2D1::BezierSegment(p1[i], p2[i], p0[i + 1]));
                 }
 
                 // End with a vertical line going down.
-                _Sink->AddLine(D2D1::Point2F(p0[n - 1].x, _Rect.bottom));
+                _Sink->AddLine(D2D1::Point2F(p0[n - 1].x, _Bounds.bottom));
             }
 
             _Sink->EndFigure(D2D1_FIGURE_END_OPEN);

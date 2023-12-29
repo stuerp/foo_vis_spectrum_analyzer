@@ -38,8 +38,8 @@ public:
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    FLOAT GetLeft() const { return _Rect.left; }
-    FLOAT GetRight() const { return _Rect.right; }
+    FLOAT GetLeft() const { return _Bounds.left; }
+    FLOAT GetRight() const { return _Bounds.right; }
 
 private:
     HRESULT CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
@@ -57,13 +57,11 @@ private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
-    D2D1_RECT_F _Rect;
+    D2D1_RECT_F _Bounds;
 
     // Device-independent resources
     CComPtr<ID2D1Factory> _Direct2DFactory;
     CComPtr<ID2D1PathGeometry> _Curve;
-
-    std::vector<D2D1_GRADIENT_STOP> _GradientStops;
 
     // Device-dependent resources
     CComPtr<ID2D1SolidColorBrush> _SolidBrush;
@@ -72,6 +70,8 @@ private:
 
     CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
+
+    std::vector<D2D1_GRADIENT_STOP> _GradientStops;
 
     std::vector<D2D1_POINT_2F> _Knots;
     std::vector<D2D1_POINT_2F> _FirstControlPoints;
