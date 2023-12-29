@@ -12,12 +12,12 @@
 /// <summary>
 /// Gets open-ended Bezier spline control points.
 /// </summary>
-void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
+void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size_t count, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
 {
-    size_t n = knots.size() - 1;
-
-    if (n < 1)
+    if (count < 2)
         return;
+
+    size_t n = count - 1;
 
     // Special case: Bezier curve should be a straight line.
     if (n == 1)

@@ -118,7 +118,7 @@ void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const 
     if (SUCCEEDED(hr))
     {
         _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 0.5f));
-        renderTarget->FillGeometry(_Curve, _SolidBrush);
+//        renderTarget->FillGeometry(_Curve, _SolidBrush);
 
         _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::GreenYellow, 1.f));
         renderTarget->DrawGeometry(_Curve, _SolidBrush, 2.f);
@@ -247,48 +247,51 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
 
-            _Sink->BeginFigure(D2D1::Point2F(_Rect.left, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
+            FLOAT x = _Rect.left + BandWidth / 2.f; // Make sure the knots are nicely centered in the bar rectangle.
 
-            // Start with a vertical line.
-            FLOAT x = _Rect.left;
+            _Sink->BeginFigure(D2D1::Point2F(x, _Rect.bottom), D2D1_FIGURE_BEGIN_FILLED);
+
+            // Start with a vertical line going up.
             FLOAT y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Rect.top, _Rect.bottom);
 
             _Sink->AddLine(D2D1::Point2F(x, y));
 
-            x -= BandWidth / 2.f; // Make sure the knots are nicely centered in the bar rectangle.
+            size_t n = frequencyBands.size(); // Determine how many knots will be used to calculate control points
 
-            const size_t n = frequencyBands.size() - 1; // Determine how many knots will be used to calculate control points
+            std::vector<D2D1_POINT_2F> p0(n);
+            std::vector<D2D1_POINT_2F> p1(n - 1);
+            std::vector<D2D1_POINT_2F> p2(n - 1);
 
-            std::vector<D2D1_POINT_2F> Knots(n);
+            n = 0;
 
-            std::vector<D2D1_POINT_2F> FirstControlPoints(n - 2);
-            std::vector<D2D1_POINT_2F> SecondControlPoints(n - 2);
-
-            for (size_t i = 1; i < n;)
+            for (const auto & Iter : frequencyBands)
             {
                 // Don't render anything above the Nyquist frequency.
-                if (frequencyBands[i].Ctr > (sampleRate / 2.))
+                if (Iter.Ctr > (sampleRate / 2.))
                     break;
 
-                size_t j = 0;
+                y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Rect.top, _Rect.bottom);
 
-                for (; (j < n) && (i < n); ++j, ++i)
-                {
-                    x += BandWidth;
-                    y = Clamp((FLOAT)(_Rect.bottom - (Height * _Configuration->ScaleA(frequencyBands[i].CurValue))), _Rect.top, _Rect.bottom);
-                    Knots[j] = D2D1::Point2F(x, y);
-                }
+                p0[n++] = D2D1::Point2F(x, y);
 
-                Knots.resize(j);
-
-                BezierSpline::GetControlPoints(Knots, FirstControlPoints, SecondControlPoints);
-
-                for (size_t k = 0; k < FirstControlPoints.size(); ++k)
-                    _Sink->AddBezier(D2D1::BezierSegment(FirstControlPoints[k], SecondControlPoints[k], Knots[k + 1]));
+                x += BandWidth;
             }
 
-            // End with a vertical line.
-            _Sink->AddLine(D2D1::Point2F(x, _Rect.bottom));
+            if (n > 1)
+            {
+                BezierSpline::GetControlPoints(p0, n, p1, p2);
+
+                for (size_t i = 0; i < (n - 1); ++i)
+                {
+                    p1[i].y = Clamp(p1[i].y, _Rect.top, _Rect.bottom);
+                    p2[i].y = Clamp(p2[i].y, _Rect.top, _Rect.bottom);
+
+                    _Sink->AddBezier(D2D1::BezierSegment(p1[i], p2[i], p0[i + 1]));
+                }
+
+                // End with a vertical line going down.
+                _Sink->AddLine(D2D1::Point2F(p0[n - 1].x, _Rect.bottom));
+            }
 
             _Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 
