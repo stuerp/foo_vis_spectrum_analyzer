@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.h (2023.12.27) P. Stuer **/
+/** $VER: Configuration.h (2023.12.29) P. Stuer **/
 
 #pragma once
 
@@ -64,6 +64,12 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
+
+inline const double MinLineWidth =  1.f;
+inline const double MaxLineWidth = 10.f;
+
+inline const double MinAreaOpacity = 0.f;
+inline const double MaxAreaOpacity = 1.f;
 
 inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
 
@@ -177,6 +183,12 @@ enum class ColorScheme
     Rainbow = 8,
 };
 
+enum class VisualizationType
+{
+    Bars = 0,
+    Curve = 1,
+};
+
 enum class PeakMode
 {
     None = 0,
@@ -229,6 +241,7 @@ public:
 
 public:
     RECT _DialogBounds;                                                 // Will be initialized in OnInitDialog()
+    size_t _PageIndex;
 
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;
@@ -314,27 +327,35 @@ public:
             double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
         #pragma endregion
 
-        #pragma region Bands
+        #pragma region Common
             ColorScheme _ColorScheme;
             std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops. Will not be persisted.
             std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
+            bool _ShowToolTips;                                         // True if tooltips should be displayed.
 
+            SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
+            double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+        #pragma endregion
+
+            VisualizationType _VisualizationType;
+
+        #pragma region Bars
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
 
             D2D1::ColorF _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
             D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
-            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
-            bool _ShowToolTips;                                         // True if tooltips should be displayed.
-
             bool _HorizontalGradient;                                   // True if the gradient will be used to paint horizontally.
-
-            SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
-            double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
 
             PeakMode _PeakMode;
             double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
             double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
+        #pragma endregion
+
+        #pragma region Curve
+            FLOAT _LineWidth;
+            FLOAT _AreaOpacity;
         #pragma endregion
     #pragma endregion
 
@@ -371,5 +392,5 @@ public:
     void UpdateGradient();
 
 private:
-    const size_t _CurrentVersion = 8;
+    const size_t _CurrentVersion = 9;
 };

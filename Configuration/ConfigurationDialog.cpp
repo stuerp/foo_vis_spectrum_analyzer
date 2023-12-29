@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.28) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.29) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -55,16 +55,16 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        const WCHAR * Labels[] = { L"Transform", L"Spectrum", L"Mode" };
+        const WCHAR * Labels[] = { L"Transform", L"Graph", L"Visualization" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             _MenuList.AddString(Labels[i]);
 
-        _MenuList.SetCurSel(0);
+        _MenuList.SetCurSel(_Configuration->_PageIndex);
 
-        UpdatePage1(SW_SHOW);
-        UpdatePage2(SW_HIDE);
-        UpdatePage3(SW_HIDE);
+        UpdatePage1((_Configuration->_PageIndex == 0) ? SW_SHOW : SW_HIDE);
+        UpdatePage2((_Configuration->_PageIndex == 1) ? SW_SHOW : SW_HIDE);
+        UpdatePage3((_Configuration->_PageIndex == 2) ? SW_SHOW : SW_HIDE);
     }
 
     #pragma region Transform
@@ -553,6 +553,55 @@ void ConfigurationDialog::Initialize()
 
     #pragma endregion
 
+    #pragma region Visualization
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"Bars", L"Curve",  };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_VisualizationType);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,   1 }, //  0.1
+            { 2,   5 }, //  0.5
+        };
+
+        _LineWidth.Initialize(GetDlgItem(IDC_LINE_WIDTH));
+
+        SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_LINE_WIDTH_SPIN));
+
+        w.SetRange32((int) (MinLineWidth * 10.), (int) (MaxLineWidth * 10.));
+        w.SetPos32((int) (_Configuration->_LineWidth * 10.));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,   1 }, //  0.1
+            { 2,   5 }, //  0.5
+        };
+
+        _AreaOpacity.Initialize(GetDlgItem(IDC_AREA_OPACITY));
+
+        SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity , 0, 1)));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_AREA_OPACITY_SPIN));
+
+        w.SetRange32((int) (MinAreaOpacity * 10.), (int) (MaxAreaOpacity * 10.));
+        w.SetPos32((int) (_Configuration->_AreaOpacity * 10.));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    #pragma endregion
+
     UpdateControls();
 }
 
@@ -601,6 +650,9 @@ void ConfigurationDialog::Terminate()
 
     _LiteBandColor.Terminate();
     _DarkBandColor.Terminate();
+
+    _LineWidth.Terminate();
+    _AreaOpacity.Terminate();
 }
 
 /// <summary>
@@ -625,6 +677,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdatePage2((Selection == 1) ? SW_SHOW : SW_HIDE);
             UpdatePage3((Selection == 2) ? SW_SHOW : SW_HIDE);
 
+            _Configuration->_PageIndex = Selection;
             return;
         }
 
@@ -746,6 +799,16 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_PEAK_MODE:
         {
             _Configuration->_PeakMode = (PeakMode) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Visualization
+        case IDC_VISUALIZATION:
+        {
+            _Configuration->_VisualizationType = (VisualizationType) SelectedIndex;
 
             UpdateControls();
             break;
@@ -890,6 +953,22 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     #pragma endregion
 
+    #pragma region Curve
+
+        case IDC_LINE_WIDTH:
+        {
+            _Configuration->_LineWidth = (FLOAT) Clamp(::_wtof(Text), MinLineWidth, MaxLineWidth);
+            break;
+        }
+
+        case IDC_AREA_OPACITY:
+        {
+            _Configuration->_AreaOpacity = (FLOAT) Clamp(::_wtof(Text), MinAreaOpacity, MaxAreaOpacity);
+            break;
+        }
+
+    #pragma endregion
+
         default:
             return;
     }
@@ -995,6 +1074,20 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ACCELERATION:
         {
             SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
+            break;
+        }
+    #pragma endregion
+
+    #pragma region Curve
+        case IDC_LINE_WIDTH:
+        {
+            SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
+            break;
+        }
+
+        case IDC_AREA_OPACITY:
+        {
+            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity, 0, 1)));
             break;
         }
     #pragma endregion
@@ -1289,6 +1382,20 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_LINE_WIDTH_SPIN:
+        {
+            _Configuration->_LineWidth = ClampNewSpinPosition(nmud, MinLineWidth, MaxLineWidth, 10.);
+            SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
+            break;
+        }
+
+        case IDC_AREA_OPACITY_SPIN:
+        {
+            _Configuration->_AreaOpacity = ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 10.);
+            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity, 0, 1)));
+            break;
+        }
+
         default:
             return -1;
     }
@@ -1525,6 +1632,8 @@ void ConfigurationDialog::UpdatePage3(int mode)
 {
     static const int Page3[] =
     {
+        IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
+
         IDC_BARS,
             IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
 
@@ -1626,6 +1735,21 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_HOLD_TIME).EnableWindow(ShowPeaks);
         GetDlgItem(IDC_ACCELERATION).EnableWindow(ShowPeaks);
  
+    // Visualization
+    GetDlgItem(IDC_DRAW_BAND_BACKGROUND).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_LED_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_HOLD_TIME).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+
+    GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+    GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+
+    GetDlgItem(IDC_AREA_OPACITY).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+    GetDlgItem(IDC_AREA_OPACITY_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+
     UpdateColorControls();
 }
 

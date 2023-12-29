@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.27) P. Stuer **/
+/** $VER: Configuration.cpp (2023.12.29) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -35,6 +35,7 @@ Configuration::Configuration()
 void Configuration::Reset() noexcept
 {
     _DialogBounds = { };
+    _PageIndex = 0;
 
     _RefreshRateLimit = 20;
 
@@ -119,22 +120,30 @@ void Configuration::Reset() noexcept
     _UseAbsolute = true;
     _Gamma = 1.;
 
-    // Band
-    _DrawBandBackground = true;
-    _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    _LEDMode = false;
-    _ShowToolTips = true;
-    _HorizontalGradient = false;
-
+    // Common
     _ColorScheme = ColorScheme::Prism1;
 
     _GradientStops = GetGradientStops(_ColorScheme);
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
+    _ShowToolTips = true;
+
+    _VisualizationType = VisualizationType::Bars;
+
+    // Bars
+    _DrawBandBackground = true;
+    _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LEDMode = false;
+    _HorizontalGradient = false;
+
     _PeakMode = PeakMode::Classic;
     _HoldTime = 30.;
     _Acceleration = 0.5;
+
+    // Curve
+    _LineWidth = 2.f;
+    _AreaOpacity = 0.5f;
 
     // Logging
     _LogLevel = LogLevel::None;
@@ -146,6 +155,7 @@ void Configuration::Reset() noexcept
 Configuration & Configuration::operator=(const Configuration & other)
 {
     _DialogBounds = other._DialogBounds;
+    _PageIndex = other._PageIndex;
 
     _RefreshRateLimit = other._RefreshRateLimit;
 
@@ -229,22 +239,31 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _Gamma = other._Gamma;
 
-        // Bands
-        _DrawBandBackground = other._DrawBandBackground;
-        _LiteBandColor = other._LiteBandColor;
-        _DarkBandColor = other._DarkBandColor;
-        _LEDMode = other._LEDMode;
-        _ShowToolTips = other._ShowToolTips;
-        _HorizontalGradient = other._HorizontalGradient;
-
+        // Common
         _ColorScheme = other._ColorScheme;
 
         _GradientStops = other._GradientStops;
         _CustomGradientStops = other._CustomGradientStops;
 
+        _ShowToolTips = other._ShowToolTips;
+
+        // Visualization
+        _VisualizationType = other._VisualizationType;
+
+        // Bars
+        _DrawBandBackground = other._DrawBandBackground;
+        _LiteBandColor = other._LiteBandColor;
+        _DarkBandColor = other._DarkBandColor;
+        _LEDMode = other._LEDMode;
+        _HorizontalGradient = other._HorizontalGradient;
+
         _PeakMode = other._PeakMode;
         _HoldTime = other._HoldTime;
         _Acceleration = other._Acceleration;
+
+        // Curve
+        _LineWidth = other._LineWidth;
+        _AreaOpacity = other._AreaOpacity;
     #pragma endregion
 
     // Logging
@@ -448,6 +467,15 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _LiteBandColor.b;
             parser >> _LiteBandColor.a;
         }
+
+        // Version 9
+        if (Version >= 9)
+        {
+            parser >> _PageIndex;
+            parser >> Integer; _VisualizationType = (VisualizationType) Integer;
+            parser >> _LineWidth;
+            parser >> _AreaOpacity;
+        }
     }
     catch (exception)
     {
@@ -604,6 +632,12 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << _LiteBandColor.g;
         builder << _LiteBandColor.b;
         builder << _LiteBandColor.a;
+
+        // Version 9
+        builder << _PageIndex;
+        builder << (int) _VisualizationType;
+        builder << _LineWidth;
+        builder << _AreaOpacity;
     }
     catch (exception)
     {
@@ -739,6 +773,14 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
             reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
         }
+
+        if (Version >= 9)
+        {
+            reader->read(&_PageIndex, sizeof(_PageIndex), abortHandler);
+            reader->read(&_VisualizationType, sizeof(_VisualizationType), abortHandler);
+            reader->read(&_LineWidth, sizeof(_LineWidth), abortHandler);
+            reader->read(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
+        }
     }
     catch (exception)
     {
@@ -864,6 +906,12 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
 
         writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+
+        // Version 9
+        writer->write(&_PageIndex, sizeof(_PageIndex), abortHandler);
+        writer->write(&_VisualizationType, sizeof(_VisualizationType), abortHandler);
+        writer->write(&_LineWidth, sizeof(_LineWidth), abortHandler);
+        writer->write(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
     }
     catch (exception)
     {

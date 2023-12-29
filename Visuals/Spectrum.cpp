@@ -38,8 +38,18 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 {
     CreateDeviceSpecificResources(renderTarget);
 
-//  RenderBars(renderTarget, frequencyBands, sampleRate);
-    RenderCurve(renderTarget, frequencyBands, sampleRate);
+    switch (_Configuration->_VisualizationType)
+    {
+        default:
+
+        case VisualizationType::Bars:
+            RenderBars(renderTarget, frequencyBands, sampleRate);
+            break;
+
+        case VisualizationType::Curve:
+            RenderCurve(renderTarget, frequencyBands, sampleRate);
+            break;
+    }
 }
 
 /// <summary>
@@ -117,13 +127,13 @@ void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const 
 
     if (SUCCEEDED(hr))
     {
-        _GradientBrush->SetOpacity(0.5f);
+        _GradientBrush->SetOpacity(_Configuration->_AreaOpacity);
 
         renderTarget->FillGeometry(_Curve, _GradientBrush);
 
         _GradientBrush->SetOpacity(1.0f);
 
-        renderTarget->DrawGeometry(_Curve, _GradientBrush, 2.f);
+        renderTarget->DrawGeometry(_Curve, _GradientBrush, _Configuration->_LineWidth);
 
         _Curve.Release();
     }

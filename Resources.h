@@ -61,7 +61,7 @@
 
 #define IDC_MENULIST                    1500
 
-// Transform
+#pragma region Transform
 
 #define IDC_TRANSFORM_GROUP             2000
 
@@ -82,7 +82,9 @@
 #define IDM_CHANNELS_FIRST              9100
 #define IDM_CHANNELS_LAST               9118
 
-// FFT
+#pragma endregion
+
+#pragma region FFT
 
 #define IDC_FFT_GROUP                   2040
 
@@ -104,7 +106,9 @@
 #define IDC_KERNEL_SIZE                 2082
 #define IDC_KERNEL_SIZE_SPIN            2084
 
-// Frequencies
+#pragma endregion
+
+#pragma region Frequencies
 
 #define IDC_FREQUENCIES_GROUP           2100
 
@@ -154,7 +158,9 @@
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
 
-// Common
+#pragma endregion
+
+#pragma region Common
 
 #define IDC_COMMON                      6000
 
@@ -178,14 +184,18 @@
 #define IDC_PEAK_MODE                   6040
 #define IDC_PEAK_MODE_LBL               6041
 
-// X axis
+#pragma endregion
+
+#pragma region X axis
 
 #define IDC_X_AXIS                      4000
 
 #define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
-// Y axis
+#pragma endregion
+
+#pragma region Y axis
 
 #define IDC_Y_AXIS                      5000
 
@@ -210,7 +220,9 @@
 #define IDC_GAMMA_LBL                   5050
 #define IDC_GAMMA                       5052
 
-// Colors
+#pragma endregion
+
+#pragma region Colors
 
 #define IDC_COLORS_GROUP                7000
 
@@ -240,15 +252,20 @@
 #define IDC_BLACK_KEYS_LBL              7050
 #define IDC_BLACK_KEYS                  7052
 
-#define IDC_RESET                       8000
+#pragma endregion
+
+#pragma region Visualization
+
+#define IDC_VISUALIZATION_LBL           7100
+#define IDC_VISUALIZATION               7102
 
 // Bars
 
-#define IDC_BARS                        7100
+#define IDC_BARS                        7110
 
-#define IDC_DRAW_BAND_BACKGROUND        7110
-#define IDC_LED_MODE                    7112
-#define IDC_HORIZONTAL_GRADIENT         7114
+#define IDC_DRAW_BAND_BACKGROUND        7112
+#define IDC_LED_MODE                    7114
+#define IDC_HORIZONTAL_GRADIENT         7116
 
 #define IDC_HOLD_TIME_LBL               7120
 #define IDC_HOLD_TIME                   7122
@@ -267,3 +284,7 @@
 #define IDC_AREA_OPACITY_LBL            7220
 #define IDC_AREA_OPACITY                7222
 #define IDC_AREA_OPACITY_SPIN           7224
+
+#pragma endregion
+
+#define IDC_RESET                       9999
