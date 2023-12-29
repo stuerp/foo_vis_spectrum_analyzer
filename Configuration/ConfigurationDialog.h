@@ -46,50 +46,6 @@ public:
 
     virtual ~ConfigurationDialog() { }
 
-    BEGIN_MSG_MAP_EX(ConfigurationDialog)
-        MSG_WM_INITDIALOG(OnInitDialog)
-//      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
-        MSG_WM_CLOSE(OnClose)
-
-        COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
-
-        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
-        COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
-        COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
-        COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
-
-        NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
-        NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
-
-        REFLECT_NOTIFICATIONS() // Required for CColorListBox
-
-        CHAIN_MSG_MAP(CDialogResize<ConfigurationDialog>)
-    END_MSG_MAP()
-
-    BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
-        DLGRESIZE_CONTROL(IDC_MENULIST, DLSZ_SIZE_Y)
-/*
-        DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
-            DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-            DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
-
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_PEAK_MODE_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_HOLD_TIME_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
-*/
-        DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
-
-        DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
-    END_DLGRESIZE_MAP()
-
     enum { IDD = IDD_CONFIGURATION };
 
 private:
@@ -124,7 +80,6 @@ private:
     void OnSelectionChanged(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept;
-    LRESULT OnSetSel(UINT, WPARAM, LPARAM, BOOL & handled) const noexcept;
     void OnButtonClick(UINT, int, CWindow);
 
     LRESULT OnDeltaPos(LPNMHDR nmhd);
@@ -132,15 +87,12 @@ private:
 
     void OnChannels(UINT, int, HWND);
 
-    void OnAddClicked(UINT, int id, CWindow);
-    void OnRemoveClicked(UINT, int id, CWindow);
-    void OnReverseClicked(UINT, int id, CWindow);
-
     void UpdateControls();
     void UpdateColorControls();
     void UpdateChannelsMenu();
-    void UpdatePage2(int mode);
     void UpdatePage1(int mode);
+    void UpdatePage2(int mode);
+    void UpdatePage3(int mode);
 
     /// <summary>
     /// Sets the display version of the frequency.
@@ -185,6 +137,51 @@ private:
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
+
+    BEGIN_MSG_MAP_EX(ConfigurationDialog)
+        MSG_WM_INITDIALOG(OnInitDialog)
+//      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
+        MSG_WM_CLOSE(OnClose)
+
+        COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
+
+        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
+        COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
+        COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
+        COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
+
+        NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
+        NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
+
+        REFLECT_NOTIFICATIONS() // Required for CColorListBox
+
+        CHAIN_MSG_MAP(CDialogResize<ConfigurationDialog>)
+    END_MSG_MAP()
+
+    BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
+        DLGRESIZE_CONTROL(IDC_MENULIST, DLSZ_SIZE_Y)
+/*
+        DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
+            DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
+            DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
+
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_PEAK_MODE_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_HOLD_TIME_LBL, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
+            DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
+*/
+        DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+
+        DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+    END_DLGRESIZE_MAP()
+
     #pragma endregion
 
 private:

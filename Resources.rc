@@ -141,15 +141,10 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_BANDWIDTH,                  X_A36, Y_A36, W_A36, H_A36, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
         control         "",                         IDC_BANDWIDTH_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
-    groupbox "Bands", IDC_BANDS, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Common", IDC_COMMON, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Color scheme:",            IDC_COLOR_SCHEME_LBL,           X_A09, Y_A09 + 2, W_A09, H_A09
         combobox                                    IDC_COLOR_SCHEME,               X_A10, Y_A10,     W_A10, H_A10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-
-        control         "Band background",          IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
-        control         "Draw horizontally",        IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
-
-        control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
 
         control         "Tool tips",                IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
 
@@ -231,6 +226,15 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         ltext           "Black keys:",      IDC_BLACK_KEYS_LBL,         X_C14, Y_C14 + 2, W_C14, H_C14, SS_NOPREFIX
         ltext           "",                 IDC_BLACK_KEYS,             X_C15, Y_C15, W_C15, H_C15, SS_NOTIFY, WS_EX_STATICEDGE
+
+    groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        control         "Bar Background"            IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
+        control         "Draw horizontally",        IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
+
+        control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+
+    groupbox "Curve", IDC_CURVE, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98

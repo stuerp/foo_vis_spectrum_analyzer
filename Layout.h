@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.14) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.29) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -383,7 +383,7 @@
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 
-#pragma region Bands
+#pragma region Common
 // Groupbox
 #define X_B04   X_D01 + W_D01 + IX
 #define Y_B04   Y_D01
@@ -781,6 +781,24 @@
 
 #define W_B06  5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
 #define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + IY + H_C15 + 5
+#pragma endregion
+
+#pragma region Bars
+// Groupbox
+#define X_B07   X_D01 + W_D01 + IX
+#define Y_B07   Y_D01
+
+#define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
+#define H_B07   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_C12 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
+#pragma endregion
+
+#pragma region Curve
+// Groupbox
+#define X_B08   X_B07
+#define Y_B08   Y_B07 + H_B07 + IY
+
+#define W_B08  176 // 5 + W_A09 + IX + W_A10  + 5
+#define H_B08   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_C12 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
 #pragma endregion
 
 // Cancel button (right-most button)

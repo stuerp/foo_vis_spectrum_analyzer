@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.14) P. Stuer **/
+/** $VER: Resources.h (2023.12.29) P. Stuer **/
 
 #pragma once
 
@@ -154,16 +154,14 @@
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
 
-// Bands
+// Common
 
-#define IDC_BANDS                       6000
+#define IDC_COMMON                      6000
 
 #define IDC_COLOR_SCHEME_LBL            6010
 #define IDC_COLOR_SCHEME                6012
-#define IDC_DRAW_BAND_BACKGROUND        6014
-#define IDC_LED_MODE                    6016
+
 #define IDC_SHOW_TOOLTIPS               6018
-#define IDC_HORIZONTAL_GRADIENT         6020
 
 #define IDC_GRADIENT                    6022
 #define IDC_COLORS                      6024
@@ -173,16 +171,12 @@
 
 #define IDC_SMOOTHING_METHOD            6032
 #define IDC_SMOOTHING_METHOD_LBL        6033
+
 #define IDC_SMOOTHING_FACTOR            6034
 #define IDC_SMOOTHING_FACTOR_LBL        6035
 
 #define IDC_PEAK_MODE                   6040
 #define IDC_PEAK_MODE_LBL               6041
-
-#define IDC_HOLD_TIME                   6050
-#define IDC_HOLD_TIME_LBL               6051
-#define IDC_ACCELERATION                6052
-#define IDC_ACCELERATION_LBL            6053
 
 // X axis
 
@@ -247,3 +241,29 @@
 #define IDC_BLACK_KEYS                  7052
 
 #define IDC_RESET                       8000
+
+// Bars
+
+#define IDC_BARS                        7100
+
+#define IDC_DRAW_BAND_BACKGROUND        7110
+#define IDC_LED_MODE                    7112
+#define IDC_HORIZONTAL_GRADIENT         7114
+
+#define IDC_HOLD_TIME_LBL               7120
+#define IDC_HOLD_TIME                   7122
+
+#define IDC_ACCELERATION_LBL            7130
+#define IDC_ACCELERATION                7132
+
+// Curve
+
+#define IDC_CURVE                       7200
+
+#define IDC_LINE_WIDTH_LBL              7210
+#define IDC_LINE_WIDTH                  7212
+#define IDC_LINE_WIDTH_SPIN             7214
+
+#define IDC_AREA_OPACITY_LBL            7220
+#define IDC_AREA_OPACITY                7222
+#define IDC_AREA_OPACITY_SPIN           7224

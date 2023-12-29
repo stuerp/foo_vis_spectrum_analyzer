@@ -55,7 +55,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        const WCHAR * Labels[] = { L"Transform", L"Spectrum" };
+        const WCHAR * Labels[] = { L"Transform", L"Spectrum", L"Mode" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             _MenuList.AddString(Labels[i]);
@@ -64,6 +64,7 @@ void ConfigurationDialog::Initialize()
 
         UpdatePage1(SW_SHOW);
         UpdatePage2(SW_HIDE);
+        UpdatePage3(SW_HIDE);
     }
 
     #pragma region Transform
@@ -621,7 +622,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             int Selection = _MenuList.GetCurSel();
 
             UpdatePage1((Selection == 0) ? SW_SHOW : SW_HIDE);
-            UpdatePage2((Selection == 0) ? SW_HIDE : SW_SHOW);
+            UpdatePage2((Selection == 1) ? SW_SHOW : SW_HIDE);
+            UpdatePage3((Selection == 2) ? SW_SHOW : SW_HIDE);
 
             return;
         }
@@ -1481,13 +1483,11 @@ void ConfigurationDialog::UpdatePage2(int mode)
 {
     static const int Page2[] =
     {
-        // Bands
-        IDC_BANDS,
+        // Common
+        IDC_COMMON,
             IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
             IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
-            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
-            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
         // X axis
         IDC_X_AXIS,
             IDC_X_AXIS_MODE_LBL, IDC_X_AXIS_MODE,
@@ -1512,6 +1512,33 @@ void ConfigurationDialog::UpdatePage2(int mode)
     for (size_t i = 0; i < _countof(Page2); ++i)
     {
         auto w = GetDlgItem(Page2[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(mode);
+    }
+}
+
+/// <summary>
+/// Update page 3.
+/// </summary>
+void ConfigurationDialog::UpdatePage3(int mode)
+{
+    static const int Page3[] =
+    {
+        IDC_BARS,
+            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+
+            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+
+        IDC_CURVE,
+            IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,
+            IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN,
+    };
+
+    for (size_t i = 0; i < _countof(Page3); ++i)
+    {
+        auto w = GetDlgItem(Page3[i]);
 
         if (w.IsWindow())
             w.ShowWindow(mode);
