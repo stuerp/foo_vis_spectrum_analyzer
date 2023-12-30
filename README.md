@@ -83,7 +83,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.5.2.0, 2024-xx-xx
+v0.6.0.0, 2024-xx-xx
 
 * New: Curve visualization with customizable line width and area opacity.
 * Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
