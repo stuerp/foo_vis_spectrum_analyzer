@@ -1,9 +1,5 @@
 
-/** $VER: Graph.cpp (2023.12.29) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: Graph.cpp (2023.12.30) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 
@@ -19,11 +15,11 @@ Graph::Graph() : _Bounds()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands, CComPtr<ID2D1Factory> & direct2DFactory)
+void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
     _Configuration = configuration;
 
-    _Spectrum.Initialize(configuration, direct2DFactory);
+    _Spectrum.Initialize(configuration);
 
     _XAxis.Initialize(configuration, frequencyBands);
     
@@ -74,12 +70,12 @@ void Graph::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vec
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT Graph::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory)
+HRESULT Graph::CreateDeviceIndependentResources()
 {
-    HRESULT hr = _XAxis.CreateDeviceIndependentResources(directWriteFactory);
+    HRESULT hr = _XAxis.CreateDeviceIndependentResources();
 
     if (SUCCEEDED(hr))
-        hr = _YAxis.CreateDeviceIndependentResources(directWriteFactory);
+        hr = _YAxis.CreateDeviceIndependentResources();
 
     return hr;
 }

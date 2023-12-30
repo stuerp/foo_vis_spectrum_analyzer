@@ -1,19 +1,16 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2023.12.30) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#include <SDKDDKVer.h>
+#include "framework.h"
+#include "Support.h"
 
 // ATL
 #include <atlbase.h>
 
 // WTL
-#include <atlapp.h>
+//#include <atlapp.h>
 #include <atlframe.h>
 
 #include "Resources.h"
@@ -163,7 +160,7 @@ private:
 /*
         DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
             DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-            DLGRESIZE_CONTROL(IDC_COLORS, DLSZ_SIZE_Y)
+            DLGRESIZE_CONTROL(IDC_COLOR_LIST, DLSZ_SIZE_Y)
 
             DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
             DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD_LBL, DLSZ_MOVE_Y)
@@ -218,6 +215,7 @@ private:
 
     CColorButton _Gradient;
     CColorListBox _Colors;
+    CNumericEdit _Position;
 
     CColorButton _BackColor;
     CColorButton _XTextColor;

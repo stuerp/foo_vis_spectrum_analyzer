@@ -1,11 +1,8 @@
 
-/** $VER: YAXis.cpp (2023.12.28) P. Stuer - Implements the Y axis of a graph. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: YAXis.cpp (2023.12.30) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
+#include "DirectX.h"
 
 #pragma hdrstop
 
@@ -72,9 +69,9 @@ void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
     {
         // Draw the horizontal grid line.
         {
-            _Brush->SetColor(_Configuration->_UseCustomYLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+            _SolidBrush->SetColor(_Configuration->_UseCustomYLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-            renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), _Brush, StrokeWidth, nullptr);
+            renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), _SolidBrush, StrokeWidth, nullptr);
         }
 
         // Draw the label.
@@ -83,9 +80,9 @@ void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 
             if (TextRect.bottom < OldTextTop)
             {
-                _Brush->SetColor(_Configuration->_UseCustomYTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+                _SolidBrush->SetColor(_Configuration->_UseCustomYTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
 
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _SolidBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                 OldTextTop = TextRect.top;
             }
@@ -96,7 +93,7 @@ void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT YAxis::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory)
+HRESULT YAxis::CreateDeviceIndependentResources()
 {
     HRESULT hr = S_OK;
 
@@ -104,7 +101,7 @@ HRESULT YAxis::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & direct
     {
         static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
-        hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+        hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
         if (SUCCEEDED(hr))
         {
@@ -117,7 +114,7 @@ HRESULT YAxis::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & direct
     {
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = directWriteFactory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectX._DirectWrite->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
@@ -138,10 +135,10 @@ HRESULT YAxis::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & direct
 /// </summary>
 HRESULT YAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 {
-    if (_Brush != nullptr)
+    if (_SolidBrush != nullptr)
         return S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
+    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
 
     return hr;
 }
@@ -151,5 +148,5 @@ HRESULT YAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & re
 /// </summary>
 void YAxis::ReleaseDeviceSpecificResources()
 {
-    _Brush.Release();
+    _SolidBrush.Release();
 }

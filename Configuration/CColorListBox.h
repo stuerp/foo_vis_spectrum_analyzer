@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
 #include "framework.h"
 #include "Support.h"
 
@@ -45,8 +41,6 @@ public:
     void MeasureItem(LPMEASUREITEMSTRUCT mis);
 
 private:
-    LRESULT OnSelectionChanged(WORD, WORD, HWND, BOOL & handled);
-
     LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
 
     void SendChangedNotification() const noexcept;

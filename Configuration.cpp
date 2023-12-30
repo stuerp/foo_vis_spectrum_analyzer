@@ -1,23 +1,17 @@
 
-/** $VER: Configuration.cpp (2023.12.29) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
-
-#include <pfc/string_conv.h>
-#include <pfc/string-conv-lite.h>
-
-using namespace pfc;
-using namespace stringcvt;
+/** $VER: Configuration.cpp (2023.12.30) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
 #include "Math.h"
 
 #include "Gradients.h"
+
+#include <pfc/string_conv.h>
+#include <pfc/string-conv-lite.h>
+
+using namespace pfc;
+using namespace stringcvt;
 
 #pragma hdrstop
 
@@ -926,7 +920,9 @@ void Configuration::UpdateGradient()
     if (_GradientStops.size() == 0)
         return;
 
-    if (_GradientStops.size() > 1)
+    if (_GradientStops.size() == 1)
+        _GradientStops[0].position = 1.f;
+    else
     {
         FLOAT Position = 0.f;
 
@@ -936,8 +932,6 @@ void Configuration::UpdateGradient()
             Position++;
         }
     }
-    else
-        _GradientStops[0].position = 1.f;
 
     _ColorScheme = ColorScheme::Custom;
     _CustomGradientStops = _GradientStops;

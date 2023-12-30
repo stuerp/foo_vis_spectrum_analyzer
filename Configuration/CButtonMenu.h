@@ -1,11 +1,7 @@
 
-/** $VER: CButtonMenu.h (2023.12.02) P. Stuer - Based on Menu Button control (https://www.viksoe.dk/code/buttonmenu.htm) by Bjarke Viksoe **/
+/** $VER: CButtonMenu.h (2023.12.30) P. Stuer - Based on Menu Button control (https://www.viksoe.dk/code/buttonmenu.htm) by Bjarke Viksoe **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 

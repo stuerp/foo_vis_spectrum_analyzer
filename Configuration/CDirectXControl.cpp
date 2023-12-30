@@ -1,14 +1,8 @@
 
-/** $VER: CDirectXControl.cpp (2023.11.26) P. Stuer - Implements a base class for DirectX rendered controls. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
-#include "Support.h"
+/** $VER: CDirectXControl.cpp (2023.12.30) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #include "CDirectXControl.h"
+#include "Support.h"
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "comdlg32")

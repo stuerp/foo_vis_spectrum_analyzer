@@ -167,22 +167,23 @@
 #define IDC_COLOR_SCHEME_LBL            6010
 #define IDC_COLOR_SCHEME                6012
 
-#define IDC_SHOW_TOOLTIPS               6018
-
 #define IDC_GRADIENT                    6022
-#define IDC_COLORS                      6024
+#define IDC_COLOR_LIST                      6024
 #define IDC_ADD                         6026
 #define IDC_REMOVE                      6028
 #define IDC_REVERSE                     6030
 
-#define IDC_SMOOTHING_METHOD            6032
-#define IDC_SMOOTHING_METHOD_LBL        6033
+#define IDC_POSITION                    6040
+#define IDC_POSITION_LBL                6042
+#define IDC_SPREAD                      6044
 
-#define IDC_SMOOTHING_FACTOR            6034
-#define IDC_SMOOTHING_FACTOR_LBL        6035
+#define IDC_SMOOTHING_METHOD_LBL        6050
+#define IDC_SMOOTHING_METHOD            6052
 
-#define IDC_PEAK_MODE                   6040
-#define IDC_PEAK_MODE_LBL               6041
+#define IDC_SMOOTHING_FACTOR_LBL        6060
+#define IDC_SMOOTHING_FACTOR            6062
+
+#define IDC_SHOW_TOOLTIPS               6070
 
 #pragma endregion
 
@@ -267,11 +268,14 @@
 #define IDC_LED_MODE                    7114
 #define IDC_HORIZONTAL_GRADIENT         7116
 
-#define IDC_HOLD_TIME_LBL               7120
-#define IDC_HOLD_TIME                   7122
+#define IDC_PEAK_MODE_LBL               7120
+#define IDC_PEAK_MODE                   7122
 
-#define IDC_ACCELERATION_LBL            7130
-#define IDC_ACCELERATION                7132
+#define IDC_HOLD_TIME_LBL               7130
+#define IDC_HOLD_TIME                   7132
+
+#define IDC_ACCELERATION_LBL            7140
+#define IDC_ACCELERATION                7142
 
 // Curve
 
@@ -284,6 +288,7 @@
 #define IDC_AREA_OPACITY_LBL            7220
 #define IDC_AREA_OPACITY                7222
 #define IDC_AREA_OPACITY_SPIN           7224
+#define IDC_AREA_OPACITY_LBL_2          7226
 
 #pragma endregion
 

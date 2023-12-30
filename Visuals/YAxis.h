@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.12.28) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2023.12.30) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -29,7 +29,7 @@ public:
 
     void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
-    HRESULT CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory);
+    HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 
@@ -60,5 +60,5 @@ private:
     CComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

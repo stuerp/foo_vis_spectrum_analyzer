@@ -1,11 +1,9 @@
 
-/** $VER: Spectrum.cpp (2023.12.29) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: Spectrum.cpp (2023.12.30) P. Stuer **/
 
 #include "Spectrum.h"
+#include "DirectX.h"
+
 #include "BezierSpline.h"
 
 #pragma hdrstop
@@ -13,9 +11,8 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(const Configuration * configuration, CComPtr<ID2D1Factory> & direct2DFactory)
+void Spectrum::Initialize(const Configuration * configuration)
 {
-    _Direct2DFactory = direct2DFactory;
     _Configuration = configuration;
 
     SetGradientStops(_Configuration->_GradientStops);
@@ -243,7 +240,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
     if (frequencyBands.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2DFactory->CreatePathGeometry(&_Curve);
+    HRESULT hr = _DirectX._Direct2D->CreatePathGeometry(&_Curve);
 
     if (SUCCEEDED(hr))
     {

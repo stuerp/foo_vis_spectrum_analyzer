@@ -1,12 +1,9 @@
 
-/** $VER: UIElement.cpp (2023.12.28) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: UIElement.cpp (2023.12.30) P. Stuer **/
 
 #include "UIElement.h"
 
+#include "DirectX.h"
 #include "Resources.h"
 #include "Gradients.h"
 
@@ -57,20 +54,9 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
-        Log(LogLevel::Critical, "%s: Unable to create Direct2D device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
+        Log(LogLevel::Critical, "%s: Unable to create DirectX device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
 
-    if (::IsWindows10OrGreater())
-        _DPI = ::GetDpiForWindow(m_hWnd);
-    else
-    {
-        FLOAT DPIX, DPIY;
-
-        #pragma warning(disable: 4996)
-        _Direct2dFactory->GetDesktopDpi(&DPIX, &DPIY);
-        #pragma warning(default: 4996)
-
-        _DPI = (UINT) DPIX;
-    }
+    (void) _DirectX.GetDPI(m_hWnd, _DPI);
 
     try
     {
@@ -137,8 +123,6 @@ void UIElement::OnDestroy()
     _VisualisationStream.release();
 
     ReleaseDeviceSpecificResources();
-
-    _Direct2dFactory.Release();
 
     ::LeaveCriticalSection(&_Lock);
 }
@@ -482,7 +466,7 @@ void UIElement::SetConfiguration() noexcept
         }
     }
 
-    _Graph.Initialize(&_Configuration, _FrequencyBands, _Direct2dFactory);
+    _Graph.Initialize(&_Configuration, _FrequencyBands);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
@@ -937,20 +921,13 @@ void UIElement::ApplyPeakSmoothing(double factor)
 /// </summary>
 HRESULT UIElement::CreateDeviceIndependentResources()
 {
-    Log(LogLevel::Trace, "%s: Creating device independent resource", core_api::get_my_file_name());
-
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2dFactory);
+    HRESULT hr = _DirectX.CreateDeviceIndependentResources();
 
     if (SUCCEEDED(hr))
-        hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_DirectWriteFactory), reinterpret_cast<IUnknown **>(&_DirectWriteFactory));
-    else
-        Log(LogLevel::Error, "%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
+        hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (SUCCEEDED(hr))
-        hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
-
-    if (SUCCEEDED(hr))
-        hr = _Graph.CreateDeviceIndependentResources(_DirectWriteFactory);
+        hr = _Graph.CreateDeviceIndependentResources();
 
     return hr;
 }
@@ -961,9 +938,6 @@ HRESULT UIElement::CreateDeviceIndependentResources()
 /// </summary>
 HRESULT UIElement::CreateDeviceSpecificResources()
 {
-    if (_Direct2dFactory == nullptr)
-        return E_FAIL;
-
     HRESULT hr = S_OK;
 
     // Create the render target.
@@ -978,7 +952,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
-        hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
+        hr = _DirectX._Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -989,6 +963,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
 }

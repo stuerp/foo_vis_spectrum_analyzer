@@ -1,11 +1,5 @@
 
-/** $VER: CColorListBox.cpp (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
+/** $VER: CColorListBox.cpp (2023.12.30) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorListBox.h"
 
@@ -47,6 +41,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
     CRect ri = dis->rcItem;
 
+    // Draw the border
     {
         HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHT : COLOR_WINDOW));
 
@@ -66,6 +61,11 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         ::DeleteObject(hPen);
     }
+
+    if (dis->itemID == ~0U)
+        return;
+
+    // Draw the rectangle
     {
         HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
 

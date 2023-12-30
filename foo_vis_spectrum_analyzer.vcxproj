@@ -187,6 +187,7 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="CQTProvider.h" />
+    <ClInclude Include="DirectX.h" />
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
+    <ClCompile Include="DirectX.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Visuals\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />

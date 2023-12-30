@@ -86,6 +86,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.6.0.0, 2024-xx-xx
 
 * New: Curve visualization with customizable line width and area opacity.
+* New: The position of the custom gradient colors can be specified individually.
 * Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
 * Improved: Hardened the reading and writing of the configuration.
 * Improved: Various minor tweaks with focus on stability and future expandability:

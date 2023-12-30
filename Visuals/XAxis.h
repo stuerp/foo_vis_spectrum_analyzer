@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.12.28) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2023.12.30) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -31,7 +31,7 @@ public:
 
     void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
-    HRESULT CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory);
+    HRESULT CreateDeviceIndependentResources();
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 
@@ -60,14 +60,13 @@ private:
 
     std::vector<Label> _Labels;
 
-    // Device-independent resources
     D2D1_RECT_F _Bounds;
     FLOAT _Width;       // Width of a label
     FLOAT _Height;      // Height of the X axis area (Font size-dependent).
 
-    CComPtr<IDWriteFactory> _DirectWriteFactory;
+    // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

@@ -432,6 +432,25 @@
     #define H_A71   H_BTN
     #define X_A71   X_A70
     #define Y_A71   Y_A70 + H_A70 + IY
+
+    // Position
+    #define W_F01    40
+    #define H_F01    H_TBX
+    #define X_F01    X_A71
+    #define Y_F01    Y_A71 + H_A71 + IY
+
+    // Position Label
+    #define W_F02    10
+    #define H_F02    H_LBL
+    #define X_F02    X_F01 + W_F01 + IX
+    #define Y_F02    Y_F01
+
+    // Spread
+    #define W_F03   W_BTN
+    #define H_F03   H_BTN
+    #define X_F03   X_F01
+    #define Y_F03   Y_F01 + H_F01 + IY
+
     #pragma endregion
 
     #pragma region Smoothing Method
@@ -839,6 +858,12 @@
     #define H_E06    H_TBX
     #define X_E06    X_E05 + W_E05 + IX
     #define Y_E06    Y_E05
+
+    // Label
+    #define W_E07    10
+    #define H_E07    H_LBL
+    #define X_E07    X_E06 + W_E06 + IX
+    #define Y_E07    Y_E06
     #pragma endregion
 
 #define W_B08  W_B07

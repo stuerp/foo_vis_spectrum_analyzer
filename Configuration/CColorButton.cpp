@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.cpp (2023.12.10) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2023.12.30) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorButton.h"
 

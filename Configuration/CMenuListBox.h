@@ -1,11 +1,7 @@
 
-/** $VER: CMenuListBox.h (2023.12.11) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.h (2023.12.30) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 #include "Support.h"

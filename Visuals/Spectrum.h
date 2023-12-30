@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4211 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
 #include "framework.h"
 #include "Support.h"
 #include "Configuration.h"
@@ -29,7 +25,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(const Configuration * configuration, CComPtr<ID2D1Factory> & direct2DFactory);
+    void Initialize(const Configuration * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -60,7 +56,6 @@ private:
     D2D1_RECT_F _Bounds;
 
     // Device-independent resources
-    CComPtr<ID2D1Factory> _Direct2DFactory;
     CComPtr<ID2D1PathGeometry> _Curve;
 
     // Device-dependent resources

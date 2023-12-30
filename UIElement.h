@@ -1,11 +1,7 @@
 
-/** $VER: UIElement.h (2023.12.28) P. Stuer **/
+/** $VER: UIElement.h (2023.12.30) P. Stuer **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -170,10 +166,6 @@ private:
 
 private:
     #pragma region DirectX
-
-    // Device-independent resources
-    CComPtr<ID2D1Factory> _Direct2dFactory;
-    CComPtr<IDWriteFactory> _DirectWriteFactory;
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;

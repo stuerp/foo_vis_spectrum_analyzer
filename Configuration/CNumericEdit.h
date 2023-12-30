@@ -1,11 +1,7 @@
 
-/** $VER: CNumericEdit.h (2023.11.29) P. Stuer - Implements a numeric edit box using WTL. **/
+/** $VER: CNumericEdit.h (2023.11.30) P. Stuer - Implements a numeric edit box using WTL. **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 

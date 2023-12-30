@@ -1,16 +1,9 @@
 
 /** $VER: ConfigurationDialog.cpp (2023.12.30) P. Stuer - Implements the configuration dialog. **/
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
-#include "Support.h"
-
 #include "ConfigurationDialog.h"
-#include "Gradients.h"
 
+#include "Gradients.h"
 #include "Layout.h"
 
 /// <summary>
@@ -471,7 +464,7 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region Rendering
+    #pragma region Common
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
@@ -480,17 +473,18 @@ void ConfigurationDialog::Initialize()
         const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
 
         w.SetCurSel((int) _Configuration->_ColorScheme);
     }
     {
+        _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
+        _Colors.Initialize(GetDlgItem(IDC_COLOR_LIST));
+        _Position.Initialize(GetDlgItem(IDC_POSITION));
+    }
+    {
         SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
         SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, _Configuration->_HorizontalGradient);
-        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
-        SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
@@ -500,13 +494,51 @@ void ConfigurationDialog::Initialize()
         const WCHAR * Labels[] = { L"Average", L"Peak" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
+
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
 
         SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1)));
     }
+    {
+        SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
+    }
+    #pragma endregion
+
+    #pragma region Colors
+
+    _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
+
+    _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
+    _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
+
+    _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
+    _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
+
+    SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
+    SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
+    SendDlgItemMessageW(IDC_X_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXLineColor);
+    SendDlgItemMessageW(IDC_Y_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYTextColor);
+    SendDlgItemMessageW(IDC_Y_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYLineColor);
+
+    #pragma endregion
+
+    #pragma region Visualization
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"Bars", L"Curve",  };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_VisualizationType);
+    }
+
+    #pragma region Bars
+
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
@@ -525,52 +557,22 @@ void ConfigurationDialog::Initialize()
         SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
         SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
     }
-    #pragma endregion
-
-    #pragma region Colors
-
-    _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
-    _Colors.Initialize(GetDlgItem(IDC_COLORS));
-
-    _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
-
-    _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
-    _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
-
-    _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
-    _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
+    {
+        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
+    }
 
     _LiteBandColor.Initialize(GetDlgItem(IDC_WHITE_KEYS));
     _DarkBandColor.Initialize(GetDlgItem(IDC_BLACK_KEYS));
 
-    SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
-    SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
-    SendDlgItemMessageW(IDC_X_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXLineColor);
-    SendDlgItemMessageW(IDC_Y_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYTextColor);
-    SendDlgItemMessageW(IDC_Y_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYLineColor);
-
-    UpdateColorControls();
-
     #pragma endregion
 
-    #pragma region Visualization
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
+    #pragma region Curve
 
-        w.ResetContent();
-
-        const WCHAR * Labels[] = { L"Bars", L"Curve",  };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
-
-        w.SetCurSel((int) _Configuration->_VisualizationType);
-    }
     {
         UDACCEL Accel[] =
         {
-            { 1,   1 }, //  0.1
-            { 2,   5 }, //  0.5
+            { 1, 1 }, //  0.1
+            { 2, 5 }, //  0.5
         };
 
         _LineWidth.Initialize(GetDlgItem(IDC_LINE_WIDTH));
@@ -586,20 +588,24 @@ void ConfigurationDialog::Initialize()
     {
         UDACCEL Accel[] =
         {
-            { 1,   1 }, //  0.1
-            { 2,   5 }, //  0.5
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
         };
 
         _AreaOpacity.Initialize(GetDlgItem(IDC_AREA_OPACITY));
 
-        SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity , 0, 1)));
+        SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_AREA_OPACITY_SPIN));
 
-        w.SetRange32((int) (MinAreaOpacity * 10.), (int) (MaxAreaOpacity * 10.));
-        w.SetPos32((int) (_Configuration->_AreaOpacity * 10.));
+        w.SetRange32((int) (MinAreaOpacity * 100.f), (int) (MaxAreaOpacity * 100.f));
+        w.SetPos32((int) (_Configuration->_AreaOpacity * 100.f));
         w.SetAccel(_countof(Accel), Accel);
     }
+
+    #pragma endregion
+
     #pragma endregion
 
     UpdateControls();
@@ -637,6 +643,7 @@ void ConfigurationDialog::Terminate()
 
     _Gamma.Terminate();
 
+    _Position.Terminate();
     _Colors.Terminate();
     _Gradient.Terminate();
 
@@ -669,6 +676,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
     switch (id)
     {
+        #pragma region Menu
         case IDC_MENULIST:
         {
             int Selection = _MenuList.GetCurSel();
@@ -680,8 +688,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             _Configuration->_PageIndex = (size_t) Selection;
             return;
         }
+        #pragma endregion
 
-    #pragma region Transform
+        #pragma region Transform
         case IDC_METHOD:
         {
             _Configuration->_Transform = (Transform) SelectedIndex;
@@ -697,9 +706,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdateControls();
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region FFT
+        #pragma region FFT
         case IDC_FFT_SIZE:
         {
             _Configuration->_FFTSize = (FFTSize) SelectedIndex;
@@ -715,9 +724,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdateControls();
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Frequencies
+        #pragma region Frequencies
         case IDC_DISTRIBUTION:
         {
             _Configuration->_FrequencyDistribution = (FrequencyDistribution) SelectedIndex;
@@ -743,17 +752,17 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             _Configuration->_SmoothingMethod = (SmoothingMethod) SelectedIndex;
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region X axis
+        #pragma region X axis
         case IDC_X_AXIS_MODE:
         {
             _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Y axis
+        #pragma region Y axis
         case IDC_Y_AXIS_MODE:
         {
             _Configuration->_YAxisMode = (YAxisMode) SelectedIndex;
@@ -761,9 +770,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdateControls();
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Rendering
+        #pragma region Common
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
@@ -777,35 +786,33 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             break;
         }
 
-        case IDC_COLORS:
+        case IDC_COLOR_LIST:
         {
-            // Remove and Reverse are only enabled when there is more than 1 color.
+            // Show the position of the selected color of the gradient.
+            int Index = _Colors.GetCurSel();
+
+            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+                return;
+
+                t_int64 Position = (t_int64) (_Configuration->_GradientStops[Index].position * 100.f);
+                SetDlgItemTextW(IDC_POSITION, pfc::wideFromUTF8(pfc::format_int(Position)));
+
+            // Update the state of the buttons.
+            bool HasSelection = (Index != LB_ERR);
             bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-                GetDlgItem(IDC_REMOVE).EnableWindow(HasMoreThanOneColor);
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-
-            // Add and Remove are only enabled when a color is selected.
-            auto lb = (CListBox) GetDlgItem(IDC_COLORS);
-
-            bool HasSelection = (lb.GetCurSel() != LB_ERR);
-
                 GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
+                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
                 GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+
+                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor);
+                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor);
 
             return;
         }
+        #pragma endregion
 
-        case IDC_PEAK_MODE:
-        {
-            _Configuration->_PeakMode = (PeakMode) SelectedIndex;
-
-            UpdateControls();
-            break;
-        }
-    #pragma endregion
-
-    #pragma region Visualization
+        #pragma region Visualization
         case IDC_VISUALIZATION:
         {
             _Configuration->_VisualizationType = (VisualizationType) SelectedIndex;
@@ -813,7 +820,18 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdateControls();
             break;
         }
-    #pragma endregion
+
+        #pragma region Bars
+        case IDC_PEAK_MODE:
+        {
+            _Configuration->_PeakMode = (PeakMode) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+        #pragma endregion
+
+        #pragma endregion
     }
 
     ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
@@ -833,7 +851,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
-    #pragma region FFT
+        #pragma region FFT
         case IDC_WINDOW_PARAMETER:
         {
             _Configuration->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
@@ -875,9 +893,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_KernelSize = Clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize);
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Frequencies
+        #pragma region Frequencies
         case IDC_NUM_BANDS:
         {
             _Configuration->_NumBands = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands);
@@ -905,9 +923,38 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_Pitch = Clamp(::_wtof(Text), MinPitch, MaxPitch);
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Y axis
+        #pragma region Common
+        case IDC_POSITION:
+        {
+            int Index = _Colors.GetCurSel();
+
+            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+                return;
+
+            int Position = Clamp(::_wtoi(Text), 0, 100);
+
+            if ((int) (_Configuration->_GradientStops[Index].position * 100.f) == Position)
+                break;
+
+            _Configuration->_GradientStops[Index].position = (FLOAT) Position / 100.f;
+
+            _Configuration->_ColorScheme = ColorScheme::Custom;
+            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+
+            {
+                auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
+
+                w.SetCurSel((int) _Configuration->_ColorScheme);
+            }
+
+            _Gradient.SetGradientStops(_Configuration->_GradientStops);
+            break;
+        }
+        #pragma endregion
+
+        #pragma region Y axis
         case IDC_AMPLITUDE_LO:
         {
             _Configuration->_AmplitudeLo = Min(Clamp(::_wtof(Text), MinAmplitude, MaxAmplitude), _Configuration->_AmplitudeHi);
@@ -931,9 +978,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Peak indicator
+        #pragma region Bars
+
+        #pragma region Peak indicator
         case IDC_SMOOTHING_FACTOR:
         {
             _Configuration->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
@@ -951,9 +1000,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Curve
+        #pragma endregion
+
+        #pragma region Curve
 
         case IDC_LINE_WIDTH:
         {
@@ -963,11 +1014,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AREA_OPACITY:
         {
-            _Configuration->_AreaOpacity = (FLOAT) Clamp(::_wtof(Text), MinAreaOpacity, MaxAreaOpacity);
+            _Configuration->_AreaOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinAreaOpacity, MaxAreaOpacity);
             break;
         }
 
-    #pragma endregion
+        #pragma endregion
 
         default:
             return;
@@ -986,15 +1037,15 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
-    #pragma region FFT
+        #pragma region FFT
         case IDC_KERNEL_SIZE:
         {
             SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Frequencies
+        #pragma region Frequencies
         case IDC_NUM_BANDS:
         {
             SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
@@ -1030,9 +1081,16 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Y axis
+        #pragma region Common
+        case IDC_POSITION:
+        {
+            break;
+        }
+        #pragma endregion
+
+        #pragma region Y axis
         case IDC_AMPLITUDE_LO:
         {
             SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
@@ -1056,9 +1114,11 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Peak indicator
+        #pragma region Bars
+
+        #pragma region Peak indicator
         case IDC_SMOOTHING_FACTOR:
         {
             SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1)));
@@ -1076,9 +1136,11 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
             break;
         }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Curve
+        #pragma endregion
+
+        #pragma region Curve
         case IDC_LINE_WIDTH:
         {
             SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
@@ -1087,10 +1149,10 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_AREA_OPACITY:
         {
-            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity, 0, 1)));
+            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
             break;
         }
-    #pragma endregion
+        #pragma endregion
     }
 
     return;
@@ -1151,12 +1213,6 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
-        case IDC_SHOW_TOOLTIPS:
-        {
-            _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
         case IDC_ADD:
         {
             int Index = _Colors.GetCurSel();
@@ -1208,6 +1264,14 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_SPREAD:
+        {
+            _Configuration->UpdateGradient();
+
+            UpdateColorControls();
+            break;
+        }
+
         case IDC_BACK_COLOR_DEF:
         {
             _Configuration->_UseCustomBackColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1240,6 +1304,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             _Configuration->_UseCustomYLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             UpdateColorControls();
+            break;
+        }
+
+        case IDC_SHOW_TOOLTIPS:
+        {
+            _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -1391,8 +1461,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AREA_OPACITY_SPIN:
         {
-            _Configuration->_AreaOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 10.);
-            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity, 0, 1)));
+            _Configuration->_AreaOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 100.);
+            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
             break;
         }
 
@@ -1415,7 +1485,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
     switch (nmhd->idFrom)
     {
-        case IDC_COLORS:
+        case IDC_COLOR_LIST:
         {
             std::vector<D2D1_COLOR_F> Colors;
 
@@ -1592,12 +1662,17 @@ void ConfigurationDialog::UpdatePage2(int mode)
     {
         // Common
         IDC_COMMON,
-            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME, IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE, IDC_SHOW_TOOLTIPS,
-            IDC_GRADIENT, IDC_COLORS, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
+            IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
+            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+            IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
+            IDC_POSITION, IDC_POSITION_LBL, IDC_SPREAD,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
+            IDC_SHOW_TOOLTIPS,
+
         // X axis
         IDC_X_AXIS,
             IDC_X_AXIS_MODE_LBL, IDC_X_AXIS_MODE,
+
         // Y axis
         IDC_Y_AXIS,
             IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
@@ -1605,6 +1680,7 @@ void ConfigurationDialog::UpdatePage2(int mode)
             IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
+
         // Colors
         IDC_COLORS_GROUP,
             IDC_BACK_COLOR_LBL, IDC_BACK_COLOR, IDC_BACK_COLOR_DEF,
@@ -1643,7 +1719,7 @@ void ConfigurationDialog::UpdatePage3(int mode)
 
         IDC_CURVE,
             IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,
-            IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN,
+            IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN, IDC_AREA_OPACITY_LBL_2,
     };
 
     for (size_t i = 0; i < _countof(Page3); ++i)
@@ -1745,6 +1821,9 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
 
+    GetDlgItem(IDC_WHITE_KEYS).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_BLACK_KEYS).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+
     GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
     GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
 
@@ -1778,6 +1857,23 @@ void ConfigurationDialog::UpdateColorControls()
         _Colors.SetColors(Colors);
     }
 
+    // Remove and Reverse are only enabled when there is more than 1 color.
+    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
+
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasMoreThanOneColor);
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
+
+    // Add and Remove are only enabled when a color is selected.
+    auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
+
+    bool HasSelection = (lb.GetCurSel() != LB_ERR);
+
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection);
+
     {
         _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
         _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
@@ -1793,24 +1889,13 @@ void ConfigurationDialog::UpdateColorControls()
 
         _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
         _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+    }
 
+    // Bars
+    {
         _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
         _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
-
-    // Remove and Reverse are only enabled when there is more than 1 color.
-    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
-
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasMoreThanOneColor);
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-
-    // Add and Remove are only enabled when a color is selected.
-    auto lb = (CListBox) GetDlgItem(IDC_COLORS);
-
-    bool HasSelection = (lb.GetCurSel() != LB_ERR);
-
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
 }
 
 /// <summary>
