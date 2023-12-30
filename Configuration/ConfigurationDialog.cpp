@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2023.12.30) P. Stuer - Implements the configuration dialog. **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -60,7 +60,7 @@ void ConfigurationDialog::Initialize()
         for (size_t i = 0; i < _countof(Labels); ++i)
             _MenuList.AddString(Labels[i]);
 
-        _MenuList.SetCurSel(_Configuration->_PageIndex);
+        _MenuList.SetCurSel((int) _Configuration->_PageIndex);
 
         UpdatePage1((_Configuration->_PageIndex == 0) ? SW_SHOW : SW_HIDE);
         UpdatePage2((_Configuration->_PageIndex == 1) ? SW_SHOW : SW_HIDE);
@@ -677,7 +677,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdatePage2((Selection == 1) ? SW_SHOW : SW_HIDE);
             UpdatePage3((Selection == 2) ? SW_SHOW : SW_HIDE);
 
-            _Configuration->_PageIndex = Selection;
+            _Configuration->_PageIndex = (size_t) Selection;
             return;
         }
 
@@ -1384,14 +1384,14 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_LINE_WIDTH_SPIN:
         {
-            _Configuration->_LineWidth = ClampNewSpinPosition(nmud, MinLineWidth, MaxLineWidth, 10.);
+            _Configuration->_LineWidth = (FLOAT) ClampNewSpinPosition(nmud, MinLineWidth, MaxLineWidth, 10.);
             SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
             break;
         }
 
         case IDC_AREA_OPACITY_SPIN:
         {
-            _Configuration->_AreaOpacity = ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 10.);
+            _Configuration->_AreaOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 10.);
             SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_AreaOpacity, 0, 1)));
             break;
         }
@@ -1612,8 +1612,6 @@ void ConfigurationDialog::UpdatePage2(int mode)
             IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR, IDC_X_LINE_COLOR_DEF,
             IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR, IDC_Y_TEXT_COLOR_DEF,
             IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
-            IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
-            IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
     };
 
     for (size_t i = 0; i < _countof(Page2); ++i)
@@ -1639,6 +1637,9 @@ void ConfigurationDialog::UpdatePage3(int mode)
 
             IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
             IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+
+            IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
+            IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
 
         IDC_CURVE,
             IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,

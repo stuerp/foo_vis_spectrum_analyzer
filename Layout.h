@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.29) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.30) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -594,7 +594,7 @@
 #define H_B03   11 + H_A08 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
-#pragma region Colors Group
+#pragma region Colors
 // Groupbox
 #define X_B06   X_B03
 #define Y_B06   Y_B03 + H_B03 + IY
@@ -689,32 +689,8 @@
     #define X_C11   X_A81 + W_A81 + IX
     #define Y_C11   Y_A81 + 2
 
-    // Label (White keys)
-    #define W_A82   60
-    #define H_A82   H_LBL
-    #define X_A82   X_A80
-    #define Y_A82   Y_A81 + H_A81 + IY
-
-    // Button
-    #define W_A83   40
-    #define H_A83   H_BTN
-    #define X_A83   X_A82 + W_A82 + IX
-    #define Y_A83   Y_A82
-
-    // Label (Black keys)
-    #define W_C14   60
-    #define H_C14   H_LBL
-    #define X_C14   X_A82
-    #define Y_C14   Y_A83 + H_A83 + IY
-
-    // Button
-    #define W_C15   40
-    #define H_C15   H_BTN
-    #define X_C15   X_C14 + W_C14 + IX
-    #define Y_C15   Y_C14
-
-#define W_B06  5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
-#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + IY + H_C15 + 5
+#define W_B06  176 // 5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
+#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + 5
 #pragma endregion
 
 #pragma region Visualization
@@ -762,7 +738,7 @@
 
     #pragma region Peak Mode
     // Label
-    #define W_A11    60
+    #define W_A11    42
     #define H_A11    H_LBL
     #define X_A11    X_C12
     #define Y_A11    Y_C12 + H_C12 + IY
@@ -776,7 +752,7 @@
 
     #pragma region Hold time (ms)
     // Label
-    #define W_A51    60
+    #define W_A51    42
     #define H_A51    H_LBL
     #define X_A51    X_A11
     #define Y_A51    Y_A12 + H_A12 + IY
@@ -790,7 +766,7 @@
 
     #pragma region Acceleration (db/s2)
     // Label
-    #define W_A53    60
+    #define W_A53    42
     #define H_A53    H_LBL
     #define X_A53    X_A51
     #define Y_A53    Y_A52 + H_A52 + IY
@@ -802,8 +778,34 @@
     #define Y_A54    Y_A53
     #pragma endregion
 
+    #pragma region White & Black keys
+    // Label (White keys)
+    #define W_A82   42
+    #define H_A82   H_LBL
+    #define X_A82   X_A53
+    #define Y_A82   Y_A54 + H_A54 + IY
+
+    // Button
+    #define W_A83   40
+    #define H_A83   H_BTN
+    #define X_A83   X_A82 + W_A82 + IX
+    #define Y_A83   Y_A82
+
+    // Label (Black keys)
+    #define W_C14   42
+    #define H_C14   H_LBL
+    #define X_C14   X_A82
+    #define Y_C14   Y_A83 + H_A83 + IY
+
+    // Button
+    #define W_C15   40
+    #define H_C15   H_BTN
+    #define X_C15   X_C14 + W_C14 + IX
+    #define Y_C15   Y_C14
+    #pragma endregion
+
 #define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B07   11 + H_A57 + IY + H_C12 + IY + H_A12 + IY + H_A52 + IY + H_A54  + 7
+#define H_B07   11 + H_A57 + IY + H_C12 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IY + H_A83 + IY + H_C15 + 7
 #pragma endregion
 
 #pragma region Curve
@@ -813,7 +815,7 @@
 
     #pragma region Line Width
     // Label
-    #define W_E03    60
+    #define W_E03    42
     #define H_E03    H_LBL
     #define X_E03    X_B08 + 5
     #define Y_E03    Y_B08 + 11
@@ -827,7 +829,7 @@
 
     #pragma region Area Opacity
     // Label
-    #define W_E05    60
+    #define W_E05    42
     #define H_E05    H_LBL
     #define X_E05    X_E03
     #define Y_E05    Y_E04 + H_E04 + IY
