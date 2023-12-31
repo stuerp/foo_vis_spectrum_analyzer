@@ -1,11 +1,7 @@
 
-/** $VER: UIElement.h (2023.12.14) P. Stuer **/
+/** $VER: UIElement.h (2023.12.31) P. Stuer **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -15,6 +11,7 @@
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
+#include "Graph.h"
 #include "XAxis.h"
 #include "YAxis.h"
 #include "Spectrum.h"
@@ -36,12 +33,28 @@ public:
     UIElement & operator=(UIElement &&) = delete;
 
     #pragma region CWindowImpl
+
     static CWndClassInfo & GetWndClassInfo();
+
+    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
+    void OnDestroy();
+    void OnPaint(CDCHandle dc);
+    LRESULT OnEraseBackground(CDCHandle dc);
+    void OnSize(UINT nType, CSize size);
+    virtual void OnContextMenu(CWindow wnd, CPoint point);
+    void OnLButtonDblClk(UINT nFlags, CPoint point);
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
+
+    void OnMouseMove(UINT, CPoint);
+    void OnMouseLeave();
+
+    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_PAINT(OnPaint)
+        MSG_WM_ERASEBKGND(OnEraseBackground)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
@@ -53,18 +66,6 @@ public:
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
     END_MSG_MAP()
 
-    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
-    void OnDestroy();
-    void OnPaint(CDCHandle dc);
-    void OnSize(UINT nType, CSize size);
-    virtual void OnContextMenu(CWindow wnd, CPoint point);
-    void OnLButtonDblClk(UINT nFlags, CPoint point);
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
-
-    void OnMouseMove(UINT, CPoint);
-    void OnMouseLeave();
-
-    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
     #pragma endregion
 
 protected:
@@ -106,13 +107,8 @@ private:
 
     void Resize();
 
-    HRESULT RenderFrame();
-    HRESULT RenderChunk(const audio_chunk & chunk);
-    HRESULT RenderXAxisFreq(FLOAT, FLOAT, FLOAT, FLOAT, double frequency);
-    HRESULT RenderXAxis(FLOAT, FLOAT, FLOAT, FLOAT, uint32_t octave);
-    HRESULT RenderYAxis();
-    HRESULT RenderSpectrum();
-    HRESULT RenderFrameCounter();
+    void RenderFrame();
+    void RenderChunk(const audio_chunk & chunk);
 
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
@@ -127,18 +123,20 @@ private:
     #pragma region DirectX
 
     HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
-    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
-
     #pragma endregion
 
-//  static DWORD WINAPI TimerMain(LPVOID Parameter);
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
 protected:
     Configuration _Configuration;
+
+private:
+    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
 private:
     enum
@@ -156,36 +154,20 @@ private:
         IDM_CONFIGURE,
     };
 
-    HANDLE _hMutex;
-
     CRITICAL_SECTION _Lock;
     PTP_TIMER _ThreadPoolTimer;
-
-    struct TimerData
-    {
-        HWND hWnd;
-        Configuration * Configuration;
-    } _TimerData;
-
-    bool _UseFullScreen;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
     #pragma region Rendering
 
     FrameCounter _FrameCounter;
-    XAxis _XAxis;
-    YAxis _YAxis;
-    Spectrum _Spectrum;
+    Graph _Graph;
 
     #pragma endregion
 
 private:
     #pragma region DirectX
-
-    // Device-independent resources
-    CComPtr<ID2D1Factory> _Direct2dFactory;
-    CComPtr<IDWriteFactory> _DirectWriteFactory;
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;

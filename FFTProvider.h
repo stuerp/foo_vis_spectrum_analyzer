@@ -1,11 +1,7 @@
 
-/** $VER: FFTProvider.h (2023.12.03) P. Stuer **/
+/** $VER: FFTProvider.h (2023.12.30) P. Stuer **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -37,12 +33,12 @@ public:
     {
         _FFTSize = fftSize;
 
-        _FFT.Initialize(fftSize);
-        _TimeData.resize((size_t) fftSize);
+        _FFT.Initialize(_FFTSize);
+        _TimeData.resize(_FFTSize);
 
         // Create the ring buffer for the samples.
-        _Data = new audio_sample[(size_t) fftSize];
-        _Size = (size_t) fftSize;
+        _Size = _FFTSize;
+        _Data = new audio_sample[_Size];
 
         ::memset(_Data, 0, sizeof(audio_sample) * _Size);
 
@@ -58,9 +54,8 @@ public:
     }
 
 private:
-    size_t _FFTSize;
-
     FFT _FFT;
+    size_t _FFTSize;
 
     audio_sample * _Data;
     size_t _Size;
@@ -98,10 +93,10 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, u
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _Data[_Curr++] = AverageSamples(&samples[i], channelMask);
+        _Data[_Curr] = AverageSamples(&samples[i], channelMask);
 
-        // Wrap around the buffer.
-        if (_Curr == _Size)
+        // Wrap around the buffer index.
+        if (++_Curr == _Size)
             _Curr = 0;
     }
 }
@@ -134,7 +129,7 @@ inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freq
 
     // Normalize the Time domain data.
     {
-        double Factor = (double) _FFTSize / Norm / M_SQRT2;
+        const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
         for (complex<double> & Iter : _TimeData)
             Iter *= Factor;

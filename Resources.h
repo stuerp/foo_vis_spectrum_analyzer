@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.14) P. Stuer **/
+/** $VER: Resources.h (2023.12.31) P. Stuer **/
 
 #pragma once
 
@@ -26,8 +26,8 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          5
-#define NUM_FILE_PATCH          1
+#define NUM_FILE_MINOR          6
+#define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
@@ -35,8 +35,8 @@
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       5
-#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_MINOR       6
+#define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -61,7 +61,7 @@
 
 #define IDC_MENULIST                    1500
 
-// Transform
+#pragma region Transform
 
 #define IDC_TRANSFORM_GROUP             2000
 
@@ -82,7 +82,9 @@
 #define IDM_CHANNELS_FIRST              9100
 #define IDM_CHANNELS_LAST               9118
 
-// FFT
+#pragma endregion
+
+#pragma region FFT
 
 #define IDC_FFT_GROUP                   2040
 
@@ -104,7 +106,9 @@
 #define IDC_KERNEL_SIZE                 2082
 #define IDC_KERNEL_SIZE_SPIN            2084
 
-// Frequencies
+#pragma endregion
+
+#pragma region Frequencies
 
 #define IDC_FREQUENCIES_GROUP           2100
 
@@ -154,44 +158,45 @@
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
 
-// Bands
+#pragma endregion
 
-#define IDC_BANDS                       6000
+#pragma region Common
+
+#define IDC_COMMON                      6000
 
 #define IDC_COLOR_SCHEME_LBL            6010
 #define IDC_COLOR_SCHEME                6012
-#define IDC_DRAW_BAND_BACKGROUND        6014
-#define IDC_LED_MODE                    6016
-#define IDC_SHOW_TOOLTIPS               6018
-#define IDC_HORIZONTAL_GRADIENT         6020
 
 #define IDC_GRADIENT                    6022
-#define IDC_COLORS                      6024
+#define IDC_COLOR_LIST                      6024
 #define IDC_ADD                         6026
 #define IDC_REMOVE                      6028
 #define IDC_REVERSE                     6030
 
-#define IDC_SMOOTHING_METHOD            6032
-#define IDC_SMOOTHING_METHOD_LBL        6033
-#define IDC_SMOOTHING_FACTOR            6034
-#define IDC_SMOOTHING_FACTOR_LBL        6035
+#define IDC_POSITION                    6040
+#define IDC_POSITION_LBL                6042
+#define IDC_SPREAD                      6044
 
-#define IDC_PEAK_MODE                   6040
-#define IDC_PEAK_MODE_LBL               6041
+#define IDC_SMOOTHING_METHOD_LBL        6050
+#define IDC_SMOOTHING_METHOD            6052
 
-#define IDC_HOLD_TIME                   6050
-#define IDC_HOLD_TIME_LBL               6051
-#define IDC_ACCELERATION                6052
-#define IDC_ACCELERATION_LBL            6053
+#define IDC_SMOOTHING_FACTOR_LBL        6060
+#define IDC_SMOOTHING_FACTOR            6062
 
-// X axis
+#define IDC_SHOW_TOOLTIPS               6070
+
+#pragma endregion
+
+#pragma region X axis
 
 #define IDC_X_AXIS                      4000
 
 #define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
-// Y axis
+#pragma endregion
+
+#pragma region Y axis
 
 #define IDC_Y_AXIS                      5000
 
@@ -216,7 +221,9 @@
 #define IDC_GAMMA_LBL                   5050
 #define IDC_GAMMA                       5052
 
-// Colors
+#pragma endregion
+
+#pragma region Colors
 
 #define IDC_COLORS_GROUP                7000
 
@@ -240,10 +247,56 @@
 #define IDC_Y_LINE_COLOR                7036
 #define IDC_Y_LINE_COLOR_DEF            7038
 
-#define IDC_WHITE_KEYS_LBL              7040
-#define IDC_WHITE_KEYS                  7042
+#pragma endregion
 
-#define IDC_BLACK_KEYS_LBL              7050
-#define IDC_BLACK_KEYS                  7052
+#pragma region Visualization
 
-#define IDC_RESET                       8000
+#define IDC_VISUALIZATION_LBL           7100
+#define IDC_VISUALIZATION               7102
+
+// Bars
+
+#define IDC_BARS                        7110
+
+#define IDC_DRAW_BAND_BACKGROUND        7112
+#define IDC_LED_MODE                    7114
+#define IDC_HORIZONTAL_GRADIENT         7116
+
+#define IDC_PEAK_MODE_LBL               7120
+#define IDC_PEAK_MODE                   7122
+
+#define IDC_HOLD_TIME_LBL               7130
+#define IDC_HOLD_TIME                   7132
+
+#define IDC_ACCELERATION_LBL            7140
+#define IDC_ACCELERATION                7142
+
+#define IDC_WHITE_KEYS_LBL              7150
+#define IDC_WHITE_KEYS                  7152
+
+#define IDC_BLACK_KEYS_LBL              7154
+#define IDC_BLACK_KEYS                  7156
+
+// Curve
+
+#define IDC_CURVE                       7200
+
+#define IDC_LINE_WIDTH_LBL              7210
+#define IDC_LINE_WIDTH                  7212
+#define IDC_LINE_WIDTH_SPIN             7214
+
+#define IDC_AREA_OPACITY_LBL            7220
+#define IDC_AREA_OPACITY                7222
+#define IDC_AREA_OPACITY_SPIN           7224
+#define IDC_AREA_OPACITY_LBL_2          7226
+
+#pragma endregion
+
+#define IDC_RESET                       9999
+
+/** Color Dialog **/
+
+#define IDD_CHOOSECOLOR         1020
+
+#define IDC_ALPHA_SLIDER        800
+#define IDC_ALPHA_VALUE         801

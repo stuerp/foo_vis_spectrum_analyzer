@@ -1,16 +1,12 @@
 
-/** $VER: FrameCounter.h (2023.12.09) P. Stuer - Represents and renders the frame counter display. **/
+/** $VER: FrameCounter.h (2023.12.31) P. Stuer - Represents and renders the frame counter display. **/
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
 #include "framework.h"
-
+#include "Support.h"
 #include "Configuration.h"
-#include "Math.h"
+
 #include "RingBuffer.h"
 
 #include <string>
@@ -38,10 +34,10 @@ public:
     void NewFrame();
     HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
-    HRESULT CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory);
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
 
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
-
     void ReleaseDeviceSpecificResources();
 
 private:
@@ -64,5 +60,5 @@ private:
     FLOAT _TextHeight;
 
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

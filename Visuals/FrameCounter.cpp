@@ -1,7 +1,8 @@
 
-/** $VER: FrameCounter.cpp (2023.12.09) P. Stuer **/
+/** $VER: FrameCounter.cpp (2023.12.31) P. Stuer **/
 
 #include "FrameCounter.h"
+#include "DirectX.h"
 
 #pragma hdrstop
 
@@ -50,16 +51,16 @@ HRESULT FrameCounter::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 
         // Draw the background.
         {
-            _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
+            _SolidBrush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
-            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
+            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _SolidBrush);
         }
 
         // Draw the text.
         {
-            _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-            renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _SolidBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
@@ -69,11 +70,11 @@ HRESULT FrameCounter::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT FrameCounter::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> & directWriteFactory)
+HRESULT FrameCounter::CreateDeviceIndependentResources()
 {
     static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = directWriteFactory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+    HRESULT hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
@@ -87,7 +88,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> &
 
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = directWriteFactory->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+        hr = _DirectX._DirectWrite->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
@@ -104,15 +105,23 @@ HRESULT FrameCounter::CreateDeviceIndependentResources(CComPtr<IDWriteFactory> &
 }
 
 /// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void FrameCounter::ReleaseDeviceIndependentResources()
+{
+    _TextFormat.Release();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT FrameCounter::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 {
-    if (_Brush != nullptr)
+    if (_SolidBrush != nullptr)
         return S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
+    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
 
     return hr;
 }
@@ -122,5 +131,5 @@ HRESULT FrameCounter::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarge
 /// </summary>
 void FrameCounter::ReleaseDeviceSpecificResources()
 {
-    _Brush.Release();
+    _SolidBrush.Release();
 }

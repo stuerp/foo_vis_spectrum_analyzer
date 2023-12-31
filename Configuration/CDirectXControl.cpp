@@ -1,18 +1,12 @@
 
-/** $VER: CDirectXControl.cpp (2023.11.26) P. Stuer - Implements a base class for DirectX rendered controls. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
-
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "comdlg32")
+/** $VER: CDirectXControl.cpp (2023.12.31) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #include "CDirectXControl.h"
 
 #include "Support.h"
+
+#pragma comment(lib, "d2d1")
+#pragma comment(lib, "comdlg32")
 
 #pragma hdrstop
 
@@ -21,7 +15,7 @@
 /// </summary>
 HRESULT CDirectXControl::CreateDeviceIndependentResources()
 {
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2dFactory);
+    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2D);
 
     return hr;
 }
@@ -31,7 +25,7 @@ HRESULT CDirectXControl::CreateDeviceIndependentResources()
 /// </summary>
 void CDirectXControl::ReleaseDeviceIndependentResources()
 {
-    _Direct2dFactory.Release();
+    _Direct2D.Release();
 }
 
 /// <summary>
@@ -40,7 +34,7 @@ void CDirectXControl::ReleaseDeviceIndependentResources()
 /// </summary>
 HRESULT CDirectXControl::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
 {
-    if (_Direct2dFactory == nullptr)
+    if (_Direct2D == nullptr)
         return E_FAIL;
 
     HRESULT hr = S_OK;
@@ -51,7 +45,7 @@ HRESULT CDirectXControl::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U si
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(hWnd, size);
 
-        hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
+        hr = _Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
             _RenderTarget->SetAntialiasMode(_UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);

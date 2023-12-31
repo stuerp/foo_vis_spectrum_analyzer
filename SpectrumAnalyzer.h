@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumAnalyzer.h (2023.12.14) P. Stuer **/
+/** $VER: SpectrumAnalyzer.h (2023.12.17) P. Stuer **/
 
 #include "framework.h"
 
@@ -37,17 +37,17 @@ public:
     /// <summary>
     /// Gets the band index of the specified frequency.
     /// </summary>
-    int GetFFTIndex(double frequency) const
+    size_t GetFFTIndex(double frequency) const
     {
-        return (int)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.0));
+        return (size_t)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.));
     }
 
     /// <summary>
     /// Gets the frequency of the band specfied by the index.
     /// </summary>
-    int GetFrequency(int index) const
+    double GetFrequency(int index) const
     {
-        return (int)(index * _NyquistFrequency / ((double) GetFFTSize() / 2.0));
+        return ((double) index * _NyquistFrequency) / ((double) GetFFTSize() / 2.);
     }
 
     /// <summary>
@@ -65,14 +65,14 @@ public:
             const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
             const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), coefficients.size(), sampleRate);
 
-            const int LoIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(LoHz) + 1 : ::ceil(LoHz));
-            const int HiIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(HiHz) - 1 : ::floor(HiHz));
+            const int LoIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
+                  int HiIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
 
             const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) coefficients.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
             if (LoIdx <= HiIdx)
             {
-                const int OverflowCompensation = Max(HiIdx - LoIdx - (int) coefficients.size(), 0);
+                HiIdx -= Max(HiIdx - LoIdx - (int) coefficients.size(), 0);
 
                 double Value = (summationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -80,7 +80,7 @@ public:
 
                 int Count = 0;
 
-                for (int Idx = LoIdx; Idx <= HiIdx - OverflowCompensation; ++Idx)
+                for (int Idx = LoIdx; Idx <= HiIdx; ++Idx)
                 {
                     size_t CoefIdx = Wrap((size_t) Idx, coefficients.size());
 
@@ -175,7 +175,7 @@ public:
 
             double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
 
-            size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size());
+            size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size() / 2);
 
             re += fftCoeffs[CoefIdx].real() * w * (-1 + Wrap(i, 2) * 2);
             im += fftCoeffs[CoefIdx].imag() * w * (-1 + Wrap(i, 2) * 2);

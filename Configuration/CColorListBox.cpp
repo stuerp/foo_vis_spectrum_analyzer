@@ -1,13 +1,8 @@
 
-/** $VER: CColorListBox.cpp (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 5262 ALL_CPPCORECHECK_WARNINGS)
-
-#include "framework.h"
+/** $VER: CColorListBox.cpp (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorListBox.h"
+#include "CColorDialogEx.h"
 
 #pragma hdrstop
 
@@ -134,7 +129,9 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
 
     D2D1_COLOR_F Color = _Colors[(size_t) Index];
 
-    if (SelectColor(m_hWnd, Color))
+    CColorDialogEx cd;
+
+    if (cd.SelectColor(m_hWnd, Color))
     {
         _Colors[(size_t) Index] = Color;
 

@@ -6,7 +6,9 @@
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
-![Screenshot](/Resources/Screenshot.png?raw=true "Screenshot")
+![Screenshot](Resources/Bars.png?raw=true "Screenshot")
+
+![Screenshot](Resources/Curve.png?raw=true "Screenshot")
 
 ## Features
 
@@ -82,6 +84,23 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.6.0.0, 2023-12-31
+
+* New: Curve visualization with customizable line width and area opacity.
+* New: The position of the custom gradient colors can be specified individually.
+* New: The color dialog can create colors with a specific opacity.
+* Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
+* Improved: Hardened the reading and writing of the configuration.
+* Improved: Various minor tweaks with focus on stability and future expandability:
+  * The graph is drawn completely even when there is no track playing.
+  * The peak indicators animation continues when the track stops playing or when it is paused.
+  * The configuration dialog page is remembered.
+* Improved: The x axis shows labels for the complete specified frequency range.
+* Fixed: Crash when adding multiple instances to CUI (Columns User Interface) layouts.
+* Fixed: Removed background 'flash' when the element gets created.
+* Fixed: The spin controls of the Pitch setting used a wrong divider.
+* Fixed: Rewrote the handling of the spin controls to fix range checking and acceleration handling.
 
 v0.5.1.0, 2023-12-14
 
@@ -186,10 +205,11 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Acknowledgements / Credits
 
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
-* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help
+* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help.
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
-* fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component
+* fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
+* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
 
 ## Reference Material
 

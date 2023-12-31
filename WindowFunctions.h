@@ -1,11 +1,7 @@
 
-/** $VER: WindowFunctions.h (2023.12.11) P. Stuer **/
+/** $VER: WindowFunctions.h (2023.12.30) P. Stuer **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 

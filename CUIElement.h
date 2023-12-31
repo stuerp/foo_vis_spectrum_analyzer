@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2023.12.06) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2023.12.30) P. Stuer - Columns User Interface support **/
 
 #pragma once
 

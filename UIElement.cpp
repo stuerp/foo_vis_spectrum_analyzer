@@ -1,8 +1,9 @@
 
-/** $VER: UIElement.cpp (2023.12.14) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.31) P. Stuer **/
 
 #include "UIElement.h"
 
+#include "DirectX.h"
 #include "Resources.h"
 #include "Gradients.h"
 
@@ -50,12 +51,12 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
     ::InitializeCriticalSection(&_Lock);
 
-    _DPI = GetDpiForWindow(m_hWnd);
-
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
-        Log(LogLevel::Critical, "%s: Unable to create Direct2D device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
+        Log(LogLevel::Critical, "%s: Unable to create DirectX device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
+
+    (void) _DirectX.GetDPI(m_hWnd, _DPI);
 
     try
     {
@@ -71,11 +72,13 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     // Create the tooltip control.
-    _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
+    {
+        _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
-    _ToolTipControl.SetMaxTipWidth(100);
+        _ToolTipControl.SetMaxTipWidth(100);
 
-    _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+        _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+    }
 
     // Create the timer.
     _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
@@ -121,7 +124,7 @@ void UIElement::OnDestroy()
 
     ReleaseDeviceSpecificResources();
 
-    _Direct2dFactory.Release();
+    ReleaseDeviceIndependentResources();
 
     ::LeaveCriticalSection(&_Lock);
 }
@@ -136,6 +139,16 @@ void UIElement::OnPaint(CDCHandle hDC)
     ValidateRect(nullptr);
 
     UpdateRefreshRateLimit();
+}
+
+/// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
+{
+    RenderFrame();
+
+    return TRUE;
 }
 
 /// <summary>
@@ -287,7 +300,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     
         FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-        int Index = (int) ::floor(Map(ScaledX, _Spectrum.GetLeft(), _Spectrum.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
+        int Index = (int) ::floor(Map(ScaledX, _Graph.GetLeft(), _Graph.GetRight(), 0.f, (FLOAT) _FrequencyBands.size()));
 
         if ((Index != _LastIndex) && InRange(Index, 0, (int) _FrequencyBands.size() - 1))
         {
@@ -455,11 +468,7 @@ void UIElement::SetConfiguration() noexcept
         }
     }
 
-    _XAxis.Initialize(&_Configuration, _FrequencyBands);
-
-    _YAxis.Initialize(&_Configuration);
-
-    _Spectrum.Initialize(&_Configuration);
+    _Graph.Initialize(&_Configuration, _FrequencyBands);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
@@ -487,8 +496,6 @@ void UIElement::SetConfiguration() noexcept
     Resize();
 
     ::LeaveCriticalSection(&_Lock);
-
-//  InvalidateRect(NULL);
 }
 
 /// <summary>
@@ -501,43 +508,26 @@ void UIElement::Resize()
 
     D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
-    const FLOAT dw = (_Configuration._YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT dh = (_Configuration._XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
-
     _FrameCounter.Resize(Size.width, Size.height);
 
+    const D2D1_RECT_F Rect(0.f, 0.f, Size.width, Size.height);
+
+    _Graph.Move(Rect);
+
+    // Adjust the tracking tool tip.
     {
-        D2D1_RECT_F Rect(dw, 0.f, Size.width, Size.height);
-
-        _XAxis.Resize(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(0.f, 0.f, Size.width, Size.height - dh);
-
-        _YAxis.Resize(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(dw, 0.f, Size.width, Size.height - dh);
-
-        _Spectrum.Resize(Rect);
-
-        // Adjust the tracking tool tip.
+        if (_TrackingToolInfo != nullptr)
         {
-            if (_TrackingToolInfo != nullptr)
-            {
-                _ToolTipControl.DelTool(_TrackingToolInfo);
+            _ToolTipControl.DelTool(_TrackingToolInfo);
 
-                delete _TrackingToolInfo;
-            }
-
-            _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
-
-            ::SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
-
-            _ToolTipControl.AddTool(_TrackingToolInfo);
+            delete _TrackingToolInfo;
         }
+
+        _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+
+        ::SetRect(&_TrackingToolInfo->rect, (int) Rect.left, (int) Rect.top, (int) Rect.right, (int) Rect.bottom);
+
+        _ToolTipControl.AddTool(_TrackingToolInfo);
     }
 }
 
@@ -573,10 +563,10 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// <summary>
 /// Renders a frame.
 /// </summary>
-HRESULT UIElement::RenderFrame()
+void UIElement::RenderFrame()
 {
     if (!TryEnterCriticalSection(&_Lock))
-        return E_ABORT;
+        return;
 
     _FrameCounter.NewFrame();
 
@@ -591,25 +581,28 @@ HRESULT UIElement::RenderFrame()
         {
             _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
-            _XAxis.Render(_RenderTarget);
+            double PlaybackTime; // in ms
 
-            _YAxis.Render(_RenderTarget);
-
-            // Draw the spectrum.
-            if (_VisualisationStream.is_valid())
+            if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
             {
-                double PlaybackTime; // in ms
+                double WindowDuration = _Configuration.GetWindowDurationInMs();
 
-                if (_VisualisationStream->get_absolute_time(PlaybackTime))
-                {
-                    double WindowDuration = _Configuration.GetWindowDurationInMs();
+                audio_chunk_impl Chunk;
 
-                    audio_chunk_impl Chunk;
-
-                    if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
-                        RenderChunk(Chunk);
-                }
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - WindowDuration / 2., WindowDuration * (_Configuration._UseZeroTrigger ? 2. : 1.)))
+                    RenderChunk(Chunk);
             }
+            else
+                for (auto & Iter : _FrequencyBands)
+                    Iter.CurValue = 0.;
+
+            // Update the peak indicators.
+            {
+                if (_SpectrumAnalyzer && (_Configuration._PeakMode != PeakMode::None))
+                    _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+            }
+
+            _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate);
 
             if (_Configuration._ShowFrameCounter)
                 _FrameCounter.Render(_RenderTarget);
@@ -626,17 +619,13 @@ HRESULT UIElement::RenderFrame()
     }
 
     ::LeaveCriticalSection(&_Lock);
-
-    return hr;
 }
 
 /// <summary>
 /// Renders an audio chunk.
 /// </summary>
-HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
+void UIElement::RenderChunk(const audio_chunk & chunk)
 {
-    HRESULT hr = S_OK;
-
     uint32_t ChannelCount = chunk.get_channel_count();
     uint32_t ChannelSetup = chunk.get_channel_config();
 
@@ -682,7 +671,7 @@ HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
         const audio_sample * Samples = chunk.get_data();
 
         if (Samples == nullptr)
-            return E_FAIL;
+            return;
 
         size_t SampleCount = chunk.get_sample_count();
 
@@ -721,16 +710,6 @@ HRESULT UIElement::RenderChunk(const audio_chunk & chunk)
             }
         }
     }
-
-    // Update the peak indicators.
-    {
-        if (_Configuration._PeakMode != PeakMode::None)
-            _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
-    }
-
-    _Spectrum.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Configuration);
-
-    return hr;
 }
 
 /// <summary>
@@ -938,30 +917,28 @@ void UIElement::ApplyPeakSmoothing(double factor)
 #pragma endregion
 
 #pragma region DirectX
+
 /// <summary>
-/// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT UIElement::CreateDeviceIndependentResources()
 {
-    Log(LogLevel::Trace, "%s: Creating device independent resource", core_api::get_my_file_name());
-
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2dFactory);
+    HRESULT hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (SUCCEEDED(hr))
-        hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_DirectWriteFactory), reinterpret_cast<IUnknown **>(&_DirectWriteFactory));
-    else
-        Log(LogLevel::Error, "%s: Unable to create D2D1CreateFactory: 0x%08X.", core_api::get_my_file_name(), hr);
-
-    if (SUCCEEDED(hr))
-        hr = _FrameCounter.CreateDeviceIndependentResources(_DirectWriteFactory);
-
-    if (SUCCEEDED(hr))
-        hr = _XAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
-
-    if (SUCCEEDED(hr))
-        hr = _YAxis.CreateDeviceIndependentResources(_DirectWriteFactory);
+        hr = _Graph.CreateDeviceIndependentResources();
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void UIElement::ReleaseDeviceIndependentResources()
+{
+    _Graph.ReleaseDeviceIndependentResources();
+
+    _FrameCounter.ReleaseDeviceIndependentResources();
 }
 
 /// <summary>
@@ -970,9 +947,6 @@ HRESULT UIElement::CreateDeviceIndependentResources()
 /// </summary>
 HRESULT UIElement::CreateDeviceSpecificResources()
 {
-    if (_Direct2dFactory == nullptr)
-        return E_FAIL;
-
     HRESULT hr = S_OK;
 
     // Create the render target.
@@ -987,7 +961,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
-        hr = _Direct2dFactory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
+        hr = _DirectX._Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -999,6 +973,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
 
+    if (SUCCEEDED(hr))
+        hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
+
     return hr;
 }
 
@@ -1007,9 +984,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
-    _Spectrum.ReleaseDeviceSpecificResources();
-    _YAxis.ReleaseDeviceSpecificResources();
-    _XAxis.ReleaseDeviceSpecificResources();
+    _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
     _RenderTarget.Release();

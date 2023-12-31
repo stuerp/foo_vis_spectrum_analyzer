@@ -1,9 +1,5 @@
 
-/** $VER: Component.cpp (2023.11.12) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: Component.cpp (2023.12.30) P. Stuer **/
 
 #include "framework.h"
 

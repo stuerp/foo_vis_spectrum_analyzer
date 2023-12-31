@@ -1,11 +1,7 @@
 
-/** $VER: CColorButton.h (2023.11.26) P. Stuer **/
+/** $VER: CColorButton.h (2023.12.31) P. Stuer **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "framework.h"
 
@@ -19,14 +15,6 @@
 class CColorButton : public CWindowImpl<CColorButton>, public CDirectXControl
 {
 public:
-    DECLARE_WND_CLASS_EX(NULL, 0, COLOR_3DFACE)
-
-    BEGIN_MSG_MAP(CColorButton)
-        MSG_WM_SIZE(OnSize)
-        MSG_WM_PAINT(OnPaint)
-        MSG_WM_LBUTTONDOWN(OnLButtonDown)
-    END_MSG_MAP()
-
     CColorButton() : _Color() { }
 
     CColorButton(const CColorButton &) = delete;
@@ -51,9 +39,18 @@ private:
 
     void SendChangedNotification() const noexcept;
 
+    DECLARE_WND_CLASS_EX(NULL, 0, COLOR_3DFACE)
+
+    BEGIN_MSG_MAP(CColorButton)
+        MSG_WM_SIZE(OnSize)
+        MSG_WM_PAINT(OnPaint)
+        MSG_WM_LBUTTONDOWN(OnLButtonDown)
+    END_MSG_MAP()
+
 private:
     #pragma region DirectX
     HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size) override;
+    HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources() override;
     #pragma endregion
 
@@ -61,6 +58,7 @@ private:
     #pragma region DirectX
     // Device-specific resources
     CComPtr<ID2D1Brush> _Brush;
+    CComPtr<ID2D1BitmapBrush> _PatternBrush;
     #pragma endregion
 
 private:

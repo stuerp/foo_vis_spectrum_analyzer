@@ -1,5 +1,5 @@
 
-/** $VER: FFT.h (2023.12.02) P. Stuer **/
+/** $VER: FFT.h (2023.12.29) P. Stuer **/
 
 #pragma once
 
@@ -42,11 +42,18 @@ public:
     /// </summary>
     /// <param name="timeData"></param>
     /// <param name="freqData">freqData[0] = DC; freqData[1] = 1Hz; freqData[fftSize / 2] = Nyquist frequency</param>
-    bool Transform(const vector<complex<double>> & timeData, std::vector<complex<double>> & freqData) const
+    bool Transform(const vector<complex<double>> & timeData, std::vector<complex<double>> & freqData) const noexcept
     {
         freqData = timeData;
 
-        Fft::transform(freqData, false);
+        try
+        {
+            Fft::transform(freqData, false);
+        }
+        catch (exception)
+        {
+            std::fill(freqData.begin(), freqData.end(), 0.);
+        }
 
         return true;
     }

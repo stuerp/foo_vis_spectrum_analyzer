@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.14) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2023.12.30) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -383,7 +383,7 @@
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 
-#pragma region Bands
+#pragma region Common
 // Groupbox
 #define X_B04   X_D01 + W_D01 + IX
 #define Y_B04   Y_D01
@@ -402,44 +402,12 @@
     #define Y_A10    Y_A09
     #pragma endregion
 
-    #pragma region Draw band background
-    // Checkbox
-    #define W_A57    80
-    #define H_A57    H_CHB
-    #define X_A57    X_A09
-    #define Y_A57    Y_A10 + H_A10 + IY
-    #pragma endregion
-
-    #pragma region Horizontal gradient
-    // Checkbox
-    #define W_C13    80
-    #define H_C13    H_CHB
-    #define X_C13    X_A57 + W_A57 + IX
-    #define Y_C13    Y_A57
-    #pragma endregion
-
-    #pragma region LED mode
-    // Checkbox
-    #define W_C12    80
-    #define H_C12    H_CHB
-    #define X_C12    X_A57
-    #define Y_C12    Y_A57 + H_A57 + IY
-    #pragma endregion
-
-    #pragma region Tool tips
-    // Checkbox
-    #define W_A87    80
-    #define H_A87    H_CHB
-    #define X_A87    X_C12
-    #define Y_A87    Y_C12 + H_C12 + IY
-    #pragma endregion
-
     #pragma region Gradient
     // Label
     #define W_A67   14
     #define H_A67   100
     #define X_A67   X_A10 - W_A67 - IX
-    #define Y_A67   Y_A87 + H_A87 + IY
+    #define Y_A67   Y_A10 + H_A10 + IY
 
     // Listbox
     #define W_A68   45
@@ -464,6 +432,25 @@
     #define H_A71   H_BTN
     #define X_A71   X_A70
     #define Y_A71   Y_A70 + H_A70 + IY
+
+    // Position
+    #define W_F01    40
+    #define H_F01    H_TBX
+    #define X_F01    X_A71
+    #define Y_F01    Y_A71 + H_A71 + IY
+
+    // Position Label
+    #define W_F02    10
+    #define H_F02    H_LBL
+    #define X_F02    X_F01 + W_F01 + IX
+    #define Y_F02    Y_F01
+
+    // Spread
+    #define W_F03   W_BTN
+    #define H_F03   H_BTN
+    #define X_F03   X_F01
+    #define Y_F03   Y_F01 + H_F01 + IY
+
     #pragma endregion
 
     #pragma region Smoothing Method
@@ -494,50 +481,16 @@
     #define Y_A38    Y_A37
     #pragma endregion
 
-    #pragma region Peak Mode
-    // Label
-    #define W_A11    60
-    #define H_A11    H_LBL
-    #define X_A11    X_A37
-    #define Y_A11    Y_A38 + H_A38 + IY
-
-    // Combobox
-    #define W_A12    60
-    #define H_A12    H_CBX
-    #define X_A12    X_A11 + W_A11 + IX
-    #define Y_A12    Y_A11
-    #pragma endregion
-
-    #pragma region Hold time (ms)
-    // Label
-    #define W_A51    60
-    #define H_A51    H_LBL
-    #define X_A51    X_A11
-    #define Y_A51    Y_A12 + H_A12 + IY
-
-    // Textbox
-    #define W_A52    30
-    #define H_A52    H_TBX
-    #define X_A52    X_A51 + W_A51 + IX
-    #define Y_A52    Y_A51
-    #pragma endregion
-
-    #pragma region Acceleration (db/s2)
-    // Label
-    #define W_A53    60
-    #define H_A53    H_LBL
-    #define X_A53    X_A51
-    #define Y_A53    Y_A52 + H_A52 + IY
-
-    // Textbox
-    #define W_A54    30
-    #define H_A54    H_TBX
-    #define X_A54    X_A53 + W_A53 + IX
-    #define Y_A54    Y_A53
+    #pragma region Tool tips
+    // Checkbox
+    #define W_A87    80
+    #define H_A87    H_CHB
+    #define X_A87    X_A38
+    #define Y_A87    Y_A38 + H_A38 + IY
     #pragma endregion
 
 #define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A57 + IY + H_A87 + IY + H_C12 + IY + H_A18 + IY + H_A38 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IX + H_A67 + 7
+#define H_B04   11 + H_A10 + IY + H_A68 + IY + H_A18 + IY + H_A38 + IY + H_A87 + 7
 #pragma endregion
 
 #pragma region X axis
@@ -660,7 +613,7 @@
 #define H_B03   11 + H_A08 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
-#pragma region Colors Group
+#pragma region Colors
 // Groupbox
 #define X_B06   X_B03
 #define Y_B06   Y_B03 + H_B03 + IY
@@ -755,11 +708,101 @@
     #define X_C11   X_A81 + W_A81 + IX
     #define Y_C11   Y_A81 + 2
 
+#define W_B06  176 // 5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
+#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + 5
+#pragma endregion
+
+#pragma region Visualization
+
+// Label
+#define W_E01    24
+#define H_E01    H_LBL
+#define X_E01    X_D01 + W_D01 + IX
+#define Y_E01    Y_D01
+
+// Combobox
+#define W_E02    82
+#define H_E02    H_CBX
+#define X_E02    X_E01 + W_E01 + IX
+#define Y_E02    Y_E01
+
+#pragma region Bars
+// Groupbox
+#define X_B07   X_E01
+#define Y_B07   Y_E02 + H_E02 + IY
+
+    #pragma region Draw band background
+    // Checkbox
+    #define W_A57    80
+    #define H_A57    H_CHB
+    #define X_A57    X_B07 + 5
+    #define Y_A57    Y_B07 + 11
+    #pragma endregion
+
+    #pragma region Horizontal gradient
+    // Checkbox
+    #define W_C13    80
+    #define H_C13    H_CHB
+    #define X_C13    X_A57 + W_A57 + IX
+    #define Y_C13    Y_A57
+    #pragma endregion
+
+    #pragma region LED mode
+    // Checkbox
+    #define W_C12    80
+    #define H_C12    H_CHB
+    #define X_C12    X_A57
+    #define Y_C12    Y_A57 + H_A57 + IY
+    #pragma endregion
+
+    #pragma region Peak Mode
+    // Label
+    #define W_A11    42
+    #define H_A11    H_LBL
+    #define X_A11    X_C12
+    #define Y_A11    Y_C12 + H_C12 + IY
+
+    // Combobox
+    #define W_A12    60
+    #define H_A12    H_CBX
+    #define X_A12    X_A11 + W_A11 + IX
+    #define Y_A12    Y_A11
+    #pragma endregion
+
+    #pragma region Hold time (ms)
+    // Label
+    #define W_A51    42
+    #define H_A51    H_LBL
+    #define X_A51    X_A11
+    #define Y_A51    Y_A12 + H_A12 + IY
+
+    // Textbox
+    #define W_A52    30
+    #define H_A52    H_TBX
+    #define X_A52    X_A51 + W_A51 + IX
+    #define Y_A52    Y_A51
+    #pragma endregion
+
+    #pragma region Acceleration (db/s2)
+    // Label
+    #define W_A53    42
+    #define H_A53    H_LBL
+    #define X_A53    X_A51
+    #define Y_A53    Y_A52 + H_A52 + IY
+
+    // Textbox
+    #define W_A54    30
+    #define H_A54    H_TBX
+    #define X_A54    X_A53 + W_A53 + IX
+    #define Y_A54    Y_A53
+    #pragma endregion
+
+    #pragma region White & Black keys
     // Label (White keys)
-    #define W_A82   60
+    #define W_A82   42
     #define H_A82   H_LBL
-    #define X_A82   X_A80
-    #define Y_A82   Y_A81 + H_A81 + IY
+    #define X_A82   X_A53
+    #define Y_A82   Y_A54 + H_A54 + IY
 
     // Button
     #define W_A83   40
@@ -768,7 +811,7 @@
     #define Y_A83   Y_A82
 
     // Label (Black keys)
-    #define W_C14   60
+    #define W_C14   42
     #define H_C14   H_LBL
     #define X_C14   X_A82
     #define Y_C14   Y_A83 + H_A83 + IY
@@ -778,9 +821,55 @@
     #define H_C15   H_BTN
     #define X_C15   X_C14 + W_C14 + IX
     #define Y_C15   Y_C14
+    #pragma endregion
 
-#define W_B06  5 + W_A72 + IX + W_A73 + IX + W_CHB + 5
-#define H_B06  11 + H_A73 + IY + H_A75 + IY + H_A77 + IY + H_A79 + IY + H_A81 + IY + H_A83 + IY + H_C15 + 5
+#define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
+#define H_B07   11 + H_A57 + IY + H_C12 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IY + H_A83 + IY + H_C15 + 7
+#pragma endregion
+
+#pragma region Curve
+// Groupbox
+#define X_B08   X_B07
+#define Y_B08   Y_B07 + H_B07 + IY
+
+    #pragma region Line Width
+    // Label
+    #define W_E03    42
+    #define H_E03    H_LBL
+    #define X_E03    X_B08 + 5
+    #define Y_E03    Y_B08 + 11
+
+    // Textbox
+    #define W_E04    30
+    #define H_E04    H_TBX
+    #define X_E04    X_E03 + W_E03 + IX
+    #define Y_E04    Y_E03
+    #pragma endregion
+
+    #pragma region Area Opacity
+    // Label
+    #define W_E05    42
+    #define H_E05    H_LBL
+    #define X_E05    X_E03
+    #define Y_E05    Y_E04 + H_E04 + IY
+
+    // Textbox
+    #define W_E06    30
+    #define H_E06    H_TBX
+    #define X_E06    X_E05 + W_E05 + IX
+    #define Y_E06    Y_E05
+
+    // Label
+    #define W_E07    10
+    #define H_E07    H_LBL
+    #define X_E07    X_E06 + W_E06 + IX
+    #define Y_E07    Y_E06
+    #pragma endregion
+
+#define W_B08  W_B07
+#define H_B08   11 + H_E04 + IY + H_E06 + 7
+#pragma endregion
+
 #pragma endregion
 
 // Cancel button (right-most button)

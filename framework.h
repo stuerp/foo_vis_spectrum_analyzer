@@ -1,7 +1,11 @@
 
-/** $VER: framework.h (2022.11.11) P. Stuer **/
+/** $VER: framework.h (2023.12.30) P. Stuer **/
 
 #pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #define TOSTRING_IMPL(x) #x
 #define TOSTRING(x) TOSTRING_IMPL(x)
@@ -16,3 +20,4 @@
 #include <dwrite.h>
 
 #include <strsafe.h>
+#include <math.h>

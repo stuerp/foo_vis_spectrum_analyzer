@@ -9,7 +9,7 @@
 #include <atlframe.h>
 
 template <class TBase>
-class COwnerDrawnListBox : public CWindowImpl<TBase, CListBox>, public COwnerDraw<TBase>
+class ATL_NO_VTABLE COwnerDrawnListBox : public CWindowImpl<TBase, CListBox>, public COwnerDraw<TBase>
 {
 public:
     BEGIN_MSG_MAP(COwnerDrawnListBox)
