@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2023.12.30) P. Stuer **/
+/** $VER: FrameCounter.cpp (2023.12.31) P. Stuer **/
 
 #include "FrameCounter.h"
 #include "DirectX.h"
@@ -102,6 +102,14 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
     }
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void FrameCounter::ReleaseDeviceIndependentResources()
+{
+    _TextFormat.Release();
 }
 
 /// <summary>

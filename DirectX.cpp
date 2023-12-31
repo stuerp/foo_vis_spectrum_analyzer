@@ -1,24 +1,44 @@
 
-/** $VER: DirectX.cpp (2023.12.30) P. Stuer **/
+/** $VER: DirectX.cpp (2023.12.31) P. Stuer **/
 
 #include "DirectX.h"
 
 #pragma hdrstop
 
 /// <summary>
-/// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Initializes a new instance.
+/// </summary>
+DirectX::DirectX()
+{
+    CreateDeviceIndependentResources();
+}
+
+/// <summary>
+/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT DirectX::CreateDeviceIndependentResources()
 {
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2D);
+    HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
+    if (_Direct2D == nullptr)
+        hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &_Direct2D);
+
+    if ((_DirectWrite == nullptr) && SUCCEEDED(hr))
         hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_DirectWrite), reinterpret_cast<IUnknown **>(&_DirectWrite));
 
     return hr;
 }
 
-HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi)
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void DirectX::ReleaseDeviceIndependentResources()
+{
+//  _DirectWrite.Release();
+//  _Direct2D.Release();
+}
+
+HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi) const
 {
     if (::IsWindows10OrGreater())
         dpi = ::GetDpiForWindow(hWnd);

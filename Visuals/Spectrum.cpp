@@ -189,13 +189,13 @@ HRESULT Spectrum::CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTar
 /// </summary>
 HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 {
-    ID2D1BitmapRenderTarget * rt = nullptr;
+    CComPtr<ID2D1BitmapRenderTarget> rt;
 
     HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(8.f, 4.f), &rt);
 
     if (SUCCEEDED(hr))
     {
-        ID2D1SolidColorBrush * Brush = nullptr;
+        CComPtr<ID2D1SolidColorBrush> Brush;
 
         hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 1.f)), &Brush);
 
@@ -206,13 +206,11 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
             rt->FillRectangle(D2D1::RectF(0.f, 2.f, 8.f, 4.f), Brush);
 
             rt->EndDraw();
-
-            Brush->Release();
         }
 
         if (SUCCEEDED(hr))
         {
-            ID2D1Bitmap * Bitmap = nullptr;
+            CComPtr<ID2D1Bitmap> Bitmap;
 
             hr = rt->GetBitmap(&Bitmap);
 
@@ -221,12 +219,8 @@ HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarg
                 auto brushProperties = D2D1::BitmapBrushProperties(D2D1_EXTEND_MODE_WRAP, D2D1_EXTEND_MODE_WRAP, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 
                 hr = rt->CreateBitmapBrush(Bitmap, brushProperties, &_PatternBrush);
-
-                Bitmap->Release();
             }
         }
-
-        rt->Release();
     }
 
     return hr;

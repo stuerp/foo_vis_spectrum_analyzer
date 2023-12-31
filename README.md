@@ -6,7 +6,9 @@
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
-![Screenshot](/Resources/Screenshot.png?raw=true "Screenshot")
+![Screenshot](Resources/Bars.png?raw=true "Screenshot")
+
+![Screenshot](Resources/Curve.png?raw=true "Screenshot")
 
 ## Features
 
@@ -83,10 +85,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.6.0.0, 2024-xx-xx
+v0.6.0.0, 2023-12-31
 
 * New: Curve visualization with customizable line width and area opacity.
 * New: The position of the custom gradient colors can be specified individually.
+* New: The color dialog can create colors with a specific opacity.
 * Improved: Added fall-back case for pre-Windows 10 1903 versions. Completely untested. Your mileage may vary.
 * Improved: Hardened the reading and writing of the configuration.
 * Improved: Various minor tweaks with focus on stability and future expandability:
@@ -94,6 +97,7 @@ v0.6.0.0, 2024-xx-xx
   * The peak indicators animation continues when the track stops playing or when it is paused.
   * The configuration dialog page is remembered.
 * Improved: The x axis shows labels for the complete specified frequency range.
+* Fixed: Crash when adding multiple instances to CUI (Columns User Interface) layouts.
 * Fixed: Removed background 'flash' when the element gets created.
 * Fixed: The spin controls of the Pitch setting used a wrong divider.
 * Fixed: Rewrote the handling of the spin controls to fix range checking and acceleration handling.

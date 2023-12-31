@@ -1,7 +1,9 @@
 
-/** $VER: CColorButton.cpp (2023.12.30) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorButton.h"
+#include "CColorDialogEx.h"
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -42,7 +44,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 {
     _GradientStops = gradientStops;
 
-    ReleaseDeviceSpecificResources();
+    _Brush.Release();
 
     Invalidate();
     UpdateWindow();
@@ -64,7 +66,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
     _Color = color;
     _GradientStops.clear();
 
-    ReleaseDeviceSpecificResources();
+    _Brush.Release();
 
     Invalidate();
     UpdateWindow();
@@ -97,6 +99,7 @@ void CColorButton::OnPaint(HDC)
 
         D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) Size.width, (FLOAT) Size.height);
 
+        _RenderTarget->FillRectangle(Rect, _PatternBrush);
         _RenderTarget->FillRectangle(Rect, _Brush);
 
         hr = _RenderTarget->EndDraw();
@@ -116,7 +119,10 @@ LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
     if (!_GradientStops.empty())
         return 1;
 
-    if (SelectColor(m_hWnd, _Color))
+    CColorDialogEx cd;
+
+    if (cd.SelectColor(m_hWnd, _Color))
+//  if (SelectColor(m_hWnd, _Color))
     {
         SetColor(_Color);
         SendChangedNotification();
@@ -175,6 +181,56 @@ HRESULT CColorButton::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
         }
     }
 
+    if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
+        hr = CreatePatternBrush(_RenderTarget);
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a pattern brush for rendering the background.
+/// </summary>
+HRESULT CColorButton::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+{
+    CComPtr<ID2D1BitmapRenderTarget> rt;
+
+    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(8.f, 8.f), &rt);
+
+    if (SUCCEEDED(hr))
+    {
+        CComPtr<ID2D1SolidColorBrush> Brush;
+
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(1.f, 1.f, 1.f, 1.f)), &Brush);
+
+        if (SUCCEEDED(hr))
+        {
+            rt->BeginDraw();
+
+            rt->FillRectangle(D2D1::RectF(0.f, 0.f, 8.f, 8.f), Brush);
+
+            Brush->SetColor(D2D1::ColorF(0.8f, 0.8f, 0.8f, 1.f));
+
+            rt->FillRectangle(D2D1::RectF(0.f, 0.f, 4.f, 4.f), Brush);
+            rt->FillRectangle(D2D1::RectF(4.f, 4.f, 8.f, 8.f), Brush);
+
+            rt->EndDraw();
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            CComPtr<ID2D1Bitmap> Bitmap;
+
+            hr = rt->GetBitmap(&Bitmap);
+
+            if (SUCCEEDED(hr))
+            {
+                auto brushProperties = D2D1::BitmapBrushProperties(D2D1_EXTEND_MODE_WRAP, D2D1_EXTEND_MODE_WRAP, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+
+                hr = rt->CreateBitmapBrush(Bitmap, brushProperties, &_PatternBrush);
+            }
+        }
+    }
+
     return hr;
 }
 
@@ -183,6 +239,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
 /// </summary>
 void CColorButton::ReleaseDeviceSpecificResources()
 {
+    _PatternBrush.Release();
     _Brush.Release();
 
     __super::ReleaseDeviceSpecificResources();

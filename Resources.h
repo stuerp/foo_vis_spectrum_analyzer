@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.30) P. Stuer **/
+/** $VER: Resources.h (2023.12.31) P. Stuer **/
 
 #pragma once
 
@@ -247,12 +247,6 @@
 #define IDC_Y_LINE_COLOR                7036
 #define IDC_Y_LINE_COLOR_DEF            7038
 
-#define IDC_WHITE_KEYS_LBL              7040
-#define IDC_WHITE_KEYS                  7042
-
-#define IDC_BLACK_KEYS_LBL              7050
-#define IDC_BLACK_KEYS                  7052
-
 #pragma endregion
 
 #pragma region Visualization
@@ -277,6 +271,12 @@
 #define IDC_ACCELERATION_LBL            7140
 #define IDC_ACCELERATION                7142
 
+#define IDC_WHITE_KEYS_LBL              7150
+#define IDC_WHITE_KEYS                  7152
+
+#define IDC_BLACK_KEYS_LBL              7154
+#define IDC_BLACK_KEYS                  7156
+
 // Curve
 
 #define IDC_CURVE                       7200
@@ -293,3 +293,10 @@
 #pragma endregion
 
 #define IDC_RESET                       9999
+
+/** Color Dialog **/
+
+#define IDD_CHOOSECOLOR         1020
+
+#define IDC_ALPHA_SLIDER        800
+#define IDC_ALPHA_VALUE         801

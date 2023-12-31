@@ -87,9 +87,9 @@ private:
     void UpdateControls();
     void UpdateColorControls();
     void UpdateChannelsMenu();
-    void UpdatePage1(int mode);
-    void UpdatePage2(int mode);
-    void UpdatePage3(int mode);
+    void UpdatePage1(int mode) const noexcept;
+    void UpdatePage2(int mode) const noexcept;
+    void UpdatePage3(int mode) const noexcept;
 
     /// <summary>
     /// Sets the display version of the frequency.

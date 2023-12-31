@@ -1,5 +1,5 @@
 
-/** $VER: DirectX.h (2023.12.30) P. Stuer **/
+/** $VER: DirectX.h (2023.12.31) P. Stuer **/
 
 #pragma once
 
@@ -8,9 +8,12 @@
 class DirectX
 {
 public:
-    HRESULT CreateDeviceIndependentResources();
+    DirectX();
 
-    HRESULT GetDPI(HWND hWnd, UINT & dpi);
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+    HRESULT GetDPI(HWND hWnd, UINT & dpi) const;
 
 public:
     // Device-independent resources

@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2023.12.30) P. Stuer **/
+/** $VER: UIElement.cpp (2023.12.31) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -123,6 +123,8 @@ void UIElement::OnDestroy()
     _VisualisationStream.release();
 
     ReleaseDeviceSpecificResources();
+
+    ReleaseDeviceIndependentResources();
 
     ::LeaveCriticalSection(&_Lock);
 }
@@ -917,19 +919,26 @@ void UIElement::ApplyPeakSmoothing(double factor)
 #pragma region DirectX
 
 /// <summary>
-/// Create resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT UIElement::CreateDeviceIndependentResources()
 {
-    HRESULT hr = _DirectX.CreateDeviceIndependentResources();
-
-    if (SUCCEEDED(hr))
-        hr = _FrameCounter.CreateDeviceIndependentResources();
+    HRESULT hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (SUCCEEDED(hr))
         hr = _Graph.CreateDeviceIndependentResources();
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void UIElement::ReleaseDeviceIndependentResources()
+{
+    _Graph.ReleaseDeviceIndependentResources();
+
+    _FrameCounter.ReleaseDeviceIndependentResources();
 }
 
 /// <summary>

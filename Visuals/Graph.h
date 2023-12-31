@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2023.12.30) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2023.12.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -27,6 +27,8 @@ public:
     void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
     HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 

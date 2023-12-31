@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2023.12.30) P. Stuer **/
+/** $VER: UIElement.h (2023.12.31) P. Stuer **/
 
 #pragma once
 
@@ -123,6 +123,8 @@ private:
     #pragma region DirectX
 
     HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 

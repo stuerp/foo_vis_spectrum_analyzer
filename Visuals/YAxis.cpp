@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2023.12.30) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2023.12.31) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 #include "DirectX.h"
@@ -127,6 +127,14 @@ HRESULT YAxis::CreateDeviceIndependentResources()
     }
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void YAxis::ReleaseDeviceIndependentResources()
+{
+    _TextFormat.Release();
 }
 
 /// <summary>

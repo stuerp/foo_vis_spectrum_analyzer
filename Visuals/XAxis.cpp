@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2023.12.30) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2023.12.31) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 #include "DirectX.h"
@@ -234,6 +234,14 @@ HRESULT XAxis::CreateDeviceIndependentResources()
     }
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void XAxis::ReleaseDeviceIndependentResources()
+{
+    _TextFormat.Release();
 }
 
 /// <summary>

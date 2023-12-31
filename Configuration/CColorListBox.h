@@ -1,27 +1,19 @@
 
-/** $VER: CColorListBox.h (2023.11.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.h (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #pragma once
 
 #include "framework.h"
-#include "Support.h"
 
 #include <vector>
 
 #include "CDirectXControl.h"
 #include "COwnerDrawnListBox.h"
+#include "Support.h"
 
 class CColorListBox : public COwnerDrawnListBox<CColorListBox>, public CDirectXControl
 {
 public:
-    BEGIN_MSG_MAP(CColorListBox)
-        MSG_WM_SIZE(OnSize)
-
-        REFLECTED_COMMAND_CODE_HANDLER(LBN_DBLCLK, OnDblClick)
-
-        CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
-    END_MSG_MAP()
-
     CColorListBox() { }
 
     CColorListBox(const CColorListBox &) = delete;
@@ -45,16 +37,28 @@ private:
 
     void SendChangedNotification() const noexcept;
 
+    BEGIN_MSG_MAP(CColorListBox)
+        MSG_WM_SIZE(OnSize)
+
+        REFLECTED_COMMAND_CODE_HANDLER(LBN_DBLCLK, OnDblClick)
+
+        CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
+    END_MSG_MAP()
+
 private:
     #pragma region DirectX
+
     HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size) override;
     void ReleaseDeviceSpecificResources() override;
+
     #pragma endregion
 
 private:
     #pragma region DirectX
+
     // Device-specific resources
     CComPtr<ID2D1SolidColorBrush> _SolidBrush;
+
     #pragma endregion
 
 private:

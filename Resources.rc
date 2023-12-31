@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.12.30) P. Stuer **/
+/** $VER: Resources.rc (2023.12.31) P. Stuer **/
 
 #include "Resources.h"
 
@@ -286,4 +286,59 @@ IDM_CHANNELS menu
         menuitem "Rear Center Height",      IDM_CHANNELS_FIRST + 16
         menuitem "Rear Right Height",       IDM_CHANNELS_FIRST + 17
     }
+}
+
+// Based on "c:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um\Color.Dlg"
+#include <colordlg.h>
+
+IDD_CHOOSECOLOR dialogex 0, 0, 314, 200
+caption "Color"
+font 8, "MS Shell Dlg", 400, 0, 0x1
+style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+{
+    ltext           "&Basic colors:", -1, 4, 4, 140, 9
+    control         "", COLOR_BOX1, "static", SS_SIMPLE | WS_CHILD | WS_TABSTOP | WS_GROUP, 4, 14, 140, 86
+
+    ltext           "&Custom colors:", -1, 4, 106, 140, 9
+    control         "", COLOR_CUSTOM1, "static", SS_SIMPLE | WS_CHILD | WS_TABSTOP | WS_GROUP, 4, 116, 140, 28
+
+//  pushbutton      "&Define Custom Colors >>" COLOR_MIX, 4, 150, 138, 14, WS_TABSTOP | WS_GROUP
+
+//  pushbutton      "&Help", pshHelp, 100, 166, 44, 14, WS_GROUP | WS_TABSTOP
+
+    control         "", COLOR_RAINBOW,      "static", SS_SUNKEN | SS_SIMPLE | WS_CHILD, 152, 4, 118, 116
+    control         "", COLOR_LUMSCROLL,    "static", SS_SUNKEN | SS_SIMPLE | WS_CHILD, 280, 4,   8, 116
+    control         "", IDC_ALPHA_SLIDER,   "static", SS_SUNKEN | SS_SIMPLE | WS_CHILD, 296, 4,   8, 116
+
+    pushbutton      "&o", COLOR_SOLID, 300, 200, 4, 14, WS_GROUP
+
+    control         "", COLOR_CURRENT,      "static", SS_SUNKEN | SS_SIMPLE | WS_CHILD, 152, 124, 40, 26
+
+    rtext           "Color",    COLOR_SOLID_LEFT,   152, 151, 20,  9
+    ltext           "|S&olid",  COLOR_SOLID_RIGHT,  172, 151, 20,  9
+
+    rtext           "Hu&e:",    COLOR_HUEACCEL,     194, 126, 20,  9
+    edittext,                   COLOR_HUE,          216, 124, 18, 12, WS_GROUP | WS_TABSTOP | ES_RIGHT
+
+    rtext           "&Sat:",    COLOR_SATACCEL,     194, 140, 20,  9
+    edittext,                   COLOR_SAT,          216, 138, 18, 12, WS_TABSTOP | ES_RIGHT
+
+    rtext           "&Lum:",    COLOR_LUMACCEL,     194, 154, 20,  9
+    edittext,                   COLOR_LUM,          216, 152, 18, 12, WS_TABSTOP | ES_RIGHT
+
+    rtext           "&Red:",    COLOR_REDACCEL,     243, 126, 24,  9
+    edittext,                   COLOR_RED,          269, 124, 18, 12, WS_GROUP | WS_TABSTOP | ES_RIGHT
+
+    rtext           "&Green:",  COLOR_GREENACCEL,   243, 140, 24,  9
+    edittext,                   COLOR_GREEN,        269, 138, 18, 12, WS_TABSTOP | ES_RIGHT
+
+    rtext           "Bl&ue:",   COLOR_BLUEACCEL,    243, 154, 24,  9
+    edittext,                   COLOR_BLUE,         269, 152, 18, 12, WS_TABSTOP | ES_RIGHT
+
+    rtext           "Alpha:",   IDC_STATIC,         243, 168, 24,  9
+    edittext,                   IDC_ALPHA_VALUE,    269, 166, 18, 12, WS_TABSTOP | ES_RIGHT
+
+    pushbutton      "&Add",     COLOR_ADD,          152, 182, 50, 14, WS_GROUP | WS_TABSTOP
+    defpushbutton   "OK",       IDOK,               206  182, 50, 14, WS_TABSTOP
+    pushbutton      "Cancel",   IDCANCEL,           260, 182, 50, 14, WS_TABSTOP
 }

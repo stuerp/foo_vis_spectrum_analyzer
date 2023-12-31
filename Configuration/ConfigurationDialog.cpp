@@ -789,9 +789,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_COLOR_LIST:
         {
             // Show the position of the selected color of the gradient.
-            int Index = _Colors.GetCurSel();
+            size_t Index = (size_t) _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
                 return;
 
                 t_int64 Position = (t_int64) (_Configuration->_GradientStops[Index].position * 100.f);
@@ -928,9 +928,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma region Common
         case IDC_POSITION:
         {
-            int Index = _Colors.GetCurSel();
+            size_t Index = (size_t) _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
                 return;
 
             int Position = Clamp(::_wtoi(Text), 0, 100);
@@ -1611,7 +1611,7 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 /// <summary>
 /// Update page 1.
 /// </summary>
-void ConfigurationDialog::UpdatePage1(int mode)
+void ConfigurationDialog::UpdatePage1(int mode) const noexcept
 {
     static const int Page1[] =
     {
@@ -1656,7 +1656,7 @@ void ConfigurationDialog::UpdatePage1(int mode)
 /// <summary>
 /// Update page 2.
 /// </summary>
-void ConfigurationDialog::UpdatePage2(int mode)
+void ConfigurationDialog::UpdatePage2(int mode) const noexcept
 {
     static const int Page2[] =
     {
@@ -1702,7 +1702,7 @@ void ConfigurationDialog::UpdatePage2(int mode)
 /// <summary>
 /// Update page 3.
 /// </summary>
-void ConfigurationDialog::UpdatePage3(int mode)
+void ConfigurationDialog::UpdatePage3(int mode) const noexcept
 {
     static const int Page3[] =
     {
@@ -1821,8 +1821,11 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
 
-    GetDlgItem(IDC_WHITE_KEYS).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_BLACK_KEYS).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    _LiteBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
+
+    _DarkBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
 
     GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
     GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);

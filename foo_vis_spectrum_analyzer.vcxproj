@@ -180,6 +180,7 @@
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
+    <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />
     <ClInclude Include="Configuration\CDirectXControl.h" />
     <ClInclude Include="Configuration\CMenuListBox.h" />
@@ -212,6 +213,7 @@
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
+    <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />

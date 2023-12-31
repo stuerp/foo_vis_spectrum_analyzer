@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2023.12.30) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2023.12.31) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -30,6 +30,8 @@ public:
     void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
 
     HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 

@@ -1,7 +1,8 @@
 
-/** $VER: CColorListBox.cpp (2023.12.30) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorListBox.h"
+#include "CColorDialogEx.h"
 
 #pragma hdrstop
 
@@ -41,7 +42,6 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
     CRect ri = dis->rcItem;
 
-    // Draw the border
     {
         HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHT : COLOR_WINDOW));
 
@@ -61,11 +61,6 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         ::DeleteObject(hPen);
     }
-
-    if (dis->itemID == ~0U)
-        return;
-
-    // Draw the rectangle
     {
         HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
 
@@ -134,7 +129,9 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
 
     D2D1_COLOR_F Color = _Colors[(size_t) Index];
 
-    if (SelectColor(m_hWnd, Color))
+    CColorDialogEx cd;
+
+    if (cd.SelectColor(m_hWnd, Color))
     {
         _Colors[(size_t) Index] = Color;
 

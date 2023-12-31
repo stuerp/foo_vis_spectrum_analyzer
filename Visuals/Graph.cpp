@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2023.12.30) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2023.12.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 
@@ -78,6 +78,15 @@ HRESULT Graph::CreateDeviceIndependentResources()
         hr = _YAxis.CreateDeviceIndependentResources();
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void Graph::ReleaseDeviceIndependentResources()
+{
+    _YAxis.ReleaseDeviceIndependentResources();
+    _XAxis.ReleaseDeviceIndependentResources();
 }
 
 HRESULT Graph::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
