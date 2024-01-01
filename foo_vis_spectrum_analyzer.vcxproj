@@ -192,6 +192,7 @@
     <ClInclude Include="FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
+    <ClInclude Include="SafeModuleHandle.h" />
     <ClInclude Include="Visuals\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
     <ClInclude Include="Visuals\Gradients.h" />
