@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2023.12.31) P. Stuer **/
+/** $VER: Resources.h (2024.01.01) P. Stuer **/
 
 #pragma once
 
@@ -13,7 +13,7 @@
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
-#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023 P. Stuer. All rights reserved."
+#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2024 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
 #define STR_COMPONENT_COMMENT       "Based on the Audio Spectrum project (https://codepen.io/TF3RDL/pen/poQJwRW)"
@@ -28,7 +28,7 @@
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          6
 #define NUM_FILE_PATCH          0
-#define NUM_FILE_PRERELEASE     0
+#define NUM_FILE_PRERELEASE     1
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
 #define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
@@ -37,7 +37,7 @@
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       6
 #define NUM_PRODUCT_PATCH       0
-#define NUM_PRODUCT_PRERELEASE  0
+#define NUM_PRODUCT_PRERELEASE  1
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
 #define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)

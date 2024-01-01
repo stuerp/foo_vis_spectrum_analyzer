@@ -1,7 +1,9 @@
 
-/** $VER: DirectX.cpp (2023.12.31) P. Stuer **/
+/** $VER: DirectX.cpp (2024.01.01) P. Stuer **/
 
 #include "DirectX.h"
+
+#include "SafeModuleHandle.h"
 
 #pragma hdrstop
 
@@ -30,18 +32,18 @@ HRESULT DirectX::CreateDeviceIndependentResources()
 }
 
 /// <summary>
-/// Releases the device independent resources.
+/// Gets the DPI setting of the specified window.
 /// </summary>
-void DirectX::ReleaseDeviceIndependentResources()
-{
-//  _DirectWrite.Release();
-//  _Direct2D.Release();
-}
-
 HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi) const
 {
-    if (::IsWindows10OrGreater())
-        dpi = ::GetDpiForWindow(hWnd);
+    SafeModuleHandle Module = SafeModuleHandle(L"user32.dll");
+
+    typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
+
+    GetDpiForWindow_t GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow");
+
+    if (GetDpiForWindow_ != nullptr)
+        dpi = GetDpiForWindow_(hWnd);
     else
     {
         FLOAT DPIX, DPIY;

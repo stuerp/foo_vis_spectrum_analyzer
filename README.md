@@ -85,6 +85,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.6.0.1, 2024-01-01
+
+* Fixed: Bug fix for the broken improved DPI check.
+
 v0.6.0.0, 2023-12-31
 
 * New: Curve visualization with customizable line width and area opacity.
