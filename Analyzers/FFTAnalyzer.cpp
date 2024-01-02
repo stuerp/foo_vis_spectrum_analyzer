@@ -1,16 +1,18 @@
 
-/** $VER: SpectrumAnalyzer.cpp (2024.01.01) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2024.01.02) P. Stuer **/
 
-#include "SpectrumAnalyzer.h"
+#include "FFTAnalyzer.h"
 
 #include "Log.h"
+
+#include <algorithm>
 
 #pragma hdrstop
 
 /// <summary>
 /// Gets the spectrum from the FFT coefficients.
 /// </summary>
-void SpectrumAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod) const noexcept
+void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod) const noexcept
 {
     const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
@@ -95,7 +97,7 @@ void SpectrumAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coe
 /// Gets the spectrum based on filter bank energies (Mel-Frequency Cepstrum (MFC)).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void SpectrumAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate) const noexcept
+void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
@@ -120,7 +122,7 @@ void SpectrumAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coe
 /// <summary>
 /// Calculates the position of the peak indicators.
 /// </summary>
-void SpectrumAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept
+void FFTAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept
 {
     for (FrequencyBand & Iter : frequencyBands)
     {
@@ -194,7 +196,7 @@ void SpectrumAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequen
 /// <summary>
 /// Applies a Lanzcos kernel to the specified value.
 /// </summary>
-double SpectrumAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
+double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
 {
     double re = 0.;
     double im = 0.;
@@ -218,7 +220,7 @@ double SpectrumAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs,
 /// <summary>
 /// Calculates the median.
 /// </summary>
-double SpectrumAnalyzer::Median(std::vector<double> & data) const noexcept
+double FFTAnalyzer::Median(std::vector<double> & data) const noexcept
 {
     if (data.size() == 0)
         return DBL_MIN;

@@ -1,16 +1,18 @@
 
 /** $VER: Configuration.cpp (2024.01.02) P. Stuer **/
 
-#include "CQTProvider.h"
+#include "CQTAnalyzer.h"
 
 #include "Support.h"
+
+#include <complex>
 
 #pragma hdrstop
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTProvider::CQTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
 {
     _BandwidthOffset = bandwidthOffset;
     _Alignment = alignment;
@@ -20,7 +22,7 @@ CQTProvider::CQTProvider(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTProvider::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const
+bool CQTAnalyzer::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const
 {
     for (FrequencyBand & Iter : frequencyBands)
     {

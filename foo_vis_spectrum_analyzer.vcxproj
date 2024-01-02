@@ -187,7 +187,7 @@
     <ClInclude Include="Configuration\CNumericEdit.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
-    <ClInclude Include="Analyzers\CQTProvider.h" />
+    <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="DirectX.h" />
     <ClInclude Include="Analyzers\FFTProvider.h" />
     <ClInclude Include="framework.h" />
@@ -203,7 +203,7 @@
     <ClInclude Include="Visuals\RingBuffer.h" />
     <ClInclude Include="Visuals\Spectrum.h" />
     <ClInclude Include="CUIElement.h" />
-    <ClInclude Include="Analyzers\SpectrumAnalyzer.h" />
+    <ClInclude Include="Analyzers\FFTAnalyzer.h" />
     <ClInclude Include="DUIElement.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
@@ -214,7 +214,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
-    <ClCompile Include="Analyzers\CQTProvider.cpp" />
+    <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
@@ -229,7 +229,7 @@
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Rendering.cpp" />
-    <ClCompile Include="Analyzers\SpectrumAnalyzer.cpp" />
+    <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />
     <ClCompile Include="Visuals\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />
     <ClCompile Include="Visuals\Graph.cpp" />

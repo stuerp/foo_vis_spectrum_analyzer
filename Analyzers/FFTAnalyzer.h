@@ -1,5 +1,7 @@
 
-/** $VER: SpectrumAnalyzer.h (2024.01.01) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2024.01.02) P. Stuer **/
+
+#pragma once
 
 #include "framework.h"
 
@@ -7,29 +9,25 @@
 #include "FFTProvider.h"
 #include "FrequencyBand.h"
 
-#include <algorithm>
-
-#pragma once
-
 /// <summary>
-/// Implements a wave analyzer to measure relative amplitudes of single frequency components in a complex waveform.
+/// Implements a Fast Fourier Transform analyzer.
 /// </summary>
-class SpectrumAnalyzer : public FFTProvider
+class FFTAnalyzer : public FFTProvider
 {
 public:
-    SpectrumAnalyzer() = delete;
+    FFTAnalyzer() = delete;
 
-    SpectrumAnalyzer(const SpectrumAnalyzer &) = delete;
-    SpectrumAnalyzer & operator=(const SpectrumAnalyzer &) = delete;
-    SpectrumAnalyzer(SpectrumAnalyzer &&) = delete;
-    SpectrumAnalyzer & operator=(SpectrumAnalyzer &&) = delete;
+    FFTAnalyzer(const FFTAnalyzer &) = delete;
+    FFTAnalyzer & operator=(const FFTAnalyzer &) = delete;
+    FFTAnalyzer(FFTAnalyzer &&) = delete;
+    FFTAnalyzer & operator=(FFTAnalyzer &&) = delete;
 
-    virtual ~SpectrumAnalyzer() { };
+    virtual ~FFTAnalyzer() { };
 
     /// <summary>
     /// Initializes an instance of the class.
     /// </summary>
-    SpectrumAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration) : FFTProvider(channelCount, channelSetup, sampleRate, windowFunction, fftSize)
+    FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration) : FFTProvider(channelCount, channelSetup, sampleRate, windowFunction, fftSize)
     {
         _Configuration = configuration;
     }
