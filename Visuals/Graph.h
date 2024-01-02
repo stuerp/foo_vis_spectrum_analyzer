@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2023.12.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.01.01) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 

@@ -7,7 +7,6 @@
 
 #include "TransformProvider.h"
 #include "FFT.h"
-#include "Math.h"
 
 using namespace std;
 

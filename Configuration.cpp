@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2023.12.30) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.01) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -138,9 +138,6 @@ void Configuration::Reset() noexcept
     // Curve
     _LineWidth = 2.f;
     _AreaOpacity = 0.5f;
-
-    // Logging
-    _LogLevel = LogLevel::None;
 }
 
 /// <summary>
@@ -260,9 +257,6 @@ Configuration & Configuration::operator=(const Configuration & other)
         _AreaOpacity = other._AreaOpacity;
     #pragma endregion
 
-    // Logging
-    _LogLevel = other._LogLevel;
-
     return *this;
 }
 
@@ -273,206 +267,200 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 {
     Reset();
 
-    try
-    {
-        size_t Version;
+    size_t Version;
 
-        parser >> Version;
+    parser >> Version;
 
-        if (Version > _CurrentVersion)
-            return;
+    if (Version > _CurrentVersion)
+        return;
 
-        int Integer;
+    int Integer;
 
-        parser >> _DialogBounds.left;
-        parser >> _DialogBounds.top;
-        parser >> _DialogBounds.right;
-        parser >> _DialogBounds.bottom;
+    parser >> _DialogBounds.left;
+    parser >> _DialogBounds.top;
+    parser >> _DialogBounds.right;
+    parser >> _DialogBounds.bottom;
 
-        // Reduce the size to make sure it fits on screens scaled to 150%.
-        if ((_DialogBounds.right - _DialogBounds.left) > 1910)
-            _DialogBounds.right = _DialogBounds.left + 1910;
+    // Reduce the size to make sure it fits on screens scaled to 150%.
+    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+        _DialogBounds.right = _DialogBounds.left + 1910;
 
-        if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
-            _DialogBounds.bottom = _DialogBounds.top + 995;
+    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+        _DialogBounds.bottom = _DialogBounds.top + 995;
 
-        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+    parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
-        parser >> _UseHardwareRendering;
-        parser >> _UseAntialiasing;
+    parser >> _UseHardwareRendering;
+    parser >> _UseAntialiasing;
 
-        parser >> _UseZeroTrigger;
+    parser >> _UseZeroTrigger;
 
-        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+    parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
-        parser >> Integer; _Transform = (Transform) Integer;
+    parser >> Integer; _Transform = (Transform) Integer;
 
     #pragma region FFT
-        parser >> Integer; _FFTSize = (FFTSize) Integer;
-        parser >> _FFTCustom;
-        parser >> _FFTDuration;
+    parser >> Integer; _FFTSize = (FFTSize) Integer;
+    parser >> _FFTCustom;
+    parser >> _FFTDuration;
 
-        parser >> Integer; _MappingMethod = (Mapping) Integer;
-        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-        parser >> _SmoothingFactor;
-        parser >> _KernelSize;
-        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-        parser >> _SmoothLowerFrequencies;
-        parser >> _SmoothGainTransition;
+    parser >> Integer; _MappingMethod = (Mapping) Integer;
+    parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+    parser >> _SmoothingFactor;
+    parser >> _KernelSize;
+    parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+    parser >> _SmoothLowerFrequencies;
+    parser >> _SmoothGainTransition;
     #pragma endregion
 
     #pragma region Frequencies
-        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+    parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
 
-        parser >> _NumBands;
+    parser >> _NumBands;
 
-        if (Version < 5)
-        {
-            parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
-            parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
-        }
-        else
-        {
-            parser >> _LoFrequency;
-            parser >> _HiFrequency;
-        }
+    if (Version < 5)
+    {
+        parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
+        parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
+    }
+    else
+    {
+        parser >> _LoFrequency;
+        parser >> _HiFrequency;
+    }
 
-        parser >> _MinNote;
-        parser >> _MaxNote;
-        parser >> _BandsPerOctave;
-        parser >> _Pitch;
-        parser >> _Transpose;
+    parser >> _MinNote;
+    parser >> _MaxNote;
+    parser >> _BandsPerOctave;
+    parser >> _Pitch;
+    parser >> _Transpose;
 
-        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-        parser >> _SkewFactor;
-        parser >> _Bandwidth;
+    parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+    parser >> _SkewFactor;
+    parser >> _Bandwidth;
     #pragma endregion
 
     #pragma region Rendering
-        if (Version < 5)
-        {
-            UINT32 Rgb; parser >> Rgb;
-            FLOAT Alpha; parser >> Alpha;
+    if (Version < 5)
+    {
+        UINT32 Rgb; parser >> Rgb;
+        FLOAT Alpha; parser >> Alpha;
 
-            _BackColor = D2D1::ColorF(Rgb, Alpha);
-        }
-        else
-        {
-            parser >> _BackColor.r;
-            parser >> _BackColor.g;
-            parser >> _BackColor.b;
-            parser >> _BackColor.a;
-        }
+        _BackColor = D2D1::ColorF(Rgb, Alpha);
+    }
+    else
+    {
+        parser >> _BackColor.r;
+        parser >> _BackColor.g;
+        parser >> _BackColor.b;
+        parser >> _BackColor.a;
+    }
 
-        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+    parser >> Integer; _XAxisMode = (XAxisMode) Integer;
 
-        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+    parser >> Integer; _YAxisMode = (YAxisMode) Integer;
 
-        parser >> _AmplitudeLo;
-        parser >> _AmplitudeHi;
-        parser >> _UseAbsolute;
-        parser >> _Gamma;
+    parser >> _AmplitudeLo;
+    parser >> _AmplitudeHi;
+    parser >> _UseAbsolute;
+    parser >> _Gamma;
 
-        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+    parser >> Integer; _ColorScheme = (ColorScheme) Integer;
 
-        parser >> _DrawBandBackground;
+    parser >> _DrawBandBackground;
 
-        parser >> Integer; _PeakMode = (PeakMode) Integer;
-        parser >> _HoldTime;
-        parser >> _Acceleration;
+    parser >> Integer; _PeakMode = (PeakMode) Integer;
+    parser >> _HoldTime;
+    parser >> _Acceleration;
     #pragma endregion
 
-        // Version 5
-        if (Version >= 5)
+    // Version 5
+    if (Version >= 5)
+    {
+        _CustomGradientStops.clear();
+
+        size_t Count; parser >> Count;
+
+        for (size_t i = 0; i < Count; ++i)
         {
-            _CustomGradientStops.clear();
+            D2D1_GRADIENT_STOP gs = { };
 
-            size_t Count; parser >> Count;
+            parser >> gs.position;
+            parser >> gs.color.r;
+            parser >> gs.color.g;
+            parser >> gs.color.b;
+            parser >> gs.color.a;
 
-            for (size_t i = 0; i < Count; ++i)
-            {
-                D2D1_GRADIENT_STOP gs = { };
-
-                parser >> gs.position;
-                parser >> gs.color.r;
-                parser >> gs.color.g;
-                parser >> gs.color.b;
-                parser >> gs.color.a;
-
-                _CustomGradientStops.push_back(gs);
-            }
-        }
-
-        parser >> _XTextColor.r;
-        parser >> _XTextColor.g;
-        parser >> _XTextColor.b;
-        parser >> _XTextColor.a;
-
-        parser >> _XLineColor.r;
-        parser >> _XLineColor.g;
-        parser >> _XLineColor.b;
-        parser >> _XLineColor.a;
-
-        parser >> _YTextColor.r;
-        parser >> _YTextColor.g;
-        parser >> _YTextColor.b;
-        parser >> _YTextColor.a;
-
-        parser >> _YLineColor.r;
-        parser >> _YLineColor.g;
-        parser >> _YLineColor.b;
-        parser >> _YLineColor.a;
-
-        parser >> _DarkBandColor.r;
-        parser >> _DarkBandColor.g;
-        parser >> _DarkBandColor.b;
-        parser >> _DarkBandColor.a;
-
-        // Version 6
-        if (Version >= 6)
-            parser >> _AmplitudeStep;
-
-        // Version 7
-        if (Version >= 7)
-        {
-            parser >> _SelectedChannels;
-            parser >> _ShowToolTips;
-
-            parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
-            parser >> _WindowParameter;
-            parser >> _WindowSkew;
-        }
-
-        // Version 8
-        if (Version >= 8)
-        {
-            parser >> _UseCustomBackColor;
-            parser >> _UseCustomXTextColor;
-            parser >> _UseCustomXLineColor;
-            parser >> _UseCustomYTextColor;
-            parser >> _UseCustomYLineColor;
-
-            parser >> _LEDMode;
-
-            parser >> _HorizontalGradient;
-
-            parser >> _LiteBandColor.r;
-            parser >> _LiteBandColor.g;
-            parser >> _LiteBandColor.b;
-            parser >> _LiteBandColor.a;
-        }
-
-        // Version 9
-        if (Version >= 9)
-        {
-            parser >> _PageIndex;
-            parser >> Integer; _VisualizationType = (VisualizationType) Integer;
-            parser >> _LineWidth;
-            parser >> _AreaOpacity;
+            _CustomGradientStops.push_back(gs);
         }
     }
-    catch (exception)
+
+    parser >> _XTextColor.r;
+    parser >> _XTextColor.g;
+    parser >> _XTextColor.b;
+    parser >> _XTextColor.a;
+
+    parser >> _XLineColor.r;
+    parser >> _XLineColor.g;
+    parser >> _XLineColor.b;
+    parser >> _XLineColor.a;
+
+    parser >> _YTextColor.r;
+    parser >> _YTextColor.g;
+    parser >> _YTextColor.b;
+    parser >> _YTextColor.a;
+
+    parser >> _YLineColor.r;
+    parser >> _YLineColor.g;
+    parser >> _YLineColor.b;
+    parser >> _YLineColor.a;
+
+    parser >> _DarkBandColor.r;
+    parser >> _DarkBandColor.g;
+    parser >> _DarkBandColor.b;
+    parser >> _DarkBandColor.a;
+
+    // Version 6
+    if (Version >= 6)
+        parser >> _AmplitudeStep;
+
+    // Version 7
+    if (Version >= 7)
     {
+        parser >> _SelectedChannels;
+        parser >> _ShowToolTips;
+
+        parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
+        parser >> _WindowParameter;
+        parser >> _WindowSkew;
+    }
+
+    // Version 8
+    if (Version >= 8)
+    {
+        parser >> _UseCustomBackColor;
+        parser >> _UseCustomXTextColor;
+        parser >> _UseCustomXLineColor;
+        parser >> _UseCustomYTextColor;
+        parser >> _UseCustomYLineColor;
+
+        parser >> _LEDMode;
+
+        parser >> _HorizontalGradient;
+
+        parser >> _LiteBandColor.r;
+        parser >> _LiteBandColor.g;
+        parser >> _LiteBandColor.b;
+        parser >> _LiteBandColor.a;
+    }
+
+    // Version 9
+    if (Version >= 9)
+    {
+        parser >> _PageIndex;
+        parser >> Integer; _VisualizationType = (VisualizationType) Integer;
+        parser >> _LineWidth;
+        parser >> _AreaOpacity;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
