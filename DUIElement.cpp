@@ -1,7 +1,9 @@
 
-/** $VER: DUIElement.cpp (2023.12.30) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.01.01) P. Stuer **/
 
 #include "DUIElement.h"
+
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -55,11 +57,18 @@ GUID DUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr DUIElement::g_get_default_configuration()
 {
-    Configuration DefaultConfiguration;
-
     ui_element_config_builder Builder;
 
-    DefaultConfiguration.Write(Builder);
+    try
+    {
+        Configuration DefaultConfiguration;
+
+        DefaultConfiguration.Write(Builder);
+    }
+    catch (exception_io & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI default configuration data: %s", core_api::get_my_file_name(), ex.what());
+    }
 
     return Builder.finish(g_get_guid());
 }
@@ -85,12 +94,10 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
     }
     catch (exception_io & ex)
     {
-        Log(LogLevel::Error, "%s: Exception while reading configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
 
         _Configuration.Reset();
     }
-
-    UpdateRefreshRateLimit();
 }
 
 /// <summary>
@@ -100,7 +107,16 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _Configuration.Write(Builder);
+    try
+    {
+        _Configuration.Write(Builder);
+    }
+    catch (exception_io & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+
+        _Configuration.Reset();
+    }
 
     return Builder.finish(g_get_guid());
 }

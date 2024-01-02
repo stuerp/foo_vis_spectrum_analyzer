@@ -1,73 +1,17 @@
 
-/** $VER: FFTProvider.h (2023.12.30) P. Stuer **/
+/** $VER: FFTProvider.cpp (2024.01.02) P. Stuer **/
 
-#pragma once
+#include "FFTProvider.h"
 
-#include "framework.h"
+#include "Support.h"
+#include "Log.h"
 
-#include "TransformProvider.h"
-#include "FFT.h"
-#include "Math.h"
-
-using namespace std;
-
-/// <summary>
-/// Implements a Fast Fourier Transform provider.
-/// </summary>
-class FFTProvider : public TransformProvider
-{
-public:
-    FFTProvider() = delete;
-
-    FFTProvider(const FFTProvider &) = delete;
-    FFTProvider & operator=(const FFTProvider &) = delete;
-    FFTProvider(FFTProvider &&) = delete;
-    FFTProvider & operator=(FFTProvider &&) = delete;
-
-    virtual ~FFTProvider();
-
-    /// <summary>
-    /// Initializes a new instance.
-    /// </summary>
-    FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
-    {
-        _FFTSize = fftSize;
-
-        _FFT.Initialize(_FFTSize);
-        _TimeData.resize(_FFTSize);
-
-        // Create the ring buffer for the samples.
-        _Size = _FFTSize;
-        _Data = new audio_sample[_Size];
-
-        ::memset(_Data, 0, sizeof(audio_sample) * _Size);
-
-        _Curr = 0;
-    }
-
-    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
-    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
-
-    size_t GetFFTSize() const
-    {
-        return _FFTSize;
-    }
-
-private:
-    FFT _FFT;
-    size_t _FFTSize;
-
-    audio_sample * _Data;
-    size_t _Size;
-    size_t _Curr;
-
-    vector<complex<double>> _TimeData;
-};
+#pragma hdrstop
 
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-inline FFTProvider::~FFTProvider()
+FFTProvider::~FFTProvider()
 {
     if (_Data)
     {
@@ -77,12 +21,32 @@ inline FFTProvider::~FFTProvider()
 }
 
 /// <summary>
+/// Initializes a new instance.
+/// </summary>
+FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+{
+    _FFTSize = fftSize;
+
+    _FFT.Initialize(_FFTSize);
+    _TimeData.resize(_FFTSize);
+
+    // Create the ring buffer for the samples.
+    _Size = _FFTSize;
+    _Data = new audio_sample[_Size];
+
+    ::memset(_Data, 0, sizeof(audio_sample) * _Size);
+
+    _Curr = 0;
+}
+
+
+/// <summary>
 /// Adds multiple samples to the provider.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
 /// <param name="samples">Array that contains samples</param>
 /// <param name="sampleCount">Number of samples to add to the provider</param>
-inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, uint32_t channelMask) noexcept
+void FFTProvider::FFTProvider::Add(const audio_sample * samples, size_t sampleCount, uint32_t channelMask) noexcept
 {
     if (samples == nullptr)
         return;
@@ -104,7 +68,7 @@ inline void FFTProvider::Add(const audio_sample * samples, size_t sampleCount, u
 /// <summary>
 /// Calculates the Fast Fourier Transform and returns the frequency data in the result buffer.
 /// </summary>
-inline void FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
+void FFTProvider::FFTProvider::GetFrequencyCoefficients(vector<complex<double>> & freqCoefficients) noexcept
 {
     double Norm = 0.;
 

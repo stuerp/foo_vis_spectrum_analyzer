@@ -1,13 +1,11 @@
 
-/** $VER: UIElement.h (2023.12.31) P. Stuer **/
+/** $VER: UIElement.h (2024.01.02) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include "Configuration.h"
-#include "SpectrumAnalyzer.h"
-#include "CQTProvider.h"
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
@@ -15,6 +13,9 @@
 #include "XAxis.h"
 #include "YAxis.h"
 #include "Spectrum.h"
+
+#include "Analyzers\FFTAnalyzer.h"
+#include "Analyzers\CQTAnalyzer.h"
 
 #include <vector>
 #include <complex>
@@ -36,12 +37,29 @@ public:
 
     static CWndClassInfo & GetWndClassInfo();
 
+    #pragma endregion
+
+protected:
+    /// <summary>
+    /// Retrieves the GUID of the element.
+    /// </summary>
+    static const GUID & GetGUID() noexcept
+    {
+        static const GUID guid = GUID_UI_ELEMENT;
+
+        return guid;
+    }
+
+    virtual void OnContextMenu(CWindow wnd, CPoint point);
+
+private:
+    #pragma region CWindowImpl
+
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
     void OnPaint(CDCHandle dc);
     LRESULT OnEraseBackground(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
-    virtual void OnContextMenu(CWindow wnd, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
@@ -68,21 +86,6 @@ public:
 
     #pragma endregion
 
-protected:
-    /// <summary>
-    /// Retrieves the GUID of the element.
-    /// </summary>
-    static const GUID & GetGUID() noexcept
-    {
-        static const GUID guid = GUID_UI_ELEMENT_SPECTRUM_ANALYZER;
-
-        return guid;
-    }
-
-    void UpdateRefreshRateLimit() noexcept;
-    void Log(LogLevel logLevel, const char * format, ...) const noexcept;
-
-private:
     #pragma region Playback callback methods
 
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
@@ -108,8 +111,9 @@ private:
     void Resize();
 
     void RenderFrame();
-    void RenderChunk(const audio_chunk & chunk);
 
+    void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
+    void GetAnalyzer(const audio_chunk & chunk) noexcept;
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
@@ -129,6 +133,9 @@ private:
     void ReleaseDeviceSpecificResources();
 
     #pragma endregion
+
+    void StartTimer() const noexcept;
+    void StopTimer() const noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
@@ -181,13 +188,15 @@ private:
     CToolInfo * _TrackingToolInfo;
     bool _IsTracking;
     POINT _LastMousePos;
-    int _LastIndex;
+    size_t _LastIndex;
+
+    double _OldPlaybackTime;
 
     const WindowFunction * _WindowFunction;
-    SpectrumAnalyzer * _SpectrumAnalyzer;
+    FFTAnalyzer * _FFTAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 
-    CQTProvider * _CQT;
+    CQTAnalyzer * _CQTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
     size_t _FFTSize;

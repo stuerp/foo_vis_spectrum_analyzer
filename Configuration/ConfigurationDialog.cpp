@@ -1,10 +1,12 @@
 
-/** $VER: ConfigurationDialog.cpp (2023.12.30) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.02) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
 #include "Gradients.h"
 #include "Layout.h"
+
+#include "CColorDialogEx.h"
 
 /// <summary>
 /// Initializes the dialog.
@@ -1222,7 +1224,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             D2D1_COLOR_F Color = _Configuration->_GradientStops[(size_t) Index].color;
 
-            if (!SelectColor(m_hWnd, Color))
+            CColorDialogEx cd;
+
+            if (!cd.SelectColor(m_hWnd, Color))
                 return;
 
             D2D1_GRADIENT_STOP gs = { 0.f, Color };
@@ -1958,4 +1962,45 @@ double ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValu
     }
 
     return (double) (nmud->iPos + nmud->iDelta) / scaleFactor;
+}
+
+/// <summary>
+/// Sets the display version of the frequency.
+/// </summary>
+void ConfigurationDialog::SetFrequency(int id, double frequency) noexcept
+{
+    WCHAR Text[16] = { };
+
+    ::StringCchPrintfW(Text, _countof(Text), L"%.2f", frequency);
+
+    SetDlgItemTextW(id, Text);
+}
+
+/// <summary>
+/// Sets the display version of the note number.
+/// </summary>
+void ConfigurationDialog::SetNote(int id, uint32_t noteNumber) noexcept
+{
+    static const WCHAR * Notes[] = { L"C%d", L"C#%d", L"D%d", L"D#%d", L"E%d", L"F%d", L"F#%d", L"G%d", L"G#%d", L"A%d", L"A#%d", L"B%d" };
+
+    WCHAR Text[16] = { };
+
+    size_t NoteIndex = (size_t) (noteNumber % 12);
+    int Octave = (int) (noteNumber / 12);
+
+    ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
+
+    SetDlgItemTextW(id, Text);
+}
+
+/// <summary>
+/// Sets the display version of the amplitude.
+/// </summary>
+void ConfigurationDialog::SetDecibel(int id, double decibel) noexcept
+{
+    WCHAR Text[16] = { };
+
+    ::StringCchPrintfW(Text, _countof(Text), L"%.1f", decibel);
+
+    SetDlgItemTextW(id, Text);
 }
