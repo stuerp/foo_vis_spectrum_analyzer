@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.02) P. Stuer **/
+/** $VER: CQTAnalyzer.cpp (2024.01.02) P. Stuer **/
 
 #include "CQTAnalyzer.h"
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
 {
     _BandwidthOffset = bandwidthOffset;
     _Alignment = alignment;

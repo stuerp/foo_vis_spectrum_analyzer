@@ -197,7 +197,7 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
     }
 
     if (_CQTAnalyzer == nullptr)
-        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0);
+        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
 }
 
 /// <summary>
