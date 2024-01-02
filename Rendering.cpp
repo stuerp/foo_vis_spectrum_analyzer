@@ -72,12 +72,12 @@ void UIElement::RenderFrame()
                 if (PlaybackTime < _OldPlaybackTime)
                     _OldPlaybackTime = 0.;
 
-                double WindowDuration = .2; //PlaybackTime - _OldPlaybackTime;
+                double WindowDuration = .2;
 
                 audio_chunk_impl Chunk;
 
                 // Sliding DFT, https://wiki.hydrogenaud.io/index.php?title=Sliding_DFT
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowDuration / 2.), WindowDuration))
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowDuration / 2.)*/, WindowDuration))
                     ProcessAudioChunk(Chunk);
 
                 _OldPlaybackTime = PlaybackTime - WindowDuration;
