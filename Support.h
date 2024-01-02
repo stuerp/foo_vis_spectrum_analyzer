@@ -83,7 +83,7 @@ inline static T Wrap(T index, T length)
 template<class T, class U>
 inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
-    return dstMin + (U) (((U) (value - srcMin) * (dstMax - dstMin)) / (U) (srcMax - srcMin));
+    return dstMin + (U) (((double) (value - srcMin) * (dstMax - dstMin)) / (double) (srcMax - srcMin));
 }
 
 /// <summary>
@@ -112,6 +112,19 @@ inline COLORREF ToCOLORREF(const D2D1_COLOR_F & color)
     return RGB((BYTE)(color.r * 255.f), (BYTE)(color.g * 255.f), (BYTE)(color.b * 255.f));
 }
 
+/// <summary>
+/// Gets the handle of the module that contains the executing code.
+/// </summary>
+inline HMODULE GetCurrentModule() noexcept
+{
+    HMODULE hModule = NULL;
+
+    ::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR) GetCurrentModule, &hModule);
+
+    return hModule;
+}
+
+/*
 static bool SelectColor(HWND hWnd, D2D1_COLOR_F & color)
 {
     static COLORREF CustomColors[16] =
@@ -137,3 +150,4 @@ static bool SelectColor(HWND hWnd, D2D1_COLOR_F & color)
 
     return true;
 }
+*/

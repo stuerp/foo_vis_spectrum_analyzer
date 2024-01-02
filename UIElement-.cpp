@@ -113,16 +113,16 @@ void UIElement::OnDestroy()
         _WindowFunction = nullptr;
     }
 
-    if (_SpectrumAnalyzer)
+    if (_FFTAnalyzer)
     {
-        delete _SpectrumAnalyzer;
-        _SpectrumAnalyzer = nullptr;
+        delete _FFTAnalyzer;
+        _FFTAnalyzer = nullptr;
     }
 
-    if (_CQT)
+    if (_CQTAnalyzer)
     {
-        delete _CQT;
-        _CQT = nullptr;
+        delete _CQTAnalyzer;
+        _CQTAnalyzer = nullptr;
     }
 
     _VisualisationStream.release();
@@ -313,7 +313,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 
             if (Index != _LastIndex)
             {
-                if (InRange(Index, (size_t) 0U, _FrequencyBands.size() - 1))
+                if (InRange(Index, 0U, _FrequencyBands.size() - 1))
                     _TrackingToolInfo->lpszText = _FrequencyBands[Index].Label;
 
                 _ToolTipControl.UpdateTipText(_TrackingToolInfo);
@@ -479,17 +479,17 @@ void UIElement::SetConfiguration() noexcept
     }
 
     // Forces the recreation of the spectrum analyzer.
-    if (_SpectrumAnalyzer != nullptr)
+    if (_FFTAnalyzer != nullptr)
     {
-        delete _SpectrumAnalyzer;
-        _SpectrumAnalyzer = nullptr;
+        delete _FFTAnalyzer;
+        _FFTAnalyzer = nullptr;
     }
 
     // Forces the recreation of the Constant-Q transform.
-    if (_CQT != nullptr)
+    if (_CQTAnalyzer != nullptr)
     {
-        delete _CQT;
-        _CQT = nullptr;
+        delete _CQTAnalyzer;
+        _CQTAnalyzer = nullptr;
     }
 
     Resize();

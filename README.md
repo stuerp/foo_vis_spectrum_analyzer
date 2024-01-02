@@ -83,6 +83,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.6.0.2, 2024-01-xx
+
+* Fixed: Finally found a (the?) correct way to use the sample window duration of foobar2000.
+* Fixed: Frequency range specification when using notes.
+* Fixed: Code to determine Tooltip text.
+* Fixed: The Add button of the configuration dialog still displayed the old color dialog.
+
 v0.6.0.1, 2024-01-01
 
 * Fixed: Bug fix for the broken improved DPI check.

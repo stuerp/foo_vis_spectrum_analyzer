@@ -14,8 +14,8 @@
 #include "YAxis.h"
 #include "Spectrum.h"
 
-#include "Analyzers\SpectrumAnalyzer.h"
-#include "Analyzers\CQTProvider.h"
+#include "Analyzers\FFTAnalyzer.h"
+#include "Analyzers\CQTAnalyzer.h"
 
 #include <vector>
 #include <complex>
@@ -193,10 +193,10 @@ private:
     double _OldPlaybackTime;
 
     const WindowFunction * _WindowFunction;
-    SpectrumAnalyzer * _SpectrumAnalyzer;
+    FFTAnalyzer * _FFTAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 
-    CQTProvider * _CQT;
+    CQTAnalyzer * _CQTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
     size_t _FFTSize;

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2023.12.29) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.01.02) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -34,6 +34,7 @@ public:
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
 
+    const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
     FLOAT GetLeft() const { return _Bounds.left; }
     FLOAT GetRight() const { return _Bounds.right; }
 

@@ -1,9 +1,8 @@
 
-/** $VER: Configuration.cpp (2024.01.01) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.02) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
-#include "Math.h"
 
 #include "Gradients.h"
 

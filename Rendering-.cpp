@@ -72,7 +72,7 @@ void UIElement::RenderFrame()
                 if (PlaybackTime < _OldPlaybackTime)
                     _OldPlaybackTime = 0.;
 
-                double WindowDuration = .2; //PlaybackTime - _OldPlaybackTime;
+                const double WindowDuration = .4;
 
                 audio_chunk_impl Chunk;
 
@@ -85,11 +85,11 @@ void UIElement::RenderFrame()
             else
                 for (auto & Iter : _FrequencyBands)
                     Iter.CurValue = 0.;
-        }
 
-        // Update the peak indicators.
-        if ((_SpectrumAnalyzer != nullptr) && (_Configuration._VisualizationType == VisualizationType::Bars) && (_Configuration._PeakMode != PeakMode::None))
-            _SpectrumAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+            // Update the peak indicators.
+            if ((_FFTAnalyzer != nullptr) && (_Configuration._VisualizationType == VisualizationType::Bars) && (_Configuration._PeakMode != PeakMode::None))
+                _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+        }
 
         _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate);
 
@@ -116,6 +116,8 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 {
     _SampleRate = chunk.get_sample_rate();
 
+//  Log::Write(Log::Level::Trace, "%s: Rendering chunk { ChannelCount: %d, ChannelSetup: 0x%08X, SampleRate: %d }.", core_api::get_my_file_name(), ChannelCount, ChannelSetup, _SampleRate);
+
     GetAnalyzer(chunk);
 
     // Add the samples to the analyzer.
@@ -129,17 +131,17 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 
         if (_Configuration._Transform == Transform::FFT)
         {
-            _SpectrumAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
+            _FFTAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
 
-            _SpectrumAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
+            _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
             if (_Configuration._MappingMethod == Mapping::Standard)
-                _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
+                _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
             else
-                _SpectrumAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);
+                _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
         }
         else
-            _CQT->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
+            _CQTAnalyzer->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
     }
 
     // Smooth the spectrum.
@@ -172,7 +174,7 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
     if (_WindowFunction == nullptr)
         _WindowFunction = WindowFunction::Create(_Configuration._WindowFunction, _Configuration._WindowParameter, _Configuration._WindowSkew, _Configuration._Truncate);
 
-    if (_SpectrumAnalyzer == nullptr)
+    if (_FFTAnalyzer == nullptr)
     {
         #pragma warning (disable: 4061)
         switch (_Configuration._FFTSize)
@@ -191,13 +193,13 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
         }
         #pragma warning (default: 4061)
 
-        _SpectrumAnalyzer = new SpectrumAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _FFTSize, &_Configuration);
+        _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, &_Configuration);
 
         _FrequencyCoefficients.resize(_FFTSize);
     }
 
-    if (_CQT == nullptr)
-        _CQT = new CQTProvider(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0);
+    if (_CQTAnalyzer == nullptr)
+        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
 }
 
 /// <summary>

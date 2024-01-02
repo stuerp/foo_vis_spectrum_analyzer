@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2023.12.30) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.02) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -91,49 +91,12 @@ private:
     void UpdatePage2(int mode) const noexcept;
     void UpdatePage3(int mode) const noexcept;
 
-    /// <summary>
-    /// Sets the display version of the frequency.
-    /// </summary>
-    void SetFrequency(int id, double frequency)
-    {
-        WCHAR Text[16] = { };
-
-        ::StringCchPrintfW(Text, _countof(Text), L"%.2f", frequency);
-
-        SetDlgItemTextW(id, Text);
-    }
-
-    /// <summary>
-    /// Sets the display version of the note number.
-    /// </summary>
-    void SetNote(int id, uint32_t noteNumber)
-    {
-        static const WCHAR * Notes[] = { L"C%d", L"C#%d", L"D%d", L"D#%d", L"E%d", L"F%d", L"F#%d", L"G%d", L"G#%d", L"A%d", L"A#%d", L"B%d" };
-
-        WCHAR Text[16] = { };
-
-        size_t NoteIndex = (size_t) (noteNumber % 12);
-        int Octave = (int) ((noteNumber + 3) / 12);
-
-        ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
-
-        SetDlgItemTextW(id, Text);
-    }
-
-    /// <summary>
-    /// Sets the display version of the amplitude.
-    /// </summary>
-    void SetDecibel(int id, double decibel)
-    {
-        WCHAR Text[16] = { };
-
-        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", decibel);
-
-        SetDlgItemTextW(id, Text);
-    }
-
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
+
+    void SetFrequency(int id, double frequency) noexcept;
+    void SetNote(int id, uint32_t noteNumber) noexcept;
+    void SetDecibel(int id, double decibel) noexcept;
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)

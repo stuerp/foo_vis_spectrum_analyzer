@@ -91,12 +91,10 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
             case XAxisMode::Notes:
             {
                 double Note = -57.; // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = 0.;
+                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
 
                 for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
-                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
-
                     if (_Mode == XAxisMode::Octaves)
                     {
                         if (Frequency < 1000.)
@@ -112,6 +110,7 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
                     _Labels.push_back(lb);
 
                     Note += 12.;
+                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
                 }
 
                 break;
