@@ -34,7 +34,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
             NULL, // Cursor
             (HBRUSH) NULL, // Background
             NULL, // Menu
-            TEXT(STR_SPECTOGRAM_WINDOW_CLASS), // Class name
+            TEXT(STR_WINDOW_CLASS_NAME), // Class name
             NULL // Small Icon
         },
         NULL, NULL, IDC_ARROW, TRUE, 0, L""

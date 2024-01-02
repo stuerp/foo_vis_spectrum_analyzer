@@ -45,7 +45,7 @@ protected:
     /// </summary>
     static const GUID & GetGUID() noexcept
     {
-        static const GUID guid = GUID_UI_ELEMENT_SPECTRUM_ANALYZER;
+        static const GUID guid = GUID_UI_ELEMENT;
 
         return guid;
     }
