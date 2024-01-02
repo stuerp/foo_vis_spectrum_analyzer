@@ -20,7 +20,7 @@ FFTAnalyzer::FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <summary>
 /// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands.
 /// </summary>
-void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
@@ -105,7 +105,7 @@ void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coeffici
 /// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands (Mel-Frequency Cepstrum (MFC)).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
