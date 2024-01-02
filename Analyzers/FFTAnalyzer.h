@@ -24,16 +24,10 @@ public:
 
     virtual ~FFTAnalyzer() { };
 
-    /// <summary>
-    /// Initializes an instance of the class.
-    /// </summary>
-    FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration) : FFTProvider(channelCount, channelSetup, sampleRate, windowFunction, fftSize)
-    {
-        _Configuration = configuration;
-    }
+    FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration);
 
-    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod) const noexcept;
-    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate) const noexcept;
+    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
 
     void UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept;
 

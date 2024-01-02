@@ -134,9 +134,9 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
             _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
             if (_Configuration._MappingMethod == Mapping::Standard)
-                _FFTAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate, _Configuration._SummationMethod);
+                _FFTAnalyzer->GetSpectrum(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
             else
-                _FFTAnalyzer->GetSpectrum(_FrequencyCoefficients, _FrequencyBands, _SampleRate);
+                _FFTAnalyzer->GetSpectrum(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
         }
         else
             _CQTAnalyzer->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);

@@ -10,9 +10,17 @@
 #pragma hdrstop
 
 /// <summary>
-/// Gets the spectrum from the FFT coefficients.
+/// Initializes an instance of the class.
 /// </summary>
-void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate, SummationMethod summationMethod) const noexcept
+FFTAnalyzer::FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration) : FFTProvider(channelCount, channelSetup, sampleRate, windowFunction, fftSize)
+{
+    _Configuration = configuration;
+}
+
+/// <summary>
+/// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands.
+/// </summary>
+void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
@@ -94,10 +102,10 @@ void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coeffici
 }
 
 /// <summary>
-/// Gets the spectrum based on filter bank energies (Mel-Frequency Cepstrum (MFC)).
+/// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands (Mel-Frequency Cepstrum (MFC)).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, std::vector<FrequencyBand> & freqBands, uint32_t sampleRate) const noexcept
+void FFTAnalyzer::GetSpectrum(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
