@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.02) P. Stuer **/
+/** $VER: UIElement.h (2024.01.03) P. Stuer **/
 
 #pragma once
 
@@ -134,10 +134,15 @@ private:
 
     #pragma endregion
 
+    #pragma region Timer
+
+    void CreateTimer() noexcept;
     void StartTimer() const noexcept;
     void StopTimer() const noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
+    #pragma endregion
 
 protected:
     Configuration _Configuration;

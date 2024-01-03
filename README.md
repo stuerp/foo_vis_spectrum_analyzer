@@ -230,6 +230,10 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Mel-frequency cepstrum](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
 * [Mel scale](https://en.wikipedia.org/wiki/Mel_scale)
 
+## Test Material
+
+* [The SOS Audio Test Files](https://www.soundonsound.com/techniques/sos-audio-test-files)
+
 ## Links
 
 * Home page: [https://github.com/stuerp/foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer)

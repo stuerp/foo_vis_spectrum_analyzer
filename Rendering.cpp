@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.02) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.03) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -10,6 +10,14 @@
 #include "Log.h"
 
 #pragma hdrstop
+
+/// <summary>
+/// Creates the timer.
+/// </summary>
+void UIElement::CreateTimer() noexcept
+{
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+}
 
 /// <summary>
 /// Starts the timer.
@@ -50,7 +58,7 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// </summary>
 void UIElement::RenderFrame()
 {
-    if (!TryEnterCriticalSection(&_Lock))
+    if (!::TryEnterCriticalSection(&_Lock))
         return;
 
     _FrameCounter.NewFrame();
@@ -72,15 +80,19 @@ void UIElement::RenderFrame()
                 if (PlaybackTime < _OldPlaybackTime)
                     _OldPlaybackTime = 0.;
 
-                double WindowDuration = .2;
+//              double WindowDuration = 0.92;//(_SampleRate != 0) ? ((double) _FFTSize / (double) _SampleRate) : PlaybackTime - _OldPlaybackTime;//.2;
+                double WindowDuration = (double) _FFTSize * 2. / (double) _SampleRate;
 
                 audio_chunk_impl Chunk;
 
-                // Sliding DFT, https://wiki.hydrogenaud.io/index.php?title=Sliding_DFT
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowDuration / 2.)*/, WindowDuration))
+                if (!_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, WindowDuration))
+                    _VisualisationStream->make_fake_chunk_absolute(Chunk, PlaybackTime, WindowDuration);
+
+                {
                     ProcessAudioChunk(Chunk);
 
-                _OldPlaybackTime = PlaybackTime - WindowDuration;
+                    _OldPlaybackTime = PlaybackTime;
+                }
             }
             else
                 for (auto & Iter : _FrequencyBands)

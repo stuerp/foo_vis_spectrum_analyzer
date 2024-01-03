@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.02) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.03) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -84,7 +84,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     // Create the timer.
-    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+    CreateTimer();
 
     // Applies the initial configuration.
     SetConfiguration();
@@ -540,6 +540,16 @@ void UIElement::Resize()
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _OldPlaybackTime = 0.;
+
+    _SampleRate = 44100; // FIXME
+    _FFTSize = 4096; // FIXME
+/*
+metadb_info_container::ptr Info = track->get_info_ref();
+
+auto s = Info->info();
+
+t_int64 srate = info_get_int("samplerate");
+*/
 
     SetConfiguration();
 

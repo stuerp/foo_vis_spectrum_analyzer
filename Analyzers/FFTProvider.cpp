@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.cpp (2024.01.02) P. Stuer **/
+/** $VER: FFTProvider.cpp (2024.01.03) P. Stuer **/
 
 #include "FFTProvider.h"
 
