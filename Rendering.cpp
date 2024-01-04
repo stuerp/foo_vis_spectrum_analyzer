@@ -73,21 +73,21 @@ void UIElement::RenderFrame()
         _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
         {
-            double PlaybackTime; // in ms
+            double PlaybackTime; // in sec
 
             if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
             {
                 if (PlaybackTime < _OldPlaybackTime)
                     _OldPlaybackTime = 0.;
 
-//              double WindowDuration = 0.92;//(_SampleRate != 0) ? ((double) _FFTSize / (double) _SampleRate) : PlaybackTime - _OldPlaybackTime;//.2;
-//              double WindowDuration = (double) _FFTSize * 2. / (double) _SampleRate;
-                double WindowDuration = .2;
+//              double WindowSize = 0.92;//(_SampleRate != 0) ? ((double) _FFTSize / (double) _SampleRate) : PlaybackTime - _OldPlaybackTime;//.2;
+//              double WindowSize = (double) _FFTSize * 2. / (double) _SampleRate;
+                double WindowSize = .2; // in sec
 
                 audio_chunk_impl Chunk;
 
-//              if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowDuration / 2.)*/, WindowDuration))
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, WindowDuration))
+//              if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowSize / 2.)*/, WindowSize))
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, WindowSize))
                 {
                     ProcessAudioChunk(Chunk);
 
