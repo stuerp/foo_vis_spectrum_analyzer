@@ -208,7 +208,7 @@
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
     <ClInclude Include="Analyzers\TransformProvider.h" />
-    <ClInclude Include="WindowFunctions.h" />
+    <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
   </ItemGroup>
