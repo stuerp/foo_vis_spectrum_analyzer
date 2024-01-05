@@ -4,6 +4,8 @@
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "WIC.h"
+
 #include "Resources.h"
 #include "Gradients.h"
 
@@ -74,19 +76,27 @@ void UIElement::RenderFrame()
 
         if (_BackgroundBitmap != nullptr)
         {
-            D2D1_RECT_F Destination = _Graph.GetBounds();
+            D2D1_RECT_F DstRect = _Graph.GetBounds();
 
             D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
 
-            Destination.left   = ((Destination.right - Destination.left) - Size.width) / 2.f;
-            Destination.top    = ((Destination.bottom - Destination.top) - Size.height) / 2.f;
-            Destination.right  = Destination.left + Size.width;
-            Destination.bottom = Destination.top + Size.height;
+            // Fit big images (Free / FitBig / FitWidth / FitHeight)
+            {
+                FLOAT w = Min(Size.width,  DstRect.right - DstRect.left);
+                FLOAT h = Min(Size.height, DstRect.bottom - DstRect.top);
 
-            _RenderTarget->DrawBitmap(_BackgroundBitmap, Destination, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                Size.width  = Min(w, h);
+                Size.height = Min(w, h);
+
+                DstRect.left   = ((DstRect.right - DstRect.left) - Size.width) / 2.f;
+                DstRect.top    = ((DstRect.bottom - DstRect.top) - Size.height) / 2.f;
+                DstRect.right  = DstRect.left + Size.width;
+                DstRect.bottom = DstRect.top + Size.height;
+            }
+
+            _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
         }
 
-        if (_SampleRate != 0)
         {
             double PlaybackTime; // in sec
 
@@ -458,9 +468,23 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
     }
 
-    // Convert the album art from WIC bitmap to Direct2D bitmap.
-    if (SUCCEEDED(hr) && (_FormatConverter != nullptr) && (_BackgroundBitmap == nullptr))
-        _RenderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_BackgroundBitmap);
+    // Create the background bitmap fromt the album art.
+    if (SUCCEEDED(hr) && ((_BackgroundBitmap == nullptr) || _RefreshBackgroundBitmap))
+    {
+        CComPtr<IWICFormatConverter> FormatConverter = _WIC.Load(_CoverArt.data(), _CoverArt.size());
+
+        if (FormatConverter)
+        {
+            _BackgroundBitmap = nullptr;
+
+            _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
+            _RefreshBackgroundBitmap = false;
+
+            std::vector<uint8_t> Empty;
+
+            _CoverArt.swap(Empty);
+        }
+    }
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
@@ -478,6 +502,8 @@ void UIElement::ReleaseDeviceSpecificResources()
 {
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
+
+    _BackgroundBitmap.Release();
 
     _RenderTarget.Release();
 }

@@ -20,8 +20,6 @@
 #include <vector>
 #include <complex>
 
-#include <wincodec.h>
-
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
@@ -197,12 +195,6 @@ private:
 
     #pragma endregion
 
-    #pragma region WIC
-
-    CComPtr<IWICFormatConverter> _FormatConverter;
-
-    #pragma endregion
-
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
@@ -221,4 +213,7 @@ private:
     size_t _FFTSize;
     uint32_t _SampleRate;
     double _Bandwidth;
+
+    std::vector<uint8_t> _CoverArt;
+    bool _RefreshBackgroundBitmap;
 };

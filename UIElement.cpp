@@ -4,7 +4,6 @@
 #include "UIElement.h"
 
 #include "DirectX.h"
-#include "WIC.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -12,14 +11,8 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
 {
-    auto Manager = now_playing_album_art_notify_manager::tryGet();
-
-    if (Manager.is_valid())
-    {
-        Manager->add(this);
-    }
 }
 
 #pragma region User Interface
@@ -83,6 +76,13 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
+    {
+        auto Manager = now_playing_album_art_notify_manager::tryGet();
+
+        if (Manager.is_valid())
+            Manager->add(this);
+    }
+
     // Create the tooltip control.
     {
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
@@ -130,6 +130,13 @@ void UIElement::OnDestroy()
     {
         delete _CQTAnalyzer;
         _CQTAnalyzer = nullptr;
+    }
+
+    {
+        auto Manager = now_playing_album_art_notify_manager::tryGet();
+
+        if (Manager.is_valid())
+            Manager->remove(this);
     }
 
     _VisualisationStream.release();
@@ -277,8 +284,6 @@ LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 
     return 0;
 }
-
-#include <cassert>
 
 /// <summary>
 /// Handles mouse move messages.
@@ -568,6 +573,9 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
     // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
     _SampleRate = (uint32_t) track->get_info_ref()->info().info_get_int("samplerate");
+
+    if (_SampleRate == 0)
+        _SampleRate = 44100;
 }
 
 /// <summary>
@@ -575,7 +583,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _SampleRate = 0;
+    _SampleRate = 44100;
 }
 
 /// <summary>
@@ -592,7 +600,8 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aa)
 {
-    _FormatConverter = _WIC.Load((const uint8_t *) aa->data(), aa->size());
+    _CoverArt.assign((uint8_t *) aa->data(), (uint8_t *) aa->data() + aa->size());
+    _RefreshBackgroundBitmap = true;
 }
 
 #pragma endregion

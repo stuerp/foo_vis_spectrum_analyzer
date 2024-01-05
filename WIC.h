@@ -12,7 +12,7 @@ class WIC
 public:
     WIC();
 
-    CComPtr<IWICFormatConverter> Load(const uint8_t * data, size_t size);
+    CComPtr<IWICFormatConverter> Load(const uint8_t * data, size_t size) const;
 
 public:
     CComPtr<IWICImagingFactory> _WICFactory;
