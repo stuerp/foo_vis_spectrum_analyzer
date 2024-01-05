@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.01.02) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.01.05) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -31,6 +31,8 @@ public:
 
     HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
     void ReleaseDeviceSpecificResources();
+
+    const D2D1_RECT_F & GetBounds() const { return _Bounds; }
 
     FLOAT GetLeft() const { return _Bounds.left; }
     FLOAT GetRight() const { return _Bounds.right; }

@@ -211,6 +211,7 @@
     <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
+    <ClInclude Include="WIC.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
@@ -238,6 +239,7 @@
     <ClCompile Include="UIElement.cpp" />
     <ClCompile Include="Visuals\XAxis.cpp" />
     <ClCompile Include="Visuals\YAxis.cpp" />
+    <ClCompile Include="WIC.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">

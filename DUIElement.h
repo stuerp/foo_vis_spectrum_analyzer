@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.h (2023.12.06) P. Stuer - Default User Interface support **/
+/** $VER: DUIElement.h (2024.01.05) P. Stuer - Default User Interface support **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Implements a Default UI element.
 /// </summary>
-class DUIElement : public ui_element_instance, public UIElement
+class DUIElement : public UIElement, public ui_element_instance
 {
 public:
     DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);

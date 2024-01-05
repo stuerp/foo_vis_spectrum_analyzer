@@ -20,10 +20,12 @@
 #include <vector>
 #include <complex>
 
+#include <wincodec.h>
+
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base
+class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
 {
 public:
     UIElement();
@@ -85,6 +87,12 @@ private:
 
     #pragma endregion
 
+    #pragma region Album Art Manager callback methods
+
+    void on_album_art(album_art_data::ptr data);
+
+    #pragma endregion
+
     virtual void ToggleFullScreen() noexcept;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
@@ -115,8 +123,6 @@ private:
 
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
-
-    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
     #pragma endregion
 
@@ -185,8 +191,16 @@ private:
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+    CComPtr<ID2D1Bitmap> _BackgroundBitmap;
 
     UINT _DPI;
+
+    #pragma endregion
+
+    #pragma region WIC
+
+    CComPtr<IWICFormatConverter> _FormatConverter;
+
     #pragma endregion
 
     ConfigurationDialog _ConfigurationDialog;

@@ -1,14 +1,11 @@
 
-/** $VER: Component.cpp (2023.12.30) P. Stuer **/
+/** $VER: Component.cpp (2024.01.05) P. Stuer **/
 
 #include "framework.h"
 
 #include <sdk/componentversion.h>
 
 #include "Resources.h"
-
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "dwrite")
 
 #pragma hdrstop
 

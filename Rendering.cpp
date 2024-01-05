@@ -72,6 +72,20 @@ void UIElement::RenderFrame()
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
         _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
+        if (_BackgroundBitmap != nullptr)
+        {
+            D2D1_RECT_F Destination = _Graph.GetBounds();
+
+            D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
+
+            Destination.left   = ((Destination.right - Destination.left) - Size.width) / 2.f;
+            Destination.top    = ((Destination.bottom - Destination.top) - Size.height) / 2.f;
+            Destination.right  = Destination.left + Size.width;
+            Destination.bottom = Destination.top + Size.height;
+
+            _RenderTarget->DrawBitmap(_BackgroundBitmap, Destination, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        }
+
         if (_SampleRate != 0)
         {
             double PlaybackTime; // in sec
@@ -436,11 +450,17 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         hr = _DirectX._Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
+        {
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-        // Resize some elements based on the size of the render target.
-        Resize();
+            // Resize some elements based on the size of the render target.
+            Resize();
+        }
     }
+
+    // Convert the album art from WIC bitmap to Direct2D bitmap.
+    if (SUCCEEDED(hr) && (_FormatConverter != nullptr) && (_BackgroundBitmap == nullptr))
+        _RenderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_BackgroundBitmap);
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);

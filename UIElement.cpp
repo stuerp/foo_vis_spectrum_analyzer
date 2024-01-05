@@ -4,6 +4,7 @@
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "WIC.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -13,6 +14,12 @@
 /// </summary>
 UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(), _Bandwidth()
 {
+    auto Manager = now_playing_album_art_notify_manager::tryGet();
+
+    if (Manager.is_valid())
+    {
+        Manager->add(this);
+    }
 }
 
 #pragma region User Interface
@@ -577,6 +584,15 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 void UIElement::on_playback_pause(bool)
 {
 //  Invalidate();
+}
+
+#pragma endregion
+
+#pragma region now_playing_album_art_notify
+
+void UIElement::on_album_art(album_art_data::ptr aa)
+{
+    _FormatConverter = _WIC.Load((const uint8_t *) aa->data(), aa->size());
 }
 
 #pragma endregion

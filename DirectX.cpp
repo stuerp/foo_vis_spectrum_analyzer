@@ -5,6 +5,9 @@
 
 #include "SafeModuleHandle.h"
 
+#pragma comment(lib, "d2d1")
+#pragma comment(lib, "dwrite")
+
 #pragma hdrstop
 
 /// <summary>
