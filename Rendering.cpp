@@ -82,7 +82,8 @@ void UIElement::RenderFrame()
 
 //              double WindowSize = 0.92;//(_SampleRate != 0) ? ((double) _FFTSize / (double) _SampleRate) : PlaybackTime - _OldPlaybackTime;//.2;
 //              double WindowSize = (double) _FFTSize * 2. / (double) _SampleRate;
-                double WindowSize = .2; // in sec
+//              double WindowSize = .2; // in sec
+                double WindowSize = (double) _FFTSize / (double) _SampleRate;
 
                 audio_chunk_impl Chunk;
 
