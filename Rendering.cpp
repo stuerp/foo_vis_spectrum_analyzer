@@ -82,13 +82,12 @@ void UIElement::RenderFrame()
 
 //              double WindowSize = 0.92;//(_SampleRate != 0) ? ((double) _FFTSize / (double) _SampleRate) : PlaybackTime - _OldPlaybackTime;//.2;
 //              double WindowSize = (double) _FFTSize * 2. / (double) _SampleRate;
-//              double WindowSize = .2; // in sec
-                double WindowSize = (double) _FFTSize / _Configuration._HiFrequency;
+                double WindowSize = .2; // in sec
 
                 audio_chunk_impl Chunk;
 
 //              if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowSize / 2.)*/, WindowSize))
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, WindowSize))
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
                 {
                     ProcessAudioChunk(Chunk);
 
