@@ -83,6 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.6.0.3, 2024-01-xx
+
+* Improved: The sample window size for the FFT is now calculate based on the sample rate and the FFT size.
+
 v0.6.0.2, 2024-01-02
 
 * Fixed: Finally found a (the?) correct way to use the sample window duration of foobar2000.

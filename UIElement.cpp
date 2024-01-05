@@ -427,6 +427,23 @@ void UIElement::SetConfiguration() noexcept
             GenerateOctaveFrequencyBands();
     }
 
+    #pragma warning (disable: 4061)
+    switch (_Configuration._FFTSize)
+    {
+        default:
+            _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
+            break;
+
+        case FFTSize::FFTCustom:
+            _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
+            break;
+
+        case FFTSize::FFTDuration:
+            _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
+            break;
+    }
+    #pragma warning (default: 4061)
+
     // Generate the horizontal color gradient, if required.
     if (_Configuration._HorizontalGradient)
     {
@@ -541,19 +558,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _OldPlaybackTime = 0.;
 
-    _SampleRate = 44100; // FIXME
-    _FFTSize = 4096; // FIXME
-/*
-metadb_info_container::ptr Info = track->get_info_ref();
-
-auto s = Info->info();
-
-t_int64 srate = info_get_int("samplerate");
-*/
-
     SetConfiguration();
 
-//  Invalidate();
+    // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
+    // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
+    _SampleRate = track->get_info_ref()->info().info_get_int("samplerate");
 }
 
 /// <summary>
@@ -561,7 +570,7 @@ t_int64 srate = info_get_int("samplerate");
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-//  Invalidate();
+    _SampleRate = 0;
 }
 
 /// <summary>

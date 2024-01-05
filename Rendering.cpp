@@ -72,6 +72,7 @@ void UIElement::RenderFrame()
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
         _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
+        if (_SampleRate != 0)
         {
             double PlaybackTime; // in sec
 
@@ -187,23 +188,6 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if (_FFTAnalyzer == nullptr)
     {
-        #pragma warning (disable: 4061)
-        switch (_Configuration._FFTSize)
-        {
-            default:
-                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
-                break;
-
-            case FFTSize::FFTCustom:
-                _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
-                break;
-
-            case FFTSize::FFTDuration:
-                _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
-                break;
-        }
-        #pragma warning (default: 4061)
-
         _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _FFTSize, &_Configuration);
 
         _FrequencyCoefficients.resize(_FFTSize);
