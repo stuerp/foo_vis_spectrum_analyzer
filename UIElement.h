@@ -68,22 +68,6 @@ private:
 
     LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-    BEGIN_MSG_MAP_EX(UIElement)
-        MSG_WM_CREATE(OnCreate)
-        MSG_WM_DESTROY(OnDestroy)
-        MSG_WM_PAINT(OnPaint)
-        MSG_WM_ERASEBKGND(OnEraseBackground)
-        MSG_WM_SIZE(OnSize)
-        MSG_WM_CONTEXTMENU(OnContextMenu)
-        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
-        MSG_WM_DPICHANGED(OnDPIChanged)
-
-        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
-        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
-
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
-    END_MSG_MAP()
-
     #pragma endregion
 
     #pragma region Playback callback methods
@@ -132,6 +116,8 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
+    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
+
     #pragma endregion
 
     #pragma region Timer
@@ -144,11 +130,28 @@ private:
 
     #pragma endregion
 
+    #pragma region CWindowImpl
+
+    BEGIN_MSG_MAP_EX(UIElement)
+        MSG_WM_CREATE(OnCreate)
+        MSG_WM_DESTROY(OnDestroy)
+        MSG_WM_PAINT(OnPaint)
+        MSG_WM_ERASEBKGND(OnEraseBackground)
+        MSG_WM_SIZE(OnSize)
+        MSG_WM_CONTEXTMENU(OnContextMenu)
+        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+        MSG_WM_DPICHANGED(OnDPIChanged)
+
+        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
+        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
+
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
+    END_MSG_MAP()
+
+    #pragma endregion
+
 protected:
     Configuration _Configuration;
-
-private:
-    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
 private:
     enum
@@ -178,15 +181,14 @@ private:
 
     #pragma endregion
 
-private:
     #pragma region DirectX
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
+    UINT _DPI;
     #pragma endregion
 
-private:
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
@@ -194,8 +196,6 @@ private:
     bool _IsTracking;
     POINT _LastMousePos;
     size_t _LastIndex;
-
-    double _OldPlaybackTime;
 
     const WindowFunction * _WindowFunction;
     FFTAnalyzer * _FFTAnalyzer;
@@ -207,6 +207,4 @@ private:
     size_t _FFTSize;
     uint32_t _SampleRate;
     double _Bandwidth;
-
-    UINT _DPI;
 };

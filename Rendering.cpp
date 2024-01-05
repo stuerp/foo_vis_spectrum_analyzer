@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.03) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.05) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -473,4 +473,3 @@ void UIElement::ReleaseDeviceSpecificResources()
     _RenderTarget.Release();
 }
 #pragma endregion
-

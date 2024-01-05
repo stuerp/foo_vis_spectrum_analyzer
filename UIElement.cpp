@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.03) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.05) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _TrackingToolInfo()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(), _Bandwidth()
 {
 }
 
@@ -400,8 +400,6 @@ void UIElement::SetConfiguration() noexcept
 {
     ::EnterCriticalSection(&_Lock);
 
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
-
     // Initialize the frequency bands.
     {
         if (_Configuration._Transform == Transform::FFT)
@@ -443,6 +441,8 @@ void UIElement::SetConfiguration() noexcept
             break;
     }
     #pragma warning (default: 4061)
+
+    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
     // Generate the horizontal color gradient, if required.
     if (_Configuration._HorizontalGradient)
