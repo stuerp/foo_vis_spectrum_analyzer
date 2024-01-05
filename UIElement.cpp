@@ -556,13 +556,11 @@ void UIElement::Resize()
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    _OldPlaybackTime = 0.;
-
     SetConfiguration();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
     // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
-    _SampleRate = track->get_info_ref()->info().info_get_int("samplerate");
+    _SampleRate = (uint32_t) track->get_info_ref()->info().info_get_int("samplerate");
 }
 
 /// <summary>
