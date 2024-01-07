@@ -83,8 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.6.0.3, 2024-01-xx
+v0.6.1.0, 2024-01-xx
 
+* New: The album art of the playing track can be used as background image.
+* New: The dominant colors of the album art can be used to generate a gradient.
 * Improved: The sample window size for the FFT is now calculate based on the sample rate and the FFT size.
 
 v0.6.0.2, 2024-01-02
@@ -223,6 +225,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 * Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
+* [Humeur](https://github.com/Humeur) for [Better Dominant Colors](https://github.com/Humeur/better-dominant-colors).
 
 ## Reference Material
 

@@ -8,5 +8,7 @@
 class DominantColors
 {
 public:
-    HRESULT Get(CComPtr<IWICBitmapFrameDecode> frame, size_t count, std::vector<uint32_t> & colors) const noexcept;
+    HRESULT Get(CComPtr<IWICBitmapFrameDecode> frame, size_t count, std::vector<D2D1_COLOR_F> & colors) const noexcept;
+
+private:
 };

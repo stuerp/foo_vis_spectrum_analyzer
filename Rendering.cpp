@@ -11,6 +11,9 @@
 
 #include "Log.h"
 
+#include <vector>
+#include <algorithm>
+
 #pragma hdrstop
 
 /// <summary>
@@ -491,19 +494,33 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         {
             DominantColors dc;
 
-            const size_t _DominantColorCount = 3;
-            std::vector<uint32_t> Colors;
+            const size_t _DominantColorCount = 5;
+            std::vector<D2D1_COLOR_F> Colors;
 
             hr = dc.Get(_Frame, _DominantColorCount, Colors);
 
             if (SUCCEEDED(hr))
             {
+                std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+                {
+                    if (left.r != right.r)
+                        return left.r < right.r;
+
+                    if (left.g != right.g)
+                        return left.g < right.g;
+
+                    if (left.b != right.b)
+                        return left.b < right.b;
+
+                    return false;
+                });
+
                 _Configuration._GradientStops.clear();
 
-                _Configuration._GradientStops.push_back({ 0.f, D2D1::ColorF(Colors[0], 1.f) });
+                _Configuration._GradientStops.push_back({ 0.f, Colors[0] });
 
                 for (size_t i = 1; i < _DominantColorCount; ++i)
-                    _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), D2D1::ColorF(Colors[i], 1.f) });
+                    _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), Colors[i] });
             }
         }
     }
