@@ -6,7 +6,7 @@
 #include "framework.h"
 #include "Support.h"
 
-#include "Analyzers\WindowFunctions.h"
+#include "WindowFunctions.h"
 
 inline const double MinWindowSkew = -1.;
 inline const double MaxWindowSkew =  1.;

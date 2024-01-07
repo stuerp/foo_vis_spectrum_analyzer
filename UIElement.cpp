@@ -601,7 +601,6 @@ void UIElement::on_playback_pause(bool)
 void UIElement::on_album_art(album_art_data::ptr aa)
 {
     _CoverArt.assign((uint8_t *) aa->data(), (uint8_t *) aa->data() + aa->size());
-    _RefreshBackgroundBitmap = true;
 }
 
 #pragma endregion

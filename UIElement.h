@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.05) P. Stuer **/
+/** $VER: UIElement.h (2024.01.06) P. Stuer **/
 
 #pragma once
 
@@ -14,8 +14,8 @@
 #include "YAxis.h"
 #include "Spectrum.h"
 
-#include "Analyzers\FFTAnalyzer.h"
-#include "Analyzers\CQTAnalyzer.h"
+#include "FFTAnalyzer.h"
+#include "CQTAnalyzer.h"
 
 #include <vector>
 #include <complex>
@@ -189,6 +189,8 @@ private:
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+    CComPtr<IWICBitmapFrameDecode> _Frame;
     CComPtr<ID2D1Bitmap> _BackgroundBitmap;
 
     UINT _DPI;
@@ -215,5 +217,4 @@ private:
     double _Bandwidth;
 
     std::vector<uint8_t> _CoverArt;
-    bool _RefreshBackgroundBitmap;
 };

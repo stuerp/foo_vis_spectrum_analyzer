@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.05) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.07) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -468,21 +468,43 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
     }
 
-    // Create the background bitmap fromt the album art.
-    if (SUCCEEDED(hr) && ((_BackgroundBitmap == nullptr) || _RefreshBackgroundBitmap))
+    // Create the background bitmap from the album art.
+    if (SUCCEEDED(hr) && (_CoverArt.size() != 0))
     {
-        CComPtr<IWICFormatConverter> FormatConverter = _WIC.Load(_CoverArt.data(), _CoverArt.size());
+        _Frame = nullptr;
 
-        if (FormatConverter)
+        hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), _Frame);
+
+        CComPtr<IWICFormatConverter> FormatConverter;
+
+        if (SUCCEEDED(hr))
+            hr = _WIC.GetFormatConverter(_Frame, FormatConverter);
+
+        if (SUCCEEDED(hr))
         {
             _BackgroundBitmap = nullptr;
 
             _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
-            _RefreshBackgroundBitmap = false;
+        }
 
-            std::vector<uint8_t> Empty;
+        if (SUCCEEDED(hr))
+        {
+            DominantColors dc;
 
-            _CoverArt.swap(Empty);
+            const size_t _DominantColorCount = 3;
+            std::vector<uint32_t> Colors;
+
+            hr = dc.Get(_Frame, _DominantColorCount, Colors);
+
+            if (SUCCEEDED(hr))
+            {
+                _Configuration._GradientStops.clear();
+
+                _Configuration._GradientStops.push_back({ 0.f, D2D1::ColorF(Colors[0], 1.f) });
+
+                for (size_t i = 1; i < _DominantColorCount; ++i)
+                    _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), D2D1::ColorF(Colors[i], 1.f) });
+            }
         }
     }
 
@@ -490,7 +512,24 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
 
     if (SUCCEEDED(hr))
+    {
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
+
+        if (SUCCEEDED(hr) && (_CoverArt.size() != 0))
+        {
+            Spectrum & s = _Graph.GetSpectrum();
+
+            s.Initialize(&_Configuration);
+        }
+    }
+
+    // Release the raw data.
+    if (_CoverArt.size() > 0)
+    {
+        std::vector<uint8_t> Empty;
+
+        _CoverArt.swap(Empty);
+    }
 
     return hr;
 }
@@ -504,7 +543,9 @@ void UIElement::ReleaseDeviceSpecificResources()
     _FrameCounter.ReleaseDeviceSpecificResources();
 
     _BackgroundBitmap.Release();
+    _Frame.Release();
 
     _RenderTarget.Release();
 }
+
 #pragma endregion

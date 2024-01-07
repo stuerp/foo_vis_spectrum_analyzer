@@ -79,7 +79,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;3rdParty\ProjectNayuki;$(ProjectDir);$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -103,7 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;3rdParty\ProjectNayuki;$(ProjectDir);$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -131,7 +131,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;3rdParty\ProjectNayuki;$(ProjectDir);$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -155,7 +155,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;3rdParty\ProjectNayuki;$(ProjectDir);$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -188,11 +188,13 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
-    <ClInclude Include="DirectX.h" />
+    <ClInclude Include="Visuals\DirectX.h" />
     <ClInclude Include="Analyzers\FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="Visuals\DominantColors.h" />
+    <ClInclude Include="Visuals\PeakFinder.h" />
     <ClInclude Include="SafeModuleHandle.h" />
     <ClInclude Include="Visuals\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
@@ -200,6 +202,7 @@
     <ClInclude Include="Visuals\Graph.h" />
     <ClInclude Include="Layout.h" />
     <ClInclude Include="Resources.h" />
+    <ClInclude Include="Visuals\Pixels.h" />
     <ClInclude Include="Visuals\RingBuffer.h" />
     <ClInclude Include="Visuals\Spectrum.h" />
     <ClInclude Include="CUIElement.h" />
@@ -211,7 +214,7 @@
     <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
-    <ClInclude Include="WIC.h" />
+    <ClInclude Include="Visuals\WIC.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
@@ -227,19 +230,22 @@
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
-    <ClCompile Include="DirectX.cpp" />
+    <ClCompile Include="Visuals\DirectX.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Visuals\DominantColors.cpp" />
+    <ClCompile Include="Visuals\PeakFinder.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />
     <ClCompile Include="Visuals\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />
     <ClCompile Include="Visuals\Graph.cpp" />
+    <ClCompile Include="Visuals\Pixels.cpp" />
     <ClCompile Include="Visuals\Spectrum.cpp" />
     <ClCompile Include="UIElement.cpp" />
     <ClCompile Include="Visuals\XAxis.cpp" />
     <ClCompile Include="Visuals\YAxis.cpp" />
-    <ClCompile Include="WIC.cpp" />
+    <ClCompile Include="Visuals\WIC.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">
