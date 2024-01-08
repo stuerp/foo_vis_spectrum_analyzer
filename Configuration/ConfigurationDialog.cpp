@@ -141,7 +141,7 @@ void ConfigurationDialog::Initialize()
         w.AddString(L"Custom");
         w.AddString(L"Sample rate based");
 
-        w.SetCurSel((int) _Configuration->_FFTSize);
+        w.SetCurSel((int) _Configuration->_FFTMode);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
@@ -713,7 +713,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma region FFT
         case IDC_FFT_SIZE:
         {
-            _Configuration->_FFTSize = (FFTSize) SelectedIndex;
+            _Configuration->_FFTMode = (FFTMode) SelectedIndex;
 
             UpdateControls();
             break;
@@ -869,18 +869,18 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
-            switch (_Configuration->_FFTSize)
+            switch (_Configuration->_FFTMode)
             {
                 default:
                     break;
 
-                case FFTSize::FFTCustom:
+                case FFTMode::FFTCustom:
                 {
                     _Configuration->_FFTCustom = (size_t) Clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize);
                     break;
                 }
 
-                case FFTSize::FFTDuration:
+                case FFTMode::FFTDuration:
                 {
                     _Configuration->_FFTDuration= Clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration);;
                     break;
@@ -1758,7 +1758,7 @@ void ConfigurationDialog::UpdateControls()
     // FFT
         GetDlgItem(IDC_FFT_SIZE).EnableWindow(IsFFT);
 
-    bool NotFixed = (_Configuration->_FFTSize == FFTSize::FFTCustom) || (_Configuration->_FFTSize == FFTSize::FFTDuration);
+    bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
 
         GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && NotFixed);
 
@@ -1769,18 +1769,18 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_KERNEL_SIZE).EnableWindow(IsFFT);
 
         #pragma warning (disable: 4061)
-        switch (_Configuration->_FFTSize)
+        switch (_Configuration->_FFTMode)
         {
             default:
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"");
                 break;
 
-            case FFTSize::FFTCustom:
+            case FFTMode::FFTCustom:
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"samples");
                 break;
 
-            case FFTSize::FFTDuration:
+            case FFTMode::FFTDuration:
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 1)));
                 SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"ms");
                 break;

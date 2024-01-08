@@ -438,17 +438,17 @@ void UIElement::SetConfiguration() noexcept
     }
 
     #pragma warning (disable: 4061)
-    switch (_Configuration._FFTSize)
+    switch (_Configuration._FFTMode)
     {
         default:
-            _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
+            _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTMode));
             break;
 
-        case FFTSize::FFTCustom:
+        case FFTMode::FFTCustom:
             _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
             break;
 
-        case FFTSize::FFTDuration:
+        case FFTMode::FFTDuration:
             _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
             break;
     }

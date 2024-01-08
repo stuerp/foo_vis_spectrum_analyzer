@@ -79,7 +79,7 @@ enum class Transform
     CQT = 1
 };
 
-enum class FFTSize
+enum class FFTMode
 {
     FFT64       = 0,
     FFT128      = 1,
@@ -251,7 +251,7 @@ public:
     #pragma endregion
 
     #pragma region FFT
-        FFTSize _FFTSize;                                               // bins
+        FFTMode _FFTMode;                                               // bins
         size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
