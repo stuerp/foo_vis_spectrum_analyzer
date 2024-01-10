@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.05) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.10) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -583,6 +583,8 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
+    _IsStopping = true;
+
     _SampleRate = 44100;
 }
 
@@ -600,6 +602,8 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aa)
 {
+    _IsStopping = false;
+
     _CoverArt.assign((uint8_t *) aa->data(), (uint8_t *) aa->data() + aa->size());
 }
 

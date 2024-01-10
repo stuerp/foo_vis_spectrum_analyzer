@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.07) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.10) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -72,34 +72,23 @@ void UIElement::RenderFrame()
 
     if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
+        if (_IsStopping)
+        {
+            _BackgroundBitmap.Release();
+
+            for (auto & Iter : _FrequencyBands)
+                Iter.CurValue = 0.;
+
+            _IsStopping = false;
+        }
+
         _RenderTarget->BeginDraw();
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
-        if (_BackgroundBitmap != nullptr)
-        {
-            D2D1_RECT_F DstRect = _Graph.GetBounds();
+        RenderBackground();
 
-            D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
-
-            // Fit big images (Free / FitBig / FitWidth / FitHeight)
-            {
-                FLOAT w = Min(Size.width,  DstRect.right - DstRect.left);
-                FLOAT h = Min(Size.height, DstRect.bottom - DstRect.top);
-
-                Size.width  = Min(w, h);
-                Size.height = Min(w, h);
-
-                DstRect.left   = ((DstRect.right - DstRect.left) - Size.width) / 2.f;
-                DstRect.top    = ((DstRect.bottom - DstRect.top) - Size.height) / 2.f;
-                DstRect.right  = DstRect.left + Size.width;
-                DstRect.bottom = DstRect.top + Size.height;
-            }
-
-            _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-        }
-
+        // Update the graph.
         {
             double PlaybackTime; // in sec
 
@@ -137,6 +126,37 @@ void UIElement::RenderFrame()
     }
 
     ::LeaveCriticalSection(&_Lock);
+}
+
+/// <summary>
+/// Renders the background.
+/// </summary>
+void UIElement::RenderBackground() const
+{
+    _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
+
+    // Render the album art if there is any.
+    if (_BackgroundBitmap == nullptr)
+        return;
+
+    D2D1_RECT_F DstRect = _Graph.GetBounds();
+    D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
+
+    // Fit big images (Free / FitBig / FitWidth / FitHeight)
+    {
+        FLOAT w = Min(Size.width,  DstRect.right - DstRect.left);
+        FLOAT h = Min(Size.height, DstRect.bottom - DstRect.top);
+
+        Size.width  = Min(w, h);
+        Size.height = Min(w, h);
+
+        DstRect.left   = ((DstRect.right - DstRect.left) - Size.width) / 2.f;
+        DstRect.top    = ((DstRect.bottom - DstRect.top) - Size.height) / 2.f;
+        DstRect.right  = DstRect.left + Size.width;
+        DstRect.bottom = DstRect.top + Size.height;
+    }
+
+    _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>

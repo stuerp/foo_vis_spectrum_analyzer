@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.06) P. Stuer **/
+/** $VER: UIElement.h (2024.01.10) P. Stuer **/
 
 #pragma once
 
@@ -101,6 +101,7 @@ private:
     void Resize();
 
     void RenderFrame();
+    void RenderBackground() const;
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
@@ -175,6 +176,7 @@ private:
 
     CRITICAL_SECTION _Lock;
     PTP_TIMER _ThreadPoolTimer;
+    bool _IsStopping;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
