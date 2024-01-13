@@ -48,9 +48,11 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    HRESULT hr = S_OK;
+
     ::InitializeCriticalSection(&_Lock);
 
-    HRESULT hr = CreateDeviceIndependentResources();
+    hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
     {

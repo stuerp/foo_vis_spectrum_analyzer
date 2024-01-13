@@ -100,7 +100,7 @@ HRESULT WIC::GetHistogram(CComPtr<IWICBitmapFrameDecode> frame, std::vector<std:
     #pragma warning(disable: 6011 6385)
     if (SUCCEEDED(hr) && (BitsPerPixel == 24 || BitsPerPixel == 32))
     {
-        size_t BytesPerPixel = BitsPerPixel >> 3;
+        UINT BytesPerPixel = BitsPerPixel >> 3;
 
         if (SUCCEEDED(hr))
         {

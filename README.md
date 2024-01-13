@@ -83,15 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.6.1.0, 2024-01-xx
-
-* New: The album art of the playing track can be used as background image.
-* New: The dominant colors of the album art can be used to generate a gradient.
-
 v0.6.0.3, 2024-01-13
 
 * Improved: The sample window size for the FFT is now calculated based on the sample rate and the FFT size.
-* Fixed: The spectrum was not reset after stopping a paused track.
+* Fixed: The spectrum was not cleared after stopping a paused track.
 * Fixed: Wrong note names in the tooltip when using a non-default number of bands per octave.
 
 v0.6.0.2, 2024-01-02

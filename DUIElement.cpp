@@ -78,7 +78,10 @@ ui_element_config::ptr DUIElement::g_get_default_configuration()
 /// </summary>
 void DUIElement::initialize_window(HWND p_parent)
 {
-    this->Create(p_parent, nullptr, nullptr, 0, 0/*WS_EX_STATICEDGE*/);
+    const DWORD Style = 0;
+    const DWORD ExStyle = 0;
+
+    this->Create(p_parent, nullptr, nullptr, Style, ExStyle);
 }
 
 /// <summary>
