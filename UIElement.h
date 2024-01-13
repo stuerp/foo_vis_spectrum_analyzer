@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.10) P. Stuer **/
+/** $VER: UIElement.h (2024.01.13) P. Stuer **/
 
 #pragma once
 
@@ -122,6 +122,8 @@ private:
 
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
+
+    HRESULT CreateBackgroundBitmap();
 
     #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.10) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -156,7 +156,7 @@ void UIElement::RenderBackground() const
         DstRect.bottom = DstRect.top + Size.height;
     }
 
-    _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, 1.f, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, _Configuration._BackgroundBitmapOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -285,11 +285,13 @@ void UIElement::GenerateOctaveFrequencyBands()
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
-        int n = (int) i % 12;
+        int Note = (int) (i * NotesGroup / 2);
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], (int) i / 12, fb.Ctr);
+        int n = Note % 12;
 
-        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LiteBandColor;
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
+
+        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LightBandColor;
 
         _FrequencyBands.push_back(fb);
     }
@@ -492,58 +494,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the album art.
-    if (SUCCEEDED(hr) && (_CoverArt.size() != 0))
-    {
-        _Frame = nullptr;
-
-        hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), _Frame);
-
-        CComPtr<IWICFormatConverter> FormatConverter;
-
-        if (SUCCEEDED(hr))
-            hr = _WIC.GetFormatConverter(_Frame, FormatConverter);
-
-        if (SUCCEEDED(hr))
-        {
-            _BackgroundBitmap = nullptr;
-
-            _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            DominantColors dc;
-
-            const size_t _DominantColorCount = 5;
-            std::vector<D2D1_COLOR_F> Colors;
-
-            hr = dc.Get(_Frame, _DominantColorCount, Colors);
-
-            if (SUCCEEDED(hr))
-            {
-                std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
-                {
-                    if (left.r != right.r)
-                        return left.r < right.r;
-
-                    if (left.g != right.g)
-                        return left.g < right.g;
-
-                    if (left.b != right.b)
-                        return left.b < right.b;
-
-                    return false;
-                });
-
-                _Configuration._GradientStops.clear();
-
-                _Configuration._GradientStops.push_back({ 0.f, Colors[0] });
-
-                for (size_t i = 1; i < _DominantColorCount; ++i)
-                    _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), Colors[i] });
-            }
-        }
-    }
+    if (SUCCEEDED(hr) && _Configuration._ShowCoverArt && (_CoverArt.size() != 0))
+        hr = CreateBackgroundBitmap();
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
@@ -569,6 +521,64 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     return hr;
+}
+
+/// <summary>
+/// Creates the background bitmap from the pixel data and optionally generates a dynamic gradient.
+/// </summary>
+HRESULT UIElement::CreateBackgroundBitmap()
+{
+    _Frame = nullptr;
+
+    HRESULT hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), _Frame);
+
+    CComPtr<IWICFormatConverter> FormatConverter;
+
+    if (SUCCEEDED(hr))
+        hr = _WIC.GetFormatConverter(_Frame, FormatConverter);
+
+    if (SUCCEEDED(hr))
+    {
+        _BackgroundBitmap = nullptr;
+
+        _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        DominantColors dc;
+
+        const size_t _DominantColorCount = 5;
+        std::vector<D2D1_COLOR_F> Colors;
+
+        hr = dc.Get(_Frame, _DominantColorCount, Colors);
+
+        if (SUCCEEDED(hr))
+        {
+            std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+            {
+                if (left.r != right.r)
+                    return left.r < right.r;
+
+                if (left.g != right.g)
+                    return left.g < right.g;
+
+                if (left.b != right.b)
+                    return left.b < right.b;
+
+                return false;
+            });
+
+            _Configuration._GradientStops.clear();
+
+            _Configuration._GradientStops.push_back({ 0.f, Colors[0] });
+
+            for (size_t i = 1; i < _DominantColorCount; ++i)
+                _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), Colors[i] });
+        }
+    }
+
+    return S_OK; // Problems with the cover art should not prevent rendering other elements.
 }
 
 /// <summary>

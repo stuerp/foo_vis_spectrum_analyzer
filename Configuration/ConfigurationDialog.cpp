@@ -1562,7 +1562,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_WHITE_KEYS:
         {
-            _LiteBandColor.GetColor(_Configuration->_LiteBandColor);
+            _LiteBandColor.GetColor(_Configuration->_LightBandColor);
             break;
         }
 
@@ -1826,7 +1826,7 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
 
     _LiteBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
+    _LiteBandColor.SetColor(_Configuration->_LightBandColor);
 
     _DarkBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
@@ -1900,7 +1900,7 @@ void ConfigurationDialog::UpdateColorControls()
 
     // Bars
     {
-        _LiteBandColor.SetColor(_Configuration->_LiteBandColor);
+        _LiteBandColor.SetColor(_Configuration->_LightBandColor);
         _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
 }
