@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2023.12.30) P. Stuer **/
+/** $VER: framework.h (2024.01.06) P. Stuer **/
 
 #pragma once
 
@@ -18,6 +18,8 @@
 #include <d2d1.h>
 #include <d2d1helper.h>
 #include <dwrite.h>
+
+#include <wincodec.h>
 
 #include <strsafe.h>
 #include <math.h>

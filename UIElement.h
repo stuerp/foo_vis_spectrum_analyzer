@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.02) P. Stuer **/
+/** $VER: UIElement.h (2024.01.13) P. Stuer **/
 
 #pragma once
 
@@ -14,8 +14,8 @@
 #include "YAxis.h"
 #include "Spectrum.h"
 
-#include "Analyzers\FFTAnalyzer.h"
-#include "Analyzers\CQTAnalyzer.h"
+#include "FFTAnalyzer.h"
+#include "CQTAnalyzer.h"
 
 #include <vector>
 #include <complex>
@@ -23,7 +23,7 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base
+class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
 {
 public:
     UIElement();
@@ -68,22 +68,6 @@ private:
 
     LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-    BEGIN_MSG_MAP_EX(UIElement)
-        MSG_WM_CREATE(OnCreate)
-        MSG_WM_DESTROY(OnDestroy)
-        MSG_WM_PAINT(OnPaint)
-        MSG_WM_ERASEBKGND(OnEraseBackground)
-        MSG_WM_SIZE(OnSize)
-        MSG_WM_CONTEXTMENU(OnContextMenu)
-        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
-        MSG_WM_DPICHANGED(OnDPIChanged)
-
-        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
-        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
-
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
-    END_MSG_MAP()
-
     #pragma endregion
 
     #pragma region Playback callback methods
@@ -101,6 +85,12 @@ private:
 
     #pragma endregion
 
+    #pragma region Album Art Manager callback methods
+
+    void on_album_art(album_art_data::ptr data);
+
+    #pragma endregion
+
     virtual void ToggleFullScreen() noexcept;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
@@ -111,6 +101,7 @@ private:
     void Resize();
 
     void RenderFrame();
+    void RenderBackground() const;
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
@@ -132,18 +123,42 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
+    HRESULT CreateBackgroundBitmap();
+
     #pragma endregion
 
+    #pragma region Timer
+
+    void CreateTimer() noexcept;
     void StartTimer() const noexcept;
     void StopTimer() const noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
+    #pragma endregion
+
+    #pragma region CWindowImpl
+
+    BEGIN_MSG_MAP_EX(UIElement)
+        MSG_WM_CREATE(OnCreate)
+        MSG_WM_DESTROY(OnDestroy)
+        MSG_WM_PAINT(OnPaint)
+        MSG_WM_ERASEBKGND(OnEraseBackground)
+        MSG_WM_SIZE(OnSize)
+        MSG_WM_CONTEXTMENU(OnContextMenu)
+        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+        MSG_WM_DPICHANGED(OnDPIChanged)
+
+        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
+        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
+
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
+    END_MSG_MAP()
+
+    #pragma endregion
+
 protected:
     Configuration _Configuration;
-
-private:
-    CComPtr<ID2D1GradientStopCollection> GetGradientStopCollection() const;
 
 private:
     enum
@@ -163,6 +178,7 @@ private:
 
     CRITICAL_SECTION _Lock;
     PTP_TIMER _ThreadPoolTimer;
+    bool _IsStopping;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
@@ -173,15 +189,18 @@ private:
 
     #pragma endregion
 
-private:
     #pragma region DirectX
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
+    CComPtr<IWICBitmapFrameDecode> _Frame;
+    CComPtr<ID2D1Bitmap> _BackgroundBitmap;
+
+    UINT _DPI;
+
     #pragma endregion
 
-private:
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
@@ -189,8 +208,6 @@ private:
     bool _IsTracking;
     POINT _LastMousePos;
     size_t _LastIndex;
-
-    double _OldPlaybackTime;
 
     const WindowFunction * _WindowFunction;
     FFTAnalyzer * _FFTAnalyzer;
@@ -203,5 +220,5 @@ private:
     uint32_t _SampleRate;
     double _Bandwidth;
 
-    UINT _DPI;
+    std::vector<uint8_t> _CoverArt;
 };

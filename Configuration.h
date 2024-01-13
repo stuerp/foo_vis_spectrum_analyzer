@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.01) P. Stuer **/
+/** $VER: Configuration.h (2024.01.13) P. Stuer **/
 
 #pragma once
 
@@ -79,7 +79,7 @@ enum class Transform
     CQT = 1
 };
 
-enum class FFTSize
+enum class FFTMode
 {
     FFT64       = 0,
     FFT128      = 1,
@@ -251,7 +251,7 @@ public:
     #pragma endregion
 
     #pragma region FFT
-        FFTSize _FFTSize;                                               // bins
+        FFTMode _FFTMode;                                               // bins
         size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
@@ -323,6 +323,9 @@ public:
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+
+            bool _ShowCoverArt;                                         // True if the cover art of the playing track is displayed in the background.
+            FLOAT _BackgroundBitmapOpacity;                             // 0.0 .. 1.0
         #pragma endregion
 
             VisualizationType _VisualizationType;
@@ -330,7 +333,7 @@ public:
         #pragma region Bars
             bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
 
-            D2D1::ColorF _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+            D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
             D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
             bool _HorizontalGradient;                                   // True if the gradient will be used to paint horizontally.

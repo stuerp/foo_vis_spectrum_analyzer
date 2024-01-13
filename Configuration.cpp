@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.02) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.13) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -49,7 +49,7 @@ void Configuration::Reset() noexcept
     _SelectedChannels = AllChannels;
 
     // FFT
-    _FFTSize = FFTSize::FFT4096;
+    _FFTMode = FFTMode::FFT4096;
     _FFTCustom = 4096;
     _FFTDuration = 100.;
 
@@ -120,12 +120,14 @@ void Configuration::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
+    _ShowCoverArt = false;
+    _BackgroundBitmapOpacity = 1.f;
 
     _VisualizationType = VisualizationType::Bars;
 
     // Bars
     _DrawBandBackground = true;
-    _LiteBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
     _HorizontalGradient = false;
@@ -167,7 +169,7 @@ Configuration & Configuration::operator=(const Configuration & other)
     #pragma endregion
 
     #pragma region FFT
-        _FFTSize = other._FFTSize;
+        _FFTMode = other._FFTMode;
         _FFTCustom = other._FFTCustom;
         _FFTDuration = other._FFTDuration;
 
@@ -237,12 +239,15 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _ShowToolTips = other._ShowToolTips;
 
+        _ShowCoverArt = other._ShowCoverArt;
+        _BackgroundBitmapOpacity = other._BackgroundBitmapOpacity;
+
         // Visualization
         _VisualizationType = other._VisualizationType;
 
         // Bars
         _DrawBandBackground = other._DrawBandBackground;
-        _LiteBandColor = other._LiteBandColor;
+        _LightBandColor = other._LightBandColor;
         _DarkBandColor = other._DarkBandColor;
         _LEDMode = other._LEDMode;
         _HorizontalGradient = other._HorizontalGradient;
@@ -299,7 +304,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
     parser >> Integer; _Transform = (Transform) Integer;
 
     #pragma region FFT
-    parser >> Integer; _FFTSize = (FFTSize) Integer;
+    parser >> Integer; _FFTMode = (FFTMode) Integer;
     parser >> _FFTCustom;
     parser >> _FFTDuration;
 
@@ -447,10 +452,10 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 
         parser >> _HorizontalGradient;
 
-        parser >> _LiteBandColor.r;
-        parser >> _LiteBandColor.g;
-        parser >> _LiteBandColor.b;
-        parser >> _LiteBandColor.a;
+        parser >> _LightBandColor.r;
+        parser >> _LightBandColor.g;
+        parser >> _LightBandColor.b;
+        parser >> _LightBandColor.a;
     }
 
     // Version 9
@@ -495,7 +500,7 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _Transform;
 
     #pragma region FFT
-        builder << (int) _FFTSize;
+        builder << (int) _FFTMode;
         builder << _FFTCustom;
         builder << _FFTDuration;
         builder << (int) _MappingMethod;
@@ -609,10 +614,10 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
 
         builder << _HorizontalGradient;
 
-        builder << _LiteBandColor.r;
-        builder << _LiteBandColor.g;
-        builder << _LiteBandColor.b;
-        builder << _LiteBandColor.a;
+        builder << _LightBandColor.r;
+        builder << _LightBandColor.g;
+        builder << _LightBandColor.b;
+        builder << _LightBandColor.a;
 
         // Version 9
         builder << _PageIndex;
@@ -658,7 +663,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         reader->read(&_Transform, sizeof(_Transform), abortHandler);
 
     #pragma region FFT
-        reader->read(&_FFTSize, sizeof(_FFTSize), abortHandler);
+        reader->read(&_FFTMode, sizeof(_FFTMode), abortHandler);
         reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
         reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
 
@@ -752,7 +757,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
             reader->read(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
 
-            reader->read(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+            reader->read(&_LightBandColor, sizeof(_LightBandColor), abortHandler);
         }
 
         if (Version >= 9)
@@ -798,7 +803,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
             writer->write(&_Transform, sizeof(_Transform), abortHandler);
 
         #pragma region FFT
-            writer->write(&_FFTSize, sizeof(_FFTSize), abortHandler);
+            writer->write(&_FFTMode, sizeof(_FFTMode), abortHandler);
             writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
             writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
             writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
@@ -886,7 +891,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
 
         writer->write(&_HorizontalGradient, sizeof(_HorizontalGradient), abortHandler);
 
-        writer->write(&_LiteBandColor, sizeof(_LiteBandColor), abortHandler);
+        writer->write(&_LightBandColor, sizeof(_LightBandColor), abortHandler);
 
         // Version 9
         writer->write(&_PageIndex, sizeof(_PageIndex), abortHandler);

@@ -83,6 +83,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.6.0.3, 2024-01-13
+
+* Improved: The sample window size for the FFT is now calculated based on the sample rate and the FFT size.
+* Fixed: The spectrum was not cleared after stopping a paused track.
+* Fixed: Wrong note names in the tooltip when using a non-default number of bands per octave.
+
 v0.6.0.2, 2024-01-02
 
 * Fixed: Finally found a (the?) correct way to use the sample window duration of foobar2000.
@@ -219,6 +225,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 * Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
+* [Humeur](https://github.com/Humeur) for [Better Dominant Colors](https://github.com/Humeur/better-dominant-colors).
 
 ## Reference Material
 
@@ -229,6 +236,10 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Constant-Q transform](https://en.wikipedia.org/wiki/Constant-Q_transform)
 * [Mel-frequency cepstrum](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
 * [Mel scale](https://en.wikipedia.org/wiki/Mel_scale)
+
+## Test Material
+
+* [The SOS Audio Test Files](https://www.soundonsound.com/techniques/sos-audio-test-files)
 
 ## Links
 

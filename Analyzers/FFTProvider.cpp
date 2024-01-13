@@ -1,5 +1,5 @@
 
-/** $VER: FFTProvider.cpp (2024.01.02) P. Stuer **/
+/** $VER: FFTProvider.cpp (2024.01.04) P. Stuer **/
 
 #include "FFTProvider.h"
 
@@ -39,7 +39,6 @@ FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sa
     _Curr = 0;
 }
 
-
 /// <summary>
 /// Adds multiple samples to the provider.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
@@ -48,6 +47,8 @@ FFTProvider::FFTProvider(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <param name="sampleCount">Number of samples to add to the provider</param>
 void FFTProvider::FFTProvider::Add(const audio_sample * samples, size_t sampleCount, uint32_t channelMask) noexcept
 {
+//  Log::Write(Log::Level::Trace, "%5d, %5d, %5d", _Size, _Curr, sampleCount / 2);
+
     if (samples == nullptr)
         return;
 
@@ -59,9 +60,7 @@ void FFTProvider::FFTProvider::Add(const audio_sample * samples, size_t sampleCo
     {
         _Data[_Curr] = AverageSamples(&samples[i], channelMask);
 
-        // Wrap around the buffer index.
-        if (++_Curr == _Size)
-            _Curr = 0;
+        _Curr = (_Curr + 1) % _Size;
     }
 }
 
@@ -83,8 +82,7 @@ void FFTProvider::FFTProvider::GetFrequencyCoefficients(vector<complex<double>> 
 
             Iter = complex<double>(_Data[i] * WindowFactor, 0.);
 
-            if (++i == _Size)
-                i = 0;
+            i = (i + 1) % _Size;
 
             Norm += WindowFactor;
             j++;

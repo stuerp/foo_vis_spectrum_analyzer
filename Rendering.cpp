@@ -1,15 +1,28 @@
 
-/** $VER: UIElement.cpp (2024.01.02) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.13) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "WIC.h"
+
 #include "Resources.h"
 #include "Gradients.h"
 
 #include "Log.h"
 
+#include <vector>
+#include <algorithm>
+
 #pragma hdrstop
+
+/// <summary>
+/// Creates the timer.
+/// </summary>
+void UIElement::CreateTimer() noexcept
+{
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+}
 
 /// <summary>
 /// Starts the timer.
@@ -50,7 +63,7 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// </summary>
 void UIElement::RenderFrame()
 {
-    if (!TryEnterCriticalSection(&_Lock))
+    if (!::TryEnterCriticalSection(&_Lock))
         return;
 
     _FrameCounter.NewFrame();
@@ -59,28 +72,34 @@ void UIElement::RenderFrame()
 
     if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
+        if (_IsStopping)
+        {
+            _BackgroundBitmap.Release();
+
+            for (auto & Iter : _FrequencyBands)
+                Iter.CurValue = 0.;
+
+            _IsStopping = false;
+        }
+
         _RenderTarget->BeginDraw();
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
+        RenderBackground();
+
+        // Update the graph.
         {
-            double PlaybackTime; // in ms
+            double PlaybackTime; // in sec
 
             if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
             {
-                if (PlaybackTime < _OldPlaybackTime)
-                    _OldPlaybackTime = 0.;
-
-                double WindowDuration = .2;
+                double WindowSize = (double) _FFTSize / (double) _SampleRate;
 
                 audio_chunk_impl Chunk;
 
-                // Sliding DFT, https://wiki.hydrogenaud.io/index.php?title=Sliding_DFT
-                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime /*- (WindowDuration / 2.)*/, WindowDuration))
+                if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
                     ProcessAudioChunk(Chunk);
-
-                _OldPlaybackTime = PlaybackTime - WindowDuration;
             }
             else
                 for (auto & Iter : _FrequencyBands)
@@ -107,6 +126,37 @@ void UIElement::RenderFrame()
     }
 
     ::LeaveCriticalSection(&_Lock);
+}
+
+/// <summary>
+/// Renders the background.
+/// </summary>
+void UIElement::RenderBackground() const
+{
+    _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
+
+    // Render the album art if there is any.
+    if (_BackgroundBitmap == nullptr)
+        return;
+
+    D2D1_RECT_F DstRect = _Graph.GetBounds();
+    D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
+
+    // Fit big images (Free / FitBig / FitWidth / FitHeight)
+    {
+        FLOAT w = Min(Size.width,  DstRect.right - DstRect.left);
+        FLOAT h = Min(Size.height, DstRect.bottom - DstRect.top);
+
+        Size.width  = Min(w, h);
+        Size.height = Min(w, h);
+
+        DstRect.left   = ((DstRect.right - DstRect.left) - Size.width) / 2.f;
+        DstRect.top    = ((DstRect.bottom - DstRect.top) - Size.height) / 2.f;
+        DstRect.right  = DstRect.left + Size.width;
+        DstRect.bottom = DstRect.top + Size.height;
+    }
+
+    _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, _Configuration._BackgroundBitmapOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -174,23 +224,6 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if (_FFTAnalyzer == nullptr)
     {
-        #pragma warning (disable: 4061)
-        switch (_Configuration._FFTSize)
-        {
-            default:
-                _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTSize));
-                break;
-
-            case FFTSize::FFTCustom:
-                _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
-                break;
-
-            case FFTSize::FFTDuration:
-                _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
-                break;
-        }
-        #pragma warning (default: 4061)
-
         _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _FFTSize, &_Configuration);
 
         _FrequencyCoefficients.resize(_FFTSize);
@@ -252,11 +285,13 @@ void UIElement::GenerateOctaveFrequencyBands()
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
-        int n = (int) i % 12;
+        int Note = (int) (i * (NotesGroup / 2.));
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], (int) i / 12, fb.Ctr);
+        int n = Note % 12;
 
-        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LiteBandColor;
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
+
+        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LightBandColor;
 
         _FrequencyBands.push_back(fb);
     }
@@ -444,25 +479,110 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_SIZE_U Size = D2D1::SizeU((UINT32) rc.Width(), (UINT32) rc.Height());
 
-        D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
-        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
+        D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
+        (
+            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+        );
+         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
         hr = _DirectX._Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
+        {
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-        // Resize some elements based on the size of the render target.
-        Resize();
+            // Resize some elements based on the size of the render target.
+            Resize();
+        }
     }
+
+    // Create the background bitmap from the album art.
+    if (SUCCEEDED(hr) && _Configuration._ShowCoverArt && (_CoverArt.size() != 0))
+        hr = CreateBackgroundBitmap();
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
 
     if (SUCCEEDED(hr))
+    {
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
+        if (SUCCEEDED(hr) && (_CoverArt.size() != 0))
+        {
+            Spectrum & s = _Graph.GetSpectrum();
+
+            s.Initialize(&_Configuration);
+        }
+    }
+
+    // Release the raw data.
+    if (_CoverArt.size() > 0)
+    {
+        std::vector<uint8_t> Empty;
+
+        _CoverArt.swap(Empty);
+    }
+
     return hr;
+}
+
+/// <summary>
+/// Creates the background bitmap from the pixel data and optionally generates a dynamic gradient.
+/// </summary>
+HRESULT UIElement::CreateBackgroundBitmap()
+{
+    _Frame = nullptr;
+
+    HRESULT hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), _Frame);
+
+    CComPtr<IWICFormatConverter> FormatConverter;
+
+    if (SUCCEEDED(hr))
+        hr = _WIC.GetFormatConverter(_Frame, FormatConverter);
+
+    if (SUCCEEDED(hr))
+    {
+        _BackgroundBitmap = nullptr;
+
+        _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        DominantColors dc;
+
+        const size_t _DominantColorCount = 5;
+        std::vector<D2D1_COLOR_F> Colors;
+
+        hr = dc.Get(_Frame, _DominantColorCount, Colors);
+
+        if (SUCCEEDED(hr))
+        {
+            std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+            {
+                if (left.r != right.r)
+                    return left.r < right.r;
+
+                if (left.g != right.g)
+                    return left.g < right.g;
+
+                if (left.b != right.b)
+                    return left.b < right.b;
+
+                return false;
+            });
+
+            _Configuration._GradientStops.clear();
+
+            _Configuration._GradientStops.push_back({ 0.f, Colors[0] });
+
+            for (size_t i = 1; i < _DominantColorCount; ++i)
+                _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), Colors[i] });
+        }
+    }
+
+    return S_OK; // Problems with the cover art should not prevent rendering other elements.
 }
 
 /// <summary>
@@ -473,7 +593,10 @@ void UIElement::ReleaseDeviceSpecificResources()
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
+    _BackgroundBitmap.Release();
+    _Frame.Release();
+
     _RenderTarget.Release();
 }
-#pragma endregion
 
+#pragma endregion

@@ -1,10 +1,20 @@
 
-/** $VER: Resources.h (2024.01.02) P. Stuer **/
+/** $VER: Resources.h (2024.01.05) P. Stuer **/
 
 #pragma once
 
 #define TOSTRING_IMPL(x) #x
 #define TOSTRING(x) TOSTRING_IMPL(x)
+
+#define NUM_FILE_MAJOR          0
+#define NUM_FILE_MINOR          6
+#define NUM_FILE_PATCH          0
+#define NUM_FILE_PRERELEASE     3
+
+#define NUM_PRODUCT_MAJOR       0
+#define NUM_PRODUCT_MINOR       6
+#define NUM_PRODUCT_PATCH       0
+#define NUM_PRODUCT_PRERELEASE  3
 
 /** Component specific **/
 
@@ -25,19 +35,9 @@
 #define STR_COMMENTS            TEXT(STR_COMPONENT_COMMENTS)
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
-#define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          6
-#define NUM_FILE_PATCH          0
-#define NUM_FILE_PRERELEASE     2
-
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
 #define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
-
-#define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       6
-#define NUM_PRODUCT_PATCH       0
-#define NUM_PRODUCT_PRERELEASE  2
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
 #define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)
@@ -51,7 +51,7 @@
 #define GUID_UI_ELEMENT         {0x3247c894,0xe585,0x4025,{0xa8,0x66,0xc7,0xd4,0x93,0x3f,0xb2,0xe3}} // {3247c894-e585-4025-a866-c7d4933fb2e3}
 #define STR_WINDOW_CLASS_NAME   "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
-#define WM_CONFIGURATION_CHANGING           WM_USER + 1
+#define WM_CONFIGURATION_CHANGING       WM_USER + 1
 
 /** Configuration **/
 
