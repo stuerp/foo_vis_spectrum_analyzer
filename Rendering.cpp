@@ -1,13 +1,15 @@
 
-/** $VER: Rendering.cpp (2024.01.13) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.15) P. Stuer **/
 
 #include "UIElement.h"
 
-#include "DirectX.h"
+#include "Direct2D.h"
+#include "DirectWrite.h"
 #include "WIC.h"
 
 #include "Resources.h"
 #include "Gradients.h"
+#include "ColorThief.h"
 
 #include "Log.h"
 
@@ -139,24 +141,30 @@ void UIElement::RenderBackground() const
     if (_BackgroundBitmap == nullptr)
         return;
 
-    D2D1_RECT_F DstRect = _Graph.GetBounds();
     D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
+    D2D1_RECT_F Rect = _Graph.GetBounds();
+
+    FLOAT MaxWidth  = Rect.right  - Rect.left;
+    FLOAT MaxHeight = Rect.bottom - Rect.top;
 
     // Fit big images (Free / FitBig / FitWidth / FitHeight)
     {
-        FLOAT w = Min(Size.width,  DstRect.right - DstRect.left);
-        FLOAT h = Min(Size.height, DstRect.bottom - DstRect.top);
+        // Fit big images.
+        FLOAT HScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+        FLOAT VScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
 
-        Size.width  = Min(w, h);
-        Size.height = Min(w, h);
+        FLOAT Scalar = (std::min)(HScalar, VScalar);
 
-        DstRect.left   = ((DstRect.right - DstRect.left) - Size.width) / 2.f;
-        DstRect.top    = ((DstRect.bottom - DstRect.top) - Size.height) / 2.f;
-        DstRect.right  = DstRect.left + Size.width;
-        DstRect.bottom = DstRect.top + Size.height;
+        Size.width  *= Scalar;
+        Size.height *= Scalar;
     }
 
-    _RenderTarget->DrawBitmap(_BackgroundBitmap, DstRect, _Configuration._BackgroundBitmapOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    Rect.left   = (MaxWidth  - Size.width)  / 2.f;
+    Rect.top    = (MaxHeight - Size.height) / 2.f;
+    Rect.right  = Rect.left + Size.width;
+    Rect.bottom = Rect.top  + Size.height;
+
+    _RenderTarget->DrawBitmap(_BackgroundBitmap, Rect, _Configuration._BackgroundBitmapOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -486,7 +494,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         );
          D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
-        hr = _DirectX._Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
+        hr = _Direct2D.Factory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
         {
@@ -530,7 +538,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 /// <summary>
 /// Creates the background bitmap from the pixel data and optionally generates a dynamic gradient.
 /// </summary>
-HRESULT UIElement::CreateBackgroundBitmap()
+HRESULT UIElement::CreateBackgroundBitmap() noexcept
 {
     _Frame = nullptr;
 
@@ -538,8 +546,11 @@ HRESULT UIElement::CreateBackgroundBitmap()
 
     CComPtr<IWICFormatConverter> FormatConverter;
 
+    // Convert the format of the frame to 32bppPBGRA.
+    hr = _WIC.Factory->CreateFormatConverter(&FormatConverter);
+
     if (SUCCEEDED(hr))
-        hr = _WIC.GetFormatConverter(_Frame, FormatConverter);
+        hr = FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
 
     if (SUCCEEDED(hr))
     {
@@ -548,41 +559,84 @@ HRESULT UIElement::CreateBackgroundBitmap()
         _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
     }
 
+    std::vector<D2D1_COLOR_F> Colors;
+
+    if (SUCCEEDED(hr))
+        hr = CreatePalette(FormatConverter, Colors);
+
     if (SUCCEEDED(hr))
     {
-        DominantColors dc;
-
-        const size_t _DominantColorCount = 5;
-        std::vector<D2D1_COLOR_F> Colors;
-
-        hr = dc.Get(_Frame, _DominantColorCount, Colors);
-
-        if (SUCCEEDED(hr))
+        // Sort from dark to light.
+        std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
         {
-            std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
-            {
-                if (left.r != right.r)
-                    return left.r < right.r;
+            if (left.r != right.r)
+                return left.r < right.r;
 
-                if (left.g != right.g)
-                    return left.g < right.g;
+            if (left.g != right.g)
+                return left.g < right.g;
 
-                if (left.b != right.b)
-                    return left.b < right.b;
+            if (left.b != right.b)
+                return left.b < right.b;
 
-                return false;
-            });
+            return false;
+        });
 
-            _Configuration._GradientStops.clear();
-
-            _Configuration._GradientStops.push_back({ 0.f, Colors[0] });
-
-            for (size_t i = 1; i < _DominantColorCount; ++i)
-                _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (_DominantColorCount - 1), Colors[i] });
-        }
+        // Create the gradient.
+        hr = CreateGradient(Colors);
     }
 
     return S_OK; // Problems with the cover art should not prevent rendering other elements.
+}
+
+/// <summary>
+/// Creates a palette from the bitmap source.
+/// </summary>
+HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & colors) noexcept
+{
+    UINT Width = 0, Height = 0;
+
+    HRESULT hr = bitmapSource->GetSize(&Width, &Height);
+
+    uint32_t Quality = ColorThief::DefaultQuality;
+
+    if (SUCCEEDED(hr))
+    {
+        Quality = (Width * Height * 10) / (640 * 480); // Reference: 640 x 480 => Quality = 10
+
+        if (Quality == 0)
+            Quality = 1;
+    }
+
+    std::vector<ColorThief::color_t> Palette;
+
+    if (SUCCEEDED(hr))
+        hr = ColorThief::GetPalette(bitmapSource, Palette, 10, Quality);
+
+    // Convert to Direct2D colors.
+    if (SUCCEEDED(hr))
+    {
+        colors.clear();
+
+        for (const auto & p : Palette)
+            colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+    }
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a gradient from a list of colors.
+/// </summary>
+HRESULT UIElement::CreateGradient(const std::vector<D2D1_COLOR_F> & colors) noexcept
+{
+    _Configuration._GradientStops.clear();
+
+    _Configuration._GradientStops.push_back({ 0.f, colors[0] });
+
+    for (size_t i = 1; i < colors.size(); ++i)
+        _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
+
+    return S_OK;
 }
 
 /// <summary>

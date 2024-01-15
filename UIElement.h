@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.13) P. Stuer **/
+/** $VER: UIElement.h (2024.01.15) P. Stuer **/
 
 #pragma once
 
@@ -123,7 +123,9 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
-    HRESULT CreateBackgroundBitmap();
+    HRESULT CreateBackgroundBitmap() noexcept;
+    HRESULT CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & palette) noexcept;
+    HRESULT CreateGradient(const std::vector<D2D1_COLOR_F> & colors) noexcept;
 
     #pragma endregion
 

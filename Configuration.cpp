@@ -120,7 +120,7 @@ void Configuration::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
-    _ShowCoverArt = false;
+    _ShowCoverArt = true;
     _BackgroundBitmapOpacity = 1.f;
 
     _VisualizationType = VisualizationType::Bars;

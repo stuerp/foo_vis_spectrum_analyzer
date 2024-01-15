@@ -83,6 +83,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.6.1.0, 2024-01-xx
+
+* New: The cover art of the playing track can be used as background image.
+* New: The dominant colors of the cover art can be used to generate a gradient.
+* New: The outline color of the curve can be specified.
+
 v0.6.0.3, 2024-01-13
 
 * Improved: The sample window size for the FFT is now calculated based on the sample rate and the FFT size.

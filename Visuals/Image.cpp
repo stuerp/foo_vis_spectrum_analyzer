@@ -1,16 +1,19 @@
 
-/** $VER: Pixels.cpp (2024.01.07) P. Stuer - Provides access to the pixels of a WIC image. **/
+/** $VER: Image.cpp (2024.01.15) P. Stuer **/
 
-#include "Pixels.h"
+#include "Image.h"
 
 #include "WIC.h"
 
 #pragma hdrstop
 
-HRESULT Pixels::Initialize(CComPtr<IWICBitmapFrameDecode> frame) noexcept
+/// <summary>
+/// Initializes this instance from a WIC bitmap source.
+/// </summary>
+HRESULT Image::Initialize(IWICBitmapSource * source) noexcept
 {
     // Create the bitmap from the image frame.
-    HRESULT hr = _WIC.CreateBitmapFromSource(frame, WICBitmapCacheOnDemand, &_Bitmap);
+    HRESULT hr = _WIC.CreateBitmapFromSource(source, WICBitmapCacheOnDemand, &_Bitmap);
 
     if (SUCCEEDED(hr))
         _Bitmap->GetSize(&_Width, &_Height);

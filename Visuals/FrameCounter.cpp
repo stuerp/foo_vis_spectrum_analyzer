@@ -2,7 +2,7 @@
 /** $VER: FrameCounter.cpp (2023.12.31) P. Stuer **/
 
 #include "FrameCounter.h"
-#include "DirectX.h"
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -74,7 +74,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
 {
     static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
@@ -88,7 +88,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
 
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {

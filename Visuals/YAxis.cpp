@@ -2,7 +2,8 @@
 /** $VER: YAXis.cpp (2023.12.31) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
-#include "DirectX.h"
+
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -101,7 +102,7 @@ HRESULT YAxis::CreateDeviceIndependentResources()
     {
         static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
-        hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
         if (SUCCEEDED(hr))
         {
@@ -114,7 +115,7 @@ HRESULT YAxis::CreateDeviceIndependentResources()
     {
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {

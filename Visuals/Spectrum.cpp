@@ -1,8 +1,10 @@
 
-/** $VER: Spectrum.cpp (2023.12.30) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.01.15) P. Stuer **/
 
 #include "Spectrum.h"
-#include "DirectX.h"
+
+#include "Direct2D.h"
+#include "DirectWrite.h"
 
 #include "BezierSpline.h"
 
@@ -234,7 +236,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
     if (frequencyBands.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _DirectX._Direct2D->CreatePathGeometry(&_Curve);
+    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&_Curve);
 
     if (SUCCEEDED(hr))
     {

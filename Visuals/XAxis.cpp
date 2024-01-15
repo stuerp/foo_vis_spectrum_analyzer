@@ -2,7 +2,8 @@
 /** $VER: XAXis.cpp (2023.12.31) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
-#include "DirectX.h"
+
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -170,7 +171,7 @@ void XAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectX._DirectWrite->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -204,7 +205,7 @@ HRESULT XAxis::CreateDeviceIndependentResources()
     {
         static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
-        hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
         if (SUCCEEDED(hr))
         {
@@ -218,7 +219,7 @@ HRESULT XAxis::CreateDeviceIndependentResources()
     {
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
