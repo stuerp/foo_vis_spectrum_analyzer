@@ -19,7 +19,7 @@ static const uint32_t DefaultColorCount = 5;
 static const uint32_t DefaultQuality = 10;
 static const bool DefaultIgnoreBright = true;
 
-HRESULT GetDominantColor(IWICBitmapSource * sourceImage, color_t & color, uint32_t quality = DefaultQuality, bool ignoreWhite = DefaultIgnoreBright);
-HRESULT GetPalette(IWICBitmapSource * sourceImage, std::vector<color_t> & palette, uint32_t colorCount = DefaultColorCount, uint32_t quality = DefaultQuality, bool ignoreWhite = DefaultIgnoreBright);
+HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palette, uint32_t colorCount = DefaultColorCount, uint32_t quality = DefaultQuality, bool ignoreWhite = DefaultIgnoreBright);
+HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint32_t quality = DefaultQuality, bool ignoreWhite = DefaultIgnoreBright);
 
 }

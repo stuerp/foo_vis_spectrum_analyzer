@@ -1,5 +1,5 @@
 
-/** $VER: ColorThief.cpp (2024.01.15) P. Stuer **/
+/** $VER: ColorThief.cpp (2024.01.16) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,7 +7,7 @@
 
 #include "ColorThief.h"
 
-#include "Image.h"
+#include "Raster.h"
 #include "WIC.h"
 
 #include <cmath>
@@ -18,11 +18,6 @@
 #include <algorithm>
 
 #pragma hdrstop
-
-enum class PrimaryColor
-{
-    Red, Green, Blue
-};
 
 namespace ColorThief
 {
@@ -36,9 +31,9 @@ std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t pixelCo
 /// <param name="quality">0 is the highest quality settings. 10 is the default. There is a trade-off between quality and speed. The bigger the number,
 /// the faster a color will be returned but the greater the likelihood that it will not be the visually most dominant color.</param>
 /// <param name="ignoreWhite">if set to <c>true</c> [ignore white].</param>
-HRESULT GetPalette(IWICBitmapSource * source, std::vector<color_t> & palette, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors)
+HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palette, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors)
 {
-    if ((source == nullptr) || (colorCount < 2) || (colorCount > 256) || (quality == 0))
+    if ((bitmapSource == nullptr) || (colorCount < 2) || (colorCount > 256) || (quality == 0))
         return E_INVALIDARG;
 
     CComPtr<IWICFormatConverter> Converter;
@@ -46,15 +41,15 @@ HRESULT GetPalette(IWICBitmapSource * source, std::vector<color_t> & palette, ui
     HRESULT hr = _WIC.Factory->CreateFormatConverter(&Converter);
 
     if (SUCCEEDED(hr))
-        hr = Converter->Initialize(source, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+        hr = Converter->Initialize(bitmapSource, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 
-    Image p;
-
-    if (SUCCEEDED(hr))
-        hr = p.Initialize(Converter);
+    Raster r;
 
     if (SUCCEEDED(hr))
-        palette = GetPaletteInternal(p.Data(), p.Width() * p.Height(), colorCount, quality, ignoreBrightColors);
+        hr = r.Initialize(Converter);
+
+    if (SUCCEEDED(hr))
+        palette = GetPaletteInternal(r.Data(), r.Width() * r.Height(), colorCount, quality, ignoreBrightColors);
 
     return hr;
 }
@@ -66,17 +61,19 @@ HRESULT GetPalette(IWICBitmapSource * source, std::vector<color_t> & palette, ui
 /// <param name="quality">0 is the highest quality settings. 10 is the default. There is a trade-off between quality and speed. The bigger the number,
 /// the faster a color will be returned but the greater the likelihood that it will not be the visually most dominant color.</param>
 /// <param name="ignoreWhite">if set to <c>true</c> [ignore white].</param>
-HRESULT GetDominantColor(IWICBitmapSource * source, color_t & color, uint32_t quality, bool ignoreBrightColors)
+HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint32_t quality, bool ignoreBrightColors)
 {
     std::vector<color_t> Palette;
 
-    HRESULT hr = GetPalette(source, Palette, DefaultColorCount, quality, ignoreBrightColors);
+    HRESULT hr = GetPalette(bitmapSource, Palette, DefaultColorCount, quality, ignoreBrightColors);
 
     if (SUCCEEDED(hr))
         color = Palette[0];
 
     return S_OK;
 }
+
+#pragma region Private
 
 const int32_t SignificantBits = 5;
 const int32_t Shift = 8 - SignificantBits;
@@ -88,6 +85,9 @@ inline size_t GetColorIndex(int32_t r, int32_t g, int32_t b) noexcept
     return (size_t) ((r << (2 * SignificantBits)) + (g << SignificantBits) + b);
 }
 
+/// <summary>
+/// Implements a color box.
+/// </summary>
 class VBox
 {
 public:
@@ -225,6 +225,9 @@ private:
     bool _HasAverage;
 };
 
+/// <summary>
+/// Implements a priority queue.
+/// </summary>
 template<typename T, typename U>
 class PriorityQueue
 {
@@ -273,6 +276,11 @@ private:
     bool _IsSorted;
 };
 
+enum class PrimaryColor
+{
+    Red, Green, Blue
+};
+
 inline bool CompareCount(VBox & a, VBox & b) noexcept;
 inline bool CompareProduct(VBox & a, VBox & b) noexcept;
 
@@ -281,7 +289,7 @@ std::vector<color_t> Quantize(const std::vector<int32_t> & histogram, VBox & box
 
 void Iterate(PriorityQueue<VBox, decltype(CompareCount)> & pq, size_t targetCount, const std::vector<int32_t> & histogram) noexcept;
 std::tuple<std::optional<VBox>, std::optional<VBox>> MedianCut(const std::vector<int32_t> & histogram, VBox & box) noexcept;
-std::tuple<std::unordered_map<int, uint64_t>, uint64_t> ComputePartialCounts(const std::vector<int32_t> & histogram, const VBox & box, PrimaryColor color) noexcept;
+std::tuple<std::unordered_map<int32_t, uint64_t>, uint64_t> ComputePartialCounts(const std::vector<int32_t> & histogram, const VBox & box, PrimaryColor color) noexcept;
 
 /// <summary>
 /// Gets the palette from the RGBA data.
@@ -426,7 +434,7 @@ std::tuple<std::optional<VBox>, std::optional<VBox>> MedianCut(const std::vector
     if (box.Count() == 1)
         return { { box.Clone() }, {} };
 
-    std::unordered_map<int, uint64_t> LookAheadCount;
+    std::unordered_map<int32_t, uint64_t> LookAheadCount;
 
     auto [PartialCount, Total] = ComputePartialCounts(histogram, box, CutColor);
 
@@ -500,9 +508,9 @@ std::tuple<std::optional<VBox>, std::optional<VBox>> MedianCut(const std::vector
 /// <summary>
 /// Computes the partials sums.
 /// </summary>
-std::tuple<std::unordered_map<int, uint64_t>, uint64_t> ComputePartialCounts(const std::vector<int32_t> & histogram, const VBox & vbox, PrimaryColor color) noexcept
+std::tuple<std::unordered_map<int32_t, uint64_t>, uint64_t> ComputePartialCounts(const std::vector<int32_t> & histogram, const VBox & vbox, PrimaryColor color) noexcept
 {
-    std::unordered_map<int, uint64_t> PartialCount;
+    std::unordered_map<int32_t, uint64_t> PartialCount;
     uint64_t Total = 0;
 
     switch (color)
@@ -577,4 +585,5 @@ inline bool CompareProduct(VBox & a, VBox & b) noexcept
     return ((uint64_t) a.Count() * (uint64_t) a.Volume()) < ((uint64_t) b.Count() * (uint64_t) b.Volume());
 }
 
+#pragma endregion
 }

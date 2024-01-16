@@ -1,7 +1,7 @@
 
-/** $VER: Image.cpp (2024.01.15) P. Stuer **/
+/** $VER: Raster.cpp (2024.01.16) P. Stuer **/
 
-#include "Image.h"
+#include "Raster.h"
 
 #include "WIC.h"
 
@@ -10,13 +10,13 @@
 /// <summary>
 /// Initializes this instance from a WIC bitmap source.
 /// </summary>
-HRESULT Image::Initialize(IWICBitmapSource * source) noexcept
+HRESULT Raster::Initialize(IWICBitmapSource * bitmapSource) noexcept
 {
     // Create the bitmap from the image frame.
-    HRESULT hr = _WIC.CreateBitmapFromSource(source, WICBitmapCacheOnDemand, &_Bitmap);
+    HRESULT hr = _WIC.CreateBitmapFromSource(bitmapSource, WICBitmapCacheOnDemand, &_Bitmap);
 
     if (SUCCEEDED(hr))
-        _Bitmap->GetSize(&_Width, &_Height);
+        hr = _Bitmap->GetSize(&_Width, &_Height);
 
     // Lock the complete bitmap.
     if (SUCCEEDED(hr))

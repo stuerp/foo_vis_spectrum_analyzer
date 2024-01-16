@@ -1,5 +1,5 @@
 
-/** $VER: Image.h (2024.01.15) P. Stuer **/
+/** $VER: Raster.h (2024.01.16) P. Stuer **/
 
 #pragma once
 
@@ -8,10 +8,10 @@
 /// <summary>
 /// Represents a bitmap image.
 /// </summary>
-class Image
+class Raster
 {
 public:
-    Image() : _Width(), _Height(), _Data(), _Size(), _Stride(), _PixelFormat(), _BitsPerPixel() { }
+    Raster() : _Width(), _Height(), _Data(), _Size(), _Stride(), _PixelFormat(), _BitsPerPixel() { }
 
     HRESULT Initialize(IWICBitmapSource * source) noexcept;
 
