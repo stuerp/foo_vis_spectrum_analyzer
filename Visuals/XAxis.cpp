@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2023.12.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.01.16) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -143,7 +143,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void XAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+void XAxis::Render(ID2D1RenderTarget * renderTarget)
 {
     if (_Mode == XAxisMode::None)
         return;
@@ -248,7 +248,7 @@ void XAxis::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT XAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

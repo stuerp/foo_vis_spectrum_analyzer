@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.01.15) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.01.16) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 

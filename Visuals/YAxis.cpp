@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2023.12.31) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.01.16) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
@@ -54,7 +54,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+void YAxis::Render(ID2D1RenderTarget * renderTarget)
 {
     if (_Configuration->_YAxisMode == YAxisMode::None)
         return;
@@ -142,7 +142,7 @@ void YAxis::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT YAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

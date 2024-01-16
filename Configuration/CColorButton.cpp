@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.cpp (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2024.01.16) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorButton.h"
 #include "CColorDialogEx.h"
@@ -190,7 +190,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
 /// <summary>
 /// Creates a pattern brush for rendering the background.
 /// </summary>
-HRESULT CColorButton::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 

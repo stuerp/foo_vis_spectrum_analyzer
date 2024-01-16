@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.13) P. Stuer **/
+/** $VER: Configuration.h (2024.01.16) P. Stuer **/
 
 #pragma once
 
@@ -317,7 +317,6 @@ public:
 
         #pragma region Common
             ColorScheme _ColorScheme;
-            std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops. Will not be persisted.
             std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
 
@@ -354,6 +353,7 @@ public:
 
     t_ui_color _DefBackColor;
     t_ui_color _DefTextColor;
+    std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
 
     #pragma endregion
 /*

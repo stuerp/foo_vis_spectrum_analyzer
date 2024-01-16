@@ -1,5 +1,5 @@
 
-/** $VER: WIC.cpp (2024.01.08) P. Stuer **/
+/** $VER: WIC.cpp (2024.01.16) P. Stuer **/
 
 #include "WIC.h"
 
@@ -18,7 +18,7 @@ WIC::WIC()
 /// <summary>
 /// Creates a WIC format converter from raw image data.
 /// </summary>
-HRESULT WIC::Load(const uint8_t * data, size_t size, CComPtr<IWICBitmapFrameDecode> & frame) const noexcept
+HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept
 {
     if ((data == nullptr) || (size == 0))
         return E_FAIL;
@@ -36,7 +36,7 @@ HRESULT WIC::Load(const uint8_t * data, size_t size, CComPtr<IWICBitmapFrameDeco
         hr = Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnLoad, &Decoder);
 
     if (SUCCEEDED(hr))
-        hr = Decoder->GetFrame(0, &frame);
+        hr = Decoder->GetFrame(0, frame);
 
     return hr;
 }
@@ -64,13 +64,13 @@ HRESULT WIC::GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & bits
 /// <summary>
 /// Creates a format converter to convert a WIC frame to the specfied format.
 /// </summary>
-HRESULT WIC::GetFormatConverter(CComPtr<IWICBitmapFrameDecode> frame, CComPtr<IWICFormatConverter> & formatConverter) const noexcept
+HRESULT WIC::GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) const noexcept
 {
     // Convert the format of the frame to 32bppPBGRA.
-    HRESULT hr = Factory->CreateFormatConverter(&formatConverter);
+    HRESULT hr = Factory->CreateFormatConverter(formatConverter);
 
     if (SUCCEEDED(hr))
-        hr = formatConverter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        hr = (*formatConverter)->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
 
     return hr;
 }

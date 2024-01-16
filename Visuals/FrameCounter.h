@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.h (2023.12.31) P. Stuer - Represents and renders the frame counter display. **/
+/** $VER: FrameCounter.h (2024.01.16) P. Stuer - Represents and renders the frame counter display. **/
 
 #pragma once
 
@@ -32,12 +32,12 @@ public:
     void Resize(FLOAT clientWidth, FLOAT clientHeight);
 
     void NewFrame();
-    HRESULT Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT Render(ID2D1RenderTarget * renderTarget);
 
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
 
-    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
 private:

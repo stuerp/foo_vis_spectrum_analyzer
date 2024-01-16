@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2023.12.31) P. Stuer **/
+/** $VER: FrameCounter.cpp (2024.01.16) P. Stuer **/
 
 #include "FrameCounter.h"
 #include "DirectWrite.h"
@@ -37,7 +37,7 @@ void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT FrameCounter::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 {
     static WCHAR Text[512] = { };
 
@@ -116,7 +116,7 @@ void FrameCounter::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT FrameCounter::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

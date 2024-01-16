@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.01.15) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.01.16) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -33,7 +33,7 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     CreateDeviceSpecificResources(renderTarget);
 
@@ -54,7 +54,7 @@ void Spectrum::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::
 /// <summary>
 /// Renders the spectrum analysis as bars.
 /// </summary>
-void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
@@ -120,7 +120,7 @@ void Spectrum::RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const s
 /// <summary>
 /// Renders the spectrum analysis as a curve.
 /// </summary>
-void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     HRESULT hr = CreateCurve(frequencyBands, sampleRate);
 
@@ -142,7 +142,7 @@ void Spectrum::RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const 
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Spectrum::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -167,7 +167,7 @@ HRESULT Spectrum::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> &
 /// <summary>
 /// Creates a gradient brush for rendering the bars.
 /// </summary>
-HRESULT Spectrum::CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT Spectrum::CreateGradientBrush(ID2D1RenderTarget * renderTarget)
 {
     if (_GradientStops.empty())
         return E_FAIL;
@@ -189,7 +189,7 @@ HRESULT Spectrum::CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTar
 /// <summary>
 /// Creates a pattern brush for rendering LED mode.
 /// </summary>
-HRESULT Spectrum::CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT Spectrum::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 

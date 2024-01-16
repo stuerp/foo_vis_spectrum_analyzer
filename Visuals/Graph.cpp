@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.01.01) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.01.16) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 
@@ -58,7 +58,7 @@ void Graph::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Graph::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
     _XAxis.Render(renderTarget);
 
@@ -89,7 +89,7 @@ void Graph::ReleaseDeviceIndependentResources()
     _XAxis.ReleaseDeviceIndependentResources();
 }
 
-HRESULT Graph::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     return S_OK;
 }

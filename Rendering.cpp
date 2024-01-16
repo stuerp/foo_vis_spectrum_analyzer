@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.15) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.16) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -540,9 +540,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 /// </summary>
 HRESULT UIElement::CreateBackgroundBitmap() noexcept
 {
-    _Frame = nullptr;
+    _Frame.Release();
 
-    HRESULT hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), _Frame);
+    HRESULT hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), &_Frame);
 
     CComPtr<IWICFormatConverter> FormatConverter;
 
@@ -554,7 +554,7 @@ HRESULT UIElement::CreateBackgroundBitmap() noexcept
 
     if (SUCCEEDED(hr))
     {
-        _BackgroundBitmap = nullptr;
+        _BackgroundBitmap.Release();
 
         _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
     }
@@ -582,7 +582,7 @@ HRESULT UIElement::CreateBackgroundBitmap() noexcept
         });
 
         // Create the gradient.
-        hr = CreateGradient(Colors);
+        hr = CreateGradientStops(Colors);
     }
 
     return S_OK; // Problems with the cover art should not prevent rendering other elements.
@@ -625,9 +625,9 @@ HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2
 }
 
 /// <summary>
-/// Creates a gradient from a list of colors.
+/// Creates the gradient stops from a list of colors.
 /// </summary>
-HRESULT UIElement::CreateGradient(const std::vector<D2D1_COLOR_F> & colors) noexcept
+HRESULT UIElement::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     _Configuration._GradientStops.clear();
 
