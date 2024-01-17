@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.17) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -179,6 +179,10 @@ private:
     CColorButton _Gradient;
     CColorListBox _Colors;
     CNumericEdit _Position;
+
+    CNumericEdit _CoverArtOpacity;
+    CNumericEdit _CoverArtColors;
+    CNumericEdit _LightnessThreshold;
 
     CColorButton _BackColor;
     CColorButton _XTextColor;

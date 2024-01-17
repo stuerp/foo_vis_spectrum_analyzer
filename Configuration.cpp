@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.13) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.17) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -120,8 +120,14 @@ void Configuration::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
-    _ShowCoverArt = true;
-    _BackgroundBitmapOpacity = 1.f;
+
+    _BackgroundMode = BackgroundMode::CoverArt;
+    _CoverArtOpacity = 1.f;
+
+    _CoverArtColors = 10;
+    _LightnessThreshold = 0.98f;
+
+    _ColorOrder = ColorOrder::None;
 
     _VisualizationType = VisualizationType::Bars;
 
@@ -239,8 +245,13 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _ShowToolTips = other._ShowToolTips;
 
-        _ShowCoverArt = other._ShowCoverArt;
-        _BackgroundBitmapOpacity = other._BackgroundBitmapOpacity;
+        _BackgroundMode = other._BackgroundMode;
+        _CoverArtOpacity = other._CoverArtOpacity;
+
+        _CoverArtColors = other._CoverArtColors;
+        _LightnessThreshold = other._LightnessThreshold;
+
+        _ColorOrder = other._ColorOrder;
 
         // Visualization
         _VisualizationType = other._VisualizationType;
@@ -371,6 +382,9 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 
     parser >> Integer; _ColorScheme = (ColorScheme) Integer;
 
+    if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
+        _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::CoverArt was added after ColorScheme::Custom
+
     parser >> _DrawBandBackground;
 
     parser >> Integer; _PeakMode = (PeakMode) Integer;
@@ -465,6 +479,17 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> Integer; _VisualizationType = (VisualizationType) Integer;
         parser >> _LineWidth;
         parser >> _AreaOpacity;
+    }
+
+    // Version 10
+    if (Version >= 10)
+    {
+        parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
+        parser >> _CoverArtOpacity;
+
+        parser >> _CoverArtColors;
+        parser >> _LightnessThreshold;
+        parser >> Integer; _ColorOrder = (ColorOrder) Integer;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -624,6 +649,14 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _VisualizationType;
         builder << _LineWidth;
         builder << _AreaOpacity;
+
+        // Version 10
+        builder << (int) _BackgroundMode;
+        builder << _CoverArtOpacity;
+
+        builder << _CoverArtColors;
+        builder << _LightnessThreshold;
+        builder << (int) _ColorOrder;
     }
     catch (exception)
     {
@@ -709,6 +742,9 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
         reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
+        if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
+            _ColorScheme = (ColorScheme) ((int) _ColorScheme + 1); // ColorScheme::CoverArt was added after ColorScheme::Custom
+
         reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
 
         reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
@@ -766,6 +802,16 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_VisualizationType, sizeof(_VisualizationType), abortHandler);
             reader->read(&_LineWidth, sizeof(_LineWidth), abortHandler);
             reader->read(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
+        }
+
+        if (Version >= 10)
+        {
+            reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+            reader->read(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
+
+            reader->read(&_CoverArtColors, sizeof(_CoverArtColors), abortHandler);
+            reader->read(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
+            reader->read(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
         }
     }
     catch (exception)
@@ -898,6 +944,14 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_VisualizationType, sizeof(_VisualizationType), abortHandler);
         writer->write(&_LineWidth, sizeof(_LineWidth), abortHandler);
         writer->write(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
+
+        // Version 10
+        writer->write(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+        writer->write(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
+
+        writer->write(&_CoverArtColors, sizeof(_CoverArtColors), abortHandler);
+        writer->write(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
+        writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
     }
     catch (exception)
     {

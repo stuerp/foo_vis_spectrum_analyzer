@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.17) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -472,7 +472,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Cover Art", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -505,6 +505,86 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
     }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_BACKGROUND_MODE);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"None", L"Solid", L"Cover Art" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_BackgroundMode);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
+        };
+
+        _CoverArtOpacity.Initialize(GetDlgItem(IDC_COVER_ART_OPACITY));
+
+        SetDlgItemTextW(IDC_COVER_ART_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_CoverArtOpacity * 100.f))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_COVER_ART_OPACITY_SPIN));
+
+        w.SetRange32((int) (MinCoverArtOpacity * 100.f), (int) (MaxCoverArtOpacity * 100.f));
+        w.SetPos32((int) (_Configuration->_CoverArtOpacity * 100.f));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  2 },
+            { 3,  8 },
+            { 4, 16 },
+        };
+
+        _CoverArtColors.Initialize(GetDlgItem(IDC_COVER_ART_COLORS));
+
+        SetDlgItemTextW(IDC_COVER_ART_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_CoverArtColors))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_COVER_ART_COLORS_SPIN));
+
+        w.SetRange32((int) (MinCoverArtColors), (int) (MaxCoverArtColors));
+        w.SetPos32((int) (_Configuration->_CoverArtColors));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
+        };
+
+        _LightnessThreshold.Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD));
+
+        SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_LIGHTNESS_THRESHOLD_SPIN));
+
+        w.SetRange32((int) (MinLightnessThreshold * 100.f), (int) (MaxLightnessThreshold * 100.f));
+        w.SetPos32((int) (_Configuration->_LightnessThreshold * 100.f));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_COLOR_ORDER);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"None", L"Hue ascending", L"Hue descending", L"Lightness ascending", L"Lightness descending", L"Saturation ascending", L"Saturation descending" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_ColorOrder);
+    }
+
     #pragma endregion
 
     #pragma region Colors
@@ -648,6 +728,10 @@ void ConfigurationDialog::Terminate()
     _Position.Terminate();
     _Colors.Terminate();
     _Gradient.Terminate();
+
+    _CoverArtOpacity.Terminate();
+    _CoverArtColors.Terminate();
+    _LightnessThreshold.Terminate();
 
     _BackColor.Terminate();
 
@@ -1672,6 +1756,13 @@ void ConfigurationDialog::UpdatePage2(int mode) const noexcept
             IDC_POSITION, IDC_POSITION_LBL, IDC_SPREAD,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_SHOW_TOOLTIPS,
+
+            IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
+            IDC_COVER_ART_OPACITY_LBL, IDC_COVER_ART_OPACITY, IDC_COVER_ART_OPACITY_SPIN, IDC_COVER_ART_OPACITY_LBL_2,
+            IDC_COVER_ART_COLORS_LBL, IDC_COVER_ART_COLORS,
+            IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
+            IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
+
 
         // X axis
         IDC_X_AXIS,

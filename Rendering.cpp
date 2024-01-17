@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.16) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.17) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -138,7 +138,7 @@ void UIElement::RenderBackground() const
     _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
     // Render the album art if there is any.
-    if (_BackgroundBitmap == nullptr)
+    if ((_BackgroundBitmap == nullptr) || (_Configuration._BackgroundMode != BackgroundMode::CoverArt))
         return;
 
     D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
@@ -164,7 +164,7 @@ void UIElement::RenderBackground() const
     Rect.right  = Rect.left + Size.width;
     Rect.bottom = Rect.top  + Size.height;
 
-    _RenderTarget->DrawBitmap(_BackgroundBitmap, Rect, _Configuration._BackgroundBitmapOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    _RenderTarget->DrawBitmap(_BackgroundBitmap, Rect, _Configuration._CoverArtOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -506,7 +506,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the album art.
-    if (SUCCEEDED(hr) && _Configuration._ShowCoverArt && (_CoverArt.size() != 0))
+    if (SUCCEEDED(hr) && (_Configuration._BackgroundMode == BackgroundMode::CoverArt) && (_CoverArt.size() != 0))
         hr = CreateBackgroundBitmap();
 
     if (SUCCEEDED(hr))
@@ -520,7 +520,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         {
             Spectrum & s = _Graph.GetSpectrum();
 
-            s.Initialize(&_Configuration);
+            s.Initialize(&_Configuration); // FIXME
         }
     }
 
@@ -559,30 +559,36 @@ HRESULT UIElement::CreateBackgroundBitmap() noexcept
         _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
     }
 
-    std::vector<D2D1_COLOR_F> Colors;
+    // Get the colors from the cover art.
+    if (SUCCEEDED(hr) && (_Configuration._ColorScheme == ColorScheme::CoverArt))
+    {
+        std::vector<D2D1_COLOR_F> Colors;
 
-    if (SUCCEEDED(hr))
         hr = CreatePalette(FormatConverter, Colors);
 
-    if (SUCCEEDED(hr))
-    {
-        // Sort from dark to light.
-        std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+        if (SUCCEEDED(hr))
         {
-            if (left.r != right.r)
-                return left.r < right.r;
+            if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
+            {
+                // FIXME: Sort from dark to light.
+                std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+                {
+                    if (left.r != right.r)
+                        return left.r < right.r;
 
-            if (left.g != right.g)
-                return left.g < right.g;
+                    if (left.g != right.g)
+                        return left.g < right.g;
 
-            if (left.b != right.b)
-                return left.b < right.b;
+                    if (left.b != right.b)
+                        return left.b < right.b;
 
-            return false;
-        });
+                    return false;
+                });
+            }
 
-        // Create the gradient.
-        hr = CreateGradientStops(Colors);
+            // Create the gradient.
+            hr = CreateGradientStops(Colors);
+        }
     }
 
     return S_OK; // Problems with the cover art should not prevent rendering other elements.
@@ -597,20 +603,14 @@ HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2
 
     HRESULT hr = bitmapSource->GetSize(&Width, &Height);
 
-    uint32_t Quality = ColorThief::DefaultQuality;
-
-    if (SUCCEEDED(hr))
-    {
-        Quality = (Width * Height * 10) / (640 * 480); // Reference: 640 x 480 => Quality = 10
-
-        if (Quality == 0)
-            Quality = 1;
-    }
-
     std::vector<ColorThief::color_t> Palette;
 
     if (SUCCEEDED(hr))
-        hr = ColorThief::GetPalette(bitmapSource, Palette, 10, Quality);
+    {
+        uint32_t Quality = Clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+
+        hr = ColorThief::GetPalette(bitmapSource, Palette, _Configuration._CoverArtColors, Quality);
+    }
 
     // Convert to Direct2D colors.
     if (SUCCEEDED(hr))

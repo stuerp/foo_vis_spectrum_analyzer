@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.16) P. Stuer **/
+/** $VER: Configuration.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -70,6 +70,15 @@ inline const double MaxLineWidth = 10.f;
 
 inline const double MinAreaOpacity = 0.f;
 inline const double MaxAreaOpacity = 1.f;
+
+inline const double MinCoverArtOpacity = 0.f;
+inline const double MaxCoverArtOpacity = 1.f;
+
+inline const uint32_t MinCoverArtColors = 2;
+inline const uint32_t MaxCoverArtColors = 256;
+
+inline const double MinLightnessThreshold = 0.f;
+inline const double MaxLightnessThreshold = 1.f;
 
 inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
 
@@ -171,16 +180,17 @@ enum class ColorScheme
 {
     Solid = 0,
     Custom = 1,
+    CoverArt = 2,
 
-    Prism1 = 2,
-    Prism2 = 3,
-    Prism3 = 4,
+    Prism1 = 3,
+    Prism2 = 4,
+    Prism3 = 5,
 
-    foobar2000 = 5,
-    foobar2000DarkMode = 6,
+    foobar2000 = 6,
+    foobar2000DarkMode = 7,
 
-    Fire = 7,
-    Rainbow = 8,
+    Fire = 8,
+    Rainbow = 9,
 };
 
 enum class VisualizationType
@@ -197,6 +207,28 @@ enum class PeakMode
     Gravity = 2,
     AIMP = 3,
     FadeOut = 4,
+};
+
+enum class BackgroundMode
+{
+    None = 0,
+
+    Solid = 1,
+    CoverArt = 2,
+};
+
+enum class ColorOrder
+{
+    None = 0,
+
+    HueAscending = 1,
+    HueDescending = 2,
+
+    SaturationAscending = 3,
+    SaturationDescending = 4,
+
+    LightnessAscending = 5,
+    LightnessDescending = 6,
 };
 
 /// <summary>
@@ -323,8 +355,14 @@ public:
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
 
-            bool _ShowCoverArt;                                         // True if the cover art of the playing track is displayed in the background.
-            FLOAT _BackgroundBitmapOpacity;                             // 0.0 .. 1.0
+            BackgroundMode _BackgroundMode;
+            FLOAT _CoverArtOpacity;                                     // 0.0 .. 1.0
+
+            uint32_t _CoverArtColors;                                   // Number of colors to select from the cover art.
+            FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
+
+            ColorOrder _ColorOrder;
+
         #pragma endregion
 
             VisualizationType _VisualizationType;
@@ -383,5 +421,5 @@ public:
     void UpdateGradient();
 
 private:
-    const size_t _CurrentVersion = 9;
+    const size_t _CurrentVersion = 10;
 };

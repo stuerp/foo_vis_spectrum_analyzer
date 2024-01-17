@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.05) P. Stuer **/
+/** $VER: Resources.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -168,7 +168,7 @@
 #define IDC_COLOR_SCHEME                6012
 
 #define IDC_GRADIENT                    6022
-#define IDC_COLOR_LIST                      6024
+#define IDC_COLOR_LIST                  6024
 #define IDC_ADD                         6026
 #define IDC_REMOVE                      6028
 #define IDC_REVERSE                     6030
@@ -184,6 +184,26 @@
 #define IDC_SMOOTHING_FACTOR            6062
 
 #define IDC_SHOW_TOOLTIPS               6070
+
+#define IDC_BACKGROUND_MODE_LBL         6080
+#define IDC_BACKGROUND_MODE             6082
+
+#define IDC_COVER_ART_OPACITY_LBL       6090
+#define IDC_COVER_ART_OPACITY           6092
+#define IDC_COVER_ART_OPACITY_SPIN      6094
+#define IDC_COVER_ART_OPACITY_LBL_2     6096
+
+#define IDC_COVER_ART_COLORS_LBL        6100
+#define IDC_COVER_ART_COLORS            6102
+#define IDC_COVER_ART_COLORS_SPIN       6104
+
+#define IDC_LIGHTNESS_THRESHOLD_LBL     6106
+#define IDC_LIGHTNESS_THRESHOLD         6108
+#define IDC_LIGHTNESS_THRESHOLD_SPIN    6110
+#define IDC_LIGHTNESS_THRESHOLD_LBL_2   6112
+
+#define IDC_COLOR_ORDER_LBL             6114
+#define IDC_COLOR_ORDER                 6116
 
 #pragma endregion
 

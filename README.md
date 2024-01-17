@@ -86,7 +86,11 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.6.1.0, 2024-01-xx
 
 * New: The cover art of the playing track can be used as background image.
+  * Opacity can be specified.
 * New: The dominant colors of the cover art can be used to generate a gradient.
+  * Color scheme "Cover Art" turns on the feature.
+  * Between 2 and 256 colors can be selected.
+  * Lightness threshold determines which light colors will be ignored.
 * New: The outline color of the curve can be specified.
 
 v0.6.0.3, 2024-01-13

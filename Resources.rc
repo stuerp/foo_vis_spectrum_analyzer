@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2023.12.31) P. Stuer **/
+/** $VER: Resources.rc (2024.01.17) P. Stuer **/
 
 #include "Resources.h"
 
@@ -159,6 +159,17 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03, W_F03, H_F03
 
+        rtext           "Cover art colors:"         IDC_COVER_ART_COLORS_LBL,       X_G06, Y_G06 + 2, W_G06, H_G06
+        edittext                                    IDC_COVER_ART_COLORS,           X_G07, Y_G07, W_G07, H_G07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_COVER_ART_COLORS_SPIN,      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+        rtext           "Lightness threshold:"      IDC_LIGHTNESS_THRESHOLD_LBL,    X_G08, Y_G08 + 2, W_G08, H_G08
+        edittext                                    IDC_LIGHTNESS_THRESHOLD,        X_G09, Y_G09, W_G09, H_G09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_LIGHTNESS_THRESHOLD_SPIN,   "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "%"                         IDC_LIGHTNESS_THRESHOLD_LBL_2,  X_G10, Y_G10 + 2, W_G10, H_G10
+
+        rtext           "Color order:",             IDC_COLOR_ORDER_LBL,            X_G11, Y_G11 + 2, W_G11, H_G11
+        combobox                                    IDC_COLOR_ORDER,                X_G12, Y_G12,     W_G12, H_G12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Smoothing:",               IDC_SMOOTHING_METHOD_LBL,       X_A17, Y_A17 + 2, W_A17, H_A17
         combobox                                    IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -167,6 +178,14 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_SMOOTHING_FACTOR,           X_A38, Y_A38, W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         control         "Tool tips",                IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
+
+        rtext           "Background mode:",         IDC_BACKGROUND_MODE_LBL,        X_G01, Y_G01 + 2, W_G01, H_G01
+        combobox                                    IDC_BACKGROUND_MODE,            X_G02, Y_G02,     W_G02, H_G02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Cover art opacity:"        IDC_COVER_ART_OPACITY_LBL,      X_G03, Y_G03 + 2, W_G03, H_G03
+        edittext                                    IDC_COVER_ART_OPACITY,          X_G04, Y_G04, W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_COVER_ART_OPACITY_SPIN,     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "%"                         IDC_COVER_ART_OPACITY_LBL_2,    X_G05, Y_G05 + 2, W_G05, H_G05
 
     groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -190,7 +209,6 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                            IDC_AMPLITUDE_STEP,         X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                 IDC_AMPLITUDE_STEP_SPIN     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "dB"                IDC_AMPLITUDE_STEP_LBL_2,   X_A86, Y_A86 + 2, W_A86, H_A86
-
 
         control         "Use absolute",     IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
 

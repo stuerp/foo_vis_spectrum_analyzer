@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2023.12.30) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.17) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -390,13 +390,13 @@
 
     #pragma region Color Scheme
     // Label
-    #define W_A09    60
+    #define W_A09    64
     #define H_A09    H_LBL
     #define X_A09    X_B04 + 5
     #define Y_A09    Y_B04 + 11
 
     // Combobox
-    #define W_A10    82
+    #define W_A10    86
     #define H_A10    H_CBX
     #define X_A10    X_A09 + W_A09 + IX
     #define Y_A10    Y_A09
@@ -453,12 +453,60 @@
 
     #pragma endregion
 
+    #pragma region Cover Art Colors
+    // Label
+    #define W_G06    64
+    #define H_G06    H_LBL
+    #define X_G06    X_A09
+    #define Y_G06    Y_A67 + H_A67 + IY
+
+    // Textbox
+    #define W_G07    30
+    #define H_G07    H_TBX
+    #define X_G07    X_G06 + W_G06 + IX
+    #define Y_G07    Y_G06
+    #pragma endregion
+
+    #pragma region Lightness Threshold
+    // Label
+    #define W_G08    64
+    #define H_G08    H_LBL
+    #define X_G08    X_G06
+    #define Y_G08    Y_G07 + H_G07 + IY
+
+    // Textbox
+    #define W_G09    30
+    #define H_G09    H_TBX
+    #define X_G09    X_G08 + W_G08 + IX
+    #define Y_G09    Y_G08
+
+    // Label
+    #define W_G10    10
+    #define H_G10    H_LBL
+    #define X_G10    X_G09 + W_G09 + IX
+    #define Y_G10    Y_G08
+    #pragma endregion
+
+    #pragma region Color Order
+    // Label
+    #define W_G11    64
+    #define H_G11    H_LBL
+    #define X_G11    X_G08
+    #define Y_G11    Y_G09 + H_G09 + IY
+
+    // Combobox
+    #define W_G12    86
+    #define H_G12    H_CBX
+    #define X_G12    X_G11 + W_G11 + IX
+    #define Y_G12    Y_G11
+    #pragma endregion
+
     #pragma region Smoothing Method
     // Label
-    #define W_A17    60
+    #define W_A17    64
     #define H_A17    H_LBL
-    #define X_A17    X_A09
-    #define Y_A17    Y_A67 + H_A67 + IY
+    #define X_A17    X_G11
+    #define Y_A17    Y_G12 + H_G12 + IY
 
     // Combobox
     #define W_A18    60
@@ -469,7 +517,7 @@
 
     #pragma region Smoothing Factor
     // Label
-    #define W_A37    60
+    #define W_A37    64
     #define H_A37    H_LBL
     #define X_A37    X_A17
     #define Y_A37    Y_A18 + H_A18 + IY
@@ -489,8 +537,42 @@
     #define Y_A87    Y_A38 + H_A38 + IY
     #pragma endregion
 
-#define W_B04  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A68 + IY + H_A18 + IY + H_A38 + IY + H_A87 + 7
+    #pragma region Background Mode
+    // Label
+    #define W_G01    64
+    #define H_G01    H_LBL
+    #define X_G01    X_A37
+    #define Y_G01    Y_A87 + H_A87 + IY
+
+    // Combobox
+    #define W_G02    86
+    #define H_G02    H_CBX
+    #define X_G02    X_G01 + W_G01 + IX
+    #define Y_G02    Y_G01
+    #pragma endregion
+
+    #pragma region Cover Art Opacity
+    // Label
+    #define W_G03    64
+    #define H_G03    H_LBL
+    #define X_G03    X_G01
+    #define Y_G03    Y_G02 + H_G02 + IY
+
+    // Textbox
+    #define W_G04    30
+    #define H_G04    H_TBX
+    #define X_G04    X_G03 + W_G03 + IX
+    #define Y_G04    Y_G03
+
+    // Label
+    #define W_G05    10
+    #define H_G05    H_LBL
+    #define X_G05    X_G04 + W_G04 + IX
+    #define Y_G05    Y_G03
+    #pragma endregion
+
+#define W_B04  180 // 5 + W_A09 + IX + W_A10  + 5
+#define H_B04   11 + H_A10 + IY + H_A68 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G02 + IY + H_G04 + 7
 #pragma endregion
 
 #pragma region X axis
