@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2024.01.15) P. Stuer **/
+/** $VER: Direct2D.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -9,6 +9,11 @@ class Direct2D
 {
 public:
     Direct2D();
+
+    virtual ~Direct2D()
+    {
+        Factory.Release();
+    }
 
     HRESULT GetDPI(HWND hWnd, UINT & dpi) const;
 
@@ -20,12 +25,10 @@ public:
     HRESULT CreateBitmap(IWICBitmapSource * source, ID2D1RenderTarget * renderTarget, ID2D1Bitmap ** bitmap) const noexcept;
 
 private:
-    HRESULT Initialize();
-
     static HRESULT GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize);
 
 public:
-    CComPtr<ID2D1Factory> Factory;
+    CComPtr<ID2D1Factory2> Factory;
 };
 
 extern Direct2D _Direct2D;

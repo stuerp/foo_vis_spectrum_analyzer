@@ -96,23 +96,15 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 HRESULT YAxis::CreateDeviceIndependentResources()
 {
-    HRESULT hr = S_OK;
+    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
-        static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
 
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
         CComPtr<IDWriteTextLayout> TextLayout;
 
         hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);

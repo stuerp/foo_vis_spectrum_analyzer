@@ -65,7 +65,7 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// </summary>
 void UIElement::RenderFrame()
 {
-    if (!::TryEnterCriticalSection(&_Lock))
+    if (!_CriticalSection.TryEnter())
         return;
 
     _FrameCounter.NewFrame();
@@ -90,10 +90,10 @@ void UIElement::RenderFrame()
 
         RenderBackground();
 
-        // Update the graph.
         {
             double PlaybackTime; // in sec
 
+            // Update the graph.
             if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
             {
                 double WindowSize = (double) _FFTSize / (double) _SampleRate;
@@ -106,11 +106,11 @@ void UIElement::RenderFrame()
             else
                 for (auto & Iter : _FrequencyBands)
                     Iter.CurValue = 0.;
-        }
 
-        // Update the peak indicators.
-        if ((_FFTAnalyzer != nullptr) && (_Configuration._VisualizationType == VisualizationType::Bars) && (_Configuration._PeakMode != PeakMode::None))
-            _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+            // Update the peak indicators.
+            if ((_FFTAnalyzer != nullptr) && (_Configuration._VisualizationType == VisualizationType::Bars) && (_Configuration._PeakMode != PeakMode::None))
+                _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+        }
 
         _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate);
 
@@ -127,7 +127,7 @@ void UIElement::RenderFrame()
         }
     }
 
-    ::LeaveCriticalSection(&_Lock);
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -492,7 +492,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE,
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
-         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
+        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
         hr = _Direct2D.Factory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 

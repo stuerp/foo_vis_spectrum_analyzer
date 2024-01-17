@@ -199,24 +199,16 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 HRESULT XAxis::CreateDeviceIndependentResources()
 {
-    HRESULT hr = S_OK;
+    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
-        static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
         CComPtr<IDWriteTextLayout> TextLayout;
 
         hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);

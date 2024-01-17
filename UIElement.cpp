@@ -1,9 +1,10 @@
 
-/** $VER: UIElement.cpp (2024.01.15) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.17) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "Direct2D.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -48,11 +49,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
-    HRESULT hr = S_OK;
-
-    ::InitializeCriticalSection(&_Lock);
-
-    hr = CreateDeviceIndependentResources();
+    HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
     {
@@ -108,7 +105,7 @@ void UIElement::OnDestroy()
 {
     StopTimer();
 
-    ::EnterCriticalSection(&_Lock);
+    _CriticalSection.Enter();
 
     if (_ThreadPoolTimer)
     {
@@ -147,7 +144,9 @@ void UIElement::OnDestroy()
 
     ReleaseDeviceIndependentResources();
 
-    ::LeaveCriticalSection(&_Lock);
+    _CriticalSection.Leave();
+
+    _Direct2D.Factory.Release();
 }
 
 /// <summary>
@@ -180,8 +179,7 @@ void UIElement::OnSize(UINT type, CSize size)
 
     D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    if (_RenderTarget)
-        _RenderTarget->Resize(Size);
+    _RenderTarget->Resize(Size);
 
     Resize();
 }
@@ -394,14 +392,14 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        ::EnterCriticalSection(&_Lock);
+        _CriticalSection.Enter();
 
         DialogParameters dp = { m_hWnd, &_Configuration };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
 
-        ::LeaveCriticalSection(&_Lock);
+        _CriticalSection.Leave();
     }
     else
         _ConfigurationDialog.BringWindowToTop();
@@ -412,7 +410,7 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::SetConfiguration() noexcept
 {
-    ::EnterCriticalSection(&_Lock);
+    _CriticalSection.Enter();
 
     // Initialize the frequency bands.
     {
@@ -525,7 +523,7 @@ void UIElement::SetConfiguration() noexcept
 
     Resize();
 
-    ::LeaveCriticalSection(&_Lock);
+    _CriticalSection.Leave();
 }
 
 /// <summary>

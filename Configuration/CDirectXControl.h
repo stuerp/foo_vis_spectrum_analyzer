@@ -35,7 +35,7 @@ protected:
 
 protected:
     // Device-independent resources
-    CComPtr<ID2D1Factory> _Direct2D;
+    CComPtr<ID2D1Factory2> _Direct2D;
 
     const bool _UseHardwareRendering = true;
     const bool _UseAntialiasing = true;

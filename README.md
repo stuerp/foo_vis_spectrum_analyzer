@@ -230,8 +230,8 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
-* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
-* [Humeur](https://github.com/Humeur) for [Better Dominant Colors](https://github.com/Humeur/better-dominant-colors).
+* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
+* [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 
 ## Reference Material
 

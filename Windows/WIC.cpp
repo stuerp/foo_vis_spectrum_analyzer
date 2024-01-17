@@ -1,7 +1,9 @@
 
-/** $VER: WIC.cpp (2024.01.16) P. Stuer **/
+/** $VER: WIC.cpp (2024.01.17) P. Stuer **/
 
 #include "WIC.h"
+
+#include "COMException.h"
 
 #pragma comment(lib, "windowscodecs")
 
@@ -13,6 +15,9 @@ WIC::WIC()
     HRESULT hr = ::CoInitialize(nullptr);
 
     hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
+
+    if (!SUCCEEDED(hr))
+        throw COMException(hr, L"Unable to create WIC factory.");
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: ColorThief.h (2024.01.15) P. Stuer **/
+/** $VER: ColorThief.h (2024.01.15) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief**/
 
 #pragma once
 

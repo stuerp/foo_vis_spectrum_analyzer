@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.01.15) P. Stuer **/
+/** $VER: framework.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -7,14 +7,20 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#define NOMINMAX
 #include <SDKDDKVer.h>
+
+#define NOMINMAX
+#include <helpers/foobar2000+atl.h>
+#include <helpers/helpers.h>
 #undef NOMINMAX
 
 #include <atlbase.h>
 
-#include <d2d1.h>
+#include <dxgi1_3.h>
+#include <d3d11_2.h>
+#include <d2d1_2.h>
 #include <d2d1helper.h>
+#include <dcomp.h>
 #include <dwrite.h>
 
 #include <wincodec.h>
@@ -24,8 +30,7 @@
 
 #include <cmath>
 
-#include <helpers/foobar2000+atl.h>
-#include <helpers/helpers.h>
+#include "CriticalSection.h"
 
 #ifndef Assert
 #if defined(DEBUG) || defined(_DEBUG)

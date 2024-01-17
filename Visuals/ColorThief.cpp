@@ -1,5 +1,5 @@
 
-/** $VER: ColorThief.cpp (2024.01.16) P. Stuer **/
+/** $VER: ColorThief.cpp (2024.01.17) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief**/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -21,7 +21,7 @@
 
 namespace ColorThief
 {
-std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t pixelCount, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors) noexcept;
+std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors) noexcept;
 
 /// <summary>
 /// Use the median cut algorithm to cluster similar colors.
@@ -49,7 +49,7 @@ HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palet
         hr = r.Initialize(Converter);
 
     if (SUCCEEDED(hr))
-        palette = GetPaletteInternal(r.Data(), r.Width() * r.Height(), colorCount, quality, ignoreBrightColors);
+        palette = GetPaletteInternal(r.Data(), r.Width(), r.Height(), r.Stride(), colorCount, quality, ignoreBrightColors);
 
     return hr;
 }
@@ -284,7 +284,7 @@ enum class PrimaryColor
 inline bool CompareCount(VBox & a, VBox & b) noexcept;
 inline bool CompareProduct(VBox & a, VBox & b) noexcept;
 
-std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * pixels, uint32_t pixelCount, uint32_t quality, bool ignoreBrightColors) noexcept;
+std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t quality, bool ignoreBrightColors) noexcept;
 std::vector<color_t> Quantize(const std::vector<int32_t> & histogram, VBox & box, uint32_t colorCount) noexcept;
 
 void Iterate(PriorityQueue<VBox, decltype(CompareCount)> & pq, size_t targetCount, const std::vector<int32_t> & histogram) noexcept;
@@ -294,10 +294,10 @@ std::tuple<std::unordered_map<int32_t, uint64_t>, uint64_t> ComputePartialCounts
 /// <summary>
 /// Gets the palette from the RGBA data.
 /// </summary>
-std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t pixelCount, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors) noexcept
+std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t colorCount, uint32_t quality, bool ignoreBrightColors) noexcept
 {
-    std::tuple<std::vector<int32_t>, color_t, color_t> Result = GetHistogram(pixels, pixelCount, quality, ignoreBrightColors);
-
+    std::tuple<std::vector<int32_t>, color_t, color_t> Result = GetHistogram(pixels, width, height, stride, quality, ignoreBrightColors);
+ 
     std::vector<int32_t> Histogram = std::get<0>(Result);
 
     color_t MinColor = std::get<1>(Result);
@@ -311,34 +311,59 @@ std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t pixelCo
 /// <summary>
 /// Gets the histogram of the image.
 /// </summary>
-std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * pixels, uint32_t pixelCount, uint32_t quality, bool ignoreBrightColors) noexcept
+std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t quality, bool ignoreBrightColors) noexcept
 {
     std::vector<int32_t> Histogram((size_t) std::pow(2, 3 * SignificantBits), 0);
 
     color_t MinColor{ 255, 255, 255 };
     color_t MaxColor{   0,   0,   0 };
 
-    const uint8_t * p = pixels;
-
-    for (size_t i = 0; i < pixelCount; i += quality, p += (4 * quality))
+    struct Pixel
     {
-        // Skip the pixel if it is too bright or not opaque enough.
-        if ((ignoreBrightColors && p[0] > 250 && p[1] > 250 && p[2] > 250) || (p[3] < 125))
-            continue;
+        uint8_t Red;
+        uint8_t Green;
+        uint8_t Blue;
+        uint8_t Alpha;
 
-        size_t Index = 0;
+        bool IsLight() const { return (Red > 250) && (Green > 250) && (Blue > 250); }
+        bool IsTransparent() const { return Alpha < 125; }
+    };
 
-        for (size_t j = 0; j < 3; ++j)
+    #pragma loop(hint_parallel(4)) // Don't forget /Qpar compiler switch.
+    for (uint32_t y = 0; y < height; ++y)
+    {
+        const Pixel * p = (const Pixel *) pixels;
+
+        for (uint32_t x = 0; x < width; x += quality, p += quality)
         {
-            uint8_t Channel = (uint8_t) (p[j] >> Shift);
+            if ((ignoreBrightColors && p->IsLight()) || p->IsTransparent())
+                continue;
 
-            MaxColor[j] = (std::max)(MaxColor[j], Channel);
-            MinColor[j] = (std::min)(MinColor[j], Channel);
+            uint8_t Channel = (uint8_t) (p->Red >> Shift);
 
-            Index += (size_t) Channel << ((2 - j) * SignificantBits);
+            MaxColor[0] = (std::max)(MaxColor[0], Channel);
+            MinColor[0] = (std::min)(MinColor[0], Channel);
+
+            size_t Index = (size_t) Channel << (2 * SignificantBits);
+
+            Channel = (uint8_t) (p->Green >> Shift);
+
+            MaxColor[1] = (std::max)(MaxColor[1], Channel);
+            MinColor[1] = (std::min)(MinColor[1], Channel);
+
+            Index += (size_t) Channel << SignificantBits;
+
+            Channel = (uint8_t) (p->Blue >> Shift);
+
+            MaxColor[2] = (std::max)(MaxColor[2], Channel);
+            MinColor[2] = (std::min)(MinColor[2], Channel);
+
+            Index += (size_t) Channel;
+
+            ++Histogram[Index];
         }
 
-        ++Histogram[Index];
+        pixels += stride;
     }
 
     return { Histogram, MinColor, MaxColor };

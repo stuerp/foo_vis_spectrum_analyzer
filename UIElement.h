@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.1) P. Stuer **/
+/** $VER: UIElement.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -178,7 +178,7 @@ private:
         IDM_CONFIGURE,
     };
 
-    CRITICAL_SECTION _Lock;
+    CriticalSection _CriticalSection;
     PTP_TIMER _ThreadPoolTimer;
     bool _IsStopping;
 

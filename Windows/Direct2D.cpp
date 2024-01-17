@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.01.16) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.01.17) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,6 +7,8 @@
 
 #include "Direct2D.h"
 #include "WIC.h"
+
+#include "COMException.h"
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
@@ -18,15 +20,16 @@
 /// </summary>
 Direct2D::Direct2D()
 {
-    Initialize();
-}
+#ifdef _DEBUG
+    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION };
+#else
+    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
+#endif
 
-/// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
-/// </summary>
-HRESULT Direct2D::Initialize()
-{
-    return ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &Factory);
+    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, Options, &Factory);
+
+    if (!SUCCEEDED(hr))
+        throw COMException(hr, L"Unable to create Direct2D factory.");
 }
 
 /// <summary>

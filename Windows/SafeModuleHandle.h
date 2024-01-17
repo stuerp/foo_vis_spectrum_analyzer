@@ -5,8 +5,6 @@
 
 #include "framework.h"
 
-#pragma once
-
 class SafeModuleHandle
 {
 public:

@@ -1,11 +1,13 @@
 
-/** $VER: DirectWrite.cpp (2024.01.08) P. Stuer **/
+/** $VER: DirectWrite.cpp (2024.01.17) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "DirectWrite.h"
+
+#include "COMException.h"
 
 #pragma comment(lib, "dwrite")
 
@@ -16,17 +18,10 @@
 /// </summary>
 DirectWrite::DirectWrite()
 {
-    Initialize();
-}
-
-/// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
-/// </summary>
-HRESULT DirectWrite::Initialize()
-{
     HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(Factory), (IUnknown **) &Factory);
 
-    return hr;
+    if (!SUCCEEDED(hr))
+        throw COMException(hr, L"Unable to create DirectWrite factory.");
 }
 
 DirectWrite _DirectWrite;

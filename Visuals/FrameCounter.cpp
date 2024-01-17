@@ -20,7 +20,7 @@ void FrameCounter::NewFrame()
 
 float FrameCounter::GetFPS()
 {
-    float FPS = (float)((_Times.GetCount() - 1) * _Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
+    float FPS = (float)((_Times.Count() - 1) * _Frequency.QuadPart) / (float) (_Times.Last() - _Times.First());
 
     return FPS;
 }
@@ -80,10 +80,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
     {
         _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
         _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-    }
 
-    if (SUCCEEDED(hr))
-    {
         const WCHAR Text[] = L"999.99 fps";
 
         CComPtr<IDWriteTextLayout> TextLayout;

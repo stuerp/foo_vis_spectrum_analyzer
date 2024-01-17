@@ -10,9 +10,6 @@ class DirectWrite
 public:
     DirectWrite();
 
-private:
-    HRESULT Initialize();
-
 public:
     CComPtr<IDWriteFactory> Factory;
 };
