@@ -76,7 +76,7 @@ void UIElement::RenderFrame()
     {
         if (_IsStopping)
         {
-            _BackgroundBitmap.Release();
+            _CoverArtBitmap.Release();
 
             for (auto & Iter : _FrequencyBands)
                 Iter.CurValue = 0.;
@@ -138,10 +138,10 @@ void UIElement::RenderBackground() const
     _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
     // Render the album art if there is any.
-    if ((_BackgroundBitmap == nullptr) || (_Configuration._BackgroundMode != BackgroundMode::CoverArt))
+    if ((_CoverArtBitmap == nullptr) || (_Configuration._BackgroundMode != BackgroundMode::CoverArt))
         return;
 
-    D2D1_SIZE_F Size = _BackgroundBitmap->GetSize();
+    D2D1_SIZE_F Size = _CoverArtBitmap->GetSize();
     D2D1_RECT_F Rect = _Graph.GetBounds();
 
     FLOAT MaxWidth  = Rect.right  - Rect.left;
@@ -164,7 +164,7 @@ void UIElement::RenderBackground() const
     Rect.right  = Rect.left + Size.width;
     Rect.bottom = Rect.top  + Size.height;
 
-    _RenderTarget->DrawBitmap(_BackgroundBitmap, Rect, _Configuration._CoverArtOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    _RenderTarget->DrawBitmap(_CoverArtBitmap, Rect, _Configuration._CoverArtOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -506,8 +506,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the album art.
-    if (SUCCEEDED(hr) && (_Configuration._BackgroundMode == BackgroundMode::CoverArt) && (_CoverArt.size() != 0))
-        hr = CreateBackgroundBitmap();
+    if (SUCCEEDED(hr) && (_Configuration._BackgroundMode == BackgroundMode::CoverArt) && _Configuration._NewCoverArt)
+        hr = CreateCoverArtBitmap();
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
@@ -516,7 +516,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     {
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
-        if (SUCCEEDED(hr) && (_CoverArt.size() != 0))
+        if (SUCCEEDED(hr) && _Configuration._NewCoverArt)
         {
             Spectrum & s = _Graph.GetSpectrum();
 
@@ -524,25 +524,19 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
     }
 
-    // Release the raw data.
-    if (_CoverArt.size() > 0)
-    {
-        std::vector<uint8_t> Empty;
-
-        _CoverArt.swap(Empty);
-    }
+    _Configuration._NewCoverArt = false;
 
     return hr;
 }
 
 /// <summary>
-/// Creates the background bitmap from the pixel data and optionally generates a dynamic gradient.
+/// Creates the cover art bitmap from the pixel data and optionally generates a gradient stops list from it.
 /// </summary>
-HRESULT UIElement::CreateBackgroundBitmap() noexcept
+HRESULT UIElement::CreateCoverArtBitmap() noexcept
 {
     _Frame.Release();
 
-    HRESULT hr = _WIC.Load(_CoverArt.data(), _CoverArt.size(), &_Frame);
+    HRESULT hr = _WIC.Load(_Configuration._CoverArt.data(), _Configuration._CoverArt.size(), &_Frame);
 
     CComPtr<IWICFormatConverter> FormatConverter;
 
@@ -554,41 +548,48 @@ HRESULT UIElement::CreateBackgroundBitmap() noexcept
 
     if (SUCCEEDED(hr))
     {
-        _BackgroundBitmap.Release();
+        _CoverArtBitmap.Release();
 
-        _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_BackgroundBitmap);
+        _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_CoverArtBitmap);
     }
 
     // Get the colors from the cover art.
-    if (SUCCEEDED(hr) && (_Configuration._ColorScheme == ColorScheme::CoverArt))
-    {
-        std::vector<D2D1_COLOR_F> Colors;
+    std::vector<D2D1_COLOR_F> Colors;
 
+    if (SUCCEEDED(hr))
         hr = CreatePalette(FormatConverter, Colors);
 
-        if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr))
+    {
+        if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
         {
-            if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
+            // FIXME: Sort from dark to light.
+            std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
             {
-                // FIXME: Sort from dark to light.
-                std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
-                {
-                    if (left.r != right.r)
-                        return left.r < right.r;
+                if (left.r != right.r)
+                    return left.r < right.r;
 
-                    if (left.g != right.g)
-                        return left.g < right.g;
+                if (left.g != right.g)
+                    return left.g < right.g;
 
-                    if (left.b != right.b)
-                        return left.b < right.b;
+                if (left.b != right.b)
+                    return left.b < right.b;
 
-                    return false;
-                });
-            }
-
-            // Create the gradient.
-            hr = CreateGradientStops(Colors);
+                return false;
+            });
         }
+
+        // Create a gradient stops list from the list of colors.
+        hr = CreateGradientStops(Colors, _Configuration._CoverArtGradientStops);
+    }
+
+    if (SUCCEEDED(hr) && (_Configuration._ColorScheme == ColorScheme::CoverArt))
+    {
+        _Configuration._GradientStops = _Configuration._CoverArtGradientStops;
+
+        // Notify the configuration dialog about the change.
+        if (_ConfigurationDialog.IsWindow())
+            _ConfigurationDialog.SendMessageW(WM_COLORS_CHANGED);
     }
 
     return S_OK; // Problems with the cover art should not prevent rendering other elements.
@@ -625,16 +626,16 @@ HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2
 }
 
 /// <summary>
-/// Creates the gradient stops from a list of colors.
+/// Creates a gradient stops list from a list of colors.
 /// </summary>
-HRESULT UIElement::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors) noexcept
+HRESULT UIElement::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
 {
-    _Configuration._GradientStops.clear();
+    gradientStops.clear();
 
-    _Configuration._GradientStops.push_back({ 0.f, colors[0] });
+    gradientStops.push_back({ 0.f, colors[0] });
 
     for (size_t i = 1; i < colors.size(); ++i)
-        _Configuration._GradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
+        gradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
 
     return S_OK;
 }
@@ -647,7 +648,7 @@ void UIElement::ReleaseDeviceSpecificResources()
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
-    _BackgroundBitmap.Release();
+    _CoverArtBitmap.Release();
     _Frame.Release();
 
     _RenderTarget.Release();

@@ -394,6 +394,10 @@ public:
     t_ui_color _DefTextColor;
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
 
+    std::vector<uint8_t> _CoverArt;
+    std::vector<D2D1_GRADIENT_STOP> _CoverArtGradientStops;             // The gradient stops extracted from the cover art bitmap.
+    bool _NewCoverArt;
+
     #pragma endregion
 /*
     bandwidthOffset: 1,

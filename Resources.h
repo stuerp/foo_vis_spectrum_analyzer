@@ -52,6 +52,7 @@
 #define STR_WINDOW_CLASS_NAME   "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
 #define WM_CONFIGURATION_CHANGING       WM_USER + 1
+#define WM_COLORS_CHANGED               WM_USER + 2
 
 /** Configuration **/
 

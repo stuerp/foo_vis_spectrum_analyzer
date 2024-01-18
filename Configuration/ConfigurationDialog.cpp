@@ -846,10 +846,20 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
 
-            if (_Configuration->_ColorScheme != ColorScheme::Custom)
-                _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
-            else
-                _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
+            switch (_Configuration->_ColorScheme)
+            {
+                default:
+                    _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+                    break;
+
+                case ColorScheme::Custom:
+                    _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
+                    break;
+
+                case ColorScheme::CoverArt:
+                    _Configuration->_GradientStops = _Configuration->_CoverArtGradientStops;
+                    break;
+            }
 
             UpdateColorControls();
             break;
@@ -2062,22 +2072,26 @@ void ConfigurationDialog::UpdateColorControls()
         _Colors.SetColors(Colors);
     }
 
-    // Remove and Reverse are only enabled when there is more than 1 color.
-    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
-
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasMoreThanOneColor);
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-
     // Add and Remove are only enabled when a color is selected.
     auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
 
     bool HasSelection = (lb.GetCurSel() != LB_ERR);
 
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+    // Remove and Reverse are only enabled when there is more than 1 color.
+    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection);
-        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection);
+    // Gradient controls are disabled when the cover art provides the controls.
+    bool UseCoverArt = (_Configuration->_ColorScheme == ColorScheme::CoverArt);
+
+        GetDlgItem(IDC_COLOR_LIST).EnableWindow(!UseCoverArt);
+
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseCoverArt);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseCoverArt);
+
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseCoverArt);
+
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseCoverArt);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseCoverArt);
 
     {
         _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
@@ -2103,8 +2117,6 @@ void ConfigurationDialog::UpdateColorControls()
     }
 
     // Color Scheme
-
-    bool UseCoverArt = (_Configuration->_ColorScheme == ColorScheme::CoverArt);
 
         GetDlgItem(IDC_NUM_COVER_ART_COLORS).EnableWindow(UseCoverArt);
         GetDlgItem(IDC_LIGHTNESS_THRESHOLD).EnableWindow(UseCoverArt);

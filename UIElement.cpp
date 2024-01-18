@@ -1,11 +1,13 @@
 
-/** $VER: UIElement.cpp (2024.01.17) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.18) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
 #include "Direct2D.h"
 #include "Log.h"
+
+#include "Gradients.h"
 
 #pragma hdrstop
 
@@ -456,6 +458,9 @@ void UIElement::SetConfiguration() noexcept
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
+    if (_Configuration._ColorScheme == ColorScheme::CoverArt)
+        _Configuration._GradientStops = (_Configuration._CoverArtGradientStops.size() != 0) ? _Configuration._CoverArtGradientStops : GetGradientStops(ColorScheme::CoverArt);
+
     // Generate the horizontal color gradient, if required.
     if (_Configuration._HorizontalGradient)
     {
@@ -586,6 +591,13 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
     _IsStopping = true;
 
     _SampleRate = 44100;
+
+    if (_Configuration._CoverArt.size() > 0)
+    {
+        std::vector<uint8_t> Empty;
+
+        _Configuration._CoverArt.swap(Empty);
+    }
 }
 
 /// <summary>
@@ -600,11 +612,12 @@ void UIElement::on_playback_pause(bool)
 
 #pragma region now_playing_album_art_notify
 
-void UIElement::on_album_art(album_art_data::ptr aa)
+void UIElement::on_album_art(album_art_data::ptr aad)
 {
     _IsStopping = false;
 
-    _CoverArt.assign((uint8_t *) aa->data(), (uint8_t *) aa->data() + aa->size());
+    _Configuration._CoverArt.assign((uint8_t *) aad->data(), (uint8_t *) aad->data() + aad->size());
+    _Configuration._NewCoverArt = true;
 }
 
 #pragma endregion

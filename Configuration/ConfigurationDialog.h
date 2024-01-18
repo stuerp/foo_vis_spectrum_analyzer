@@ -50,7 +50,7 @@ private:
     BOOL OnInitDialog(CWindow w, LPARAM lParam);
 
     /// <summary>
-    /// Handles the Close message.
+    /// Handles the WM_CLOSE message.
     /// </summary>
     void OnClose()
     {
@@ -59,6 +59,18 @@ private:
         Terminate();
 
         SetMsgHandled(FALSE);
+    }
+
+    /// <summary>
+    /// Handles the WM_COLORS_CHANGED message.
+    /// </summary>
+    LRESULT OnColorsChanged(UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        UpdateColorControls();
+
+        SetMsgHandled(TRUE);
+
+        return 0;
     }
 
 #ifdef _DEBUG
@@ -102,6 +114,8 @@ private:
         MSG_WM_INITDIALOG(OnInitDialog)
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
+
+        MESSAGE_HANDLER_EX(WM_COLORS_CHANGED, OnColorsChanged)
 
         COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
 

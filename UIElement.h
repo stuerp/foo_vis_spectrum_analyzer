@@ -123,9 +123,9 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
-    HRESULT CreateBackgroundBitmap() noexcept;
+    HRESULT CreateCoverArtBitmap() noexcept;
     HRESULT CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & palette) noexcept;
-    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors) noexcept;
+    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept;
 
     #pragma endregion
 
@@ -197,7 +197,7 @@ private:
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     CComPtr<IWICBitmapFrameDecode> _Frame;
-    CComPtr<ID2D1Bitmap> _BackgroundBitmap;
+    CComPtr<ID2D1Bitmap> _CoverArtBitmap;
 
     UINT _DPI;
 
@@ -221,6 +221,4 @@ private:
     size_t _FFTSize;
     uint32_t _SampleRate;
     double _Bandwidth;
-
-    std::vector<uint8_t> _CoverArt;
 };
