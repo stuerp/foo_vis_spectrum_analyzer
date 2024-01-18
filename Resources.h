@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.17) P. Stuer **/
+/** $VER: Resources.h (2024.01.18) P. Stuer **/
 
 #pragma once
 
@@ -193,9 +193,9 @@
 #define IDC_COVER_ART_OPACITY_SPIN      6094
 #define IDC_COVER_ART_OPACITY_LBL_2     6096
 
-#define IDC_COVER_ART_COLORS_LBL        6100
-#define IDC_COVER_ART_COLORS            6102
-#define IDC_COVER_ART_COLORS_SPIN       6104
+#define IDC_NUM_COVER_ART_COLORS_LBL    6100
+#define IDC_NUM_COVER_ART_COLORS        6102
+#define IDC_NUM_COVER_ART_COLORS_SPIN   6104
 
 #define IDC_LIGHTNESS_THRESHOLD_LBL     6106
 #define IDC_LIGHTNESS_THRESHOLD         6108

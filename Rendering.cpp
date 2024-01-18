@@ -609,7 +609,7 @@ HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2
     {
         uint32_t Quality = Clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
 
-        hr = ColorThief::GetPalette(bitmapSource, Palette, _Configuration._CoverArtColors, Quality);
+        hr = ColorThief::GetPalette(bitmapSource, Palette, _Configuration._NumCoverArtColors, Quality, true, (uint8_t) (_Configuration._LightnessThreshold * 255.f), (uint8_t) (_Configuration._TransparencyThreshold * 255.f));
     }
 
     // Convert to Direct2D colors.

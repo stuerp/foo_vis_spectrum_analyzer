@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.17) P. Stuer **/
+/** $VER: Configuration.h (2024.01.18) P. Stuer **/
 
 #pragma once
 
@@ -75,7 +75,7 @@ inline const double MinCoverArtOpacity = 0.f;
 inline const double MaxCoverArtOpacity = 1.f;
 
 inline const uint32_t MinCoverArtColors = 2;
-inline const uint32_t MaxCoverArtColors = 256;
+inline const uint32_t MaxCoverArtColors = 16;
 
 inline const double MinLightnessThreshold = 0.f;
 inline const double MaxLightnessThreshold = 1.f;
@@ -358,8 +358,9 @@ public:
             BackgroundMode _BackgroundMode;
             FLOAT _CoverArtOpacity;                                     // 0.0 .. 1.0
 
-            uint32_t _CoverArtColors;                                   // Number of colors to select from the cover art.
+            uint32_t _NumCoverArtColors;                                // Number of colors to select from the cover art.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
+            FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
 
             ColorOrder _ColorOrder;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.17) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.18) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -124,8 +124,9 @@ void Configuration::Reset() noexcept
     _BackgroundMode = BackgroundMode::CoverArt;
     _CoverArtOpacity = 1.f;
 
-    _CoverArtColors = 10;
-    _LightnessThreshold = 0.98f;
+    _NumCoverArtColors = 10;
+    _LightnessThreshold = 250.f / 255.f;
+    _TransparencyThreshold = 125.f / 255.f;
 
     _ColorOrder = ColorOrder::None;
 
@@ -248,8 +249,9 @@ Configuration & Configuration::operator=(const Configuration & other)
         _BackgroundMode = other._BackgroundMode;
         _CoverArtOpacity = other._CoverArtOpacity;
 
-        _CoverArtColors = other._CoverArtColors;
+        _NumCoverArtColors = other._NumCoverArtColors;
         _LightnessThreshold = other._LightnessThreshold;
+        _TransparencyThreshold = other._TransparencyThreshold;
 
         _ColorOrder = other._ColorOrder;
 
@@ -487,7 +489,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
         parser >> _CoverArtOpacity;
 
-        parser >> _CoverArtColors;
+        parser >> _NumCoverArtColors;
         parser >> _LightnessThreshold;
         parser >> Integer; _ColorOrder = (ColorOrder) Integer;
     }
@@ -654,7 +656,7 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _BackgroundMode;
         builder << _CoverArtOpacity;
 
-        builder << _CoverArtColors;
+        builder << _NumCoverArtColors;
         builder << _LightnessThreshold;
         builder << (int) _ColorOrder;
     }
@@ -809,7 +811,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
             reader->read(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
 
-            reader->read(&_CoverArtColors, sizeof(_CoverArtColors), abortHandler);
+            reader->read(&_NumCoverArtColors, sizeof(_NumCoverArtColors), abortHandler);
             reader->read(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
             reader->read(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
         }
@@ -949,7 +951,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
         writer->write(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
 
-        writer->write(&_CoverArtColors, sizeof(_CoverArtColors), abortHandler);
+        writer->write(&_NumCoverArtColors, sizeof(_NumCoverArtColors), abortHandler);
         writer->write(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
         writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
     }
