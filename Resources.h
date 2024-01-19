@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.18) P. Stuer **/
+/** $VER: Resources.h (2024.01.19) P. Stuer **/
 
 #pragma once
 
@@ -51,7 +51,7 @@
 #define GUID_UI_ELEMENT         {0x3247c894,0xe585,0x4025,{0xa8,0x66,0xc7,0xd4,0x93,0x3f,0xb2,0xe3}} // {3247c894-e585-4025-a866-c7d4933fb2e3}
 #define STR_WINDOW_CLASS_NAME   "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
-#define WM_CONFIGURATION_CHANGING       WM_USER + 1
+#define WM_CONFIGURATION_CHANGED        WM_USER + 1
 #define WM_COLORS_CHANGED               WM_USER + 2
 
 /** Configuration **/

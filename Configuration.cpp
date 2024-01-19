@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.18) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.19) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -509,7 +509,8 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
     {
         builder << _CurrentVersion;
 
-    #pragma region User Interface
+        #pragma region User Interface
+
         builder << _DialogBounds.left;
         builder << _DialogBounds.top;
         builder << _DialogBounds.right;
@@ -522,11 +523,13 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
 
         builder << _UseZeroTrigger;
         builder << _WindowDuration;
-    #pragma endregion
+
+        #pragma endregion
 
         builder << (int) _Transform;
 
-    #pragma region FFT
+        #pragma region FFT
+
         builder << (int) _FFTMode;
         builder << _FFTCustom;
         builder << _FFTDuration;
@@ -538,9 +541,11 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _SummationMethod;
         builder << _SmoothLowerFrequencies;
         builder << _SmoothGainTransition;
-    #pragma endregion
 
-    #pragma region Frequencies
+        #pragma endregion
+
+        #pragma region Frequencies
+
         builder << (int) _FrequencyDistribution;
 
         builder << _NumBands;
@@ -556,30 +561,33 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _ScalingFunction;
         builder << _SkewFactor;
         builder << _Bandwidth;
-    #pragma endregion
+
+        #pragma endregion
 
         #pragma region Rendering
-            builder << _BackColor.r;
-            builder << _BackColor.g;
-            builder << _BackColor.b;
-            builder << _BackColor.a;
 
-            builder << (int) _XAxisMode;
+        builder << _BackColor.r;
+        builder << _BackColor.g;
+        builder << _BackColor.b;
+        builder << _BackColor.a;
 
-            builder << (int) _YAxisMode;
+        builder << (int) _XAxisMode;
 
-            builder << _AmplitudeLo;
-            builder << _AmplitudeHi;
-            builder << _UseAbsolute;
-            builder << _Gamma;
+        builder << (int) _YAxisMode;
 
-            builder << (int) _ColorScheme;
+        builder << _AmplitudeLo;
+        builder << _AmplitudeHi;
+        builder << _UseAbsolute;
+        builder << _Gamma;
 
-            builder << _DrawBandBackground;
+        builder << (int) _ColorScheme;
 
-            builder << (int) _PeakMode;
-            builder << _HoldTime;
-            builder << _Acceleration;
+        builder << _DrawBandBackground;
+
+        builder << (int) _PeakMode;
+        builder << _HoldTime;
+        builder << _Acceleration;
+
         #pragma endregion
 
         // Version 5
@@ -837,70 +845,78 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_CurrentVersion, sizeof(_CurrentVersion), abortHandler);
 
         #pragma region User Interface
-            writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-            writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-            writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
-            writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+        writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
 
-            writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
-            writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
+        writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
+        writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+
+        writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
+        writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
+
         #pragma endregion
 
-            writer->write(&_Transform, sizeof(_Transform), abortHandler);
+        writer->write(&_Transform, sizeof(_Transform), abortHandler);
 
         #pragma region FFT
-            writer->write(&_FFTMode, sizeof(_FFTMode), abortHandler);
-            writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
-            writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
-            writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
 
-            writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
-            writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
-            writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
-            writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
-            writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
-            writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+        writer->write(&_FFTMode, sizeof(_FFTMode), abortHandler);
+        writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
+        writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
+        writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
+
+        writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+        writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
+        writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
+        writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
+        writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
+        writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+
         #pragma endregion
 
         #pragma region Frequencies
-            writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-            writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
-            writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-            writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
+        writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-            writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
-            writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
-            writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-            writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
-            writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
+        writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
+        writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+        writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
 
-            writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
-            writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
-            writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+        writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
+        writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
+        writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
+        writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
+        writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
+
+        writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
+        writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
+        writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+
         #pragma endregion
 
         #pragma region Rendering
-            writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
 
-            writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
+        writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
 
-            writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
+        writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
 
-            writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
-            writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
-            writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
-            writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
+        writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
 
-            writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
+        writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
+        writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
+        writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
+        writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
 
-            writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+        writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
-            writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
-            writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-            writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+
+        writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
+        writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
+        writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+
         #pragma endregion
 
         size_t Size = _CustomGradientStops.size();
@@ -963,7 +979,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
 /// <summary>
 /// Updates the position of the current gradient colors.
 /// </summary>
-void Configuration::UpdateGradient()
+void Configuration::UpdateGradientStops()
 {
     if (_GradientStops.size() == 0)
         return;

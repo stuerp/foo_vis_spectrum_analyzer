@@ -458,6 +458,12 @@ void UIElement::SetConfiguration() noexcept
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
+    // Generate the cover art palette if the parameters have changed.
+    if (_Configuration._NewCoverArtParameters)
+    {
+        _Configuration._NewCoverArtParameters = false;
+    }
+
     if (_Configuration._ColorScheme == ColorScheme::CoverArt)
         _Configuration._GradientStops = (_Configuration._CoverArtGradientStops.size() != 0) ? _Configuration._CoverArtGradientStops : GetGradientStops(ColorScheme::CoverArt);
 

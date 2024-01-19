@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.18) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.19) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -956,7 +956,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1081,12 +1081,14 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_NUM_COVER_ART_COLORS:
         {
             _Configuration->_NumCoverArtColors = Clamp((uint32_t) ::_wtoi(Text), MinCoverArtColors, MaxCoverArtColors);
+            _Configuration->_NewCoverArtParameters = true;
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
             _Configuration->_LightnessThreshold = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
+            _Configuration->_NewCoverArtParameters = true;
             break;
         }
 
@@ -1172,7 +1174,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1407,7 +1409,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             _Configuration->_GradientStops.insert(_Configuration->_GradientStops.begin() + Index + 1, gs);
 
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1426,7 +1428,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             _Configuration->_GradientStops.erase(_Configuration->_GradientStops.begin() + Index);
 
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1436,7 +1438,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             std::reverse(_Configuration->_GradientStops.begin(), _Configuration->_GradientStops.end());
 
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1444,7 +1446,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_SPREAD:
         {
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1520,7 +1522,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1669,7 +1671,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1771,7 +1773,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1804,7 +1806,7 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 
     UpdateChannelsMenu();
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>

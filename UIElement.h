@@ -125,7 +125,7 @@ private:
 
     HRESULT CreateCoverArtBitmap() noexcept;
     HRESULT CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & palette) noexcept;
-    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept;
+    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors) noexcept;
 
     #pragma endregion
 
@@ -154,7 +154,7 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanging)
     END_MSG_MAP()
 
     #pragma endregion
@@ -197,6 +197,7 @@ private:
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     CComPtr<IWICBitmapFrameDecode> _Frame;
+    CComPtr<IWICFormatConverter> _FormatConverter;
     CComPtr<ID2D1Bitmap> _CoverArtBitmap;
 
     UINT _DPI;

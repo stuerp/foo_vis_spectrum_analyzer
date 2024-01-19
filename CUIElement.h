@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2023.12.30) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2024.01.19) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -25,6 +25,7 @@ public:
     CUIElement & operator=(CUIElement &&) = delete;
 
     #pragma region window interface
+
     /// <summary>
     /// Gets the category of the extension.
     /// </summary>
@@ -41,44 +42,9 @@ public:
         return uie::type_panel;
     }
 
-    /// <summary>
-    /// Creates or transfers the window.
-    /// </summary>
-    HWND create_or_transfer_window(HWND parent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
-    {
-        if ((HWND) *this)
-        {
-            ShowWindow(SW_HIDE);
-            SetParent(parent);
+    HWND create_or_transfer_window(HWND parent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position);
 
-            _Host->relinquish_ownership(*this);
-            _Host = newHost;
-
-            SetWindowPos(0, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
-        }
-        else
-        {
-            _Host = newHost;
-
-            CRect r;
-
-            position.convert_to_rect(r);
-
-            Create(parent, r, 0, WS_CHILD, 0);
-        }
-
-        return *this;
-    }
-
-    /// <summary>
-    /// Destroys the window.
-    /// </summary>
-    virtual void destroy_window()
-    {
-        ::DestroyWindow(*this);
-
-        _Host.release();
-    }
+    virtual void destroy_window();
 
     /// <summary>
     /// Returns true if the extension is available.
@@ -95,6 +61,7 @@ public:
     {
         return *this;
     }
+
     #pragma endregion
 
     #pragma region container_uie_window_v3_t interface

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.18) P. Stuer **/
+/** $VER: Configuration.h (2024.01.19) P. Stuer **/
 
 #pragma once
 
@@ -232,7 +232,7 @@ enum class ColorOrder
 };
 
 /// <summary>
-/// Represents the configuration of the spectrum analyzer.
+/// Represents the configuration of the component.
 /// </summary>
 class Configuration
 {
@@ -384,7 +384,7 @@ public:
 
         #pragma region Curve
             FLOAT _LineWidth;
-            FLOAT _AreaOpacity;
+            FLOAT _AreaOpacity;                                         // 0.0 .. 1.0
         #pragma endregion
     #pragma endregion
 
@@ -394,20 +394,14 @@ public:
     t_ui_color _DefTextColor;
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
 
+    bool _NewCoverArt;                                                  // True when new cover art has arrived.
     std::vector<uint8_t> _CoverArt;
     std::vector<D2D1_GRADIENT_STOP> _CoverArtGradientStops;             // The gradient stops extracted from the cover art bitmap.
-    bool _NewCoverArt;
+
+    bool _NewCoverArtParameters;                                     // True when the parameters to calculate the cover art palette have changed.
 
     #pragma endregion
-/*
-    bandwidthOffset: 1,
 
-    timeAlignment: 1,
-    downsample: 0,
-    clampPeaks: true,
-
-    labelTuning: 440,
-*/
 public:
     /// <summary>
     /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
@@ -423,7 +417,7 @@ public:
         return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
 
-    void UpdateGradient();
+    void UpdateGradientStops();
 
 private:
     const size_t _CurrentVersion = 10;

@@ -506,8 +506,18 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the album art.
-    if (SUCCEEDED(hr) && (_Configuration._BackgroundMode == BackgroundMode::CoverArt) && _Configuration._NewCoverArt)
-        hr = CreateCoverArtBitmap();
+    if (SUCCEEDED(hr) && _Configuration._NewCoverArt)
+        hr = CreateCoverArtBitmap(&_FormatConverter, &_CoverArtBitmap);
+
+    std::vector<D2D1_COLOR_F> Colors;
+
+    // Get the colors from the cover art.
+    if (SUCCEEDED(hr))
+        hr = CreatePalette(_FormatConverter, Colors);
+
+    // Create the cover art gradient stops.
+    if (SUCCEEDED(hr))
+        hr = CreateGradientStops(Colors);
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
@@ -538,50 +548,49 @@ HRESULT UIElement::CreateCoverArtBitmap() noexcept
 
     HRESULT hr = _WIC.Load(_Configuration._CoverArt.data(), _Configuration._CoverArt.size(), &_Frame);
 
-    CComPtr<IWICFormatConverter> FormatConverter;
-
     // Convert the format of the frame to 32bppPBGRA.
-    hr = _WIC.Factory->CreateFormatConverter(&FormatConverter);
+    _FormatConverter.Release();
 
     if (SUCCEEDED(hr))
-        hr = FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
 
     if (SUCCEEDED(hr))
+        hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+
+    // Create a Direct2D bitmap from the WIC bitmap source.
+    _CoverArtBitmap.Release();
+
+    if (SUCCEEDED(hr))
+        hr = _RenderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_CoverArtBitmap);
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a list of gradient stops from the specified bitmap source.
+/// </summary>
+HRESULT UIElement::CreateGradientStops(std::vector<D2D1_COLOR_F> & colors) noexcept
+{
+    if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
     {
-        _CoverArtBitmap.Release();
-
-        _RenderTarget->CreateBitmapFromWicBitmap(FormatConverter, nullptr, &_CoverArtBitmap);
-    }
-
-    // Get the colors from the cover art.
-    std::vector<D2D1_COLOR_F> Colors;
-
-    if (SUCCEEDED(hr))
-        hr = CreatePalette(FormatConverter, Colors);
-
-    if (SUCCEEDED(hr))
-    {
-        if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
+        // FIXME: Sort from dark to light.
+        std::sort(colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
         {
-            // FIXME: Sort from dark to light.
-            std::sort(Colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
-            {
-                if (left.r != right.r)
-                    return left.r < right.r;
+            if (left.r != right.r)
+                return left.r < right.r;
 
-                if (left.g != right.g)
-                    return left.g < right.g;
+            if (left.g != right.g)
+                return left.g < right.g;
 
-                if (left.b != right.b)
-                    return left.b < right.b;
+            if (left.b != right.b)
+                return left.b < right.b;
 
-                return false;
-            });
-        }
-
-        // Create a gradient stops list from the list of colors.
-        hr = CreateGradientStops(Colors, _Configuration._CoverArtGradientStops);
+            return false;
+        });
     }
+
+    // Create a gradient stops list from the list of colors.
+    HRESULT hr = CreateGradientStops(Colors, _Configuration._CoverArtGradientStops);
 
     if (SUCCEEDED(hr) && (_Configuration._ColorScheme == ColorScheme::CoverArt))
     {
@@ -596,7 +605,7 @@ HRESULT UIElement::CreateCoverArtBitmap() noexcept
 }
 
 /// <summary>
-/// Creates a palette from the bitmap source.
+/// Creates a palette from the specified bitmap source.
 /// </summary>
 HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
