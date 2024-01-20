@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.19) P. Stuer **/
+/** $VER: Configuration.h (2024.01.20) P. Stuer **/
 
 #pragma once
 
@@ -71,11 +71,11 @@ inline const double MaxLineWidth = 10.f;
 inline const double MinAreaOpacity = 0.f;
 inline const double MaxAreaOpacity = 1.f;
 
-inline const double MinCoverArtOpacity = 0.f;
-inline const double MaxCoverArtOpacity = 1.f;
+inline const double MinArtworkOpacity = 0.f;
+inline const double MaxArtworkOpacity = 1.f;
 
-inline const uint32_t MinCoverArtColors = 2;
-inline const uint32_t MaxCoverArtColors = 16;
+inline const uint32_t MinArtworkColors = 2;
+inline const uint32_t MaxArtworkColors = 16;
 
 inline const double MinLightnessThreshold = 0.f;
 inline const double MaxLightnessThreshold = 1.f;
@@ -180,7 +180,7 @@ enum class ColorScheme
 {
     Solid = 0,
     Custom = 1,
-    CoverArt = 2,
+    Artwork = 2,
 
     Prism1 = 3,
     Prism2 = 4,
@@ -214,7 +214,8 @@ enum class BackgroundMode
     None = 0,
 
     Solid = 1,
-    CoverArt = 2,
+    Artwork = 2,
+    ArtworkAndDominantColor = 3,
 };
 
 enum class ColorOrder
@@ -356,9 +357,9 @@ public:
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
 
             BackgroundMode _BackgroundMode;
-            FLOAT _CoverArtOpacity;                                     // 0.0 .. 1.0
+            FLOAT _ArtworkOpacity;                                     // 0.0 .. 1.0
 
-            uint32_t _NumCoverArtColors;                                // Number of colors to select from the cover art.
+            uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
             FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
 
@@ -393,12 +394,9 @@ public:
     t_ui_color _DefBackColor;
     t_ui_color _DefTextColor;
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
+    std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The gradient stops extracted from the artwork bitmap.
 
-    bool _NewCoverArt;                                                  // True when new cover art has arrived.
-    std::vector<uint8_t> _CoverArt;
-    std::vector<D2D1_GRADIENT_STOP> _CoverArtGradientStops;             // The gradient stops extracted from the cover art bitmap.
-
-    bool _NewCoverArtParameters;                                     // True when the parameters to calculate the cover art palette have changed.
+    bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 
     #pragma endregion
 

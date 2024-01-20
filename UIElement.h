@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.17) P. Stuer **/
+/** $VER: UIElement.h (2024.01.20) P. Stuer **/
 
 #pragma once
 
@@ -13,6 +13,7 @@
 #include "XAxis.h"
 #include "YAxis.h"
 #include "Spectrum.h"
+#include "Artwork.h"
 
 #include "FFTAnalyzer.h"
 #include "CQTAnalyzer.h"
@@ -66,7 +67,7 @@ private:
     void OnMouseMove(UINT, CPoint);
     void OnMouseLeave();
 
-    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     #pragma endregion
 
@@ -123,10 +124,6 @@ private:
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
-    HRESULT CreateCoverArtBitmap() noexcept;
-    HRESULT CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & palette) noexcept;
-    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors) noexcept;
-
     #pragma endregion
 
     #pragma region Timer
@@ -154,7 +151,7 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanging)
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChange)
     END_MSG_MAP()
 
     #pragma endregion
@@ -196,10 +193,6 @@ private:
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
-    CComPtr<IWICBitmapFrameDecode> _Frame;
-    CComPtr<IWICFormatConverter> _FormatConverter;
-    CComPtr<ID2D1Bitmap> _CoverArtBitmap;
-
     UINT _DPI;
 
     #pragma endregion
@@ -222,4 +215,8 @@ private:
     size_t _FFTSize;
     uint32_t _SampleRate;
     double _Bandwidth;
+
+    Artwork _Artwork;
+    bool _NewArtwork; // True when new artwork has arrived.
+    D2D1_COLOR_F _DominantColor;
 };

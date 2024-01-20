@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.19) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.20) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -7,6 +7,8 @@
 #include "Layout.h"
 
 #include "CColorDialogEx.h"
+
+#include "Direct2D.h"
 
 /// <summary>
 /// Initializes the dialog.
@@ -472,7 +474,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Cover Art", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -510,7 +512,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Solid", L"Cover Art" };
+        const WCHAR * Labels[] = { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -525,14 +527,14 @@ void ConfigurationDialog::Initialize()
             { 3, 10 },
         };
 
-        _CoverArtOpacity.Initialize(GetDlgItem(IDC_COVER_ART_OPACITY));
+        _ArtworkOpacity.Initialize(GetDlgItem(IDC_ARTWORK_OPACITY));
 
-        SetDlgItemTextW(IDC_COVER_ART_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_CoverArtOpacity * 100.f))));
+        SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_COVER_ART_OPACITY_SPIN));
+        auto w = CUpDownCtrl(GetDlgItem(IDC_ARTWORK_OPACITY_SPIN));
 
-        w.SetRange32((int) (MinCoverArtOpacity * 100.f), (int) (MaxCoverArtOpacity * 100.f));
-        w.SetPos32((int) (_Configuration->_CoverArtOpacity * 100.f));
+        w.SetRange32((int) (MinArtworkOpacity * 100.f), (int) (MaxArtworkOpacity * 100.f));
+        w.SetPos32((int) (_Configuration->_ArtworkOpacity * 100.f));
         w.SetAccel(_countof(Accel), Accel);
     }
     {
@@ -544,14 +546,14 @@ void ConfigurationDialog::Initialize()
             { 4, 16 },
         };
 
-        _CoverArtColors.Initialize(GetDlgItem(IDC_NUM_COVER_ART_COLORS));
+        _ArtworkColors.Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS));
 
-        SetDlgItemTextW(IDC_NUM_COVER_ART_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumCoverArtColors))));
+        SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors))));
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_COVER_ART_COLORS_SPIN));
+        auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_ARTWORK_COLORS_SPIN));
 
-        w.SetRange32((int) (MinCoverArtColors), (int) (MaxCoverArtColors));
-        w.SetPos32((int) (_Configuration->_NumCoverArtColors));
+        w.SetRange32((int) (MinArtworkColors), (int) (MaxArtworkColors));
+        w.SetPos32((int) (_Configuration->_NumArtworkColors));
         w.SetAccel(_countof(Accel), Accel);
     }
     {
@@ -729,8 +731,8 @@ void ConfigurationDialog::Terminate()
     _Colors.Terminate();
     _Gradient.Terminate();
 
-    _CoverArtOpacity.Terminate();
-    _CoverArtColors.Terminate();
+    _ArtworkOpacity.Terminate();
+    _ArtworkColors.Terminate();
     _LightnessThreshold.Terminate();
 
     _BackColor.Terminate();
@@ -842,6 +844,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         #pragma region Color Scheme
 
+        #pragma warning(disable: 4061) // Enumerator not handled
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
@@ -856,14 +859,15 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
                     _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
                     break;
 
-                case ColorScheme::CoverArt:
-                    _Configuration->_GradientStops = _Configuration->_CoverArtGradientStops;
+                case ColorScheme::Artwork:
+                    _Configuration->_GradientStops = _Configuration->_ArtworkGradientStops;
                     break;
             }
 
             UpdateColorControls();
             break;
         }
+        #pragma warning(default: 4061)
 
         case IDC_COLOR_LIST:
         {
@@ -878,25 +882,27 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             // Update the state of the buttons.
             bool HasSelection = (Index != LB_ERR);
+            bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
             bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-                GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-                GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+                GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+                GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor);
-                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor);
+                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
             return;
         }
 
         #pragma endregion
 
-        #pragma region Cover Art Colors
+        #pragma region Artwork Colors
 
         case IDC_COLOR_ORDER:
         {
             _Configuration->_ColorOrder = (ColorOrder) SelectedIndex;
+            _Configuration->_NewArtworkParameters = true;
             break;
         }
 
@@ -1076,29 +1082,29 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         }
         #pragma endregion
 
-        #pragma region Cover Art Colors
+        #pragma region Artwork Colors
 
-        case IDC_NUM_COVER_ART_COLORS:
+        case IDC_NUM_ARTWORK_COLORS:
         {
-            _Configuration->_NumCoverArtColors = Clamp((uint32_t) ::_wtoi(Text), MinCoverArtColors, MaxCoverArtColors);
-            _Configuration->_NewCoverArtParameters = true;
+            _Configuration->_NumArtworkColors = Clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
+            _Configuration->_NewArtworkParameters = true;
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
             _Configuration->_LightnessThreshold = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
-            _Configuration->_NewCoverArtParameters = true;
+            _Configuration->_NewArtworkParameters = true;
             break;
         }
 
         #pragma endregion
 
-        #pragma region Cover Art Image
+        #pragma region Artwork Image
 
-        case IDC_COVER_ART_OPACITY:
+        case IDC_ARTWORK_OPACITY:
         {
-            _Configuration->_CoverArtOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinCoverArtOpacity, MaxCoverArtOpacity);
+            _Configuration->_ArtworkOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
             break;
         }
 
@@ -1242,11 +1248,11 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
-        #pragma region Cover Art Colors
+        #pragma region Artwork Colors
 
-        case IDC_NUM_COVER_ART_COLORS:
+        case IDC_NUM_ARTWORK_COLORS:
         {
-            SetDlgItemTextW(IDC_NUM_COVER_ART_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumCoverArtColors))));
+            SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors))));
             break;
         }
 
@@ -1258,11 +1264,11 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
-        #pragma region Cover Art Image
+        #pragma region Artwork Image
 
-        case IDC_COVER_ART_OPACITY:
+        case IDC_ARTWORK_OPACITY:
         {
-            SetDlgItemTextW(IDC_COVER_ART_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_CoverArtOpacity * 100.f))));
+            SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
             break;
         }
 
@@ -1646,10 +1652,10 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_NUM_COVER_ART_COLORS_SPIN:
+        case IDC_NUM_ARTWORK_COLORS_SPIN:
         {
-            _Configuration->_NumCoverArtColors = (size_t) ClampNewSpinPosition(nmud, MinCoverArtColors, MaxCoverArtColors);
-            SetDlgItemTextW(IDC_NUM_COVER_ART_COLORS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumCoverArtColors)));
+            _Configuration->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
+            SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumArtworkColors)));
             break;
         }
 
@@ -1660,10 +1666,10 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_COVER_ART_OPACITY_SPIN:
+        case IDC_ARTWORK_OPACITY_SPIN:
         {
-            _Configuration->_CoverArtOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinCoverArtOpacity, MaxCoverArtOpacity, 100.);
-            SetDlgItemTextW(IDC_COVER_ART_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_CoverArtOpacity * 100.f))));
+            _Configuration->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
+            SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
             break;
         }
 
@@ -1695,22 +1701,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             if (Colors.empty())
                 return 0;
 
-            {
-                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
-
-                GradientStops.clear();
-
-                FLOAT Position = 0.f;
-
-                for (const auto & Iter : Colors)
-                {
-                    D2D1_GRADIENT_STOP gs = { Position, Iter };
-
-                    GradientStops.push_back(gs);
-
-                    Position += 1.f / (FLOAT) Colors.size();
-                }
-            }
+            _Direct2D.CreateGradientStops(Colors,_Configuration->_GradientStops);
 
             _Configuration->_ColorScheme = ColorScheme::Custom;
             _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
@@ -1871,8 +1862,8 @@ void ConfigurationDialog::UpdatePage2(int mode) const noexcept
             IDC_SHOW_TOOLTIPS,
 
             IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
-            IDC_COVER_ART_OPACITY_LBL, IDC_COVER_ART_OPACITY, IDC_COVER_ART_OPACITY_SPIN, IDC_COVER_ART_OPACITY_LBL_2,
-            IDC_NUM_COVER_ART_COLORS_LBL, IDC_NUM_COVER_ART_COLORS,
+            IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
+            IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
 
@@ -2010,9 +2001,9 @@ void ConfigurationDialog::UpdateControls()
 
     // Background Mode
 
-    bool UseCoverArtForBackground = (_Configuration->_BackgroundMode == BackgroundMode::CoverArt);
+    bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
 
-        GetDlgItem(IDC_COVER_ART_OPACITY).EnableWindow(UseCoverArtForBackground);
+        GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
 
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
@@ -2082,18 +2073,22 @@ void ConfigurationDialog::UpdateColorControls()
     // Remove and Reverse are only enabled when there is more than 1 color.
     bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-    // Gradient controls are disabled when the cover art provides the controls.
-    bool UseCoverArt = (_Configuration->_ColorScheme == ColorScheme::CoverArt);
+    // Gradient controls are disabled when the artwork provides the colors.
+    bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
 
-        GetDlgItem(IDC_COLOR_LIST).EnableWindow(!UseCoverArt);
+//      GetDlgItem(IDC_COLOR_LIST).EnableWindow(!UseArtwork);
 
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseCoverArt);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseCoverArt);
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseCoverArt);
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
-        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseCoverArt);
-        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseCoverArt);
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
+
+        GetDlgItem(IDC_NUM_ARTWORK_COLORS).EnableWindow(UseArtwork);
+        GetDlgItem(IDC_LIGHTNESS_THRESHOLD).EnableWindow(UseArtwork);
+        GetDlgItem(IDC_COLOR_ORDER).EnableWindow(UseArtwork);
 
     {
         _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
@@ -2118,11 +2113,6 @@ void ConfigurationDialog::UpdateColorControls()
         _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
 
-    // Color Scheme
-
-        GetDlgItem(IDC_NUM_COVER_ART_COLORS).EnableWindow(UseCoverArt);
-        GetDlgItem(IDC_LIGHTNESS_THRESHOLD).EnableWindow(UseCoverArt);
-        GetDlgItem(IDC_COLOR_ORDER).EnableWindow(UseCoverArt);
 }
 
 /// <summary>

@@ -196,6 +196,8 @@
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
+    <ClInclude Include="Visuals\Artwork.h" />
+    <ClInclude Include="Windows\COMException.h" />
     <ClInclude Include="Windows\CriticalSection.h" />
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
@@ -240,6 +242,7 @@
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
+    <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />

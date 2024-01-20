@@ -1,5 +1,5 @@
 
-/** $VER: ColorThief.cpp (2024.01.18) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
+/** $VER: ColorThief.cpp (2024.01.20) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -390,9 +390,12 @@ std::vector<color_t> Quantize(const std::vector<int32_t> & histogram, VBox & box
     while (pq1.Size() > 0)
         pq2.Push(pq1.Pop());
 
-    Iterate(pq2, (size_t) colorCount - pq2.Size(), histogram);
+    if (pq2.Size() < colorCount)
+    {
+        Iterate(pq2, (size_t) colorCount - pq2.Size(), histogram);
 
-    pq2.Sort();
+        pq2.Sort();
+    }
 
     for (auto & vbox : pq2.Contents())
         Colors.push_back(vbox.Average());

@@ -194,8 +194,8 @@ private:
     CColorListBox _Colors;
     CNumericEdit _Position;
 
-    CNumericEdit _CoverArtOpacity;
-    CNumericEdit _CoverArtColors;
+    CNumericEdit _ArtworkOpacity;
+    CNumericEdit _ArtworkColors;
     CNumericEdit _LightnessThreshold;
 
     CColorButton _BackColor;

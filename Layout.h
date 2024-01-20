@@ -453,7 +453,7 @@
 
     #pragma endregion
 
-    #pragma region Cover Art Colors
+    #pragma region Artwork Colors
     // Label
     #define W_G06    64
     #define H_G06    H_LBL
@@ -551,7 +551,7 @@
     #define Y_G02    Y_G01
     #pragma endregion
 
-    #pragma region Cover Art Opacity
+    #pragma region Artwork Opacity
     // Label
     #define W_G03    64
     #define H_G03    H_LBL

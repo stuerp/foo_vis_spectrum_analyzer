@@ -121,10 +121,10 @@ void Configuration::Reset() noexcept
 
     _ShowToolTips = true;
 
-    _BackgroundMode = BackgroundMode::CoverArt;
-    _CoverArtOpacity = 1.f;
+    _BackgroundMode = BackgroundMode::Artwork;
+    _ArtworkOpacity = 1.f;
 
-    _NumCoverArtColors = 10;
+    _NumArtworkColors = 10;
     _LightnessThreshold = 250.f / 255.f;
     _TransparencyThreshold = 125.f / 255.f;
 
@@ -247,9 +247,9 @@ Configuration & Configuration::operator=(const Configuration & other)
         _ShowToolTips = other._ShowToolTips;
 
         _BackgroundMode = other._BackgroundMode;
-        _CoverArtOpacity = other._CoverArtOpacity;
+        _ArtworkOpacity = other._ArtworkOpacity;
 
-        _NumCoverArtColors = other._NumCoverArtColors;
+        _NumArtworkColors = other._NumArtworkColors;
         _LightnessThreshold = other._LightnessThreshold;
         _TransparencyThreshold = other._TransparencyThreshold;
 
@@ -385,7 +385,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
     parser >> Integer; _ColorScheme = (ColorScheme) Integer;
 
     if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
-        _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::CoverArt was added after ColorScheme::Custom
+        _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
 
     parser >> _DrawBandBackground;
 
@@ -487,9 +487,9 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
     if (Version >= 10)
     {
         parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
-        parser >> _CoverArtOpacity;
+        parser >> _ArtworkOpacity;
 
-        parser >> _NumCoverArtColors;
+        parser >> _NumArtworkColors;
         parser >> _LightnessThreshold;
         parser >> Integer; _ColorOrder = (ColorOrder) Integer;
     }
@@ -662,9 +662,9 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
 
         // Version 10
         builder << (int) _BackgroundMode;
-        builder << _CoverArtOpacity;
+        builder << _ArtworkOpacity;
 
-        builder << _NumCoverArtColors;
+        builder << _NumArtworkColors;
         builder << _LightnessThreshold;
         builder << (int) _ColorOrder;
     }
@@ -753,7 +753,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
         if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
-            _ColorScheme = (ColorScheme) ((int) _ColorScheme + 1); // ColorScheme::CoverArt was added after ColorScheme::Custom
+            _ColorScheme = (ColorScheme) ((int) _ColorScheme + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
 
         reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
 
@@ -817,9 +817,9 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         if (Version >= 10)
         {
             reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
-            reader->read(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
+            reader->read(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
 
-            reader->read(&_NumCoverArtColors, sizeof(_NumCoverArtColors), abortHandler);
+            reader->read(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
             reader->read(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
             reader->read(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
         }
@@ -965,9 +965,9 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
 
         // Version 10
         writer->write(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
-        writer->write(&_CoverArtOpacity, sizeof(_CoverArtOpacity), abortHandler);
+        writer->write(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
 
-        writer->write(&_NumCoverArtColors, sizeof(_NumCoverArtColors), abortHandler);
+        writer->write(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
         writer->write(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
         writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
     }

@@ -355,7 +355,7 @@ void UIElement::OnMouseLeave()
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-LRESULT UIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     SetConfiguration();
 
@@ -457,15 +457,6 @@ void UIElement::SetConfiguration() noexcept
     #pragma warning (default: 4061)
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
-
-    // Generate the cover art palette if the parameters have changed.
-    if (_Configuration._NewCoverArtParameters)
-    {
-        _Configuration._NewCoverArtParameters = false;
-    }
-
-    if (_Configuration._ColorScheme == ColorScheme::CoverArt)
-        _Configuration._GradientStops = (_Configuration._CoverArtGradientStops.size() != 0) ? _Configuration._CoverArtGradientStops : GetGradientStops(ColorScheme::CoverArt);
 
     // Generate the horizontal color gradient, if required.
     if (_Configuration._HorizontalGradient)
@@ -598,12 +589,7 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 
     _SampleRate = 44100;
 
-    if (_Configuration._CoverArt.size() > 0)
-    {
-        std::vector<uint8_t> Empty;
-
-        _Configuration._CoverArt.swap(Empty);
-    }
+    _Artwork.Release();
 }
 
 /// <summary>
@@ -622,8 +608,8 @@ void UIElement::on_album_art(album_art_data::ptr aad)
 {
     _IsStopping = false;
 
-    _Configuration._CoverArt.assign((uint8_t *) aad->data(), (uint8_t *) aad->data() + aad->size());
-    _Configuration._NewCoverArt = true;
+    _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+    _NewArtwork = true;
 }
 
 #pragma endregion

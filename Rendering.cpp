@@ -9,12 +9,8 @@
 
 #include "Resources.h"
 #include "Gradients.h"
-#include "ColorThief.h"
 
 #include "Log.h"
-
-#include <vector>
-#include <algorithm>
 
 #pragma hdrstop
 
@@ -76,7 +72,7 @@ void UIElement::RenderFrame()
     {
         if (_IsStopping)
         {
-            _CoverArtBitmap.Release();
+            _Artwork.Release();
 
             for (auto & Iter : _FrequencyBands)
                 Iter.CurValue = 0.;
@@ -135,13 +131,16 @@ void UIElement::RenderFrame()
 /// </summary>
 void UIElement::RenderBackground() const
 {
-    _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
+    if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
+        _RenderTarget->Clear(_DominantColor);
+    else
+        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
     // Render the album art if there is any.
-    if ((_CoverArtBitmap == nullptr) || (_Configuration._BackgroundMode != BackgroundMode::CoverArt))
+    if ((_Artwork.Bitmap() == nullptr) || !((_Configuration._BackgroundMode == BackgroundMode::Artwork) || (_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor)))
         return;
 
-    D2D1_SIZE_F Size = _CoverArtBitmap->GetSize();
+    D2D1_SIZE_F Size = _Artwork.Size();
     D2D1_RECT_F Rect = _Graph.GetBounds();
 
     FLOAT MaxWidth  = Rect.right  - Rect.left;
@@ -164,7 +163,7 @@ void UIElement::RenderBackground() const
     Rect.right  = Rect.left + Size.width;
     Rect.bottom = Rect.top  + Size.height;
 
-    _RenderTarget->DrawBitmap(_CoverArtBitmap, Rect, _Configuration._CoverArtOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    _RenderTarget->DrawBitmap(_Artwork.Bitmap(), Rect, _Configuration._ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -505,148 +504,100 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
     }
 
-    // Create the background bitmap from the album art.
-    if (SUCCEEDED(hr) && _Configuration._NewCoverArt)
-        hr = CreateCoverArtBitmap(&_FormatConverter, &_CoverArtBitmap);
+    // Create the background bitmap from the artwork.
+    if (SUCCEEDED(hr) && _NewArtwork)
+    {
+        hr = _Artwork.Realize(_RenderTarget);
 
-    std::vector<D2D1_COLOR_F> Colors;
+        if (SUCCEEDED(hr))
+            _Configuration._ArtworkGradientStops.clear();
 
-    // Get the colors from the cover art.
-    if (SUCCEEDED(hr))
-        hr = CreatePalette(_FormatConverter, Colors);
+        _NewArtwork = false;
+    }
 
-    // Create the cover art gradient stops.
-    if (SUCCEEDED(hr))
-        hr = CreateGradientStops(Colors);
+    bool NewArtworkGradientStops = false;
+
+    // Create the gradient stops based on the artwork. Done at least once per artwork because the configuration dialog needs it when ColorScheme::Artwork is selected.
+    if (SUCCEEDED(hr) && (_Artwork.Bitmap() != nullptr) && ((_Configuration._ArtworkGradientStops.size() == 0) || _Configuration._NewArtworkParameters))
+    {
+        _Configuration._NewArtworkParameters = false;
+
+        // Get the colors from the artwork.
+        std::vector<D2D1_COLOR_F> Colors;
+
+        hr = _Artwork.GetColors(Colors, _Configuration._NumArtworkColors, _Configuration._LightnessThreshold, _Configuration._TransparencyThreshold);
+
+        // Sort the colors.
+        if (SUCCEEDED(hr))
+        {
+            _DominantColor = Colors[0];
+
+            #pragma warning(disable: 4061) // Enumerator not handled
+            switch (_Configuration._ColorOrder)
+            {
+                case ColorOrder::None:
+                    break;
+
+                case ColorOrder::HueAscending:
+                    _Direct2D.SortColorsByHue(Colors, true);
+                    break;
+
+                case ColorOrder::HueDescending:
+                    _Direct2D.SortColorsByHue(Colors, false);
+                    break;
+
+                case ColorOrder::SaturationAscending:
+                    _Direct2D.SortColorsBySaturation(Colors, true);
+                    break;
+
+                case ColorOrder::SaturationDescending:
+                    _Direct2D.SortColorsBySaturation(Colors, false);
+                    break;
+
+                case ColorOrder::LightnessAscending:
+                    _Direct2D.SortColorsByLightness(Colors, true);
+                    break;
+
+                case ColorOrder::LightnessDescending:
+                    _Direct2D.SortColorsByLightness(Colors, false);
+                    break;
+            }
+            #pragma warning(default: 4061)
+        }
+
+        // Create the gradient stops.
+        if (SUCCEEDED(hr))
+            hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
+
+        if (SUCCEEDED(hr))
+        {
+            NewArtworkGradientStops = true;
+
+            if (_Configuration._ColorScheme == ColorScheme::Artwork)
+            {
+                _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
+
+                // Notify the configuration dialog about the change.
+                if (_ConfigurationDialog.IsWindow())
+                    _ConfigurationDialog.SendMessageW(WM_COLORS_CHANGED);
+            }
+        }
+    }
 
     if (SUCCEEDED(hr))
         hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
 
     if (SUCCEEDED(hr))
-    {
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
-        if (SUCCEEDED(hr) && _Configuration._NewCoverArt)
-        {
-            Spectrum & s = _Graph.GetSpectrum();
-
-            s.Initialize(&_Configuration); // FIXME
-        }
-    }
-
-    _Configuration._NewCoverArt = false;
-
-    return hr;
-}
-
-/// <summary>
-/// Creates the cover art bitmap from the pixel data and optionally generates a gradient stops list from it.
-/// </summary>
-HRESULT UIElement::CreateCoverArtBitmap() noexcept
-{
-    _Frame.Release();
-
-    HRESULT hr = _WIC.Load(_Configuration._CoverArt.data(), _Configuration._CoverArt.size(), &_Frame);
-
-    // Convert the format of the frame to 32bppPBGRA.
-    _FormatConverter.Release();
-
-    if (SUCCEEDED(hr))
-        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
-
-    if (SUCCEEDED(hr))
-        hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
-
-    // Create a Direct2D bitmap from the WIC bitmap source.
-    _CoverArtBitmap.Release();
-
-    if (SUCCEEDED(hr))
-        hr = _RenderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_CoverArtBitmap);
-
-    return hr;
-}
-
-/// <summary>
-/// Creates a list of gradient stops from the specified bitmap source.
-/// </summary>
-HRESULT UIElement::CreateGradientStops(std::vector<D2D1_COLOR_F> & colors) noexcept
-{
-    if (_Configuration._ColorOrder == ColorOrder::LightnessAscending)
+    if (SUCCEEDED(hr) && NewArtworkGradientStops)
     {
-        // FIXME: Sort from dark to light.
-        std::sort(colors.begin(), Colors.end(), [](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
-        {
-            if (left.r != right.r)
-                return left.r < right.r;
+        Spectrum & s = _Graph.GetSpectrum();
 
-            if (left.g != right.g)
-                return left.g < right.g;
-
-            if (left.b != right.b)
-                return left.b < right.b;
-
-            return false;
-        });
-    }
-
-    // Create a gradient stops list from the list of colors.
-    HRESULT hr = CreateGradientStops(Colors, _Configuration._CoverArtGradientStops);
-
-    if (SUCCEEDED(hr) && (_Configuration._ColorScheme == ColorScheme::CoverArt))
-    {
-        _Configuration._GradientStops = _Configuration._CoverArtGradientStops;
-
-        // Notify the configuration dialog about the change.
-        if (_ConfigurationDialog.IsWindow())
-            _ConfigurationDialog.SendMessageW(WM_COLORS_CHANGED);
-    }
-
-    return S_OK; // Problems with the cover art should not prevent rendering other elements.
-}
-
-/// <summary>
-/// Creates a palette from the specified bitmap source.
-/// </summary>
-HRESULT UIElement::CreatePalette(IWICBitmapSource * bitmapSource, std::vector<D2D1_COLOR_F> & colors) noexcept
-{
-    UINT Width = 0, Height = 0;
-
-    HRESULT hr = bitmapSource->GetSize(&Width, &Height);
-
-    std::vector<ColorThief::color_t> Palette;
-
-    if (SUCCEEDED(hr))
-    {
-        uint32_t Quality = Clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
-
-        hr = ColorThief::GetPalette(bitmapSource, Palette, _Configuration._NumCoverArtColors, Quality, true, (uint8_t) (_Configuration._LightnessThreshold * 255.f), (uint8_t) (_Configuration._TransparencyThreshold * 255.f));
-    }
-
-    // Convert to Direct2D colors.
-    if (SUCCEEDED(hr))
-    {
-        colors.clear();
-
-        for (const auto & p : Palette)
-            colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+        s.Initialize(&_Configuration); // FIXME
     }
 
     return hr;
-}
-
-/// <summary>
-/// Creates a gradient stops list from a list of colors.
-/// </summary>
-HRESULT UIElement::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
-{
-    gradientStops.clear();
-
-    gradientStops.push_back({ 0.f, colors[0] });
-
-    for (size_t i = 1; i < colors.size(); ++i)
-        gradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
-
-    return S_OK;
 }
 
 /// <summary>
@@ -657,8 +608,7 @@ void UIElement::ReleaseDeviceSpecificResources()
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
-    _CoverArtBitmap.Release();
-    _Frame.Release();
+    _Artwork.Release();
 
     _RenderTarget.Release();
 }
