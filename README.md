@@ -92,10 +92,10 @@ v0.6.1.0, 2024-01-xx
   * Color scheme "Artwork" turns on the feature.
   * Between 2 and 256 colors can be selected.
   * Lightness threshold determines which light colors will be ignored.
-* New: The outline color of the curve can be specified.
-* New: Curve mode has a peak line.
+* New: The Curve visual has a peak line.
 * New: Dark mode support.
 * Improved: Curve mode can use a horizontal gradient.
+* Improved: The curve is no longer visible as a flat line if no track is playing.
 
 v0.6.0.3, 2024-01-13
 

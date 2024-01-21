@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.20) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.21) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -816,10 +816,52 @@
 #define Y_C13    Y_E02 + H_E02 + IY
 #pragma endregion
 
+#pragma region Peak Mode
+// Label
+#define W_A11    42
+#define H_A11    H_LBL
+#define X_A11    X_C13
+#define Y_A11    Y_C13 + H_C13 + IY
+
+// Combobox
+#define W_A12    60
+#define H_A12    H_CBX
+#define X_A12    X_A11 + W_A11 + IX
+#define Y_A12    Y_A11
+#pragma endregion
+
+#pragma region Hold time (ms)
+// Label
+#define W_A51    42
+#define H_A51    H_LBL
+#define X_A51    X_A11
+#define Y_A51    Y_A12 + H_A12 + IY
+
+// Textbox
+#define W_A52    30
+#define H_A52    H_TBX
+#define X_A52    X_A51 + W_A51 + IX
+#define Y_A52    Y_A51
+#pragma endregion
+
+#pragma region Acceleration (db/s2)
+// Label
+#define W_A53    42
+#define H_A53    H_LBL
+#define X_A53    X_A51
+#define Y_A53    Y_A52 + H_A52 + IY
+
+// Textbox
+#define W_A54    30
+#define H_A54    H_TBX
+#define X_A54    X_A53 + W_A53 + IX
+#define Y_A54    Y_A53
+#pragma endregion
+
 #pragma region Bars
 // Groupbox
 #define X_B07   X_E01
-#define Y_B07   Y_C13 + H_C13 + IY
+#define Y_B07   Y_A54 + H_A54 + IY
 
     #pragma region Draw band background
     // Checkbox
@@ -837,54 +879,12 @@
     #define Y_C12    Y_A57 + H_A57 + IY
     #pragma endregion
 
-    #pragma region Peak Mode
-    // Label
-    #define W_A11    42
-    #define H_A11    H_LBL
-    #define X_A11    X_C12
-    #define Y_A11    Y_C12 + H_C12 + IY
-
-    // Combobox
-    #define W_A12    60
-    #define H_A12    H_CBX
-    #define X_A12    X_A11 + W_A11 + IX
-    #define Y_A12    Y_A11
-    #pragma endregion
-
-    #pragma region Hold time (ms)
-    // Label
-    #define W_A51    42
-    #define H_A51    H_LBL
-    #define X_A51    X_A11
-    #define Y_A51    Y_A12 + H_A12 + IY
-
-    // Textbox
-    #define W_A52    30
-    #define H_A52    H_TBX
-    #define X_A52    X_A51 + W_A51 + IX
-    #define Y_A52    Y_A51
-    #pragma endregion
-
-    #pragma region Acceleration (db/s2)
-    // Label
-    #define W_A53    42
-    #define H_A53    H_LBL
-    #define X_A53    X_A51
-    #define Y_A53    Y_A52 + H_A52 + IY
-
-    // Textbox
-    #define W_A54    30
-    #define H_A54    H_TBX
-    #define X_A54    X_A53 + W_A53 + IX
-    #define Y_A54    Y_A53
-    #pragma endregion
-
     #pragma region White & Black keys
     // Label (White keys)
     #define W_A82   42
     #define H_A82   H_LBL
-    #define X_A82   X_A53
-    #define Y_A82   Y_A54 + H_A54 + IY
+    #define X_A82   X_C12
+    #define Y_A82   Y_C12 + H_C12 + IY
 
     // Button
     #define W_A83   40
@@ -906,7 +906,7 @@
     #pragma endregion
 
 #define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B07   11 + H_A57 + IY + H_C12 + IY + H_A12 + IY + H_A52 + IY + H_A54 + IY + H_A83 + IY + H_C15 + 7
+#define H_B07   11 + H_A57 + IY + H_C12 + IY + H_A83 + IY + H_C15 + 7
 #pragma endregion
 
 #pragma region Curve

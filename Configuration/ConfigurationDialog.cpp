@@ -627,8 +627,6 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration->_VisualizationType);
     }
 
-    #pragma region Bars
-
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
@@ -643,10 +641,14 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration->_PeakMode);
     }
+
     {
         SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
         SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
     }
+
+    #pragma region Bars
+
     {
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
     }
@@ -1914,11 +1916,11 @@ void ConfigurationDialog::UpdatePage3(int mode) const noexcept
 
         IDC_HORIZONTAL_GRADIENT,
 
+        IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+        IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+
         IDC_BARS,
             IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE,
-
-            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
-            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
             IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
             IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
@@ -2007,7 +2009,6 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
 
     // Background Mode
-
     bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
 
         GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
@@ -2018,19 +2019,15 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(IsLogarithmic);
         GetDlgItem(IDC_GAMMA).EnableWindow(IsLogarithmic);
 
-    // Peak indicators
+    // Visualization
     bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
 
         GetDlgItem(IDC_HOLD_TIME).EnableWindow(ShowPeaks);
         GetDlgItem(IDC_ACCELERATION).EnableWindow(ShowPeaks);
  
-    // Visualization
+    // Bars
     GetDlgItem(IDC_DRAW_BAND_BACKGROUND).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     GetDlgItem(IDC_LED_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_HOLD_TIME).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
 
     _LiteBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     _LiteBandColor.SetColor(_Configuration->_LightBandColor);
@@ -2038,6 +2035,7 @@ void ConfigurationDialog::UpdateControls()
     _DarkBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
 
+    // Curve
     GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
     GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
 

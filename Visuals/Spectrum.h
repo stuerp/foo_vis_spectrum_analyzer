@@ -41,7 +41,7 @@ public:
 private:
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 

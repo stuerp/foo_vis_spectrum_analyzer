@@ -104,7 +104,7 @@ void UIElement::RenderFrame()
                     Iter.CurValue = 0.;
 
             // Update the peak indicators.
-            if ((_FFTAnalyzer != nullptr) && (_Configuration._VisualizationType == VisualizationType::Bars) && (_Configuration._PeakMode != PeakMode::None))
+            if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
                 _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
         }
 

@@ -134,10 +134,7 @@ void FFTAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBan
 {
     for (FrequencyBand & Iter : frequencyBands)
     {
-        double Amplitude = _Configuration->ScaleA(Iter.CurValue);
-
-        if (!::isfinite(Iter.Peak))
-            Iter.Peak = 0.;
+        double Amplitude = Clamp(_Configuration->ScaleA(Iter.CurValue), 0., 1.);
 
         if (Amplitude >= Iter.Peak)
         {
@@ -151,53 +148,55 @@ void FFTAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBan
             Iter.Opacity = 1.;
         }
         else
-        if (Iter.HoldTime >= 0.)
         {
-            if ((_Configuration->_PeakMode == PeakMode::AIMP))
-                Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration->_HoldTime;
-
-            Iter.HoldTime -= 1.;
-
-            if (_Configuration->_PeakMode == PeakMode::AIMP)
-                Iter.HoldTime = Min(Iter.HoldTime, _Configuration->_HoldTime);
-        }
-        else
-        {
-            switch (_Configuration->_PeakMode)
+            if (Iter.HoldTime >= 0.)
             {
-                default:
+                if ((_Configuration->_PeakMode == PeakMode::AIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration->_HoldTime;
 
-                case PeakMode::None:
-                    break;
+                Iter.HoldTime -= 1.;
 
-                case PeakMode::Classic:
-                    Iter.DecaySpeed = _Configuration->_Acceleration / 256.;
-                    break;
-
-                case PeakMode::Gravity:
-                case PeakMode::FadeOut:
-                    Iter.DecaySpeed += _Configuration->_Acceleration / 256.;
-                    break;
-
-                case PeakMode::AIMP:
-                    Iter.DecaySpeed = (_Configuration->_Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                    break;
-
-                    break;
+                if (_Configuration->_PeakMode == PeakMode::AIMP)
+                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration->_HoldTime);
             }
-
-            if (_Configuration->_PeakMode != PeakMode::FadeOut)
-                Iter.Peak -= Iter.DecaySpeed;
             else
             {
-                Iter.Opacity -= Iter.DecaySpeed;
+                switch (_Configuration->_PeakMode)
+                {
+                    default:
 
-                if (Iter.Opacity <= 0.)
-                    Iter.Peak = 0.;
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
+                        Iter.DecaySpeed = _Configuration->_Acceleration / 256.;
+                        break;
+
+                    case PeakMode::Gravity:
+                    case PeakMode::FadeOut:
+                        Iter.DecaySpeed += _Configuration->_Acceleration / 256.;
+                        break;
+
+                    case PeakMode::AIMP:
+                        Iter.DecaySpeed = (_Configuration->_Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        break;
+
+                        break;
+                }
+
+                if (_Configuration->_PeakMode != PeakMode::FadeOut)
+                    Iter.Peak -= Iter.DecaySpeed;
+                else
+                {
+                    Iter.Opacity -= Iter.DecaySpeed;
+
+                    if (Iter.Opacity <= 0.)
+                        Iter.Peak = Amplitude;
+                }
             }
-        }
 
-        Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+        }
     }
 }
 
