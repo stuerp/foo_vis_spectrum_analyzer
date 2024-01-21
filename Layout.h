@@ -383,6 +383,29 @@
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 
+#pragma region Filters
+// Groupbox
+#define X_B09   X_B01
+#define Y_B09   Y_B01 + H_B01 + IY
+
+    #pragma region Acoustic Filter
+    // Label
+    #define W_H01    60
+    #define H_H01    H_LBL
+    #define X_H01    X_B09 + 5
+    #define Y_H01    Y_B09 + 11
+
+    // Combobox
+    #define W_H02    100
+    #define H_H02    H_CBX
+    #define X_H02    X_H01 + W_H01 + IX
+    #define Y_H02    Y_H01
+    #pragma endregion
+
+#define W_B09   W_B01
+#define H_B09   11 + H_H02 + 7
+#pragma endregion
+
 #pragma region Common
 // Groupbox
 #define X_B04   X_D01 + W_D01 + IX

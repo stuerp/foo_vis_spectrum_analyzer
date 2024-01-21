@@ -52,7 +52,7 @@ void ConfigurationDialog::Initialize()
 {
     Terminate();
 
-    // Initializes the menu list.
+    #pragma region Menu
     {
         _MenuList.Initialize(GetDlgItem(IDC_MENULIST));
 
@@ -69,6 +69,7 @@ void ConfigurationDialog::Initialize()
         UpdatePage2((_Configuration->_PageIndex == 1) ? SW_SHOW : SW_HIDE);
         UpdatePage3((_Configuration->_PageIndex == 2) ? SW_SHOW : SW_HIDE);
     }
+    #pragma endregion
 
     #pragma region Transform
     {
@@ -383,6 +384,23 @@ void ConfigurationDialog::Initialize()
             w.SetRange32((int) (MinBandwidth * 10.), (int) (MaxBandwidth * 10.));
             w.SetPos32((int) (_Configuration->_Bandwidth * 10.));
             w.SetAccel(_countof(Accel), Accel);
+        }
+    }
+    #pragma endregion
+
+    #pragma region Acoustic Filter
+    {
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_ACOUSTIC_FILTER);
+
+            w.ResetContent();
+
+            const WCHAR * Labels[] = { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" };
+
+            for (size_t i = 0; i < _countof(Labels); ++i)
+                w.AddString(Labels[i]);
+
+            w.SetCurSel((int) _Configuration->_AcousticFilterType);
         }
     }
     #pragma endregion
@@ -844,6 +862,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_SMOOTHING_METHOD:
         {
             _Configuration->_SmoothingMethod = (SmoothingMethod) SelectedIndex;
+            break;
+        }
+        #pragma endregion
+
+        #pragma region Filters
+        case IDC_ACOUSTIC_FILTER:
+        {
+            _Configuration->_AcousticFilterType = (AcousticFilterType) SelectedIndex;
             break;
         }
         #pragma endregion
@@ -1820,6 +1846,7 @@ void ConfigurationDialog::UpdatePage1(int mode) const noexcept
             IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
             IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
             IDC_CHANNELS,
+
         // FFT
         IDC_FFT_GROUP,
             IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
@@ -1828,6 +1855,7 @@ void ConfigurationDialog::UpdatePage1(int mode) const noexcept
             IDC_SMOOTH_LOWER_FREQUENCIES,
             IDC_SMOOTH_GAIN_TRANSITION,
             IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+
         // Frequencies
         IDC_FREQUENCIES_GROUP,
             IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
@@ -1840,6 +1868,10 @@ void ConfigurationDialog::UpdatePage1(int mode) const noexcept
             IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
             IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
             IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+
+        // Filters
+        IDC_FILTERS_GROUP,
+            IDC_ACOUSTIC_FILTER_LBL, IDC_ACOUSTIC_FILTER,
     };
 
     for (size_t i = 0; i < _countof(Page1); ++i)

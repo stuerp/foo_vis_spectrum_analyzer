@@ -85,7 +85,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.0.0-beta-2, 2024-02-xx
 
-*
+* New: Acoustic weighting filters.
 
 v0.7.0.0-beta-1, 2024-01-21
 

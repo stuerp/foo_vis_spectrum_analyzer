@@ -111,6 +111,7 @@ private:
     void GenerateAveePlayerFrequencyBands();
 
     void FilterSpectrum();
+    double GetWeight(double x) const noexcept;
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);

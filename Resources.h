@@ -161,6 +161,15 @@
 
 #pragma endregion
 
+#pragma region Filters
+
+#define IDC_FILTERS_GROUP               2500
+
+#define IDC_ACOUSTIC_FILTER_LBL         2510
+#define IDC_ACOUSTIC_FILTER             2512
+
+#pragma endregion
+
 #pragma region Common
 
 #define IDC_COMMON                      6000

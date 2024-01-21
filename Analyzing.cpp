@@ -7,20 +7,6 @@
 
 #pragma hdrstop
 
-double GetWeight(double x);
-
-enum class AcousticFilterType
-{
-    None = 0,
-
-    AWeighting = 1, // A-weighting. https://en.wikipedia.org/wiki/A-weighting
-    BWeighting = 2,
-    CWeighting = 3,
-    DWeighting = 4,
-
-    MWeighting = 5, // M-weighting, related to ITU-R 468 noise weighting, https://en.wikipedia.org/wiki/ITU-R_468_noise_weighting
-};
-
 inline double GetFrequencyTilt(double x, double amount = 3., double offset = 1000.);
 inline double Equalize(double x, double amount = 6., double depth = 1024., double offset = 44100.);
 inline double ApplyWeightingFunction(double x, double weightAmount = 1., AcousticFilterType = AcousticFilterType::AWeighting);
@@ -284,7 +270,7 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
 /// </summary>
 void UIElement::FilterSpectrum()
 {
-    const double slopeFunctionsOffset = 1.; // 0..8, Slope functions offset (offset by sample rate/FFT size in samples).
+    const double slopeFunctionsOffset = 1.; // 0..8, Slope functions offset (offset by sample rate/FFT size in samples)
 
     for (FrequencyBand & Iter : _FrequencyBands)
     {
@@ -295,19 +281,22 @@ void UIElement::FilterSpectrum()
 /// <summary>
 /// Gets the total weight.
 /// </summary>
-double GetWeight(double x)
+double UIElement::GetWeight(double x) const noexcept
 {
-    const double slope = 0.;
-    const double slopeOffset = 1000.;
+    const double Slope = 0.;                // -12 .. 12, Frequency slope (dB per octave)
+    const double SlopeOffset = 1000.;       // 0 .. 96000, Frequency slope offset (Hz = 0dB)
 
-    const double equalizeAmount = 0.;
-    const double equalizeOffset = 44100.;
-    const double equalizeDepth = 1024.;
+    const double EqualizeAmount = 0.;       // -12 .. 12, Equalize amount
+    const double EqualizeOffset = 44100.;   // 0 .. 96000, Equalize offset
+    const double EqualizeDepth = 1024.;     // 0 .. 96000, Equalize depth
 
-    const double weightingAmount = 0.;
-    const AcousticFilterType FilterType = AcousticFilterType::AWeighting;
+    const double WeightingAmount = 0.;      // -100 .. 100, Weighting amount
 
-    return GetFrequencyTilt(x, slope, slopeOffset) * Equalize(x, equalizeAmount, equalizeDepth, equalizeOffset) * ApplyWeightingFunction(x, weightingAmount / 100., FilterType);
+    const double a = GetFrequencyTilt(x, Slope, SlopeOffset);
+    const double b = Equalize(x, EqualizeAmount, EqualizeDepth, EqualizeOffset);
+    const double c = ApplyWeightingFunction(x, WeightingAmount / 100., _Configuration._AcousticFilterType);
+
+    return a * b * c;
 }
 
 /// <summary>
@@ -315,7 +304,7 @@ double GetWeight(double x)
 /// </summary>
 double GetFrequencyTilt(double x, double amount, double offset)
 {
-    return ::pow(x / offset, amount / 6);
+    return ::pow(x / offset, amount / 6.);
 }
 
 /// <summary>
@@ -338,6 +327,11 @@ double ApplyWeightingFunction(double x, double weightAmount, AcousticFilterType 
 
     switch (weightType)
     {
+        default:
+
+        case AcousticFilterType::None:
+            return 1.;
+
         case AcousticFilterType::AWeighting:
             return ::pow(1.2588966          * 148840000 * (f2 * f2)    / ((f2 + 424.36) * ::sqrt((f2 + 11599.29) * (f2 + 544496.41)) * (f2 + 148840000.)), weightAmount);
 
@@ -357,9 +351,6 @@ double ApplyWeightingFunction(double x, double weightAmount, AcousticFilterType 
 
             return ::pow(8.128305161640991 * 1.246332637532143e-4 * x / ::hypot(h1, h2), weightAmount);
         }
-
-        default:
-            return 1.;
     }
 }
 

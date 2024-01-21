@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.20) P. Stuer **/
+/** $VER: Configuration.h (2024.01.21) P. Stuer **/
 
 #pragma once
 
@@ -116,6 +116,18 @@ enum class FrequencyDistribution
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+};
+
+enum class AcousticFilterType
+{
+    None = 0,
+
+    AWeighting = 1, // A-weighting. https://en.wikipedia.org/wiki/A-weighting
+    BWeighting = 2,
+    CWeighting = 3,
+    DWeighting = 4,
+
+    MWeighting = 5, // M-weighting, related to ITU-R 468 noise weighting, https://en.wikipedia.org/wiki/ITU-R_468_noise_weighting
 };
 
 enum class ScalingFunction
@@ -318,6 +330,10 @@ public:
         double _Bandwidth;                                              // Distance between low and high frequency boundaries for each band, More useful for constant-Q/variable-Q transforms and Mel/triangular filterbank energies (higher values smooths out the spectrum and reduces the visual noise) than bandpower mode that we have currently at the time, 0.0 .. 64.0
     #pragma endregion
 
+    #pragma region Frequencies
+        AcousticFilterType _AcousticFilterType;
+    #pragma endregion
+
     #pragma region Rendering
         D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
         bool _UseCustomBackColor;
@@ -419,5 +435,5 @@ public:
     void UpdateGradientStops();
 
 private:
-    const size_t _CurrentVersion = 10;
+    const size_t _CurrentVersion = 11;
 };

@@ -73,6 +73,9 @@ void Configuration::Reset() noexcept
     // Frequencies
     _ScalingFunction = ScalingFunction::Logarithmic;
 
+    // Filters
+    _AcousticFilterType = AcousticFilterType::None;
+
     _SkewFactor = 0.0;
     _Bandwidth = 0.5;
 
@@ -206,6 +209,10 @@ Configuration & Configuration::operator=(const Configuration & other)
         _ScalingFunction = other._ScalingFunction;
         _SkewFactor = other._SkewFactor;
         _Bandwidth = other._Bandwidth;
+    #pragma endregion
+
+    #pragma region Filters
+        _AcousticFilterType = other._AcousticFilterType;
     #pragma endregion
 
     #pragma region Rendering
@@ -494,6 +501,12 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> Integer; _ColorOrder = (ColorOrder) Integer;
     }
 
+    // Version 11
+    if (Version >= 11)
+    {
+        parser >> Integer; _AcousticFilterType = (AcousticFilterType) Integer;
+    }
+
     if (_ColorScheme != ColorScheme::Custom)
         _GradientStops = GetGradientStops(_ColorScheme);
     else
@@ -667,6 +680,9 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << _NumArtworkColors;
         builder << _LightnessThreshold;
         builder << (int) _ColorOrder;
+
+        // Version 11
+        builder << (int) _AcousticFilterType;
     }
     catch (exception)
     {
@@ -823,6 +839,11 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
             reader->read(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
         }
+
+        if (Version >= 11)
+        {
+            reader->read(&_AcousticFilterType, sizeof(_AcousticFilterType), abortHandler);
+        }
     }
     catch (exception)
     {
@@ -970,6 +991,9 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
         writer->write(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
         writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
+
+        // Version 11
+        writer->write(&_AcousticFilterType, sizeof(_AcousticFilterType), abortHandler);
     }
     catch (exception)
     {
