@@ -147,8 +147,6 @@ void UIElement::OnDestroy()
     ReleaseDeviceIndependentResources();
 
     _CriticalSection.Leave();
-
-    _Direct2D.Factory.Release();
 }
 
 /// <summary>

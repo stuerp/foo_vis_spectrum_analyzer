@@ -585,7 +585,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Hue ascending", L"Hue descending", L"Lightness ascending", L"Lightness descending", L"Saturation ascending", L"Saturation descending" };
+        const WCHAR * Labels[] = { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);

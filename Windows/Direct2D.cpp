@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.01.20) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.01.21) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -32,12 +32,12 @@ FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z);
 Direct2D::Direct2D()
 {
 #ifdef _DEBUG
-    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION };
+    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE /*D2D1_DEBUG_LEVEL_INFORMATION*/ }; // FIXME: Debug complains about a dangling reference to the Direct2D factory when exiting foobar2000. No clue where the leak is.
 #else
     D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 #endif
 
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, Options, &Factory);
+    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &Factory);
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create Direct2D factory.");

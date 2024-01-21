@@ -83,6 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-beta-2, 2024-02-xx
+
+*
+
 v0.7.0.0-beta-1, 2024-01-21
 
 * New: The cover art of the playing track can be used as background image.
@@ -96,7 +100,7 @@ v0.7.0.0-beta-1, 2024-01-21
 * New: Dark mode support.
 * New: Fading AIMP peak mode, a combination of AIMP and Fade Out mode.
 * Improved: Curve mode can use a horizontal gradient.
-* Improved: The curve is no longer visible as a flat line if no track is playing.
+* Improved: The curve is no longer visible as a flat line when no track is playing.
 
 v0.6.0.3, 2024-01-13
 

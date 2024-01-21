@@ -110,6 +110,8 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
 
+    void FilterSpectrum();
+
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
 

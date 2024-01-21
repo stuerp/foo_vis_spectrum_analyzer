@@ -234,6 +234,7 @@
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\FFTProvider.cpp" />
+    <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
