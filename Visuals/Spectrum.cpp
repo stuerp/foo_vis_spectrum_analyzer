@@ -122,6 +122,10 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
 /// </summary>
 void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
+    // Can happen when no artwork is available.
+    if (_GradientBrush == nullptr)
+        return;
+
     HRESULT hr = CreateCurve(frequencyBands, sampleRate);
 
     if (SUCCEEDED(hr))

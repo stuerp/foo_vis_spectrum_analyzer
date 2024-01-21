@@ -545,7 +545,7 @@
     #define Y_G01    Y_A87 + H_A87 + IY
 
     // Combobox
-    #define W_G02    86
+    #define W_G02    100
     #define H_G02    H_CBX
     #define X_G02    X_G01 + W_G01 + IX
     #define Y_G02    Y_G01

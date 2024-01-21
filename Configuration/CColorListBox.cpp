@@ -43,18 +43,9 @@ void CColorListBox::Terminate()
 /// </summary>
 void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 {
-    HRESULT hr = CreateDeviceSpecificResources();
-
-    if (FAILED(hr))
-        return;
-
-    _RenderTarget->BeginDraw();
-
     HDC hDC = dis->hDC;
 
     CRect ri = dis->rcItem;
-
-    D2D1_RECT_F Rect = { (FLOAT) ri.left, (FLOAT) ri.top, (FLOAT) ri.right, (FLOAT) ri.bottom };
 
     // Draw the background.
     {
@@ -68,9 +59,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
 
-        _SolidBrush->SetColor(ToD2D1_COLOR_F(Color));
-        _RenderTarget->FillRectangle(Rect, _SolidBrush);
-//      ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
+        ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
         if (dis->itemState & ODS_FOCUS)
             ::DrawFocusRect(hDC, &ri);
@@ -99,11 +88,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
             ::InflateRect(&ri, -2, -2);
 
-            Rect = { (FLOAT) ri.left, (FLOAT) ri.top, (FLOAT) ri.right, (FLOAT) ri.bottom };
-
-            _SolidBrush->SetColor(_Colors[dis->itemID]);
-            _RenderTarget->FillRectangle(Rect, _SolidBrush);
-//          ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
+            ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
             ::SelectObject(hDC, hOldBrush);
 
@@ -114,11 +99,6 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         ::DeleteObject(hPen);
     }
-
-        hr = _RenderTarget->EndDraw();
-
-        if (hr == D2DERR_RECREATE_TARGET)
-            ReleaseDeviceSpecificResources();
 }
 
 /// <summary>
