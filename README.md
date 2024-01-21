@@ -94,6 +94,7 @@ v0.6.1.0, 2024-01-xx
   * Lightness threshold determines which light colors will be ignored.
 * New: The Curve visual has a peak line.
 * New: Dark mode support.
+* New: Fading AIMP peak mode, a combination of AIMP and Fade Out mode.
 * Improved: Curve mode can use a horizontal gradient.
 * Improved: The curve is no longer visible as a flat line if no track is playing.
 

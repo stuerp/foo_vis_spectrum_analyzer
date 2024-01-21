@@ -207,6 +207,7 @@ enum class PeakMode
     Gravity = 2,
     AIMP = 3,
     FadeOut = 4,
+    FadingAIMP = 5,
 };
 
 enum class BackgroundMode

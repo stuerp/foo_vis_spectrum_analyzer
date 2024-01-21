@@ -100,14 +100,14 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
                 Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak)), _Bounds.top, _Bounds.bottom);
                 Rect.bottom = Rect.top + 1.f;
 
-                ID2D1Brush * PeakBrush = (_Configuration->_PeakMode != PeakMode::FadeOut) ? ForeBrush : _WhiteBrush;
+                ID2D1Brush * PeakBrush = ((_Configuration->_PeakMode != PeakMode::FadeOut) && (_Configuration->_PeakMode != PeakMode::FadingAIMP)) ? ForeBrush : _WhiteBrush;
 
-                if (_Configuration->_PeakMode == PeakMode::FadeOut)
+                if ((_Configuration->_PeakMode == PeakMode::FadeOut) || (_Configuration->_PeakMode == PeakMode::FadingAIMP))
                     PeakBrush->SetOpacity((FLOAT) Iter.Opacity);
 
                 renderTarget->FillRectangle(Rect, PeakBrush);
 
-                if (_Configuration->_PeakMode == PeakMode::FadeOut)
+                if ((_Configuration->_PeakMode == PeakMode::FadeOut) || (_Configuration->_PeakMode == PeakMode::FadingAIMP))
                     PeakBrush->SetOpacity(1.f);
             }
         }
