@@ -83,7 +83,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.6.1.0, 2024-01-xx
+v0.7.0.0-beta-1, 2024-01-21
 
 * New: The cover art of the playing track can be used as background image.
   * Opacity can be specified.
