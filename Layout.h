@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.17) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.20) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -808,10 +808,18 @@
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
 
+#pragma region Horizontal gradient
+// Checkbox
+#define W_C13    80
+#define H_C13    H_CHB
+#define X_C13    X_E01 + 5
+#define Y_C13    Y_E02 + H_E02 + IY
+#pragma endregion
+
 #pragma region Bars
 // Groupbox
 #define X_B07   X_E01
-#define Y_B07   Y_E02 + H_E02 + IY
+#define Y_B07   Y_C13 + H_C13 + IY
 
     #pragma region Draw band background
     // Checkbox
@@ -819,14 +827,6 @@
     #define H_A57    H_CHB
     #define X_A57    X_B07 + 5
     #define Y_A57    Y_B07 + 11
-    #pragma endregion
-
-    #pragma region Horizontal gradient
-    // Checkbox
-    #define W_C13    80
-    #define H_C13    H_CHB
-    #define X_C13    X_A57 + W_A57 + IX
-    #define Y_C13    Y_A57
     #pragma endregion
 
     #pragma region LED mode

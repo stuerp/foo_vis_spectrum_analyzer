@@ -1,9 +1,12 @@
 
-/** $VER: CButtonMenu.h (2023.12.30) P. Stuer - Based on Menu Button control (https://www.viksoe.dk/code/buttonmenu.htm) by Bjarke Viksoe **/
+/** $VER: CButtonMenu.h (2024.01.21) P. Stuer - Based on Menu Button control (https://www.viksoe.dk/code/buttonmenu.htm) by Bjarke Viksoe **/
 
 #pragma once
 
 #include "framework.h"
+
+#include "Color.h"
+#include "Theme.h"
 
 #include <shlwapi.h>
 
@@ -19,7 +22,7 @@
 #define GLYPH_CHECKMARK     L"\xE001"
 
 template <class T, class TBase = CButton, class TWinTraits = CControlWinTraits>
-class ATL_NO_VTABLE CButtonMenuImpl : public CWindowImpl<T, TBase, TWinTraits>, /*public COwnerDraw<T>,*/ public CCustomDraw<T>
+class ATL_NO_VTABLE CButtonMenuImpl : public CWindowImpl<T, TBase, TWinTraits>, public CCustomDraw<T>
 {
 public:
     CButtonMenuImpl() : _IsMenuOwner(FALSE), _MenuStyle() { }
@@ -33,34 +36,51 @@ public:
             _ImageList.Destroy();
     }
 
-private:
-    BEGIN_MSG_MAP(CButtonMenuImpl)
-        MESSAGE_HANDLER(WM_CREATE, OnCreate)
-        MESSAGE_HANDLER(WM_KEYUP, OnKeyUp)
-
-        MSG_WM_MEASUREITEM(OnMeasureItem)
-        MSG_WM_DRAWITEM(OnDrawItem)
-
-        REFLECTED_COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-
-        CHAIN_MSG_MAP_ALT(CCustomDraw<T>, 1)
-    END_MSG_MAP()
-
-    enum
+    /// <summary>
+    /// 
+    /// </summary>
+    DWORD OnPrePaint(int, LPNMCUSTOMDRAW)
     {
-        CX_MENUSPACE =   3,
-        CY_MENUSPACE =   2,
+        return CDRF_NOTIFYPOSTPAINT;
+    }
 
-        CX_ICONSPACE =   2,
-        CX_CHECKSIZE =  16,
-        CX_CHECKSPACE =  2,
-    };
-
-    inline COLORREF Blend(COLORREF c1, COLORREF c2, int factor)
+    /// <summary>
+    /// 
+    /// </summary>
+    DWORD OnPostPaint(int, LPNMCUSTOMDRAW nmcd)
     {
-        return RGB(GetRValue(c1) + ((GetRValue(c2) - GetRValue(c1)) * factor / 100L),
-                   GetGValue(c1) + ((GetGValue(c2) - GetGValue(c1)) * factor / 100L),
-                   GetBValue(c1) + ((GetBValue(c2) - GetBValue(c1)) * factor / 100L));
+        CDCHandle dc = nmcd->hdc;
+        RECT& rc = nmcd->rc;
+
+        // Draw the vertical separator.
+        {
+            RECT r = { rc.right - 22, rc.top + 6, rc.right - 20, rc.bottom - 6 };
+
+            dc.Draw3dRect(&r, _Theme.GetSysColor(COLOR_BTNSHADOW), _Theme.GetSysColor(COLOR_BTNHIGHLIGHT));
+        }
+
+        // Draw the arrow.
+        {
+            bool IsDisabled = (nmcd->uItemState & (CDIS_DISABLED | CDIS_GRAYED)) != 0;
+
+            dc.SetBkMode(TRANSPARENT);
+            dc.SetTextColor(_Theme.GetSysColor(IsDisabled ? COLOR_GRAYTEXT : COLOR_BTNTEXT));
+
+            HFONT hOldFont = dc.SelectFont(_Assets);
+
+            RECT r = { rc.right - 18, rc.top, rc.right, rc.bottom };
+
+            dc.DrawText(GLYPH_ARROW_DOWN, 1, &r, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+
+            dc.SelectFont(hOldFont);
+        }
+
+        return CDRF_DODEFAULT;
+    }
+
+    CMenuHandle & GetMenu()
+    {
+        return _Menu;
     }
 
     void SetMenu(UINT id)
@@ -83,11 +103,6 @@ private:
         _IsMenuOwner = false;
     }
 
-    CMenuHandle & GetMenu()
-    {
-        return _Menu;
-    }
-
     void SetExtendedMenuStyle(DWORD menuStyle)
     {
         _MenuStyle = menuStyle;
@@ -99,14 +114,14 @@ private:
     }
 
     /// <summary>
-    /// 
+    /// Initializes this instance.
     /// </summary>
     BOOL Initialize(HWND hWnd)
     {
         ATLASSERT(this->m_hWnd == NULL);
         ATLASSERT(::IsWindow(hWnd));
 
-        BOOL Success = CWindowImpl< T, TBase, TWinTraits >::SubclassWindow(hWnd);
+        BOOL Success = CWindowImpl<T, TBase, TWinTraits>::SubclassWindow(hWnd);
 
         if (Success)
             InternalInitialize();
@@ -114,13 +129,63 @@ private:
         return Success;
     }
 
+    /// <summary>
+    /// Terminates this instance.
+    /// </summary>
     void Terminate()
     {
         if (!IsWindow(this->m_hWnd))
             return;
 
-        CWindowImpl< T, TBase, TWinTraits >::UnsubclassWindow(TRUE);
+        CWindowImpl<T, TBase, TWinTraits>::UnsubclassWindow(TRUE);
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    LRESULT OnClicked(WORD, WORD, HWND, BOOL &)
+    {
+        ATLASSERT(_Menu.IsMenu());
+
+        CMenuHandle Menu = PrepareMenu();
+
+        RECT wr = { };
+
+        this->GetWindowRect(&wr);
+
+        POINT Position = { wr.left + 2, wr.bottom - 2 };
+
+        CWindow w = this->GetTopLevelWindow();
+
+        w.SendMessage(WM_INITMENUPOPUP, (WPARAM) (HMENU) Menu);
+
+        TPMPARAMS tpmp = { };
+
+        tpmp.cbSize = sizeof(TPMPARAMS);
+        tpmp.rcExclude = wr;
+
+        ::InflateRect(&tpmp.rcExclude, -1, -1);
+
+        UINT Id = (UINT) ::TrackPopupMenuEx(Menu, TPM_RETURNCMD | TPM_VERPOSANIMATION | TPM_VERTICAL, Position.x, Position.y, this->m_hWnd, &tpmp);
+
+        if (Id == 0)
+            return 0;
+
+        ::PostMessageW(this->GetParent(), WM_COMMAND, MAKEWPARAM(Id, 0), 0);
+
+        return 0;
+    }
+
+private:
+    enum
+    {
+        CX_MENUSPACE =   3,
+        CY_MENUSPACE =   2,
+
+        CX_ICONSPACE =   2,
+        CX_CHECKSIZE =  16,
+        CX_CHECKSPACE =  2,
+    };
 
     /// <summary>
     /// 
@@ -163,46 +228,10 @@ private:
     /// </summary>
     LRESULT OnKeyUp(UINT, WPARAM, LPARAM, BOOL & handled)
     {
-//      if (wParam == VK_F4)
-//          Click();
+    //      if (wParam == VK_F4)
+    //          Click();
 
         handled = FALSE;
-
-        return 0;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    LRESULT OnClicked(WORD, WORD, HWND, BOOL &)
-    {
-        ATLASSERT(_Menu.IsMenu());
-
-        CMenuHandle Menu = PrepareMenu();
-
-        RECT wr = { };
-
-        this->GetWindowRect(&wr);
-
-        POINT Position = { wr.left + 2, wr.bottom - 2 };
-
-        CWindow w = this->GetTopLevelWindow();
-
-        w.SendMessage(WM_INITMENUPOPUP, (WPARAM) (HMENU) Menu);
-
-        TPMPARAMS tpmp = { };
-
-        tpmp.cbSize = sizeof(TPMPARAMS);
-        tpmp.rcExclude = wr;
-
-        ::InflateRect(&tpmp.rcExclude, -1, -1);
-
-        UINT Id = (UINT) ::TrackPopupMenuEx(Menu, TPM_RETURNCMD | TPM_VERPOSANIMATION | TPM_VERTICAL, Position.x, Position.y, this->m_hWnd, &tpmp);
-
-        if (Id == 0)
-            return 0;
-
-        ::PostMessageW(this->GetParent(), WM_COMMAND, MAKEWPARAM(Id, 0), 0);
 
         return 0;
     }
@@ -240,26 +269,26 @@ private:
 
         bool IsSeparator = (mii.fType & MFT_SEPARATOR) != 0;
 
-        COLORREF BackColor = ::GetSysColor(COLOR_MENU);
-        COLORREF TextColor = ::GetSysColor(COLOR_MENUTEXT);
+        COLORREF BackColor = _Theme.GetSysColor(COLOR_MENU);
+        COLORREF TextColor = _Theme.GetSysColor(COLOR_MENUTEXT);
+
+        COLORREF HighlightColor = _Theme.GetSysColor(COLOR_HIGHLIGHT);
 
         // Draw the background.
         {
             if ((_MenuStyle & BMS_EX_HOTCHECKLINE) != 0 && (dis->itemState & ODS_CHECKED) != 0)
             {
-                COLORREF HighlightColor = ::GetSysColor(COLOR_HIGHLIGHT);
-
-                BackColor = Blend(HighlightColor, BackColor, 80);
+                BackColor = Color::Blend(HighlightColor, BackColor, 80);
             }
 
             if (((dis->itemState & ODS_SELECTED) != 0) && !IsSeparator)
             {
-                BackColor = ::GetSysColor(COLOR_HIGHLIGHT);
-                TextColor = ::GetSysColor(COLOR_HIGHLIGHTTEXT);
+                BackColor = HighlightColor;
+                TextColor = _Theme.GetSysColor(COLOR_HIGHLIGHTTEXT);
             }
 
             if ((dis->itemState & ODS_DISABLED) != 0)
-                TextColor = ::GetSysColor(COLOR_GRAYTEXT);
+                TextColor = _Theme.GetSysColor(COLOR_GRAYTEXT);
 
             dc.FillSolidRect(&rc, BackColor);
         }
@@ -332,50 +361,8 @@ private:
             LONG y = rc.top + ((rc.bottom - rc.top) / 2);
             RECT r = { rc.left, y - 1, rc.right, y + 1 };
 
-            dc.Draw3dRect(&r, ::GetSysColor(COLOR_BTNSHADOW), ::GetSysColor(COLOR_BTNHIGHLIGHT));
+            dc.Draw3dRect(&r, _Theme.GetSysColor(COLOR_BTNSHADOW), _Theme.GetSysColor(COLOR_BTNHIGHLIGHT));
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    DWORD OnPrePaint(int, LPNMCUSTOMDRAW)
-    {
-        return CDRF_NOTIFYPOSTPAINT;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    DWORD OnPostPaint(int, LPNMCUSTOMDRAW nmcd)
-    {
-        CDCHandle dc = nmcd->hdc;
-        RECT& rc = nmcd->rc;
-
-        // Draw the vertical separator.
-        {
-            RECT r = { rc.right - 22, rc.top + 6, rc.right - 20, rc.bottom - 6 };
-
-            dc.Draw3dRect(&r, ::GetSysColor(COLOR_BTNSHADOW), ::GetSysColor(COLOR_BTNHIGHLIGHT));
-        }
-
-        // Draw the arrow.
-        {
-            bool IsDisabled = (nmcd->uItemState & (CDIS_DISABLED | CDIS_GRAYED)) != 0;
-
-            dc.SetBkMode(TRANSPARENT);
-            dc.SetTextColor(::GetSysColor(IsDisabled ? COLOR_GRAYTEXT : COLOR_BTNTEXT));
-
-            HFONT hOldFont = dc.SelectFont(_Assets);
-
-            RECT r = { rc.right - 18, rc.top, rc.right, rc.bottom };
-
-            dc.DrawText(GLYPH_ARROW_DOWN, 1, &r, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
-
-            dc.SelectFont(hOldFont);
-        }
-
-        return CDRF_DODEFAULT;
     }
 
     /// <summary>
@@ -467,6 +454,18 @@ private:
 
         return Dst.Detach();
     }
+
+    BEGIN_MSG_MAP(CButtonMenuImpl)
+        MESSAGE_HANDLER(WM_CREATE, OnCreate)
+        MESSAGE_HANDLER(WM_KEYUP, OnKeyUp)
+
+        MSG_WM_MEASUREITEM(OnMeasureItem)
+        MSG_WM_DRAWITEM(OnDrawItem)
+
+        REFLECTED_COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+
+        CHAIN_MSG_MAP_ALT(CCustomDraw<T>, 1)
+    END_MSG_MAP()
 
 private:
     CMenuHandle _Menu;

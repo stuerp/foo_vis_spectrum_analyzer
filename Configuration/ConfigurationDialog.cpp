@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.21) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -10,11 +10,15 @@
 
 #include "Direct2D.h"
 
+#include "Theme.h"
+
 /// <summary>
 /// Initializes the dialog.
 /// </summary>
 BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 {
+    _Theme.Initialize(_DarkMode);
+
     DlgResize_Init(true, true, WS_CLIPCHILDREN);
 
     DialogParameters * dp = (DialogParameters *) lParam;
@@ -35,6 +39,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     Initialize();
 
     MoveWindow(&_Configuration->_DialogBounds);
+
+    _DarkMode.AddDialogWithControls(*this);
 
     return TRUE;
 }
@@ -1855,7 +1861,7 @@ void ConfigurationDialog::UpdatePage2(int mode) const noexcept
         // Common
         IDC_COMMON,
             IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
-            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+
             IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
             IDC_POSITION, IDC_POSITION_LBL, IDC_SPREAD,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
@@ -1866,7 +1872,6 @@ void ConfigurationDialog::UpdatePage2(int mode) const noexcept
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
-
 
         // X axis
         IDC_X_AXIS,
@@ -1907,8 +1912,10 @@ void ConfigurationDialog::UpdatePage3(int mode) const noexcept
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
+        IDC_HORIZONTAL_GRADIENT,
+
         IDC_BARS,
-            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+            IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE,
 
             IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
             IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
@@ -2019,7 +2026,6 @@ void ConfigurationDialog::UpdateControls()
  
     // Visualization
     GetDlgItem(IDC_DRAW_BAND_BACKGROUND).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
     GetDlgItem(IDC_LED_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
 
     GetDlgItem(IDC_PEAK_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);

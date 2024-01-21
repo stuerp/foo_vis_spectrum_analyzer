@@ -197,6 +197,7 @@
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
+    <ClInclude Include="Windows\Color.h" />
     <ClInclude Include="Windows\COMException.h" />
     <ClInclude Include="Windows\CriticalSection.h" />
     <ClInclude Include="Visuals\ColorThief.h" />
@@ -226,6 +227,7 @@
     <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
+    <ClInclude Include="Windows\Theme.h" />
     <ClInclude Include="Windows\WIC.h" />
   </ItemGroup>
   <ItemGroup>
@@ -244,6 +246,7 @@
     <ClCompile Include="CUIElement.cpp" />
     <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
+    <ClCompile Include="Windows\Color.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />
     <ClCompile Include="Windows\DirectX.cpp" />
@@ -259,6 +262,7 @@
     <ClCompile Include="UIElement.cpp" />
     <ClCompile Include="Visuals\XAxis.cpp" />
     <ClCompile Include="Visuals\YAxis.cpp" />
+    <ClCompile Include="Windows\Theme.cpp" />
     <ClCompile Include="Windows\WIC.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,17 +1,10 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.17) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.21) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
-
-// ATL
-#include <atlbase.h>
-
-// WTL
-//#include <atlapp.h>
-#include <atlframe.h>
 
 #include "Resources.h"
 #include "Configuration.h"
@@ -21,6 +14,8 @@
 #include "CColorButton.h"
 #include "CColorListBox.h"
 #include "CButtonMenu.h"
+
+#include <sdk/coreDarkMode.h>
 
 struct DialogParameters
 {
@@ -208,4 +203,6 @@ private:
 
     CNumericEdit _LineWidth;
     CNumericEdit _AreaOpacity;
+
+    fb2k::CCoreDarkModeHooks _DarkMode;
 };

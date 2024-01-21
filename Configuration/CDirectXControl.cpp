@@ -32,7 +32,7 @@ void CDirectXControl::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CDirectXControl::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
+HRESULT CDirectXControl::CreateDeviceSpecificResources()
 {
     if (_Direct2D == nullptr)
         return E_FAIL;
@@ -42,8 +42,14 @@ HRESULT CDirectXControl::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U si
     // Create the render target.
     if (_RenderTarget == nullptr)
     {
+        CRect rc;
+
+        ::GetClientRect(_hWnd, &rc);
+
+        D2D1_SIZE_U Size = D2D1::SizeU((UINT32) rc.Width(), (UINT32) rc.Height());
+
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
-        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(hWnd, size);
+        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(_hWnd, Size);
 
         hr = _Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 

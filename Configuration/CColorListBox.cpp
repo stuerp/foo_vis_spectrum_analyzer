@@ -1,8 +1,11 @@
 
-/** $VER: CColorListBox.cpp (2023.12.31) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2024.01.21) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorListBox.h"
 #include "CColorDialogEx.h"
+
+#include "Theme.h"
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -12,6 +15,8 @@
 void CColorListBox::Initialize(HWND hWnd)
 {
     ATLASSERT(::IsWindow(hWnd));
+
+    __super::_hWnd = hWnd;
 
     SubclassWindow(hWnd);
 
@@ -38,31 +43,52 @@ void CColorListBox::Terminate()
 /// </summary>
 void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 {
+    HRESULT hr = CreateDeviceSpecificResources();
+
+    if (FAILED(hr))
+        return;
+
+    _RenderTarget->BeginDraw();
+
     HDC hDC = dis->hDC;
 
     CRect ri = dis->rcItem;
 
+    D2D1_RECT_F Rect = { (FLOAT) ri.left, (FLOAT) ri.top, (FLOAT) ri.right, (FLOAT) ri.bottom };
+
+    // Draw the background.
     {
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHT : COLOR_WINDOW);
+
+        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
 
         HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
-        if (dis->itemState & (ODS_FOCUS | ODS_SELECTED))
-            ::SelectObject(hDC, ::GetSysColorBrush(COLOR_HIGHLIGHT));
-        else
-            ::SelectObject(hDC, ::GetSysColorBrush(COLOR_WINDOW));
+        HBRUSH hBrush = ::CreateSolidBrush(Color);
 
-        ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
+        HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
+
+        _SolidBrush->SetColor(ToD2D1_COLOR_F(Color));
+        _RenderTarget->FillRectangle(Rect, _SolidBrush);
+//      ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
         if (dis->itemState & ODS_FOCUS)
             ::DrawFocusRect(hDC, &ri);
+
+        ::SelectObject(hDC, hOldBrush);
+
+        ::DeleteObject(hBrush);
 
         ::SelectObject(hDC, hOldPen);
 
         ::DeleteObject(hPen);
     }
+
+    // Draw the foreground.
     {
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
+        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
+
+        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
 
         HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
@@ -73,7 +99,11 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
             ::InflateRect(&ri, -2, -2);
 
-            ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
+            Rect = { (FLOAT) ri.left, (FLOAT) ri.top, (FLOAT) ri.right, (FLOAT) ri.bottom };
+
+            _SolidBrush->SetColor(_Colors[dis->itemID]);
+            _RenderTarget->FillRectangle(Rect, _SolidBrush);
+//          ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
             ::SelectObject(hDC, hOldBrush);
 
@@ -84,6 +114,11 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
         ::DeleteObject(hPen);
     }
+
+        hr = _RenderTarget->EndDraw();
+
+        if (hr == D2DERR_RECREATE_TARGET)
+            ReleaseDeviceSpecificResources();
 }
 
 /// <summary>
@@ -157,9 +192,9 @@ void CColorListBox::SendChangedNotification() const noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CColorListBox::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
+HRESULT CColorListBox::CreateDeviceSpecificResources()
 {
-    HRESULT hr = __super::CreateDeviceSpecificResources(hWnd, size);
+    HRESULT hr = __super::CreateDeviceSpecificResources();
 
     if (SUCCEEDED(hr) && (_SolidBrush == nullptr))
         hr = _RenderTarget->CreateSolidColorBrush(D2D1_COLOR_F(), &_SolidBrush);

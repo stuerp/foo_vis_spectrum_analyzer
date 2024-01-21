@@ -49,7 +49,7 @@ private:
 
 private:
     #pragma region DirectX
-    HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size) override;
+    HRESULT CreateDeviceSpecificResources() override;
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources() override;
     #pragma endregion

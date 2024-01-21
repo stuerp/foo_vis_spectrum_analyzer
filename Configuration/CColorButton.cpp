@@ -14,6 +14,8 @@ void CColorButton::Initialize(HWND hWnd)
 {
     ATLASSERT(::IsWindow(hWnd));
 
+    __super::_hWnd = hWnd;
+
     SubclassWindow(hWnd);
 
     CreateDeviceIndependentResources();
@@ -85,28 +87,26 @@ void CColorButton::GetColor(D2D1_COLOR_F & color) const
 /// </summary>
 void CColorButton::OnPaint(HDC)
 {
-    CRect ClientRect; GetClientRect(ClientRect);
+    HRESULT hr = CreateDeviceSpecificResources();
 
-    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) ClientRect.Width(), (UINT32) ClientRect.Height());
+    if (FAILED(hr))
+        return;
 
-    {
-        HRESULT hr = CreateDeviceSpecificResources(m_hWnd, Size);
+    _RenderTarget->BeginDraw();
 
-        if (FAILED(hr))
-            return;
+    CRect cr;
 
-        _RenderTarget->BeginDraw();
+    GetClientRect(&cr);
 
-        D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) Size.width, (FLOAT) Size.height);
+    D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
 
-        _RenderTarget->FillRectangle(Rect, _PatternBrush);
-        _RenderTarget->FillRectangle(Rect, _Brush);
+    _RenderTarget->FillRectangle(Rect, _PatternBrush);
+    _RenderTarget->FillRectangle(Rect, _Brush);
 
-        hr = _RenderTarget->EndDraw();
+    hr = _RenderTarget->EndDraw();
 
-        if (hr == D2DERR_RECREATE_TARGET)
-            ReleaseDeviceSpecificResources();
-    }
+    if (hr == D2DERR_RECREATE_TARGET)
+        ReleaseDeviceSpecificResources();
 
     ValidateRect(NULL);
 }
@@ -147,9 +147,9 @@ void CColorButton::SendChangedNotification() const noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CColorButton::CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size)
+HRESULT CColorButton::CreateDeviceSpecificResources()
 {
-    HRESULT hr = __super::CreateDeviceSpecificResources(hWnd, size);
+    HRESULT hr = __super::CreateDeviceSpecificResources();
 
     if (SUCCEEDED(hr) && (_Brush == nullptr))
     {

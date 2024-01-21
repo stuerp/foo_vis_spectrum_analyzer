@@ -180,7 +180,10 @@ HRESULT Spectrum::CreateGradientBrush(ID2D1RenderTarget * renderTarget)
     {
         D2D1_SIZE_F Size = renderTarget->GetSize();
 
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F(0.f, 0.f), D2D1::Point2F(0, Size.height)), Collection, &_GradientBrush);
+        D2D1_POINT_2F Start = _Configuration->_HorizontalGradient ? D2D1::Point2F(       0.f, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, 0.f);
+        D2D1_POINT_2F End   = _Configuration->_HorizontalGradient ? D2D1::Point2F(Size.width, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, Size.height);
+
+        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, &_GradientBrush);
     }
 
     return hr;

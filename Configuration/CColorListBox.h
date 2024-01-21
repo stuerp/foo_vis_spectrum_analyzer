@@ -48,7 +48,7 @@ private:
 private:
     #pragma region DirectX
 
-    HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size) override;
+    HRESULT CreateDeviceSpecificResources() override;
     void ReleaseDeviceSpecificResources() override;
 
     #pragma endregion

@@ -1,7 +1,9 @@
 
-/** $VER: CMenuListBox.cpp (2023.12.11) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.cpp (2024.01.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #include "CMenuListBox.h"
+
+#include "Theme.h"
 
 #pragma hdrstop
 
@@ -36,27 +38,37 @@ void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
     CRect ri = dis->rcItem;
 
+    // Draw the background.
     {
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_FOCUS) ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHT : COLOR_WINDOW);
+
+        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
 
         HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
-        if (dis->itemState & (ODS_FOCUS | ODS_SELECTED))
-            ::SelectObject(hDC, ::GetSysColorBrush(COLOR_HIGHLIGHT));
-        else
-            ::SelectObject(hDC, ::GetSysColorBrush(COLOR_WINDOW));
+        HBRUSH hBrush = ::CreateSolidBrush(Color);
+
+        HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
 
         ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
         if (dis->itemState & ODS_FOCUS)
             ::DrawFocusRect(hDC, &ri);
 
+        ::SelectObject(hDC, hOldBrush);
+
+        ::DeleteObject(hBrush);
+
         ::SelectObject(hDC, hOldPen);
 
         ::DeleteObject(hPen);
     }
+
+    // Draw the foreground.
     {
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, ::GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT));
+        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
+
+        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
 
         HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
