@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.01.21) P. Stuer **/
+/** $VER: Resources.rc (2024.01.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -141,10 +141,42 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_BANDWIDTH,                  X_A36, Y_A36, W_A36, H_A36, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
         control         "",                         IDC_BANDWIDTH_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
-    groupbox "Filters", IDC_FILTERS_GROUP, X_B09, Y_B09, W_B09, H_B09, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Acoustic Filters", IDC_FILTERS_GROUP, X_B09, Y_B09, W_B09, H_B09, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Acousting filter:",        IDC_ACOUSTIC_FILTER_LBL,        X_H01, Y_H01 + 2, W_H01, H_H01
+        rtext           "Weighting type:",          IDC_ACOUSTIC_FILTER_LBL,        X_H01, Y_H01 + 2, W_H01, H_H01
         combobox                                    IDC_ACOUSTIC_FILTER,            X_H02, Y_H02,     W_H02, H_H02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Slope function offset:"    IDC_SLOPE_FN_OFFS_LBL,          X_H03, Y_H03 + 2, W_H03, H_H03
+        edittext                                    IDC_SLOPE_FN_OFFS,              X_H04, Y_H04, W_H04, H_H04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_SLOPE_FN_OFFS_SPIN,         "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+        rtext           "Slope:"                    IDC_SLOPE_LBL,                  X_H05, Y_H05 + 2, W_H05, H_H05
+        edittext                                    IDC_SLOPE,                      X_H06, Y_H06, W_H06, H_H06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_SLOPE_SPIN,                 "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "dB/octave"                 IDC_SLOPE_UNIT,                 X_H07, Y_H07 + 2, W_H07, H_H07
+
+        rtext           "Slope offset:"             IDC_SLOPE_OFFS_LBL,             X_H08, Y_H08 + 2, W_H08, H_H08
+        edittext                                    IDC_SLOPE_OFFS,                 X_H09, Y_H09, W_H09, H_H09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_SLOPE_OFFS_SPIN,            "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "Hz"                        IDC_SLOPE_OFFS_UNIT,            X_H10, Y_H10 + 2, W_H10, H_H10
+
+        rtext           "Equalize amount:"          IDC_EQ_AMT_LBL,                 X_H11, Y_H11 + 2, W_H11, H_H11
+        edittext                                    IDC_EQ_AMT,                     X_H12, Y_H12, W_H12, H_H12, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_EQ_AMT_SPIN,                "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+        rtext           "Equalize offset:"          IDC_EQ_OFFS_LBL,                X_H13, Y_H13 + 2, W_H13, H_H13
+        edittext                                    IDC_EQ_OFFS,                    X_H14, Y_H14, W_H14, H_H14, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_EQ_OFFS_SPIN,               "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "Hz"                        IDC_EQ_OFFS_UNIT,               X_H15, Y_H15 + 2, W_H15, H_H15
+
+        rtext           "Equalize depth:"           IDC_EQ_DEPTH_LBL,               X_H16, Y_H16 + 2, W_H16, H_H16
+        edittext                                    IDC_EQ_DEPTH,                   X_H17, Y_H17, W_H17, H_H17, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_EQ_DEPTH_SPIN,              "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "Hz"                        IDC_EQ_DEPTH_UNIT,              X_H18, Y_H18 + 2, W_H18, H_H18
+
+        rtext           "Weighting amount:"         IDC_WT_AMT_LBL,                 X_H19, Y_H19 + 2, W_H19, H_H19
+        edittext                                    IDC_WT_AMT,                     X_H20, Y_H20, W_H20, H_H20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_WT_AMT_SPIN,                "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
     groupbox "Common", IDC_COMMON, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 

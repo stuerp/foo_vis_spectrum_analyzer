@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.19) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.22) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -74,7 +74,18 @@ void Configuration::Reset() noexcept
     _ScalingFunction = ScalingFunction::Logarithmic;
 
     // Filters
-    _AcousticFilterType = AcousticFilterType::None;
+    _WeightingType = WeightingType::None;
+
+    _SlopeFunctionOffset = 1.;
+
+    _Slope = 0.;
+    _SlopeOffset = 1000.;
+
+    _EqualizeAmount = 0.;
+    _EqualizeOffset = 44100.;
+    _EqualizeDepth = 1024.;
+
+    _WeightingAmount = 0.;
 
     _SkewFactor = 0.0;
     _Bandwidth = 0.5;
@@ -168,6 +179,7 @@ Configuration & Configuration::operator=(const Configuration & other)
     _WindowDuration = other._WindowDuration;
 
     #pragma region Transform
+
         _Transform = other._Transform;
 
         _WindowFunction = other._WindowFunction;
@@ -176,9 +188,11 @@ Configuration & Configuration::operator=(const Configuration & other)
         _Truncate = other._Truncate;
 
         _SelectedChannels = other._SelectedChannels;
+
     #pragma endregion
 
     #pragma region FFT
+
         _FFTMode = other._FFTMode;
         _FFTCustom = other._FFTCustom;
         _FFTDuration = other._FFTDuration;
@@ -190,9 +204,11 @@ Configuration & Configuration::operator=(const Configuration & other)
         _SummationMethod = other._SummationMethod;
         _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
         _SmoothGainTransition = other._SmoothGainTransition;
+
     #pragma endregion
 
     #pragma region Frequencies
+
         _FrequencyDistribution = other._FrequencyDistribution;
 
         _NumBands = other._NumBands;
@@ -209,13 +225,28 @@ Configuration & Configuration::operator=(const Configuration & other)
         _ScalingFunction = other._ScalingFunction;
         _SkewFactor = other._SkewFactor;
         _Bandwidth = other._Bandwidth;
+
     #pragma endregion
 
     #pragma region Filters
-        _AcousticFilterType = other._AcousticFilterType;
+
+        _WeightingType = other._WeightingType;
+
+        _SlopeFunctionOffset = other._SlopeFunctionOffset;
+
+        _Slope = other._Slope;
+        _SlopeOffset = other._SlopeOffset;
+
+        _EqualizeAmount = other._EqualizeAmount;
+        _EqualizeOffset = other._EqualizeOffset;
+        _EqualizeDepth = other._EqualizeDepth;
+
+        _WeightingAmount = other._WeightingAmount;
+
     #pragma endregion
 
     #pragma region Rendering
+
         _BackColor = other._BackColor;
         _UseCustomBackColor = other._UseCustomBackColor;
 
@@ -253,14 +284,14 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _ShowToolTips = other._ShowToolTips;
 
-        _BackgroundMode = other._BackgroundMode;
-        _ArtworkOpacity = other._ArtworkOpacity;
-
         _NumArtworkColors = other._NumArtworkColors;
         _LightnessThreshold = other._LightnessThreshold;
         _TransparencyThreshold = other._TransparencyThreshold;
 
         _ColorOrder = other._ColorOrder;
+
+        _BackgroundMode = other._BackgroundMode;
+        _ArtworkOpacity = other._ArtworkOpacity;
 
         // Visualization
         _VisualizationType = other._VisualizationType;
@@ -279,6 +310,7 @@ Configuration & Configuration::operator=(const Configuration & other)
         // Curve
         _LineWidth = other._LineWidth;
         _AreaOpacity = other._AreaOpacity;
+
     #pragma endregion
 
     return *this;
@@ -504,7 +536,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
     // Version 11
     if (Version >= 11)
     {
-        parser >> Integer; _AcousticFilterType = (AcousticFilterType) Integer;
+        parser >> Integer; _WeightingType = (WeightingType) Integer;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -682,7 +714,18 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _ColorOrder;
 
         // Version 11
-        builder << (int) _AcousticFilterType;
+        builder << (int) _WeightingType;
+
+        builder << _SlopeFunctionOffset;
+
+        builder << _Slope;
+        builder << _SlopeOffset;
+
+        builder << _EqualizeAmount;
+        builder << _EqualizeOffset;
+        builder << _EqualizeDepth;
+
+        builder << _WeightingAmount;
     }
     catch (exception)
     {
@@ -842,7 +885,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
         if (Version >= 11)
         {
-            reader->read(&_AcousticFilterType, sizeof(_AcousticFilterType), abortHandler);
+            reader->read(&_WeightingType, sizeof(_WeightingType), abortHandler);
         }
     }
     catch (exception)
@@ -993,7 +1036,18 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
 
         // Version 11
-        writer->write(&_AcousticFilterType, sizeof(_AcousticFilterType), abortHandler);
+        writer->write(&_WeightingType, sizeof(_WeightingType), abortHandler);
+
+        writer->write(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+
+        writer->write(&_Slope, sizeof(_Slope), abortHandler);
+        writer->write(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+
+        writer->write(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
+        writer->write(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
+        writer->write(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+
+        writer->write(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
     }
     catch (exception)
     {

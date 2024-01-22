@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.22) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -94,14 +94,12 @@ private:
     void UpdateControls();
     void UpdateColorControls();
     void UpdateChannelsMenu();
-    void UpdatePage1(int mode) const noexcept;
-    void UpdatePage2(int mode) const noexcept;
-    void UpdatePage3(int mode) const noexcept;
+    void UpdatePages(size_t index) const noexcept;
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
 
-    void SetFrequency(int id, double frequency) noexcept;
+    void SetDouble(int id, double frequency) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
     void SetDecibel(int id, double decibel) noexcept;
 
@@ -184,6 +182,16 @@ private:
     CNumericEdit _AmplitudeStep;
 
     CNumericEdit _Gamma;
+
+    CNumericEdit _SlopeFunctionOffset;
+    CNumericEdit _Slope;
+    CNumericEdit _SlopeOffset;
+
+    CNumericEdit _EqualizeAmount;
+    CNumericEdit _EqualizeOffset;
+    CNumericEdit _EqualizeDepth;
+
+    CNumericEdit _WeightingAmount;
 
     CColorButton _Gradient;
     CColorListBox _Colors;

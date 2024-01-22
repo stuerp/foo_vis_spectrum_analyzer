@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.01.21) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.01.22) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -7,9 +7,9 @@
 
 #pragma hdrstop
 
-inline double GetFrequencyTilt(double x, double amount = 3., double offset = 1000.);
-inline double Equalize(double x, double amount = 6., double depth = 1024., double offset = 44100.);
-inline double ApplyWeightingFunction(double x, double weightAmount = 1., AcousticFilterType = AcousticFilterType::AWeighting);
+inline double GetFrequencyTilt(double x, double amount = 3., double offset = 1000.) noexcept;
+inline double Equalize(double x, double amount = 6., double depth = 1024., double offset = 44100.) noexcept;
+inline double GetAcousticWeight(double x, WeightingType = WeightingType::AWeighting, double weightAmount = 1.) noexcept;
 
 /// <summary>
 /// Processes an audio chunk.
@@ -45,7 +45,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
     }
 
     // Filter the spectrum.
-    FilterSpectrum();
+    ApplyAcousticWeighting();
 
     // Smooth the spectrum.
     switch (_Configuration._SmoothingMethod)
@@ -266,16 +266,14 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
 }
 
 /// <summary>
-/// Filters the spectrum.
+/// Applies acoustic weighting to the spectrum.
 /// </summary>
-void UIElement::FilterSpectrum()
+void UIElement::ApplyAcousticWeighting()
 {
-    const double slopeFunctionsOffset = 1.; // 0..8, Slope functions offset (offset by sample rate/FFT size in samples)
+    const double Offset = ((_Configuration._SlopeFunctionOffset * (double) _SampleRate) / (double) _FFTSize);
 
     for (FrequencyBand & Iter : _FrequencyBands)
-    {
-        Iter.CurValue *= GetWeight(Iter.Ctr + ((slopeFunctionsOffset * _SampleRate) / _FFTSize));
-    }
+        Iter.CurValue *= GetWeight(Iter.Ctr + Offset);
 }
 
 /// <summary>
@@ -283,18 +281,9 @@ void UIElement::FilterSpectrum()
 /// </summary>
 double UIElement::GetWeight(double x) const noexcept
 {
-    const double Slope = 0.;                // -12 .. 12, Frequency slope (dB per octave)
-    const double SlopeOffset = 1000.;       // 0 .. 96000, Frequency slope offset (Hz = 0dB)
-
-    const double EqualizeAmount = 0.;       // -12 .. 12, Equalize amount
-    const double EqualizeOffset = 44100.;   // 0 .. 96000, Equalize offset
-    const double EqualizeDepth = 1024.;     // 0 .. 96000, Equalize depth
-
-    const double WeightingAmount = 0.;      // -100 .. 100, Weighting amount
-
-    const double a = GetFrequencyTilt(x, Slope, SlopeOffset);
-    const double b = Equalize(x, EqualizeAmount, EqualizeDepth, EqualizeOffset);
-    const double c = ApplyWeightingFunction(x, WeightingAmount / 100., _Configuration._AcousticFilterType);
+    const double a = GetFrequencyTilt(x, _Configuration._Slope, _Configuration._SlopeOffset);
+    const double b = Equalize(x, _Configuration._EqualizeAmount, _Configuration._EqualizeDepth, _Configuration._EqualizeOffset);
+    const double c = GetAcousticWeight(x, _Configuration._WeightingType, _Configuration._WeightingAmount);
 
     return a * b * c;
 }
@@ -302,15 +291,15 @@ double UIElement::GetWeight(double x) const noexcept
 /// <summary>
 /// Gets the frequency tilt.
 /// </summary>
-double GetFrequencyTilt(double x, double amount, double offset)
+double GetFrequencyTilt(double x, double amount, double offset) noexcept
 {
     return ::pow(x / offset, amount / 6.);
 }
 
 /// <summary>
-/// Equalizes the frequency.
+/// Equalizes the weight.
 /// </summary>
-double Equalize(double x, double amount, double depth, double offset)
+double Equalize(double x, double amount, double depth, double offset) noexcept
 {
     const double pos = x * depth / offset;
     const double bias = ::pow(1.0025, -pos * 0.04);
@@ -319,9 +308,9 @@ double Equalize(double x, double amount, double depth, double offset)
 }
 
 /// <summary>
-/// Applies the specified weighting function to the frequency.
+/// Gets the weight for the specified frequency.
 /// </summary>
-double ApplyWeightingFunction(double x, double weightAmount, AcousticFilterType weightType)
+double GetAcousticWeight(double x, WeightingType weightType, double weightAmount) noexcept
 {
     const double f2 = x * x;
 
@@ -329,22 +318,22 @@ double ApplyWeightingFunction(double x, double weightAmount, AcousticFilterType 
     {
         default:
 
-        case AcousticFilterType::None:
+        case WeightingType::None:
             return 1.;
 
-        case AcousticFilterType::AWeighting:
+        case WeightingType::AWeighting:
             return ::pow(1.2588966          * 148840000 * (f2 * f2)    / ((f2 + 424.36) * ::sqrt((f2 + 11599.29) * (f2 + 544496.41)) * (f2 + 148840000.)), weightAmount);
 
-        case AcousticFilterType::BWeighting:
+        case WeightingType::BWeighting:
             return ::pow(1.019764760044717  * 148840000 * ::pow(x, 3.) / ((f2 + 424.36) * ::sqrt(f2 + 25122.25)                      * (f2 + 148840000.)), weightAmount);
 
-        case AcousticFilterType::CWeighting:
+        case WeightingType::CWeighting:
             return ::pow(1.0069316688518042 * 148840000 * f2           / ((f2 + 424.36)                                              * (f2 + 148840000.)), weightAmount);
 
-        case AcousticFilterType::DWeighting:
+        case WeightingType::DWeighting:
             return ::pow(x / 6.8966888496476e-5 * ::sqrt(((1037918.48 - f2) * (1037918.48 - f2) + 1080768.16 * f2) / ((9837328. - f2) * (9837328. - f2) + 11723776. * f2) / ((f2 + 79919.29) * (f2 + 1345600.))), weightAmount);
 
-        case AcousticFilterType::MWeighting:
+        case WeightingType::MWeighting:
         {
             const double h1 = -4.737338981378384e-24 * ::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)    - 1.363894795463638e-7 * f2 + 1;
             const double h2 =  1.306612257412824e-19 * ::pow( x, 5.) - 2.118150887518656e-11 * ::pow(x, 3.) + 5.559488023498642e-4 * x;

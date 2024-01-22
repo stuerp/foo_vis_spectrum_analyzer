@@ -110,7 +110,7 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
 
-    void FilterSpectrum();
+    void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
 
     void ApplyAverageSmoothing(double factor);
