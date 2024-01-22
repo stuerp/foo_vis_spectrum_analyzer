@@ -273,7 +273,7 @@ void UIElement::ApplyAcousticWeighting()
     const double Offset = ((_Configuration._SlopeFunctionOffset * (double) _SampleRate) / (double) _FFTSize);
 
     for (FrequencyBand & Iter : _FrequencyBands)
-        Iter.CurValue *= GetWeight(Iter.Ctr + Offset);
+        Iter.NewValue *= GetWeight(Iter.Ctr + Offset);
 }
 
 /// <summary>
@@ -302,7 +302,7 @@ double GetFrequencyTilt(double x, double amount, double offset) noexcept
 double Equalize(double x, double amount, double depth, double offset) noexcept
 {
     const double pos = x * depth / offset;
-    const double bias = ::pow(1.0025, -pos * 0.04);
+    const double bias = ::pow(1.0025, -pos) * 0.04;
 
     return ::pow((10. * ::log10(1. + bias + (pos + 1.) * (9. - bias) / depth)), amount / 6.);
 }

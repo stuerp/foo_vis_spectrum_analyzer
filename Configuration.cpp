@@ -537,6 +537,17 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
     if (Version >= 11)
     {
         parser >> Integer; _WeightingType = (WeightingType) Integer;
+
+        parser >> _SlopeFunctionOffset;
+
+        parser >> _Slope;
+        parser >> _SlopeOffset;
+
+        parser >> _EqualizeAmount;
+        parser >> _EqualizeOffset;
+        parser >> _EqualizeDepth;
+
+        parser >> _WeightingAmount;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -886,6 +897,17 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         if (Version >= 11)
         {
             reader->read(&_WeightingType, sizeof(_WeightingType), abortHandler);
+
+            reader->read(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+
+            reader->read(&_Slope, sizeof(_Slope), abortHandler);
+            reader->read(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+
+            reader->read(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
+            reader->read(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
+            reader->read(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+
+            reader->read(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
         }
     }
     catch (exception)

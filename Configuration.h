@@ -77,8 +77,8 @@ inline const double MaxEqualizeOffset = 96000.; // Hz
 inline const double MinEqualizeDepth =     0.; // Hz
 inline const double MaxEqualizeDepth = 96000.; // Hz
 
-inline const double MinWeightingAmount = -100.;
-inline const double MaxWeightingAmount =  100.;
+inline const double MinWeightingAmount = -1.; // %
+inline const double MaxWeightingAmount =  1.; // %
 
 
 
@@ -366,7 +366,7 @@ public:
 
         WeightingType _WeightingType;
 
-        double _SlopeFunctionOffset;                                    // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
+        double _SlopeFunctionOffset = 1.;                               // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
 
         double _Slope = 0.;                                             // -12 .. 12, Frequency slope (dB per octave)
         double _SlopeOffset = 1000.;                                    // 0 .. 96000, Frequency slope offset (Hz = 0dB)
@@ -375,7 +375,7 @@ public:
         double _EqualizeOffset = 44100.;                                // 0 .. 96000, Equalize offset
         double _EqualizeDepth = 1024.;                                  // 0 .. 96000, Equalize depth
 
-        double _WeightingAmount = 0.;                                   // -100 .. 100, Weighting amount
+        double _WeightingAmount = 0.;                                   // -1 .. 1, Weighting amount
 
     #pragma endregion
 

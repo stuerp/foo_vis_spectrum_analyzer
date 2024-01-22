@@ -523,8 +523,9 @@ void ConfigurationDialog::Initialize()
         {
             UDACCEL Accel[] =
             {
-                { 1,     100 }, //     1.0
-                { 2,    1000 }, //    10.0
+                { 1,  1 }, // 0.01
+                { 2,  5 }, // 0.05
+                { 3, 10 }, // 0.10
             };
 
             _WeightingAmount.Initialize(GetDlgItem(IDC_WT_AMT));
@@ -1152,10 +1153,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
-    #define ON_EDIT_CHANGE_DOUBLE(x,y) \
-        _Configuration->_##x = Min(Clamp(::_wtof(Text), Min##x, Max##x), _Configuration->_##x); \
-        CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_Configuration->_##x * 100.));
-
     switch (id)
     {
         #pragma region FFT
@@ -1233,6 +1230,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma endregion
 
         #pragma region Filters
+
+        #define ON_EDIT_CHANGE_DOUBLE(x,y) _Configuration->_##x = Clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_Configuration->_##x * 100.));
 
         case IDC_SLOPE_FN_OFFS: { ON_EDIT_CHANGE_DOUBLE(SlopeFunctionOffset, IDC_SLOPE_FN_OFFS); break; }
         case IDC_SLOPE:         { ON_EDIT_CHANGE_DOUBLE(Slope, IDC_SLOPE); break; }
