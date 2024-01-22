@@ -128,6 +128,8 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
     HRESULT hr = S_OK;
 
+//  renderTarget->PushAxisAlignedClip(D2D1::RectF( _Bounds.left + 20 , _Bounds.top + 20, _Bounds.right - 20, _Bounds.bottom - 20), D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
     // Draw the peak curve.
     if (_Configuration->_PeakMode != PeakMode::None)
     {
@@ -163,6 +165,8 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
         _Curve.Release();
     }
+
+//  renderTarget->PopAxisAlignedClip();
 }
 
 /// <summary>
@@ -285,7 +289,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
             _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
 
             FLOAT x = _Bounds.left + (BandWidth / 2.f); // Make sure the knots are nicely centered in the bar rectangle.
-            FLOAT y;
+            FLOAT y = 0.f;
 
             switch (type)
             {
