@@ -7,9 +7,9 @@
 
 #pragma hdrstop
 
-inline double GetFrequencyTilt(double x, double amount = 3., double offset = 1000.) noexcept;
-inline double Equalize(double x, double amount = 6., double depth = 1024., double offset = 44100.) noexcept;
-inline double GetAcousticWeight(double x, WeightingType = WeightingType::AWeighting, double weightAmount = 1.) noexcept;
+inline double GetFrequencyTilt(double x, double amount, double offset) noexcept;
+inline double Equalize(double x, double amount, double depth, double offset) noexcept;
+inline double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
 
 /// <summary>
 /// Processes an audio chunk.
@@ -140,13 +140,16 @@ void UIElement::GenerateOctaveFrequencyBands()
             C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
         };
 
-        int Note = (int) (i * (NotesGroup / 2.));
+        // Pre-calculate the tooltip text and the bar background color.
+        {
+            int Note = (int) (i * (NotesGroup / 2.));
 
-        int n = Note % 12;
+            int n = Note % 12;
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
+            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
 
-        fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LightBandColor;
+            fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LightBandColor;
+        }
 
         _FrequencyBands.push_back(fb);
     }
