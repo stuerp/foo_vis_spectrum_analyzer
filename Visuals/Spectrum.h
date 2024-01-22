@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.01.16) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.01.22) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -41,7 +41,15 @@ public:
 private:
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak);
+
+    enum class CurveType
+    {
+        Peak,
+        Area,
+        Line
+    };
+
+    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
