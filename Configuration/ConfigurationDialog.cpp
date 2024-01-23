@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.23) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -1014,6 +1014,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         case IDC_ACOUSTIC_FILTER:
         {
             _Configuration->_WeightingType = (WeightingType) SelectedIndex;
+            UpdateControls();
             break;
         }
         #pragma endregion
@@ -2104,24 +2105,17 @@ void ConfigurationDialog::UpdateControls()
                      || (_Configuration->_WindowFunction == WindowFunctions::Poison)
                      || (_Configuration->_WindowFunction == WindowFunctions::HyperbolicSecant);
 
-        GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
-
-    bool IsFFT = (_Configuration->_Transform == Transform::FFT);
-
-        GetDlgItem(IDC_DISTRIBUTION).EnableWindow(IsFFT);
+    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
 
     // FFT
-        GetDlgItem(IDC_FFT_SIZE).EnableWindow(IsFFT);
+    bool IsFFT = (_Configuration->_Transform == Transform::FFT);
+
+    for (const auto & Iter : { IDC_DISTRIBUTION, IDC_FFT_SIZE, IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+        GetDlgItem(Iter).EnableWindow(IsFFT);
 
     bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
 
         GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && NotFixed);
-
-        GetDlgItem(IDC_SUMMATION_METHOD).EnableWindow(IsFFT);
-        GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
-        GetDlgItem(IDC_SMOOTH_LOWER_FREQUENCIES).EnableWindow(IsFFT);
-        GetDlgItem(IDC_SMOOTH_GAIN_TRANSITION).EnableWindow(IsFFT);
-        GetDlgItem(IDC_KERNEL_SIZE).EnableWindow(IsFFT);
 
         #pragma warning (disable: 4061)
         switch (_Configuration->_FFTMode)
@@ -2153,11 +2147,14 @@ void ConfigurationDialog::UpdateControls()
 
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
-        GetDlgItem(IDC_MIN_NOTE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_MAX_NOTE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_PITCH).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
+        for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
+            GetDlgItem(Iter).EnableWindow(IsOctaves);
+
+    // Filters
+    bool HasFilter = (_Configuration->_WeightingType != WeightingType::None);
+
+        for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
+            GetDlgItem(Iter).EnableWindow(HasFilter);
 
     // Background Mode
     bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
@@ -2167,31 +2164,29 @@ void ConfigurationDialog::UpdateControls()
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
 
-        GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(IsLogarithmic);
-        GetDlgItem(IDC_GAMMA).EnableWindow(IsLogarithmic);
+        for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
+            GetDlgItem(Iter).EnableWindow(IsLogarithmic);
 
     // Visualization
     bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
 
-        GetDlgItem(IDC_HOLD_TIME).EnableWindow(ShowPeaks);
-        GetDlgItem(IDC_ACCELERATION).EnableWindow(ShowPeaks);
+        for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
+            GetDlgItem(Iter).EnableWindow(ShowPeaks);
  
     // Bars
-    GetDlgItem(IDC_DRAW_BAND_BACKGROUND).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_LED_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    bool IsBars = _Configuration->_VisualizationType == VisualizationType::Bars;
 
-    _LiteBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    _LiteBandColor.SetColor(_Configuration->_LightBandColor);
+        for (const auto & Iter : { IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE, IDC_WHITE_KEYS, IDC_BLACK_KEYS })
+            GetDlgItem(Iter).EnableWindow(IsBars);
 
-    _DarkBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
+        _LiteBandColor.SetColor(_Configuration->_LightBandColor);
+        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
 
     // Curve
-    GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
-    GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+    bool IsCurve = _Configuration->_VisualizationType == VisualizationType::Curve;
 
-    GetDlgItem(IDC_AREA_OPACITY).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
-    GetDlgItem(IDC_AREA_OPACITY_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+        for (const auto & Iter : { IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN })
+            GetDlgItem(Iter).EnableWindow(IsCurve);
 
     UpdateColorControls();
 }
