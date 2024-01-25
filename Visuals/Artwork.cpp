@@ -56,6 +56,9 @@ HRESULT Artwork::Realize(ID2D1HwndRenderTarget * renderTarget) noexcept
 /// </summary>
 HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) const noexcept
 {
+    if (_FormatConverter == nullptr)
+        return E_FAIL;
+
     UINT Width = 0, Height = 0;
 
     HRESULT hr = _FormatConverter->GetSize(&Width, &Height);

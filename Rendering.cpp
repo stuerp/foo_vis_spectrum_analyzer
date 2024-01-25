@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.21) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.24) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -66,20 +66,12 @@ void UIElement::RenderFrame()
 
     _FrameCounter.NewFrame();
 
+    ProcessPlaybackEvent();
+
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
-        if (_IsStopping)
-        {
-            _Artwork.Release();
-
-            for (auto & Iter : _FrequencyBands)
-                Iter.CurValue = 0.;
-
-            _IsStopping = false;
-        }
-
         _RenderTarget->BeginDraw();
 
         _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -87,7 +79,7 @@ void UIElement::RenderFrame()
         RenderBackground();
 
         {
-            double PlaybackTime; // in sec
+            double PlaybackTime; // in seconds
 
             // Update the graph.
             if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
@@ -166,6 +158,51 @@ void UIElement::RenderBackground() const
     _RenderTarget->DrawBitmap(_Artwork.Bitmap(), Rect, _Configuration._ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
+/// <summary>
+/// Allows the rendering thread to react to playback events in the main thread.
+/// </summary>
+void UIElement::ProcessPlaybackEvent()
+{
+    switch (_PlaybackEvent)
+    {
+        default:
+        case PlaybackEvent::None:
+            break;
+
+        case PlaybackEvent::NewTrack:
+        {
+            if (_Artwork.Bitmap() == nullptr)
+            {
+                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default color for a Artwork gradient.
+
+                if (_Configuration._ColorScheme == ColorScheme::Artwork)
+                {
+                    _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
+
+                    Spectrum & s = _Graph.GetSpectrum();
+
+                    s.Initialize(&_Configuration);
+
+                    if (_ConfigurationDialog.IsWindow())
+                        _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
+                }
+            }
+            break;
+        }
+
+        case PlaybackEvent::Stop:
+        {
+            _Artwork.Release();
+
+            for (auto & Iter : _FrequencyBands)
+                Iter.CurValue = 0.;
+            break;
+        }
+    }
+
+    _PlaybackEvent = PlaybackEvent::None;
+}
+
 #pragma region DirectX
 
 /// <summary>
@@ -237,13 +274,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         _NewArtwork = false;
     }
 
-    bool NewArtworkGradientStops = false;
-
     // Create the gradient stops based on the artwork. Done at least once per artwork because the configuration dialog needs it when ColorScheme::Artwork is selected.
-    if (SUCCEEDED(hr) && (_Artwork.Bitmap() != nullptr) && ((_Configuration._ArtworkGradientStops.size() == 0) || _Configuration._NewArtworkParameters))
+    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && (_Configuration._ArtworkGradientStops.size() == 0)))
     {
-        _Configuration._NewArtworkParameters = false;
-
         // Get the colors from the artwork.
         std::vector<D2D1_COLOR_F> Colors;
 
@@ -293,17 +326,23 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         if (SUCCEEDED(hr))
         {
-            NewArtworkGradientStops = true;
-
             if (_Configuration._ColorScheme == ColorScheme::Artwork)
             {
+                _Configuration._ArtworkGradientStops = _Configuration._ArtworkGradientStops;
+
+                // Inform the other elements about the change.
                 _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
 
-                // Notify the configuration dialog about the change.
+                Spectrum & s = _Graph.GetSpectrum();
+
+                s.Initialize(&_Configuration);
+
                 if (_ConfigurationDialog.IsWindow())
-                    _ConfigurationDialog.SendMessageW(WM_COLORS_CHANGED);
+                    _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
             }
         }
+
+        hr = S_OK; // Make sure resource create continues. This is not fatal.
     }
 
     if (SUCCEEDED(hr))
@@ -311,13 +350,6 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
     if (SUCCEEDED(hr))
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
-
-    if (SUCCEEDED(hr) && NewArtworkGradientStops)
-    {
-        Spectrum & s = _Graph.GetSpectrum();
-
-        s.Initialize(&_Configuration); // FIXME
-    }
 
     return hr;
 }

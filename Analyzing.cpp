@@ -122,10 +122,10 @@ void UIElement::GenerateOctaveFrequencyBands()
     const double Pitch = (_Configuration._Pitch > 0.) ? ::round((::log2(_Configuration._Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _Configuration._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
 
-    const double NotesGroup = 24. / _Configuration._BandsPerOctave;
+    const double NoteGroup = 24. / _Configuration._BandsPerOctave;
 
-    const double LoNote = ::round(_Configuration._MinNote * 2. / NotesGroup);
-    const double HiNote = ::round(_Configuration._MaxNote * 2. / NotesGroup);
+    const double LoNote = ::round(_Configuration._MinNote * 2. / NoteGroup);
+    const double HiNote = ::round(_Configuration._MaxNote * 2. / NoteGroup);
 
     _FrequencyBands.clear();
 
@@ -135,14 +135,14 @@ void UIElement::GenerateOctaveFrequencyBands()
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, ((i - _Bandwidth) * NotesGroup + _Configuration._Transpose)),
-            C0 * ::pow(Root24,  (i               * NotesGroup + _Configuration._Transpose)),
-            C0 * ::pow(Root24, ((i + _Bandwidth) * NotesGroup + _Configuration._Transpose)),
+            C0 * ::pow(Root24, (i - _Bandwidth) * NoteGroup + _Configuration._Transpose),
+            C0 * ::pow(Root24,  i               * NoteGroup + _Configuration._Transpose),
+            C0 * ::pow(Root24, (i + _Bandwidth) * NoteGroup + _Configuration._Transpose),
         };
 
         // Pre-calculate the tooltip text and the bar background color.
         {
-            int Note = (int) (i * (NotesGroup / 2.));
+            int Note = (int) (i * (NoteGroup / 2.));
 
             int n = Note % 12;
 

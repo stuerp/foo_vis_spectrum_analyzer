@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.21) P. Stuer **/
+/** $VER: Resources.h (2024.01.24) P. Stuer **/
 
 #pragma once
 
@@ -52,7 +52,8 @@
 #define STR_WINDOW_CLASS_NAME   "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
 #define WM_CONFIGURATION_CHANGED        WM_USER + 1
-#define WM_COLORS_CHANGED               WM_USER + 2
+
+#define CC_GRADIENT_STOPS               1   // The gradient stops have changed.
 
 /** Configuration **/
 

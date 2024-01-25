@@ -104,6 +104,8 @@ private:
     void RenderFrame();
     void RenderBackground() const;
 
+    void ProcessPlaybackEvent();
+
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
     void GenerateLinearFrequencyBands();
@@ -180,7 +182,14 @@ private:
 
     CriticalSection _CriticalSection;
     PTP_TIMER _ThreadPoolTimer;
-    bool _IsStopping;
+
+    enum class PlaybackEvent
+    {
+        None = 0,
+
+        NewTrack,
+        Stop,
+    } _PlaybackEvent;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 

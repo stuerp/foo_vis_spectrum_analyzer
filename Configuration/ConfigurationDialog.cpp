@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.23) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.24) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -918,6 +918,25 @@ void ConfigurationDialog::Terminate()
 
     _LineWidth.Terminate();
     _AreaOpacity.Terminate();
+}
+
+/// <summary>
+/// Handles the WM_CONFIGURATION_CHANGED message.
+/// </summary>
+LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (wParam)
+    {
+        case CC_GRADIENT_STOPS:
+        {
+            UpdateColorControls();
+            break;
+        }
+    }
+
+    SetMsgHandled(TRUE);
+
+    return 0;
 }
 
 /// <summary>

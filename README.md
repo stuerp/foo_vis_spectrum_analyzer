@@ -87,8 +87,7 @@ v0.7.0.0-beta-2, 2024-02-xx
 
 * New: Acoustic weighting filters.
 * Improved: Curve mode no longer has vertical lines at the beginning and the end of the spectrum.
-* Improved: Note names only appear in tooltips when the bar contains the frequency of the note.
-* Fixed (Beta 1): Crash when switching to full screen or when modifying the layout.
+* Fixed (Beta 1 regression): Crash when switching to full screen or when modifying the layout.
 
 v0.7.0.0-beta-1, 2024-01-21
 

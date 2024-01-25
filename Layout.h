@@ -535,7 +535,7 @@
 
     #pragma region Color Scheme
     // Label
-    #define W_A09    64
+    #define W_A09    66
     #define H_A09    H_LBL
     #define X_A09    X_B04 + 5
     #define Y_A09    Y_B04 + 11
@@ -600,7 +600,7 @@
 
     #pragma region Artwork Colors
     // Label
-    #define W_G06    64
+    #define W_G06    66
     #define H_G06    H_LBL
     #define X_G06    X_A09
     #define Y_G06    Y_A67 + H_A67 + IY
@@ -614,7 +614,7 @@
 
     #pragma region Lightness Threshold
     // Label
-    #define W_G08    64
+    #define W_G08    66
     #define H_G08    H_LBL
     #define X_G08    X_G06
     #define Y_G08    Y_G07 + H_G07 + IY
@@ -634,7 +634,7 @@
 
     #pragma region Color Order
     // Label
-    #define W_G11    64
+    #define W_G11    66
     #define H_G11    H_LBL
     #define X_G11    X_G08
     #define Y_G11    Y_G09 + H_G09 + IY
@@ -648,7 +648,7 @@
 
     #pragma region Smoothing Method
     // Label
-    #define W_A17    64
+    #define W_A17    66
     #define H_A17    H_LBL
     #define X_A17    X_G11
     #define Y_A17    Y_G12 + H_G12 + IY
@@ -662,7 +662,7 @@
 
     #pragma region Smoothing Factor
     // Label
-    #define W_A37    64
+    #define W_A37    66
     #define H_A37    H_LBL
     #define X_A37    X_A17
     #define Y_A37    Y_A18 + H_A18 + IY
@@ -684,7 +684,7 @@
 
     #pragma region Background Mode
     // Label
-    #define W_G01    64
+    #define W_G01    66
     #define H_G01    H_LBL
     #define X_G01    X_A37
     #define Y_G01    Y_A87 + H_A87 + IY
@@ -698,7 +698,7 @@
 
     #pragma region Artwork Opacity
     // Label
-    #define W_G03    64
+    #define W_G03    66
     #define H_G03    H_LBL
     #define X_G03    X_G01
     #define Y_G03    Y_G02 + H_G02 + IY

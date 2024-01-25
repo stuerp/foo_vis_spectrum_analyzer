@@ -568,6 +568,8 @@ void UIElement::Resize()
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
+    _PlaybackEvent = PlaybackEvent::NewTrack;
+
     SetConfiguration();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
@@ -583,7 +585,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _IsStopping = true;
+    _PlaybackEvent = PlaybackEvent::Stop;
 
     _SampleRate = 44100;
 
@@ -604,8 +606,6 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
-    _IsStopping = false;
-
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
     _NewArtwork = true;
 }
