@@ -1026,7 +1026,7 @@
 
     #pragma region White & Black keys
     // Label (White keys)
-    #define W_A82   42
+    #define W_A82   50
     #define H_A82   H_LBL
     #define X_A82   X_C12
     #define Y_A82   Y_C12 + H_C12 + IY
@@ -1038,7 +1038,7 @@
     #define Y_A83   Y_A82
 
     // Label (Black keys)
-    #define W_C14   42
+    #define W_C14   50
     #define H_C14   H_LBL
     #define X_C14   X_A82
     #define Y_C14   Y_A83 + H_A83 + IY
