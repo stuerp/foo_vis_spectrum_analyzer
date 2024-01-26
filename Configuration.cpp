@@ -5,6 +5,7 @@
 #include "Resources.h"
 
 #include "Gradients.h"
+#include "Log.h"
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -331,245 +332,254 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 {
     Reset();
 
-    size_t Version;
-
-    parser >> Version;
-
-    if (Version > _CurrentVersion)
-        return;
-
-    int Integer;
-
-    parser >> _DialogBounds.left;
-    parser >> _DialogBounds.top;
-    parser >> _DialogBounds.right;
-    parser >> _DialogBounds.bottom;
-
-    // Reduce the size to make sure it fits on screens scaled to 150%.
-    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
-        _DialogBounds.right = _DialogBounds.left + 1910;
-
-    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
-        _DialogBounds.bottom = _DialogBounds.top + 995;
-
-    parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-    parser >> _UseHardwareRendering;
-    parser >> _UseAntialiasing;
-
-    parser >> _UseZeroTrigger;
-
-    parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-    parser >> Integer; _Transform = (Transform) Integer;
-
-    #pragma region FFT
-    parser >> Integer; _FFTMode = (FFTMode) Integer;
-    parser >> _FFTCustom;
-    parser >> _FFTDuration;
-
-    parser >> Integer; _MappingMethod = (Mapping) Integer;
-    parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-    parser >> _SmoothingFactor;
-    parser >> _KernelSize;
-    parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-    parser >> _SmoothLowerFrequencies;
-    parser >> _SmoothGainTransition;
-    #pragma endregion
-
-    #pragma region Frequencies
-    parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
-
-    parser >> _NumBands;
-
-    if (Version < 5)
+    try
     {
-        parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
-        parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
-    }
-    else
-    {
-        parser >> _LoFrequency;
-        parser >> _HiFrequency;
-    }
+        size_t Version;
 
-    parser >> _MinNote;
-    parser >> _MaxNote;
-    parser >> _BandsPerOctave;
-    parser >> _Pitch;
-    parser >> _Transpose;
+        parser >> Version;
 
-    parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-    parser >> _SkewFactor;
-    parser >> _Bandwidth;
-    #pragma endregion
+        if (Version > _CurrentVersion)
+            return;
 
-    #pragma region Rendering
-    if (Version < 5)
-    {
-        UINT32 Rgb; parser >> Rgb;
-        FLOAT Alpha; parser >> Alpha;
+        int Integer;
 
-        _BackColor = D2D1::ColorF(Rgb, Alpha);
-    }
-    else
-    {
-        parser >> _BackColor.r;
-        parser >> _BackColor.g;
-        parser >> _BackColor.b;
-        parser >> _BackColor.a;
-    }
+        parser >> _DialogBounds.left;
+        parser >> _DialogBounds.top;
+        parser >> _DialogBounds.right;
+        parser >> _DialogBounds.bottom;
 
-    parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+        // Reduce the size to make sure it fits on screens scaled to 150%.
+        if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+            _DialogBounds.right = _DialogBounds.left + 1910;
 
-    parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+        if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+            _DialogBounds.bottom = _DialogBounds.top + 995;
 
-    parser >> _AmplitudeLo;
-    parser >> _AmplitudeHi;
-    parser >> _UseAbsolute;
-    parser >> _Gamma;
+        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
-    parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+        parser >> _UseHardwareRendering;
+        parser >> _UseAntialiasing;
 
-    if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
-        _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
+        parser >> _UseZeroTrigger;
 
-    parser >> _DrawBandBackground;
+        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
-    parser >> Integer; _PeakMode = (PeakMode) Integer;
-    parser >> _HoldTime;
-    parser >> _Acceleration;
-    #pragma endregion
+        parser >> Integer; _Transform = (Transform) Integer;
 
-    // Version 5
-    if (Version >= 5)
-    {
-        _CustomGradientStops.clear();
+        #pragma region FFT
+        parser >> Integer; _FFTMode = (FFTMode) Integer;
+        parser >> _FFTCustom;
+        parser >> _FFTDuration;
 
-        size_t Count; parser >> Count;
+        parser >> Integer; _MappingMethod = (Mapping) Integer;
+        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+        parser >> _SmoothingFactor;
+        parser >> _KernelSize;
+        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+        parser >> _SmoothLowerFrequencies;
+        parser >> _SmoothGainTransition;
+        #pragma endregion
 
-        for (size_t i = 0; i < Count; ++i)
+        #pragma region Frequencies
+        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+
+        parser >> _NumBands;
+
+        if (Version < 5)
         {
-            D2D1_GRADIENT_STOP gs = { };
+            parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
+            parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
+        }
+        else
+        {
+            parser >> _LoFrequency;
+            parser >> _HiFrequency;
+        }
 
-            parser >> gs.position;
-            parser >> gs.color.r;
-            parser >> gs.color.g;
-            parser >> gs.color.b;
-            parser >> gs.color.a;
+        parser >> _MinNote;
+        parser >> _MaxNote;
+        parser >> _BandsPerOctave;
+        parser >> _Pitch;
+        parser >> _Transpose;
 
-            _CustomGradientStops.push_back(gs);
+        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+        parser >> _SkewFactor;
+        parser >> _Bandwidth;
+        #pragma endregion
+
+        #pragma region Rendering
+        if (Version < 5)
+        {
+            UINT32 Rgb; parser >> Rgb;
+            FLOAT Alpha; parser >> Alpha;
+
+            _BackColor = D2D1::ColorF(Rgb, Alpha);
+        }
+        else
+        {
+            parser >> _BackColor.r;
+            parser >> _BackColor.g;
+            parser >> _BackColor.b;
+            parser >> _BackColor.a;
+        }
+
+        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+
+        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+
+        parser >> _AmplitudeLo;
+        parser >> _AmplitudeHi;
+        parser >> _UseAbsolute;
+        parser >> _Gamma;
+
+        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+
+        if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
+            _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
+
+        parser >> _DrawBandBackground;
+
+        parser >> Integer; _PeakMode = (PeakMode) Integer;
+        parser >> _HoldTime;
+        parser >> _Acceleration;
+        #pragma endregion
+
+        // Version 5
+        if (Version >= 5)
+        {
+            _CustomGradientStops.clear();
+
+            size_t Count; parser >> Count;
+
+            for (size_t i = 0; i < Count; ++i)
+            {
+                D2D1_GRADIENT_STOP gs = { };
+
+                parser >> gs.position;
+                parser >> gs.color.r;
+                parser >> gs.color.g;
+                parser >> gs.color.b;
+                parser >> gs.color.a;
+
+                _CustomGradientStops.push_back(gs);
+            }
+        }
+
+        parser >> _XTextColor.r;
+        parser >> _XTextColor.g;
+        parser >> _XTextColor.b;
+        parser >> _XTextColor.a;
+
+        parser >> _XLineColor.r;
+        parser >> _XLineColor.g;
+        parser >> _XLineColor.b;
+        parser >> _XLineColor.a;
+
+        parser >> _YTextColor.r;
+        parser >> _YTextColor.g;
+        parser >> _YTextColor.b;
+        parser >> _YTextColor.a;
+
+        parser >> _YLineColor.r;
+        parser >> _YLineColor.g;
+        parser >> _YLineColor.b;
+        parser >> _YLineColor.a;
+
+        parser >> _DarkBandColor.r;
+        parser >> _DarkBandColor.g;
+        parser >> _DarkBandColor.b;
+        parser >> _DarkBandColor.a;
+
+        // Version 6
+        if (Version >= 6)
+            parser >> _AmplitudeStep;
+
+        // Version 7
+        if (Version >= 7)
+        {
+            parser >> _SelectedChannels;
+            parser >> _ShowToolTips;
+
+            parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
+            parser >> _WindowParameter;
+            parser >> _WindowSkew;
+        }
+
+        // Version 8
+        if (Version >= 8)
+        {
+            parser >> _UseCustomBackColor;
+            parser >> _UseCustomXTextColor;
+            parser >> _UseCustomXLineColor;
+            parser >> _UseCustomYTextColor;
+            parser >> _UseCustomYLineColor;
+
+            parser >> _LEDMode;
+
+            parser >> _HorizontalGradient;
+
+            parser >> _LightBandColor.r;
+            parser >> _LightBandColor.g;
+            parser >> _LightBandColor.b;
+            parser >> _LightBandColor.a;
+        }
+
+        // Version 9
+        if (Version >= 9)
+        {
+            parser >> _PageIndex;
+            parser >> Integer; _VisualizationType = (VisualizationType) Integer;
+            parser >> _LineWidth;
+            parser >> _AreaOpacity;
+        }
+
+        // Version 10
+        if (Version >= 10)
+        {
+            parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
+            parser >> _ArtworkOpacity;
+
+            parser >> _NumArtworkColors;
+            parser >> _LightnessThreshold;
+            parser >> Integer; _ColorOrder = (ColorOrder) Integer;
+        }
+
+        // Version 11
+        if (Version >= 11)
+        {
+            parser >> Integer; _WeightingType = (WeightingType) Integer;
+
+            parser >> _SlopeFunctionOffset;
+
+            parser >> _Slope;
+            parser >> _SlopeOffset;
+
+            parser >> _EqualizeAmount;
+            parser >> _EqualizeOffset;
+            parser >> _EqualizeDepth;
+
+            parser >> _WeightingAmount;
+
+            parser >> _LineColor.r;
+            parser >> _LineColor.g;
+            parser >> _LineColor.b;
+            parser >> _LineColor.a;
+
+            parser >> _UseCustomLineColor;
+
+            parser >> _PeakLineColor.r;
+            parser >> _PeakLineColor.g;
+            parser >> _PeakLineColor.b;
+            parser >> _PeakLineColor.a;
+
+            parser >> _UseCustomPeakLineColor;
         }
     }
-
-    parser >> _XTextColor.r;
-    parser >> _XTextColor.g;
-    parser >> _XTextColor.b;
-    parser >> _XTextColor.a;
-
-    parser >> _XLineColor.r;
-    parser >> _XLineColor.g;
-    parser >> _XLineColor.b;
-    parser >> _XLineColor.a;
-
-    parser >> _YTextColor.r;
-    parser >> _YTextColor.g;
-    parser >> _YTextColor.b;
-    parser >> _YTextColor.a;
-
-    parser >> _YLineColor.r;
-    parser >> _YLineColor.g;
-    parser >> _YLineColor.b;
-    parser >> _YLineColor.a;
-
-    parser >> _DarkBandColor.r;
-    parser >> _DarkBandColor.g;
-    parser >> _DarkBandColor.b;
-    parser >> _DarkBandColor.a;
-
-    // Version 6
-    if (Version >= 6)
-        parser >> _AmplitudeStep;
-
-    // Version 7
-    if (Version >= 7)
+    catch (exception_io & ex)
     {
-        parser >> _SelectedChannels;
-        parser >> _ShowToolTips;
+        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
 
-        parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
-        parser >> _WindowParameter;
-        parser >> _WindowSkew;
-    }
-
-    // Version 8
-    if (Version >= 8)
-    {
-        parser >> _UseCustomBackColor;
-        parser >> _UseCustomXTextColor;
-        parser >> _UseCustomXLineColor;
-        parser >> _UseCustomYTextColor;
-        parser >> _UseCustomYLineColor;
-
-        parser >> _LEDMode;
-
-        parser >> _HorizontalGradient;
-
-        parser >> _LightBandColor.r;
-        parser >> _LightBandColor.g;
-        parser >> _LightBandColor.b;
-        parser >> _LightBandColor.a;
-    }
-
-    // Version 9
-    if (Version >= 9)
-    {
-        parser >> _PageIndex;
-        parser >> Integer; _VisualizationType = (VisualizationType) Integer;
-        parser >> _LineWidth;
-        parser >> _AreaOpacity;
-    }
-
-    // Version 10
-    if (Version >= 10)
-    {
-        parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
-        parser >> _ArtworkOpacity;
-
-        parser >> _NumArtworkColors;
-        parser >> _LightnessThreshold;
-        parser >> Integer; _ColorOrder = (ColorOrder) Integer;
-    }
-
-    // Version 11
-    if (Version >= 11)
-    {
-        parser >> Integer; _WeightingType = (WeightingType) Integer;
-
-        parser >> _SlopeFunctionOffset;
-
-        parser >> _Slope;
-        parser >> _SlopeOffset;
-
-        parser >> _EqualizeAmount;
-        parser >> _EqualizeOffset;
-        parser >> _EqualizeDepth;
-
-        parser >> _WeightingAmount;
-
-        parser >> _LineColor.r;
-        parser >> _LineColor.g;
-        parser >> _LineColor.b;
-        parser >> _LineColor.a;
-
-        parser >> _UseCustomLineColor;
-
-        parser >> _PeakLineColor.r;
-        parser >> _PeakLineColor.g;
-        parser >> _PeakLineColor.b;
-        parser >> _PeakLineColor.a;
-
-        parser >> _UseCustomPeakLineColor;
+        Reset();
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -774,8 +784,9 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
 
         builder << _UseCustomPeakLineColor;
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -951,8 +962,10 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
         }
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+
         Reset();
     }
 
@@ -1117,8 +1130,9 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
         writer->write(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing CUI configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
