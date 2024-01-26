@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.20) P. Stuer **/
+/** $VER: UIElement.h (2024.01.26) P. Stuer **/
 
 #pragma once
 
@@ -126,6 +126,8 @@ private:
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
 
+    HRESULT CreateArtworkGradient();
+
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
 
@@ -230,5 +232,6 @@ private:
 
     Artwork _Artwork;
     bool _NewArtwork; // True when new artwork has arrived.
+    bool _NewArtworkGradient; // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
     D2D1_COLOR_F _DominantColor;
 };

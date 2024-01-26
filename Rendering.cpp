@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.24) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.26) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -173,7 +173,8 @@ void UIElement::ProcessPlaybackEvent()
         {
             if (_Artwork.Bitmap() == nullptr)
             {
-                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default color for a Artwork gradient.
+                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default colors for the Artwork gradient.
+                _DominantColor = _Configuration._ArtworkGradientStops[0].color;
 
                 if (_Configuration._ColorScheme == ColorScheme::Artwork)
                 {
@@ -266,83 +267,22 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _NewArtwork)
     {
+        Spectrum & s = _Graph.GetSpectrum();
+
+        s.ReleaseDeviceSpecificResources();
+
         hr = _Artwork.Realize(_RenderTarget);
 
-        if (SUCCEEDED(hr))
-            _Configuration._ArtworkGradientStops.clear();
-
         _NewArtwork = false;
+        _NewArtworkGradient = true;
     }
 
     // Create the gradient stops based on the artwork. Done at least once per artwork because the configuration dialog needs it when ColorScheme::Artwork is selected.
-    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && (_Configuration._ArtworkGradientStops.size() == 0)))
+    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkGradient))
     {
-        // Get the colors from the artwork.
-        std::vector<D2D1_COLOR_F> Colors;
+        hr = CreateArtworkGradient();
 
-        hr = _Artwork.GetColors(Colors, _Configuration._NumArtworkColors, _Configuration._LightnessThreshold, _Configuration._TransparencyThreshold);
-
-        // Sort the colors.
-        if (SUCCEEDED(hr))
-        {
-            _DominantColor = Colors[0];
-
-            #pragma warning(disable: 4061) // Enumerator not handled
-            switch (_Configuration._ColorOrder)
-            {
-                case ColorOrder::None:
-                    break;
-
-                case ColorOrder::HueAscending:
-                    _Direct2D.SortColorsByHue(Colors, true);
-                    break;
-
-                case ColorOrder::HueDescending:
-                    _Direct2D.SortColorsByHue(Colors, false);
-                    break;
-
-                case ColorOrder::SaturationAscending:
-                    _Direct2D.SortColorsBySaturation(Colors, true);
-                    break;
-
-                case ColorOrder::SaturationDescending:
-                    _Direct2D.SortColorsBySaturation(Colors, false);
-                    break;
-
-                case ColorOrder::LightnessAscending:
-                    _Direct2D.SortColorsByLightness(Colors, true);
-                    break;
-
-                case ColorOrder::LightnessDescending:
-                    _Direct2D.SortColorsByLightness(Colors, false);
-                    break;
-            }
-            #pragma warning(default: 4061)
-        }
-
-        // Create the gradient stops.
-        if (SUCCEEDED(hr))
-            hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
-
-        if (SUCCEEDED(hr))
-        {
-            if (_Configuration._ColorScheme == ColorScheme::Artwork)
-            {
-                _Configuration._ArtworkGradientStops = _Configuration._ArtworkGradientStops;
-
-                // Inform the other elements about the change.
-                _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
-
-                Spectrum & s = _Graph.GetSpectrum();
-
-                s.Initialize(&_Configuration);
-
-                if (_ConfigurationDialog.IsWindow())
-                    _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
-            }
-        }
-
-        hr = S_OK; // Make sure resource create continues. This is not fatal.
+        _NewArtworkGradient = false;
     }
 
     if (SUCCEEDED(hr))
@@ -352,6 +292,77 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
+}
+
+/// <summary>
+/// Creates the DirectX resources that are dependent on the artwork.
+/// </summary>
+HRESULT UIElement::CreateArtworkGradient()
+{
+    // Get the colors from the artwork.
+    std::vector<D2D1_COLOR_F> Colors;
+
+    HRESULT hr = _Artwork.GetColors(Colors, _Configuration._NumArtworkColors, _Configuration._LightnessThreshold, _Configuration._TransparencyThreshold);
+
+    // Sort the colors.
+    if (SUCCEEDED(hr))
+    {
+        _DominantColor = Colors[0];
+
+        #pragma warning(disable: 4061) // Enumerator not handled
+        switch (_Configuration._ColorOrder)
+        {
+            case ColorOrder::None:
+                break;
+
+            case ColorOrder::HueAscending:
+                _Direct2D.SortColorsByHue(Colors, true);
+                break;
+
+            case ColorOrder::HueDescending:
+                _Direct2D.SortColorsByHue(Colors, false);
+                break;
+
+            case ColorOrder::SaturationAscending:
+                _Direct2D.SortColorsBySaturation(Colors, true);
+                break;
+
+            case ColorOrder::SaturationDescending:
+                _Direct2D.SortColorsBySaturation(Colors, false);
+                break;
+
+            case ColorOrder::LightnessAscending:
+                _Direct2D.SortColorsByLightness(Colors, true);
+                break;
+
+            case ColorOrder::LightnessDescending:
+                _Direct2D.SortColorsByLightness(Colors, false);
+                break;
+        }
+        #pragma warning(default: 4061)
+    }
+
+    // Create the gradient stops.
+    if (SUCCEEDED(hr))
+        hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
+
+    if (SUCCEEDED(hr))
+    {
+        if (_Configuration._ColorScheme == ColorScheme::Artwork)
+        {
+            // Inform the other elements about the change.
+            _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
+
+            Spectrum & s = _Graph.GetSpectrum();
+
+            s.Initialize(&_Configuration);
+
+            if (_ConfigurationDialog.IsWindow())
+                _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
+        }
+    }
+
+    return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
 }
 
 /// <summary>

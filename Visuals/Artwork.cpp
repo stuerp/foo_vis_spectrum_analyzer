@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.01.20) P. Stuer **/
+/** $VER: Artwork.cpp (2024.01.26) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -14,6 +14,8 @@
 /// </summary>
 HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 {
+    Release();
+
     if ((data != nullptr) && (size != 0))
         _Raster.assign(data, data + size);
 
@@ -29,22 +31,18 @@ HRESULT Artwork::Realize(ID2D1HwndRenderTarget * renderTarget) noexcept
         return S_OK;
 
     // Load the frame from the raster data.
-    _Frame.Release();
-
     HRESULT hr = _WIC.Load(_Raster.data(), _Raster.size(), &_Frame);
 
-    // Convert the format of the frame to 32bppPBGRA.
-    _FormatConverter.Release();
-
+    // Create a format coverter to 32bppPBGRA.
     if (SUCCEEDED(hr))
+    {
         hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
 
-    if (SUCCEEDED(hr))
-        hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        if (SUCCEEDED(hr))
+            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+    }
 
     // Create a Direct2D bitmap from the WIC bitmap source.
-    _Bitmap.Release();
-
     if (SUCCEEDED(hr))
         hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
@@ -83,4 +81,3 @@ HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCou
 
     return hr;
 }
-
