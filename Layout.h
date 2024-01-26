@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.21) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.26) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1061,7 +1061,7 @@
 
     #pragma region Line Width
     // Label
-    #define W_E03    42
+    #define W_E03    50
     #define H_E03    H_LBL
     #define X_E03    X_B08 + 5
     #define Y_E03    Y_B08 + 11
@@ -1073,12 +1073,52 @@
     #define Y_E04    Y_E03
     #pragma endregion
 
+    #pragma region Line Color
+    // Label
+    #define W_E08   50
+    #define H_E08   H_LBL
+    #define X_E08   X_E03
+    #define Y_E08   Y_E04 + H_E04 + IY
+
+    // Button
+    #define W_E09   40
+    #define H_E09   H_BTN
+    #define X_E09   X_E08 + W_E08 + IX
+    #define Y_E09   Y_E08
+
+    // Checkbox
+    #define W_E10   W_CHB
+    #define H_E10   H_CHB
+    #define X_E10   X_E09 + W_E09 + IX
+    #define Y_E10   Y_E09 + 2
+    #pragma endregion
+
+    #pragma region Peak line Color
+    // Label
+    #define W_E11   50
+    #define H_E11   H_LBL
+    #define X_E11   X_E08
+    #define Y_E11   Y_E09 + H_E09 + IY
+
+    // Button
+    #define W_E12   40
+    #define H_E12   H_BTN
+    #define X_E12   X_E11 + W_E11 + IX
+    #define Y_E12   Y_E11
+
+    // Checkbox
+    #define W_E13   W_CHB
+    #define H_E13   H_CHB
+    #define X_E13   X_E12 + W_E12 + IX
+    #define Y_E13   Y_E12 + 2
+    #pragma endregion
+
     #pragma region Area Opacity
     // Label
-    #define W_E05    42
+    #define W_E05    50
     #define H_E05    H_LBL
-    #define X_E05    X_E03
-    #define Y_E05    Y_E04 + H_E04 + IY
+    #define X_E05    X_E11
+    #define Y_E05    Y_E12 + H_E12 + IY
 
     // Textbox
     #define W_E06    30
@@ -1094,7 +1134,7 @@
     #pragma endregion
 
 #define W_B08  W_B07
-#define H_B08   11 + H_E04 + IY + H_E06 + 7
+#define H_B08   11 + H_E04 + IY + H_E09 + IY + H_E12 + IY + H_E06 + 7
 #pragma endregion
 
 #pragma endregion

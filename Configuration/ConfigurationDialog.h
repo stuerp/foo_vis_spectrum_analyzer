@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.26) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -185,6 +185,8 @@ private:
     CColorButton _DarkBandColor;
 
     CNumericEdit _LineWidth;
+    CColorButton _LineColor;
+    CColorButton _PeakLineColor;
     CNumericEdit _AreaOpacity;
 
     fb2k::CCoreDarkModeHooks _DarkMode;

@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.22) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.26) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -159,6 +159,10 @@ void Configuration::Reset() noexcept
 
     // Curve
     _LineWidth = 2.f;
+    _LineColor = D2D1::ColorF(D2D1::ColorF::White);
+    _UseCustomLineColor = false;
+    _PeakLineColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _UseCustomPeakLineColor = false;
     _AreaOpacity = 0.5f;
 }
 
@@ -309,6 +313,10 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Curve
         _LineWidth = other._LineWidth;
+        _LineColor = other._LineColor;
+        _UseCustomLineColor = other._UseCustomLineColor;
+        _PeakLineColor = other._PeakLineColor;
+        _UseCustomPeakLineColor = other._UseCustomPeakLineColor;
         _AreaOpacity = other._AreaOpacity;
 
     #pragma endregion
@@ -548,6 +556,20 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> _EqualizeDepth;
 
         parser >> _WeightingAmount;
+
+        parser >> _LineColor.r;
+        parser >> _LineColor.g;
+        parser >> _LineColor.b;
+        parser >> _LineColor.a;
+
+        parser >> _UseCustomLineColor;
+
+        parser >> _PeakLineColor.r;
+        parser >> _PeakLineColor.g;
+        parser >> _PeakLineColor.b;
+        parser >> _PeakLineColor.a;
+
+        parser >> _UseCustomPeakLineColor;
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -737,6 +759,20 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << _EqualizeDepth;
 
         builder << _WeightingAmount;
+
+        builder << _LineColor.r;
+        builder << _LineColor.g;
+        builder << _LineColor.b;
+        builder << _LineColor.a;
+
+        builder << _UseCustomLineColor;
+
+        builder << _PeakLineColor.r;
+        builder << _PeakLineColor.g;
+        builder << _PeakLineColor.b;
+        builder << _PeakLineColor.a;
+
+        builder << _UseCustomPeakLineColor;
     }
     catch (exception)
     {
@@ -908,6 +944,11 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
 
             reader->read(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
+
+            reader->read(&_LineColor, sizeof(_LineColor), abortHandler);
+            reader->read(&_UseCustomLineColor, sizeof(_UseCustomLineColor), abortHandler);
+            reader->read(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
+            reader->read(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
         }
     }
     catch (exception)
@@ -1070,6 +1111,11 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
 
         writer->write(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
+
+        writer->write(&_LineColor, sizeof(_LineColor), abortHandler);
+        writer->write(&_UseCustomLineColor, sizeof(_UseCustomLineColor), abortHandler);
+        writer->write(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
+        writer->write(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
     }
     catch (exception)
     {

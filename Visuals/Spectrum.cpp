@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.01.22) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.01.26) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -136,7 +136,18 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
         hr = CreateCurve(frequencyBands, sampleRate, CurveType::Peak);
 
         if (SUCCEEDED(hr))
-            renderTarget->DrawGeometry(_Curve, _GradientBrush, 1.f);
+        {
+            ID2D1Brush * Brush = _GradientBrush;
+
+            if (_Configuration->_UseCustomPeakLineColor)
+            {
+                _SolidBrush->SetColor(_Configuration->_PeakLineColor);
+
+                Brush = _SolidBrush;
+            }
+
+            renderTarget->DrawGeometry(_Curve, Brush, 1.f);
+        }
 
         _Curve.Release();
     }
@@ -161,7 +172,18 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
         hr = CreateCurve(frequencyBands, sampleRate, CurveType::Line);
 
         if (SUCCEEDED(hr))
-            renderTarget->DrawGeometry(_Curve, _GradientBrush, _Configuration->_LineWidth);
+        {
+            ID2D1Brush * Brush = _GradientBrush;
+
+            if (_Configuration->_UseCustomLineColor)
+            {
+                _SolidBrush->SetColor(_Configuration->_LineColor);
+
+                Brush = _SolidBrush;
+            }
+
+            renderTarget->DrawGeometry(_Curve, Brush, _Configuration->_LineWidth);
+        }
 
         _Curve.Release();
     }

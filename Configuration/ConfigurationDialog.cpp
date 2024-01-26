@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.24) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.26) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -628,7 +628,7 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region Common
+    #pragma region Visualizations
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
@@ -746,7 +746,6 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration->_ColorOrder);
     }
-
     #pragma endregion
 
     #pragma region Colors
@@ -828,6 +827,13 @@ void ConfigurationDialog::Initialize()
         w.SetRange32((int) (MinLineWidth * 10.), (int) (MaxLineWidth * 10.));
         w.SetPos32((int) (_Configuration->_LineWidth * 10.));
         w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        _LineColor.Initialize(GetDlgItem(IDC_LINE_COLOR));
+        _PeakLineColor.Initialize(GetDlgItem(IDC_PEAK_LINE_COLOR));
+
+        SendDlgItemMessageW(IDC_LINE_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomLineColor);
+        SendDlgItemMessageW(IDC_PEAK_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomPeakLineColor);
     }
     {
         UDACCEL Accel[] =
@@ -917,6 +923,8 @@ void ConfigurationDialog::Terminate()
     _DarkBandColor.Terminate();
 
     _LineWidth.Terminate();
+    _LineColor.Terminate();
+    _PeakLineColor.Terminate();
     _AreaOpacity.Terminate();
 }
 
@@ -1599,6 +1607,20 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_PEAK_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomPeakLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
         case IDC_SHOW_TOOLTIPS:
         {
             _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1916,6 +1938,18 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_LINE_COLOR:
+        {
+            _LineColor.GetColor(_Configuration->_LineColor);
+            break;
+        }
+
+        case IDC_PEAK_LINE_COLOR:
+        {
+            _PeakLineColor.GetColor(_Configuration->_PeakLineColor);
+            break;
+        }
+
         default:
             return -1;
     }
@@ -2066,6 +2100,10 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_CURVE,
             IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,
+
+            IDC_LINE_COLOR_LBL, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF,
+            IDC_PEAK_LINE_COLOR_LBL, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF,
+
             IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN, IDC_AREA_OPACITY_LBL_2,
     };
 
@@ -2204,7 +2242,7 @@ void ConfigurationDialog::UpdateControls()
     // Curve
     bool IsCurve = _Configuration->_VisualizationType == VisualizationType::Curve;
 
-        for (const auto & Iter : { IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN })
+        for (const auto & Iter : { IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN })
             GetDlgItem(Iter).EnableWindow(IsCurve);
 
     UpdateColorControls();
@@ -2282,6 +2320,14 @@ void ConfigurationDialog::UpdateColorControls()
         _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
     }
 
+    // Curve
+    {
+        _LineColor.EnableWindow(_Configuration->_UseCustomLineColor);
+        _LineColor.SetColor(_Configuration->_UseCustomLineColor ? _Configuration->_LineColor : _Configuration->_DefLineColor);
+
+        _PeakLineColor.EnableWindow(_Configuration->_UseCustomPeakLineColor);
+        _PeakLineColor.SetColor(_Configuration->_UseCustomPeakLineColor ? _Configuration->_PeakLineColor : _Configuration->_DefPeakLineColor);
+    }
 }
 
 /// <summary>

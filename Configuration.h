@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.22) P. Stuer **/
+/** $VER: Configuration.h (2024.01.26) P. Stuer **/
 
 #pragma once
 
@@ -458,6 +458,10 @@ public:
             #pragma region Curve
 
                 FLOAT _LineWidth;
+                D2D1::ColorF _LineColor = _DefLineColor;
+                bool _UseCustomLineColor;
+                D2D1::ColorF _PeakLineColor = _DefPeakLineColor;
+                bool _UseCustomPeakLineColor;
                 FLOAT _AreaOpacity;                                     // 0.0 .. 1.0
 
             #pragma endregion
@@ -473,6 +477,9 @@ public:
 
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
     std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The gradient stops extracted from the artwork bitmap.
+
+    const D2D1::ColorF _DefLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 

@@ -348,10 +348,18 @@
 #define IDC_LINE_WIDTH                  7212
 #define IDC_LINE_WIDTH_SPIN             7214
 
-#define IDC_AREA_OPACITY_LBL            7220
-#define IDC_AREA_OPACITY                7222
-#define IDC_AREA_OPACITY_SPIN           7224
-#define IDC_AREA_OPACITY_LBL_2          7226
+#define IDC_LINE_COLOR_LBL              7220
+#define IDC_LINE_COLOR                  7222
+#define IDC_LINE_COLOR_DEF              7224
+
+#define IDC_PEAK_LINE_COLOR_LBL         7230
+#define IDC_PEAK_LINE_COLOR             7232
+#define IDC_PEAK_LINE_COLOR_DEF         7234
+
+#define IDC_AREA_OPACITY_LBL            7240
+#define IDC_AREA_OPACITY                7242
+#define IDC_AREA_OPACITY_SPIN           7244
+#define IDC_AREA_OPACITY_LBL_2          7246
 
 #pragma endregion
 

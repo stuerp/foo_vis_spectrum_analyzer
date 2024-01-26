@@ -307,6 +307,14 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_LINE_WIDTH,                 X_E04, Y_E04, W_E04, H_E04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_LINE_WIDTH_SPIN,            "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
+        rtext           "Line color:"               IDC_LINE_COLOR_LBL,             X_E08, Y_E08 + 2, W_E08, H_E08, SS_NOPREFIX
+        ltext           "",                         IDC_LINE_COLOR,                 X_E09, Y_E09, W_E09, H_E09, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                         IDC_LINE_COLOR_DEF,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_E10, Y_E10, W_E10, H_E10
+
+        rtext           "Peak line color:"          IDC_PEAK_LINE_COLOR_LBL,        X_E11, Y_E11 + 2, W_E11, H_E11, SS_NOPREFIX
+        ltext           "",                         IDC_PEAK_LINE_COLOR,            X_E12, Y_E12, W_E12, H_E12, SS_NOTIFY, WS_EX_STATICEDGE
+        control         "",                         IDC_PEAK_LINE_COLOR_DEF,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_E13, Y_E13, W_E13, H_E13
+
         rtext           "Area opacity:"             IDC_AREA_OPACITY_LBL,           X_E05, Y_E05 + 2, W_E05, H_E05
         edittext                                    IDC_AREA_OPACITY,               X_E06, Y_E06, W_E06, H_E06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_AREA_OPACITY_SPIN,          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0

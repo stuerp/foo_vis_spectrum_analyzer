@@ -83,10 +83,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.0.0-beta-2, 2024-02-xx
+v0.7.0.0-beta-2, 2024-01-27
 
-* New: Acoustic weighting filters.
+* New: Acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468))
 * Improved: Curve mode no longer has vertical lines at the beginning and the end of the spectrum.
+* Improved: The Curve line color can be specified.
+* Improved: The Curve Peak line color can be specified.
 * Fixed (Beta 1 regression): Crash when switching to full screen or when modifying the layout.
 
 v0.7.0.0-beta-1, 2024-01-21
