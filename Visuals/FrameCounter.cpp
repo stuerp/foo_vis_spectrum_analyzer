@@ -1,8 +1,8 @@
 
-/** $VER: FrameCounter.cpp (2023.12.31) P. Stuer **/
+/** $VER: FrameCounter.cpp (2024.01.16) P. Stuer **/
 
 #include "FrameCounter.h"
-#include "DirectX.h"
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -20,7 +20,7 @@ void FrameCounter::NewFrame()
 
 float FrameCounter::GetFPS()
 {
-    float FPS = (float)((_Times.GetCount() - 1) * _Frequency.QuadPart) / (float) (_Times.GetLast() - _Times.GetFirst());
+    float FPS = (float)((_Times.Count() - 1) * _Frequency.QuadPart) / (float) (_Times.Last() - _Times.First());
 
     return FPS;
 }
@@ -37,7 +37,7 @@ void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT FrameCounter::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 {
     static WCHAR Text[512] = { };
 
@@ -74,21 +74,18 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
 {
     static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
         _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
         _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-    }
 
-    if (SUCCEEDED(hr))
-    {
         const WCHAR Text[] = L"999.99 fps";
 
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
@@ -116,7 +113,7 @@ void FrameCounter::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT FrameCounter::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

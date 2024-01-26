@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.13) P. Stuer **/
+/** $VER: UIElement.h (2024.01.26) P. Stuer **/
 
 #pragma once
 
@@ -13,6 +13,7 @@
 #include "XAxis.h"
 #include "YAxis.h"
 #include "Spectrum.h"
+#include "Artwork.h"
 
 #include "FFTAnalyzer.h"
 #include "CQTAnalyzer.h"
@@ -66,7 +67,7 @@ private:
     void OnMouseMove(UINT, CPoint);
     void OnMouseLeave();
 
-    LRESULT OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     #pragma endregion
 
@@ -103,11 +104,16 @@ private:
     void RenderFrame();
     void RenderBackground() const;
 
+    void ProcessPlaybackEvent();
+
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
+
+    void ApplyAcousticWeighting();
+    double GetWeight(double x) const noexcept;
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
@@ -120,10 +126,10 @@ private:
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
 
+    HRESULT CreateArtworkGradient();
+
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
-
-    HRESULT CreateBackgroundBitmap();
 
     #pragma endregion
 
@@ -152,7 +158,7 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGING, OnConfigurationChanging)
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChange)
     END_MSG_MAP()
 
     #pragma endregion
@@ -176,9 +182,16 @@ private:
         IDM_CONFIGURE,
     };
 
-    CRITICAL_SECTION _Lock;
+    CriticalSection _CriticalSection;
     PTP_TIMER _ThreadPoolTimer;
-    bool _IsStopping;
+
+    enum class PlaybackEvent
+    {
+        None = 0,
+
+        NewTrack,
+        Stop,
+    } _PlaybackEvent;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 
@@ -193,9 +206,6 @@ private:
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    CComPtr<IWICBitmapFrameDecode> _Frame;
-    CComPtr<ID2D1Bitmap> _BackgroundBitmap;
 
     UINT _DPI;
 
@@ -220,5 +230,8 @@ private:
     uint32_t _SampleRate;
     double _Bandwidth;
 
-    std::vector<uint8_t> _CoverArt;
+    Artwork _Artwork;
+    bool _NewArtwork; // True when new artwork has arrived.
+    bool _NewArtworkGradient; // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
+    D2D1_COLOR_F _DominantColor;
 };

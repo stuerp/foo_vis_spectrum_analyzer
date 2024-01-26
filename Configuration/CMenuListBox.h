@@ -1,5 +1,5 @@
 
-/** $VER: CMenuListBox.h (2023.12.30) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.h (2024.01.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #pragma once
 
@@ -30,4 +30,7 @@ public:
     BEGIN_MSG_MAP(CMenuListBox)
         CHAIN_MSG_MAP(COwnerDrawnListBox<CMenuListBox>)
     END_MSG_MAP()
+
+private:
+    bool _DarkMode;
 };

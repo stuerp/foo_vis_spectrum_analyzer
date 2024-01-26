@@ -7,15 +7,15 @@
 
 struct FrequencyBand
 {
-    FrequencyBand() : Lo(), Ctr(), Hi(), NewValue(), CurValue() { }
-    FrequencyBand(double l, double c, double h) : Lo(l), Ctr(c), Hi(h), NewValue(), CurValue() { }
+    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi() { }
+    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h) { }
+
+    double NewValue;
+    double CurValue;
 
     double Lo;
     double Ctr;
     double Hi;
-
-    double NewValue;
-    double CurValue;
 
     double Peak;        // The value of the indicator (0.0 - 1.0)
     double HoldTime;    // Time to hold the current peak value.

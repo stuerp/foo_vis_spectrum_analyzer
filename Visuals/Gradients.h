@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.h (2023.12.14) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.h (2023.12.17) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -20,6 +20,13 @@ static const vector<D2D1_GRADIENT_STOP> GradientStopsCustom =
 {
     { 0.f / 1.f, D2D1::ColorF(0xbdc3c7, 1.f) },
     { 1.f / 1.f, D2D1::ColorF(0x2c3e50, 1.f) },
+};
+
+// Artwork (default colors)
+static const vector<D2D1_GRADIENT_STOP> GradientStopsArtwork =
+{
+    { 0.f / 1.f, D2D1::ColorF(D2D1::ColorF::Black) },
+    { 1.f / 1.f, D2D1::ColorF(D2D1::ColorF::White) },
 };
 
 // Prism / foo_musical_spectrum
@@ -110,6 +117,7 @@ static const vector<D2D1_GRADIENT_STOP> GetGradientStops(ColorScheme colorScheme
 
         case ColorScheme::Solid: return GradientStopsSolid; break;
         case ColorScheme::Custom: return GradientStopsCustom; break;
+        case ColorScheme::Artwork: return GradientStopsArtwork; break;
 
         case ColorScheme::Prism1: return GradientStopsPrism1; break;
         case ColorScheme::Prism2: return GradientStopsPrism2; break;

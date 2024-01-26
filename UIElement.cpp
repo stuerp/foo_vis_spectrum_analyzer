@@ -1,10 +1,13 @@
 
-/** $VER: UIElement.cpp (2024.01.10) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.18) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "Direct2D.h"
 #include "Log.h"
+
+#include "Gradients.h"
 
 #pragma hdrstop
 
@@ -48,11 +51,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
-    HRESULT hr = S_OK;
-
-    ::InitializeCriticalSection(&_Lock);
-
-    hr = CreateDeviceIndependentResources();
+    HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
     {
@@ -108,7 +107,7 @@ void UIElement::OnDestroy()
 {
     StopTimer();
 
-    ::EnterCriticalSection(&_Lock);
+    _CriticalSection.Enter();
 
     if (_ThreadPoolTimer)
     {
@@ -147,7 +146,7 @@ void UIElement::OnDestroy()
 
     ReleaseDeviceIndependentResources();
 
-    ::LeaveCriticalSection(&_Lock);
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -180,8 +179,7 @@ void UIElement::OnSize(UINT type, CSize size)
 
     D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    if (_RenderTarget)
-        _RenderTarget->Resize(Size);
+    _RenderTarget->Resize(Size);
 
     Resize();
 }
@@ -355,7 +353,7 @@ void UIElement::OnMouseLeave()
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-LRESULT UIElement::OnConfigurationChanging(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     SetConfiguration();
 
@@ -394,14 +392,14 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        ::EnterCriticalSection(&_Lock);
+        _CriticalSection.Enter();
 
         DialogParameters dp = { m_hWnd, &_Configuration };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
 
-        ::LeaveCriticalSection(&_Lock);
+        _CriticalSection.Leave();
     }
     else
         _ConfigurationDialog.BringWindowToTop();
@@ -412,7 +410,7 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::SetConfiguration() noexcept
 {
-    ::EnterCriticalSection(&_Lock);
+    _CriticalSection.Enter();
 
     // Initialize the frequency bands.
     {
@@ -457,6 +455,8 @@ void UIElement::SetConfiguration() noexcept
     #pragma warning (default: 4061)
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
+
+    _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
     // Generate the horizontal color gradient, if required.
     if (_Configuration._HorizontalGradient)
@@ -525,7 +525,7 @@ void UIElement::SetConfiguration() noexcept
 
     Resize();
 
-    ::LeaveCriticalSection(&_Lock);
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -570,6 +570,8 @@ void UIElement::Resize()
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
+    _PlaybackEvent = PlaybackEvent::NewTrack;
+
     SetConfiguration();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
@@ -585,9 +587,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _IsStopping = true;
+    _PlaybackEvent = PlaybackEvent::Stop;
 
     _SampleRate = 44100;
+
+    _Artwork.Release();
 }
 
 /// <summary>
@@ -602,11 +606,10 @@ void UIElement::on_playback_pause(bool)
 
 #pragma region now_playing_album_art_notify
 
-void UIElement::on_album_art(album_art_data::ptr aa)
+void UIElement::on_album_art(album_art_data::ptr aad)
 {
-    _IsStopping = false;
-
-    _CoverArt.assign((uint8_t *) aa->data(), (uint8_t *) aa->data() + aa->size());
+    _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+    _NewArtwork = true;
 }
 
 #pragma endregion

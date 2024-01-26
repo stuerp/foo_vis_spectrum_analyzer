@@ -1,8 +1,9 @@
 
-/** $VER: XAXis.cpp (2023.12.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.01.16) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
-#include "DirectX.h"
+
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -142,7 +143,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void XAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+void XAxis::Render(ID2D1RenderTarget * renderTarget)
 {
     if (_Mode == XAxisMode::None)
         return;
@@ -170,7 +171,7 @@ void XAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectX._DirectWrite->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -198,27 +199,19 @@ void XAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 /// </summary>
 HRESULT XAxis::CreateDeviceIndependentResources()
 {
-    HRESULT hr = S_OK;
+    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
-        static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-        hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
@@ -247,7 +240,7 @@ void XAxis::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT XAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

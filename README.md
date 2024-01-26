@@ -83,6 +83,29 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-beta-2, 2024-01-26
+
+* New: Acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468))
+* Improved: Curve mode no longer has vertical lines at the beginning and the end of the spectrum.
+* Improved: The Curve line color can be specified.
+* Improved: The Curve Peak line color can be specified.
+* Fixed (Beta 1 regression): Crash when switching to full screen or when modifying the layout.
+
+v0.7.0.0-beta-1, 2024-01-21
+
+* New: The cover art of the playing track can be used as background image.
+  * Opacity can be specified.
+  * The dominant color of the cover art can be used as a filler.
+* New: The dominant colors of the cover art can be used to generate a gradient.
+  * Color scheme "Artwork" turns on the feature.
+  * Between 2 and 256 colors can be selected.
+  * Lightness threshold determines which light colors will be ignored.
+* New: The Curve visual has a peak line.
+* New: Dark mode support.
+* New: Fading AIMP peak mode, a combination of AIMP and Fade Out mode.
+* Improved: Curve mode can use a horizontal gradient.
+* Improved: The curve is no longer visible as a flat line when no track is playing.
+
 v0.6.0.3, 2024-01-13
 
 * Improved: The sample window size for the FFT is now calculated based on the sample rate and the FFT size.
@@ -224,8 +247,8 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
-* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline article](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit).
-* [Humeur](https://github.com/Humeur) for [Better Dominant Colors](https://github.com/Humeur/better-dominant-colors).
+* Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
+* [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 
 ## Reference Material
 

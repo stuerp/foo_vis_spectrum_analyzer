@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.01.06) P. Stuer **/
+/** $VER: framework.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -7,19 +7,43 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#define TOSTRING_IMPL(x) #x
-#define TOSTRING(x) TOSTRING_IMPL(x)
-
 #include <SDKDDKVer.h>
 
+#define NOMINMAX
 #include <helpers/foobar2000+atl.h>
 #include <helpers/helpers.h>
+#undef NOMINMAX
 
-#include <d2d1.h>
+#include <atlbase.h>
+
+#include <dxgi1_3.h>
+#include <d3d11_2.h>
+#include <d2d1_2.h>
 #include <d2d1helper.h>
+#include <dcomp.h>
 #include <dwrite.h>
 
 #include <wincodec.h>
 
+#include <stdlib.h>
 #include <strsafe.h>
-#include <math.h>
+
+#include <cmath>
+
+#include "CriticalSection.h"
+
+#ifndef Assert
+#if defined(DEBUG) || defined(_DEBUG)
+#define Assert(b) do {if (!(b)) { ::OutputDebugStringA("Assert: " #b "\n");}} while(0)
+#else
+#define Assert(b)
+#endif
+#endif
+
+#define TOSTRING_IMPL(x) #x
+#define TOSTRING(x) TOSTRING_IMPL(x)
+
+#ifndef THIS_HINSTANCE
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
+#endif

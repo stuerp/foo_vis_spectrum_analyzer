@@ -1,8 +1,9 @@
 
-/** $VER: YAXis.cpp (2023.12.31) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.01.16) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
-#include "DirectX.h"
+
+#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -53,7 +54,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+void YAxis::Render(ID2D1RenderTarget * renderTarget)
 {
     if (_Configuration->_YAxisMode == YAxisMode::None)
         return;
@@ -95,26 +96,18 @@ void YAxis::Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
 /// </summary>
 HRESULT YAxis::CreateDeviceIndependentResources()
 {
-    HRESULT hr = S_OK;
+    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
-        static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
 
-        hr = _DirectX._DirectWrite->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectX._DirectWrite->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
@@ -141,7 +134,7 @@ void YAxis::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT YAxis::CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget)
+HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     if (_SolidBrush != nullptr)
         return S_OK;

@@ -1,10 +1,11 @@
 
-/** $VER: Configuration.cpp (2024.01.13) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.26) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
 
 #include "Gradients.h"
+#include "Log.h"
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -73,6 +74,20 @@ void Configuration::Reset() noexcept
     // Frequencies
     _ScalingFunction = ScalingFunction::Logarithmic;
 
+    // Filters
+    _WeightingType = WeightingType::None;
+
+    _SlopeFunctionOffset = 1.;
+
+    _Slope = 0.;
+    _SlopeOffset = 1000.;
+
+    _EqualizeAmount = 0.;
+    _EqualizeOffset = 44100.;
+    _EqualizeDepth = 1024.;
+
+    _WeightingAmount = 0.;
+
     _SkewFactor = 0.0;
     _Bandwidth = 0.5;
 
@@ -120,8 +135,15 @@ void Configuration::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
-    _ShowCoverArt = false;
-    _BackgroundBitmapOpacity = 1.f;
+
+    _BackgroundMode = BackgroundMode::Artwork;
+    _ArtworkOpacity = 1.f;
+
+    _NumArtworkColors = 10;
+    _LightnessThreshold = 250.f / 255.f;
+    _TransparencyThreshold = 125.f / 255.f;
+
+    _ColorOrder = ColorOrder::None;
 
     _VisualizationType = VisualizationType::Bars;
 
@@ -138,6 +160,10 @@ void Configuration::Reset() noexcept
 
     // Curve
     _LineWidth = 2.f;
+    _LineColor = D2D1::ColorF(D2D1::ColorF::White);
+    _UseCustomLineColor = false;
+    _PeakLineColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _UseCustomPeakLineColor = false;
     _AreaOpacity = 0.5f;
 }
 
@@ -158,6 +184,7 @@ Configuration & Configuration::operator=(const Configuration & other)
     _WindowDuration = other._WindowDuration;
 
     #pragma region Transform
+
         _Transform = other._Transform;
 
         _WindowFunction = other._WindowFunction;
@@ -166,9 +193,11 @@ Configuration & Configuration::operator=(const Configuration & other)
         _Truncate = other._Truncate;
 
         _SelectedChannels = other._SelectedChannels;
+
     #pragma endregion
 
     #pragma region FFT
+
         _FFTMode = other._FFTMode;
         _FFTCustom = other._FFTCustom;
         _FFTDuration = other._FFTDuration;
@@ -180,9 +209,11 @@ Configuration & Configuration::operator=(const Configuration & other)
         _SummationMethod = other._SummationMethod;
         _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
         _SmoothGainTransition = other._SmoothGainTransition;
+
     #pragma endregion
 
     #pragma region Frequencies
+
         _FrequencyDistribution = other._FrequencyDistribution;
 
         _NumBands = other._NumBands;
@@ -199,9 +230,28 @@ Configuration & Configuration::operator=(const Configuration & other)
         _ScalingFunction = other._ScalingFunction;
         _SkewFactor = other._SkewFactor;
         _Bandwidth = other._Bandwidth;
+
+    #pragma endregion
+
+    #pragma region Filters
+
+        _WeightingType = other._WeightingType;
+
+        _SlopeFunctionOffset = other._SlopeFunctionOffset;
+
+        _Slope = other._Slope;
+        _SlopeOffset = other._SlopeOffset;
+
+        _EqualizeAmount = other._EqualizeAmount;
+        _EqualizeOffset = other._EqualizeOffset;
+        _EqualizeDepth = other._EqualizeDepth;
+
+        _WeightingAmount = other._WeightingAmount;
+
     #pragma endregion
 
     #pragma region Rendering
+
         _BackColor = other._BackColor;
         _UseCustomBackColor = other._UseCustomBackColor;
 
@@ -239,8 +289,14 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _ShowToolTips = other._ShowToolTips;
 
-        _ShowCoverArt = other._ShowCoverArt;
-        _BackgroundBitmapOpacity = other._BackgroundBitmapOpacity;
+        _NumArtworkColors = other._NumArtworkColors;
+        _LightnessThreshold = other._LightnessThreshold;
+        _TransparencyThreshold = other._TransparencyThreshold;
+
+        _ColorOrder = other._ColorOrder;
+
+        _BackgroundMode = other._BackgroundMode;
+        _ArtworkOpacity = other._ArtworkOpacity;
 
         // Visualization
         _VisualizationType = other._VisualizationType;
@@ -258,7 +314,12 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Curve
         _LineWidth = other._LineWidth;
+        _LineColor = other._LineColor;
+        _UseCustomLineColor = other._UseCustomLineColor;
+        _PeakLineColor = other._PeakLineColor;
+        _UseCustomPeakLineColor = other._UseCustomPeakLineColor;
         _AreaOpacity = other._AreaOpacity;
+
     #pragma endregion
 
     return *this;
@@ -271,200 +332,254 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 {
     Reset();
 
-    size_t Version;
-
-    parser >> Version;
-
-    if (Version > _CurrentVersion)
-        return;
-
-    int Integer;
-
-    parser >> _DialogBounds.left;
-    parser >> _DialogBounds.top;
-    parser >> _DialogBounds.right;
-    parser >> _DialogBounds.bottom;
-
-    // Reduce the size to make sure it fits on screens scaled to 150%.
-    if ((_DialogBounds.right - _DialogBounds.left) > 1910)
-        _DialogBounds.right = _DialogBounds.left + 1910;
-
-    if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
-        _DialogBounds.bottom = _DialogBounds.top + 995;
-
-    parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
-
-    parser >> _UseHardwareRendering;
-    parser >> _UseAntialiasing;
-
-    parser >> _UseZeroTrigger;
-
-    parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
-
-    parser >> Integer; _Transform = (Transform) Integer;
-
-    #pragma region FFT
-    parser >> Integer; _FFTMode = (FFTMode) Integer;
-    parser >> _FFTCustom;
-    parser >> _FFTDuration;
-
-    parser >> Integer; _MappingMethod = (Mapping) Integer;
-    parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
-    parser >> _SmoothingFactor;
-    parser >> _KernelSize;
-    parser >> Integer; _SummationMethod = (SummationMethod) Integer;
-    parser >> _SmoothLowerFrequencies;
-    parser >> _SmoothGainTransition;
-    #pragma endregion
-
-    #pragma region Frequencies
-    parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
-
-    parser >> _NumBands;
-
-    if (Version < 5)
+    try
     {
-        parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
-        parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
-    }
-    else
-    {
-        parser >> _LoFrequency;
-        parser >> _HiFrequency;
-    }
+        size_t Version;
 
-    parser >> _MinNote;
-    parser >> _MaxNote;
-    parser >> _BandsPerOctave;
-    parser >> _Pitch;
-    parser >> _Transpose;
+        parser >> Version;
 
-    parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
-    parser >> _SkewFactor;
-    parser >> _Bandwidth;
-    #pragma endregion
+        if (Version > _CurrentVersion)
+            return;
 
-    #pragma region Rendering
-    if (Version < 5)
-    {
-        UINT32 Rgb; parser >> Rgb;
-        FLOAT Alpha; parser >> Alpha;
+        int Integer;
 
-        _BackColor = D2D1::ColorF(Rgb, Alpha);
-    }
-    else
-    {
-        parser >> _BackColor.r;
-        parser >> _BackColor.g;
-        parser >> _BackColor.b;
-        parser >> _BackColor.a;
-    }
+        parser >> _DialogBounds.left;
+        parser >> _DialogBounds.top;
+        parser >> _DialogBounds.right;
+        parser >> _DialogBounds.bottom;
 
-    parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+        // Reduce the size to make sure it fits on screens scaled to 150%.
+        if ((_DialogBounds.right - _DialogBounds.left) > 1910)
+            _DialogBounds.right = _DialogBounds.left + 1910;
 
-    parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+        if ((_DialogBounds.bottom - _DialogBounds.top) > 995)
+            _DialogBounds.bottom = _DialogBounds.top + 995;
 
-    parser >> _AmplitudeLo;
-    parser >> _AmplitudeHi;
-    parser >> _UseAbsolute;
-    parser >> _Gamma;
+        parser >> _RefreshRateLimit; _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
 
-    parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+        parser >> _UseHardwareRendering;
+        parser >> _UseAntialiasing;
 
-    parser >> _DrawBandBackground;
+        parser >> _UseZeroTrigger;
 
-    parser >> Integer; _PeakMode = (PeakMode) Integer;
-    parser >> _HoldTime;
-    parser >> _Acceleration;
-    #pragma endregion
+        parser >> _WindowDuration; _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
 
-    // Version 5
-    if (Version >= 5)
-    {
-        _CustomGradientStops.clear();
+        parser >> Integer; _Transform = (Transform) Integer;
 
-        size_t Count; parser >> Count;
+        #pragma region FFT
+        parser >> Integer; _FFTMode = (FFTMode) Integer;
+        parser >> _FFTCustom;
+        parser >> _FFTDuration;
 
-        for (size_t i = 0; i < Count; ++i)
+        parser >> Integer; _MappingMethod = (Mapping) Integer;
+        parser >> Integer; _SmoothingMethod = (SmoothingMethod) Integer;
+        parser >> _SmoothingFactor;
+        parser >> _KernelSize;
+        parser >> Integer; _SummationMethod = (SummationMethod) Integer;
+        parser >> _SmoothLowerFrequencies;
+        parser >> _SmoothGainTransition;
+        #pragma endregion
+
+        #pragma region Frequencies
+        parser >> Integer; _FrequencyDistribution = (FrequencyDistribution) Integer;
+
+        parser >> _NumBands;
+
+        if (Version < 5)
         {
-            D2D1_GRADIENT_STOP gs = { };
+            parser >> Integer; _LoFrequency = Integer; // In v5 _LoFrequency became double
+            parser >> Integer; _HiFrequency = Integer; // In v5 _LoFrequency became double
+        }
+        else
+        {
+            parser >> _LoFrequency;
+            parser >> _HiFrequency;
+        }
 
-            parser >> gs.position;
-            parser >> gs.color.r;
-            parser >> gs.color.g;
-            parser >> gs.color.b;
-            parser >> gs.color.a;
+        parser >> _MinNote;
+        parser >> _MaxNote;
+        parser >> _BandsPerOctave;
+        parser >> _Pitch;
+        parser >> _Transpose;
 
-            _CustomGradientStops.push_back(gs);
+        parser >> Integer; _ScalingFunction = (ScalingFunction) Integer;
+        parser >> _SkewFactor;
+        parser >> _Bandwidth;
+        #pragma endregion
+
+        #pragma region Rendering
+        if (Version < 5)
+        {
+            UINT32 Rgb; parser >> Rgb;
+            FLOAT Alpha; parser >> Alpha;
+
+            _BackColor = D2D1::ColorF(Rgb, Alpha);
+        }
+        else
+        {
+            parser >> _BackColor.r;
+            parser >> _BackColor.g;
+            parser >> _BackColor.b;
+            parser >> _BackColor.a;
+        }
+
+        parser >> Integer; _XAxisMode = (XAxisMode) Integer;
+
+        parser >> Integer; _YAxisMode = (YAxisMode) Integer;
+
+        parser >> _AmplitudeLo;
+        parser >> _AmplitudeHi;
+        parser >> _UseAbsolute;
+        parser >> _Gamma;
+
+        parser >> Integer; _ColorScheme = (ColorScheme) Integer;
+
+        if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
+            _ColorScheme = (ColorScheme) (Integer + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
+
+        parser >> _DrawBandBackground;
+
+        parser >> Integer; _PeakMode = (PeakMode) Integer;
+        parser >> _HoldTime;
+        parser >> _Acceleration;
+        #pragma endregion
+
+        // Version 5
+        if (Version >= 5)
+        {
+            _CustomGradientStops.clear();
+
+            size_t Count; parser >> Count;
+
+            for (size_t i = 0; i < Count; ++i)
+            {
+                D2D1_GRADIENT_STOP gs = { };
+
+                parser >> gs.position;
+                parser >> gs.color.r;
+                parser >> gs.color.g;
+                parser >> gs.color.b;
+                parser >> gs.color.a;
+
+                _CustomGradientStops.push_back(gs);
+            }
+        }
+
+        parser >> _XTextColor.r;
+        parser >> _XTextColor.g;
+        parser >> _XTextColor.b;
+        parser >> _XTextColor.a;
+
+        parser >> _XLineColor.r;
+        parser >> _XLineColor.g;
+        parser >> _XLineColor.b;
+        parser >> _XLineColor.a;
+
+        parser >> _YTextColor.r;
+        parser >> _YTextColor.g;
+        parser >> _YTextColor.b;
+        parser >> _YTextColor.a;
+
+        parser >> _YLineColor.r;
+        parser >> _YLineColor.g;
+        parser >> _YLineColor.b;
+        parser >> _YLineColor.a;
+
+        parser >> _DarkBandColor.r;
+        parser >> _DarkBandColor.g;
+        parser >> _DarkBandColor.b;
+        parser >> _DarkBandColor.a;
+
+        // Version 6
+        if (Version >= 6)
+            parser >> _AmplitudeStep;
+
+        // Version 7
+        if (Version >= 7)
+        {
+            parser >> _SelectedChannels;
+            parser >> _ShowToolTips;
+
+            parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
+            parser >> _WindowParameter;
+            parser >> _WindowSkew;
+        }
+
+        // Version 8
+        if (Version >= 8)
+        {
+            parser >> _UseCustomBackColor;
+            parser >> _UseCustomXTextColor;
+            parser >> _UseCustomXLineColor;
+            parser >> _UseCustomYTextColor;
+            parser >> _UseCustomYLineColor;
+
+            parser >> _LEDMode;
+
+            parser >> _HorizontalGradient;
+
+            parser >> _LightBandColor.r;
+            parser >> _LightBandColor.g;
+            parser >> _LightBandColor.b;
+            parser >> _LightBandColor.a;
+        }
+
+        // Version 9
+        if (Version >= 9)
+        {
+            parser >> _PageIndex;
+            parser >> Integer; _VisualizationType = (VisualizationType) Integer;
+            parser >> _LineWidth;
+            parser >> _AreaOpacity;
+        }
+
+        // Version 10
+        if (Version >= 10)
+        {
+            parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
+            parser >> _ArtworkOpacity;
+
+            parser >> _NumArtworkColors;
+            parser >> _LightnessThreshold;
+            parser >> Integer; _ColorOrder = (ColorOrder) Integer;
+        }
+
+        // Version 11
+        if (Version >= 11)
+        {
+            parser >> Integer; _WeightingType = (WeightingType) Integer;
+
+            parser >> _SlopeFunctionOffset;
+
+            parser >> _Slope;
+            parser >> _SlopeOffset;
+
+            parser >> _EqualizeAmount;
+            parser >> _EqualizeOffset;
+            parser >> _EqualizeDepth;
+
+            parser >> _WeightingAmount;
+
+            parser >> _LineColor.r;
+            parser >> _LineColor.g;
+            parser >> _LineColor.b;
+            parser >> _LineColor.a;
+
+            parser >> _UseCustomLineColor;
+
+            parser >> _PeakLineColor.r;
+            parser >> _PeakLineColor.g;
+            parser >> _PeakLineColor.b;
+            parser >> _PeakLineColor.a;
+
+            parser >> _UseCustomPeakLineColor;
         }
     }
-
-    parser >> _XTextColor.r;
-    parser >> _XTextColor.g;
-    parser >> _XTextColor.b;
-    parser >> _XTextColor.a;
-
-    parser >> _XLineColor.r;
-    parser >> _XLineColor.g;
-    parser >> _XLineColor.b;
-    parser >> _XLineColor.a;
-
-    parser >> _YTextColor.r;
-    parser >> _YTextColor.g;
-    parser >> _YTextColor.b;
-    parser >> _YTextColor.a;
-
-    parser >> _YLineColor.r;
-    parser >> _YLineColor.g;
-    parser >> _YLineColor.b;
-    parser >> _YLineColor.a;
-
-    parser >> _DarkBandColor.r;
-    parser >> _DarkBandColor.g;
-    parser >> _DarkBandColor.b;
-    parser >> _DarkBandColor.a;
-
-    // Version 6
-    if (Version >= 6)
-        parser >> _AmplitudeStep;
-
-    // Version 7
-    if (Version >= 7)
+    catch (exception_io & ex)
     {
-        parser >> _SelectedChannels;
-        parser >> _ShowToolTips;
+        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
 
-        parser >> Integer; _WindowFunction = (WindowFunctions) Integer;
-        parser >> _WindowParameter;
-        parser >> _WindowSkew;
-    }
-
-    // Version 8
-    if (Version >= 8)
-    {
-        parser >> _UseCustomBackColor;
-        parser >> _UseCustomXTextColor;
-        parser >> _UseCustomXLineColor;
-        parser >> _UseCustomYTextColor;
-        parser >> _UseCustomYLineColor;
-
-        parser >> _LEDMode;
-
-        parser >> _HorizontalGradient;
-
-        parser >> _LightBandColor.r;
-        parser >> _LightBandColor.g;
-        parser >> _LightBandColor.b;
-        parser >> _LightBandColor.a;
-    }
-
-    // Version 9
-    if (Version >= 9)
-    {
-        parser >> _PageIndex;
-        parser >> Integer; _VisualizationType = (VisualizationType) Integer;
-        parser >> _LineWidth;
-        parser >> _AreaOpacity;
+        Reset();
     }
 
     if (_ColorScheme != ColorScheme::Custom)
@@ -482,7 +597,8 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
     {
         builder << _CurrentVersion;
 
-    #pragma region User Interface
+        #pragma region User Interface
+
         builder << _DialogBounds.left;
         builder << _DialogBounds.top;
         builder << _DialogBounds.right;
@@ -495,11 +611,13 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
 
         builder << _UseZeroTrigger;
         builder << _WindowDuration;
-    #pragma endregion
+
+        #pragma endregion
 
         builder << (int) _Transform;
 
-    #pragma region FFT
+        #pragma region FFT
+
         builder << (int) _FFTMode;
         builder << _FFTCustom;
         builder << _FFTDuration;
@@ -511,9 +629,11 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _SummationMethod;
         builder << _SmoothLowerFrequencies;
         builder << _SmoothGainTransition;
-    #pragma endregion
 
-    #pragma region Frequencies
+        #pragma endregion
+
+        #pragma region Frequencies
+
         builder << (int) _FrequencyDistribution;
 
         builder << _NumBands;
@@ -529,30 +649,33 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _ScalingFunction;
         builder << _SkewFactor;
         builder << _Bandwidth;
-    #pragma endregion
+
+        #pragma endregion
 
         #pragma region Rendering
-            builder << _BackColor.r;
-            builder << _BackColor.g;
-            builder << _BackColor.b;
-            builder << _BackColor.a;
 
-            builder << (int) _XAxisMode;
+        builder << _BackColor.r;
+        builder << _BackColor.g;
+        builder << _BackColor.b;
+        builder << _BackColor.a;
 
-            builder << (int) _YAxisMode;
+        builder << (int) _XAxisMode;
 
-            builder << _AmplitudeLo;
-            builder << _AmplitudeHi;
-            builder << _UseAbsolute;
-            builder << _Gamma;
+        builder << (int) _YAxisMode;
 
-            builder << (int) _ColorScheme;
+        builder << _AmplitudeLo;
+        builder << _AmplitudeHi;
+        builder << _UseAbsolute;
+        builder << _Gamma;
 
-            builder << _DrawBandBackground;
+        builder << (int) _ColorScheme;
 
-            builder << (int) _PeakMode;
-            builder << _HoldTime;
-            builder << _Acceleration;
+        builder << _DrawBandBackground;
+
+        builder << (int) _PeakMode;
+        builder << _HoldTime;
+        builder << _Acceleration;
+
         #pragma endregion
 
         // Version 5
@@ -624,9 +747,46 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _VisualizationType;
         builder << _LineWidth;
         builder << _AreaOpacity;
+
+        // Version 10
+        builder << (int) _BackgroundMode;
+        builder << _ArtworkOpacity;
+
+        builder << _NumArtworkColors;
+        builder << _LightnessThreshold;
+        builder << (int) _ColorOrder;
+
+        // Version 11
+        builder << (int) _WeightingType;
+
+        builder << _SlopeFunctionOffset;
+
+        builder << _Slope;
+        builder << _SlopeOffset;
+
+        builder << _EqualizeAmount;
+        builder << _EqualizeOffset;
+        builder << _EqualizeDepth;
+
+        builder << _WeightingAmount;
+
+        builder << _LineColor.r;
+        builder << _LineColor.g;
+        builder << _LineColor.b;
+        builder << _LineColor.a;
+
+        builder << _UseCustomLineColor;
+
+        builder << _PeakLineColor.r;
+        builder << _PeakLineColor.g;
+        builder << _PeakLineColor.b;
+        builder << _PeakLineColor.a;
+
+        builder << _UseCustomPeakLineColor;
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -709,6 +869,9 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
         reader->read(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
+        if ((Version <= 9) && (_ColorScheme != ColorScheme::Solid) && (_ColorScheme != ColorScheme::Custom))
+            _ColorScheme = (ColorScheme) ((int) _ColorScheme + 1); // ColorScheme::Artwork was added after ColorScheme::Custom
+
         reader->read(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
 
         reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
@@ -767,9 +930,42 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_LineWidth, sizeof(_LineWidth), abortHandler);
             reader->read(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
         }
+
+        if (Version >= 10)
+        {
+            reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+            reader->read(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
+
+            reader->read(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
+            reader->read(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
+            reader->read(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
+        }
+
+        if (Version >= 11)
+        {
+            reader->read(&_WeightingType, sizeof(_WeightingType), abortHandler);
+
+            reader->read(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+
+            reader->read(&_Slope, sizeof(_Slope), abortHandler);
+            reader->read(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+
+            reader->read(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
+            reader->read(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
+            reader->read(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+
+            reader->read(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
+
+            reader->read(&_LineColor, sizeof(_LineColor), abortHandler);
+            reader->read(&_UseCustomLineColor, sizeof(_UseCustomLineColor), abortHandler);
+            reader->read(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
+            reader->read(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
+        }
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+
         Reset();
     }
 
@@ -789,70 +985,78 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_CurrentVersion, sizeof(_CurrentVersion), abortHandler);
 
         #pragma region User Interface
-            writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-            writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-            writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
-            writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+        writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
 
-            writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
-            writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
+        writer->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
+        writer->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
+
+        writer->write(&_UseZeroTrigger, sizeof(_UseZeroTrigger), abortHandler);
+        writer->write(&_WindowDuration, sizeof(_WindowDuration), abortHandler);
+
         #pragma endregion
 
-            writer->write(&_Transform, sizeof(_Transform), abortHandler);
+        writer->write(&_Transform, sizeof(_Transform), abortHandler);
 
         #pragma region FFT
-            writer->write(&_FFTMode, sizeof(_FFTMode), abortHandler);
-            writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
-            writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
-            writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
 
-            writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
-            writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
-            writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
-            writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
-            writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
-            writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+        writer->write(&_FFTMode, sizeof(_FFTMode), abortHandler);
+        writer->write(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
+        writer->write(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
+        writer->write(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
+
+        writer->write(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+        writer->write(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
+        writer->write(&_KernelSize, sizeof(_KernelSize), abortHandler);
+        writer->write(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
+        writer->write(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
+        writer->write(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+
         #pragma endregion
 
         #pragma region Frequencies
-            writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-            writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
-            writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
-            writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
+        writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-            writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
-            writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
-            writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-            writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
-            writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
+        writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
+        writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
+        writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
 
-            writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
-            writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
-            writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+        writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
+        writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
+        writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
+        writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
+        writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
+
+        writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
+        writer->write(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
+        writer->write(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+
         #pragma endregion
 
         #pragma region Rendering
-            writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
 
-            writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
+        writer->write(&_BackColor, sizeof(_BackColor), abortHandler);
 
-            writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
+        writer->write(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
 
-            writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
-            writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
-            writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
-            writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
+        writer->write(&_YAxisMode, sizeof(_YAxisMode), abortHandler);
 
-            writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
+        writer->write(&_AmplitudeLo, sizeof(_AmplitudeLo), abortHandler);
+        writer->write(&_AmplitudeHi, sizeof(_AmplitudeHi), abortHandler);
+        writer->write(&_UseAbsolute, sizeof(_UseAbsolute), abortHandler);
+        writer->write(&_Gamma, sizeof(_Gamma), abortHandler);
 
-            writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+        writer->write(&_ColorScheme, sizeof(_ColorScheme), abortHandler);
 
-            writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
-            writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-            writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        writer->write(&_DrawBandBackground, sizeof(_DrawBandBackground), abortHandler);
+
+        writer->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
+        writer->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
+        writer->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+
         #pragma endregion
 
         size_t Size = _CustomGradientStops.size();
@@ -898,16 +1102,44 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_VisualizationType, sizeof(_VisualizationType), abortHandler);
         writer->write(&_LineWidth, sizeof(_LineWidth), abortHandler);
         writer->write(&_AreaOpacity, sizeof(_AreaOpacity), abortHandler);
+
+        // Version 10
+        writer->write(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+        writer->write(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
+
+        writer->write(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
+        writer->write(&_LightnessThreshold, sizeof(_LightnessThreshold), abortHandler);
+        writer->write(&_ColorOrder, sizeof(_ColorOrder), abortHandler);
+
+        // Version 11
+        writer->write(&_WeightingType, sizeof(_WeightingType), abortHandler);
+
+        writer->write(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+
+        writer->write(&_Slope, sizeof(_Slope), abortHandler);
+        writer->write(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+
+        writer->write(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
+        writer->write(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
+        writer->write(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+
+        writer->write(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
+
+        writer->write(&_LineColor, sizeof(_LineColor), abortHandler);
+        writer->write(&_UseCustomLineColor, sizeof(_UseCustomLineColor), abortHandler);
+        writer->write(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
+        writer->write(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
     }
-    catch (exception)
+    catch (exception & ex)
     {
+        Log::Write(Log::Level::Error, "%s: Exception while writing CUI configuration data: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
 /// <summary>
 /// Updates the position of the current gradient colors.
 /// </summary>
-void Configuration::UpdateGradient()
+void Configuration::UpdateGradientStops()
 {
     if (_GradientStops.size() == 0)
         return;

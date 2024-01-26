@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.h (2023.12.31) P. Stuer **/
+/** $VER: CColorButton.h (2024.01.16) P. Stuer **/
 
 #pragma once
 
@@ -49,8 +49,8 @@ private:
 
 private:
     #pragma region DirectX
-    HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size) override;
-    HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreateDeviceSpecificResources() override;
+    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources() override;
     #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.05) P. Stuer **/
+/** $VER: Resources.h (2024.01.24) P. Stuer **/
 
 #pragma once
 
@@ -7,19 +7,19 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          6
+#define NUM_FILE_MINOR          7
 #define NUM_FILE_PATCH          0
-#define NUM_FILE_PRERELEASE     3
+#define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       6
+#define NUM_PRODUCT_MINOR       7
 #define NUM_PRODUCT_PATCH       0
-#define NUM_PRODUCT_PRERELEASE  3
+#define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta-2"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -36,7 +36,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta-2"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -51,7 +51,9 @@
 #define GUID_UI_ELEMENT         {0x3247c894,0xe585,0x4025,{0xa8,0x66,0xc7,0xd4,0x93,0x3f,0xb2,0xe3}} // {3247c894-e585-4025-a866-c7d4933fb2e3}
 #define STR_WINDOW_CLASS_NAME   "{08e851a2-ec49-467e-a336-775d79ee26de}"
 
-#define WM_CONFIGURATION_CHANGING       WM_USER + 1
+#define WM_CONFIGURATION_CHANGED        WM_USER + 1
+
+#define CC_GRADIENT_STOPS               1   // The gradient stops have changed.
 
 /** Configuration **/
 
@@ -160,6 +162,47 @@
 
 #pragma endregion
 
+#pragma region Filters
+
+#define IDC_FILTERS_GROUP               2500
+
+#define IDC_ACOUSTIC_FILTER_LBL         2510
+#define IDC_ACOUSTIC_FILTER             2512
+
+#define IDC_SLOPE_FN_OFFS_LBL           2520
+#define IDC_SLOPE_FN_OFFS               2522
+#define IDC_SLOPE_FN_OFFS_SPIN          2524
+
+#define IDC_SLOPE_LBL                   2530
+#define IDC_SLOPE                       2532
+#define IDC_SLOPE_SPIN                  2534
+#define IDC_SLOPE_UNIT                  2536
+
+#define IDC_SLOPE_OFFS_LBL              2540
+#define IDC_SLOPE_OFFS                  2542
+#define IDC_SLOPE_OFFS_SPIN             2544
+#define IDC_SLOPE_OFFS_UNIT             2546
+
+#define IDC_EQ_AMT_LBL                  2550
+#define IDC_EQ_AMT                      2552
+#define IDC_EQ_AMT_SPIN                 2554
+
+#define IDC_EQ_OFFS_LBL                 2560
+#define IDC_EQ_OFFS                     2562
+#define IDC_EQ_OFFS_SPIN                2564
+#define IDC_EQ_OFFS_UNIT                2566
+
+#define IDC_EQ_DEPTH_LBL                2570
+#define IDC_EQ_DEPTH                    2572
+#define IDC_EQ_DEPTH_SPIN               2574
+#define IDC_EQ_DEPTH_UNIT               2576
+
+#define IDC_WT_AMT_LBL                  2580
+#define IDC_WT_AMT                      2582
+#define IDC_WT_AMT_SPIN                 2584
+
+#pragma endregion
+
 #pragma region Common
 
 #define IDC_COMMON                      6000
@@ -168,7 +211,7 @@
 #define IDC_COLOR_SCHEME                6012
 
 #define IDC_GRADIENT                    6022
-#define IDC_COLOR_LIST                      6024
+#define IDC_COLOR_LIST                  6024
 #define IDC_ADD                         6026
 #define IDC_REMOVE                      6028
 #define IDC_REVERSE                     6030
@@ -184,6 +227,26 @@
 #define IDC_SMOOTHING_FACTOR            6062
 
 #define IDC_SHOW_TOOLTIPS               6070
+
+#define IDC_BACKGROUND_MODE_LBL         6080
+#define IDC_BACKGROUND_MODE             6082
+
+#define IDC_ARTWORK_OPACITY_LBL       6090
+#define IDC_ARTWORK_OPACITY           6092
+#define IDC_ARTWORK_OPACITY_SPIN      6094
+#define IDC_ARTWORK_OPACITY_LBL_2     6096
+
+#define IDC_NUM_ARTWORK_COLORS_LBL    6100
+#define IDC_NUM_ARTWORK_COLORS        6102
+#define IDC_NUM_ARTWORK_COLORS_SPIN   6104
+
+#define IDC_LIGHTNESS_THRESHOLD_LBL     6106
+#define IDC_LIGHTNESS_THRESHOLD         6108
+#define IDC_LIGHTNESS_THRESHOLD_SPIN    6110
+#define IDC_LIGHTNESS_THRESHOLD_LBL_2   6112
+
+#define IDC_COLOR_ORDER_LBL             6114
+#define IDC_COLOR_ORDER                 6116
 
 #pragma endregion
 
@@ -285,10 +348,18 @@
 #define IDC_LINE_WIDTH                  7212
 #define IDC_LINE_WIDTH_SPIN             7214
 
-#define IDC_AREA_OPACITY_LBL            7220
-#define IDC_AREA_OPACITY                7222
-#define IDC_AREA_OPACITY_SPIN           7224
-#define IDC_AREA_OPACITY_LBL_2          7226
+#define IDC_LINE_COLOR_LBL              7220
+#define IDC_LINE_COLOR                  7222
+#define IDC_LINE_COLOR_DEF              7224
+
+#define IDC_PEAK_LINE_COLOR_LBL         7230
+#define IDC_PEAK_LINE_COLOR             7232
+#define IDC_PEAK_LINE_COLOR_DEF         7234
+
+#define IDC_AREA_OPACITY_LBL            7240
+#define IDC_AREA_OPACITY                7242
+#define IDC_AREA_OPACITY_SPIN           7244
+#define IDC_AREA_OPACITY_LBL_2          7246
 
 #pragma endregion
 

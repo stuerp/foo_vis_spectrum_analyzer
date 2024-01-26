@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.13) P. Stuer **/
+/** $VER: Configuration.h (2024.01.26) P. Stuer **/
 
 #pragma once
 
@@ -56,6 +56,32 @@ inline const double MaxAmplitudeStep =  -1.; // dB
 inline const double MinGamma =  0.5;
 inline const double MaxGamma = 10.0;
 
+
+
+// Filters
+inline const double MinSlopeFunctionOffset = 0.;
+inline const double MaxSlopeFunctionOffset = 8.;
+
+inline const double MinSlope = -12.;
+inline const double MaxSlope =  12.;
+
+inline const double MinSlopeOffset =     0.; // Hz
+inline const double MaxSlopeOffset = 96000.; // Hz
+
+inline const double MinEqualizeAmount = -12.;
+inline const double MaxEqualizeAmount =  12.;
+
+inline const double MinEqualizeOffset =     0.; // Hz
+inline const double MaxEqualizeOffset = 96000.; // Hz
+
+inline const double MinEqualizeDepth =     0.; // Hz
+inline const double MaxEqualizeDepth = 96000.; // Hz
+
+inline const double MinWeightingAmount = -1.; // %
+inline const double MaxWeightingAmount =  1.; // %
+
+
+
 inline const double MinSmoothingFactor = 0.;
 inline const double MaxSmoothingFactor = 1.;
 
@@ -70,6 +96,15 @@ inline const double MaxLineWidth = 10.f;
 
 inline const double MinAreaOpacity = 0.f;
 inline const double MaxAreaOpacity = 1.f;
+
+inline const double MinArtworkOpacity = 0.f;
+inline const double MaxArtworkOpacity = 1.f;
+
+inline const uint32_t MinArtworkColors = 2;
+inline const uint32_t MaxArtworkColors = 16;
+
+inline const double MinLightnessThreshold = 0.f;
+inline const double MaxLightnessThreshold = 1.f;
 
 inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
 
@@ -107,6 +142,18 @@ enum class FrequencyDistribution
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+};
+
+enum class WeightingType
+{
+    None = 0,
+
+    AWeighting = 1, // A-weighting. https://en.wikipedia.org/wiki/A-weighting
+    BWeighting = 2,
+    CWeighting = 3,
+    DWeighting = 4,
+
+    MWeighting = 5, // M-weighting, related to ITU-R 468 noise weighting, https://en.wikipedia.org/wiki/ITU-R_468_noise_weighting
 };
 
 enum class ScalingFunction
@@ -171,16 +218,17 @@ enum class ColorScheme
 {
     Solid = 0,
     Custom = 1,
+    Artwork = 2,
 
-    Prism1 = 2,
-    Prism2 = 3,
-    Prism3 = 4,
+    Prism1 = 3,
+    Prism2 = 4,
+    Prism3 = 5,
 
-    foobar2000 = 5,
-    foobar2000DarkMode = 6,
+    foobar2000 = 6,
+    foobar2000DarkMode = 7,
 
-    Fire = 7,
-    Rainbow = 8,
+    Fire = 8,
+    Rainbow = 9,
 };
 
 enum class VisualizationType
@@ -197,10 +245,34 @@ enum class PeakMode
     Gravity = 2,
     AIMP = 3,
     FadeOut = 4,
+    FadingAIMP = 5,
+};
+
+enum class BackgroundMode
+{
+    None = 0,
+
+    Solid = 1,
+    Artwork = 2,
+    ArtworkAndDominantColor = 3,
+};
+
+enum class ColorOrder
+{
+    None = 0,
+
+    HueAscending = 1,
+    HueDescending = 2,
+
+    SaturationAscending = 3,
+    SaturationDescending = 4,
+
+    LightnessAscending = 5,
+    LightnessDescending = 6,
 };
 
 /// <summary>
-/// Represents the configuration of the spectrum analyzer.
+/// Represents the configuration of the component.
 /// </summary>
 class Configuration
 {
@@ -240,6 +312,7 @@ public:
     bool _UseZeroTrigger;
 
     #pragma region Transform
+
         Transform _Transform;                                           // FFT or CQT
 
         WindowFunctions _WindowFunction;
@@ -248,9 +321,11 @@ public:
         bool _Truncate;
 
         uint32_t _SelectedChannels;
+
     #pragma endregion
 
     #pragma region FFT
+
         FFTMode _FFTMode;                                               // bins
         size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
@@ -261,9 +336,11 @@ public:
         bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
 
         Mapping _MappingMethod;                                         // Determines how the FFT coefficients are mapped to the frequency bins.
+
     #pragma endregion
 
     #pragma region Frequencies
+
         FrequencyDistribution _FrequencyDistribution;
 
         // Frequency range
@@ -282,13 +359,33 @@ public:
 
         double _SkewFactor;                                             // Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum (in the case of Avee Player's frequency distribution, exactly linear when this parameter is 1), 0.0 .. 1.0
         double _Bandwidth;                                              // Distance between low and high frequency boundaries for each band, More useful for constant-Q/variable-Q transforms and Mel/triangular filterbank energies (higher values smooths out the spectrum and reduces the visual noise) than bandpower mode that we have currently at the time, 0.0 .. 64.0
+
+    #pragma endregion
+
+    #pragma region Filters
+
+        WeightingType _WeightingType;
+
+        double _SlopeFunctionOffset = 1.;                               // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
+
+        double _Slope = 0.;                                             // -12 .. 12, Frequency slope (dB per octave)
+        double _SlopeOffset = 1000.;                                    // 0 .. 96000, Frequency slope offset (Hz = 0dB)
+
+        double _EqualizeAmount = 0.;                                    // -12 .. 12, Equalize amount
+        double _EqualizeOffset = 44100.;                                // 0 .. 96000, Equalize offset
+        double _EqualizeDepth = 1024.;                                  // 0 .. 96000, Equalize depth
+
+        double _WeightingAmount = 0.;                                   // -1 .. 1, Weighting amount
+
     #pragma endregion
 
     #pragma region Rendering
+
         D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
         bool _UseCustomBackColor;
 
         #pragma region X axis
+
             XAxisMode _XAxisMode;
 
             D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
@@ -296,9 +393,11 @@ public:
 
             D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
             bool _UseCustomXLineColor;
+
         #pragma endregion
 
         #pragma region Y axis
+
             YAxisMode _YAxisMode;
 
             D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
@@ -313,41 +412,62 @@ public:
 
             bool _UseAbsolute = true;                                   // Logarithmic scale: Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
             double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
+
         #pragma endregion
 
         #pragma region Common
+
             ColorScheme _ColorScheme;
-            std::vector<D2D1_GRADIENT_STOP> _GradientStops;             // The current gradient stops. Will not be persisted.
             std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
 
             SmoothingMethod _SmoothingMethod = SmoothingMethod::Average;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
 
-            bool _ShowCoverArt;                                         // True if the cover art of the playing track is displayed in the background.
-            FLOAT _BackgroundBitmapOpacity;                             // 0.0 .. 1.0
+            BackgroundMode _BackgroundMode;
+            FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
+
+            uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
+            FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
+            FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
+
+            ColorOrder _ColorOrder;
+
         #pragma endregion
+
+        #pragma region Visualization
 
             VisualizationType _VisualizationType;
 
-        #pragma region Bars
-            bool _DrawBandBackground;                                   // True if the background for each band should be drawn.
+            #pragma region Bars
 
-            D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-            D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+                bool _DrawBandBackground;                               // True if the background for each band should be drawn.
 
-            bool _HorizontalGradient;                                   // True if the gradient will be used to paint horizontally.
-            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
+                D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+                D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
-            PeakMode _PeakMode;
-            double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
-            double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
+                bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
+                bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
+
+                PeakMode _PeakMode;
+                double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
+                double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
+
+            #pragma endregion
+
+            #pragma region Curve
+
+                FLOAT _LineWidth;
+                D2D1::ColorF _LineColor = _DefLineColor;
+                bool _UseCustomLineColor;
+                D2D1::ColorF _PeakLineColor = _DefPeakLineColor;
+                bool _UseCustomPeakLineColor;
+                FLOAT _AreaOpacity;                                     // 0.0 .. 1.0
+
+            #pragma endregion
+
         #pragma endregion
 
-        #pragma region Curve
-            FLOAT _LineWidth;
-            FLOAT _AreaOpacity;
-        #pragma endregion
     #pragma endregion
 
     #pragma region Not Serialized
@@ -355,16 +475,16 @@ public:
     t_ui_color _DefBackColor;
     t_ui_color _DefTextColor;
 
+    std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
+    std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The gradient stops extracted from the artwork bitmap.
+
+    const D2D1::ColorF _DefLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+
+    bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
+
     #pragma endregion
-/*
-    bandwidthOffset: 1,
 
-    timeAlignment: 1,
-    downsample: 0,
-    clampPeaks: true,
-
-    labelTuning: 440,
-*/
 public:
     /// <summary>
     /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
@@ -380,8 +500,8 @@ public:
         return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
 
-    void UpdateGradient();
+    void UpdateGradientStops();
 
 private:
-    const size_t _CurrentVersion = 9;
+    const size_t _CurrentVersion = 11;
 };

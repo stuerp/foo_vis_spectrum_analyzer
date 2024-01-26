@@ -1,5 +1,5 @@
 
-/** $VER: RingBuffer.h (2023.12.30) P. Stuer **/
+/** $VER: RingBuffer.h (2024.01.17) P. Stuer **/
 
 #pragma once
 
@@ -11,10 +11,7 @@ template<typename T, size_t size>
 class RingBuffer
 {
 public:
-    RingBuffer() : _Curr(0), _Count(0)
-    {
-        ::memset(_Items, 0, sizeof(T) * size);
-    }
+    RingBuffer() : _Curr(0), _Count(0), _Items() { }
 
     T operator [](size_t index) const
     {
@@ -31,17 +28,17 @@ public:
             _Curr = (_Curr + 1) % size;
     }
 
-    T GetFirst() const
+    T First() const
     {
         return _Items[_Curr];
     }
 
-    T GetLast() const
+    T Last() const
     {
         return _Items[(_Curr + (_Count - 1)) % size];
     }
 
-    size_t GetCount() const
+    size_t Count() const
     {
         return _Count;
     }

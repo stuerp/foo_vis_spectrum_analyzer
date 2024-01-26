@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2023.12.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.01.16) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -29,12 +29,12 @@ public:
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    void Render(ID2D1RenderTarget * renderTarget);
 
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
 
-    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
     FLOAT GetHeight() const { return _Height; }

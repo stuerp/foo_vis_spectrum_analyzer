@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.26) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -8,11 +8,17 @@
 
 #include "CColorDialogEx.h"
 
+#include "Direct2D.h"
+
+#include "Theme.h"
+
 /// <summary>
 /// Initializes the dialog.
 /// </summary>
 BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 {
+    _Theme.Initialize(_DarkMode);
+
     DlgResize_Init(true, true, WS_CLIPCHILDREN);
 
     DialogParameters * dp = (DialogParameters *) lParam;
@@ -34,6 +40,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
     MoveWindow(&_Configuration->_DialogBounds);
 
+    _DarkMode.AddDialogWithControls(*this);
+
     return TRUE;
 }
 
@@ -44,23 +52,22 @@ void ConfigurationDialog::Initialize()
 {
     Terminate();
 
-    // Initializes the menu list.
+    #pragma region Menu
     {
         _MenuList.Initialize(GetDlgItem(IDC_MENULIST));
 
         _MenuList.ResetContent();
 
-        const WCHAR * Labels[] = { L"Transform", L"Graph", L"Visualization" };
+        const WCHAR * Labels[] = { L"Transform", L"Filters", L"Graph", L"Visualization" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             _MenuList.AddString(Labels[i]);
 
         _MenuList.SetCurSel((int) _Configuration->_PageIndex);
 
-        UpdatePage1((_Configuration->_PageIndex == 0) ? SW_SHOW : SW_HIDE);
-        UpdatePage2((_Configuration->_PageIndex == 1) ? SW_SHOW : SW_HIDE);
-        UpdatePage3((_Configuration->_PageIndex == 2) ? SW_SHOW : SW_HIDE);
+        UpdatePages(_Configuration->_PageIndex);
     }
+    #pragma endregion
 
     #pragma region Transform
     {
@@ -233,7 +240,7 @@ void ConfigurationDialog::Initialize()
             {
                 _LoFrequency.Initialize(GetDlgItem(IDC_LO_FREQUENCY));
 
-                SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
+                SetDouble(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
 
                 auto w = CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN));
 
@@ -246,7 +253,7 @@ void ConfigurationDialog::Initialize()
             {
                 _HiFrequency.Initialize(GetDlgItem(IDC_HI_FREQUENCY));
 
-                SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
+                SetDouble(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
 
                 auto w = CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN));
 
@@ -302,8 +309,7 @@ void ConfigurationDialog::Initialize()
             };
 
             _Pitch.Initialize(GetDlgItem(IDC_PITCH));
-
-            SetFrequency(IDC_PITCH, _Configuration->_Pitch);
+            SetDouble(IDC_PITCH, _Configuration->_Pitch);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN));
 
@@ -375,6 +381,162 @@ void ConfigurationDialog::Initialize()
             w.SetRange32((int) (MinBandwidth * 10.), (int) (MaxBandwidth * 10.));
             w.SetPos32((int) (_Configuration->_Bandwidth * 10.));
             w.SetAccel(_countof(Accel), Accel);
+        }
+    }
+    #pragma endregion
+
+    #pragma region Acoustic Filter
+    {
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_ACOUSTIC_FILTER);
+
+            w.ResetContent();
+
+            const WCHAR * Labels[] = { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" };
+
+            for (size_t i = 0; i < _countof(Labels); ++i)
+                w.AddString(Labels[i]);
+
+            w.SetCurSel((int) _Configuration->_WeightingType);
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+            };
+
+            _SlopeFunctionOffset.Initialize(GetDlgItem(IDC_SLOPE_FN_OFFS));
+            SetDouble(IDC_SLOPE_FN_OFFS, _Configuration->_SlopeFunctionOffset);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_FN_OFFS_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinSlopeFunctionOffset * 100.), (int) (MaxSlopeFunctionOffset * 100.));
+            w.SetPos32((int)(_Configuration->_SlopeFunctionOffset * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+            };
+
+            _Slope.Initialize(GetDlgItem(IDC_SLOPE));
+            SetDouble(IDC_SLOPE, _Configuration->_Slope);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinSlope * 100.), (int) (MaxSlope * 100.));
+            w.SetPos32((int)(_Configuration->_Slope* 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+                { 2,    1000 }, //    10.0
+                { 3,    2500 }, //    25.0
+                { 4,    5000 }, //    50.0
+                { 5,   10000 }, //   100.0
+                { 6,  100000 }, //  1000.0
+                { 7, 1000000 }, // 10000.0
+            };
+
+            _SlopeOffset.Initialize(GetDlgItem(IDC_SLOPE_OFFS));
+            SetDouble(IDC_SLOPE_OFFS, _Configuration->_SlopeOffset);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_OFFS_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinSlopeOffset * 100.), (int) (MaxSlopeOffset * 100.));
+            w.SetPos32((int)(_Configuration->_SlopeOffset * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+            };
+
+            _EqualizeAmount.Initialize(GetDlgItem(IDC_EQ_AMT));
+            SetDouble(IDC_EQ_AMT, _Configuration->_EqualizeAmount);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_AMT_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinEqualizeAmount * 100.), (int) (MaxEqualizeAmount * 100.));
+            w.SetPos32((int)(_Configuration->_EqualizeAmount * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+                { 2,    1000 }, //    10.0
+                { 3,    2500 }, //    25.0
+                { 4,    5000 }, //    50.0
+                { 5,   10000 }, //   100.0
+                { 6,  100000 }, //  1000.0
+                { 7, 1000000 }, // 10000.0
+            };
+
+            _EqualizeOffset.Initialize(GetDlgItem(IDC_EQ_OFFS));
+            SetDouble(IDC_EQ_OFFS, _Configuration->_EqualizeOffset);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_OFFS_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinEqualizeOffset * 100.), (int) (MaxEqualizeOffset * 100.));
+            w.SetPos32((int)(_Configuration->_EqualizeOffset * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     100 }, //     1.0
+                { 2,    1000 }, //    10.0
+                { 3,    2500 }, //    25.0
+                { 4,    5000 }, //    50.0
+                { 5,   10000 }, //   100.0
+                { 6,  100000 }, //  1000.0
+                { 7, 1000000 }, // 10000.0
+            };
+
+            _EqualizeDepth.Initialize(GetDlgItem(IDC_EQ_DEPTH));
+            SetDouble(IDC_EQ_DEPTH, _Configuration->_EqualizeDepth);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_DEPTH_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinEqualizeDepth * 100.), (int) (MaxEqualizeDepth * 100.));
+            w.SetPos32((int)(_Configuration->_EqualizeDepth * 100.));
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,  1 }, // 0.01
+                { 2,  5 }, // 0.05
+                { 3, 10 }, // 0.10
+            };
+
+            _WeightingAmount.Initialize(GetDlgItem(IDC_WT_AMT));
+            SetDouble(IDC_WT_AMT, _Configuration->_WeightingAmount);
+
+            auto w = CUpDownCtrl(GetDlgItem(IDC_WT_AMT_SPIN));
+
+            w.SetAccel(_countof(Accel), Accel);
+
+            w.SetRange32((int) (MinWeightingAmount * 100.), (int) (MaxWeightingAmount * 100.));
+            w.SetPos32((int)(_Configuration->_WeightingAmount * 100.));
         }
     }
     #pragma endregion
@@ -466,13 +628,13 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region Common
+    #pragma region Visualizations
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
+        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
             w.AddString(Labels[i]);
@@ -504,6 +666,85 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_BACKGROUND_MODE);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_BackgroundMode);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
+        };
+
+        _ArtworkOpacity.Initialize(GetDlgItem(IDC_ARTWORK_OPACITY));
+
+        SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_ARTWORK_OPACITY_SPIN));
+
+        w.SetRange32((int) (MinArtworkOpacity * 100.f), (int) (MaxArtworkOpacity * 100.f));
+        w.SetPos32((int) (_Configuration->_ArtworkOpacity * 100.f));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  2 },
+            { 3,  8 },
+            { 4, 16 },
+        };
+
+        _ArtworkColors.Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS));
+
+        SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_ARTWORK_COLORS_SPIN));
+
+        w.SetRange32((int) (MinArtworkColors), (int) (MaxArtworkColors));
+        w.SetPos32((int) (_Configuration->_NumArtworkColors));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
+        };
+
+        _LightnessThreshold.Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD));
+
+        SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f))));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_LIGHTNESS_THRESHOLD_SPIN));
+
+        w.SetRange32((int) (MinLightnessThreshold * 100.f), (int) (MaxLightnessThreshold * 100.f));
+        w.SetPos32((int) (_Configuration->_LightnessThreshold * 100.f));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_COLOR_ORDER);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] = { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" };
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_ColorOrder);
     }
     #pragma endregion
 
@@ -539,26 +780,26 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _Configuration->_VisualizationType);
     }
 
-    #pragma region Bars
-
     {
         auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out" };
+        const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" };
 
         for (size_t i = 0; i < _countof(Labels); ++i)
-        {
             w.AddString(Labels[i]);
-        }
 
         w.SetCurSel((int) _Configuration->_PeakMode);
     }
+
     {
         SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
         SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
     }
+
+    #pragma region Bars
+
     {
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
     }
@@ -586,6 +827,13 @@ void ConfigurationDialog::Initialize()
         w.SetRange32((int) (MinLineWidth * 10.), (int) (MaxLineWidth * 10.));
         w.SetPos32((int) (_Configuration->_LineWidth * 10.));
         w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        _LineColor.Initialize(GetDlgItem(IDC_LINE_COLOR));
+        _PeakLineColor.Initialize(GetDlgItem(IDC_PEAK_LINE_COLOR));
+
+        SendDlgItemMessageW(IDC_LINE_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomLineColor);
+        SendDlgItemMessageW(IDC_PEAK_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomPeakLineColor);
     }
     {
         UDACCEL Accel[] =
@@ -645,9 +893,23 @@ void ConfigurationDialog::Terminate()
 
     _Gamma.Terminate();
 
+    _SlopeFunctionOffset.Terminate();
+    _Slope.Terminate();
+    _SlopeOffset.Terminate();
+
+    _EqualizeAmount.Terminate();
+    _EqualizeOffset.Terminate();
+    _EqualizeDepth.Terminate();
+
+    _WeightingAmount.Terminate();
+
     _Position.Terminate();
     _Colors.Terminate();
     _Gradient.Terminate();
+
+    _ArtworkOpacity.Terminate();
+    _ArtworkColors.Terminate();
+    _LightnessThreshold.Terminate();
 
     _BackColor.Terminate();
 
@@ -661,7 +923,28 @@ void ConfigurationDialog::Terminate()
     _DarkBandColor.Terminate();
 
     _LineWidth.Terminate();
+    _LineColor.Terminate();
+    _PeakLineColor.Terminate();
     _AreaOpacity.Terminate();
+}
+
+/// <summary>
+/// Handles the WM_CONFIGURATION_CHANGED message.
+/// </summary>
+LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (wParam)
+    {
+        case CC_GRADIENT_STOPS:
+        {
+            UpdateColorControls();
+            break;
+        }
+    }
+
+    SetMsgHandled(TRUE);
+
+    return 0;
 }
 
 /// <summary>
@@ -681,13 +964,11 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma region Menu
         case IDC_MENULIST:
         {
-            int Selection = _MenuList.GetCurSel();
+            size_t Selection = (size_t) _MenuList.GetCurSel();
 
-            UpdatePage1((Selection == 0) ? SW_SHOW : SW_HIDE);
-            UpdatePage2((Selection == 1) ? SW_SHOW : SW_HIDE);
-            UpdatePage3((Selection == 2) ? SW_SHOW : SW_HIDE);
+            UpdatePages(Selection);
 
-            _Configuration->_PageIndex = (size_t) Selection;
+            _Configuration->_PageIndex = Selection;
             return;
         }
         #pragma endregion
@@ -756,37 +1037,41 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         }
         #pragma endregion
 
-        #pragma region X axis
-        case IDC_X_AXIS_MODE:
+        #pragma region Filters
+        case IDC_ACOUSTIC_FILTER:
         {
-            _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
-            break;
-        }
-        #pragma endregion
-
-        #pragma region Y axis
-        case IDC_Y_AXIS_MODE:
-        {
-            _Configuration->_YAxisMode = (YAxisMode) SelectedIndex;
-
+            _Configuration->_WeightingType = (WeightingType) SelectedIndex;
             UpdateControls();
             break;
         }
         #pragma endregion
 
-        #pragma region Common
+        #pragma region Color Scheme
+
+        #pragma warning(disable: 4061) // Enumerator not handled
         case IDC_COLOR_SCHEME:
         {
             _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
 
-            if (_Configuration->_ColorScheme != ColorScheme::Custom)
-                _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
-            else
-                _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
+            switch (_Configuration->_ColorScheme)
+            {
+                default:
+                    _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+                    break;
+
+                case ColorScheme::Custom:
+                    _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
+                    break;
+
+                case ColorScheme::Artwork:
+                    _Configuration->_GradientStops = _Configuration->_ArtworkGradientStops;
+                    break;
+            }
 
             UpdateColorControls();
             break;
         }
+        #pragma warning(default: 4061)
 
         case IDC_COLOR_LIST:
         {
@@ -801,16 +1086,61 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             // Update the state of the buttons.
             bool HasSelection = (Index != LB_ERR);
+            bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
             bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-                GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-                GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+                GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+                GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor);
-                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor);
+                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
             return;
+        }
+
+        #pragma endregion
+
+        #pragma region Artwork Colors
+
+        case IDC_COLOR_ORDER:
+        {
+            _Configuration->_ColorOrder = (ColorOrder) SelectedIndex;
+            _Configuration->_NewArtworkParameters = true;
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Background Mode
+
+        case IDC_BACKGROUND_MODE:
+        {
+            _Configuration->_BackgroundMode = (BackgroundMode) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region X axis
+
+        case IDC_X_AXIS_MODE:
+        {
+            _Configuration->_XAxisMode = (XAxisMode) SelectedIndex;
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Y axis
+        case IDC_Y_AXIS_MODE:
+        {
+            _Configuration->_YAxisMode = (YAxisMode) SelectedIndex;
+
+            UpdateControls();
+            break;
         }
         #pragma endregion
 
@@ -836,7 +1166,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -927,7 +1257,21 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         }
         #pragma endregion
 
-        #pragma region Common
+        #pragma region Filters
+
+        #define ON_EDIT_CHANGE_DOUBLE(x,y) _Configuration->_##x = Clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_Configuration->_##x * 100.));
+
+        case IDC_SLOPE_FN_OFFS: { ON_EDIT_CHANGE_DOUBLE(SlopeFunctionOffset, IDC_SLOPE_FN_OFFS); break; }
+        case IDC_SLOPE:         { ON_EDIT_CHANGE_DOUBLE(Slope, IDC_SLOPE); break; }
+        case IDC_SLOPE_OFFS:    { ON_EDIT_CHANGE_DOUBLE(SlopeOffset, IDC_SLOPE_OFFS); break; }
+        case IDC_EQ_AMT:        { ON_EDIT_CHANGE_DOUBLE(EqualizeAmount, IDC_EQ_AMT); break; }
+        case IDC_EQ_OFFS:       { ON_EDIT_CHANGE_DOUBLE(EqualizeOffset, IDC_EQ_OFFS); break; }
+        case IDC_EQ_DEPTH:      { ON_EDIT_CHANGE_DOUBLE(EqualizeDepth, IDC_EQ_DEPTH); break; }
+        case IDC_WT_AMT:        { ON_EDIT_CHANGE_DOUBLE(WeightingAmount, IDC_WT_AMT); break; }
+
+        #pragma endregion
+
+        #pragma region Color Scheme
         case IDC_POSITION:
         {
             size_t Index = (size_t) _Colors.GetCurSel();
@@ -954,6 +1298,34 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Gradient.SetGradientStops(_Configuration->_GradientStops);
             break;
         }
+        #pragma endregion
+
+        #pragma region Artwork Colors
+
+        case IDC_NUM_ARTWORK_COLORS:
+        {
+            _Configuration->_NumArtworkColors = Clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
+            _Configuration->_NewArtworkParameters = true;
+            break;
+        }
+
+        case IDC_LIGHTNESS_THRESHOLD:
+        {
+            _Configuration->_LightnessThreshold = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
+            _Configuration->_NewArtworkParameters = true;
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Artwork Image
+
+        case IDC_ARTWORK_OPACITY:
+        {
+            _Configuration->_ArtworkOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Y axis
@@ -1026,7 +1398,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1039,122 +1411,48 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
-        #pragma region FFT
-        case IDC_KERNEL_SIZE:
-        {
-            SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
-            break;
-        }
-        #pragma endregion
+        // FFT
+        case IDC_KERNEL_SIZE:           { SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize))); break; }
 
-        #pragma region Frequencies
-        case IDC_NUM_BANDS:
-        {
-            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
-            break;
-        }
+        // Frequencies
+        case IDC_NUM_BANDS:             { SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands))); break; }
+        case IDC_LO_FREQUENCY:          { SetDouble(IDC_LO_FREQUENCY, _Configuration->_LoFrequency); break; }
+        case IDC_HI_FREQUENCY:          { SetDouble(IDC_HI_FREQUENCY, _Configuration->_HiFrequency); break; }
+        case IDC_PITCH:                 { SetDouble(IDC_PITCH, _Configuration->_Pitch); break; }
+        case IDC_SKEW_FACTOR:           { SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2))); break; }
+        case IDC_BANDWIDTH:             { SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1))); break; }
 
-        case IDC_LO_FREQUENCY:
-        {
-            SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
-            break;
-        }
+        // Filters
+        case IDC_SLOPE_FN_OFFS:         { SetDouble(IDC_SLOPE_FN_OFFS, _Configuration->_SlopeFunctionOffset); break; }
+        case IDC_SLOPE:                 { SetDouble(IDC_SLOPE, _Configuration->_Slope); break; }
+        case IDC_SLOPE_OFFS:            { SetDouble(IDC_SLOPE_OFFS, _Configuration->_SlopeOffset); break; }
+        case IDC_EQ_AMT:                { SetDouble(IDC_EQ_AMT, _Configuration->_EqualizeAmount); break; }
+        case IDC_EQ_OFFS:               { SetDouble(IDC_EQ_OFFS, _Configuration->_EqualizeOffset); break; }
+        case IDC_EQ_DEPTH:              { SetDouble(IDC_EQ_DEPTH, _Configuration->_EqualizeDepth); break; }
+        case IDC_WT_AMT:                { SetDouble(IDC_WT_AMT, _Configuration->_WeightingAmount); break; }
 
-        case IDC_HI_FREQUENCY:
-        {
-            SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
-            break;
-        }
+        // Artwork Colors
+        case IDC_NUM_ARTWORK_COLORS:    { SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors)))); break; }
+        case IDC_LIGHTNESS_THRESHOLD:   { SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f)))); break; }
 
-        case IDC_PITCH:
-        {
-            SetFrequency(IDC_PITCH, _Configuration->_Pitch);
-            break;
-        }
+        // Artwork Image
+        case IDC_ARTWORK_OPACITY:       { SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f)))); break; }
 
-        case IDC_SKEW_FACTOR:
-        {
-            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
-            break;
-        }
+        // Y axis
+        case IDC_AMPLITUDE_LO:          { SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo); break; }
+        case IDC_AMPLITUDE_HI:          { SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi); break; }
+        case IDC_AMPLITUDE_STEP:        { SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep); break; }
+        case IDC_GAMMA:                 { SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1))); break; }
 
-        case IDC_BANDWIDTH:
-        {
-            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
-            break;
-        }
-        #pragma endregion
+        // Spectrum smoothing
+        case IDC_SMOOTHING_FACTOR:      { SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1))); break; }
 
-        #pragma region Common
-        case IDC_POSITION:
-        {
-            break;
-        }
-        #pragma endregion
+        // Peak indicator
+        case IDC_HOLD_TIME:             { SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1))); break; }
+        case IDC_ACCELERATION:          { SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1))); break; }
 
-        #pragma region Y axis
-        case IDC_AMPLITUDE_LO:
-        {
-            SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
-            break;
-        }
-
-        case IDC_AMPLITUDE_HI:
-        {
-            SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
-            break;
-        }
-
-        case IDC_AMPLITUDE_STEP:
-        {
-            SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
-            break;
-        }
-
-        case IDC_GAMMA:
-        {
-            SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
-            break;
-        }
-        #pragma endregion
-
-        #pragma region Bars
-
-        #pragma region Peak indicator
-        case IDC_SMOOTHING_FACTOR:
-        {
-            SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1)));
-            break;
-        }
-
-        case IDC_HOLD_TIME:
-        {
-            SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
-            break;
-        }
-
-        case IDC_ACCELERATION:
-        {
-            SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
-            break;
-        }
-        #pragma endregion
-
-        #pragma endregion
-
-        #pragma region Curve
-        case IDC_LINE_WIDTH:
-        {
-            SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
-            break;
-        }
-
-        case IDC_AREA_OPACITY:
-        {
-            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
-            break;
-        }
-        #pragma endregion
+        case IDC_LINE_WIDTH:            { SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1))); break; }
+        case IDC_AREA_OPACITY:          { SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f)))); break; }
     }
 
     return;
@@ -1233,7 +1531,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             _Configuration->_GradientStops.insert(_Configuration->_GradientStops.begin() + Index + 1, gs);
 
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1252,7 +1550,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             _Configuration->_GradientStops.erase(_Configuration->_GradientStops.begin() + Index);
 
-            _Configuration->UpdateGradient();
+            _Configuration->UpdateGradientStops();
 
             UpdateColorControls();
             break;
@@ -1262,16 +1560,14 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             std::reverse(_Configuration->_GradientStops.begin(), _Configuration->_GradientStops.end());
 
-            _Configuration->UpdateGradient();
-
+            _Configuration->UpdateGradientStops();
             UpdateColorControls();
             break;
         }
 
         case IDC_SPREAD:
         {
-            _Configuration->UpdateGradient();
-
+            _Configuration->UpdateGradientStops();
             UpdateColorControls();
             break;
         }
@@ -1311,6 +1607,20 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
+        case IDC_PEAK_LINE_COLOR_DEF:
+        {
+            _Configuration->_UseCustomPeakLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateColorControls();
+            break;
+        }
+
         case IDC_SHOW_TOOLTIPS:
         {
             _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1346,7 +1656,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1370,14 +1680,14 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_LO_FREQUENCY_SPIN:
         {
             _Configuration->_LoFrequency = Min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _Configuration->_HiFrequency);
-            SetFrequency(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
+            SetDouble(IDC_LO_FREQUENCY, _Configuration->_LoFrequency);
             break;
         }
 
         case IDC_HI_FREQUENCY_SPIN:
         {
             _Configuration->_HiFrequency = Max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _Configuration->_LoFrequency);
-            SetFrequency(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
+            SetDouble(IDC_HI_FREQUENCY, _Configuration->_HiFrequency);
             break;
         }
 
@@ -1411,13 +1721,63 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_PITCH_SPIN:
         {
             _Configuration->_Pitch = ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.);
-            SetFrequency(IDC_PITCH, _Configuration->_Pitch);
+            SetDouble(IDC_PITCH, _Configuration->_Pitch);
             break;
         }
 
         case IDC_TRANSPOSE_SPIN:
         {
             _Configuration->_Transpose = ClampNewSpinPosition(nmud, MinTranspose, MaxTranspose);
+            break;
+        }
+
+        // Filters
+        case IDC_SLOPE_FN_OFFS_SPIN:
+        {
+            _Configuration->_SlopeFunctionOffset = ClampNewSpinPosition(nmud, MinSlopeFunctionOffset, MaxSlopeFunctionOffset, 100.);
+            SetDouble(IDC_SLOPE_FN_OFFS, _Configuration->_SlopeFunctionOffset);
+            break;
+        }
+
+        case IDC_SLOPE_SPIN:
+        {
+            _Configuration->_Slope = ClampNewSpinPosition(nmud, MinSlope, MaxSlope, 100.);
+            SetDouble(IDC_SLOPE, _Configuration->_Slope);
+            break;
+        }
+
+        case IDC_SLOPE_OFFS_SPIN:
+        {
+            _Configuration->_SlopeOffset = ClampNewSpinPosition(nmud, MinSlopeOffset, MaxSlopeOffset, 100.);
+            SetDouble(IDC_SLOPE_OFFS, _Configuration->_SlopeOffset);
+            break;
+        }
+
+        case IDC_EQ_AMT_SPIN:
+        {
+            _Configuration->_EqualizeAmount = ClampNewSpinPosition(nmud, MinEqualizeAmount, MaxEqualizeAmount, 100.);
+            SetDouble(IDC_EQ_AMT, _Configuration->_EqualizeAmount);
+            break;
+        }
+
+        case IDC_EQ_OFFS_SPIN:
+        {
+            _Configuration->_EqualizeOffset = ClampNewSpinPosition(nmud, MinEqualizeOffset, MaxEqualizeOffset, 100.);
+            SetDouble(IDC_EQ_OFFS, _Configuration->_EqualizeOffset);
+            break;
+        }
+
+        case IDC_EQ_DEPTH_SPIN:
+        {
+            _Configuration->_EqualizeDepth = ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.);
+            SetDouble(IDC_EQ_DEPTH, _Configuration->_EqualizeDepth);
+            break;
+        }
+
+        case IDC_WT_AMT_SPIN:
+        {
+            _Configuration->_WeightingAmount = ClampNewSpinPosition(nmud, MinWeightingAmount, MaxWeightingAmount, 100.);
+            SetDouble(IDC_WT_AMT, _Configuration->_WeightingAmount);
             break;
         }
 
@@ -1470,11 +1830,32 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_NUM_ARTWORK_COLORS_SPIN:
+        {
+            _Configuration->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
+            SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumArtworkColors)));
+            break;
+        }
+
+        case IDC_LIGHTNESS_THRESHOLD_SPIN:
+        {
+            _Configuration->_LightnessThreshold = (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.);
+            SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f))));
+            break;
+        }
+
+        case IDC_ARTWORK_OPACITY_SPIN:
+        {
+            _Configuration->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
+            SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
+            break;
+        }
+
         default:
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1498,22 +1879,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             if (Colors.empty())
                 return 0;
 
-            {
-                std::vector<D2D1_GRADIENT_STOP> & GradientStops = _Configuration->_GradientStops;
-
-                GradientStops.clear();
-
-                FLOAT Position = 0.f;
-
-                for (const auto & Iter : Colors)
-                {
-                    D2D1_GRADIENT_STOP gs = { Position, Iter };
-
-                    GradientStops.push_back(gs);
-
-                    Position += 1.f / (FLOAT) Colors.size();
-                }
-            }
+            _Direct2D.CreateGradientStops(Colors,_Configuration->_GradientStops);
 
             _Configuration->_ColorScheme = ColorScheme::Custom;
             _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
@@ -1572,11 +1938,23 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_LINE_COLOR:
+        {
+            _LineColor.GetColor(_Configuration->_LineColor);
+            break;
+        }
+
+        case IDC_PEAK_LINE_COLOR:
+        {
+            _PeakLineColor.GetColor(_Configuration->_PeakLineColor);
+            break;
+        }
+
         default:
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1609,69 +1987,80 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 
     UpdateChannelsMenu();
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGING, 0, 0);
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
-/// Update page 1.
+/// Updates the visibility of the controls.
 /// </summary>
-void ConfigurationDialog::UpdatePage1(int mode) const noexcept
+void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 {
     static const int Page1[] =
     {
-        // Transform
-        IDC_TRANSFORM_GROUP,
-            IDC_METHOD_LBL, IDC_METHOD,
-            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
-            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
-            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
-            IDC_CHANNELS,
-        // FFT
-        IDC_FFT_GROUP,
-            IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
-            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
-            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
-            IDC_SMOOTH_LOWER_FREQUENCIES,
-            IDC_SMOOTH_GAIN_TRANSITION,
-            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
-        // Frequencies
-        IDC_FREQUENCIES_GROUP,
-            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
-            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
-            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
-            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
-            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
-            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
-            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
-            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
-            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
-            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+    // Transform
+    IDC_TRANSFORM_GROUP,
+        IDC_METHOD_LBL, IDC_METHOD,
+        IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
+        IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
+        IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+        IDC_CHANNELS,
+
+    // FFT
+    IDC_FFT_GROUP,
+        IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
+        IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
+        IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
+        IDC_SMOOTH_LOWER_FREQUENCIES,
+        IDC_SMOOTH_GAIN_TRANSITION,
+        IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+
+    // Frequencies
+    IDC_FREQUENCIES_GROUP,
+        IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
+        IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+        IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
+        IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+        IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+        IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
+        IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+        IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
+        IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+        IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
     };
 
-    for (size_t i = 0; i < _countof(Page1); ++i)
-    {
-        auto w = GetDlgItem(Page1[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(mode);
-    }
-}
-
-/// <summary>
-/// Update page 2.
-/// </summary>
-void ConfigurationDialog::UpdatePage2(int mode) const noexcept
-{
     static const int Page2[] =
+    {
+        // Filters
+        IDC_FILTERS_GROUP,
+            IDC_ACOUSTIC_FILTER_LBL, IDC_ACOUSTIC_FILTER,
+
+            IDC_SLOPE_FN_OFFS_LBL, IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS_SPIN,
+            IDC_SLOPE_LBL, IDC_SLOPE, IDC_SLOPE_SPIN, IDC_SLOPE_UNIT,
+            IDC_SLOPE_OFFS_LBL, IDC_SLOPE_OFFS, IDC_SLOPE_OFFS_SPIN, IDC_SLOPE_OFFS_UNIT,
+
+            IDC_EQ_AMT_LBL, IDC_EQ_AMT, IDC_EQ_AMT_SPIN,
+            IDC_EQ_OFFS_LBL, IDC_EQ_OFFS, IDC_EQ_OFFS_SPIN, IDC_EQ_OFFS_UNIT,
+            IDC_EQ_DEPTH_LBL, IDC_EQ_DEPTH, IDC_EQ_DEPTH_SPIN, IDC_EQ_DEPTH_UNIT,
+
+            IDC_WT_AMT_LBL, IDC_WT_AMT, IDC_WT_AMT_SPIN,
+    };
+
+    static const int Page3[] =
     {
         // Common
         IDC_COMMON,
             IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
-            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+
             IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
             IDC_POSITION, IDC_POSITION_LBL, IDC_SPREAD,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_SHOW_TOOLTIPS,
+
+            IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
+            IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
+            IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
+            IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
+            IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
 
         // X axis
         IDC_X_AXIS,
@@ -1694,44 +2083,68 @@ void ConfigurationDialog::UpdatePage2(int mode) const noexcept
             IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
     };
 
-    for (size_t i = 0; i < _countof(Page2); ++i)
-    {
-        auto w = GetDlgItem(Page2[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(mode);
-    }
-}
-
-/// <summary>
-/// Update page 3.
-/// </summary>
-void ConfigurationDialog::UpdatePage3(int mode) const noexcept
-{
-    static const int Page3[] =
+    static const int Page4[] =
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
-        IDC_BARS,
-            IDC_DRAW_BAND_BACKGROUND, IDC_HORIZONTAL_GRADIENT, IDC_LED_MODE,
+        IDC_HORIZONTAL_GRADIENT,
 
-            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
-            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+        IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+        IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+
+        IDC_BARS,
+            IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE,
 
             IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
             IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
 
         IDC_CURVE,
             IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,
+
+            IDC_LINE_COLOR_LBL, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF,
+            IDC_PEAK_LINE_COLOR_LBL, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF,
+
             IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN, IDC_AREA_OPACITY_LBL_2,
     };
+
+    int Mode = (index == 0) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page1); ++i)
+    {
+        auto w = GetDlgItem(Page1[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
+    }
+
+    Mode = (index == 1) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page2); ++i)
+    {
+        auto w = GetDlgItem(Page2[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
+    }
+
+    Mode = (index == 2) ? SW_SHOW : SW_HIDE;
 
     for (size_t i = 0; i < _countof(Page3); ++i)
     {
         auto w = GetDlgItem(Page3[i]);
 
         if (w.IsWindow())
-            w.ShowWindow(mode);
+            w.ShowWindow(Mode);
+    }
+
+    Mode = (index == 3) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page4); ++i)
+    {
+        auto w = GetDlgItem(Page4[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
     }
 }
 
@@ -1749,24 +2162,17 @@ void ConfigurationDialog::UpdateControls()
                      || (_Configuration->_WindowFunction == WindowFunctions::Poison)
                      || (_Configuration->_WindowFunction == WindowFunctions::HyperbolicSecant);
 
-        GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
-
-    bool IsFFT = (_Configuration->_Transform == Transform::FFT);
-
-        GetDlgItem(IDC_DISTRIBUTION).EnableWindow(IsFFT);
+    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
 
     // FFT
-        GetDlgItem(IDC_FFT_SIZE).EnableWindow(IsFFT);
+    bool IsFFT = (_Configuration->_Transform == Transform::FFT);
+
+    for (const auto & Iter : { IDC_DISTRIBUTION, IDC_FFT_SIZE, IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+        GetDlgItem(Iter).EnableWindow(IsFFT);
 
     bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
 
         GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && NotFixed);
-
-        GetDlgItem(IDC_SUMMATION_METHOD).EnableWindow(IsFFT);
-        GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
-        GetDlgItem(IDC_SMOOTH_LOWER_FREQUENCIES).EnableWindow(IsFFT);
-        GetDlgItem(IDC_SMOOTH_GAIN_TRANSITION).EnableWindow(IsFFT);
-        GetDlgItem(IDC_KERNEL_SIZE).EnableWindow(IsFFT);
 
         #pragma warning (disable: 4061)
         switch (_Configuration->_FFTMode)
@@ -1798,44 +2204,46 @@ void ConfigurationDialog::UpdateControls()
 
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
-        GetDlgItem(IDC_MIN_NOTE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_MAX_NOTE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_BANDS_PER_OCTAVE).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_PITCH).EnableWindow(IsOctaves);
-        GetDlgItem(IDC_TRANSPOSE).EnableWindow(IsOctaves);
+        for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
+            GetDlgItem(Iter).EnableWindow(IsOctaves);
+
+    // Filters
+    bool HasFilter = (_Configuration->_WeightingType != WeightingType::None);
+
+        for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
+            GetDlgItem(Iter).EnableWindow(HasFilter);
+
+    // Background Mode
+    bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
+
+        GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
 
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
 
-        GetDlgItem(IDC_USE_ABSOLUTE).EnableWindow(IsLogarithmic);
-        GetDlgItem(IDC_GAMMA).EnableWindow(IsLogarithmic);
+        for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
+            GetDlgItem(Iter).EnableWindow(IsLogarithmic);
 
-    // Peak indicators
+    // Visualization
     bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
 
-        GetDlgItem(IDC_HOLD_TIME).EnableWindow(ShowPeaks);
-        GetDlgItem(IDC_ACCELERATION).EnableWindow(ShowPeaks);
+        for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
+            GetDlgItem(Iter).EnableWindow(ShowPeaks);
  
-    // Visualization
-    GetDlgItem(IDC_DRAW_BAND_BACKGROUND).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_LED_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+    // Bars
+    bool IsBars = _Configuration->_VisualizationType == VisualizationType::Bars;
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_HOLD_TIME).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
+        for (const auto & Iter : { IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE, IDC_WHITE_KEYS, IDC_BLACK_KEYS })
+            GetDlgItem(Iter).EnableWindow(IsBars);
 
-    _LiteBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    _LiteBandColor.SetColor(_Configuration->_LightBandColor);
+        _LiteBandColor.SetColor(_Configuration->_LightBandColor);
+        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
 
-    _DarkBandColor.EnableWindow(_Configuration->_VisualizationType == VisualizationType::Bars);
-    _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
+    // Curve
+    bool IsCurve = _Configuration->_VisualizationType == VisualizationType::Curve;
 
-    GetDlgItem(IDC_LINE_WIDTH).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
-    GetDlgItem(IDC_LINE_WIDTH_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
-
-    GetDlgItem(IDC_AREA_OPACITY).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
-    GetDlgItem(IDC_AREA_OPACITY_SPIN).EnableWindow(_Configuration->_VisualizationType == VisualizationType::Curve);
+        for (const auto & Iter : { IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN })
+            GetDlgItem(Iter).EnableWindow(IsCurve);
 
     UpdateColorControls();
 }
@@ -1864,22 +2272,30 @@ void ConfigurationDialog::UpdateColorControls()
         _Colors.SetColors(Colors);
     }
 
-    // Remove and Reverse are only enabled when there is more than 1 color.
-    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
-
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasMoreThanOneColor);
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor);
-
     // Add and Remove are only enabled when a color is selected.
     auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
 
     bool HasSelection = (lb.GetCurSel() != LB_ERR);
 
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor);
+    // Remove and Reverse are only enabled when there is more than 1 color.
+    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
 
-        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection);
-        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection);
+    // Gradient controls are disabled when the artwork provides the colors.
+    bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
+
+//      GetDlgItem(IDC_COLOR_LIST).EnableWindow(!UseArtwork);
+
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
+
+        GetDlgItem(IDC_NUM_ARTWORK_COLORS).EnableWindow(UseArtwork);
+        GetDlgItem(IDC_LIGHTNESS_THRESHOLD).EnableWindow(UseArtwork);
+        GetDlgItem(IDC_COLOR_ORDER).EnableWindow(UseArtwork);
 
     {
         _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
@@ -1902,6 +2318,15 @@ void ConfigurationDialog::UpdateColorControls()
     {
         _LiteBandColor.SetColor(_Configuration->_LightBandColor);
         _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
+    }
+
+    // Curve
+    {
+        _LineColor.EnableWindow(_Configuration->_UseCustomLineColor);
+        _LineColor.SetColor(_Configuration->_UseCustomLineColor ? _Configuration->_LineColor : _Configuration->_DefLineColor);
+
+        _PeakLineColor.EnableWindow(_Configuration->_UseCustomPeakLineColor);
+        _PeakLineColor.SetColor(_Configuration->_UseCustomPeakLineColor ? _Configuration->_PeakLineColor : _Configuration->_DefPeakLineColor);
     }
 }
 
@@ -1967,11 +2392,11 @@ double ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValu
 /// <summary>
 /// Sets the display version of the frequency.
 /// </summary>
-void ConfigurationDialog::SetFrequency(int id, double frequency) noexcept
+void ConfigurationDialog::SetDouble(int id, double value) noexcept
 {
     WCHAR Text[16] = { };
 
-    ::StringCchPrintfW(Text, _countof(Text), L"%.2f", frequency);
+    ::StringCchPrintfW(Text, _countof(Text), L"%.2f", value);
 
     SetDlgItemTextW(id, Text);
 }

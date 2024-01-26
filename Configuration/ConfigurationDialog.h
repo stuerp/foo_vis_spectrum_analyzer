@@ -1,17 +1,10 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.26) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
-
-// ATL
-#include <atlbase.h>
-
-// WTL
-//#include <atlapp.h>
-#include <atlframe.h>
 
 #include "Resources.h"
 #include "Configuration.h"
@@ -21,6 +14,8 @@
 #include "CColorButton.h"
 #include "CColorListBox.h"
 #include "CButtonMenu.h"
+
+#include <sdk/coreDarkMode.h>
 
 struct DialogParameters
 {
@@ -50,7 +45,7 @@ private:
     BOOL OnInitDialog(CWindow w, LPARAM lParam);
 
     /// <summary>
-    /// Handles the Close message.
+    /// Handles the WM_CLOSE message.
     /// </summary>
     void OnClose()
     {
@@ -60,6 +55,8 @@ private:
 
         SetMsgHandled(FALSE);
     }
+
+    LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam);
 
 #ifdef _DEBUG
     /// <summary>
@@ -87,14 +84,12 @@ private:
     void UpdateControls();
     void UpdateColorControls();
     void UpdateChannelsMenu();
-    void UpdatePage1(int mode) const noexcept;
-    void UpdatePage2(int mode) const noexcept;
-    void UpdatePage3(int mode) const noexcept;
+    void UpdatePages(size_t index) const noexcept;
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
 
-    void SetFrequency(int id, double frequency) noexcept;
+    void SetDouble(int id, double frequency) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
     void SetDecibel(int id, double decibel) noexcept;
 
@@ -102,6 +97,8 @@ private:
         MSG_WM_INITDIALOG(OnInitDialog)
 //      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
+
+        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
         COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
 
@@ -120,22 +117,7 @@ private:
 
     BEGIN_DLGRESIZE_MAP(ConfigurationDialog)
         DLGRESIZE_CONTROL(IDC_MENULIST, DLSZ_SIZE_Y)
-/*
-        DLGRESIZE_CONTROL(IDC_BANDS, DLSZ_SIZE_Y)
-            DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-            DLGRESIZE_CONTROL(IDC_COLOR_LIST, DLSZ_SIZE_Y)
 
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_METHOD_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_SMOOTHING_FACTOR_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_PEAK_MODE, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_PEAK_MODE_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_HOLD_TIME, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_HOLD_TIME_LBL, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_ACCELERATION, DLSZ_MOVE_Y)
-            DLGRESIZE_CONTROL(IDC_ACCELERATION_LBL, DLSZ_MOVE_Y)
-*/
         DLGRESIZE_CONTROL(IDC_RESET, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -176,9 +158,23 @@ private:
 
     CNumericEdit _Gamma;
 
+    CNumericEdit _SlopeFunctionOffset;
+    CNumericEdit _Slope;
+    CNumericEdit _SlopeOffset;
+
+    CNumericEdit _EqualizeAmount;
+    CNumericEdit _EqualizeOffset;
+    CNumericEdit _EqualizeDepth;
+
+    CNumericEdit _WeightingAmount;
+
     CColorButton _Gradient;
     CColorListBox _Colors;
     CNumericEdit _Position;
+
+    CNumericEdit _ArtworkOpacity;
+    CNumericEdit _ArtworkColors;
+    CNumericEdit _LightnessThreshold;
 
     CColorButton _BackColor;
     CColorButton _XTextColor;
@@ -189,5 +185,9 @@ private:
     CColorButton _DarkBandColor;
 
     CNumericEdit _LineWidth;
+    CColorButton _LineColor;
+    CColorButton _PeakLineColor;
     CNumericEdit _AreaOpacity;
+
+    fb2k::CCoreDarkModeHooks _DarkMode;
 };

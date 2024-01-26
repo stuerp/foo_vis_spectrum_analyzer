@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.01.01) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.01.26) P. Stuer **/
 
 #include "DUIElement.h"
 
@@ -91,16 +91,7 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    try
-    {
-        _Configuration.Read(Parser);
-    }
-    catch (exception_io & ex)
-    {
-        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
-
-        _Configuration.Reset();
-    }
+    _Configuration.Read(Parser);
 }
 
 /// <summary>
@@ -110,16 +101,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    try
-    {
-        _Configuration.Write(Builder);
-    }
-    catch (exception_io & ex)
-    {
-        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
-
-        _Configuration.Reset();
-    }
+    _Configuration.Write(Builder);
 
     return Builder.finish(g_get_guid());
 }

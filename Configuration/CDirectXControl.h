@@ -1,5 +1,5 @@
 
-/** $VER: CDirectXControl.h (2023.12.31) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.h (2024.01.21) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #pragma once
 
@@ -20,7 +20,12 @@ public:
 protected:
     virtual void OnSize(UINT type, CSize size)
     {
-        ReleaseDeviceSpecificResources();
+        if (_RenderTarget == nullptr)
+            return;
+
+        D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+
+        _RenderTarget->Resize(Size);
     }
 
     #pragma region DirectX
@@ -28,14 +33,16 @@ protected:
     virtual HRESULT CreateDeviceIndependentResources();
     virtual void ReleaseDeviceIndependentResources();
 
-    virtual HRESULT CreateDeviceSpecificResources(HWND hWnd, D2D1_SIZE_U size);
+    virtual HRESULT CreateDeviceSpecificResources();
     virtual void ReleaseDeviceSpecificResources();
 
     #pragma endregion
 
 protected:
+    HWND _hWnd;
+
     // Device-independent resources
-    CComPtr<ID2D1Factory> _Direct2D;
+    CComPtr<ID2D1Factory2> _Direct2D;
 
     const bool _UseHardwareRendering = true;
     const bool _UseAntialiasing = true;

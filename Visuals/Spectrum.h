@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.01.02) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.01.22) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -29,9 +29,9 @@ public:
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
-    HRESULT CreateDeviceSpecificResources(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
     const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
@@ -39,14 +39,22 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
-    HRESULT CreateGradientBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
-    HRESULT CreatePatternBrush(CComPtr<ID2D1HwndRenderTarget> & renderTarget);
-    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
+    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
+
+    enum class CurveType
+    {
+        Peak,
+        Area,
+        Line
+    };
+
+    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
-    void RenderBars(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
-    void RenderCurve(CComPtr<ID2D1HwndRenderTarget> & renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
 private:
     const Configuration * _Configuration;
