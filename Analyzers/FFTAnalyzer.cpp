@@ -18,7 +18,7 @@ FFTAnalyzer::FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sa
 }
 
 /// <summary>
-/// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands.
+/// Maps Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
 void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
@@ -102,28 +102,71 @@ void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & co
 }
 
 /// <summary>
-/// Calculates the Fast Fourier Transform on the sample data and returns the frequency bands (Mel-Frequency Cepstrum (MFC)).
+/// Maps Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
-        double Sum = 0;
+        double Sum = 0.;
 
-        const double minBin = Min(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
-        const double midBin = Iter.Ctr              * (double) coefficients.size() / sampleRate;
-        const double maxBin = Max(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
+        const double MinBin = Min(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
+        const double MidBin = Iter.Ctr              * (double) coefficients.size() / sampleRate;
+        const double MaxBin = Max(Iter.Lo, Iter.Hi) * (double) coefficients.size() / sampleRate;
 
-        const double overflowCompensation = Max(0., maxBin - minBin - (double) coefficients.size());
+        const double OverflowCompensation = Max(0., MaxBin - MinBin - (double) coefficients.size());
 
-        for (double i = ::floor(midBin); i >= ::floor(minBin + overflowCompensation); --i)
-            Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, minBin, midBin, 0., 1.), 0.), 2.);
+        for (double i = ::floor(MidBin); i >= ::floor(MinBin + OverflowCompensation); --i)
+            Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
 
-        for (double i = ::ceil(midBin); i <= ::ceil(maxBin - overflowCompensation); ++i)
-            Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, maxBin, midBin, 0., 1.), 0.), 2.);
+        for (double i = ::ceil(MidBin); i <= ::ceil(MaxBin - OverflowCompensation); ++i)
+            Sum += ::pow(std::abs(coefficients[Wrap((size_t) i, coefficients.size())]) * Max(Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
         Iter.NewValue = ::sqrt(Sum);
+    }
+}
+
+/// <summary>
+/// Maps Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
+/// </summary>
+/// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
+void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept
+{
+    const double HzToBin = (double) coefficients.size() / sampleRate;
+
+    for (FrequencyBand & Iter : freqBands)
+    {
+        double re = 0.;
+        double im = 0.;
+
+        double Center      = Iter.Ctr * HzToBin;
+
+        double bandwidth    = ::abs(Iter.Hi - Iter.Lo) + (double) sampleRate / (double) coefficients.size() * bandwidthOffset;
+        double tlen         = Min(1. / bandwidth, HzToBin / bandwidthCap);
+        double actualLength = granularBW ? tlen * sampleRate : Min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) coefficients.size() / bandwidthCap);
+        double flen         = Min(bandwidthAmount * (double) coefficients.size() / actualLength, (double) coefficients.size());
+
+        double Start        = ::ceil (Center - flen / 2.);
+        double End          = ::floor(Center + flen / 2.);
+
+        if (::isfinite(Start) && ::isfinite(End))
+        {
+            for (int32_t i = (int32_t ) Start; i <= (int32_t ) End; ++i)
+            {
+                double Sign = i & 1 ? -1. : 1.;
+                double posX = 2. * ((double) i - Center) / flen;
+                double w = windowFunction(posX);
+                double u = w * Sign;
+
+                size_t idx = ((i % coefficients.size()) + coefficients.size()) % coefficients.size();
+
+                re += coefficients[idx].real() * u;
+                im += coefficients[idx].imag() * u;
+            }
+        }
+
+        Iter.NewValue = ::hypot(re, im);
     }
 }
 

@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.01.22) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.01.26) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -35,10 +35,22 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 
             _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
-            if (_Configuration._MappingMethod == Mapping::Standard)
-                _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
-            else
-                _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
+            switch (_Configuration._MappingMethod)
+            {
+                default:
+
+                case Mapping::Standard:
+                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
+                    break;
+
+                case Mapping::TriangularFilterBank:
+                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
+                    break;
+
+                case Mapping::BrownPuckette:
+                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, *_WindowFunction, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
+                    break;
+            }
         }
         else
             _CQTAnalyzer->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
@@ -268,6 +280,8 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
     }
 }
 
+#pragma region Acoustic Weighting
+
 /// <summary>
 /// Applies acoustic weighting to the spectrum.
 /// </summary>
@@ -345,6 +359,8 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
         }
     }
 }
+
+#pragma endregion
 
 /// <summary>
 /// Smooths the spectrum using averages.

@@ -135,6 +135,7 @@ enum class Mapping
 {
     Standard = 0,
     TriangularFilterBank = 1,
+    BrownPuckette = 2,
 };
 
 enum class FrequencyDistribution
@@ -336,6 +337,12 @@ public:
         bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
 
         Mapping _MappingMethod;                                         // Determines how the FFT coefficients are mapped to the frequency bins.
+
+        // Brown-Puckette CQT
+        double _BandwidthOffset = 1.;                                    // 0.0 .. 1.0, Transition smoothness
+        double _BandwidthCap = 1.;                                       // 0.0 .. 1.0, Minimum Brown-Puckette kernel size
+        double _BandwidthAmount = 6.;                                    // 0 .. 256, Brown-Puckette kernel size
+        bool _GranularBW = true;                                         // True: Don't constrain bandwidth to powers of 2.
 
     #pragma endregion
 

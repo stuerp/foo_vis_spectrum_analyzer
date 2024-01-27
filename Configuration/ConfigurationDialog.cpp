@@ -58,10 +58,8 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        const WCHAR * Labels[] = { L"Transform", L"Filters", L"Graph", L"Visualization" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            _MenuList.AddString(Labels[i]);
+        for (const auto & x : { L"Transform", L"Filters", L"Graph", L"Visualization" })
+            _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _Configuration->_PageIndex);
 
@@ -75,10 +73,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Fast Fourier", L"Constant-Q" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Fast Fourier", L"Constant-Q" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);
     }
@@ -155,10 +151,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SummationMethod);
     }
@@ -167,10 +161,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Standard", L"Triangular Filter Bank" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_MappingMethod);
     }
@@ -197,10 +189,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_FrequencyDistribution);
         }
@@ -335,10 +325,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_ScalingFunction);
         }
@@ -392,10 +380,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_WeightingType);
         }
@@ -547,10 +533,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_XAxisMode);
     }
@@ -563,10 +547,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"None", L"Decibel", L"Logarithmic" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"None", L"Decibel", L"Logarithmic" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_YAxisMode);
         }
@@ -634,10 +616,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_ColorScheme);
     }
@@ -655,10 +635,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Average", L"Peak" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Average", L"Peak" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
 
@@ -672,10 +650,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_BackgroundMode);
     }
@@ -739,10 +715,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_ColorOrder);
     }
@@ -772,10 +746,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Bars", L"Curve",  };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Bars", L"Curve" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_VisualizationType);
     }
@@ -785,10 +757,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_PeakMode);
     }

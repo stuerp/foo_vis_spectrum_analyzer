@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2024.01.02) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2024.01.26) P. Stuer **/
 
 #pragma once
 
@@ -28,6 +28,7 @@ public:
 
     void GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
     void GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
 
     void UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept;
 
