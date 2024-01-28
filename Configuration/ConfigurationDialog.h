@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.01.28) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -134,12 +134,19 @@ private:
 
     CMenuListBox _MenuList;
 
-    CNumericEdit _WindowParameter;
-    CNumericEdit _WindowSkew;
-
     CButtonMenu _Channels;
 
     CNumericEdit _KernelSize;
+
+    CNumericEdit _WindowParameter;
+    CNumericEdit _WindowSkew;
+
+    CNumericEdit _BandwidthOffset;
+    CNumericEdit _BandwidthCap;
+    CNumericEdit _BandwidthAmount;
+
+    CNumericEdit _KernelShapeParameter;
+    CNumericEdit _KernelAsymmetry;
 
     CNumericEdit _NumBands;
     CNumericEdit _LoFrequency;

@@ -238,6 +238,7 @@ private:
     size_t _LastIndex;
 
     const WindowFunction * _WindowFunction;
+    const WindowFunction * _BrownPucketteKernel;
     FFTAnalyzer * _FFTAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 

@@ -48,7 +48,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
                     break;
 
                 case Mapping::BrownPuckette:
-                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, *_WindowFunction, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
+                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
                     break;
             }
         }
@@ -88,6 +88,9 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if (_WindowFunction == nullptr)
         _WindowFunction = WindowFunction::Create(_Configuration._WindowFunction, _Configuration._WindowParameter, _Configuration._WindowSkew, _Configuration._Truncate);
+
+    if (_BrownPucketteKernel == nullptr)
+        _BrownPucketteKernel = WindowFunction::Create(_Configuration._KernelShape, _Configuration._KernelShapeParameter, _Configuration._KernelAsymmetry, _Configuration._Truncate);
 
     if (_FFTAnalyzer == nullptr)
     {

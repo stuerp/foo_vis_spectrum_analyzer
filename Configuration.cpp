@@ -56,6 +56,16 @@ void Configuration::Reset() noexcept
 
     _MappingMethod = Mapping::Standard;
 
+    // Brown-Puckette CQT-specific
+    _BandwidthOffset = 1.;
+    _BandwidthCap = 1.;
+    _BandwidthAmount = 6.;
+    _GranularBW = true;
+
+    _KernelShape = WindowFunctions::Nuttall;
+    _KernelShapeParameter = 1.;
+    _KernelAsymmetry = 0.;
+
     // Frequencies
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
@@ -185,51 +195,64 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     #pragma region Transform
 
-        _Transform = other._Transform;
+    _Transform = other._Transform;
 
-        _WindowFunction = other._WindowFunction;
-        _WindowParameter = other._WindowParameter;
-        _WindowSkew = other._WindowSkew;
-        _Truncate = other._Truncate;
+    _WindowFunction = other._WindowFunction;
+    _WindowParameter = other._WindowParameter;
+    _WindowSkew = other._WindowSkew;
+    _Truncate = other._Truncate;
 
-        _SelectedChannels = other._SelectedChannels;
+    _SelectedChannels = other._SelectedChannels;
 
     #pragma endregion
 
     #pragma region FFT
 
-        _FFTMode = other._FFTMode;
-        _FFTCustom = other._FFTCustom;
-        _FFTDuration = other._FFTDuration;
+    _FFTMode = other._FFTMode;
+    _FFTCustom = other._FFTCustom;
+    _FFTDuration = other._FFTDuration;
 
-        _MappingMethod = other._MappingMethod;
-        _SmoothingMethod = other._SmoothingMethod;
-        _SmoothingFactor = other._SmoothingFactor;
-        _KernelSize = other._KernelSize;
-        _SummationMethod = other._SummationMethod;
-        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-        _SmoothGainTransition = other._SmoothGainTransition;
+    _MappingMethod = other._MappingMethod;
+    _SmoothingMethod = other._SmoothingMethod;
+    _SmoothingFactor = other._SmoothingFactor;
+    _KernelSize = other._KernelSize;
+    _SummationMethod = other._SummationMethod;
+    _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
+    _SmoothGainTransition = other._SmoothGainTransition;
+
+    #pragma endregion
+
+    #pragma region Brown-Puckette CQT
+
+    _BandwidthOffset = other._BandwidthOffset;
+    _BandwidthCap = other._BandwidthCap;
+    _BandwidthAmount = other._BandwidthAmount;
+    _GranularBW = other._GranularBW;
+
+    _KernelShape = other._KernelShape;
+    _KernelShapeParameter = other._KernelShapeParameter;
+    _KernelAsymmetry = other._KernelAsymmetry;
 
     #pragma endregion
 
     #pragma region Frequencies
 
-        _FrequencyDistribution = other._FrequencyDistribution;
+    _FrequencyDistribution = other._FrequencyDistribution;
 
-        _NumBands = other._NumBands;
-        _LoFrequency = other._LoFrequency;
-        _HiFrequency = other._HiFrequency;
+    _NumBands = other._NumBands;
+    _LoFrequency = other._LoFrequency;
+    _HiFrequency = other._HiFrequency;
 
-        // Note range
-        _MinNote = other._MinNote;
-        _MaxNote = other._MaxNote;
-        _BandsPerOctave = other._BandsPerOctave;
-        _Pitch = other._Pitch;
-        _Transpose = other._Transpose;
+    // Note range
+    _MinNote = other._MinNote;
+    _MaxNote = other._MaxNote;
+    _BandsPerOctave = other._BandsPerOctave;
+    _Pitch = other._Pitch;
+    _Transpose = other._Transpose;
 
-        _ScalingFunction = other._ScalingFunction;
-        _SkewFactor = other._SkewFactor;
-        _Bandwidth = other._Bandwidth;
+    _ScalingFunction = other._ScalingFunction;
+    _SkewFactor = other._SkewFactor;
+    _Bandwidth = other._Bandwidth;
 
     #pragma endregion
 

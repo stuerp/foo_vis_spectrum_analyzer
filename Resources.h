@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.26) P. Stuer **/
+/** $VER: Resources.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
@@ -107,6 +107,27 @@
 #define IDC_KERNEL_SIZE_LBL             2080
 #define IDC_KERNEL_SIZE                 2082
 #define IDC_KERNEL_SIZE_SPIN            2084
+
+#pragma endregion
+
+#pragma region Brown-Puckette CQT
+
+#define IDC_BP_GROUP                    2300
+
+#define IDC_BW_OFFSET_LBL               2310
+#define IDC_BW_OFFSET                   2312
+#define IDC_BW_CAP_LBL                  2314
+#define IDC_BW_CAP                      2316
+#define IDC_BW_AMOUNT_LBL               2318
+#define IDC_BW_AMOUNT                   2320
+#define IDC_GRANULAR_BW                 2322
+
+#define IDC_KERNEL_SHAPE_LBL            2326
+#define IDC_KERNEL_SHAPE                2328
+#define IDC_KERNEL_SHAPE_PARAMETER_LBL  2330
+#define IDC_KERNEL_SHAPE_PARAMETER      2332
+#define IDC_KERNEL_ASYMMETRY_LBL        2334
+#define IDC_KERNEL_ASYMMETRY            2336
 
 #pragma endregion
 

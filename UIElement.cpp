@@ -13,7 +13,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
 {
 }
 
@@ -114,6 +114,12 @@ void UIElement::OnDestroy()
     {
         ::CloseThreadpoolTimer(_ThreadPoolTimer);
         _ThreadPoolTimer = nullptr;
+    }
+
+    if (_BrownPucketteKernel)
+    {
+        delete _BrownPucketteKernel;
+        _BrownPucketteKernel = nullptr;
     }
 
     if (_WindowFunction)
@@ -502,6 +508,13 @@ void UIElement::SetConfiguration() noexcept
     _Graph.Initialize(&_Configuration, _FrequencyBands);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
+
+    // Forces the recreation of the Brown-Puckette window function.
+    if (_BrownPucketteKernel != nullptr)
+    {
+        delete _BrownPucketteKernel;
+        _BrownPucketteKernel = nullptr;
+    }
 
     // Forces the recreation of the window function.
     if (_WindowFunction != nullptr)
