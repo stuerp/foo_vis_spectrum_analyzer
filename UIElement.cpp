@@ -1,7 +1,9 @@
 
-/** $VER: UIElement.cpp (2024.01.18) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.28) P. Stuer **/
 
 #include "UIElement.h"
+
+#include "DirectX.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -48,6 +50,8 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    DirectX::Initialize();
+
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -144,6 +148,8 @@ void UIElement::OnDestroy()
     ReleaseDeviceIndependentResources();
 
     _CriticalSection.Leave();
+
+    DirectX::Terminate();
 }
 
 /// <summary>

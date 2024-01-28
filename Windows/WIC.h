@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2024.01.16) P. Stuer **/
+/** $VER: WIC.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
@@ -8,7 +8,10 @@
 class WIC
 {
 public:
-    WIC();
+    WIC() { }
+
+    HRESULT Initialize();
+    void Terminate();
 
     HRESULT Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept;
 

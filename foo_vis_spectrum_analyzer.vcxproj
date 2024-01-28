@@ -207,6 +207,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Windows\Raster.h" />
     <ClInclude Include="Windows\SafeModuleHandle.h" />
     <ClInclude Include="Visuals\BezierSpline.h" />
@@ -252,6 +253,7 @@
     <ClCompile Include="Windows\DirectWrite.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Windows\DirectX.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />
