@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2024.01.20) P. Stuer **/
+/** $VER: Direct2D.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
@@ -11,14 +11,10 @@
 class Direct2D
 {
 public:
-    Direct2D();
+    Direct2D() { };
 
-    virtual ~Direct2D()
-    {
-        Factory.Release();
-    }
-
-    HRESULT GetDPI(HWND hWnd, UINT & dpi) const;
+    HRESULT Initialize();
+    void Terminate();
 
     HRESULT Load(const WCHAR * resourceName, const WCHAR * resourceType, IWICBitmapSource ** source) const noexcept;
     HRESULT Load(const WCHAR * uri, IWICBitmapSource ** source) const noexcept;

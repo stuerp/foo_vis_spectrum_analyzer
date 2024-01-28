@@ -1,18 +1,10 @@
 
-/** $VER: DirectX.h (2024.01.15) P. Stuer **/
+/** $VER: DirectX.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
-
-class DirectX
+namespace DirectX
 {
-public:
-    DirectX();
-
-    HRESULT GetDPI(HWND hWnd, UINT & dpi) const;
-
-public:
-};
-
-extern DirectX _DirectX;
+    void Initialize();
+    void Terminate();
+}

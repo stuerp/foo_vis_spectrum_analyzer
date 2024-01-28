@@ -1,5 +1,5 @@
 
-/** $VER: DirectWrite.h (2024.01.15) P. Stuer **/
+/** $VER: DirectWrite.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
@@ -8,7 +8,10 @@
 class DirectWrite
 {
 public:
-    DirectWrite();
+    DirectWrite() { }
+
+    HRESULT Initialize();
+    void Terminate();
 
 public:
     CComPtr<IDWriteFactory> Factory;

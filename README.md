@@ -83,6 +83,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-beta-3, 2024-01-28
+
+* New: Brown-Puckette constant Q transform.
+* New: Background mode "None" does not draw a background resulting in transparent element.
+* New: Full Screen mode for Columns UI.
+* Improved: Bar width and peak indicator thickness get rounded to pixels for a more visually pleasing result.
+
 v0.7.0.0-beta-2, 2024-01-26
 
 * New: Acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468))

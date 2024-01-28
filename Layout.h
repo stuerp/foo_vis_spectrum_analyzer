@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.26) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.28) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -198,10 +198,97 @@
 #define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
+#pragma region Brown-Puckette CQT
+// Groupbox
+#define X_B10   X_B05 + W_B05 + IY
+#define Y_B10   Y_B05
+
+    // Label: Bandwidth Offset
+    #define W_F04    78
+    #define H_F04    H_LBL
+    #define X_F04    X_B10 + 5
+    #define Y_F04    Y_B10 + 11
+
+    // Textbox
+    #define W_F05    40
+    #define H_F05    H_TBX
+    #define X_F05    X_F04 + W_F04 + IX
+    #define Y_F05    Y_F04
+
+    // Label: Bandwidth Cap
+    #define W_F06    78
+    #define H_F06    H_LBL
+    #define X_F06    X_F04
+    #define Y_F06    Y_F05 + H_F05 + IX
+
+    // Textbox
+    #define W_F07    40
+    #define H_F07    H_TBX
+    #define X_F07    X_F06 + W_F06 + IX
+    #define Y_F07    Y_F06
+
+    // Label: Bandwidth Amount
+    #define W_F08    78
+    #define H_F08    H_LBL
+    #define X_F08    X_F06
+    #define Y_F08    Y_F07 + H_F07 + IX
+
+    // Textbox
+    #define W_F09    40
+    #define H_F09    H_TBX
+    #define X_F09    X_F08 + W_F08 + IX
+    #define Y_F09    Y_F08
+
+    // Checkbox: Granular Bandwidth
+    #define W_F10    80
+    #define H_F10    H_LBL
+    #define X_F10    X_F09
+    #define Y_F10    Y_F09 + H_F09 + IX
+
+    // Label: Kernel Shape
+    #define W_A89    78
+    #define H_A89    H_LBL
+    #define X_A89    X_F08
+    #define Y_A89    Y_F10 + H_F10 + IY
+
+    // Combobox
+    #define W_A90    82
+    #define H_A90    H_CBX
+    #define X_A90    X_A89 + W_A89 + IX
+    #define Y_A90    Y_A89
+
+    // Label: Kernel Shape Parameter
+    #define W_A91    78
+    #define H_A91    H_LBL
+    #define X_A91    X_A89
+    #define Y_A91    Y_A90 + H_A90 + IY
+
+    // Textbox
+    #define W_A92    30
+    #define H_A92    H_CBX
+    #define X_A92    X_A91 + W_A91 + IX
+    #define Y_A92    Y_A91
+
+    // Label: Kernel Asymmetry
+    #define W_A93    78
+    #define H_A93    H_LBL
+    #define X_A93    X_A91
+    #define Y_A93    Y_A92 + H_A92 + IY
+
+    // Textbox
+    #define W_A94    30
+    #define H_A94    H_CBX
+    #define X_A94    X_A93 + W_A93 + IX
+    #define Y_A94    Y_A93
+
+#define W_B10   W_B05
+#define H_B10   11 + H_F05 + IY + H_F07 + IY + H_F09 + IY + H_F10 + IY + H_A90 + IY + H_A92 + IY + H_A94 + 7
+#pragma endregion
+
 #pragma region Frequencies
 // Groupbox
-#define X_B01   X_B05 + W_B05 + IX
-#define Y_B01   Y_B05
+#define X_B01   X_D01 + W_D01 + IX
+#define Y_B01   Y_D01
 
     #pragma region Distribution
     // Label

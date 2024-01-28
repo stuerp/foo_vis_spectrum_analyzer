@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.28) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -58,10 +58,8 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        const WCHAR * Labels[] = { L"Transform", L"Filters", L"Graph", L"Visualization" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            _MenuList.AddString(Labels[i]);
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Graph", L"Visualization" })
+            _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _Configuration->_PageIndex);
 
@@ -75,47 +73,10 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Fast Fourier", L"Constant-Q" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Fast Fourier", L"Constant-Q" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);
-    }
-    #pragma endregion
-
-    #pragma region Window Function
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_WINDOW_FUNCTION);
-
-        w.ResetContent();
-
-        const WCHAR * Labels[] =
-        {
-            L"Boxcar",
-            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
-            L"Bartlett", L"Parzen",
-            L"Welch", L"Power-of-sine", L"Power-of-circle",
-            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
-            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
-        };
-
-        assert(((size_t) WindowFunctions::Count == _countof(Labels)));
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
-
-        w.SetCurSel((int) _Configuration->_WindowFunction);
-    }
-    {
-        _WindowParameter.Initialize(GetDlgItem(IDC_WINDOW_PARAMETER));
-
-        SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 4, 2)));
-    }
-    {
-        _WindowSkew.Initialize(GetDlgItem(IDC_WINDOW_SKEW));
-
-        SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 4, 2)));
     }
     #pragma endregion
 
@@ -155,10 +116,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SummationMethod);
     }
@@ -167,10 +126,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Standard", L"Triangular Filter Bank" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_MappingMethod);
     }
@@ -190,6 +147,95 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    #pragma region Window Function
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_WINDOW_FUNCTION);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] =
+        {
+            L"Boxcar",
+            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
+            L"Bartlett", L"Parzen",
+            L"Welch", L"Power-of-sine", L"Power-of-circle",
+            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
+            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
+        };
+
+        assert(((size_t) WindowFunctions::Count == _countof(Labels)));
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_WindowFunction);
+    }
+    {
+        _WindowParameter.Initialize(GetDlgItem(IDC_WINDOW_PARAMETER));
+
+        SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 4, 2)));
+    }
+    {
+        _WindowSkew.Initialize(GetDlgItem(IDC_WINDOW_SKEW));
+
+        SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 4, 2)));
+    }
+    #pragma endregion
+
+    #pragma region Brown-Puckette Kernel
+
+    {
+        _BandwidthOffset.Initialize(GetDlgItem(IDC_BW_OFFSET));
+
+        SetDlgItemTextW(IDC_BW_OFFSET, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthOffset, 4, 2)));
+    }
+    {
+        _BandwidthCap.Initialize(GetDlgItem(IDC_BW_CAP));
+
+        SetDlgItemTextW(IDC_BW_CAP, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthCap, 4, 2)));
+    }
+    {
+        _BandwidthAmount.Initialize(GetDlgItem(IDC_BW_AMOUNT));
+
+        SetDlgItemTextW(IDC_BW_AMOUNT, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthAmount, 4, 2)));
+    }
+
+    SendDlgItemMessageW(IDC_GRANULAR_BW, BM_SETCHECK, _Configuration->_GranularBW);
+
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_KERNEL_SHAPE);
+
+        w.ResetContent();
+
+        const WCHAR * Labels[] =
+        {
+            L"Boxcar",
+            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
+            L"Bartlett", L"Parzen",
+            L"Welch", L"Power-of-sine", L"Power-of-circle",
+            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
+            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
+        };
+
+        assert(((size_t) WindowFunctions::Count == _countof(Labels)));
+
+        for (size_t i = 0; i < _countof(Labels); ++i)
+            w.AddString(Labels[i]);
+
+        w.SetCurSel((int) _Configuration->_KernelShape);
+    }
+    {
+        _KernelShapeParameter.Initialize(GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER));
+
+        SetDlgItemTextW(IDC_KERNEL_SHAPE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_KernelShapeParameter, 4, 2)));
+    }
+    {
+        _KernelAsymmetry.Initialize(GetDlgItem(IDC_KERNEL_ASYMMETRY));
+
+        SetDlgItemTextW(IDC_KERNEL_ASYMMETRY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_KernelAsymmetry, 4, 2)));
+    }
+    #pragma endregion
+
     #pragma region Frequencies
     {
         {
@@ -197,10 +243,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"Linear", L"Octaves", L"AveePlayer" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_FrequencyDistribution);
         }
@@ -335,10 +379,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"Linear", L"Logarithmic", L"Shifted Logarithmic", L"Mel", L"Bark", L"Adjustable Bark", L"ERB", L"Cams", L"Hyperbolic Sine", L"Nth Root", L"Negative Exponential", L"Period" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_ScalingFunction);
         }
@@ -392,10 +434,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"None", L"A-weighting", L"B-weighting", L"C-weighting", L"D-weighting", L"M-weighting (ITU-R 468)" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_WeightingType);
         }
@@ -547,10 +587,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_XAxisMode);
     }
@@ -563,10 +601,8 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            const WCHAR * Labels[] = { L"None", L"Decibel", L"Logarithmic" };
-
-            for (size_t i = 0; i < _countof(Labels); ++i)
-                w.AddString(Labels[i]);
+            for (const auto & x : { L"None", L"Decibel", L"Logarithmic" })
+                w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_YAxisMode);
         }
@@ -634,10 +670,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_ColorScheme);
     }
@@ -655,10 +689,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Average", L"Peak" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Average", L"Peak" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
 
@@ -672,10 +704,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_BackgroundMode);
     }
@@ -739,10 +769,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_ColorOrder);
     }
@@ -772,10 +800,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"Bars", L"Curve",  };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"Bars", L"Curve" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_VisualizationType);
     }
@@ -785,10 +811,8 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] = { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" };
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (const auto & x : { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" })
+            w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_PeakMode);
     }
@@ -869,12 +893,19 @@ void ConfigurationDialog::Terminate()
 {
     _MenuList.Terminate();
 
-    _WindowParameter.Terminate();
-    _WindowSkew.Terminate();
-
     _Channels.Terminate();
 
     _KernelSize.Terminate();
+
+    _WindowParameter.Terminate();
+    _WindowSkew.Terminate();
+
+    _BandwidthOffset.Terminate();
+    _BandwidthCap.Terminate();
+    _BandwidthAmount.Terminate();
+
+    _KernelShapeParameter.Terminate();
+    _KernelAsymmetry.Terminate();
 
     _NumBands.Terminate();
     _LoFrequency.Terminate();
@@ -1184,18 +1215,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     switch (id)
     {
         #pragma region FFT
-        case IDC_WINDOW_PARAMETER:
-        {
-            _Configuration->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
-            break;
-        }
-
-        case IDC_WINDOW_SKEW:
-        {
-            _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
-            break;
-        }
-
         case IDC_FFT_SIZE_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -1225,6 +1244,52 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_KernelSize = Clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize);
             break;
         }
+
+        case IDC_WINDOW_PARAMETER:
+        {
+            _Configuration->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
+            break;
+        }
+
+        case IDC_WINDOW_SKEW:
+        {
+            _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
+            break;
+        }
+        #pragma endregion
+
+        #pragma region Brown-Puckette CQT
+
+        case IDC_BW_OFFSET:
+        {
+            _Configuration->_BandwidthOffset = Clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset);
+            break;
+        }
+
+        case IDC_BW_CAP:
+        {
+            _Configuration->_BandwidthCap = Clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap);
+            break;
+        }
+
+        case IDC_BW_AMOUNT:
+        {
+            _Configuration->_BandwidthAmount = Clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount);
+            break;
+        }
+
+        case IDC_KERNEL_SHAPE_PARAMETER:
+        {
+            _Configuration->_KernelShapeParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
+            break;
+        }
+
+        case IDC_KERNEL_ASYMMETRY:
+        {
+            _Configuration->_KernelAsymmetry = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Frequencies
@@ -1414,6 +1479,13 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // FFT
         case IDC_KERNEL_SIZE:           { SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize))); break; }
 
+        // Brown-Puckette CQT
+        case IDC_BW_OFFSET:             { SetDouble(id, _Configuration->_BandwidthOffset); break; }
+        case IDC_BW_CAP:                { SetDouble(id, _Configuration->_BandwidthCap); break; }
+        case IDC_BW_AMOUNT:             { SetDouble(id, _Configuration->_BandwidthAmount); break; }
+        case IDC_KERNEL_SHAPE_PARAMETER:{ SetDouble(id, _Configuration->_KernelShapeParameter); break; }
+        case IDC_KERNEL_ASYMMETRY:      { SetDouble(id, _Configuration->_KernelAsymmetry); break; }
+
         // Frequencies
         case IDC_NUM_BANDS:             { SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands))); break; }
         case IDC_LO_FREQUENCY:          { SetDouble(IDC_LO_FREQUENCY, _Configuration->_LoFrequency); break; }
@@ -1475,6 +1547,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _Channels.OnClicked(0, 0, 0, Handled);
 
             return;
+        }
+
+        case IDC_GRANULAR_BW:
+        {
+            _Configuration->_GranularBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
         }
 
         case IDC_SMOOTH_LOWER_FREQUENCIES:
@@ -1997,38 +2075,46 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 {
     static const int Page1[] =
     {
-    // Transform
-    IDC_TRANSFORM_GROUP,
-        IDC_METHOD_LBL, IDC_METHOD,
-        IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
-        IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
-        IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
-        IDC_CHANNELS,
+        // Transform
+        IDC_TRANSFORM_GROUP,
+            IDC_METHOD_LBL, IDC_METHOD,
+            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
+            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
+            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+            IDC_CHANNELS,
 
-    // FFT
-    IDC_FFT_GROUP,
-        IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
-        IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
-        IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
-        IDC_SMOOTH_LOWER_FREQUENCIES,
-        IDC_SMOOTH_GAIN_TRANSITION,
-        IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+        // FFT
+        IDC_FFT_GROUP,
+            IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
+            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
+            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
+            IDC_SMOOTH_LOWER_FREQUENCIES,
+            IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
 
-    // Frequencies
-    IDC_FREQUENCIES_GROUP,
-        IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
-        IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
-        IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
-        IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
-        IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
-        IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
-        IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
-        IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
-        IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
-        IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+        // Brown-Puckette CQT
+        IDC_BP_GROUP,
+            IDC_BW_OFFSET_LBL, IDC_BW_OFFSET, IDC_BW_CAP_LBL, IDC_BW_CAP, IDC_BW_AMOUNT_LBL, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
+            IDC_KERNEL_SHAPE_LBL, IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER_LBL, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY_LBL, IDC_KERNEL_ASYMMETRY,
     };
 
     static const int Page2[] =
+    {
+        // Frequencies
+        IDC_FREQUENCIES_GROUP,
+            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
+            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
+            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
+            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
+            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+    };
+
+    static const int Page3[] =
     {
         // Filters
         IDC_FILTERS_GROUP,
@@ -2045,7 +2131,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_WT_AMT_LBL, IDC_WT_AMT, IDC_WT_AMT_SPIN,
     };
 
-    static const int Page3[] =
+    static const int Page4[] =
     {
         // Common
         IDC_COMMON,
@@ -2083,7 +2169,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
     };
 
-    static const int Page4[] =
+    static const int Page5[] =
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
@@ -2146,6 +2232,16 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         if (w.IsWindow())
             w.ShowWindow(Mode);
     }
+
+    Mode = (index == 4) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page5); ++i)
+    {
+        auto w = GetDlgItem(Page5[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
+    }
 }
 
 /// <summary>
@@ -2192,6 +2288,14 @@ void ConfigurationDialog::UpdateControls()
                 break;
         }
         #pragma warning (default: 4061)
+
+    // Brown-Puckette CQT
+    bool IsBrownPuckette = (_Configuration->_MappingMethod == Mapping::BrownPuckette);
+
+        for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
+            GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
+
+    GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
 
     // Frequencies
     bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);

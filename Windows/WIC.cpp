@@ -1,5 +1,5 @@
 
-/** $VER: WIC.cpp (2024.01.17) P. Stuer **/
+/** $VER: WIC.cpp (2024.01.28) P. Stuer **/
 
 #include "WIC.h"
 
@@ -8,9 +8,9 @@
 #pragma comment(lib, "windowscodecs")
 
 /// <summary>
-/// Initializes a new instance.
+/// Initializes this instance.
 /// </summary>
-WIC::WIC()
+HRESULT WIC::Initialize()
 {
     HRESULT hr = ::CoInitialize(nullptr);
 
@@ -18,6 +18,16 @@ WIC::WIC()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create WIC factory.");
+
+    return hr;
+}
+
+/// <summary>
+/// Terminates this instance.
+/// </summary>
+void WIC::Terminate()
+{
+    Factory.Release();
 }
 
 /// <summary>

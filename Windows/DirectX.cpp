@@ -1,45 +1,66 @@
 
-/** $VER: DirectX.cpp (2024.01.15) P. Stuer **/
+/** $VER: DirectX.cpp (2024.01.28) P. Stuer **/
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "DirectX.h"
+
+#include "DXGI.h"
+#include "Direct3D.h"
 #include "Direct2D.h"
+#include "DirectWrite.h"
+#include "WIC.h"
 
-#include "SafeModuleHandle.h"
-
-#pragma hdrstop
+namespace DirectX
+{
+int32_t _Count;
 
 /// <summary>
-/// Initializes a new instance.
+/// Initializes DirectX once per component.
 /// </summary>
-DirectX::DirectX()
+void Initialize()
 {
+    ++_Count;
+
+    if (_Count > 1)
+        return;
+
+    HRESULT hr = _DXGI.Initialize();
+
+    if (SUCCEEDED(hr))
+        hr = _Direct3D.Initialize();
+
+    if (SUCCEEDED(hr))
+        hr = _Direct2D.Initialize();
+
+    if (SUCCEEDED(hr))
+        hr = _DirectWrite.Initialize();
+
+    if (SUCCEEDED(hr))
+        hr = _WIC.Initialize();
 }
 
 /// <summary>
-/// Gets the DPI setting of the specified window.
+/// Terminates DirectX once per component.
 /// </summary>
-HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi) const
+void Terminate()
 {
-    SafeModuleHandle Module = SafeModuleHandle(L"user32.dll");
+    --_Count;
 
-    typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
+    if (_Count > 0)
+        return;
 
-    GetDpiForWindow_t GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow");
+    _WIC.Terminate();
 
-    if (GetDpiForWindow_ != nullptr)
-        dpi = GetDpiForWindow_(hWnd);
-    else
-    {
-        FLOAT DPIX, DPIY;
+    _DirectWrite.Terminate();
 
-        #pragma warning(disable: 4996)
-        _Direct2D.Factory->GetDesktopDpi(&DPIX, &DPIY);
-        #pragma warning(default: 4996)
+    _Direct2D.Terminate();
 
-        dpi = (UINT) DPIX;
-    }
+    _Direct3D.Terminate();
 
-    return S_OK;
+    _DXGI.Terminate();
 }
 
-DirectX _DirectX;
+}

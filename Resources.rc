@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.01.22) P. Stuer **/
+/** $VER: Resources.rc (2024.01.28) P. Stuer **/
 
 #include "Resources.h"
 
@@ -60,13 +60,13 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Method:"                   IDC_METHOD_LBL,                 X_A62, Y_A62 + 2, W_A62, H_A62
         combobox                                    IDC_METHOD,                     X_A63, Y_A63,     W_A63, H_A63, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Window Function:"          IDC_WINDOW_FUNCTION_LBL,        X_C01, Y_C01 + 2, W_C01, H_C01
+        rtext           "Window function:"          IDC_WINDOW_FUNCTION_LBL,        X_C01, Y_C01 + 2, W_C01, H_C01
         combobox                                    IDC_WINDOW_FUNCTION,            X_C02, Y_C02,     W_C02, H_C02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Window Parameter:"         IDC_WINDOW_PARAMETER_LBL,       X_C03, Y_C03 + 2, W_C03, H_C03
+        rtext           "Window parameter:"         IDC_WINDOW_PARAMETER_LBL,       X_C03, Y_C03 + 2, W_C03, H_C03
         edittext                                    IDC_WINDOW_PARAMETER,           X_C04, Y_C04, W_C04, H_C04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext           "Window Skew:"              IDC_WINDOW_SKEW_LBL,            X_C05, Y_C05 + 2, W_C05, H_C05
+        rtext           "Window skew:"              IDC_WINDOW_SKEW_LBL,            X_C05, Y_C05 + 2, W_C05, H_C05
         edittext                                    IDC_WINDOW_SKEW,                X_C06, Y_C06, W_C06, H_C06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         pushbutton      "Channels",                 IDC_CHANNELS,                   X_A88, Y_A88, W_A88, H_A88
@@ -92,6 +92,23 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Lanczos kernel:"           IDC_KERNEL_SIZE_LBL,            X_A39, Y_A39 + 2, W_A39, H_A39
         edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_KERNEL_SIZE_SPIN,           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
+
+    groupbox "Brown-Puckette CQT Mapping", IDC_BP_GROUP, X_B10, Y_B10, W_B10, H_B10, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext           "Bandwidth offset:",        IDC_BW_OFFSET_LBL,              X_F04, Y_F04 + 2, W_F04, H_F04
+        edittext                                    IDC_BW_OFFSET,                  X_F05, Y_F05,     W_F05, H_F05, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Bandwidth cap:",           IDC_BW_CAP_LBL,                 X_F06, Y_F06 + 2, W_F06, H_F06
+        edittext                                    IDC_BW_CAP,                     X_F07, Y_F07,     W_F07, H_F07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Bandwidth amount:",        IDC_BW_AMOUNT_LBL,              X_F08, Y_F08 + 2, W_F08, H_F09
+        edittext                                    IDC_BW_AMOUNT,                  X_F09, Y_F09,     W_F09, H_F09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "Granular bandwidth",       IDC_GRANULAR_BW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_F10, Y_F10, W_F10, H_F10
+
+        rtext           "Kernel shape:"             IDC_KERNEL_SHAPE_LBL,           X_A89, Y_A89 + 2, W_A89, H_A89
+        combobox                                    IDC_KERNEL_SHAPE,               X_A90, Y_A90,     W_A90, H_A90, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Kernel shape parameter:"   IDC_KERNEL_SHAPE_PARAMETER_LBL, X_A91, Y_A91 + 2, W_A91, H_A91
+        edittext                                    IDC_KERNEL_SHAPE_PARAMETER,     X_A92, Y_A92,     W_A92, H_A92, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Kernel asymmetry:"         IDC_KERNEL_ASYMMETRY_LBL,       X_A93, Y_A93 + 2, W_A93, H_A93
+        edittext                                    IDC_KERNEL_ASYMMETRY,           X_A94, Y_A94,     W_A94, H_A94, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Frequencies", IDC_FREQUENCIES_GROUP, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -196,9 +213,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03, W_F03, H_F03
 
-        rtext           "No. artwork colors:"       IDC_NUM_ARTWORK_COLORS_LBL,   X_G06, Y_G06 + 2, W_G06, H_G06
-        edittext                                    IDC_NUM_ARTWORK_COLORS,       X_G07, Y_G07, W_G07, H_G07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                         IDC_NUM_ARTWORK_COLORS_SPIN,  "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        rtext           "No. artwork colors:"       IDC_NUM_ARTWORK_COLORS_LBL,     X_G06, Y_G06 + 2, W_G06, H_G06
+        edittext                                    IDC_NUM_ARTWORK_COLORS,         X_G07, Y_G07, W_G07, H_G07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_NUM_ARTWORK_COLORS_SPIN,    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
 
         rtext           "Lightness threshold:"      IDC_LIGHTNESS_THRESHOLD_LBL,    X_G08, Y_G08 + 2, W_G08, H_G08
         edittext                                    IDC_LIGHTNESS_THRESHOLD,        X_G09, Y_G09, W_G09, H_G09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

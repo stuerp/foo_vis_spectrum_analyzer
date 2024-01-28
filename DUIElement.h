@@ -23,14 +23,7 @@ public:
     DUIElement & operator=(DUIElement &&) = delete;
 
     void OnContextMenu(CWindow wnd, CPoint position) override final;
-
-    /// <summary>
-    /// Toggles full screen mode.
-    /// </summary>
-    void ToggleFullScreen() noexcept override
-    {
-        static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
-    }
+    void ToggleFullScreen() noexcept override final;
 
     // Default User Interface
     #pragma region ui_element_instance interface

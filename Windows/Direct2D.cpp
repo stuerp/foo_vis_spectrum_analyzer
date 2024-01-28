@@ -27,12 +27,12 @@ D2D1_COLOR_F HSL2RGB(const ColorHSL & hsl);
 FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z);
 
 /// <summary>
-/// Initializes a new instance.
+/// Initializes this instance.
 /// </summary>
-Direct2D::Direct2D()
+HRESULT Direct2D::Initialize()
 {
 #ifdef _DEBUG
-    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE /*D2D1_DEBUG_LEVEL_INFORMATION*/ }; // FIXME: Debug complains about a dangling reference to the Direct2D factory when exiting foobar2000. No clue where the leak is.
+    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION }; // FIXME: Debug complains about a dangling reference to the Direct2D factory when exiting foobar2000. No clue where the leak is.
 #else
     D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 #endif
@@ -41,16 +41,16 @@ Direct2D::Direct2D()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create Direct2D factory.");
+
+    return hr;
 }
 
 /// <summary>
-/// Gets the DPI setting of the specified window.
+/// Terminates this instance.
 /// </summary>
-HRESULT Direct2D::GetDPI(HWND hWnd, UINT & dpi) const
+void Direct2D::Terminate()
 {
-    dpi = ::GetDpiForWindow(hWnd);
-
-    return S_OK;
+    Factory.Release();
 }
 
 /// <summary>

@@ -58,7 +58,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
 {
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
+    const FLOAT BandWidth = ::ceil(Max((Width / (FLOAT) frequencyBands.size()), 1.f));
 
     FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
@@ -97,8 +97,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
             // Draw the peak indicator.
             if ((_Configuration->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak)), _Bounds.top, _Bounds.bottom);
-                Rect.bottom = Rect.top + 1.f;
+                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak)), _Bounds.top, _Bounds.bottom));
+                Rect.bottom = ::ceil(Rect.top + 1.f);
 
                 ID2D1Brush * PeakBrush = ((_Configuration->_PeakMode != PeakMode::FadeOut) && (_Configuration->_PeakMode != PeakMode::FadingAIMP)) ? ForeBrush : _WhiteBrush;
 

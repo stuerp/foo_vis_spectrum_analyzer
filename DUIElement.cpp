@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.01.26) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.01.28) P. Stuer **/
 
 #include "DUIElement.h"
 
@@ -133,4 +133,13 @@ void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
         SetMsgHandled(FALSE);
     else
         UIElement::OnContextMenu(wnd, position);
+}
+
+/// <summary>
+/// Toggles full screen mode.
+/// </summary>
+void DUIElement::ToggleFullScreen() noexcept
+{
+    static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
+    _IsFullScreen = !_IsFullScreen;
 }

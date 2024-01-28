@@ -1,20 +1,19 @@
 
-/** $VER: UIElement.cpp (2024.01.18) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.28) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
-#include "Direct2D.h"
-#include "Log.h"
 
-#include "Gradients.h"
+#include "Support.h"
+#include "Log.h"
 
 #pragma hdrstop
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
 {
 }
 
@@ -25,7 +24,7 @@ UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTrac
 /// </summary>
 CWndClassInfo & UIElement::GetWndClassInfo()
 {
-    static ATL::CWndClassInfo wci =
+    static ATL::CWndClassInfoW wci =
     {
         {
             sizeof(WNDCLASSEX),
@@ -51,6 +50,8 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// </summary>
 LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 {
+    DirectX::Initialize();
+
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -60,7 +61,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
-    (void) _DirectX.GetDPI(m_hWnd, _DPI);
+    (void) GetDPI(m_hWnd, _DPI);
 
     try
     {
@@ -115,6 +116,12 @@ void UIElement::OnDestroy()
         _ThreadPoolTimer = nullptr;
     }
 
+    if (_BrownPucketteKernel)
+    {
+        delete _BrownPucketteKernel;
+        _BrownPucketteKernel = nullptr;
+    }
+
     if (_WindowFunction)
     {
         delete _WindowFunction;
@@ -147,6 +154,8 @@ void UIElement::OnDestroy()
     ReleaseDeviceIndependentResources();
 
     _CriticalSection.Leave();
+
+    DirectX::Terminate();
 }
 
 /// <summary>
@@ -164,7 +173,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
 {
-    RenderFrame();
+    Render();
 
     return TRUE;
 }
@@ -174,12 +183,10 @@ LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)
 {
-    if (_RenderTarget == nullptr)
+    if (_DC == nullptr)
         return;
 
-    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
-
-    _RenderTarget->Resize(Size);
+    ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
 
     Resize();
 }
@@ -197,7 +204,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
-        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, !_IsFullScreen ? L"Full-Screen Mode" : L"Exit Full-Screen Mode");
         Menu.AppendMenu((UINT) MF_STRING | (_Configuration._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 //      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
@@ -315,7 +322,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     }
     else
     {
-        if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
+        if (_TrackingToolInfo && ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
         {
             _LastMousePos = pt;
     
@@ -502,6 +509,13 @@ void UIElement::SetConfiguration() noexcept
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
+    // Forces the recreation of the Brown-Puckette window function.
+    if (_BrownPucketteKernel != nullptr)
+    {
+        delete _BrownPucketteKernel;
+        _BrownPucketteKernel = nullptr;
+    }
+
     // Forces the recreation of the window function.
     if (_WindowFunction != nullptr)
     {
@@ -533,10 +547,10 @@ void UIElement::SetConfiguration() noexcept
 /// </summary>
 void UIElement::Resize()
 {
-    if (_RenderTarget == nullptr)
+    if (_DC == nullptr)
         return;
 
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+    D2D1_SIZE_F Size = _DC->GetSize();
 
     _FrameCounter.Resize(Size.width, Size.height);
 

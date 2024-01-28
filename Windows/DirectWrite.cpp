@@ -1,5 +1,5 @@
 
-/** $VER: DirectWrite.cpp (2024.01.17) P. Stuer **/
+/** $VER: DirectWrite.cpp (2024.01.28) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -14,14 +14,21 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
+/// Initializes this instance.
 /// </summary>
-DirectWrite::DirectWrite()
+HRESULT DirectWrite::Initialize()
 {
     HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(Factory), (IUnknown **) &Factory);
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create DirectWrite factory.");
+
+    return hr;
+}
+
+void DirectWrite::Terminate()
+{
+    Factory.Release();
 }
 
 DirectWrite _DirectWrite;

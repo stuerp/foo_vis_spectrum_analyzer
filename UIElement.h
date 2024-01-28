@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.26) P. Stuer **/
+/** $VER: UIElement.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
@@ -21,10 +21,12 @@
 #include <vector>
 #include <complex>
 
+typedef CWinTraits<WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, WS_EX_NOREDIRECTIONBITMAP> CDXGIWinTraits;
+
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
+class UIElement : public CWindowImpl<UIElement, CWindow, CDXGIWinTraits>, private play_callback_impl_base, now_playing_album_art_notify
 {
 public:
     UIElement();
@@ -101,8 +103,10 @@ private:
 
     void Resize();
 
-    void RenderFrame();
+    void Render();
+
     void RenderBackground() const;
+    void RenderForeground();
 
     void ProcessPlaybackEvent();
 
@@ -130,6 +134,9 @@ private:
 
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
+
+    void ResizeSwapChain(UINT width, UINT height) noexcept;
+    HRESULT CreateSwapChainBuffers(ID2D1DeviceContext * dc, IDXGISwapChain1 * swapChain) noexcept;
 
     #pragma endregion
 
@@ -165,6 +172,8 @@ private:
 
 protected:
     Configuration _Configuration;
+    CriticalSection _CriticalSection;
+    bool _IsFullScreen;
 
 private:
     enum
@@ -182,7 +191,6 @@ private:
         IDM_CONFIGURE,
     };
 
-    CriticalSection _CriticalSection;
     PTP_TIMER _ThreadPoolTimer;
 
     enum class PlaybackEvent
@@ -204,8 +212,18 @@ private:
 
     #pragma region DirectX
 
+    CComPtr<IDXGIDevice> _DXGIDevice;
+    CComPtr<ID2D1Device1> _D2DDevice;
+    CComPtr<IDCompositionDevice> _CompositionDevice;
+
     // Device-specific resources
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+//  CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+    CComPtr<ID2D1DeviceContext> _DC;
+    CComPtr<IDXGISwapChain1> _SwapChain;
+
+    CComPtr<IDCompositionTarget> _CompositionTarget;
+    CComPtr<IDCompositionVisual> _CompositionVisual;
 
     UINT _DPI;
 
@@ -220,6 +238,7 @@ private:
     size_t _LastIndex;
 
     const WindowFunction * _WindowFunction;
+    const WindowFunction * _BrownPucketteKernel;
     FFTAnalyzer * _FFTAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 

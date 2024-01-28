@@ -1,11 +1,13 @@
 
-/** $VER: Support.h (2023.12.31) P. Stuer **/
+/** $VER: Support.h (2024.01.28) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include <math.h>
+
+HRESULT GetDPI(HWND hWnd, UINT & dpi);
 
 /// <summary>
 /// Returns the minimum value of the specified values.
