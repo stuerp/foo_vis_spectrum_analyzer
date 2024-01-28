@@ -510,5 +510,5 @@ public:
     void UpdateGradientStops();
 
 private:
-    const size_t _CurrentVersion = 11;
+    const size_t _CurrentVersion = 12;
 };

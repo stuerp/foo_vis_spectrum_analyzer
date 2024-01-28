@@ -86,6 +86,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.0.0-beta-3, 2024-02-xx
 
 * New: Brown-Puckette constant Q transform.
+* New: Background mode "None" does not draw a background resulting in transparent element.
 
 v0.7.0.0-beta-2, 2024-01-26
 

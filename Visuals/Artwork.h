@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.01.26) P. Stuer  **/
+/** $VER: Artwork.h (2024.01.28) P. Stuer  **/
 
 #pragma once
 
@@ -14,7 +14,7 @@ public:
     }
 
     HRESULT Initialize(const uint8_t * data, size_t size) noexcept;
-    HRESULT Realize(ID2D1HwndRenderTarget * renderTarget) noexcept;
+    HRESULT Realize(ID2D1RenderTarget * renderTarget) noexcept;
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) const noexcept;
 
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }

@@ -24,7 +24,7 @@ UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTrac
 /// </summary>
 CWndClassInfo & UIElement::GetWndClassInfo()
 {
-    static ATL::CWndClassInfo wci =
+    static ATL::CWndClassInfoW wci =
     {
         {
             sizeof(WNDCLASSEX),
@@ -167,7 +167,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
 {
-    RenderFrame();
+    Render();
 
     return TRUE;
 }
@@ -177,12 +177,10 @@ LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)
 {
-    if (_RenderTarget == nullptr)
+    if (_DC == nullptr)
         return;
 
-    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
-
-    _RenderTarget->Resize(Size);
+    ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
 
     Resize();
 }
@@ -536,10 +534,10 @@ void UIElement::SetConfiguration() noexcept
 /// </summary>
 void UIElement::Resize()
 {
-    if (_RenderTarget == nullptr)
+    if (_DC == nullptr)
         return;
 
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+    D2D1_SIZE_F Size = _DC->GetSize();
 
     _FrameCounter.Resize(Size.width, Size.height);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.01.26) P. Stuer **/
+/** $VER: Artwork.cpp (2024.01.28) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -25,7 +25,7 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// <summary>
 /// Realizes this instance.
 /// </summary>
-HRESULT Artwork::Realize(ID2D1HwndRenderTarget * renderTarget) noexcept
+HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
     if (_Raster.empty())
         return S_OK;
