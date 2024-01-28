@@ -203,7 +203,6 @@
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
-    <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Analyzers\FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
@@ -245,12 +244,12 @@
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
+    <ClCompile Include="Support.cpp" />
     <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />
-    <ClCompile Include="Windows\DirectX.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />

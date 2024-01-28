@@ -3,11 +3,8 @@
 
 #include "UIElement.h"
 
-#include "DirectX.h"
-#include "Direct2D.h"
+#include "Support.h"
 #include "Log.h"
-
-#include "Gradients.h"
 
 #pragma hdrstop
 
@@ -60,7 +57,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
-    (void) _DirectX.GetDPI(m_hWnd, _DPI);
+    (void) GetDPI(m_hWnd, _DPI);
 
     try
     {

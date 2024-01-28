@@ -1,7 +1,6 @@
 
-/** $VER: DirectX.cpp (2024.01.15) P. Stuer **/
+/** $VER: Support.cpp (2024.01.28) P. Stuer **/
 
-#include "DirectX.h"
 #include "Direct2D.h"
 
 #include "SafeModuleHandle.h"
@@ -9,16 +8,9 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-DirectX::DirectX()
-{
-}
-
-/// <summary>
 /// Gets the DPI setting of the specified window.
 /// </summary>
-HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi) const
+HRESULT GetDPI(HWND hWnd, UINT & dpi)
 {
     SafeModuleHandle Module = SafeModuleHandle(L"user32.dll");
 
@@ -41,5 +33,3 @@ HRESULT DirectX::GetDPI(HWND hWnd, UINT & dpi) const
 
     return S_OK;
 }
-
-DirectX _DirectX;
