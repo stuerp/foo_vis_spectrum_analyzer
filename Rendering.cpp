@@ -259,66 +259,29 @@ void UIElement::ReleaseDeviceIndependentResources()
 /// </summary>
 HRESULT UIElement::CreateDeviceSpecificResources()
 {
-    HRESULT hr = S_OK;
+    CRect cr;
 
-#ifdef old
-    // Create the render target.
-    if (_RenderTarget == nullptr)
-    {
-        CRect rc;
+    GetClientRect(cr);
 
-        GetClientRect(rc);
+    UINT Width  = (UINT) (cr.right  - cr.left);
+    UINT Height = (UINT) (cr.bottom - cr.top);
 
-        D2D1_SIZE_U Size = D2D1::SizeU((UINT32) rc.Width(), (UINT32) rc.Height());
-
-        D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
-        (
-            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE,
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
-        );
-        D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
-
-        hr = _Direct2D.Factory->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
-
-        if (SUCCEEDED(hr))
-        {
-            _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-            // Resize some elements based on the size of the render target.
-            Resize();
-        }
-    }
-#endif
-
-    UINT Width  = 0;
-    UINT Height = 0;
+    HRESULT hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
 
     // Create the Direct2D device context that is the actual render target and exposes drawing commands.
-    if (_DC == nullptr)
+    if (SUCCEEDED(hr) && (_DC == nullptr))
     {
-        CRect cr;
+        hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_DC);
 
-        GetClientRect(cr);
-
-        Width  = (UINT) (cr.right  - cr.left);
-        Height = (UINT) (cr.bottom - cr.top);
-
-        hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
-
+        // Set the DPI of the device context based on that of the target window.
         if (SUCCEEDED(hr))
         {
-            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_DC);
+            UINT DPI;
 
-            // Set the DPI of the device context based on that of the target window.
-            if (SUCCEEDED(hr))
-            {
-                UINT DPI;
+            GetDPI(m_hWnd, DPI);
 
-                GetDPI(m_hWnd, DPI);
-
-                _DC->SetDpi((FLOAT) DPI, (FLOAT) DPI);
-                _DC->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-            }
+            _DC->SetDpi((FLOAT) DPI, (FLOAT) DPI);
+            _DC->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
         }
     }
 
