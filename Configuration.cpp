@@ -467,7 +467,6 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> _Acceleration;
         #pragma endregion
 
-        // Version 5
         if (Version >= 5)
         {
             _CustomGradientStops.clear();
@@ -513,11 +512,9 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         parser >> _DarkBandColor.b;
         parser >> _DarkBandColor.a;
 
-        // Version 6
         if (Version >= 6)
             parser >> _AmplitudeStep;
 
-        // Version 7
         if (Version >= 7)
         {
             parser >> _SelectedChannels;
@@ -528,7 +525,6 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _WindowSkew;
         }
 
-        // Version 8
         if (Version >= 8)
         {
             parser >> _UseCustomBackColor;
@@ -547,7 +543,6 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _LightBandColor.a;
         }
 
-        // Version 9
         if (Version >= 9)
         {
             parser >> _PageIndex;
@@ -556,7 +551,6 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _AreaOpacity;
         }
 
-        // Version 10
         if (Version >= 10)
         {
             parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
@@ -567,7 +561,6 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> Integer; _ColorOrder = (ColorOrder) Integer;
         }
 
-        // Version 11
         if (Version >= 11)
         {
             parser >> Integer; _WeightingType = (WeightingType) Integer;
@@ -596,6 +589,18 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _PeakLineColor.a;
 
             parser >> _UseCustomPeakLineColor;
+        }
+
+        if (Version >= 12)
+        {
+            parser >> _BandwidthOffset;
+            parser >> _BandwidthCap;
+            parser >> _BandwidthAmount;
+            parser >> _GranularBW;
+
+            parser >> Integer; _KernelShape = (WindowFunctions) Integer;
+            parser >> _KernelShapeParameter;
+            parser >> _KernelAsymmetry;
         }
     }
     catch (exception_io & ex)
@@ -806,6 +811,16 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << _PeakLineColor.a;
 
         builder << _UseCustomPeakLineColor;
+
+        // Version 12
+        builder << _BandwidthOffset;
+        builder << _BandwidthCap;
+        builder << _BandwidthAmount;
+        builder << _GranularBW;
+
+        builder << (int) _KernelShape;
+        builder << _KernelShapeParameter;
+        builder << _KernelAsymmetry;
     }
     catch (exception & ex)
     {
@@ -984,6 +999,18 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
             reader->read(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
         }
+
+        if (Version >= 12)
+        {
+            reader->read(&_BandwidthOffset, sizeof(_BandwidthOffset), abortHandler);
+            reader->read(&_BandwidthCap, sizeof(_BandwidthCap), abortHandler);
+            reader->read(&_BandwidthAmount, sizeof(_BandwidthAmount), abortHandler);
+            reader->read(&_GranularBW, sizeof(_GranularBW), abortHandler);
+
+            reader->read(&_KernelShape, sizeof(_KernelShape), abortHandler);
+            reader->read(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);
+            reader->read(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1152,6 +1179,16 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_UseCustomLineColor, sizeof(_UseCustomLineColor), abortHandler);
         writer->write(&_PeakLineColor, sizeof(_PeakLineColor), abortHandler);
         writer->write(&_UseCustomPeakLineColor, sizeof(_UseCustomPeakLineColor), abortHandler);
+
+        // Version 12
+        writer->write(&_BandwidthOffset, sizeof(_BandwidthOffset), abortHandler);
+        writer->write(&_BandwidthCap, sizeof(_BandwidthCap), abortHandler);
+        writer->write(&_BandwidthAmount, sizeof(_BandwidthAmount), abortHandler);
+        writer->write(&_GranularBW, sizeof(_GranularBW), abortHandler);
+
+        writer->write(&_KernelShape, sizeof(_KernelShape), abortHandler);
+        writer->write(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);
+        writer->write(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
     }
     catch (exception & ex)
     {

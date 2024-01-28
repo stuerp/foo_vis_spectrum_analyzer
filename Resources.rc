@@ -93,7 +93,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_KERNEL_SIZE_SPIN,           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
-    groupbox "Brown-Puckette CQT", IDC_BP_GROUP, X_B10, Y_B10, W_B10, H_B10, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Brown-Puckette CQT Mapping", IDC_BP_GROUP, X_B10, Y_B10, W_B10, H_B10, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Bandwidth offset:",        IDC_BW_OFFSET_LBL,              X_F04, Y_F04 + 2, W_F04, H_F04
         edittext                                    IDC_BW_OFFSET,                  X_F05, Y_F05,     W_F05, H_F05, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
