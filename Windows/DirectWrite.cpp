@@ -22,6 +22,8 @@ HRESULT DirectWrite::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create DirectWrite factory.");
+
+    return hr;
 }
 
 void DirectWrite::Terminate()

@@ -28,6 +28,8 @@ HRESULT DXGI::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create DXGI factory.");
+
+    return hr;
 }
 
 /// <summary>

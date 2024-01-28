@@ -28,6 +28,8 @@ HRESULT Direct3D::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create Direct3D device.");
+
+    return hr;
 }
 
 /// <summary>

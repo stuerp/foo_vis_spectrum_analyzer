@@ -41,6 +41,8 @@ HRESULT Direct2D::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create Direct2D factory.");
+
+    return hr;
 }
 
 /// <summary>

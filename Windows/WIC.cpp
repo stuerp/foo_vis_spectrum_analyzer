@@ -18,6 +18,8 @@ HRESULT WIC::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create WIC factory.");
+
+    return hr;
 }
 
 /// <summary>
