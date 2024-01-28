@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2024.01.19) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2024.01.28) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -14,7 +14,7 @@ namespace uie
 /// <summary>
 /// Implements a Columns UI element.
 /// </summary>
-class CUIElement : public UIElement, public window
+class CUIElement : public UIElement, public uie::window
 {
 public:
     CUIElement();
@@ -24,7 +24,9 @@ public:
     CUIElement(CUIElement &&) = delete;
     CUIElement & operator=(CUIElement &&) = delete;
 
-    #pragma region window interface
+    void ToggleFullScreen() noexcept override final;
+
+    #pragma region uie::window interface
 
     /// <summary>
     /// Gets the category of the extension.
@@ -111,5 +113,6 @@ public:
 
 private:
     window_host_ptr _Host;
+    HWND _hParent;
 };
 }

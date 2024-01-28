@@ -292,6 +292,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         if (SUCCEEDED(hr))
             hr = CreateSwapChainBuffers(_DC, _SwapChain);
+
+        // Resize all sub-elements now that we know the size of the render target.
+        Resize();
     }
 
     // Create the composition target.

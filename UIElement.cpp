@@ -198,7 +198,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
-        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Full-Screen Mode");
+        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, !_IsFullScreen ? L"Full-Screen Mode" : L"Exit Full-Screen Mode");
         Menu.AppendMenu((UINT) MF_STRING | (_Configuration._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 //      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
 
@@ -316,7 +316,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     }
     else
     {
-        if ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y))
+        if (_TrackingToolInfo && ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
         {
             _LastMousePos = pt;
     

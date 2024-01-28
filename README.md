@@ -87,6 +87,7 @@ v0.7.0.0-beta-3, 2024-02-xx
 
 * New: Brown-Puckette constant Q transform.
 * New: Background mode "None" does not draw a background resulting in transparent element.
+* New: Full Screen mode for Columns UI.
 
 v0.7.0.0-beta-2, 2024-01-26
 

@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.01.19) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.01.28) P. Stuer **/
 
 #include "CUIElement.h"
 
@@ -24,19 +24,9 @@ CUIElement::CUIElement()
 /// <summary>
 /// Creates or transfers the window.
 /// </summary>
-HWND CUIElement::create_or_transfer_window(HWND parent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
+HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
 {
-    if ((HWND) *this)
-    {
-        ShowWindow(SW_HIDE);
-        SetParent(parent);
-
-        _Host->relinquish_ownership(*this);
-        _Host = newHost;
-
-        SetWindowPos(0, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
-    }
-    else
+    if (*this == nullptr)
     {
         _Host = newHost;
 
@@ -44,7 +34,19 @@ HWND CUIElement::create_or_transfer_window(HWND parent, const window_host_ptr & 
 
         position.convert_to_rect(r);
 
-        Create(parent, r, 0, WS_CHILD, 0);
+        Create(hParent, r, 0, WS_CHILD, 0);
+
+        _hParent = hParent;
+    }
+    else
+    {
+        ShowWindow(SW_HIDE);
+        SetParent(hParent);
+
+        _Host->relinquish_ownership(*this);
+        _Host = newHost;
+
+        SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
     return *this;
@@ -58,6 +60,51 @@ void CUIElement::destroy_window()
     ::DestroyWindow(*this);
 
     _Host.release();
+}
+
+/// <summary>
+/// Toggles full screen mode.
+/// </summary>
+void CUIElement::ToggleFullScreen() noexcept
+{
+    _CriticalSection.Enter();
+
+    LONG_PTR Style = ::GetWindowLongPtrW(m_hWnd, GWL_STYLE);
+
+    if (!_IsFullScreen)
+    {
+        HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+
+        if (hMonitor != NULL)
+        {
+            MONITORINFOEXW mix = { { sizeof(mix) } };
+
+            if (::GetMonitorInfoW(hMonitor, &mix))
+            {
+                ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
+
+                SetParent(::GetDesktopWindow());
+                SetWindowPos(NULL, mix.rcWork.left, mix.rcWork.top, mix.rcWork.right - mix.rcWork.left, mix.rcWork.bottom - mix.rcWork.top, SWP_NOZORDER);
+
+                _IsFullScreen = true;
+            }
+        }
+    }
+    else
+    {
+        RECT cr;
+
+        ::GetClientRect(_hParent, &cr);
+
+        ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
+
+        SetWindowPos(NULL, cr.left, cr.top, cr.right - cr.left, cr.bottom - cr.top, SWP_NOZORDER);
+        SetParent(_hParent);
+
+        _IsFullScreen = false;
+    }
+
+    _CriticalSection.Leave();
 }
 
 static window_factory<CUIElement> _WindowFactory;

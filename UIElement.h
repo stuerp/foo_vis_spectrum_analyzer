@@ -172,6 +172,8 @@ private:
 
 protected:
     Configuration _Configuration;
+    CriticalSection _CriticalSection;
+    bool _IsFullScreen;
 
 private:
     enum
@@ -189,7 +191,6 @@ private:
         IDM_CONFIGURE,
     };
 
-    CriticalSection _CriticalSection;
     PTP_TIMER _ThreadPoolTimer;
 
     enum class PlaybackEvent
