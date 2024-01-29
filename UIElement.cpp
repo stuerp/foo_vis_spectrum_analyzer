@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.28) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.29) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -600,6 +600,19 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
     if (_SampleRate == 0)
         _SampleRate = 44100;
+
+    if (track.is_valid() && !_Configuration._ArtworkFilePath.isEmpty())
+    {
+        titleformat_object::ptr Script;
+
+        bool Success = titleformat_compiler::get()->compile(Script, _Configuration._ArtworkFilePath.c_str());
+
+        if (Success && Script.is_valid() && track->format_title(0, _ScriptResult, Script, 0))
+        {
+            _Artwork.Initialize(pfc::wideFromUTF8(_ScriptResult).c_str());
+            _NewArtwork = true;
+        }
+    }
 }
 
 /// <summary>
@@ -627,6 +640,9 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
+    if (!_Configuration._ArtworkFilePath.isEmpty())
+        return;
+
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
     _NewArtwork = true;
 }

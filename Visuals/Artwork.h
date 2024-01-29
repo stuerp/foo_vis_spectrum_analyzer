@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.01.28) P. Stuer  **/
+/** $VER: Artwork.h (2024.01.29) P. Stuer  **/
 
 #pragma once
 
@@ -14,6 +14,7 @@ public:
     }
 
     HRESULT Initialize(const uint8_t * data, size_t size) noexcept;
+    HRESULT Initialize(const std::wstring & filePath) noexcept;
     HRESULT Realize(ID2D1RenderTarget * renderTarget) noexcept;
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) const noexcept;
 
@@ -34,6 +35,7 @@ public:
 
 private:
     std::vector<uint8_t> _Raster;
+    std::wstring _FilePath;
 
     CComPtr<IWICBitmapFrameDecode> _Frame;
     CComPtr<IWICFormatConverter> _FormatConverter;

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.28) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.29) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 #define H_CHB       10 // Check box
 
 #define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      308 // Dialog height (in dialog units)
+#define H_A00      309 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7
@@ -803,8 +803,22 @@
     #define Y_G05    Y_G03
     #pragma endregion
 
+    #pragma region Script
+    // Label
+    #define W_G13    66
+    #define H_G13    H_LBL
+    #define X_G13    X_G03
+    #define Y_G13    Y_G04 + H_G04 + IY
+
+    // Textbox
+    #define W_G14    100
+    #define H_G14    H_TBX
+    #define X_G14    X_G13 + W_G13 + IX
+    #define Y_G14    Y_G13
+    #pragma endregion
+
 #define W_B04  180 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_A10 + IY + H_A68 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G02 + IY + H_G04 + 7
+#define H_B04   11 + H_A10 + IY + H_A68 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
 
 #pragma region X axis

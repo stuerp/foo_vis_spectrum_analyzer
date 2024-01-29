@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.28) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.29) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -664,7 +664,7 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region Visualizations
+    #pragma region Common
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
@@ -773,6 +773,9 @@ void ConfigurationDialog::Initialize()
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_ColorOrder);
+    }
+    {
+        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(pfc::wideFromUTF8(_Configuration->_ArtworkFilePath));
     }
     #pragma endregion
 
@@ -1388,6 +1391,16 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_ARTWORK_OPACITY:
         {
             _Configuration->_ArtworkOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Script
+
+        case IDC_FILE_PATH:
+        {
+            _Configuration->_ArtworkFilePath = pfc::utf8FromWide(Text);
             break;
         }
 

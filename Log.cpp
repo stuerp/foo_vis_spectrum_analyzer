@@ -1,5 +1,5 @@
 
-/** $VER: Log.cpp (2024.01.01) P. Stuer **/
+/** $VER: Log.cpp (2024.01.29) P. Stuer **/
 
 #include "framework.h"
 
@@ -9,7 +9,11 @@
 
 namespace Log
 {
+#ifdef _DEBUG
 static Level _Level = Level::Trace;
+#else
+static Level _Level = Level::None;
+#endif
 
 /// <summary>
 /// Writes a message to the console.

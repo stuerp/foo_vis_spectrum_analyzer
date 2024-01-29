@@ -252,14 +252,14 @@
 #define IDC_BACKGROUND_MODE_LBL         6080
 #define IDC_BACKGROUND_MODE             6082
 
-#define IDC_ARTWORK_OPACITY_LBL       6090
-#define IDC_ARTWORK_OPACITY           6092
-#define IDC_ARTWORK_OPACITY_SPIN      6094
-#define IDC_ARTWORK_OPACITY_LBL_2     6096
+#define IDC_ARTWORK_OPACITY_LBL         6090
+#define IDC_ARTWORK_OPACITY             6092
+#define IDC_ARTWORK_OPACITY_SPIN        6094
+#define IDC_ARTWORK_OPACITY_LBL_2       6096
 
-#define IDC_NUM_ARTWORK_COLORS_LBL    6100
-#define IDC_NUM_ARTWORK_COLORS        6102
-#define IDC_NUM_ARTWORK_COLORS_SPIN   6104
+#define IDC_NUM_ARTWORK_COLORS_LBL      6100
+#define IDC_NUM_ARTWORK_COLORS          6102
+#define IDC_NUM_ARTWORK_COLORS_SPIN     6104
 
 #define IDC_LIGHTNESS_THRESHOLD_LBL     6106
 #define IDC_LIGHTNESS_THRESHOLD         6108
@@ -268,6 +268,9 @@
 
 #define IDC_COLOR_ORDER_LBL             6114
 #define IDC_COLOR_ORDER                 6116
+
+#define IDC_FILE_PATH_LBL               6120
+#define IDC_FILE_PATH                   6122
 
 #pragma endregion
 
@@ -388,7 +391,7 @@
 
 /** Color Dialog **/
 
-#define IDD_CHOOSECOLOR         1020
+#define IDD_CHOOSECOLOR                 1020
 
-#define IDC_ALPHA_SLIDER        800
-#define IDC_ALPHA_VALUE         801
+#define IDC_ALPHA_SLIDER                 800
+#define IDC_ALPHA_VALUE                  801

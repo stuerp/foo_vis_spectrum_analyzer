@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.01.28) P. Stuer **/
+/** $VER: Resources.rc (2024.01.29) P. Stuer **/
 
 #include "Resources.h"
 
@@ -236,10 +236,13 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Background mode:",         IDC_BACKGROUND_MODE_LBL,        X_G01, Y_G01 + 2, W_G01, H_G01
         combobox                                    IDC_BACKGROUND_MODE,            X_G02, Y_G02,     W_G02, H_G02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,      X_G03, Y_G03 + 2, W_G03, H_G03
-        edittext                                    IDC_ARTWORK_OPACITY,          X_G04, Y_G04, W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                         IDC_ARTWORK_OPACITY_SPIN,     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "%"                         IDC_ARTWORK_OPACITY_LBL_2,    X_G05, Y_G05 + 2, W_G05, H_G05
+        rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,        X_G03, Y_G03 + 2, W_G03, H_G03
+        edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04, W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_ARTWORK_OPACITY_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "%"                         IDC_ARTWORK_OPACITY_LBL_2,      X_G05, Y_G05 + 2, W_G05, H_G05
+
+        rtext           "Artwork file path:"        IDC_FILE_PATH_LBL,              X_G13, Y_G13 + 2, W_G13, H_G13
+        edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14, W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
