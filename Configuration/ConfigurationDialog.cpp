@@ -2334,6 +2334,7 @@ void ConfigurationDialog::UpdateControls()
     bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
 
         GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
+        GetDlgItem(IDC_FILE_PATH).EnableWindow(UseArtworkForBackground);
 
     // Y axis
     bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);

@@ -83,9 +83,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-beta-5, 2024-xx-xx
+
+* 
+
 v0.7.0.0-beta-4, 2024-01-29
 
-* New: File path of the artwork can be specified as a file path or a title formating script that returns a file path.
+* New: File path of the artwork can be specified as a file path or a title formatting script that returns a file path.
 * Fixed (Beta 3 regression): Crash when resizing the component.
 
 v0.7.0.0-beta-3, 2024-01-28
