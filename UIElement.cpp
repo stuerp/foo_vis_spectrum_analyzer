@@ -63,6 +63,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     (void) GetDPI(m_hWnd, _DPI);
 
+    // Create the visualisation stream.
     try
     {
         static_api_ptr_t<visualisation_manager> VisualisationManager;
@@ -78,11 +79,12 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
+    // Register ourselves with the album art notification manager.
     {
-        auto Manager = now_playing_album_art_notify_manager::tryGet();
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
 
-        if (Manager.is_valid())
-            Manager->add(this);
+        if (AlbumArtNotificationManager.is_valid())
+            AlbumArtNotificationManager->add(this);
     }
 
     // Create the tooltip control.
@@ -173,7 +175,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
 {
-    Render();
+//  Render();
 
     return TRUE;
 }
@@ -186,9 +188,13 @@ void UIElement::OnSize(UINT type, CSize size)
     if (_DC == nullptr)
         return;
 
+    _CriticalSection.Enter();
+
     ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
 
     Resize();
+
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -552,8 +558,10 @@ void UIElement::Resize()
 
     D2D1_SIZE_F Size = _DC->GetSize();
 
+    // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
 
+    // Resize the graph area.
     const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
 
     _Graph.Move(Bounds);
@@ -613,7 +621,6 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 /// </summary>
 void UIElement::on_playback_pause(bool)
 {
-//  Invalidate();
 }
 
 #pragma endregion

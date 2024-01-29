@@ -83,6 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-beta-4, 2024-xx-xx
+
+* Fixed (Beta 3 regression): Crash when resizing the component.
+
 v0.7.0.0-beta-3, 2024-01-28
 
 * New: Brown-Puckette constant Q transform.
