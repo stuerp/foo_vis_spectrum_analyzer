@@ -1,5 +1,5 @@
 
-/** $VER: DXGI.cpp (2024.01.28) P. Stuer **/
+/** $VER: DXGI.cpp (2024.01.28) P. Stuer - Encapsulates the DirectX Graphics Infrastructure API.**/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -28,6 +28,33 @@ HRESULT DXGI::Initialize()
 
     if (!SUCCEEDED(hr))
         throw COMException(hr, L"Unable to create DXGI factory.");
+
+#ifdef _DEBUG
+    if (SUCCEEDED(hr))
+    {
+        IDXGIAdapter * Adapter = nullptr;
+
+        for (UINT i = 0; Factory->EnumAdapters(i, &Adapter) != DXGI_ERROR_NOT_FOUND; ++i)
+        {
+            DXGI_ADAPTER_DESC ad;
+
+            Adapter->GetDesc(&ad);
+
+            IDXGIOutput * Output = nullptr;
+
+            for (UINT j = 0; Adapter->EnumOutputs(j, &Output) != DXGI_ERROR_NOT_FOUND; ++j)
+            {
+                DXGI_OUTPUT_DESC od;
+
+                Output->GetDesc(&od);
+
+                Output->Release();
+            }
+
+            Adapter->Release();
+        }
+    }
+#endif
 
     return hr;
 }

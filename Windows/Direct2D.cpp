@@ -32,7 +32,7 @@ FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z);
 HRESULT Direct2D::Initialize()
 {
 #ifdef _DEBUG
-    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION }; // FIXME: Debug complains about a dangling reference to the Direct2D factory when exiting foobar2000. No clue where the leak is.
+    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION };
 #else
     D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 #endif

@@ -104,7 +104,7 @@ void UIElement::RenderBackground() const
         _DC->Clear(_DominantColor);
     else
     if (_Configuration._BackgroundMode == BackgroundMode::None)
-        _DC->Clear(D2D1::ColorF(0, 0.f));
+        _DC->Clear(D2D1::ColorF(0U, 0.f));
     else
         _DC->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 

@@ -34,7 +34,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
             NULL, // Instance,
             NULL, // Icon
             NULL, // Cursor
-            (HBRUSH) NULL, // Background
+            NULL, // Background brush
             NULL, // Menu
             TEXT(STR_WINDOW_CLASS_NAME), // Class name
             NULL // Small Icon
@@ -161,6 +161,14 @@ void UIElement::OnDestroy()
 }
 
 /// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
+{
+    return 1;
+}
+
+/// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
@@ -168,16 +176,6 @@ void UIElement::OnPaint(CDCHandle hDC)
     StartTimer();
 
     ValidateRect(nullptr);
-}
-
-/// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
-{
-//  Render();
-
-    return TRUE;
 }
 
 /// <summary>

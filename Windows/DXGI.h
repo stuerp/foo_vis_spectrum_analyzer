@@ -1,5 +1,5 @@
 
-/** $VER: DXGI.h (2024.01.28) P. Stuer **/
+/** $VER: DXGI.h (2024.01.28) P. Stuer - Encapsulates the DirectX Graphics Infrastructure API.**/
 
 #pragma once
 
