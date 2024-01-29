@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.28) P. Stuer **/
+/** $VER: UIElement.h (2024.01.29) P. Stuer **/
 
 #pragma once
 
@@ -60,8 +60,8 @@ private:
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
-    void OnPaint(CDCHandle dc);
     LRESULT OnEraseBackground(CDCHandle dc);
+    void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
@@ -155,8 +155,8 @@ private:
     BEGIN_MSG_MAP_EX(UIElement)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
-        MSG_WM_PAINT(OnPaint)
         MSG_WM_ERASEBKGND(OnEraseBackground)
+        MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
@@ -253,4 +253,6 @@ private:
     bool _NewArtwork; // True when new artwork has arrived.
     bool _NewArtworkGradient; // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
     D2D1_COLOR_F _DominantColor;
+
+    pfc::string _ScriptResult;
 };

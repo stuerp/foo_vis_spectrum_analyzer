@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.01.26) P. Stuer **/
+/** $VER: Configuration.cpp (2024.01.29) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -148,6 +148,7 @@ void Configuration::Reset() noexcept
 
     _BackgroundMode = BackgroundMode::Artwork;
     _ArtworkOpacity = 1.f;
+    _ArtworkFilePath.clear();
 
     _NumArtworkColors = 10;
     _LightnessThreshold = 250.f / 255.f;
@@ -320,6 +321,7 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         _BackgroundMode = other._BackgroundMode;
         _ArtworkOpacity = other._ArtworkOpacity;
+        _ArtworkFilePath = other._ArtworkFilePath;
 
         // Visualization
         _VisualizationType = other._VisualizationType;
@@ -602,6 +604,11 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
             parser >> _KernelShapeParameter;
             parser >> _KernelAsymmetry;
         }
+
+        if (Version >= 13)
+        {
+            parser >> _ArtworkFilePath;
+        }
     }
     catch (exception_io & ex)
     {
@@ -821,6 +828,9 @@ void Configuration::Write(ui_element_config_builder & builder) const noexcept
         builder << (int) _KernelShape;
         builder << _KernelShapeParameter;
         builder << _KernelAsymmetry;
+
+        // Version 13
+        builder << _ArtworkFilePath;
     }
     catch (exception & ex)
     {
@@ -1011,6 +1021,11 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);
             reader->read(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
         }
+
+        if (Version >= 13)
+        {
+            _ArtworkFilePath = reader->read_string(abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1189,6 +1204,9 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write(&_KernelShape, sizeof(_KernelShape), abortHandler);
         writer->write(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);
         writer->write(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
+
+        // Version 13
+        writer->write_string(_ArtworkFilePath, abortHandler);
     }
     catch (exception & ex)
     {

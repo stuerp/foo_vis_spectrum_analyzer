@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.28) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.29) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -104,7 +104,7 @@ void UIElement::RenderBackground() const
         _DC->Clear(_DominantColor);
     else
     if (_Configuration._BackgroundMode == BackgroundMode::None)
-        _DC->Clear(D2D1::ColorF(0, 0.f));
+        _DC->Clear(D2D1::ColorF(0U, 0.f));
     else
         _DC->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
 
@@ -156,9 +156,6 @@ void UIElement::RenderForeground()
             if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
                 ProcessAudioChunk(Chunk);
         }
-        else
-            for (auto & Iter : _FrequencyBands)
-                Iter.CurValue = 0.;
 
         // Update the peak indicators.
         if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
@@ -251,6 +248,12 @@ void UIElement::ReleaseDeviceIndependentResources()
     _Graph.ReleaseDeviceIndependentResources();
 
     _FrameCounter.ReleaseDeviceIndependentResources();
+
+    _CompositionDevice.Release();
+
+    _D2DDevice.Release();
+
+    _DXGIDevice.Release();
 }
 
 /// <summary>
@@ -271,6 +274,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the Direct2D device context that is the actual render target and exposes drawing commands.
     if (SUCCEEDED(hr) && (_DC == nullptr))
     {
+        Log::Write(Log::Level::Trace, "Creating device context...");
+
         hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_DC);
 
         // Set the DPI of the device context based on that of the target window.
@@ -288,6 +293,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the swap chain.
     if (SUCCEEDED(hr) && (_SwapChain == nullptr))
     {
+        Log::Write(Log::Level::Trace, "Creating swap chain...");
+
         hr = _DXGI.CreateSwapChain(_DXGIDevice, Width, Height, &_SwapChain);
 
         if (SUCCEEDED(hr))
@@ -300,6 +307,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the composition target.
     if (SUCCEEDED(hr) && (_CompositionTarget == nullptr))
     {
+        Log::Write(Log::Level::Trace, "Creating composition target...");
+
         hr = _CompositionDevice->CreateTargetForHwnd(m_hWnd, true, &_CompositionTarget);
 
         if (SUCCEEDED(hr) && (_CompositionVisual == nullptr))
@@ -307,13 +316,13 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         if (SUCCEEDED(hr))
             hr = _CompositionTarget->SetRoot(_CompositionVisual);
+
+        if (SUCCEEDED(hr))
+            hr = _CompositionVisual->SetContent(_SwapChain);
+
+        if (SUCCEEDED(hr))
+            hr = _CompositionDevice->Commit();
     }
-
-    if (SUCCEEDED(hr))
-        hr = _CompositionVisual->SetContent(_SwapChain);
-
-    if (SUCCEEDED(hr))
-        hr = _CompositionDevice->Commit();
 
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _NewArtwork)
@@ -350,6 +359,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 /// </summary>
 HRESULT UIElement::CreateArtworkGradient()
 {
+    Log::Write(Log::Level::Trace, "Creating artwork gradient...");
+
     // Get the colors from the artwork.
     std::vector<D2D1_COLOR_F> Colors;
 
@@ -435,7 +446,7 @@ void UIElement::ReleaseDeviceSpecificResources()
 /// </summary>
 void UIElement::ResizeSwapChain(UINT width, UINT height) noexcept
 {
-    // Release the reference to the swap chain before resizing its buffers.
+    // Release the reference to the surface bitmap before resizing the swap chain buffers.
     _DC->SetTarget(nullptr);
 
     HRESULT hr = (width != 0) && (height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;

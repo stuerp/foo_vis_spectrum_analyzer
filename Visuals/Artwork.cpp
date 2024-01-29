@@ -17,7 +17,23 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
     Release();
 
     if ((data != nullptr) && (size != 0))
+    {
         _Raster.assign(data, data + size);
+        _FilePath.clear();
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
+{
+    Release();
+
+    _FilePath = filePath;
+    _Raster.clear();
 
     return S_OK;
 }
@@ -27,11 +43,11 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// </summary>
 HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
-    if (_Raster.empty())
+    if (_Raster.empty() && _FilePath.empty())
         return S_OK;
 
     // Load the frame from the raster data.
-    HRESULT hr = _WIC.Load(_Raster.data(), _Raster.size(), &_Frame);
+    HRESULT hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
 
     // Create a format coverter to 32bppPBGRA.
     if (SUCCEEDED(hr))

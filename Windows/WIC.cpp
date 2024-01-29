@@ -1,5 +1,5 @@
 
-/** $VER: WIC.cpp (2024.01.28) P. Stuer **/
+/** $VER: WIC.cpp (2024.01.29) P. Stuer **/
 
 #include "WIC.h"
 
@@ -31,7 +31,7 @@ void WIC::Terminate()
 }
 
 /// <summary>
-/// Creates a WIC format converter from raw image data.
+/// Creates a WIC bitmap frame from raw image data.
 /// </summary>
 HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept
 {
@@ -49,6 +49,24 @@ HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** fr
 
     if (SUCCEEDED(hr))
         hr = Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnLoad, &Decoder);
+
+    if (SUCCEEDED(hr))
+        hr = Decoder->GetFrame(0, frame);
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a WIC bitmap frame from a file.
+/// </summary>
+HRESULT WIC::Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) const noexcept
+{
+    if (filePath.empty())
+        return E_FAIL;
+
+    CComPtr<IWICBitmapDecoder> Decoder;
+
+    HRESULT hr = Factory->CreateDecoderFromFilename(filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &Decoder);
 
     if (SUCCEEDED(hr))
         hr = Decoder->GetFrame(0, frame);

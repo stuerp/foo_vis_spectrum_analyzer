@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.28) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.29) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -34,7 +34,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
             NULL, // Instance,
             NULL, // Icon
             NULL, // Cursor
-            (HBRUSH) NULL, // Background
+            NULL, // Background brush
             NULL, // Menu
             TEXT(STR_WINDOW_CLASS_NAME), // Class name
             NULL // Small Icon
@@ -63,6 +63,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     (void) GetDPI(m_hWnd, _DPI);
 
+    // Create the visualisation stream.
     try
     {
         static_api_ptr_t<visualisation_manager> VisualisationManager;
@@ -78,11 +79,12 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
+    // Register ourselves with the album art notification manager.
     {
-        auto Manager = now_playing_album_art_notify_manager::tryGet();
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
 
-        if (Manager.is_valid())
-            Manager->add(this);
+        if (AlbumArtNotificationManager.is_valid())
+            AlbumArtNotificationManager->add(this);
     }
 
     // Create the tooltip control.
@@ -159,6 +161,14 @@ void UIElement::OnDestroy()
 }
 
 /// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
+{
+    return 1;
+}
+
+/// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
@@ -169,16 +179,6 @@ void UIElement::OnPaint(CDCHandle hDC)
 }
 
 /// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
-{
-    Render();
-
-    return TRUE;
-}
-
-/// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)
@@ -186,9 +186,13 @@ void UIElement::OnSize(UINT type, CSize size)
     if (_DC == nullptr)
         return;
 
+    _CriticalSection.Enter();
+
     ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
 
     Resize();
+
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -552,8 +556,10 @@ void UIElement::Resize()
 
     D2D1_SIZE_F Size = _DC->GetSize();
 
+    // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
 
+    // Resize the graph area.
     const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
 
     _Graph.Move(Bounds);
@@ -594,6 +600,19 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
     if (_SampleRate == 0)
         _SampleRate = 44100;
+
+    if (track.is_valid() && !_Configuration._ArtworkFilePath.isEmpty())
+    {
+        titleformat_object::ptr Script;
+
+        bool Success = titleformat_compiler::get()->compile(Script, _Configuration._ArtworkFilePath.c_str());
+
+        if (Success && Script.is_valid() && track->format_title(0, _ScriptResult, Script, 0))
+        {
+            _Artwork.Initialize(pfc::wideFromUTF8(_ScriptResult).c_str());
+            _NewArtwork = true;
+        }
+    }
 }
 
 /// <summary>
@@ -613,7 +632,6 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 /// </summary>
 void UIElement::on_playback_pause(bool)
 {
-//  Invalidate();
 }
 
 #pragma endregion
@@ -622,6 +640,9 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
+    if (!_Configuration._ArtworkFilePath.isEmpty())
+        return;
+
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
     _NewArtwork = true;
 }

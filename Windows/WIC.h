@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2024.01.28) P. Stuer **/
+/** $VER: WIC.h (2024.01.29) P. Stuer **/
 
 #pragma once
 
@@ -14,6 +14,7 @@ public:
     void Terminate();
 
     HRESULT Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept;
+    HRESULT Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) const noexcept;
 
     HRESULT GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) const noexcept;
 

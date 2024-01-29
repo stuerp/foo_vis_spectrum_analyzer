@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.28) P. Stuer **/
+/** $VER: Configuration.h (2024.01.29) P. Stuer **/
 
 #pragma once
 
@@ -451,6 +451,7 @@ public:
 
             BackgroundMode _BackgroundMode;
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
+            pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
 
             uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
@@ -528,5 +529,5 @@ public:
     void UpdateGradientStops();
 
 private:
-    const size_t _CurrentVersion = 12;
+    const size_t _CurrentVersion = 13;
 };
