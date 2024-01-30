@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.30) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -2157,6 +2157,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
             IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
+            IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
