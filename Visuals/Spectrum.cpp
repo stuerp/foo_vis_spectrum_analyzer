@@ -298,9 +298,9 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
     if (SUCCEEDED(hr))
     {
-        CComPtr<ID2D1GeometrySink> _Sink;
+        CComPtr<ID2D1GeometrySink> Sink;
 
-        hr = _Curve->Open(&_Sink);
+        hr = _Curve->Open(&Sink);
 
         if (SUCCEEDED(hr))
         {
@@ -308,7 +308,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
             const FLOAT Height = _Bounds.bottom - _Bounds.top;
             const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-            _Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+            Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
 
             FLOAT x = _Bounds.left + (BandWidth / 2.f); // Make sure the knots are nicely centered in the bar rectangle.
             FLOAT y = 0.f;
@@ -317,11 +317,11 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
             {
                 case CurveType::Area:
                 {
-                    _Sink->BeginFigure(D2D1::Point2F(x, _Bounds.bottom), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+                    Sink->BeginFigure(D2D1::Point2F(x, _Bounds.bottom), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
 
                     y = Clamp((FLOAT) (_Bounds.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Bounds.top, _Bounds.bottom);
 
-                    _Sink->AddLine(D2D1::Point2F(x, y));
+                    Sink->AddLine(D2D1::Point2F(x, y));
                     break;
                 }
 
@@ -329,7 +329,7 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
                 {
                     y = Clamp((FLOAT) (_Bounds.bottom - (Height * frequencyBands[0].Peak)), _Bounds.top, _Bounds.bottom);
 
-                    _Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
                     break;
                 }
 
@@ -337,13 +337,12 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
                 {
                     y = Clamp((FLOAT) (_Bounds.bottom - (Height * _Configuration->ScaleA(frequencyBands[0].CurValue))), _Bounds.top, _Bounds.bottom);
 
-                    _Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
                     break;
                 }
             }
 
-            if (y != _Bounds.bottom)
-                IsFlatLine = false;
+            IsFlatLine = (y == _Bounds.bottom);
 
             {
                 size_t n = frequencyBands.size(); // Determine how many knots will be used to calculate control points
@@ -354,13 +353,13 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
                 n = 0;
 
-                for (const auto & Iter : frequencyBands)
+                for (size_t i = 1; i < frequencyBands.size(); ++i)
                 {
                     // Don't render anything above the Nyquist frequency.
-                    if (Iter.Ctr > (sampleRate / 2.))
+                    if (frequencyBands[i].Ctr > (sampleRate / 2.))
                         break;
 
-                    double Value = (type != CurveType::Peak) ? _Configuration->ScaleA(Iter.CurValue) : Iter.Peak;
+                    double Value = (type != CurveType::Peak) ? _Configuration->ScaleA(frequencyBands[i].CurValue) : frequencyBands[i].Peak;
 
                     y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 
@@ -381,21 +380,90 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
                         p1[i].y = Clamp(p1[i].y, _Bounds.top, _Bounds.bottom);
                         p2[i].y = Clamp(p2[i].y, _Bounds.top, _Bounds.bottom);
 
-                        _Sink->AddBezier(D2D1::BezierSegment(p1[i], p2[i], p0[i + 1]));
+                        Sink->AddBezier(D2D1::BezierSegment(p1[i], p2[i], p0[i + 1]));
                     }
 
                     if (type == CurveType::Area)
-                        _Sink->AddLine(D2D1::Point2F(p0[n - 1].x, _Bounds.bottom)); // End with a vertical line going down.
+                        Sink->AddLine(D2D1::Point2F(p0[n - 1].x, _Bounds.bottom)); // End with a vertical line going down.
                 }
             }
 
-            _Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 
-            _Sink->Close();
+            Sink->Close();
         }
     }
 
     return !IsFlatLine ? hr : E_FAIL;
+}
+
+struct GeometryPoints
+{
+    std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
+    std::vector<D2D1_POINT_2F> p1;
+    std::vector<D2D1_POINT_2F> p2;
+
+    GeometryPoints(size_t n)
+    {
+        p0.reserve(n);
+        p1.reserve(n - 1);
+        p2.reserve(n - 1);
+    }
+};
+
+/// <summary>
+/// Creates the geometry points from the power values.
+/// </summary>
+HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type)
+{
+    if (frequencyBands.size() < 2)
+        return E_FAIL;
+
+    GeometryPoints gp(frequencyBands.size());
+
+    bool IsFlatLine = true;
+
+    const FLOAT Width = _Bounds.right - _Bounds.left;
+    const FLOAT Height = _Bounds.bottom - _Bounds.top;
+    const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
+
+    FLOAT x = _Bounds.left + (BandWidth / 2.f); // Make sure the knots are nicely centered in the bar rectangle.
+    FLOAT y = 0.f;
+
+    size_t n = 0;
+
+    // Create all the knots.
+    for (size_t i = 0; i < frequencyBands.size(); ++i)
+    {
+        // Don't render anything above the Nyquist frequency.
+        if (frequencyBands[i].Ctr > (sampleRate / 2.))
+            break;
+
+        double Value = (type != CurveType::Peak) ? _Configuration->ScaleA(frequencyBands[i].CurValue) : frequencyBands[i].Peak;
+
+        y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
+
+        gp.p0[n++] = D2D1::Point2F(x, y);
+
+        if (y < _Bounds.bottom)
+            IsFlatLine = false;
+
+        x += BandWidth;
+    }
+
+    if (n > 1)
+    {
+        // Create all the control points.
+        BezierSpline::GetControlPoints(gp.p0, n, gp.p1, gp.p2);
+
+        for (size_t i = 0; i < (n - 1); ++i)
+        {
+            gp.p1[i].y = Clamp(gp.p1[i].y, _Bounds.top, _Bounds.bottom);
+            gp.p2[i].y = Clamp(gp.p2[i].y, _Bounds.top, _Bounds.bottom);
+        }
+    }
+
+    return !IsFlatLine ? S_OK : E_FAIL;
 }
 
 /// <summary>

@@ -50,6 +50,7 @@ private:
     };
 
     HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
+    HRESULT CreateGeometryPoints(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
