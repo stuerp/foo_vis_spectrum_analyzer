@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.29) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.30) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -183,12 +183,14 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)
 {
-    if (_DC == nullptr)
+    if (_RenderTarget == nullptr)
         return;
 
     _CriticalSection.Enter();
 
-    ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
+    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+
+    _RenderTarget->Resize(Size);
 
     Resize();
 
@@ -551,10 +553,10 @@ void UIElement::SetConfiguration() noexcept
 /// </summary>
 void UIElement::Resize()
 {
-    if (_DC == nullptr)
+    if (_RenderTarget == nullptr)
         return;
 
-    D2D1_SIZE_F Size = _DC->GetSize();
+    D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
     // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
@@ -607,9 +609,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
         bool Success = titleformat_compiler::get()->compile(Script, _Configuration._ArtworkFilePath.c_str());
 
-        if (Success && Script.is_valid() && track->format_title(0, _ScriptResult, Script, 0))
+        pfc::string Result;
+
+        if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
         {
-            _Artwork.Initialize(pfc::wideFromUTF8(_ScriptResult).c_str());
+            _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
             _NewArtwork = true;
         }
     }
