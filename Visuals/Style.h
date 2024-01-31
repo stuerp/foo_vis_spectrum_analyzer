@@ -5,6 +5,9 @@
 
 #include "framework.h"
 
+#include "Configuration.h"
+#include "Gradients.h"
+
 enum class VisualElement
 {
     Background,
@@ -33,27 +36,30 @@ enum class ColorSource
     Host,
 };
 
-typedef std::vector<D2D1_GRADIENT_STOP> GradientStops;
-
 class Style
 {
 public:
     std::wstring _Name;
 
-    ColorSource _ColorSource;       // Determine the source of the color.
-    D2D1_COLOR_F _CustomColor;      // Color specified by the user
-    GradientStops _GradientStops;
+    ColorSource _ColorSource;           // Determines the source of the color.
+    D2D1_COLOR_F _CustomColor;          // User-specified color
+    ColorScheme _ColorScheme;           // User-specified color scheme
+    GradientStops _CustomGradientStops; // User-specified gradient stops
 
     // Area-specific
-    FLOAT _Opacity;                 // Area opacity
+    FLOAT _Opacity;                     // Area opacity
 
     // Line-specific
-    FLOAT _Thickness;               // Line thickness
+    FLOAT _Thickness;                   // Line thickness
 
     // Font-specific
     std::wstring _FontName;
     FLOAT _FontSize;
 
-    // DirectX resources
+    // Resulting resources
     D2D1_COLOR_F _Color;
+    GradientStops _GradientStops;
+
+    // DirectX resources
+    CComPtr<ID2D1Brush> _Brush;
 };

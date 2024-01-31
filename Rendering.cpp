@@ -148,25 +148,69 @@ void UIElement::UpdateSpectrum()
 /// </summary>
 void UIElement::UpdateStyles() noexcept
 {
-    Style & style = _StyleManager.GetStyle(VisualElement::Background);
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::Background);
 
-    if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
-    {
-        style._ColorSource = ColorSource::DominantColor;
-        style._Color = _DominantColor;
-    }
-    else
-    if (!_Configuration._UseCustomBackColor)
-    {
-        style._ColorSource = ColorSource::Host;
-        style._Color = D2D1::ColorF(_Configuration._DefBackColor);
-    }
-    else
-    {
-        style._CustomColor = _Configuration._BackColor;
+        if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
+        {
+            style._ColorSource = ColorSource::DominantColor;
+            style._Color = _DominantColor;
+        }
+        else
+        if (!_Configuration._UseCustomBackColor)
+        {
+            style._ColorSource = ColorSource::Host;
+            style._Color = D2D1::ColorF(_Configuration._DefBackColor);
+        }
+        else
+        {
+            style._CustomColor = _Configuration._BackColor;
 
-        style._ColorSource = ColorSource::Solid;
-        style._Color = style._CustomColor;
+            style._ColorSource = ColorSource::Solid;
+            style._Color = style._CustomColor;
+        }
+    }
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
+
+        style._CustomColor = _Configuration._LineColor;
+
+        if (_Configuration._UseCustomLineColor)
+        {
+            style._ColorSource = ColorSource::Solid;
+            style._Color = style._CustomColor;
+        }
+        else
+        {
+            style._ColorSource = ColorSource::Gradient;
+            style._Color = D2D1::ColorF(0, 0.f);
+        }
+
+        style._Thickness = _Configuration._LineWidth;
+    }
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
+
+        style._ColorSource = ColorSource::Gradient;
+        style._Opacity = _Configuration._AreaOpacity;
+    }
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::PeakLine);
+
+        style._CustomColor = _Configuration._PeakLineColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+        if (_Configuration._UseCustomPeakLineColor)
+        {
+            style._ColorSource = ColorSource::Solid;
+            style._Color = style._CustomColor;
+        }
+        else
+        {
+            style._ColorSource = ColorSource::Gradient;
+            style._Color = D2D1::ColorF(0, 0.f);
+            style._GradientStops = style._CustomGradientStops;
+        }
     }
 }
 

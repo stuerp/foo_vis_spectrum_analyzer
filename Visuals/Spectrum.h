@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "Support.h"
 #include "Configuration.h"
+#include "Gradients.h"
 
 #include "FrequencyBand.h"
 
@@ -39,7 +40,7 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
-    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
 
     struct GeometryPoints

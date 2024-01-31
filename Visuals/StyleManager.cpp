@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.01.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: StyleManager.cpp (2024.01.31) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -11,21 +11,61 @@ std::map<VisualElement, Style> _Styles =
 {
     { VisualElement::Background,
         {
-            L"Background",
-
-            ColorSource::Solid,
-            D2D1::ColorF(D2D1::ColorF::Black),
-            { },
-
+            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), ColorScheme::Solid, { },
             // Area-specific
             1.f,
-
             // Line-specific
             0.f,
-
             // Font-specific
-            L"",
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::CurveLine,
+        {
+            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { },
+            // Area-specific
+            1.f,
+            // Line-specific
+            2.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::CurveArea,
+        {
+            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { },
+            // Area-specific
+            .5f,
+            // Line-specific
             0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::PeakLine,
+        {
+            L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { },
+            // Area-specific
+            1.f,
+            // Line-specific
+            2.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::PeakArea,
+        {
+            L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { },
+            // Area-specific
+            .5f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
         }
     },
 };
