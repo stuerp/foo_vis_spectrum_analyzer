@@ -236,5 +236,4 @@ private:
     Artwork _Artwork;
     bool _NewArtwork; // True when new artwork has arrived.
     bool _NewArtworkGradient; // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
-    D2D1_COLOR_F _DominantColor;
 };

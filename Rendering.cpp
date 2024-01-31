@@ -90,7 +90,7 @@ void UIElement::ProcessPlaybackEvent()
             if (_Artwork.Bitmap() == nullptr)
             {
                 _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default colors for the Artwork gradient.
-                _DominantColor = _Configuration._ArtworkGradientStops[0].color;
+                _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
 
                 if (_Configuration._ColorScheme == ColorScheme::Artwork)
                 {
@@ -151,10 +151,12 @@ void UIElement::UpdateStyles() noexcept
     {
         Style & style = _StyleManager.GetStyle(VisualElement::Background);
 
+        style._CustomGradientStops = _Configuration._GradientStops;
+
         if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
         {
             style._ColorSource = ColorSource::DominantColor;
-            style._Color = _DominantColor;
+            style._Color = _Configuration._DominantColor;
         }
         else
         if (!_Configuration._UseCustomBackColor)
@@ -170,10 +172,92 @@ void UIElement::UpdateStyles() noexcept
             style._Color = style._CustomColor;
         }
     }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+
+        style._CustomColor = _Configuration._XLineColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            if (!_Configuration._UseCustomXLineColor)
+            {
+                style._ColorSource = ColorSource::Host;
+                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
+            }
+            else
+            {
+                style._ColorSource = ColorSource::Solid;
+                style._Color = style._CustomColor;
+            }
+
+        style._GradientStops = style._CustomGradientStops;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::XAxisText);
+
+        style._CustomColor = _Configuration._XTextColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            if (!_Configuration._UseCustomXTextColor)
+            {
+                style._ColorSource = ColorSource::Host;
+                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
+            }
+            else
+            {
+                style._ColorSource = ColorSource::Solid;
+                style._Color = style._CustomColor;
+            }
+
+        style._GradientStops = style._CustomGradientStops;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::YAxisLine);
+
+        style._CustomColor = _Configuration._YLineColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            if (!_Configuration._UseCustomYLineColor)
+            {
+                style._ColorSource = ColorSource::Host;
+                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
+            }
+            else
+            {
+                style._ColorSource = ColorSource::Solid;
+                style._Color = style._CustomColor;
+            }
+
+        style._GradientStops = style._CustomGradientStops;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::YAxisText);
+
+        style._CustomColor = _Configuration._YTextColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            if (!_Configuration._UseCustomYTextColor)
+            {
+                style._ColorSource = ColorSource::Host;
+                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
+            }
+            else
+            {
+                style._ColorSource = ColorSource::Solid;
+                style._Color = style._CustomColor;
+            }
+
+        style._GradientStops = style._CustomGradientStops;
+    }
+
     {
         Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
 
         style._CustomColor = _Configuration._LineColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
 
         if (_Configuration._UseCustomLineColor)
         {
@@ -184,33 +268,47 @@ void UIElement::UpdateStyles() noexcept
         {
             style._ColorSource = ColorSource::Gradient;
             style._Color = D2D1::ColorF(0, 0.f);
+            style._GradientStops = style._CustomGradientStops;
         }
 
         style._Thickness = _Configuration._LineWidth;
     }
+
     {
         Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
 
-        style._ColorSource = ColorSource::Gradient;
-        style._Opacity = _Configuration._AreaOpacity;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            style._ColorSource = ColorSource::Gradient;
+            style._Opacity = _Configuration._AreaOpacity;
+
+        style._Color = style._CustomColor;
+        style._GradientStops = style._CustomGradientStops;
     }
+
     {
         Style & style = _StyleManager.GetStyle(VisualElement::PeakLine);
 
         style._CustomColor = _Configuration._PeakLineColor;
         style._CustomGradientStops = _Configuration._GradientStops;
 
-        if (_Configuration._UseCustomPeakLineColor)
-        {
-            style._ColorSource = ColorSource::Solid;
-            style._Color = style._CustomColor;
-        }
-        else
-        {
-            style._ColorSource = ColorSource::Gradient;
-            style._Color = D2D1::ColorF(0, 0.f);
-            style._GradientStops = style._CustomGradientStops;
-        }
+            if (!_Configuration._UseCustomPeakLineColor)
+            {
+                style._ColorSource = ColorSource::Gradient;
+            }
+            else
+            {
+                style._ColorSource = ColorSource::Solid;
+            }
+
+        style._Color = style._CustomColor;
+        style._GradientStops = style._CustomGradientStops;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::PeakArea);
+
+        style._Color = style._CustomColor;
     }
 }
 
@@ -227,7 +325,7 @@ void UIElement::Render()
 
         _RenderTarget->BeginDraw();
 
-        _Graph.RenderBackground(_RenderTarget, _Artwork, _DominantColor);
+        _Graph.RenderBackground(_RenderTarget, _Artwork, _Configuration._DominantColor);
         _Graph.RenderForeground(_RenderTarget, _FrequencyBands, (double) _SampleRate);
 
         if (_Configuration._ShowFrameCounter)
@@ -351,7 +449,7 @@ HRESULT UIElement::CreateArtworkGradient()
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _DominantColor = Colors[0];
+        _Configuration._DominantColor = Colors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_Configuration._ColorOrder)

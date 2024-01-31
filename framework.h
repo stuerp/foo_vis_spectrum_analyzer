@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.01.17) P. Stuer **/
+/** $VER: framework.h (2024.01.31) P. Stuer **/
 
 #pragma once
 
@@ -47,3 +47,5 @@
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
 #endif
+
+typedef std::vector<D2D1_GRADIENT_STOP> GradientStops;

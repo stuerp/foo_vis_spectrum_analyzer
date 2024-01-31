@@ -12,6 +12,8 @@ class StyleManager
 public:
     Style & GetStyle(VisualElement visualElement);
 
+    void ReleaseDeviceSpecificResources();
+
 private:
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, FLOAT width, FLOAT height, const GradientStops & gradientStops, bool isVertical, ID2D1LinearGradientBrush ** brush);
 };

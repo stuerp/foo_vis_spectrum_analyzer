@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.01.16) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.01.31) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -40,6 +40,9 @@ public:
     FLOAT GetHeight() const { return _Height; }
 
 private:
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
+
+private:
     const Configuration * _Configuration;
 
     XAxisMode _Mode;
@@ -68,7 +71,4 @@ private:
 
     // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
-
-    // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

@@ -11,9 +11,47 @@ std::map<VisualElement, Style> _Styles =
 {
     { VisualElement::Background,
         {
-            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), ColorScheme::Solid, { },
-            // Area-specific
+            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), ColorScheme::Solid, { }, 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::XAxisLine,
+        {
+            L"X-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), ColorScheme::Solid, { }, 1.f,
+            // Line-specific
             1.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::XAxisText,
+        {
+            L"X-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::YAxisLine,
+        {
+            L"Y-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), ColorScheme::Solid, { }, 1.f,
+            // Line-specific
+            1.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    },
+
+    { VisualElement::YAxisText,
+        {
+            L"Y-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
             // Line-specific
             0.f,
             // Font-specific
@@ -23,9 +61,7 @@ std::map<VisualElement, Style> _Styles =
 
     { VisualElement::CurveLine,
         {
-            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { },
-            // Area-specific
-            1.f,
+            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, 1.f,
             // Line-specific
             2.f,
             // Font-specific
@@ -35,9 +71,7 @@ std::map<VisualElement, Style> _Styles =
 
     { VisualElement::CurveArea,
         {
-            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { },
-            // Area-specific
-            .5f,
+            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, .5f,
             // Line-specific
             0.f,
             // Font-specific
@@ -47,9 +81,7 @@ std::map<VisualElement, Style> _Styles =
 
     { VisualElement::PeakLine,
         {
-            L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { },
-            // Area-specific
-            1.f,
+            L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, 1.f,
             // Line-specific
             2.f,
             // Font-specific
@@ -59,9 +91,7 @@ std::map<VisualElement, Style> _Styles =
 
     { VisualElement::PeakArea,
         {
-            L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { },
-            // Area-specific
-            .5f,
+            L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, .25f,
             // Line-specific
             0.f,
             // Font-specific
@@ -75,9 +105,18 @@ std::map<VisualElement, Style> _Styles =
 /// </summary>
 Style & StyleManager::GetStyle(VisualElement visualElement)
 {
-    Style & style = _Styles[VisualElement::Background];
+    Style & style = _Styles[visualElement];
 
     return style;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void StyleManager::ReleaseDeviceSpecificResources()
+{
+    for (auto & Iter : _Styles)
+        Iter.second._Brush.Release();
 }
 
 /// <summary>

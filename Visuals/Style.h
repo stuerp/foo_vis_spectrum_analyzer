@@ -6,7 +6,6 @@
 #include "framework.h"
 
 #include "Configuration.h"
-#include "Gradients.h"
 
 enum class VisualElement
 {

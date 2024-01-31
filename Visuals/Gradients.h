@@ -1,15 +1,9 @@
 
-/** $VER: Gradients.h (2023.12.17) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.h (2024.01.31) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
 #include "framework.h"
-
-#include <vector>
-
-using namespace std;
-
-typedef std::vector<D2D1_GRADIENT_STOP> GradientStops;
 
 // Solid
 static const GradientStops GradientStopsSolid =

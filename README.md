@@ -85,6 +85,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.0.0-beta-5, 2024-xx-xx
 
+* New: Styles. Moved all the fragmented visual parameters (color, opacity thickness) into one unified style system.
+    * Upon first use the old settings are converted to styles and sensible defaults are set for the new features.
+* Improved: Minor performance optimizations due to styles.
+* Improved: Optimized the calculation of the Curve visual.
 * Fixed (Beta 4 regression): Removed the DirectComposition code that enabled transparent child windows. It was fun while it lasted.
 
 v0.7.0.0-beta-4, 2024-01-29

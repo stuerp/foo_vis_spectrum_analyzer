@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.01.16) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.01.31) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -38,6 +38,9 @@ public:
     FLOAT GetWidth() const { return _Width; }
 
 private:
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
+
+private:
     const Configuration * _Configuration;
 
     struct Label
@@ -60,7 +63,4 @@ private:
     FLOAT _Height; // Height of a label
 
     CComPtr<IDWriteTextFormat> _TextFormat;
-
-    // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

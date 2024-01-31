@@ -470,6 +470,8 @@ void UIElement::SetConfiguration() noexcept
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
+    _StyleManager.ReleaseDeviceSpecificResources();
+
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
     // Generate the horizontal color gradient, if required.
