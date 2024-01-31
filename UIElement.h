@@ -98,6 +98,7 @@ private:
 
     void Configure() noexcept;
     void SetConfiguration() noexcept;
+    void UpdateStyles() noexcept;
 
     void Resize();
 
@@ -201,6 +202,7 @@ private:
 
     FrameCounter _FrameCounter;
     Graph _Graph;
+    UINT _DPI;
 
     #pragma endregion
 
@@ -208,8 +210,6 @@ private:
 
     // Device-specific resources
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    UINT _DPI;
 
     #pragma endregion
 

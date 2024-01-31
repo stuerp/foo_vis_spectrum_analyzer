@@ -9,36 +9,11 @@
 
 #include "Resources.h"
 #include "Gradients.h"
-#include "Style.h"
+#include "StyleManager.h"
 
 #include "Log.h"
 
-#include <map>
-
 #pragma hdrstop
-
-std::map<VisualElement, Style> _Styles = 
-{
-    { VisualElement::Background,
-        {
-            L"Background",
-
-            ColorSource::Solid,
-            D2D1::ColorF(D2D1::ColorF::Black),
-            { },
-
-            // Area-specific
-            1.f,
-
-            // Line-specific
-            0.f,
-
-            // Font-specific
-            L"",
-            0.f,
-        }
-    },
-};
 
 /// <summary>
 /// Creates the timer.
@@ -169,21 +144,43 @@ void UIElement::UpdateSpectrum()
 }
 
 /// <summary>
+/// FIXME: Temporary method to transfer configuration parameters to styles.
+/// </summary>
+void UIElement::UpdateStyles() noexcept
+{
+    Style & style = _StyleManager.GetStyle(VisualElement::Background);
+
+    if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
+    {
+        style._ColorSource = ColorSource::DominantColor;
+        style._Color = _DominantColor;
+    }
+    else
+    if (!_Configuration._UseCustomBackColor)
+    {
+        style._ColorSource = ColorSource::Host;
+        style._Color = D2D1::ColorF(_Configuration._DefBackColor);
+    }
+    else
+    {
+        style._CustomColor = _Configuration._BackColor;
+
+        style._ColorSource = ColorSource::Solid;
+        style._Color = style._CustomColor;
+    }
+}
+
+/// <summary>
 /// Renders a frame.
 /// </summary>
 void UIElement::Render()
 {
-    const Style & style = _Styles[VisualElement::Background];
-/*
-    if (style._ColorSource != ColorSource::Gradient)
-        _RenderTarget->Clear(style._Color);
-    else
-        _RenderTarget->FillRectangle(_Graph.GetBounds(), _Brush);
-*/
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
+        UpdateStyles(); // FIXME
+
         _RenderTarget->BeginDraw();
 
         _Graph.RenderBackground(_RenderTarget, _Artwork, _DominantColor);

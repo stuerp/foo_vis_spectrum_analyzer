@@ -1,9 +1,10 @@
 
-/** $VER: UIElement.cpp (2024.01.30) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.31) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "StyleManager.h"
 
 #include "Support.h"
 #include "Log.h"

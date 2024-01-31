@@ -27,6 +27,7 @@ enum class VisualElement
 enum class ColorSource
 {
     Solid,
+    DominantColor,
     Gradient,
     Windows,
     Host,
@@ -40,7 +41,7 @@ public:
     std::wstring _Name;
 
     ColorSource _ColorSource;       // Determine the source of the color.
-    D2D1_COLOR_F _Color;
+    D2D1_COLOR_F _CustomColor;      // Color specified by the user
     GradientStops _GradientStops;
 
     // Area-specific
@@ -52,4 +53,7 @@ public:
     // Font-specific
     std::wstring _FontName;
     FLOAT _FontSize;
+
+    // DirectX resources
+    D2D1_COLOR_F _Color;
 };

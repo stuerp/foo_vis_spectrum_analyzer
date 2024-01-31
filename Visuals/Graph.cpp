@@ -1,7 +1,8 @@
 
-/** $VER: Graph.cpp (2024.01.16) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.01.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
+#include "StyleManager.h"
 
 #pragma hdrstop
 
@@ -69,10 +70,16 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector
 
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork, D2D1_COLOR_F dominantColor) const
 {
+    Style & style = _StyleManager.GetStyle(VisualElement::Background);
+
     if ((_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration->_ArtworkGradientStops.size() > 0))
         renderTarget->Clear(dominantColor);
     else
-        renderTarget->Clear(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : _Configuration->_DefBackColor);
+        renderTarget->Clear(style._Color);
+/*
+    else
+        _RenderTarget->FillRectangle(_Graph.GetBounds(), _Brush);
+*/
 
     // Render the album art if there is any.
     if ((artwork.Bitmap() == nullptr) || !((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor)))

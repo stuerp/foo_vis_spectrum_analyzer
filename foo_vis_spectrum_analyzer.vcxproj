@@ -198,6 +198,7 @@
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Style.h" />
+    <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />
     <ClInclude Include="Windows\COMException.h" />
     <ClInclude Include="Windows\CriticalSection.h" />
@@ -249,6 +250,8 @@
     <ClCompile Include="Support.cpp" />
     <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
+    <ClCompile Include="Visuals\Style.cpp" />
+    <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />
