@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.01.22) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.01.31) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -41,21 +41,19 @@ public:
 private:
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-/*
-    enum class CurveType
-    {
-        Peak,
-        Area,
-        Line
-    };
 
-    HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
-*/
     struct GeometryPoints
     {
         std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
         std::vector<D2D1_POINT_2F> p1;
         std::vector<D2D1_POINT_2F> p2;
+
+        void Clear()
+        {
+            p0.clear();
+            p1.clear();
+            p2.clear();
+        }
     };
 
     HRESULT CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
