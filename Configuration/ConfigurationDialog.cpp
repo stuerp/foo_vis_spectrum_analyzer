@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.01.30) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.01.31) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -11,6 +11,7 @@
 #include "Direct2D.h"
 
 #include "Theme.h"
+#include "StyleManager.h"
 
 /// <summary>
 /// Initializes the dialog.
@@ -58,7 +59,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Graph", L"Visualization" })
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Graph", L"Visualization", L"Styles" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _Configuration->_PageIndex);
@@ -882,6 +883,20 @@ void ConfigurationDialog::Initialize()
     }
 
     #pragma endregion
+
+    #pragma endregion
+
+    #pragma region Styles
+    {
+        auto w = (CListBox) GetDlgItem(IDC_STYLES);
+
+        std::vector<Style> Styles;
+
+        _StyleManager.GetStyles(Styles);
+
+        for (const auto & x : Styles)
+            w.AddString(x._Name.c_str());
+    }
 
     #pragma endregion
 
@@ -2207,6 +2222,11 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN, IDC_AREA_OPACITY_LBL_2,
     };
 
+    static const int Page6[] =
+    {
+        IDC_STYLES,
+    };
+
     int Mode = (index == 0) ? SW_SHOW : SW_HIDE;
 
     for (size_t i = 0; i < _countof(Page1); ++i)
@@ -2252,6 +2272,16 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
     for (size_t i = 0; i < _countof(Page5); ++i)
     {
         auto w = GetDlgItem(Page5[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
+    }
+
+    Mode = (index == 5) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page6); ++i)
+    {
+        auto w = GetDlgItem(Page6[i]);
 
         if (w.IsWindow())
             w.ShowWindow(Mode);

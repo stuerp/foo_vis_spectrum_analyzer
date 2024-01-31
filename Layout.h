@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.01.29) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.01.31) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1237,6 +1237,16 @@
 #define W_B08  W_B07
 #define H_B08   11 + H_E04 + IY + H_E09 + IY + H_E12 + IY + H_E06 + 7
 #pragma endregion
+
+#pragma endregion
+
+#pragma region Styles
+
+// Listbox
+#define W_I01    100
+#define H_I01    H_D01
+#define X_I01    X_D01 + W_D01 + IX
+#define Y_I01    Y_D01
 
 #pragma endregion
 

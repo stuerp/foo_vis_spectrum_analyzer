@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.29) P. Stuer **/
+/** $VER: Resources.h (2024.01.31) P. Stuer **/
 
 #pragma once
 
@@ -384,6 +384,12 @@
 #define IDC_AREA_OPACITY                7242
 #define IDC_AREA_OPACITY_SPIN           7244
 #define IDC_AREA_OPACITY_LBL_2          7246
+
+#pragma endregion
+
+#pragma region Styles
+
+#define IDC_STYLES                      7500
 
 #pragma endregion
 

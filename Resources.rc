@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.01.29) P. Stuer **/
+/** $VER: Resources.rc (2024.01.31) P. Stuer **/
 
 #include "Resources.h"
 
@@ -339,6 +339,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_AREA_OPACITY,               X_E06, Y_E06, W_E06, H_E06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_AREA_OPACITY_SPIN,          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "%"                         IDC_AREA_OPACITY_LBL_2,         X_E07, Y_E07 + 2, W_E07, H_E07
+
+    listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98
