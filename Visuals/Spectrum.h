@@ -41,7 +41,7 @@ public:
 private:
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-
+/*
     enum class CurveType
     {
         Peak,
@@ -50,7 +50,16 @@ private:
     };
 
     HRESULT CreateCurve(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
-    HRESULT CreateGeometryPoints(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type);
+*/
+    struct GeometryPoints
+    {
+        std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
+        std::vector<D2D1_POINT_2F> p1;
+        std::vector<D2D1_POINT_2F> p2;
+    };
+
+    HRESULT CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
+    HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
     void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
 
@@ -64,9 +73,6 @@ private:
     const FLOAT PaddingY = 1.f;
 
     D2D1_RECT_F _Bounds;
-
-    // Device-independent resources
-    CComPtr<ID2D1PathGeometry> _Curve;
 
     // Device-dependent resources
     CComPtr<ID2D1SolidColorBrush> _SolidBrush;

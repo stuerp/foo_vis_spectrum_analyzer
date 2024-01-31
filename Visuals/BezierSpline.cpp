@@ -56,13 +56,13 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
     for (size_t i = 0; i < n; ++i)
     {
         // First control point
-        firstControlPoints[i] = D2D1::Point2F(x[i], y[i]);
+        firstControlPoints.push_back(D2D1::Point2F(x[i], y[i]));
 
         // Second control point
         if (i < n - 1)
-            secondControlPoints[i] = D2D1::Point2F(2.f * knots[i + 1].x - x[i + 1], 2.f * knots[i + 1].y - y[i + 1]);
+            secondControlPoints.push_back(D2D1::Point2F(2.f * knots[i + 1].x - x[i + 1], 2.f * knots[i + 1].y - y[i + 1]));
         else
-            secondControlPoints[i] = D2D1::Point2F((knots[n].x + x[n - 1]) / 2.f, (knots[n].y + y[n - 1]) / 2.f);
+            secondControlPoints.push_back(D2D1::Point2F((knots[n].x + x[n - 1]) / 2.f, (knots[n].y + y[n - 1]) / 2.f));
     }
 }
 

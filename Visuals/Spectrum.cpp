@@ -128,12 +128,18 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
     HRESULT hr = S_OK;
 
-//  renderTarget->PushAxisAlignedClip(D2D1::RectF( _Bounds.left + 20 , _Bounds.top + 20, _Bounds.right - 20, _Bounds.bottom - 20), D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    CComPtr<ID2D1PathGeometry> Curve;
 
     // Draw the peak curve.
     if (_Configuration->_PeakMode != PeakMode::None)
     {
-        hr = CreateCurve(frequencyBands, sampleRate, CurveType::Peak);
+//      hr = CreateCurve(frequencyBands, sampleRate, CurveType::Peak);
+        GeometryPoints gp;
+
+        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, true, gp);
+
+        if (SUCCEEDED(hr))
+            hr = CreateCurve(gp, false, &Curve);
 
         if (SUCCEEDED(hr))
         {
@@ -146,30 +152,39 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
                 Brush = _SolidBrush;
             }
 
-            renderTarget->DrawGeometry(_Curve, Brush, 1.f);
+            renderTarget->DrawGeometry(Curve, Brush, 1.f);
         }
 
-        _Curve.Release();
+        Curve.Release();
     }
 
-    // Draw the area.
-    hr = CreateCurve(frequencyBands, sampleRate, CurveType::Area);
+    // Draw the area with the current values.
+//  hr = CreateCurve(frequencyBands, sampleRate, CurveType::Area);
+
+    GeometryPoints gp;
+
+    hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, gp);
 
     if (SUCCEEDED(hr))
     {
-        _GradientBrush->SetOpacity(_Configuration->_AreaOpacity);
+        hr = CreateCurve(gp, true, &Curve);
 
-        renderTarget->FillGeometry(_Curve, _GradientBrush);
+        if (SUCCEEDED(hr))
+        {
+            _GradientBrush->SetOpacity(_Configuration->_AreaOpacity);
 
-        _GradientBrush->SetOpacity(1.0f);
+            renderTarget->FillGeometry(Curve, _GradientBrush);
+
+            _GradientBrush->SetOpacity(1.0f);
+        }
+
+        Curve.Release();
     }
 
-    _Curve.Release();
-
-    // Draw the curve.
+    // Draw the line with the current values.
     if (SUCCEEDED(hr))
     {
-        hr = CreateCurve(frequencyBands, sampleRate, CurveType::Line);
+        hr = CreateCurve(gp, false, &Curve);
 
         if (SUCCEEDED(hr))
         {
@@ -182,13 +197,11 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
                 Brush = _SolidBrush;
             }
 
-            renderTarget->DrawGeometry(_Curve, Brush, _Configuration->_LineWidth);
+            renderTarget->DrawGeometry(Curve, Brush, _Configuration->_LineWidth);
         }
 
-        _Curve.Release();
+        Curve.Release();
     }
-
-//  renderTarget->PopAxisAlignedClip();
 }
 
 /// <summary>
@@ -284,6 +297,7 @@ HRESULT Spectrum::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
     return hr;
 }
 
+#ifdef old // FIXME
 /// <summary>
 /// Creates a curve from the power values.
 /// </summary>
@@ -396,30 +410,14 @@ HRESULT Spectrum::CreateCurve(const std::vector<FrequencyBand> & frequencyBands,
 
     return !IsFlatLine ? hr : E_FAIL;
 }
-
-struct GeometryPoints
-{
-    std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
-    std::vector<D2D1_POINT_2F> p1;
-    std::vector<D2D1_POINT_2F> p2;
-
-    GeometryPoints(size_t n)
-    {
-        p0.reserve(n);
-        p1.reserve(n - 1);
-        p2.reserve(n - 1);
-    }
-};
-
+#endif
 /// <summary>
-/// Creates the geometry points from the power values.
+/// Creates the geometry points from the amplitudes of the spectrum.
 /// </summary>
-HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, CurveType type)
+HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp)
 {
     if (frequencyBands.size() < 2)
         return E_FAIL;
-
-    GeometryPoints gp(frequencyBands.size());
 
     bool IsFlatLine = true;
 
@@ -430,8 +428,6 @@ HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & freque
     FLOAT x = _Bounds.left + (BandWidth / 2.f); // Make sure the knots are nicely centered in the bar rectangle.
     FLOAT y = 0.f;
 
-    size_t n = 0;
-
     // Create all the knots.
     for (size_t i = 0; i < frequencyBands.size(); ++i)
     {
@@ -439,11 +435,11 @@ HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & freque
         if (frequencyBands[i].Ctr > (sampleRate / 2.))
             break;
 
-        double Value = (type != CurveType::Peak) ? _Configuration->ScaleA(frequencyBands[i].CurValue) : frequencyBands[i].Peak;
+        double Value = !usePeak ? _Configuration->ScaleA(frequencyBands[i].CurValue) : frequencyBands[i].Peak;
 
         y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 
-        gp.p0[n++] = D2D1::Point2F(x, y);
+        gp.p0.push_back(D2D1::Point2F(x, y));
 
         if (y < _Bounds.bottom)
             IsFlatLine = false;
@@ -451,8 +447,13 @@ HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & freque
         x += BandWidth;
     }
 
+    const size_t n = gp.p0.size();
+
     if (n > 1)
     {
+        gp.p1.reserve(n - 1);
+        gp.p2.reserve(n - 1);
+
         // Create all the control points.
         BezierSpline::GetControlPoints(gp.p0, n, gp.p1, gp.p2);
 
@@ -464,6 +465,49 @@ HRESULT Spectrum::CreateGeometryPoints(const std::vector<FrequencyBand> & freque
     }
 
     return !IsFlatLine ? S_OK : E_FAIL;
+}
+
+/// <summary>
+/// Creates a curve from the power values.
+/// </summary>
+HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
+{
+    if (gp.p0.size() < 2)
+        return E_FAIL;
+
+    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+
+    CComPtr<ID2D1GeometrySink> Sink;
+
+    if (SUCCEEDED(hr))
+        hr = (*curve)->Open(&Sink);
+
+    if (SUCCEEDED(hr))
+    {
+        Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+        if (isFilled)
+        {
+            Sink->BeginFigure(D2D1::Point2F(_Bounds.left, _Bounds.bottom), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+            Sink->AddLine(D2D1::Point2F(_Bounds.left, gp.p0[0].y));
+        }
+        else
+            Sink->BeginFigure(D2D1::Point2F(_Bounds.left, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+        const size_t n = gp.p1.size();
+
+        for (size_t i = 0; i < n; ++i)
+            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
+
+        if (isFilled)
+            Sink->AddLine(D2D1::Point2F(gp.p0[n].x, _Bounds.bottom)); // End with a vertical line going down.
+
+        Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+        hr = Sink->Close();
+    }
+
+    return hr;
 }
 
 /// <summary>
