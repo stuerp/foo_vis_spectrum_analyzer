@@ -85,7 +85,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.0.0-beta-5, 2024-xx-xx
 
-* Fixed (Beta 4 regression): Removed the DirectComposition code. It was fun while it lasted.
+* Fixed (Beta 4 regression): Removed the DirectComposition code that enabled transparent child windows. It was fun while it lasted.
 
 v0.7.0.0-beta-4, 2024-01-29
 

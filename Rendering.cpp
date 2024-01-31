@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.01.30) P. Stuer **/
+/** $VER: Rendering.cpp (2024.01.31) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -9,10 +9,36 @@
 
 #include "Resources.h"
 #include "Gradients.h"
+#include "Style.h"
 
 #include "Log.h"
 
+#include <map>
+
 #pragma hdrstop
+
+std::map<VisualElement, Style> _Styles = 
+{
+    { VisualElement::Background,
+        {
+            L"Background",
+
+            ColorSource::Solid,
+            D2D1::ColorF(D2D1::ColorF::Black),
+            { },
+
+            // Area-specific
+            1.f,
+
+            // Line-specific
+            0.f,
+
+            // Font-specific
+            L"",
+            0.f,
+        }
+    },
+};
 
 /// <summary>
 /// Creates the timer.
@@ -53,13 +79,13 @@ void UIElement::StopTimer() const noexcept
 /// </summary>
 void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
 {
-    ((UIElement *) context)->Render();
+    ((UIElement *) context)->OnTimer();
 }
 
 /// <summary>
-/// Renders a frame.
+/// Handles a timer tick.
 /// </summary>
-void UIElement::Render()
+void UIElement::OnTimer()
 {
     if (!_CriticalSection.TryEnter())
         return;
@@ -67,97 +93,10 @@ void UIElement::Render()
     _FrameCounter.NewFrame();
 
     ProcessPlaybackEvent();
-
-    HRESULT hr = CreateDeviceSpecificResources();
-
-    if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-    {
-        _RenderTarget->BeginDraw();
-
-        RenderBackground();
-        RenderForeground();
-
-        hr = _RenderTarget->EndDraw();
-
-        if (hr == D2DERR_RECREATE_TARGET)
-        {
-            ReleaseDeviceSpecificResources();
-
-            hr = S_OK;
-        }
-    }
+    UpdateSpectrum();
+    Render();
 
     _CriticalSection.Leave();
-}
-
-/// <summary>
-/// Renders the background.
-/// </summary>
-void UIElement::RenderBackground() const
-{
-    if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
-        _RenderTarget->Clear(_DominantColor);
-    else
-        _RenderTarget->Clear(_Configuration._UseCustomBackColor ? _Configuration._BackColor : _Configuration._DefBackColor);
-
-    // Render the album art if there is any.
-    if ((_Artwork.Bitmap() == nullptr) || !((_Configuration._BackgroundMode == BackgroundMode::Artwork) || (_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor)))
-        return;
-
-    D2D1_SIZE_F Size = _Artwork.Size();
-    D2D1_RECT_F Rect = _Graph.GetBounds();
-
-    FLOAT MaxWidth  = Rect.right  - Rect.left;
-    FLOAT MaxHeight = Rect.bottom - Rect.top;
-
-    // Fit big images (Free / FitBig / FitWidth / FitHeight)
-    {
-        // Fit big images.
-        FLOAT HScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
-        FLOAT VScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
-
-        FLOAT Scalar = (std::min)(HScalar, VScalar);
-
-        Size.width  *= Scalar;
-        Size.height *= Scalar;
-    }
-
-    Rect.left   = (MaxWidth  - Size.width)  / 2.f;
-    Rect.top    = (MaxHeight - Size.height) / 2.f;
-    Rect.right  = Rect.left + Size.width;
-    Rect.bottom = Rect.top  + Size.height;
-
-    _RenderTarget->DrawBitmap(_Artwork.Bitmap(), Rect, _Configuration._ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-}
-
-/// <summary>
-/// Renders the foreground.
-/// </summary>
-void UIElement::RenderForeground()
-{
-    {
-        double PlaybackTime; // in seconds
-
-        // Update the graph.
-        if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
-        {
-            double WindowSize = (double) _FFTSize / (double) _SampleRate;
-
-            audio_chunk_impl Chunk;
-
-            if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
-                ProcessAudioChunk(Chunk);
-        }
-
-        // Update the peak indicators.
-        if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
-            _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
-    }
-
-    _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate);
-
-    if (_Configuration._ShowFrameCounter)
-        _FrameCounter.Render(_RenderTarget);
 }
 
 /// <summary>
@@ -204,6 +143,64 @@ void UIElement::ProcessPlaybackEvent()
     }
 
     _PlaybackEvent = PlaybackEvent::None;
+}
+
+/// <summary>
+/// Updates the spectrum using the next audio chunk.
+/// </summary>
+void UIElement::UpdateSpectrum()
+{
+    double PlaybackTime; // in seconds
+
+    // Update the graph.
+    if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+    {
+        double WindowSize = (double) _FFTSize / (double) _SampleRate;
+
+        audio_chunk_impl Chunk;
+
+        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
+            ProcessAudioChunk(Chunk);
+    }
+
+    // Update the peak indicators.
+    if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
+        _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+}
+
+/// <summary>
+/// Renders a frame.
+/// </summary>
+void UIElement::Render()
+{
+    const Style & style = _Styles[VisualElement::Background];
+/*
+    if (style._ColorSource != ColorSource::Gradient)
+        _RenderTarget->Clear(style._Color);
+    else
+        _RenderTarget->FillRectangle(_Graph.GetBounds(), _Brush);
+*/
+    HRESULT hr = CreateDeviceSpecificResources();
+
+    if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+    {
+        _RenderTarget->BeginDraw();
+
+        _Graph.RenderBackground(_RenderTarget, _Artwork, _DominantColor);
+        _Graph.RenderForeground(_RenderTarget, _FrequencyBands, (double) _SampleRate);
+
+        if (_Configuration._ShowFrameCounter)
+            _FrameCounter.Render(_RenderTarget);
+
+        hr = _RenderTarget->EndDraw();
+
+        if (hr == D2DERR_RECREATE_TARGET)
+        {
+            ReleaseDeviceSpecificResources();
+
+            hr = S_OK;
+        }
+    }
 }
 
 #pragma region DirectX

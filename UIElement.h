@@ -101,12 +101,11 @@ private:
 
     void Resize();
 
-    void Render();
-
-    void RenderBackground() const;
-    void RenderForeground();
+    void OnTimer();
 
     void ProcessPlaybackEvent();
+    void UpdateSpectrum();
+    void Render();
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;

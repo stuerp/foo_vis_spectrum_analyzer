@@ -1,18 +1,19 @@
 
-/** $VER: Graph.h (2024.01.16) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.01.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
 #include "Configuration.h"
+#include "Artwork.h"
 
 #include "Spectrum.h"
 #include "XAxis.h"
 #include "YAxis.h"
 
 /// <summary>
-/// Implements a graphical represenation of the spectrum analysis.
+/// Implements a graphical representation of the spectrum analysis.
 /// </summary>
 class Graph
 {
@@ -24,7 +25,8 @@ public:
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork, D2D1_COLOR_F dominantColor) const;
 
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();

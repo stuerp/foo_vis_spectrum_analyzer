@@ -197,6 +197,7 @@
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
+    <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Windows\Color.h" />
     <ClInclude Include="Windows\COMException.h" />
     <ClInclude Include="Windows\CriticalSection.h" />
