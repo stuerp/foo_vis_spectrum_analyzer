@@ -16,7 +16,7 @@
 class YAxis
 {
 public:
-    YAxis() : _Configuration(nullptr), _TextColor(), _LineColor(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
@@ -52,8 +52,6 @@ private:
 
     std::vector<Label> _Labels;
 
-    D2D1_COLOR_F _TextColor;
-    D2D1_COLOR_F _LineColor;
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 

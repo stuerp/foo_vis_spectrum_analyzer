@@ -51,8 +51,6 @@ private:
     double _HiFrequency;
     size_t _NumBands;
 
-    D2D1_COLOR_F _TextColor;
-    D2D1_COLOR_F _LineColor;
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 

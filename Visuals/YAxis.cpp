@@ -15,9 +15,6 @@ void YAxis::Initialize(const Configuration * configuration)
 {
     _Configuration = configuration;
 
-    _TextColor = configuration->_YTextColor;
-    _LineColor = configuration->_YLineColor;
-
     _Labels.clear();
 
     if (_Configuration->_YAxisMode == YAxisMode::None)

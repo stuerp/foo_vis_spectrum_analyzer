@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.01.31) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.01) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -60,8 +60,6 @@ private:
     HRESULT CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
     HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
-    void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
-
     void RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
     void RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
@@ -74,12 +72,6 @@ private:
     D2D1_RECT_F _Bounds;
 
     // Device-dependent resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
-    CComPtr<ID2D1SolidColorBrush> _BackBrush;
-    CComPtr<ID2D1SolidColorBrush> _WhiteBrush;
-
-    CComPtr<ID2D1LinearGradientBrush> _GradientBrush;
+    CComPtr<ID2D1SolidColorBrush> _SolidColorBrush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
-
-    std::vector<D2D1_GRADIENT_STOP> _GradientStops;
  };

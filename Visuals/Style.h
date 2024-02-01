@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.01.31) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.01) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -16,14 +16,14 @@ enum class VisualElement
     YAxisLine,
 
     BarForeground,
-    PeakIndicator,
-    BarWhiteKey,
-    BarBlackKey,
+    BarPeakIndicator,
+    BarDarkBackground,
+    BarLightBackground,
 
     CurveLine,
     CurveArea,
-    PeakLine,
-    PeakArea
+    CurvePeakLine,
+    CurvePeakArea
 };
 
 enum class ColorSource

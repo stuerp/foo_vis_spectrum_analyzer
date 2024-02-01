@@ -24,9 +24,6 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
     _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
     _NumBands = frequencyBands.size();
 
-    _TextColor = _Configuration->_XTextColor;
-    _LineColor = _Configuration->_XLineColor;
-
     _Labels.clear();
 
     if (frequencyBands.size() == 0)

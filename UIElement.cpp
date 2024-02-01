@@ -489,7 +489,7 @@ void UIElement::SetConfiguration() noexcept
 
             for (FrequencyBand & Iter : _FrequencyBands)
             {
-                Iter.ForeColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
+                Iter.GradientColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
                 i++;
 
                 if (i >= n)
@@ -510,7 +510,7 @@ void UIElement::SetConfiguration() noexcept
         else
         {
             for (FrequencyBand & Iter : _FrequencyBands)
-                Iter.ForeColor = _Configuration._GradientStops[0].color;
+                Iter.GradientColor = _Configuration._GradientStops[0].color;
         }
     }
 

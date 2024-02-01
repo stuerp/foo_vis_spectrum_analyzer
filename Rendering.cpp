@@ -1,4 +1,5 @@
 
+
 /** $VER: Rendering.cpp (2024.01.31) P. Stuer **/
 
 #include "UIElement.h"
@@ -254,6 +255,46 @@ void UIElement::UpdateStyles() noexcept
     }
 
     {
+        Style & style = _StyleManager.GetStyle(VisualElement::BarForeground);
+
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            style._ColorSource = ColorSource::Gradient;
+            style._Color = D2D1::ColorF(0, 0.f);
+            style._GradientStops = style._CustomGradientStops;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+
+        style._CustomColor = _Configuration._DarkBandColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            style._ColorSource = ColorSource::Solid;
+            style._Color = style._CustomColor;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+
+        style._CustomColor = _Configuration._LightBandColor;
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+            style._ColorSource = ColorSource::Solid;
+            style._Color = style._CustomColor;
+    }
+
+    {
+        Style & style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
+
+        style._CustomGradientStops = _Configuration._GradientStops;
+
+        {
+            style._Color = style._CustomColor;
+        }
+    }
+
+    {
         Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
 
         style._CustomColor = _Configuration._LineColor;
@@ -287,7 +328,7 @@ void UIElement::UpdateStyles() noexcept
     }
 
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::PeakLine);
+        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
         style._CustomColor = _Configuration._PeakLineColor;
         style._CustomGradientStops = _Configuration._GradientStops;
@@ -306,7 +347,7 @@ void UIElement::UpdateStyles() noexcept
     }
 
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::PeakArea);
+        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
         style._Color = style._CustomColor;
     }

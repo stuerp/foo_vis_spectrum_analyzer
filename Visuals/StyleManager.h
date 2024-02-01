@@ -74,6 +74,46 @@ private:
             }
         },
 
+        { VisualElement::BarForeground,
+            {
+                L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, 1.f,
+                // Line-specific
+                0.f,
+                // Font-specific
+                L"", 0.f,
+            }
+        },
+
+        { VisualElement::BarDarkBackground,
+            {
+                L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(0), ColorScheme::Solid, { }, 1.f,
+                // Line-specific
+                0.f,
+                // Font-specific
+                L"", 0.f,
+            }
+        },
+
+        { VisualElement::BarLightBackground,
+            {
+                L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(0), ColorScheme::Solid, { }, 1.f,
+                // Line-specific
+                0.f,
+                // Font-specific
+                L"", 0.f,
+            }
+        },
+
+        { VisualElement::BarPeakIndicator,
+            {
+                L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
+                // Line-specific
+                0.f,
+                // Font-specific
+                L"", 0.f,
+            }
+        },
+
         { VisualElement::CurveLine,
             {
                 L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, 1.f,
@@ -94,7 +134,7 @@ private:
             }
         },
 
-        { VisualElement::PeakLine,
+        { VisualElement::CurvePeakLine,
             {
                 L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, 1.f,
                 // Line-specific
@@ -104,7 +144,7 @@ private:
             }
         },
 
-        { VisualElement::PeakArea,
+        { VisualElement::CurvePeakArea,
             {
                 L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, .25f,
                 // Line-specific
