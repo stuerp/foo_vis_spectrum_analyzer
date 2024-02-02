@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.01.28) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.02) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -83,6 +83,7 @@ private:
 
     void UpdateControls();
     void UpdateColorControls();
+    void UpdateStyleControls();
     void UpdateChannelsMenu();
     void UpdatePages(size_t index) const noexcept;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.31) P. Stuer **/
+/** $VER: Resources.h (2024.02.02) P. Stuer **/
 
 #pragma once
 
@@ -228,19 +228,6 @@
 
 #define IDC_COMMON                      6000
 
-#define IDC_COLOR_SCHEME_LBL            6010
-#define IDC_COLOR_SCHEME                6012
-
-#define IDC_GRADIENT                    6022
-#define IDC_COLOR_LIST                  6024
-#define IDC_ADD                         6026
-#define IDC_REMOVE                      6028
-#define IDC_REVERSE                     6030
-
-#define IDC_POSITION                    6040
-#define IDC_POSITION_LBL                6042
-#define IDC_SPREAD                      6044
-
 #define IDC_SMOOTHING_METHOD_LBL        6050
 #define IDC_SMOOTHING_METHOD            6052
 
@@ -390,6 +377,37 @@
 #pragma region Styles
 
 #define IDC_STYLES                      7500
+
+#define IDC_COLOR_SOURCE_LBL            7502
+#define IDC_COLOR_SOURCE                7504
+
+#define IDC_COLOR_INDEX_LBL             7506
+#define IDC_COLOR_INDEX                 7508
+
+#define IDC_COLOR_BUTTON_LBL            7510
+#define IDC_COLOR_BUTTON                7512
+
+#define IDC_OPACITY_LBL                 7514
+#define IDC_OPACITY                     7516
+#define IDC_OPACITY_SPIN                7518
+#define IDC_OPACITY_UNIT                7520
+
+#define IDC_THICKNESS_LBL               7522
+#define IDC_THICKNESS                   7524
+#define IDC_THICKNESS_SPIN              7526
+
+#define IDC_COLOR_SCHEME_LBL            7530
+#define IDC_COLOR_SCHEME                7532
+
+#define IDC_GRADIENT                    7534
+#define IDC_COLOR_LIST                  7536
+#define IDC_ADD                         7538
+#define IDC_REMOVE                      7540
+#define IDC_REVERSE                     7542
+
+#define IDC_POSITION                    7544
+#define IDC_POSITION_LBL                7546
+#define IDC_SPREAD                      7548
 
 #pragma endregion
 

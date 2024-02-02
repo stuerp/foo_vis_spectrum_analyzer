@@ -26,7 +26,7 @@ private:
     {
         { VisualElement::Background,
             {
-                L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), ColorScheme::Solid, { }, 1.f,
+                L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -36,7 +36,7 @@ private:
 
         { VisualElement::XAxisLine,
             {
-                L"X-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), ColorScheme::Solid, { }, 1.f,
+                L"X-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 1.f,
                 // Font-specific
@@ -46,7 +46,7 @@ private:
 
         { VisualElement::XAxisText,
             {
-                L"X-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
+                L"X-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -56,7 +56,7 @@ private:
 
         { VisualElement::YAxisLine,
             {
-                L"Y-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), ColorScheme::Solid, { }, 1.f,
+                L"Y-axis Line", ColorSource::Gradient, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 1.f,
                 // Font-specific
@@ -66,7 +66,7 @@ private:
 
         { VisualElement::YAxisText,
             {
-                L"Y-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
+                L"Y-axis Text", ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -76,7 +76,7 @@ private:
 
         { VisualElement::BarForeground,
             {
-                L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, 1.f,
+                L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -86,7 +86,7 @@ private:
 
         { VisualElement::BarDarkBackground,
             {
-                L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(0), ColorScheme::Solid, { }, 1.f,
+                L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(0), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -96,7 +96,7 @@ private:
 
         { VisualElement::BarLightBackground,
             {
-                L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(0), ColorScheme::Solid, { }, 1.f,
+                L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(0), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -106,7 +106,7 @@ private:
 
         { VisualElement::BarPeakIndicator,
             {
-                L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Solid, { }, 1.f,
+                L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, { }, 1.f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -116,7 +116,7 @@ private:
 
         { VisualElement::CurveLine,
             {
-                L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, 1.f,
+                L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, { }, 1.f,
                 // Line-specific
                 2.f,
                 // Font-specific
@@ -126,7 +126,7 @@ private:
 
         { VisualElement::CurveArea,
             {
-                L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), ColorScheme::Artwork, { }, .5f,
+                L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, { }, .5f,
                 // Line-specific
                 0.f,
                 // Font-specific
@@ -136,7 +136,7 @@ private:
 
         { VisualElement::CurvePeakLine,
             {
-                L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, 1.f,
+                L"Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, { }, 1.f,
                 // Line-specific
                 2.f,
                 // Font-specific
@@ -146,7 +146,7 @@ private:
 
         { VisualElement::CurvePeakArea,
             {
-                L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), ColorScheme::Artwork, { }, .25f,
+                L"Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, { }, .25f,
                 // Line-specific
                 0.f,
                 // Font-specific
