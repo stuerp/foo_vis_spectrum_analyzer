@@ -1113,7 +1113,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
                     break;
 
                 case ColorScheme::Artwork:
-                    _Configuration->_GradientStops = _Configuration->_ArtworkGradientStops;
+                    _Configuration->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
                     break;
             }
 
