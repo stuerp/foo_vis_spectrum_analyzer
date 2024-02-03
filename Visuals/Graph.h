@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.01.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.02.03) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include "Configuration.h"
 #include "Artwork.h"
 
+#include "Element.h"
 #include "Spectrum.h"
 #include "XAxis.h"
 #include "YAxis.h"
@@ -15,7 +16,7 @@
 /// <summary>
 /// Implements a graphical representation of the spectrum analysis.
 /// </summary>
-class Graph
+class Graph : public Element
 {
 public:
     Graph();
@@ -43,8 +44,6 @@ public:
 
 private:
     D2D1_RECT_F _Bounds;
-
-    const Configuration * _Configuration;
 
     Spectrum _Spectrum;
     XAxis _XAxis;

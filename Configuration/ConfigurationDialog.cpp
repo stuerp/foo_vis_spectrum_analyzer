@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.03) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -11,7 +11,8 @@
 #include "Direct2D.h"
 
 #include "Theme.h"
-#include "StyleManager.h"
+
+#include "Log.h"
 
 /// <summary>
 /// Initializes the dialog.
@@ -667,7 +668,6 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Common
     {
-        SendDlgItemMessageW(IDC_DRAW_BAND_BACKGROUND, BM_SETCHECK, _Configuration->_DrawBandBackground);
         SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, _Configuration->_HorizontalGradient);
     }
     {
@@ -765,24 +765,6 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region Colors
-
-    _BackColor.Initialize(GetDlgItem(IDC_BACK_COLOR));
-
-    _XTextColor.Initialize(GetDlgItem(IDC_X_TEXT_COLOR));
-    _XLineColor.Initialize(GetDlgItem(IDC_X_LINE_COLOR));
-
-    _YTextColor.Initialize(GetDlgItem(IDC_Y_TEXT_COLOR));
-    _YLineColor.Initialize(GetDlgItem(IDC_Y_LINE_COLOR));
-
-    SendDlgItemMessageW(IDC_BACK_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomBackColor);
-    SendDlgItemMessageW(IDC_X_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXTextColor);
-    SendDlgItemMessageW(IDC_X_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomXLineColor);
-    SendDlgItemMessageW(IDC_Y_TEXT_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYTextColor);
-    SendDlgItemMessageW(IDC_Y_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomYLineColor);
-
-    #pragma endregion
-
     #pragma region Visualization
     {
         auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
@@ -817,62 +799,14 @@ void ConfigurationDialog::Initialize()
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _Configuration->_LEDMode);
     }
 
-    _LiteBandColor.Initialize(GetDlgItem(IDC_WHITE_KEYS));
-    _DarkBandColor.Initialize(GetDlgItem(IDC_BLACK_KEYS));
-
-    #pragma endregion
-
-    #pragma region Curve
-
-    {
-        UDACCEL Accel[] =
-        {
-            { 1, 1 }, //  0.1
-            { 2, 5 }, //  0.5
-        };
-
-        _LineWidth.Initialize(GetDlgItem(IDC_LINE_WIDTH));
-
-        SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
-
-        auto w = CUpDownCtrl(GetDlgItem(IDC_LINE_WIDTH_SPIN));
-
-        w.SetRange32((int) (MinLineWidth * 10.), (int) (MaxLineWidth * 10.));
-        w.SetPos32((int) (_Configuration->_LineWidth * 10.));
-        w.SetAccel(_countof(Accel), Accel);
-    }
-    {
-        _LineColor.Initialize(GetDlgItem(IDC_LINE_COLOR));
-        _PeakLineColor.Initialize(GetDlgItem(IDC_PEAK_LINE_COLOR));
-
-        SendDlgItemMessageW(IDC_LINE_COLOR_DEF,  BM_SETCHECK,  _Configuration->_UseCustomLineColor);
-        SendDlgItemMessageW(IDC_PEAK_LINE_COLOR_DEF, BM_SETCHECK, _Configuration->_UseCustomPeakLineColor);
-    }
-    {
-        UDACCEL Accel[] =
-        {
-            { 1,  1 },
-            { 2,  5 },
-            { 3, 10 },
-        };
-
-        _AreaOpacity.Initialize(GetDlgItem(IDC_AREA_OPACITY));
-
-        SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
-
-        auto w = CUpDownCtrl(GetDlgItem(IDC_AREA_OPACITY_SPIN));
-
-        w.SetRange32((int) (MinAreaOpacity * 100.f), (int) (MaxAreaOpacity * 100.f));
-        w.SetPos32((int) (_Configuration->_AreaOpacity * 100.f));
-        w.SetAccel(_countof(Accel), Accel);
-    }
-
     #pragma endregion
 
     #pragma endregion
 
     #pragma region Styles
     {
+        _Configuration->_CurrentStyle = (int) VisualElement::Background;
+
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
         std::vector<Style> Styles;
@@ -881,6 +815,8 @@ void ConfigurationDialog::Initialize()
 
         for (const auto & x : Styles)
             w.AddString(x._Name.c_str());
+
+        w.SetCurSel(_Configuration->_CurrentStyle);
     }
 
     {
@@ -888,11 +824,11 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Solid", L"Dominant Color", L"Gradient", L"Windows", L"Host" })
+        for (const auto & x : { L"None", L"Solid", L"Dominant Color", L"Gradient", L"Windows", L"User Interface" })
             w.AddString(x);
-
-        w.SetCurSel(0);
     }
+
+    _Color.Initialize(GetDlgItem(IDC_COLOR_BUTTON));
 
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
@@ -901,8 +837,6 @@ void ConfigurationDialog::Initialize()
 
         for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" })
             w.AddString(x);
-
-        w.SetCurSel((int) _Configuration->_ColorScheme);
     }
 
     {
@@ -910,6 +844,40 @@ void ConfigurationDialog::Initialize()
         _Colors.Initialize(GetDlgItem(IDC_COLOR_LIST));
         _Position.Initialize(GetDlgItem(IDC_POSITION));
     }
+
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  1 },
+            { 2,  5 },
+            { 3, 10 },
+        };
+
+        _Opacity.Initialize(GetDlgItem(IDC_OPACITY));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_OPACITY_SPIN));
+
+        w.SetRange32((int) (MinOpacity * 100.f), (int) (MaxOpacity * 100.f));
+        w.SetPos32(0);
+        w.SetAccel(_countof(Accel), Accel);
+    }
+
+    {
+        UDACCEL Accel[] =
+        {
+            { 1, 1 }, //  0.1
+            { 2, 5 }, //  0.5
+        };
+
+        _Thickness.Initialize(GetDlgItem(IDC_THICKNESS));
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_THICKNESS_SPIN));
+
+        w.SetRange32((int) (MinThickness * 10.), (int) (MaxThickness * 10.));
+        w.SetAccel(_countof(Accel), Accel);
+    }
+
+    UpdateStyleControls();
     #pragma endregion
 
     UpdateControls();
@@ -964,29 +932,18 @@ void ConfigurationDialog::Terminate()
 
     _WeightingAmount.Terminate();
 
-    _Position.Terminate();
-    _Colors.Terminate();
-    _Gradient.Terminate();
-
     _ArtworkOpacity.Terminate();
     _ArtworkColors.Terminate();
     _LightnessThreshold.Terminate();
 
-    _BackColor.Terminate();
+    _Color.Terminate();
 
-    _XTextColor.Terminate();
-    _XLineColor.Terminate();
+    _Position.Terminate();
+    _Colors.Terminate();
+    _Gradient.Terminate();
 
-    _YTextColor.Terminate();
-    _YLineColor.Terminate();
-
-    _LiteBandColor.Terminate();
-    _DarkBandColor.Terminate();
-
-    _LineWidth.Terminate();
-    _LineColor.Terminate();
-    _PeakLineColor.Terminate();
-    _AreaOpacity.Terminate();
+    _Opacity.Terminate();
+    _Thickness.Terminate();
 }
 
 /// <summary>
@@ -998,7 +955,7 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
     {
         case CC_GRADIENT_STOPS:
         {
-            UpdateColorControls();
+            UpdateColorSchemeControls();
             break;
         }
     }
@@ -1151,6 +1108,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
 
         #pragma region Visualization
+
         case IDC_VISUALIZATION:
         {
             _Configuration->_VisualizationType = (VisualizationType) SelectedIndex;
@@ -1160,6 +1118,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         }
 
         #pragma region Bars
+
         case IDC_PEAK_MODE:
         {
             _Configuration->_PeakMode = (PeakMode) SelectedIndex;
@@ -1167,6 +1126,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             UpdateControls();
             break;
         }
+
         #pragma endregion
 
         #pragma endregion
@@ -1175,62 +1135,80 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_STYLES:
         {
+            _Configuration->_CurrentStyle = ((CListBox) w).GetCurSel();
+
             UpdateStyleControls();
-            break;
+
+            return;
         }
 
         case IDC_COLOR_SOURCE:
         {
-            break;
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            style->_ColorSource = (ColorSource) SelectedIndex;
+
+            UpdateStyleControls();
+
+            return;
         }
 
         case IDC_COLOR_INDEX:
         {
-            break;
-        }
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-        #pragma region Color Scheme
+            style->_ColorIndex = SelectedIndex;
+
+            UpdateStyleControls();
+
+            return;
+        }
 
         #pragma warning(disable: 4061) // Enumerator not handled
         case IDC_COLOR_SCHEME:
         {
-            _Configuration->_ColorScheme = (ColorScheme) SelectedIndex;
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-            switch (_Configuration->_ColorScheme)
+            style->_ColorScheme = (ColorScheme) SelectedIndex;
+
+            switch (style->_ColorScheme)
             {
                 default:
-                    _Configuration->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
+                    style->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
                     break;
 
                 case ColorScheme::Custom:
-                    _Configuration->_GradientStops = _Configuration->_CustomGradientStops;
+                    style->_GradientStops = style->_CustomGradientStops;
                     break;
 
                 case ColorScheme::Artwork:
-                    _Configuration->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+                    style->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
                     break;
             }
 
-            UpdateColorControls();
-            break;
+            UpdateColorSchemeControls();
+
+            return;
         }
         #pragma warning(default: 4061)
 
         case IDC_COLOR_LIST:
         {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
             // Show the position of the selected color of the gradient.
             size_t Index = (size_t) _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || (Index >= style->_GradientStops.size()))
                 return;
 
-                t_int64 Position = (t_int64) (_Configuration->_GradientStops[Index].position * 100.f);
+                t_int64 Position = (t_int64) (style->_GradientStops[Index].position * 100.f);
                 SetDlgItemTextW(IDC_POSITION, pfc::wideFromUTF8(pfc::format_int(Position)));
 
             // Update the state of the buttons.
             bool HasSelection = (Index != LB_ERR);
-            bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
-            bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
+            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
+            bool HasMoreThanOneColor = (style->_GradientStops.size() > 1);
 
                 GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
                 GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
@@ -1241,8 +1219,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             return;
         }
-
-        #pragma endregion
 
         #pragma endregion
     }
@@ -1389,28 +1365,25 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma region Color Scheme
         case IDC_POSITION:
         {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
             size_t Index = (size_t) _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || (Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || (Index >= style->_GradientStops.size()))
                 return;
 
             int Position = Clamp(::_wtoi(Text), 0, 100);
 
-            if ((int) (_Configuration->_GradientStops[Index].position * 100.f) == Position)
+            if ((int) (style->_GradientStops[Index].position * 100.f) == Position)
                 break;
 
-            _Configuration->_GradientStops[Index].position = (FLOAT) Position / 100.f;
+            style->_GradientStops[Index].position = (FLOAT) Position / 100.f;
 
-            _Configuration->_ColorScheme = ColorScheme::Custom;
-            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_GradientStops;
 
-            {
-                auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
-
-                w.SetCurSel((int) _Configuration->_ColorScheme);
-            }
-
-            _Gradient.SetGradientStops(_Configuration->_GradientStops);
+            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)). SetCurSel((int) style->_ColorScheme);
+            _Gradient.SetGradientStops(style->_GradientStops);
             break;
         }
         #pragma endregion
@@ -1482,6 +1455,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma region Bars
 
         #pragma region Peak indicator
+
         case IDC_SMOOTHING_FACTOR:
         {
             _Configuration->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
@@ -1499,21 +1473,26 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
             break;
         }
-        #pragma endregion
 
         #pragma endregion
 
-        #pragma region Curve
+        #pragma endregion
 
-        case IDC_LINE_WIDTH:
+        #pragma region Styles
+
+        case IDC_OPACITY:
         {
-            _Configuration->_LineWidth = (FLOAT) Clamp(::_wtof(Text), MinLineWidth, MaxLineWidth);
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            style->_Opacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
         }
 
-        case IDC_AREA_OPACITY:
+        case IDC_THICKNESS:
         {
-            _Configuration->_AreaOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinAreaOpacity, MaxAreaOpacity);
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            style->_Thickness = (FLOAT) Clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
         }
 
@@ -1583,8 +1562,9 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_HOLD_TIME:             { SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1))); break; }
         case IDC_ACCELERATION:          { SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1))); break; }
 
-        case IDC_LINE_WIDTH:            { SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1))); break; }
-        case IDC_AREA_OPACITY:          { SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f)))); break; }
+        // Styles
+        case IDC_THICKNESS:             { SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Thickness, 0, 1))); break; }
+        case IDC_OPACITY:               { SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Opacity * 100.f)))); break; }
     }
 
     return;
@@ -1633,9 +1613,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
-        case IDC_DRAW_BAND_BACKGROUND:
+        case IDC_SHOW_TOOLTIPS:
         {
-            _Configuration->_DrawBandBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -1653,12 +1633,14 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD:
         {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
             int Index = _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || ((size_t) Index >= style->_GradientStops.size()))
                 return;
 
-            D2D1_COLOR_F Color = _Configuration->_GradientStops[(size_t) Index].color;
+            D2D1_COLOR_F Color = style->_GradientStops[(size_t) Index].color;
 
             CColorDialogEx cd;
 
@@ -1667,101 +1649,50 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             D2D1_GRADIENT_STOP gs = { 0.f, Color };
 
-            _Configuration->_GradientStops.insert(_Configuration->_GradientStops.begin() + Index + 1, gs);
+            style->_GradientStops.insert(style->_GradientStops.begin() + Index + 1, gs);
 
-            _Configuration->UpdateGradientStops();
-
-            UpdateColorControls();
+            UpdateGradientStops(style);
+            UpdateColorSchemeControls();
             break;
         }
 
         case IDC_REMOVE:
         {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
             // Don't remove the last color.
             if (_Colors.GetCount() == 1)
                 return;
 
             int Index = _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || ((size_t) Index >= _Configuration->_GradientStops.size()))
+            if ((Index == LB_ERR) || ((size_t) Index >= style->_GradientStops.size()))
                 return;
 
-            _Configuration->_GradientStops.erase(_Configuration->_GradientStops.begin() + Index);
+            style->_GradientStops.erase(style->_GradientStops.begin() + Index);
 
-            _Configuration->UpdateGradientStops();
-
-            UpdateColorControls();
+            UpdateGradientStops(style);
+            UpdateColorSchemeControls();
             break;
         }
 
         case IDC_REVERSE:
         {
-            std::reverse(_Configuration->_GradientStops.begin(), _Configuration->_GradientStops.end());
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-            _Configuration->UpdateGradientStops();
-            UpdateColorControls();
+            std::reverse(style->_GradientStops.begin(), style->_GradientStops.end());
+
+            UpdateGradientStops(style);
+            UpdateColorSchemeControls();
             break;
         }
 
         case IDC_SPREAD:
         {
-            _Configuration->UpdateGradientStops();
-            UpdateColorControls();
-            break;
-        }
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-        case IDC_BACK_COLOR_DEF:
-        {
-            _Configuration->_UseCustomBackColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_X_TEXT_COLOR_DEF:
-        {
-            _Configuration->_UseCustomXTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_X_LINE_COLOR_DEF:
-        {
-            _Configuration->_UseCustomXLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_Y_TEXT_COLOR_DEF:
-        {
-            _Configuration->_UseCustomYTextColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_Y_LINE_COLOR_DEF:
-        {
-            _Configuration->_UseCustomYLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_LINE_COLOR_DEF:
-        {
-            _Configuration->_UseCustomLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_PEAK_LINE_COLOR_DEF:
-        {
-            _Configuration->_UseCustomPeakLineColor = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            UpdateColorControls();
-            break;
-        }
-
-        case IDC_SHOW_TOOLTIPS:
-        {
-            _Configuration->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateGradientStops(style);
+            UpdateColorSchemeControls();
             break;
         }
 
@@ -1954,20 +1885,6 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_LINE_WIDTH_SPIN:
-        {
-            _Configuration->_LineWidth = (FLOAT) ClampNewSpinPosition(nmud, MinLineWidth, MaxLineWidth, 10.);
-            SetDlgItemTextW(IDC_LINE_WIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_LineWidth, 0, 1)));
-            break;
-        }
-
-        case IDC_AREA_OPACITY_SPIN:
-        {
-            _Configuration->_AreaOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinAreaOpacity, MaxAreaOpacity, 100.);
-            SetDlgItemTextW(IDC_AREA_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_AreaOpacity * 100.f))));
-            break;
-        }
-
         case IDC_NUM_ARTWORK_COLORS_SPIN:
         {
             _Configuration->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
@@ -1986,6 +1903,24 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         {
             _Configuration->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
             SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
+            break;
+        }
+
+        case IDC_OPACITY_SPIN:
+        {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            style->_Opacity = (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.);
+            SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
+            break;
+        }
+
+        case IDC_THICKNESS_SPIN:
+        {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            style->_Thickness = (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.);
+            SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(style->_Thickness, 0, 1)));
             break;
         }
 
@@ -2010,6 +1945,8 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
     {
         case IDC_COLOR_LIST:
         {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
             std::vector<D2D1_COLOR_F> Colors;
 
             _Colors.GetColors(Colors);
@@ -2017,74 +1954,23 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             if (Colors.empty())
                 return 0;
 
-            _Direct2D.CreateGradientStops(Colors,_Configuration->_GradientStops);
+            style->_ColorScheme = ColorScheme::Custom;
+            _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
 
-            _Configuration->_ColorScheme = ColorScheme::Custom;
-            _Configuration->_CustomGradientStops = _Configuration->_GradientStops;
-
-            {
-                auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
-
-                w.SetCurSel((int) _Configuration->_ColorScheme);
-            }
-
-            {
-                _Gradient.SetGradientStops(_Configuration->_GradientStops);
-            }
+            // Update the controls.
+            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
+            _Gradient.SetGradientStops(style->_CustomGradientStops);
             break;
         }
 
-        case IDC_BACK_COLOR:
+        case IDC_COLOR_BUTTON:
         {
-            _BackColor.GetColor(_Configuration->_BackColor);
-            break;
-        }
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-        case IDC_X_TEXT_COLOR:
-        {
-            _XTextColor.GetColor(_Configuration->_XTextColor);
-            break;
-        }
+            _Color.GetColor(style->_CustomColor);
 
-        case IDC_X_LINE_COLOR:
-        {
-            _XLineColor.GetColor(_Configuration->_XLineColor);
-            break;
-        }
-
-        case IDC_Y_TEXT_COLOR:
-        {
-            _YTextColor.GetColor(_Configuration->_YTextColor);
-            break;
-        }
-
-        case IDC_Y_LINE_COLOR:
-        {
-            _YLineColor.GetColor(_Configuration->_YLineColor);
-            break;
-        }
-
-        case IDC_WHITE_KEYS:
-        {
-            _LiteBandColor.GetColor(_Configuration->_LightBandColor);
-            break;
-        }
-
-        case IDC_BLACK_KEYS:
-        {
-            _DarkBandColor.GetColor(_Configuration->_DarkBandColor);
-            break;
-        }
-
-        case IDC_LINE_COLOR:
-        {
-            _LineColor.GetColor(_Configuration->_LineColor);
-            break;
-        }
-
-        case IDC_PEAK_LINE_COLOR:
-        {
-            _PeakLineColor.GetColor(_Configuration->_PeakLineColor);
+            if (style->_ColorSource == ColorSource::Solid)
+                style->_Color = style->_CustomColor;
             break;
         }
 
@@ -2216,14 +2102,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
-
-        // Colors
-        IDC_COLORS_GROUP,
-            IDC_BACK_COLOR_LBL, IDC_BACK_COLOR, IDC_BACK_COLOR_DEF,
-            IDC_X_TEXT_COLOR_LBL, IDC_X_TEXT_COLOR, IDC_X_TEXT_COLOR_DEF,
-            IDC_X_LINE_COLOR_LBL, IDC_X_LINE_COLOR, IDC_X_LINE_COLOR_DEF,
-            IDC_Y_TEXT_COLOR_LBL, IDC_Y_TEXT_COLOR, IDC_Y_TEXT_COLOR_DEF,
-            IDC_Y_LINE_COLOR_LBL, IDC_Y_LINE_COLOR, IDC_Y_LINE_COLOR_DEF,
     };
 
     static const int Page5[] =
@@ -2236,18 +2114,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
         IDC_BARS,
-            IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE,
-
-            IDC_WHITE_KEYS_LBL, IDC_WHITE_KEYS,
-            IDC_BLACK_KEYS_LBL, IDC_BLACK_KEYS,
-
-        IDC_CURVE,
-            IDC_LINE_WIDTH_LBL, IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN,
-
-            IDC_LINE_COLOR_LBL, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF,
-            IDC_PEAK_LINE_COLOR_LBL, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF,
-
-            IDC_AREA_OPACITY_LBL, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN, IDC_AREA_OPACITY_LBL_2,
+            IDC_LED_MODE,
     };
 
     static const int Page6[] =
@@ -2400,7 +2267,7 @@ void ConfigurationDialog::UpdateControls()
             GetDlgItem(Iter).EnableWindow(HasFilter);
 
     // Background Mode
-    bool UseArtworkForBackground = ((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor));
+    bool UseArtworkForBackground = (_Configuration->_BackgroundMode == BackgroundMode::Artwork);
 
         GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
         GetDlgItem(IDC_FILE_PATH).EnableWindow(UseArtworkForBackground);
@@ -2420,101 +2287,8 @@ void ConfigurationDialog::UpdateControls()
     // Bars
     bool IsBars = _Configuration->_VisualizationType == VisualizationType::Bars;
 
-        for (const auto & Iter : { IDC_DRAW_BAND_BACKGROUND, IDC_LED_MODE, IDC_WHITE_KEYS, IDC_BLACK_KEYS })
+        for (const auto & Iter : { IDC_LED_MODE })
             GetDlgItem(Iter).EnableWindow(IsBars);
-
-        _LiteBandColor.SetColor(_Configuration->_LightBandColor);
-        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
-
-    // Curve
-    bool IsCurve = _Configuration->_VisualizationType == VisualizationType::Curve;
-
-        for (const auto & Iter : { IDC_LINE_WIDTH, IDC_LINE_WIDTH_SPIN, IDC_LINE_COLOR, IDC_LINE_COLOR_DEF, IDC_PEAK_LINE_COLOR, IDC_PEAK_LINE_COLOR_DEF, IDC_AREA_OPACITY, IDC_AREA_OPACITY_SPIN })
-            GetDlgItem(Iter).EnableWindow(IsCurve);
-
-    UpdateColorControls();
-}
-
-/// <summary>
-/// Updates the color controls with the current configuration.
-/// </summary>
-void ConfigurationDialog::UpdateColorControls()
-{
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
-
-        w.SetCurSel((int) _Configuration->_ColorScheme);
-    }
-
-    {
-        _Gradient.SetGradientStops(_Configuration->_GradientStops);
-    }
-
-    {
-        std::vector<D2D1_COLOR_F> Colors;
-
-        for (const auto & Iter : _Configuration->_GradientStops)
-            Colors.push_back(Iter.color);
-
-        _Colors.SetColors(Colors);
-    }
-
-    // Add and Remove are only enabled when a color is selected.
-    auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
-
-    bool HasSelection = (lb.GetCurSel() != LB_ERR);
-
-    // Remove and Reverse are only enabled when there is more than 1 color.
-    bool HasMoreThanOneColor = (_Configuration->_GradientStops.size() > 1);
-
-    // Gradient controls are disabled when the artwork provides the colors.
-    bool UseArtwork = (_Configuration->_ColorScheme == ColorScheme::Artwork);
-
-//      GetDlgItem(IDC_COLOR_LIST).EnableWindow(!UseArtwork);
-
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
-
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
-
-        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
-        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
-
-        GetDlgItem(IDC_NUM_ARTWORK_COLORS).EnableWindow(UseArtwork);
-        GetDlgItem(IDC_LIGHTNESS_THRESHOLD).EnableWindow(UseArtwork);
-        GetDlgItem(IDC_COLOR_ORDER).EnableWindow(UseArtwork);
-
-    {
-        _BackColor.EnableWindow(_Configuration->_UseCustomBackColor);
-        _BackColor.SetColor(_Configuration->_UseCustomBackColor ? _Configuration->_BackColor : ToD2D1_COLOR_F(_Configuration->_DefBackColor));
-
-        _XTextColor.EnableWindow(_Configuration->_UseCustomXTextColor);
-        _XTextColor.SetColor(_Configuration->_UseCustomXTextColor ? _Configuration->_XTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
-
-        _XLineColor.EnableWindow(_Configuration->_UseCustomXLineColor);
-        _XLineColor.SetColor(_Configuration->_UseCustomXLineColor ? _Configuration->_XLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
-
-        _YTextColor.EnableWindow(_Configuration->_UseCustomYTextColor);
-        _YTextColor.SetColor(_Configuration->_UseCustomYTextColor ? _Configuration->_YTextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
-
-        _YLineColor.EnableWindow(_Configuration->_UseCustomYLineColor);
-        _YLineColor.SetColor(_Configuration->_UseCustomYLineColor ? _Configuration->_YLineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
-    }
-
-    // Bars
-    {
-        _LiteBandColor.SetColor(_Configuration->_LightBandColor);
-        _DarkBandColor.SetColor(_Configuration->_DarkBandColor);
-    }
-
-    // Curve
-    {
-        _LineColor.EnableWindow(_Configuration->_UseCustomLineColor);
-        _LineColor.SetColor(_Configuration->_UseCustomLineColor ? _Configuration->_LineColor : _Configuration->_DefLineColor);
-
-        _PeakLineColor.EnableWindow(_Configuration->_UseCustomPeakLineColor);
-        _PeakLineColor.SetColor(_Configuration->_UseCustomPeakLineColor ? _Configuration->_PeakLineColor : _Configuration->_DefPeakLineColor);
-    }
 }
 
 /// <summary>
@@ -2522,23 +2296,21 @@ void ConfigurationDialog::UpdateColorControls()
 /// </summary>
 void ConfigurationDialog::UpdateStyleControls()
 {
-    auto lb = (CListBox) GetDlgItem(IDC_STYLES);
+    int StyleIndex = ((CListBox) GetDlgItem(IDC_STYLES)).GetCurSel();
 
-    int SelectedIndex = lb.GetCurSel();
-
-    Style & style = _StyleManager.GetStyle((VisualElement) SelectedIndex);
+    Style * style = _StyleManager.GetStyle((VisualElement) StyleIndex);
 
     // Update the controls based on the color source.
-    auto cb = (CComboBox) GetDlgItem(IDC_COLOR_SOURCE);
-
-    cb.SetCurSel((int) style._ColorSource);
-
-    switch (style._ColorSource)
+    switch (style->_ColorSource)
     {
+        case ColorSource::None:
+
         case ColorSource::Solid:
+            _Color.SetColor(style->_CustomColor);
             break;
 
         case ColorSource::DominantColor:
+            _Color.SetColor(_Configuration->_DominantColor);
             break;
 
         case ColorSource::Gradient:
@@ -2552,34 +2324,121 @@ void ConfigurationDialog::UpdateStyleControls()
 
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
-
-            w.SetCurSel((int) style._ColorIndex);
             break;
         }
 
-        case ColorSource::Host:
+        case ColorSource::UserInterface:
         {
             auto w = (CComboBox) GetDlgItem(IDC_COLOR_INDEX);
 
             w.ResetContent();
 
-            // DUI
-            for (const auto & x : { L"Text", L"Background", L"Highlight", L"Selection", L"Dark mode" })
-            // CUI
-//          for (const auto & x : { L"Text", L"Selected Text", L"Inactive Selected Text", L"Background", L"Selected Background", L"Inactive Selected Background", L"Active Item" })
-                w.AddString(x);
-
-            w.SetCurSel((int) style._ColorIndex);
+            if (_Configuration->_IsDUI)
+            {
+                for (const auto & x : { L"Text", L"Background", L"Highlight", L"Selection", L"Dark mode" })
+                    w.AddString(x);
+            }
+            else
+            {
+                for (const auto & x : { L"Text", L"Selected Text", L"Inactive Selected Text", L"Background", L"Selected Background", L"Inactive Selected Background", L"Active Item" })
+                    w.AddString(x);
+            }
             break;
         }
     }
 
-    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style._ColorSource == ColorSource::Windows) || (style._ColorSource == ColorSource::Host));
-    GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style._ColorSource == ColorSource::Solid) || (style._ColorSource == ColorSource::DominantColor));
-    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style._ColorSource == ColorSource::Gradient);
+    ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
+    ((CComboBox) GetDlgItem(IDC_COLOR_INDEX)).SetCurSel((int) style->_ColorIndex);
 
-    SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style._Opacity * 100.f))));
-    SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(style._Thickness, 0, 1)));
+    SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
+    ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
+
+    SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(style->_Thickness, 0, 1)));
+    ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
+
+    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
+    GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor));
+    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
+    GetDlgItem(IDC_OPACITY).EnableWindow(style->_ColorSource != ColorSource::None);
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->_ColorSource != ColorSource::None);
+
+    UpdateColorSchemeControls();
+}
+
+/// <summary>
+/// Updates the color controls with the current configuration.
+/// </summary>
+void ConfigurationDialog::UpdateColorSchemeControls()
+{
+    int StyleIndex = ((CListBox) GetDlgItem(IDC_STYLES)).GetCurSel();
+
+    Style * style = _StyleManager.GetStyle((VisualElement) StyleIndex);
+
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
+
+        w.SetCurSel((int) style->_ColorScheme);
+    }
+
+    GradientStops gs;
+
+    if (style->_ColorScheme == ColorScheme::Custom)
+        gs = style->_CustomGradientStops;
+    else
+    if (style->_ColorScheme == ColorScheme::Artwork)
+        gs = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+    else
+        gs = GetGradientStops(style->_ColorScheme);
+
+    _Gradient.SetGradientStops(gs);
+
+    {
+        std::vector<D2D1_COLOR_F> Colors;
+
+        for (const auto & Iter : gs)
+            Colors.push_back(Iter.color);
+
+        _Colors.SetColors(Colors);
+    }
+
+    auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
+
+    bool HasSelection = (lb.GetCurSel() != LB_ERR);                 // Add and Remove are only enabled when a color is selected.
+    bool HasMoreThanOneColor = (gs.size() > 1);                     // Remove and Reverse are only enabled when there is more than 1 color.
+    bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork); // Gradient controls are disabled when the artwork provides the colors.
+
+    GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+    GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+
+    GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+
+    GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
+    GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
+}
+
+/// <summary>
+/// Updates the position of the current gradient colors.
+/// </summary>
+void ConfigurationDialog::UpdateGradientStops(Style * style)
+{
+    if (style->_GradientStops.size() == 0)
+        return;
+
+    if (style->_GradientStops.size() == 1)
+        style->_GradientStops[0].position = 1.f;
+    else
+    {
+        FLOAT Position = 0.f;
+
+        for (auto & Iter : style->_GradientStops)
+        {
+            Iter.position = Position / (FLOAT) (style->_GradientStops.size() - 1);
+            Position++;
+        }
+    }
+
+    style->_ColorScheme = ColorScheme::Custom;
+    style->_CustomGradientStops = style->_GradientStops;
 }
 
 /// <summary>

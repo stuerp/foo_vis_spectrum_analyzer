@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.02) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.03) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -28,11 +28,12 @@ enum class VisualElement
 
 enum class ColorSource
 {
+    None,
     Solid,
     DominantColor,
     Gradient,
     Windows,
-    Host,
+    UserInterface,
 };
 
 enum class WindowsColor

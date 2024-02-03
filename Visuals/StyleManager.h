@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.01.31) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.02.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 class StyleManager
 {
 public:
-    Style & GetStyle(VisualElement visualElement);
+    Style * GetStyle(VisualElement visualElement);
 
     void GetStyles(std::vector<Style> & styles) const;
 

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.01.31) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -8,11 +8,9 @@
 /// <summary>
 /// Gets the style of the specified visual element.
 /// </summary>
-Style & StyleManager::GetStyle(VisualElement visualElement)
+Style * StyleManager::GetStyle(VisualElement visualElement)
 {
-    Style & style = _Styles[visualElement];
-
-    return style;
+    return &_Styles[visualElement];
 }
 
 /// <summary>

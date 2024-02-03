@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.01.31) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.03) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -70,19 +70,15 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector
 
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork, D2D1_COLOR_F dominantColor) const
 {
-    Style & style = _StyleManager.GetStyle(VisualElement::Background);
+    Style * style = _StyleManager.GetStyle(VisualElement::Background);
 
-    if ((_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration->_ArtworkGradientStops.size() > 0))
-        renderTarget->Clear(dominantColor);
+    if (style->_ColorSource != ColorSource::Gradient)
+        renderTarget->Clear(style->_Color);
     else
-        renderTarget->Clear(style._Color);
-/*
-    else
-        _RenderTarget->FillRectangle(_Graph.GetBounds(), _Brush);
-*/
+        renderTarget->FillRectangle(_Bounds, style->_Brush);
 
     // Render the album art if there is any.
-    if ((artwork.Bitmap() == nullptr) || !((_Configuration->_BackgroundMode == BackgroundMode::Artwork) || (_Configuration->_BackgroundMode == BackgroundMode::ArtworkAndDominantColor)))
+    if ((artwork.Bitmap() == nullptr) || (_Configuration->_BackgroundMode != BackgroundMode::Artwork))
         return;
 
     D2D1_SIZE_F Size = artwork.Size();
@@ -135,7 +131,14 @@ void Graph::ReleaseDeviceIndependentResources()
 
 HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
-    return S_OK;
+    HRESULT hr = S_OK;
+
+    Style * style = _StyleManager.GetStyle(VisualElement::Background);
+
+    if (style->_Brush == nullptr)
+        hr = InitializeStyle(renderTarget, style);
+
+    return hr;
 }
 
 void Graph::ReleaseDeviceSpecificResources()
@@ -143,4 +146,6 @@ void Graph::ReleaseDeviceSpecificResources()
     _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
+
+    _StyleManager.GetStyle(VisualElement::Background)->_Brush.Release();
 }

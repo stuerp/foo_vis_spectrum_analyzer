@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.01.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.03) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -159,12 +159,13 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
         // Draw the vertical grid line.
         {
-            Style & style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+            Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
 
-            renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), style._Brush, style._Thickness, nullptr);
+            renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), style->_Brush, style->_Thickness, nullptr);
         }
 
         // Draw the label.
+        if (!Iter.Text.empty())
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
@@ -180,9 +181,9 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
                 if (OldTextRight <= TextRect.left)
                 {
-                    Style & style = _StyleManager.GetStyle(VisualElement::XAxisText);
+                    Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
 
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                     OldTextRight = TextRect.right;
                 }
@@ -242,44 +243,44 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     HRESULT hr = S_OK;
 
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
 
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
+        if (SUCCEEDED(hr) && (style->_Brush == nullptr))
         {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
+            if (style->_ColorSource != ColorSource::Gradient)
+                hr = renderTarget->CreateSolidColorBrush(style->_Color, (ID2D1SolidColorBrush ** ) &style->_Brush);
             else
             {
                 ID2D1LinearGradientBrush * Brush;
 
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
+                hr = CreateGradientBrush(renderTarget, style->_GradientStops, &Brush);
 
                 if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
+                    style->_Brush.Attach(Brush);
             }
 
-            style._Brush->SetOpacity(style._Opacity);
+            style->_Brush->SetOpacity(style->_Opacity);
         }
     }
 
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisText);
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
 
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
+        if (SUCCEEDED(hr) && (style->_Brush == nullptr))
         {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
+            if (style->_ColorSource != ColorSource::Gradient)
+                hr = renderTarget->CreateSolidColorBrush(style->_Color, (ID2D1SolidColorBrush ** ) &style->_Brush);
             else
             {
                 ID2D1LinearGradientBrush * Brush;
 
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
+                hr = CreateGradientBrush(renderTarget, style->_GradientStops, &Brush);
 
                 if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
+                    style->_Brush.Attach(Brush);
             }
 
-            style._Brush->SetOpacity(style._Opacity);
+            style->_Brush->SetOpacity(style->_Opacity);
         }
     }
 
@@ -292,15 +293,15 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 void XAxis::ReleaseDeviceSpecificResources()
 {
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
 
-        style._Brush.Release();
+        style->_Brush.Release();
     }
 
     {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisText);
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
 
-        style._Brush.Release();
+        style->_Brush.Release();
     }
 }
 

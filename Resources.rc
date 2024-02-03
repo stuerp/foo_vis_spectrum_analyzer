@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.01.31) P. Stuer **/
+/** $VER: Resources.rc (2024.02.03) P. Stuer **/
 
 #include "Resources.h"
 
@@ -256,28 +256,6 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Gamma:"            IDC_GAMMA_LBL,              X_A41, Y_A41 + 2, W_A41, H_A41
         edittext                            IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Colors", IDC_COLORS_GROUP, X_B06, Y_B06, W_B06, H_B06, BS_GROUPBOX, WS_EX_TRANSPARENT
-
-        rtext           "Background:",      IDC_BACK_COLOR_LBL,         X_A72, Y_A72 + 2, W_A72, H_A72, SS_NOPREFIX
-        ltext           "",                 IDC_BACK_COLOR,             X_A73, Y_A73, W_A73, H_A73, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                 IDC_BACK_COLOR_DEF,         "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C07, Y_C07, W_C07, H_C07
-
-        rtext           "X-axis Text:"      IDC_X_TEXT_COLOR_LBL,       X_A74, Y_A74 + 2, W_A74, H_A74, SS_NOPREFIX
-        ltext           "",                 IDC_X_TEXT_COLOR,           X_A75, Y_A75, W_A75, H_A75, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                 IDC_X_TEXT_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C08, Y_C08, W_C08, H_C08
-
-        rtext           "X-axis Line:"      IDC_X_LINE_COLOR_LBL,       X_A76, Y_A76 + 2, W_A76, H_A76, SS_NOPREFIX
-        ltext           "",                 IDC_X_LINE_COLOR,           X_A77, Y_A77, W_A77, H_A77, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                 IDC_X_LINE_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C09, Y_C09, W_C09, H_C09
-
-        rtext           "Y-axis Text:",     IDC_Y_TEXT_COLOR_LBL,       X_A78, Y_A78 + 2, W_A78, H_A78, SS_NOPREFIX
-        ltext           "",                 IDC_Y_TEXT_COLOR,           X_A79, Y_A79, W_A79, H_A79, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                 IDC_Y_TEXT_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C10, Y_C10, W_C10, H_C10
-
-        rtext           "Y-axis Line:",     IDC_Y_LINE_COLOR_LBL,       X_A80, Y_A80 + 2, W_A80, H_A80, SS_NOPREFIX
-        ltext           "",                 IDC_Y_LINE_COLOR,           X_A81, Y_A81, W_A81, H_A81, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                 IDC_Y_LINE_COLOR_DEF,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C11, Y_C11, W_C11, H_C11
-
     rtext           "Type:",          IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01
     combobox                          IDC_VISUALIZATION,     X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
@@ -295,41 +273,14 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
     groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control         "Bar background"            IDC_DRAW_BAND_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A57, Y_A57, W_A57, H_A57
-
         control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
-
-        rtext           "White keys:",              IDC_WHITE_KEYS_LBL,             X_A82, Y_A82 + 2, W_A82, H_A82, SS_NOPREFIX
-        ltext           "",                         IDC_WHITE_KEYS,                 X_A83, Y_A83, W_A83, H_A83, SS_NOTIFY, WS_EX_STATICEDGE
-
-        rtext           "Black keys:",              IDC_BLACK_KEYS_LBL,             X_C14, Y_C14 + 2, W_C14, H_C14, SS_NOPREFIX
-        ltext           "",                         IDC_BLACK_KEYS,                 X_C15, Y_C15, W_C15, H_C15, SS_NOTIFY, WS_EX_STATICEDGE
-
-    groupbox "Curve", IDC_CURVE, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
-
-        rtext           "Line width:"               IDC_LINE_WIDTH_LBL,             X_E03, Y_E03 + 2, W_E03, H_E03
-        edittext                                    IDC_LINE_WIDTH,                 X_E04, Y_E04, W_E04, H_E04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                         IDC_LINE_WIDTH_SPIN,            "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-
-        rtext           "Line color:"               IDC_LINE_COLOR_LBL,             X_E08, Y_E08 + 2, W_E08, H_E08, SS_NOPREFIX
-        ltext           "",                         IDC_LINE_COLOR,                 X_E09, Y_E09, W_E09, H_E09, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                         IDC_LINE_COLOR_DEF,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_E10, Y_E10, W_E10, H_E10
-
-        rtext           "Peak line color:"          IDC_PEAK_LINE_COLOR_LBL,        X_E11, Y_E11 + 2, W_E11, H_E11, SS_NOPREFIX
-        ltext           "",                         IDC_PEAK_LINE_COLOR,            X_E12, Y_E12, W_E12, H_E12, SS_NOTIFY, WS_EX_STATICEDGE
-        control         "",                         IDC_PEAK_LINE_COLOR_DEF,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_E13, Y_E13, W_E13, H_E13
-
-        rtext           "Area opacity:"             IDC_AREA_OPACITY_LBL,           X_E05, Y_E05 + 2, W_E05, H_E05
-        edittext                                    IDC_AREA_OPACITY,               X_E06, Y_E06, W_E06, H_E06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                         IDC_AREA_OPACITY_SPIN,          "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "%"                         IDC_AREA_OPACITY_LBL_2,         X_E07, Y_E07 + 2, W_E07, H_E07
 
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Source:",                  IDC_COLOR_SOURCE_LBL,           X_I02, Y_I02 + 2, W_I02, H_I02
+        rtext           "Color source:",            IDC_COLOR_SOURCE_LBL,           X_I02, Y_I02 + 2, W_I02, H_I02
         combobox                                    IDC_COLOR_SOURCE,               X_I03, Y_I03,     W_I03, H_I03, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Index:",                   IDC_COLOR_INDEX_LBL,            X_I04, Y_I04 + 2, W_I04, H_I04
+        rtext           "Color index:",             IDC_COLOR_INDEX_LBL,            X_I04, Y_I04 + 2, W_I04, H_I04
         combobox                                    IDC_COLOR_INDEX,                X_I05, Y_I05,     W_I05, H_I05, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Color:"                    IDC_COLOR_BUTTON_LBL,           X_I06, Y_I06 + 2, W_I06, H_I06, SS_NOPREFIX

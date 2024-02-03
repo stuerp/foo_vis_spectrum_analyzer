@@ -297,80 +297,27 @@
 
 #pragma endregion
 
-#pragma region Colors
-
-#define IDC_COLORS_GROUP                7000
-
-#define IDC_BACK_COLOR_LBL              7010
-#define IDC_BACK_COLOR                  7012
-#define IDC_BACK_COLOR_DEF              7014
-
-#define IDC_X_TEXT_COLOR_LBL            7016
-#define IDC_X_TEXT_COLOR                7018
-#define IDC_X_TEXT_COLOR_DEF            7020
-
-#define IDC_X_LINE_COLOR_LBL            7022
-#define IDC_X_LINE_COLOR                7024
-#define IDC_X_LINE_COLOR_DEF            7026
-
-#define IDC_Y_TEXT_COLOR_LBL            7028
-#define IDC_Y_TEXT_COLOR                7030
-#define IDC_Y_TEXT_COLOR_DEF            7032
-
-#define IDC_Y_LINE_COLOR_LBL            7034
-#define IDC_Y_LINE_COLOR                7036
-#define IDC_Y_LINE_COLOR_DEF            7038
-
-#pragma endregion
-
 #pragma region Visualization
 
 #define IDC_VISUALIZATION_LBL           7100
 #define IDC_VISUALIZATION               7102
 
+#define IDC_HORIZONTAL_GRADIENT         7104
+
+#define IDC_PEAK_MODE_LBL               7106
+#define IDC_PEAK_MODE                   7108
+
+#define IDC_HOLD_TIME_LBL               7110
+#define IDC_HOLD_TIME                   7112
+
+#define IDC_ACCELERATION_LBL            7114
+#define IDC_ACCELERATION                7116
+
 // Bars
 
-#define IDC_BARS                        7110
+#define IDC_BARS                        7118
 
-#define IDC_DRAW_BAND_BACKGROUND        7112
-#define IDC_LED_MODE                    7114
-#define IDC_HORIZONTAL_GRADIENT         7116
-
-#define IDC_PEAK_MODE_LBL               7120
-#define IDC_PEAK_MODE                   7122
-
-#define IDC_HOLD_TIME_LBL               7130
-#define IDC_HOLD_TIME                   7132
-
-#define IDC_ACCELERATION_LBL            7140
-#define IDC_ACCELERATION                7142
-
-#define IDC_WHITE_KEYS_LBL              7150
-#define IDC_WHITE_KEYS                  7152
-
-#define IDC_BLACK_KEYS_LBL              7154
-#define IDC_BLACK_KEYS                  7156
-
-// Curve
-
-#define IDC_CURVE                       7200
-
-#define IDC_LINE_WIDTH_LBL              7210
-#define IDC_LINE_WIDTH                  7212
-#define IDC_LINE_WIDTH_SPIN             7214
-
-#define IDC_LINE_COLOR_LBL              7220
-#define IDC_LINE_COLOR                  7222
-#define IDC_LINE_COLOR_DEF              7224
-
-#define IDC_PEAK_LINE_COLOR_LBL         7230
-#define IDC_PEAK_LINE_COLOR             7232
-#define IDC_PEAK_LINE_COLOR_DEF         7234
-
-#define IDC_AREA_OPACITY_LBL            7240
-#define IDC_AREA_OPACITY                7242
-#define IDC_AREA_OPACITY_SPIN           7244
-#define IDC_AREA_OPACITY_LBL_2          7246
+#define IDC_LED_MODE                    7120
 
 #pragma endregion
 

@@ -63,20 +63,21 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
     FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
 
-    Style & ForegroundStyle = _StyleManager.GetStyle(VisualElement::BarForeground);
-    Style & DarkBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-    Style & LightBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-    Style & PeakIndicatorStyle = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-    ID2D1Brush * Foreground = _Configuration->_HorizontalGradient ? _SolidColorBrush : ForegroundStyle._Brush;
+    Style * ForegroundStyle = _StyleManager.GetStyle(VisualElement::BarForeground);
+    Style * DarkBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+    Style * LightBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+    Style * PeakIndicatorStyle = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
         D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, Height - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
-        if (_Configuration->_DrawBandBackground)
-            renderTarget->FillRectangle(Rect, Iter.HasDarkBackground ? DarkBackgroundStyle._Brush : LightBackgroundStyle._Brush);
+        if ((LightBackgroundStyle->_ColorSource != ColorSource::None) && !Iter.HasDarkBackground)
+            renderTarget->FillRectangle(Rect,  LightBackgroundStyle->_Brush);
+
+        if ((DarkBackgroundStyle->_ColorSource != ColorSource::None) && Iter.HasDarkBackground)
+            renderTarget->FillRectangle(Rect,  DarkBackgroundStyle->_Brush);
 
         // Don't render bar foreground above the Nyquist frequency.
         if (Iter.Ctr < (sampleRate / 2.))
@@ -92,7 +93,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
                     renderTarget->FillRectangle(Rect, _SolidColorBrush);
                 }
                 else
-                    renderTarget->FillRectangle(Rect, Foreground);
+                    renderTarget->FillRectangle(Rect, ForegroundStyle->_Brush);
 
                 if (_Configuration->_LEDMode)
                     renderTarget->FillRectangle(Rect, _PatternBrush);
@@ -101,14 +102,14 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
             // Draw the peak indicator.
             if ((_Configuration->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak)), _Bounds.top, _Bounds.bottom));
-                Rect.bottom = ::ceil(Rect.top + 1.f);
+                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak) - (PeakIndicatorStyle->_Thickness / 2.f)), _Bounds.top, _Bounds.bottom));
+                Rect.bottom = ::ceil(Clamp(Rect.top                                      + (PeakIndicatorStyle->_Thickness / 2.f),  _Bounds.top, _Bounds.bottom));
 
-                FLOAT Opacity = ((_Configuration->_PeakMode == PeakMode::FadeOut) || (_Configuration->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Iter.Opacity : PeakIndicatorStyle._Opacity;
+                FLOAT Opacity = ((_Configuration->_PeakMode == PeakMode::FadeOut) || (_Configuration->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Iter.Opacity : PeakIndicatorStyle->_Opacity;
 
-                PeakIndicatorStyle._Brush->SetOpacity(Opacity);
+                PeakIndicatorStyle->_Brush->SetOpacity(Opacity);
 
-                renderTarget->FillRectangle(Rect, PeakIndicatorStyle._Brush);
+                renderTarget->FillRectangle(Rect, PeakIndicatorStyle->_Brush);
             }
         }
 
@@ -140,9 +141,9 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
             if (SUCCEEDED(hr))
             {
-                Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
+                Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
-                renderTarget->FillGeometry(Curve, style._Brush);
+                renderTarget->FillGeometry(Curve, style->_Brush);
             }
 
             Curve.Release();
@@ -155,9 +156,9 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
             if (SUCCEEDED(hr))
             {
-                Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
+                Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
-                renderTarget->DrawGeometry(Curve, style._Brush, style._Thickness);
+                renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
             }
 
             Curve.Release();
@@ -175,9 +176,9 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
         if (SUCCEEDED(hr))
         {
-            Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
+            Style * style = _StyleManager.GetStyle(VisualElement::CurveArea);
 
-            renderTarget->FillGeometry(Curve, style._Brush);
+            renderTarget->FillGeometry(Curve, style->_Brush);
         }
 
         Curve.Release();
@@ -190,9 +191,9 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
         if (SUCCEEDED(hr))
         {
-            Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
+            Style * style = _StyleManager.GetStyle(VisualElement::CurveLine);
 
-            renderTarget->DrawGeometry(Curve, style._Brush, style._Thickness);
+            renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
         }
 
         Curve.Release();
@@ -213,198 +214,45 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
         hr = CreatePatternBrush(renderTarget);
 
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarForeground);
+    Style * style = _StyleManager.GetStyle(VisualElement::BarForeground);
 
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
+    style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
+    style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
 
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
+    style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
 
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
+    style = _StyleManager.GetStyle(VisualElement::CurveLine);
 
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+    style = _StyleManager.GetStyle(VisualElement::CurveArea);
 
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
+    style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
+    style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
-
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
-
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
-
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
-
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
-
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
-
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-        if (SUCCEEDED(hr) && (style._Brush == nullptr))
-        {
-            if (style._ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style._Color, (ID2D1SolidColorBrush ** ) &style._Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style._GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style._Brush.Attach(Brush);
-            }
-
-            style._Brush->SetOpacity(style._Opacity);
-        }
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Creates a gradient brush for rendering the bars.
-/// </summary>
-HRESULT Spectrum::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush)
-{
-    if (gradientStops.empty())
-        return E_FAIL;
-
-    CComPtr<ID2D1GradientStopCollection> Collection;
-
-    HRESULT hr = renderTarget->CreateGradientStopCollection(&gradientStops[0], (UINT32) gradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-    if (SUCCEEDED(hr))
-    {
-        D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        D2D1_POINT_2F Start = _Configuration->_HorizontalGradient ? D2D1::Point2F(       0.f, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, 0.f);
-        D2D1_POINT_2F End   = _Configuration->_HorizontalGradient ? D2D1::Point2F(Size.width, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, Size.height);
-
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, gradientBrush);
-    }
+    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        hr = InitializeStyle(renderTarget, style);
 
     return hr;
 }
@@ -555,53 +403,14 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarForeground);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
-
-        style._Brush.Release();
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
-
-        style._Brush.Release();
-    }
+    _StyleManager.GetStyle(VisualElement::BarForeground)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::BarDarkBackground)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::BarLightBackground)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::BarPeakIndicator)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::CurvePeakArea)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::CurvePeakLine)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::CurveArea)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::CurveLine)->_Brush.Release();
 
     _PatternBrush.Release();
 

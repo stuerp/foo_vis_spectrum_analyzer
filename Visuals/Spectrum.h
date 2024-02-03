@@ -1,10 +1,12 @@
 
-/** $VER: Spectrum.h (2024.02.01) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.03) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
+
+#include "Element.h"
 #include "Configuration.h"
 #include "Gradients.h"
 
@@ -16,10 +18,10 @@
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class Spectrum
+class Spectrum : public Element
 {
 public:
-    Spectrum() : _Configuration() {}
+    Spectrum() {}
 
     Spectrum(const Spectrum &) = delete;
     Spectrum & operator=(const Spectrum &) = delete;
@@ -40,7 +42,6 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
-    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
 
     struct GeometryPoints
@@ -64,8 +65,6 @@ private:
     void RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
 
 private:
-    const Configuration * _Configuration;
-
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 

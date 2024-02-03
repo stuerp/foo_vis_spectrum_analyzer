@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.01.28) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.03) P. Stuer **/
 
 #include "CUIElement.h"
 
@@ -15,6 +15,8 @@ namespace uie
 /// </summary>
 CUIElement::CUIElement()
 {
+    _Configuration._IsDUI = false;
+
     cui::colours::helper Helper(pfc::guid_null);
 
     _Configuration._DefBackColor = Helper.get_colour(cui::colours::colour_background);
@@ -81,7 +83,7 @@ void CUIElement::ToggleFullScreen() noexcept
 
             if (::GetMonitorInfoW(hMonitor, &mix))
             {
-                ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
+                ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style * (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
 
                 SetParent(::GetDesktopWindow());
                 SetWindowPos(NULL, mix.rcWork.left, mix.rcWork.top, mix.rcWork.right - mix.rcWork.left, mix.rcWork.bottom - mix.rcWork.top, SWP_NOZORDER);
@@ -96,7 +98,7 @@ void CUIElement::ToggleFullScreen() noexcept
 
         ::GetClientRect(_hParent, &cr);
 
-        ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
+        ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style * (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
 
         SetWindowPos(NULL, cr.left, cr.top, cr.right - cr.left, cr.bottom - cr.top, SWP_NOZORDER);
         SetParent(_hParent);

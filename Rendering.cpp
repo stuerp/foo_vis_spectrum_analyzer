@@ -145,215 +145,6 @@ void UIElement::UpdateSpectrum()
 }
 
 /// <summary>
-/// FIXME: Temporary method to transfer configuration parameters to styles.
-/// </summary>
-void UIElement::UpdateStyles() noexcept
-{
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::Background);
-
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-        if ((_Configuration._BackgroundMode == BackgroundMode::ArtworkAndDominantColor) && (_Configuration._ArtworkGradientStops.size() > 0))
-        {
-            style._ColorSource = ColorSource::DominantColor;
-            style._Color = _Configuration._DominantColor;
-        }
-        else
-        if (!_Configuration._UseCustomBackColor)
-        {
-            style._ColorSource = ColorSource::Host;
-            style._Color = D2D1::ColorF(_Configuration._DefBackColor);
-        }
-        else
-        {
-            style._CustomColor = _Configuration._BackColor;
-
-            style._ColorSource = ColorSource::Solid;
-            style._Color = style._CustomColor;
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisLine);
-
-        style._CustomColor = _Configuration._XLineColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            if (!_Configuration._UseCustomXLineColor)
-            {
-                style._ColorSource = ColorSource::Host;
-                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
-            }
-            else
-            {
-                style._ColorSource = ColorSource::Solid;
-                style._Color = style._CustomColor;
-            }
-
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::XAxisText);
-
-        style._CustomColor = _Configuration._XTextColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            if (!_Configuration._UseCustomXTextColor)
-            {
-                style._ColorSource = ColorSource::Host;
-                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
-            }
-            else
-            {
-                style._ColorSource = ColorSource::Solid;
-                style._Color = style._CustomColor;
-            }
-
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::YAxisLine);
-
-        style._CustomColor = _Configuration._YLineColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            if (!_Configuration._UseCustomYLineColor)
-            {
-                style._ColorSource = ColorSource::Host;
-                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
-            }
-            else
-            {
-                style._ColorSource = ColorSource::Solid;
-                style._Color = style._CustomColor;
-            }
-
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::YAxisText);
-
-        style._CustomColor = _Configuration._YTextColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            if (!_Configuration._UseCustomYTextColor)
-            {
-                style._ColorSource = ColorSource::Host;
-                style._Color = D2D1::ColorF(_Configuration._DefTextColor);
-            }
-            else
-            {
-                style._ColorSource = ColorSource::Solid;
-                style._Color = style._CustomColor;
-            }
-
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarForeground);
-
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            style._ColorSource = ColorSource::Gradient;
-            style._Color = D2D1::ColorF(0, 0.f);
-            style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-        style._CustomColor = _Configuration._DarkBandColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            style._ColorSource = ColorSource::Solid;
-            style._Color = style._CustomColor;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-        style._CustomColor = _Configuration._LightBandColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            style._ColorSource = ColorSource::Solid;
-            style._Color = style._CustomColor;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-        {
-            style._Color = style._CustomColor;
-        }
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveLine);
-
-        style._CustomColor = _Configuration._LineColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-        if (_Configuration._UseCustomLineColor)
-        {
-            style._ColorSource = ColorSource::Solid;
-            style._Color = style._CustomColor;
-        }
-        else
-        {
-            style._ColorSource = ColorSource::Gradient;
-            style._Color = D2D1::ColorF(0, 0.f);
-            style._GradientStops = style._CustomGradientStops;
-        }
-
-        style._Thickness = _Configuration._LineWidth;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurveArea);
-
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            style._ColorSource = ColorSource::Gradient;
-            style._Opacity = _Configuration._AreaOpacity;
-
-        style._Color = style._CustomColor;
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-        style._CustomColor = _Configuration._PeakLineColor;
-        style._CustomGradientStops = _Configuration._GradientStops;
-
-            if (!_Configuration._UseCustomPeakLineColor)
-            {
-                style._ColorSource = ColorSource::Gradient;
-            }
-            else
-            {
-                style._ColorSource = ColorSource::Solid;
-            }
-
-        style._Color = style._CustomColor;
-        style._GradientStops = style._CustomGradientStops;
-    }
-
-    {
-        Style & style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-        style._Color = style._CustomColor;
-    }
-}
-
-/// <summary>
 /// Renders a frame.
 /// </summary>
 void UIElement::Render()
@@ -362,8 +153,6 @@ void UIElement::Render()
 
     if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
-        UpdateStyles(); // FIXME
-
         _RenderTarget->BeginDraw();
 
         _Graph.RenderBackground(_RenderTarget, _Artwork, _Configuration._DominantColor);
@@ -465,6 +254,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     {
         hr = CreateArtworkGradient();
 
+        UpdateStyles();
+
         _NewArtworkGradient = false;
     }
 
@@ -475,6 +266,142 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
+}
+
+/// <summary>
+/// Update the styles with the artwork gradient stops.
+/// </summary>
+void UIElement::UpdateStyles() noexcept
+{
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::Background);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::YAxisLine);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::YAxisText);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::BarForeground);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::CurveLine);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::CurveArea);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
+
+    {
+        Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
+
+        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
+            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
+        else
+        if (style->_ColorSource == ColorSource::DominantColor)
+            style->_Color = _Configuration._DominantColor;
+    }
 }
 
 /// <summary>

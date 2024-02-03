@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.03) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -16,6 +16,8 @@
 #include "CButtonMenu.h"
 
 #include <sdk/coreDarkMode.h>
+
+#include "StyleManager.h"
 
 struct DialogParameters
 {
@@ -82,8 +84,9 @@ private:
     void OnChannels(UINT, int, HWND);
 
     void UpdateControls();
-    void UpdateColorControls();
+    void UpdateColorSchemeControls();
     void UpdateStyleControls();
+    void UpdateGradientStops(Style * style);
     void UpdateChannelsMenu();
     void UpdatePages(size_t index) const noexcept;
 
@@ -176,26 +179,16 @@ private:
 
     CNumericEdit _WeightingAmount;
 
-    CColorButton _Gradient;
-    CColorListBox _Colors;
-    CNumericEdit _Position;
-
     CNumericEdit _ArtworkOpacity;
     CNumericEdit _ArtworkColors;
     CNumericEdit _LightnessThreshold;
 
-    CColorButton _BackColor;
-    CColorButton _XTextColor;
-    CColorButton _XLineColor;
-    CColorButton _YTextColor;
-    CColorButton _YLineColor;
-    CColorButton _LiteBandColor;
-    CColorButton _DarkBandColor;
-
-    CNumericEdit _LineWidth;
-    CColorButton _LineColor;
-    CColorButton _PeakLineColor;
-    CNumericEdit _AreaOpacity;
+    CColorButton _Color;
+    CColorButton _Gradient;
+    CColorListBox _Colors;
+    CNumericEdit _Position;
+    CNumericEdit _Opacity;
+    CNumericEdit _Thickness;
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.01.28) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.02.03) P. Stuer **/
 
 #include "DUIElement.h"
 
@@ -14,6 +14,8 @@
 /// </summary>
 DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
+    _Configuration._IsDUI = true;
+
     _Configuration._DefBackColor = m_callback->query_std_color(ui_color_background);
     _Configuration._DefTextColor = m_callback->query_std_color(ui_color_text);
 
