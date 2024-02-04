@@ -2282,7 +2282,30 @@ void ConfigurationDialog::UpdateControls()
             GetDlgItem(Iter).EnableWindow(IsBars);
 }
 
+/// <summary>
+/// Gets the selected Windows color.
+/// </summary>
 static D2D1_COLOR_F GetWindowsColor(int index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0, (int) _countof(ColorIndex) - 1)]));
+}
+
+/// <summary>
+/// Gets the selected DUI color.
+/// </summary>
+static D2D1_COLOR_F GetDUIColor(int index) noexcept
 {
     static const int ColorIndex[] =
     {
@@ -2371,6 +2394,8 @@ void ConfigurationDialog::UpdateStyleControls()
             {
                 for (const auto & x : { L"Text", L"Background", L"Highlight", L"Selection", L"Dark mode" })
                     w.AddString(x);
+
+                style->_Color = GetDUIColor(style->_ColorIndex);
             }
             else
             {
@@ -2379,6 +2404,8 @@ void ConfigurationDialog::UpdateStyleControls()
             }
 
             w.SetCurSel(Clamp(style->_ColorIndex, 0, w.GetCount() - 1));
+
+            style->_Color = _Configuration->_UserInterfaceColors[Clamp(style->_ColorIndex, 0, (int) _Configuration->_UserInterfaceColors.size())];
             break;
         }
     }

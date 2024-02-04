@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.02.03) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.04) P. Stuer **/
 
 #include "CUIElement.h"
 
@@ -19,8 +19,17 @@ CUIElement::CUIElement()
 
     cui::colours::helper Helper(pfc::guid_null);
 
-    _Configuration._DefBackColor = Helper.get_colour(cui::colours::colour_background);
-    _Configuration._DefTextColor = Helper.get_colour(cui::colours::colour_text);
+    _Configuration._UserInterfaceColors.clear();
+
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+
+    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
 /// <summary>

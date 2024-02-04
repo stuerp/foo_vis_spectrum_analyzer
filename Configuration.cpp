@@ -1236,7 +1236,7 @@ return;
         if (!_UseCustomBackColor)
         {
             style->_ColorSource = ColorSource::UserInterface;
-            style->_Color = D2D1::ColorF(_DefBackColor);
+            style->_Color = _UserInterfaceColors[_IsDUI ? 1 : 3];
         }
         else
         {
@@ -1258,7 +1258,7 @@ return;
             if (!_UseCustomXLineColor)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = D2D1::ColorF(_DefTextColor);
+                style->_Color = _UserInterfaceColors[0];
             }
             else
             {
@@ -1280,7 +1280,7 @@ return;
             if (!_UseCustomXTextColor)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = D2D1::ColorF(_DefTextColor);
+                style->_Color = _UserInterfaceColors[0];
             }
             else
             {
@@ -1302,7 +1302,7 @@ return;
             if (!_UseCustomYLineColor)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = D2D1::ColorF(_DefTextColor);
+                style->_Color = _UserInterfaceColors[0];
             }
             else
             {
@@ -1324,7 +1324,7 @@ return;
             if (!_UseCustomYTextColor)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = D2D1::ColorF(_DefTextColor);
+                style->_Color = _UserInterfaceColors[0];
             }
             else
             {

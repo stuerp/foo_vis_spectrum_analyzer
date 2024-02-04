@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.03) P. Stuer **/
+/** $VER: Configuration.h (2024.02.04) P. Stuer **/
 
 #pragma once
 
@@ -472,8 +472,7 @@ public:
     #pragma region Not Serialized
     bool _IsDUI;
 
-    t_ui_color _DefBackColor;
-    t_ui_color _DefTextColor;
+    std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
     D2D1_COLOR_F _DominantColor;
     GradientStops _GradientStops;                                       // The current gradient stops.
