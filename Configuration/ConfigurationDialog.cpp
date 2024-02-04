@@ -1958,8 +1958,10 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
             _Color.GetColor(style->_CustomColor);
 
-            if (style->_ColorSource == ColorSource::Solid)
-                style->_Color = style->_CustomColor;
+            style->_ColorSource = ColorSource::Solid; // Force the color source to Solid.
+            style->_Color = style->_CustomColor;
+
+            UpdateStyleControls();
             break;
         }
 
@@ -2280,6 +2282,23 @@ void ConfigurationDialog::UpdateControls()
             GetDlgItem(Iter).EnableWindow(IsBars);
 }
 
+static D2D1_COLOR_F GetWindowsColor(int index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0, (int) _countof(ColorIndex) - 1)]));
+}
+
 /// <summary>
 /// Updates the style controls with the current configuration.
 /// </summary>
@@ -2335,6 +2354,10 @@ void ConfigurationDialog::UpdateStyleControls()
 
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
+
+            w.SetCurSel(Clamp(style->_ColorIndex, 0, w.GetCount() - 1));
+
+            style->_Color = GetWindowsColor(style->_ColorIndex);
             break;
         }
 
@@ -2354,12 +2377,13 @@ void ConfigurationDialog::UpdateStyleControls()
                 for (const auto & x : { L"Text", L"Selected Text", L"Inactive Selected Text", L"Background", L"Selected Background", L"Inactive Selected Background", L"Active Item" })
                     w.AddString(x);
             }
+
+            w.SetCurSel(Clamp(style->_ColorIndex, 0, w.GetCount() - 1));
             break;
         }
     }
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
-    ((CComboBox) GetDlgItem(IDC_COLOR_INDEX)).SetCurSel((int) style->_ColorIndex);
 
     SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
@@ -2368,7 +2392,7 @@ void ConfigurationDialog::UpdateStyleControls()
     ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
 
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
-    GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor));
+    GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor) || (style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_OPACITY).EnableWindow(style->_ColorSource != ColorSource::None);
     GetDlgItem(IDC_THICKNESS).EnableWindow(style->_ColorSource != ColorSource::None);

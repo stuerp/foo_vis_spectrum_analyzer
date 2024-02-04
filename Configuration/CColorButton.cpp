@@ -122,7 +122,6 @@ LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
     CColorDialogEx cd;
 
     if (cd.SelectColor(m_hWnd, _Color))
-//  if (SelectColor(m_hWnd, _Color))
     {
         SetColor(_Color);
         SendChangedNotification();
