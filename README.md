@@ -89,6 +89,7 @@ v0.7.0.0-beta-5, 2024-xx-xx
     * Upon first use the old settings are converted to styles and sensible defaults are set for the new features.
     * The "Draw Band Background" option has been removed. It has been replaced by the color source of the dark and light band color.
     * The "Artwork & Dominant Color" background mode has been removed. It has been replaced by the Dominant Color source.
+* New: The background and curve peak line and area can be styled.
 * Improved: Minor performance optimizations due to styles.
 * Improved: Optimized the calculation of the Curve visual.
 * Fixed (Beta 4 regression): Removed the DirectComposition code that enabled transparent child windows. It was fun while it lasted.

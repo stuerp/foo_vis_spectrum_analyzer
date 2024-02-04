@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.03) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.04) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -68,7 +68,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector
     _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
 }
 
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork, D2D1_COLOR_F dominantColor) const
+void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) const
 {
     Style * style = _StyleManager.GetStyle(VisualElement::Background);
 

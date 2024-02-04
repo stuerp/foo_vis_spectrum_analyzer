@@ -57,7 +57,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     if (_Configuration->_YAxisMode == YAxisMode::None)
         return;
 
-    CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+
+    if (!SUCCEEDED(hr))
+        return;
 
     const FLOAT Width = _Bounds.right - _Bounds.left;
 
@@ -153,7 +156,8 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
                     style->_Brush.Attach(Brush);
             }
 
-            style->_Brush->SetOpacity(style->_Opacity);
+            if (SUCCEEDED(hr))
+                style->_Brush->SetOpacity(style->_Opacity);
         }
     }
 
@@ -174,7 +178,8 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
                     style->_Brush.Attach(Brush);
             }
 
-            style->_Brush->SetOpacity(style->_Opacity);
+            if (SUCCEEDED(hr))
+                style->_Brush->SetOpacity(style->_Opacity);
         }
     }
 
@@ -197,29 +202,4 @@ void YAxis::ReleaseDeviceSpecificResources()
 
         style->_Brush.Release();
     }
-}
-
-/// <summary>
-/// Creates a gradient brush for rendering the bars.
-/// </summary>
-HRESULT YAxis::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush)
-{
-    if (gradientStops.empty())
-        return E_FAIL;
-
-    CComPtr<ID2D1GradientStopCollection> Collection;
-
-    HRESULT hr = renderTarget->CreateGradientStopCollection(&gradientStops[0], (UINT32) gradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-    if (SUCCEEDED(hr))
-    {
-        D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        D2D1_POINT_2F Start = _Configuration->_HorizontalGradient ? D2D1::Point2F(       0.f, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, 0.f);
-        D2D1_POINT_2F End   = _Configuration->_HorizontalGradient ? D2D1::Point2F(Size.width, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, Size.height);
-
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, gradientBrush);
-    }
-
-    return hr;
 }

@@ -15,8 +15,8 @@ public:
     Element() : _Configuration() {}
 
 protected:
-    HRESULT InitializeStyle(ID2D1RenderTarget * renderTarget, Style * style) noexcept;
-    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
+    HRESULT InitializeStyle(ID2D1RenderTarget * renderTarget, Style * style) const noexcept;
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
 
 protected:
     const Configuration * _Configuration;

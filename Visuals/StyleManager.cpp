@@ -1,9 +1,200 @@
 
-/** $VER: StyleManager.cpp (2024.02.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.04) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
+#include "Gradients.h"
+
 #pragma hdrstop
+
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
+StyleManager::StyleManager()
+{
+    Reset();
+}
+
+/// <summary>
+/// Implements the = operator.
+/// </summary>
+StyleManager & StyleManager::operator=(const StyleManager & other)
+{
+    for (const auto & Iter : other._Styles)
+        _Styles[Iter.first] = Iter.second;
+
+    return *this;
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void StyleManager::Reset() noexcept
+{
+    _Styles.clear();
+
+    _Styles.insert
+    ({
+        VisualElement::Background,
+        {
+            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::XAxisLine,
+        {
+            L"X-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            1.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::XAxisText,
+        {
+            L"X-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::YAxisLine,
+        {
+            L"Y-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            1.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::YAxisText,
+        {
+            L"Y-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::BarForeground,
+        {
+            L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::BarDarkBackground,
+        {
+            L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::BarLightBackground,
+        {
+            L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::BarPeakIndicator,
+        {
+            L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::CurveLine,
+        {
+            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            2.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::CurveArea,
+        {
+            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::CurvePeakLine,
+        {
+            L"Curve Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f,
+            // Line-specific
+            2.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    _Styles.insert
+    ({
+        VisualElement::CurvePeakArea,
+        {
+            L"Curve Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f,
+            // Line-specific
+            0.f,
+            // Font-specific
+            L"", 0.f,
+        }
+    });
+
+    for (auto & Iter : _Styles)
+    {
+        Iter.second._Color = Iter.second._CustomColor;
+        Iter.second._GradientStops = GetGradientStops(Iter.second._ColorScheme);
+    }
+}
 
 /// <summary>
 /// Gets the style of the specified visual element.
@@ -23,37 +214,27 @@ void StyleManager::GetStyles(std::vector<Style> & styles) const
 }
 
 /// <summary>
+/// Updates the style parameters of all styles that are using the artwork as source.
+/// </summary>
+void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor)
+{
+    for (auto & Iter : _Styles)
+    {
+        if ((Iter.second._ColorSource == ColorSource::Gradient) && (Iter.second._ColorScheme == ColorScheme::Artwork))
+            Iter.second._GradientStops = gs;
+
+        if (Iter.second._ColorSource == ColorSource::DominantColor)
+            Iter.second._Color = dominantColor;
+    }
+}
+
+/// <summary>
 /// Releases the device specific resources.
 /// </summary>
 void StyleManager::ReleaseDeviceSpecificResources()
 {
     for (auto & Iter : _Styles)
         Iter.second._Brush.Release();
-}
-
-/// <summary>
-/// Creates a gradient brush.
-/// </summary>
-HRESULT StyleManager::CreateGradientBrush(ID2D1RenderTarget * renderTarget, FLOAT width, FLOAT height, const GradientStops & gradientStops, bool isVertical, ID2D1LinearGradientBrush ** brush)
-{
-    if (gradientStops.empty())
-        return E_FAIL;
-
-    CComPtr<ID2D1GradientStopCollection> Collection;
-
-    HRESULT hr = renderTarget->CreateGradientStopCollection(&gradientStops[0], (UINT32) gradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
-
-    if (SUCCEEDED(hr))
-    {
-        D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        D2D1_POINT_2F Start = isVertical ? D2D1::Point2F(Size.width / 2.f, 0.f)         : D2D1::Point2F(       0.f, Size.height / 2.f);
-        D2D1_POINT_2F End   = isVertical ? D2D1::Point2F(Size.width / 2.f, Size.height) : D2D1::Point2F(Size.width, Size.height / 2.f);
-
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, brush);
-    }
-
-    return hr;
 }
 
 StyleManager _StyleManager;

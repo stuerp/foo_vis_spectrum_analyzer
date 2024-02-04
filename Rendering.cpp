@@ -1,6 +1,5 @@
 
-
-/** $VER: Rendering.cpp (2024.01.31) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.04) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -73,6 +72,12 @@ void UIElement::OnTimer()
     Render();
 
     _CriticalSection.Leave();
+
+    if (_IsConfigurationChanged && _ConfigurationDialog.IsWindow())
+    {
+        _IsConfigurationChanged = false;
+        _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+    }
 }
 
 /// <summary>
@@ -93,17 +98,8 @@ void UIElement::ProcessPlaybackEvent()
                 _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default colors for the Artwork gradient.
                 _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
 
-                if (_Configuration._ColorScheme == ColorScheme::Artwork)
-                {
-                    _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
-
-                    Spectrum & s = _Graph.GetSpectrum();
-
-                    s.Initialize(&_Configuration);
-
-                    if (_ConfigurationDialog.IsWindow())
-                        _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
-                }
+                if (_ConfigurationDialog.IsWindow())
+                    _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
             }
             break;
         }
@@ -155,7 +151,7 @@ void UIElement::Render()
     {
         _RenderTarget->BeginDraw();
 
-        _Graph.RenderBackground(_RenderTarget, _Artwork, _Configuration._DominantColor);
+        _Graph.RenderBackground(_RenderTarget, _Artwork);
         _Graph.RenderForeground(_RenderTarget, _FrequencyBands, (double) _SampleRate);
 
         if (_Configuration._ShowFrameCounter)
@@ -252,9 +248,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the gradient stops based on the artwork. Done at least once per artwork because the configuration dialog needs it when ColorScheme::Artwork is selected.
     if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkGradient))
     {
-        hr = CreateArtworkGradient();
-
-        UpdateStyles();
+        hr = CreateArtworkDependentResources();
 
         _NewArtworkGradient = false;
     }
@@ -269,145 +263,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 }
 
 /// <summary>
-/// Update the styles with the artwork gradient stops.
-/// </summary>
-void UIElement::UpdateStyles() noexcept
-{
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::Background);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisLine);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisText);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarForeground);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurveLine);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurveArea);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-        if ((style->_ColorSource == ColorSource::Gradient) && (style->_ColorScheme == ColorScheme::Artwork))
-            style->_CustomGradientStops = _Configuration._ArtworkGradientStops;
-        else
-        if (style->_ColorSource == ColorSource::DominantColor)
-            style->_Color = _Configuration._DominantColor;
-    }
-}
-
-/// <summary>
 /// Creates the DirectX resources that are dependent on the artwork.
 /// </summary>
-HRESULT UIElement::CreateArtworkGradient()
+HRESULT UIElement::CreateArtworkDependentResources()
 {
     // Get the colors from the artwork.
     std::vector<D2D1_COLOR_F> Colors;
@@ -457,20 +315,9 @@ HRESULT UIElement::CreateArtworkGradient()
         hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-    {
-        if (_Configuration._ColorScheme == ColorScheme::Artwork)
-        {
-            // Inform the other elements about the change.
-            _Configuration._GradientStops = _Configuration._ArtworkGradientStops;
+        _StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
 
-            Spectrum & s = _Graph.GetSpectrum();
-
-            s.Initialize(&_Configuration);
-
-            if (_ConfigurationDialog.IsWindow())
-                _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
-        }
-    }
+    _IsConfigurationChanged = true;
 
     return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
 }

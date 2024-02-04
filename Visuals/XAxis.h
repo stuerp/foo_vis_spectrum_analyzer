@@ -1,9 +1,11 @@
 
-/** $VER: XAxis.h (2024.01.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.03) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
 #include "framework.h"
+
+#include "Element.h"
 #include "Support.h"
 #include "Configuration.h"
 
@@ -15,7 +17,7 @@
 /// <summary>
 /// Implements the X axis of a graph.
 /// </summary>
-class XAxis
+class XAxis : public Element
 {
 public:
     XAxis() : _Configuration(), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
@@ -38,9 +40,6 @@ public:
     void ReleaseDeviceSpecificResources();
 
     FLOAT GetHeight() const { return _Height; }
-
-private:
-    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
 
 private:
     const Configuration * _Configuration;

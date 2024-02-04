@@ -3,12 +3,14 @@
 
 #include "Element.h"
 
+#include "Log.h"
+
 #pragma hdrstop
 
 /// <summary>
 /// Initializes the DirectX resources of a style->
 /// </summary>
-HRESULT Element::InitializeStyle(ID2D1RenderTarget * renderTarget, Style * style) noexcept
+HRESULT Element::InitializeStyle(ID2D1RenderTarget * renderTarget, Style * style) const noexcept
 {
     HRESULT hr = S_OK;
 
@@ -33,7 +35,7 @@ HRESULT Element::InitializeStyle(ID2D1RenderTarget * renderTarget, Style * style
 /// <summary>
 /// Creates a gradient brush for rendering the bars.
 /// </summary>
-HRESULT Element::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush)
+HRESULT Element::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;

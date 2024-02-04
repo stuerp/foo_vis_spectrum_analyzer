@@ -44,7 +44,7 @@ private:
 
         CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
     END_MSG_MAP()
-
+/*
 private:
     #pragma region DirectX
 
@@ -60,7 +60,7 @@ private:
     CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 
     #pragma endregion
-
+*/
 private:
     std::vector<D2D1_COLOR_F> _Colors;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.03) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.04) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -86,7 +86,7 @@ private:
     void UpdateControls();
     void UpdateColorSchemeControls();
     void UpdateStyleControls();
-    void UpdateGradientStops(Style * style);
+    void UpdateGradientStopPositons(Style * style);
     void UpdateChannelsMenu();
     void UpdatePages(size_t index) const noexcept;
 
@@ -135,6 +135,8 @@ private:
 
     Configuration * _Configuration;
     Configuration _OldConfiguration;
+
+    StyleManager _OldStyleManager;
 
     CMenuListBox _MenuList;
 

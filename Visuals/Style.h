@@ -73,6 +73,20 @@ enum class CUIColor
 class Style
 {
 public:
+    Style() { }
+
+    Style(const Style &);
+    Style & operator=(const Style & other);
+
+    virtual ~Style()
+    {
+        _Brush.Release();
+    }
+
+    Style(std::wstring name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, std::wstring fontName, FLOAT fontSize);
+
+
+public:
     std::wstring _Name;
 
     ColorSource _ColorSource;           // Determines the source of the color

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.03) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.04) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -37,6 +37,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     }
 
     _OldConfiguration = *_Configuration;
+    _OldStyleManager = _StyleManager;
 
     Initialize();
 
@@ -1150,7 +1151,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             UpdateStyleControls();
 
-            return;
+            break;
         }
 
         case IDC_COLOR_INDEX:
@@ -1161,36 +1162,20 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             UpdateStyleControls();
 
-            return;
+            break;
         }
 
-        #pragma warning(disable: 4061) // Enumerator not handled
         case IDC_COLOR_SCHEME:
         {
             Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
-            switch (style->_ColorScheme)
-            {
-                default:
-                    style->_GradientStops = GetGradientStops(_Configuration->_ColorScheme);
-                    break;
-
-                case ColorScheme::Custom:
-                    style->_GradientStops = style->_CustomGradientStops;
-                    break;
-
-                case ColorScheme::Artwork:
-                    style->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
-                    break;
-            }
-
             UpdateColorSchemeControls();
+            UpdateStyleControls();
 
-            return;
+            break;
         }
-        #pragma warning(default: 4061)
 
         case IDC_COLOR_LIST:
         {
@@ -1635,43 +1620,41 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-            int Index = _Colors.GetCurSel();
+            size_t Index = (size_t) _Colors.GetCurSel();
 
-            if ((Index == LB_ERR) || ((size_t) Index >= style->_GradientStops.size()))
+            if ((Index == LB_ERR) || (Index >= style->_GradientStops.size()))
                 return;
 
-            D2D1_COLOR_F Color = style->_GradientStops[(size_t) Index].color;
+            D2D1_COLOR_F Color = style->_GradientStops[Index].color;
 
             CColorDialogEx cd;
 
             if (!cd.SelectColor(m_hWnd, Color))
                 return;
 
-            D2D1_GRADIENT_STOP gs = { 0.f, Color };
-
-            style->_GradientStops.insert(style->_GradientStops.begin() + Index + 1, gs);
-
-            UpdateGradientStops(style);
+            style->_GradientStops.insert(style->_GradientStops.begin() + (int) Index + 1, { 0.f, Color });
+            
+            UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
             break;
         }
 
         case IDC_REMOVE:
         {
-            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
-
             // Don't remove the last color.
             if (_Colors.GetCount() == 1)
                 return;
 
-            int Index = _Colors.GetCurSel();
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-            if ((Index == LB_ERR) || ((size_t) Index >= style->_GradientStops.size()))
+            size_t Index = (size_t) _Colors.GetCurSel();
+
+            if ((Index == LB_ERR) || (Index >= style->_GradientStops.size()))
                 return;
 
-            style->_GradientStops.erase(style->_GradientStops.begin() + Index);
+            style->_GradientStops.erase(style->_GradientStops.begin() + (int) Index);
 
-            UpdateGradientStops(style);
+            UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
             break;
         }
@@ -1682,7 +1665,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             std::reverse(style->_GradientStops.begin(), style->_GradientStops.end());
 
-            UpdateGradientStops(style);
+            UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
             break;
         }
@@ -1691,7 +1674,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
-            UpdateGradientStops(style);
+            UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
             break;
         }
@@ -1709,7 +1692,10 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDCANCEL:
         {
             if (id == IDCANCEL)
+            {
                 *_Configuration = _OldConfiguration;
+                _StyleManager = _OldStyleManager;
+            }
 
             GetWindowRect(&_Configuration->_DialogBounds);
 
@@ -1934,7 +1920,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 }
 
 /// <summary>
-/// Handles a Change notification.
+/// Handles a Change notification from the custom controls.
 /// </summary>
 LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 {
@@ -1956,6 +1942,9 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
             style->_ColorScheme = ColorScheme::Custom;
             _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
+
+            if (style->_ColorSource == ColorSource::Gradient)
+                style->_GradientStops = style->_CustomGradientStops;
 
             // Update the controls.
             ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
@@ -2306,15 +2295,41 @@ void ConfigurationDialog::UpdateStyleControls()
         case ColorSource::None:
 
         case ColorSource::Solid:
+        {
             _Color.SetColor(style->_CustomColor);
+
+            style->_Color = style->_CustomColor;
             break;
+        }
 
         case ColorSource::DominantColor:
+        {
             _Color.SetColor(_Configuration->_DominantColor);
+
+            style->_Color = _Configuration->_DominantColor;
             break;
+        }
 
         case ColorSource::Gradient:
+        {
+            #pragma warning(disable: 4061) // Enumerator not handled
+            switch (style->_ColorScheme)
+            {
+                default:
+                    style->_GradientStops = GetGradientStops(style->_ColorScheme);
+                    break;
+
+                case ColorScheme::Custom:
+                    style->_GradientStops = style->_CustomGradientStops;
+                    break;
+
+                case ColorScheme::Artwork:
+                    style->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+                    break;
+            }
+            #pragma warning(default: 4061) // Enumerator not handled
             break;
+        }
 
         case ColorSource::Windows:
         {
@@ -2374,11 +2389,7 @@ void ConfigurationDialog::UpdateColorSchemeControls()
 
     Style * style = _StyleManager.GetStyle((VisualElement) StyleIndex);
 
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
-
-        w.SetCurSel((int) style->_ColorScheme);
-    }
+    ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
     GradientStops gs;
 
@@ -2390,22 +2401,28 @@ void ConfigurationDialog::UpdateColorSchemeControls()
     else
         gs = GetGradientStops(style->_ColorScheme);
 
+    // Update the gradient control.
     _Gradient.SetGradientStops(gs);
 
+    // Update the list of colors.
     {
+        int Index = _Colors.GetCurSel();
+
         std::vector<D2D1_COLOR_F> Colors;
 
         for (const auto & Iter : gs)
             Colors.push_back(Iter.color);
 
         _Colors.SetColors(Colors);
+
+        _Colors.SetCurSel(Index);
     }
 
     auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
 
-    bool HasSelection = (lb.GetCurSel() != LB_ERR);                 // Add and Remove are only enabled when a color is selected.
-    bool HasMoreThanOneColor = (gs.size() > 1);                     // Remove and Reverse are only enabled when there is more than 1 color.
-    bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork); // Gradient controls are disabled when the artwork provides the colors.
+    bool HasSelection = (lb.GetCurSel() != LB_ERR);                     // Add and Remove are only enabled when a color is selected.
+    bool HasMoreThanOneColor = (gs.size() > 1);                         // Remove and Reverse are only enabled when there is more than 1 color.
+    bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
 
     GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
     GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
@@ -2419,7 +2436,7 @@ void ConfigurationDialog::UpdateColorSchemeControls()
 /// <summary>
 /// Updates the position of the current gradient colors.
 /// </summary>
-void ConfigurationDialog::UpdateGradientStops(Style * style)
+void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
 {
     if (style->_GradientStops.size() == 0)
         return;
@@ -2437,6 +2454,7 @@ void ConfigurationDialog::UpdateGradientStops(Style * style)
         }
     }
 
+    // Save the current result as custom gradient stops.
     style->_ColorScheme = ColorScheme::Custom;
     style->_CustomGradientStops = style->_GradientStops;
 }

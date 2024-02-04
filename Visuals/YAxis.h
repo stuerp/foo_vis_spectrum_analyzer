@@ -1,9 +1,11 @@
 
-/** $VER: YAxis.h (2024.01.31) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.02.03) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
 #include "framework.h"
+
+#include "Element.h"
 #include "Support.h"
 #include "Configuration.h"
 
@@ -13,7 +15,7 @@
 /// <summary>
 /// Implements the Y axis of a graph.
 /// </summary>
-class YAxis
+class YAxis : public Element
 {
 public:
     YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
@@ -36,9 +38,6 @@ public:
     void ReleaseDeviceSpecificResources();
 
     FLOAT GetWidth() const { return _Width; }
-
-private:
-    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, ID2D1LinearGradientBrush ** gradientBrush);
 
 private:
     const Configuration * _Configuration;

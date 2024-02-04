@@ -429,9 +429,6 @@ public:
 
         #pragma region Common
 
-        ColorScheme _ColorScheme;
-        std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
-
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
 
             SmoothingMethod _SmoothingMethod;
@@ -502,10 +499,15 @@ public:
         return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
 
+private:
     void ConvertColorSettings() noexcept;
+    const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
 
 private: // Deprecated
-    D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
+    ColorScheme _ColorScheme;
+    std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
+
+    D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);
     bool _UseCustomBackColor;
 
     D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);

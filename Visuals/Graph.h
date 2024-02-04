@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.02.03) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.02.04) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -27,7 +27,7 @@ public:
     void Move(const D2D1_RECT_F & rect);
 
     void RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
-    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork, D2D1_COLOR_F dominantColor) const;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) const;
 
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
