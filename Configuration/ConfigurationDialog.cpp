@@ -2296,16 +2296,12 @@ void ConfigurationDialog::UpdateStyleControls()
 
         case ColorSource::Solid:
         {
-            _Color.SetColor(style->_CustomColor);
-
             style->_Color = style->_CustomColor;
             break;
         }
 
         case ColorSource::DominantColor:
         {
-            _Color.SetColor(_Configuration->_DominantColor);
-
             style->_Color = _Configuration->_DominantColor;
             break;
         }
@@ -2388,6 +2384,8 @@ void ConfigurationDialog::UpdateColorSchemeControls()
     int StyleIndex = ((CListBox) GetDlgItem(IDC_STYLES)).GetCurSel();
 
     Style * style = _StyleManager.GetStyle((VisualElement) StyleIndex);
+
+    _Color.SetColor(style->_Color);
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 

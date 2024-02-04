@@ -37,10 +37,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::Background,
         {
-            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -49,10 +46,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::XAxisLine,
         {
-            L"X-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            1.f,
-            // Font-specific
+            L"X-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
             L"", 0.f,
         }
     });
@@ -61,10 +55,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::XAxisText,
         {
-            L"X-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"X-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -73,10 +64,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::YAxisLine,
         {
-            L"Y-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            1.f,
-            // Font-specific
+            L"Y-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
             L"", 0.f,
         }
     });
@@ -85,10 +73,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::YAxisText,
         {
-            L"Y-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Y-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -97,10 +82,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarForeground,
         {
-            L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -109,10 +91,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarDarkBackground,
         {
-            L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -121,10 +100,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarLightBackground,
         {
-            L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
             L"", 0.f,
         }
     });
@@ -133,10 +109,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarPeakIndicator,
         {
-            L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
             L"", 0.f,
         }
     });
@@ -145,10 +118,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurveLine,
         {
-            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            2.f,
-            // Font-specific
+            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
             L"", 0.f,
         }
     });
@@ -157,10 +127,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurveArea,
         {
-            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f,
             L"", 0.f,
         }
     });
@@ -169,10 +136,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurvePeakLine,
         {
-            L"Curve Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f,
-            // Line-specific
-            2.f,
-            // Font-specific
+            L"Curve Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
             L"", 0.f,
         }
     });
@@ -181,10 +145,7 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurvePeakArea,
         {
-            L"Curve Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f,
-            // Line-specific
-            0.f,
-            // Font-specific
+            L"Curve Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f,
             L"", 0.f,
         }
     });
@@ -220,11 +181,20 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 {
     for (auto & Iter : _Styles)
     {
-        if ((Iter.second._ColorSource == ColorSource::Gradient) && (Iter.second._ColorScheme == ColorScheme::Artwork))
-            Iter.second._GradientStops = gs;
-
+        if (Iter.second._ColorSource == ColorSource::Gradient)
+        {
+            if (Iter.second._ColorScheme == ColorScheme::Artwork)
+            {
+                Iter.second._GradientStops = gs;
+                Iter.second._Brush.Release();
+            }
+        }
+        else
         if (Iter.second._ColorSource == ColorSource::DominantColor)
+        {
             Iter.second._Color = dominantColor;
+            Iter.second._Brush.Release();
+        }
     }
 }
 

@@ -327,6 +327,8 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
+    _StyleManager.ReleaseDeviceSpecificResources();
+
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();
 
