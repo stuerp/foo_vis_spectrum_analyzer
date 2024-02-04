@@ -35,19 +35,22 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
 {
-    CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    switch (_Configuration->_VisualizationType)
+    if (SUCCEEDED(hr))
     {
-        default:
+        switch (_Configuration->_VisualizationType)
+        {
+            default:
 
-        case VisualizationType::Bars:
-            RenderBars(renderTarget, frequencyBands, sampleRate);
-            break;
+            case VisualizationType::Bars:
+                RenderBars(renderTarget, frequencyBands, sampleRate);
+                break;
 
-        case VisualizationType::Curve:
-            RenderCurve(renderTarget, frequencyBands, sampleRate);
-            break;
+            case VisualizationType::Curve:
+                RenderCurve(renderTarget, frequencyBands, sampleRate);
+                break;
+        }
     }
 }
 

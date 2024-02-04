@@ -35,7 +35,7 @@ Style & Style::operator=(const Style & other)
     return *this;
 }
 
-Style::Style(std::wstring name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, std::wstring fontName, FLOAT fontSize)
+Style::Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
 {
     _Name = name;
 

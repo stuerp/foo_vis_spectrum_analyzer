@@ -4,6 +4,7 @@
 #include "StyleManager.h"
 
 #include "Gradients.h"
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -37,8 +38,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::Background,
         {
-            L"Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "Background", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -46,8 +47,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::XAxisLine,
         {
-            L"X-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
-            L"", 0.f,
+            "X-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
+            "", 0.f,
         }
     });
 
@@ -55,8 +56,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::XAxisText,
         {
-            L"X-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "X-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -64,8 +65,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::YAxisLine,
         {
-            L"Y-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
-            L"", 0.f,
+            "Y-axis Line", ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
+            "", 0.f,
         }
     });
 
@@ -73,8 +74,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::YAxisText,
         {
-            L"Y-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "Y-axis Text", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -82,8 +83,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarForeground,
         {
-            L"Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "Bar Foreground", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -91,8 +92,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarDarkBackground,
         {
-            L"Bar Dark Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "Bar Dark Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -100,8 +101,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarLightBackground,
         {
-            L"Bar Light Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
-            L"", 0.f,
+            "Bar Light Background", ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -109,8 +110,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::BarPeakIndicator,
         {
-            L"Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
-            L"", 0.f,
+            "Bar Peak Indicator", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
+            "", 0.f,
         }
     });
 
@@ -118,8 +119,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurveLine,
         {
-            L"Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
-            L"", 0.f,
+            "Curve Line", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
+            "", 0.f,
         }
     });
 
@@ -127,8 +128,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurveArea,
         {
-            L"Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f,
-            L"", 0.f,
+            "Curve Area", ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -136,8 +137,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurvePeakLine,
         {
-            L"Curve Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
-            L"", 0.f,
+            "Curve Peak Line", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f,
+            "", 0.f,
         }
     });
 
@@ -145,8 +146,8 @@ void StyleManager::Reset() noexcept
     ({
         VisualElement::CurvePeakArea,
         {
-            L"Curve Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f,
-            L"", 0.f,
+            "Curve Peak Area", ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f,
+            "", 0.f,
         }
     });
 
@@ -205,6 +206,190 @@ void StyleManager::ReleaseDeviceSpecificResources()
 {
     for (auto & Iter : _Styles)
         Iter.second._Brush.Release();
+}
+
+void StyleManager::Read(ui_element_config_parser & parser) noexcept
+{
+    Reset();
+
+    try
+    {
+        size_t Version;
+
+        parser >> Version;
+
+        if (Version > _CurrentVersion)
+            return;
+
+        size_t StyleCount;
+
+        parser >> StyleCount;
+
+        _Styles.clear();
+
+        for (size_t i = 0; i < StyleCount; ++i)
+        {
+            int Id; parser >> Id;
+
+            pfc::string Name; parser >> Name;
+
+            int colorSource; parser >> colorSource;
+
+            D2D1_COLOR_F CustomColor;
+
+            parser >> CustomColor.r;
+            parser >> CustomColor.g;
+            parser >> CustomColor.b;
+            parser >> CustomColor.a;
+
+            int ColorIndex; parser >> ColorIndex;
+            int colorScheme; parser >> colorScheme;
+
+            GradientStops gs;
+
+            size_t GradientStopCount; parser >> GradientStopCount;
+
+            for (size_t j = 0; j < GradientStopCount; ++j)
+            {
+                FLOAT Position; parser >> Position;
+
+                D2D1_COLOR_F Color;
+
+                parser >> Color.r;
+                parser >> Color.g;
+                parser >> Color.b;
+                parser >> Color.a;
+
+                gs.push_back({ Position, Color });;
+            }
+
+            FLOAT Opacity; parser >> Opacity;
+            FLOAT Thickness; parser >> Thickness;
+
+            pfc::string FontName; parser >> FontName;
+            FLOAT FontSize; parser >> FontSize;
+
+            Style style = { Name, (ColorSource) colorSource, CustomColor, ColorIndex, (ColorScheme) colorScheme, gs, Opacity, Thickness, FontName, FontSize };
+
+            style._Color = style._CustomColor;
+            style._GradientStops = style._CustomGradientStops;
+
+            _Styles.insert({ (VisualElement) Id, style });
+        }
+    }
+    catch (exception_io & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+
+        Reset();
+    }
+}
+
+void StyleManager::Write(ui_element_config_builder & builder) const noexcept
+{
+    try
+    {
+        builder << _CurrentVersion;
+
+        builder << _Styles.size();
+
+        for (const auto & Iter : _Styles)
+        {
+            builder << (int) Iter.first;
+
+            const Style & style = Iter.second;
+
+            builder << style._Name;
+
+            builder << (int) style._ColorSource;
+
+            builder << style._CustomColor.r;
+            builder << style._CustomColor.g;
+            builder << style._CustomColor.b;
+            builder << style._CustomColor.a;
+
+            builder << style._ColorIndex;
+            builder << (int) style._ColorScheme;
+
+            builder << style._CustomGradientStops.size();
+
+            for (const auto & gs : style._CustomGradientStops)
+            {
+                builder << gs.position;
+                builder << gs.color.r;
+                builder << gs.color.g;
+                builder << gs.color.b;
+                builder << gs.color.a;
+            }
+
+            builder << style._Opacity;
+            builder << style._Thickness;
+
+            builder << style._FontName;
+            builder << style._FontSize;
+        }
+    }
+    catch (exception & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while writing DUI styles: %s", core_api::get_my_file_name(), ex.what());
+    }
+}
+
+void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
+{
+}
+
+void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
+{
+    try
+    {
+        writer->write(&_CurrentVersion, sizeof(_CurrentVersion), abortHandler);
+
+        size_t Size = _Styles.size();
+
+        writer->write(&Size, sizeof(Size), abortHandler);
+
+        for (const auto & Iter : _Styles)
+        {
+            int Index = (int) Iter.first;
+
+            writer->write(&Index, sizeof(Index), abortHandler);
+
+            const Style & style = Iter.second;
+
+            Size = style._Name.length();
+            writer->write(&Size, sizeof(Size), abortHandler);
+            writer->write(style._Name.c_str(), Size + 1, abortHandler);
+
+            writer->write(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
+            writer->write(&style._Color, sizeof(style._Color), abortHandler);
+            writer->write(&style._ColorIndex, sizeof(style._ColorIndex), abortHandler);
+            writer->write(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
+
+            Size = style._CustomGradientStops.size();
+
+            writer->write(&Size, sizeof(Size), abortHandler);
+
+            for (const auto & gs : style._CustomGradientStops)
+            {
+                writer->write(&gs.position, sizeof(gs.position), abortHandler);
+                writer->write(&gs.color, sizeof(gs.color), abortHandler);
+            }
+
+            writer->write(&style._Opacity, sizeof(style._Opacity), abortHandler);
+            writer->write(&style._Thickness, sizeof(style._Thickness), abortHandler);
+
+            Size = style._FontName.length();
+            writer->write(&Size, sizeof(Size), abortHandler);
+            writer->write(style._FontName.c_str(), Size + 1, abortHandler);
+
+            writer->write(&style._FontSize, sizeof(style._FontSize), abortHandler);
+        }
+    }
+    catch (exception & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while writing CUI styles: %s", core_api::get_my_file_name(), ex.what());
+    }
 }
 
 StyleManager _StyleManager;

@@ -537,5 +537,5 @@ private: // Deprecated
     bool _DrawBandBackground;                               // True if the background for each band should be drawn.
 
 private:
-    const size_t _CurrentVersion = 13;
+    const size_t _CurrentVersion = 14;
 };

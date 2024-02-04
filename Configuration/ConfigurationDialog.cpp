@@ -815,7 +815,7 @@ void ConfigurationDialog::Initialize()
         _StyleManager.GetStyles(Styles);
 
         for (const auto & x : Styles)
-            w.AddString(x._Name.c_str());
+            w.AddString(pfc::wideFromUTF8(x._Name));
 
         w.SetCurSel(_Configuration->_CurrentStyle);
     }
@@ -1682,6 +1682,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_RESET:
         {
             _Configuration->Reset();
+            _StyleManager.Reset();
 
             Initialize();
 
@@ -2405,7 +2406,7 @@ void ConfigurationDialog::UpdateStyleControls()
 
             w.SetCurSel(Clamp(style->_ColorIndex, 0, w.GetCount() - 1));
 
-            style->_Color = _Configuration->_UserInterfaceColors[Clamp(style->_ColorIndex, 0, (int) _Configuration->_UserInterfaceColors.size())];
+            style->_Color = _Configuration->_UserInterfaceColors[Clamp((size_t) style->_ColorIndex, (size_t) 0, _Configuration->_UserInterfaceColors.size())];
             break;
         }
     }

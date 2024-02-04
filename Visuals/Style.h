@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.03) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.04) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -83,11 +83,11 @@ public:
         _Brush.Release();
     }
 
-    Style(std::wstring name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, std::wstring fontName, FLOAT fontSize);
+    Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
 
 
 public:
-    std::wstring _Name;
+    pfc::string _Name;
 
     ColorSource _ColorSource;           // Determines the source of the color
     D2D1_COLOR_F _CustomColor;          // User-specified color
@@ -102,7 +102,7 @@ public:
     FLOAT _Thickness;                   // Line thickness
 
     // Font-specific
-    std::wstring _FontName;
+    pfc::string _FontName;
     FLOAT _FontSize;
 
     // Resulting resources

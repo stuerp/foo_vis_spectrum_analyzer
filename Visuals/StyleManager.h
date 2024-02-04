@@ -23,6 +23,12 @@ public:
 
     void Reset() noexcept;
 
+    void Read(ui_element_config_parser & parser) noexcept;
+    void Write(ui_element_config_builder & builder) const noexcept;
+
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept;
+    void Write(stream_writer * writer, abort_callback & abortHandler) const noexcept;
+
     Style * GetStyle(VisualElement visualElement);
 
     void GetStyles(std::vector<Style> & styles) const;
@@ -33,6 +39,8 @@ public:
 
 private:
     std::map<VisualElement, Style> _Styles;
+
+    const size_t _CurrentVersion = 1;
 };
 
 extern StyleManager _StyleManager;
