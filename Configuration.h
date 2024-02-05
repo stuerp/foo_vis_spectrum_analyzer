@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.04) P. Stuer **/
+/** $VER: Configuration.h (2024.02.05) P. Stuer **/
 
 #pragma once
 
@@ -120,7 +120,7 @@ inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) -
 inline const double MinOpacity = 0.f;
 inline const double MaxOpacity = 1.f;
 
-inline const double MinThickness =  1.f;
+inline const double MinThickness =  0.f;
 inline const double MaxThickness = 10.f;
 
 

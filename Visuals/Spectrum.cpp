@@ -217,45 +217,19 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
         hr = CreatePatternBrush(renderTarget);
 
-    Style * style = _StyleManager.GetStyle(VisualElement::BarForeground);
+    if (SUCCEEDED(hr))
+    {
+        for (const auto & Iter : { VisualElement::BarForeground, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
+        {
+            Style * style = _StyleManager.GetStyle(Iter);
 
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
+            if (style->_Brush == nullptr)
+                hr = style->CreateDeviceSpecificResources(renderTarget);
 
-    style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::CurveLine);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::CurveArea);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
-
-    style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-    if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        hr = InitializeStyle(renderTarget, style);
+            if (!SUCCEEDED(hr))
+                break;
+        }
+    }
 
     return hr;
 }

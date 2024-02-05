@@ -95,8 +95,11 @@ void UIElement::ProcessPlaybackEvent()
         {
             if (_Artwork.Bitmap() == nullptr)
             {
-                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork); // Get the default colors for the Artwork gradient.
+                // Get the default colors for the artwork dominant color and gradient.
+                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
                 _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
+
+                _StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
 
                 if (_ConfigurationDialog.IsWindow())
                     _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
@@ -151,8 +154,7 @@ void UIElement::Render()
     {
         _RenderTarget->BeginDraw();
 
-        _Graph.RenderBackground(_RenderTarget, _Artwork);
-        _Graph.RenderForeground(_RenderTarget, _FrequencyBands, (double) _SampleRate);
+        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
 
         if (_Configuration._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -245,19 +247,13 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         _NewArtworkGradient = true;
     }
 
-    // Create the gradient stops based on the artwork. Done at least once per artwork because the configuration dialog needs it when ColorScheme::Artwork is selected.
+    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
     if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkGradient))
     {
         hr = CreateArtworkDependentResources();
 
         _NewArtworkGradient = false;
     }
-
-    if (SUCCEEDED(hr))
-        hr = _FrameCounter.CreateDeviceSpecificResources(_RenderTarget);
-
-    if (SUCCEEDED(hr))
-        hr = _Graph.CreateDeviceSpecificResources(_RenderTarget);
 
     return hr;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.04) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.05) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -59,15 +59,20 @@ void Graph::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Graph::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Artwork & artwork)
 {
-    _XAxis.Render(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    _YAxis.Render(renderTarget);
-
-    _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+    if (SUCCEEDED(hr))
+    {
+        RenderBackground(renderTarget, artwork);
+        RenderForeground(renderTarget, frequencyBands, sampleRate);
+    }
 }
 
+/// <summary>
+/// Renders the background.
+/// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) const
 {
     Style * style = _StyleManager.GetStyle(VisualElement::Background);
@@ -108,6 +113,18 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
 }
 
 /// <summary>
+/// Renders the foreground.
+/// </summary>
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+{
+    _XAxis.Render(renderTarget);
+
+    _YAxis.Render(renderTarget);
+
+    _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+}
+
+/// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT Graph::CreateDeviceIndependentResources()
@@ -129,6 +146,10 @@ void Graph::ReleaseDeviceIndependentResources()
     _XAxis.ReleaseDeviceIndependentResources();
 }
 
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// </summary>
 HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
@@ -136,16 +157,19 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     Style * style = _StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_Brush == nullptr)
-        hr = InitializeStyle(renderTarget, style);
+        hr = style->CreateDeviceSpecificResources(renderTarget);
 
     return hr;
 }
 
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
 void Graph::ReleaseDeviceSpecificResources()
 {
     _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
 
-    _StyleManager.GetStyle(VisualElement::Background)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
 }

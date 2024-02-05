@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.04) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.05) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -83,11 +83,14 @@ public:
         _Brush.Release();
     }
 
-    Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
+    Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
 
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources();
 
 public:
     pfc::string _Name;
+    uint64_t _Flags;
 
     ColorSource _ColorSource;           // Determines the source of the color
     D2D1_COLOR_F _CustomColor;          // User-specified color
@@ -95,10 +98,7 @@ public:
     ColorScheme _ColorScheme;           // User-specified color scheme
     GradientStops _CustomGradientStops; // User-specified gradient stops
 
-    // Area-specific
-    FLOAT _Opacity;                     // Area opacity
-
-    // Line-specific
+    FLOAT _Opacity;                     // Opacity of the brush or area
     FLOAT _Thickness;                   // Line thickness
 
     // Font-specific
@@ -111,4 +111,13 @@ public:
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;
+
+    enum Feature
+    {
+        SupportsOpacity     = 0x01,
+        SupportsThickness   = 0x02,
+        SupportsFont        = 0x04,
+
+        HorizontalGradient  = 0x08,
+    };
 };

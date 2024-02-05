@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.04) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.05) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -2422,8 +2422,8 @@ void ConfigurationDialog::UpdateStyleControls()
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor) || (style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_OPACITY).EnableWindow(style->_ColorSource != ColorSource::None);
-    GetDlgItem(IDC_THICKNESS).EnableWindow(style->_ColorSource != ColorSource::None);
+    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsThickness));
 
     UpdateColorSchemeControls();
 }
@@ -2437,10 +2437,12 @@ void ConfigurationDialog::UpdateColorSchemeControls()
 
     Style * style = _StyleManager.GetStyle((VisualElement) StyleIndex);
 
+    // Update the color button.
     _Color.SetColor(style->_Color);
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
+    // Get the gradient stops.
     GradientStops gs;
 
     if (style->_ColorScheme == ColorScheme::Custom)

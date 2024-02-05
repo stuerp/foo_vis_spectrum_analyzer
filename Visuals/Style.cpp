@@ -3,16 +3,25 @@
 
 #include "Style.h"
 
+#include "Direct2D.h"
+
 #pragma hdrstop
 
+/// <summary>
+/// Initializes an instance.
+/// </summary>
 Style::Style(const Style & other)
 {
     operator=(other);
 }
 
+/// <summary>
+/// Implements the = operator.
+/// </summary>
 Style & Style::operator=(const Style & other)
 {
     _Name = other._Name;
+    _Flags = other._Flags;
 
     _ColorSource = other._ColorSource;
     _ColorIndex = other._ColorIndex;
@@ -35,9 +44,13 @@ Style & Style::operator=(const Style & other)
     return *this;
 }
 
-Style::Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
+/// <summary>
+/// Initializes an instance.
+/// </summary>
+Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
 {
     _Name = name;
+    _Flags = flags;
 
     _ColorSource = colorSource;
     _ColorIndex = colorIndex;
@@ -54,4 +67,31 @@ Style::Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColo
 
     _Color = customColor;
     _GradientStops = customGradientStops;
+}
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// </summary>
+HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+{
+    HRESULT hr = S_OK;
+
+    if (_ColorSource != ColorSource::Gradient)
+        hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush ** ) &_Brush);
+    else
+        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, _Flags & Style::Feature::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+
+    if (_Brush)
+        _Brush->SetOpacity(_Opacity);
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void Style::ReleaseDeviceSpecificResources()
+{
+    _Brush.Release();
 }

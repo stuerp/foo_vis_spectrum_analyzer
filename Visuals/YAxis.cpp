@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.02.03) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.02.05) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
@@ -139,47 +139,17 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
+    if (SUCCEEDED(hr))
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisLine);
-
-        if (SUCCEEDED(hr) && (style->_Brush == nullptr))
+        for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
         {
-            if (style->_ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style->_Color, (ID2D1SolidColorBrush ** ) &style->_Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
+            Style * style = _StyleManager.GetStyle(Iter);
 
-                hr = CreateGradientBrush(renderTarget, style->_GradientStops, &Brush);
+            if (style->_Brush == nullptr)
+                hr = style->CreateDeviceSpecificResources(renderTarget);
 
-                if (SUCCEEDED(hr))
-                    style->_Brush.Attach(Brush);
-            }
-
-            if (SUCCEEDED(hr))
-                style->_Brush->SetOpacity(style->_Opacity);
-        }
-    }
-
-    {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisText);
-
-        if (SUCCEEDED(hr) && (style->_Brush == nullptr))
-        {
-            if (style->_ColorSource != ColorSource::Gradient)
-                hr = renderTarget->CreateSolidColorBrush(style->_Color, (ID2D1SolidColorBrush ** ) &style->_Brush);
-            else
-            {
-                ID2D1LinearGradientBrush * Brush;
-
-                hr = CreateGradientBrush(renderTarget, style->_GradientStops, &Brush);
-
-                if (SUCCEEDED(hr))
-                    style->_Brush.Attach(Brush);
-            }
-
-            if (SUCCEEDED(hr))
-                style->_Brush->SetOpacity(style->_Opacity);
+            if (!SUCCEEDED(hr))
+                break;
         }
     }
 

@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2024.01.28) P. Stuer **/
+/** $VER: Direct2D.h (2024.02.05) P. Stuer **/
 
 #pragma once
 
@@ -24,6 +24,7 @@ public:
     HRESULT CreateBitmap(IWICBitmapSource * source, ID2D1RenderTarget * renderTarget, ID2D1Bitmap ** bitmap) const noexcept;
 
     HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept;
+    HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
 
     void SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) const noexcept;
     void SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) const noexcept;
