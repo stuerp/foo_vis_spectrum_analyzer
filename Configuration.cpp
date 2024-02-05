@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.02.04) P. Stuer **/
+/** $VER: Configuration.cpp (2024.02.05) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -1258,6 +1258,8 @@ void Configuration::ConvertColorSettings() noexcept
             style->_ColorSource = ColorSource::Solid;
             style->_Color = style->_CustomColor;
         }
+
+        style->_Flags |= (_HorizontalGradient ? Style::HorizontalGradient : 0);
     }
 
     {

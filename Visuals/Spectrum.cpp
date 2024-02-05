@@ -90,13 +90,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
             {
                 Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _Configuration->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
 
-                if (_Configuration->_HorizontalGradient)
-                {
-                    _SolidColorBrush->SetColor(Iter.GradientColor);
-                    renderTarget->FillRectangle(Rect, _SolidColorBrush);
-                }
-                else
-                    renderTarget->FillRectangle(Rect, ForegroundStyle->_Brush);
+                renderTarget->FillRectangle(Rect, ForegroundStyle->_Brush);
 
                 if (_Configuration->_LEDMode)
                     renderTarget->FillRectangle(Rect, _PatternBrush);

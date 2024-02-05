@@ -474,46 +474,6 @@ void UIElement::SetConfiguration() noexcept
 
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
-    // Generate the horizontal color gradient, if required.
-    if (_Configuration._HorizontalGradient)
-    {
-        if (_Configuration._GradientStops.size() > 1)
-        {
-            size_t j = 0;
-
-            D2D1_COLOR_F Color1 = _Configuration._GradientStops[0].color;
-            D2D1_COLOR_F Color2 = _Configuration._GradientStops[1].color;
-
-            float i =  0.f;
-            float n = (_Configuration._GradientStops[1].position - _Configuration._GradientStops[0].position) * (float) _FrequencyBands.size();
-
-            for (FrequencyBand & Iter : _FrequencyBands)
-            {
-                Iter.GradientColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
-                i++;
-
-                if (i >= n)
-                {
-                    j++;
-
-                    if (j == _Configuration._GradientStops.size() - 1)
-                        break;
-
-                    Color1 = _Configuration._GradientStops[j].color;
-                    Color2 = _Configuration._GradientStops[j + 1].color;
-
-                    i = 0.f;
-                    n = (_Configuration._GradientStops[j + 1].position - _Configuration._GradientStops[j].position) * (float) _FrequencyBands.size();;
-                }
-            }
-        }
-        else
-        {
-            for (FrequencyBand & Iter : _FrequencyBands)
-                Iter.GradientColor = _Configuration._GradientStops[0].color;
-        }
-    }
-
     _Graph.Initialize(&_Configuration, _FrequencyBands);
 
     _ToolTipControl.Activate(_Configuration._ShowToolTips);

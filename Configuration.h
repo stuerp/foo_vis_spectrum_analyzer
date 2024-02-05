@@ -450,14 +450,13 @@ public:
 
             VisualizationType _VisualizationType;
 
+            PeakMode _PeakMode;
+            double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
+            double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
+
             #pragma region Bars
 
-                bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-
-                PeakMode _PeakMode;
-                double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
-                double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
 
             #pragma endregion
 
@@ -535,6 +534,7 @@ private: // Deprecated
     const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
 
     bool _DrawBandBackground;                               // True if the background for each band should be drawn.
+    bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
     const size_t _CurrentVersion = 14;
