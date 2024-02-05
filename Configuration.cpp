@@ -557,7 +557,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
 
         if (Version >= 10)
         {
-            parser >> Integer; _BackgroundMode = (BackgroundMode) Integer;
+            parser >> Integer; _BackgroundMode = (BackgroundMode) Clamp(Integer, (int) BackgroundMode::None, (int) BackgroundMode::Artwork);
             parser >> _ArtworkOpacity;
 
             parser >> _NumArtworkColors;
@@ -987,7 +987,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 
         if (Version >= 10)
         {
-            reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+            reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler); _BackgroundMode = Clamp(_BackgroundMode, BackgroundMode::None, BackgroundMode::Artwork);
             reader->read(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
 
             reader->read(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);

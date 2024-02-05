@@ -87,22 +87,13 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
             }
 
             case XAxisMode::Octaves:
-            case XAxisMode::Notes:
             {
-                double Note = -57.; // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
-                    if (_Mode == XAxisMode::Octaves)
-                    {
-                        if (Frequency < 1000.)
-                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
-                        else
-                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
-                    }
-                    else
-                        ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
+                    ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
                     Label lb = { Frequency, Text, 0.f };
 
@@ -111,7 +102,37 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
                     Note += 12.;
                     Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
                 }
+                break;
+            }
 
+            case XAxisMode::Notes:
+            {
+                static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
+                static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
+
+                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+
+                int j = 0;
+
+                while (Frequency < frequencyBands.back().Lo)
+                {
+                    int Octave = (Note + 57.) / 12;
+
+                    if (j == 0)
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[j], Octave);
+                    else
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
+
+                    Label lb = { Frequency, Text, 0.f };
+
+                    _Labels.push_back(lb);
+
+                    Note += Step[j];
+                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+
+                    if (j < 6) j++; else j = 0;
+                }
                 break;
             }
         }

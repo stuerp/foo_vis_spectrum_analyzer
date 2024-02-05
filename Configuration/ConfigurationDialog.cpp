@@ -688,7 +688,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"None", L"Solid", L"Artwork", L"Artwork and Dominant Color" })
+        for (const auto & x : { L"None", L"Solid", L"Artwork" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_BackgroundMode);
