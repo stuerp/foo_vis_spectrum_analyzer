@@ -66,7 +66,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
     FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
 
-    Style * ForegroundStyle = _StyleManager.GetStyle(VisualElement::BarForeground);
+    Style * ForegroundStyle = _StyleManager.GetStyle(VisualElement::BarSpectrum);
     Style * DarkBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
     Style * LightBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarLightBackground);
     Style * PeakIndicatorStyle = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
@@ -219,7 +219,7 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 
     if (SUCCEEDED(hr))
     {
-        for (const auto & Iter : { VisualElement::BarForeground, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
+        for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
         {
             Style * style = _StyleManager.GetStyle(Iter);
 
@@ -380,7 +380,7 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
-    _StyleManager.GetStyle(VisualElement::BarForeground)->_Brush.Release();
+    _StyleManager.GetStyle(VisualElement::BarSpectrum)->_Brush.Release();
     _StyleManager.GetStyle(VisualElement::BarDarkBackground)->_Brush.Release();
     _StyleManager.GetStyle(VisualElement::BarLightBackground)->_Brush.Release();
     _StyleManager.GetStyle(VisualElement::BarPeakIndicator)->_Brush.Release();

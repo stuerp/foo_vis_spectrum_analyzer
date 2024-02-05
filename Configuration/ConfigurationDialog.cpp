@@ -669,9 +669,6 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Common
     {
-        SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, _Configuration->_HorizontalGradient);
-    }
-    {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
 
         w.ResetContent();
@@ -1604,12 +1601,6 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
-        case IDC_HORIZONTAL_GRADIENT:
-        {
-            _Configuration->_HorizontalGradient = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
         case IDC_LED_MODE:
         {
             _Configuration->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -1676,6 +1667,17 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
+            break;
+        }
+
+        case IDC_HORIZONTAL_GRADIENT:
+        {
+            Style * style = _StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
+
+            if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
+                style->_Flags |= Style::HorizontalGradient;
+            else
+                style->_Flags &= ~Style::HorizontalGradient;
             break;
         }
 
@@ -2100,8 +2102,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
-        IDC_HORIZONTAL_GRADIENT,
-
         IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
         IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
@@ -2116,12 +2116,14 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_COLOR_SOURCE_LBL, IDC_COLOR_SOURCE,
         IDC_COLOR_INDEX_LBL, IDC_COLOR_INDEX,
         IDC_COLOR_BUTTON_LBL, IDC_COLOR_BUTTON,
+
         IDC_OPACITY_LBL, IDC_OPACITY, IDC_OPACITY_SPIN, IDC_OPACITY_UNIT,
         IDC_THICKNESS_LBL, IDC_THICKNESS, IDC_THICKNESS_SPIN,
 
         IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
         IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
         IDC_POSITION, IDC_POSITION_LBL, IDC_SPREAD,
+        IDC_HORIZONTAL_GRADIENT,
     };
 
     int Mode = (index == 0) ? SW_SHOW : SW_HIDE;
@@ -2412,6 +2414,8 @@ void ConfigurationDialog::UpdateStyleControls()
     }
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
+
+    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, style->_Flags & Style::HorizontalGradient);
 
     SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));

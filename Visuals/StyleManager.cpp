@@ -82,9 +82,9 @@ void StyleManager::Reset() noexcept
 
     _Styles.insert
     ({
-        VisualElement::BarForeground,
+        VisualElement::BarSpectrum,
         {
-            "Bar Foreground", Style::SupportsOpacity | Style::SupportsThickness,
+            "Bar Spectrum", Style::SupportsOpacity | Style::SupportsThickness,
             ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
         }
     });

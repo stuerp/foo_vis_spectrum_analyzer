@@ -15,7 +15,7 @@ enum class VisualElement
     YAxisText,
     YAxisLine,
 
-    BarForeground,
+    BarSpectrum,
     BarPeakIndicator,
     BarDarkBackground,
     BarLightBackground,

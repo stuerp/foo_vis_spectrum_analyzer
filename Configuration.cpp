@@ -1349,7 +1349,7 @@ void Configuration::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarForeground);
+        Style * style = _StyleManager.GetStyle(VisualElement::BarSpectrum);
 
         style->_CustomGradientStops = _CustomGradientStops;
 

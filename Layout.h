@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.02.03) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.02.05) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -890,20 +890,12 @@
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
 
-#pragma region Horizontal gradient
-// Checkbox
-#define W_C13    80
-#define H_C13    H_CHB
-#define X_C13    X_E01 + 5
-#define Y_C13    Y_E02 + H_E02 + IY
-#pragma endregion
-
 #pragma region Peak Mode
 // Label
 #define W_A11    42
 #define H_A11    H_LBL
-#define X_A11    X_C13
-#define Y_A11    Y_C13 + H_C13 + IY
+#define X_A11    X_E01
+#define Y_A11    Y_E02 + H_E02 + IY
 
 // Combobox
 #define W_A12    60
@@ -1065,6 +1057,12 @@
 #define H_F03   H_BTN
 #define X_F03   X_F01
 #define Y_F03   Y_F01 + H_F01 + IY
+
+// Checkbox: Horizontal gradient
+#define W_C13    80
+#define H_C13    H_CHB
+#define X_C13    X_F03
+#define Y_C13    Y_F03 + H_F03 + IY
 
 #pragma endregion
 

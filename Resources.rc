@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.02.03) P. Stuer **/
+/** $VER: Resources.rc (2024.02.05) P. Stuer **/
 
 #include "Resources.h"
 
@@ -259,8 +259,6 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     rtext           "Type:",          IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01
     combobox                          IDC_VISUALIZATION,     X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
-
     // Peak indicators
     rtext           "Peak mode:",               IDC_PEAK_MODE_LBL,              X_A11, Y_A11 + 2, W_A11, H_A11
     combobox                                    IDC_PEAK_MODE,                  X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -301,6 +299,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         ltext           "%"                         IDC_POSITION_LBL,               X_F02, Y_F02 + 2, W_F02, H_F02
 
         pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03,     W_F03, H_F03
+
+        control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
 
         rtext           "Opacity:"                  IDC_OPACITY_LBL,                X_I08, Y_I08 + 2, W_I08, H_I08
         edittext                                    IDC_OPACITY,                    X_I09, Y_I09,     W_I09, H_I09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
