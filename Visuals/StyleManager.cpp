@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.04) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.05) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -270,9 +270,6 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
             FLOAT FontSize; parser >> FontSize;
 
             Style style = { Name, (ColorSource) colorSource, CustomColor, ColorIndex, (ColorScheme) colorScheme, gs, Opacity, Thickness, FontName, FontSize };
-
-            style._Color = style._CustomColor;
-            style._GradientStops = style._CustomGradientStops;
 
             _Styles.insert({ (VisualElement) Id, style });
         }

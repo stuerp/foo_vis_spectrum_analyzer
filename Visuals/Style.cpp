@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.02.04) P. Stuer **/
+/** $VER: Style.cpp (2024.02.05) P. Stuer **/
 
 #include "Style.h"
 
@@ -51,4 +51,7 @@ Style::Style(const char * name, ColorSource colorSource, D2D1_COLOR_F customColo
 
     _FontName = fontName;
     _FontSize = fontSize;
+
+    _Color = customColor;
+    _GradientStops = customGradientStops;
 }
