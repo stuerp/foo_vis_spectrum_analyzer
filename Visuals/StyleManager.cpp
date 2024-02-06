@@ -337,6 +337,64 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
 
 void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
 {
+    try
+    {
+        _Styles.clear();
+
+        size_t Version;
+
+        reader->read(&Version, sizeof(Version), abortHandler);
+
+        if (Version > _CurrentVersion)
+            return;
+
+        size_t StyleCount;
+
+        reader->read(&StyleCount, sizeof(StyleCount), abortHandler);
+
+        for (size_t i = 0; i < StyleCount; ++i)
+        {
+            int Id; reader->read(&Id, sizeof(Id), abortHandler);
+
+            Style style;
+
+            style._Name = reader->read_string(abortHandler);
+
+            reader->read(&style._Flags, sizeof(style._Flags), abortHandler);
+            reader->read(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
+            reader->read(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
+            reader->read(&style._ColorIndex, sizeof(style._ColorIndex), abortHandler);
+            reader->read(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
+
+            size_t Size = style._CustomGradientStops.size();
+
+            reader->read(&Size, sizeof(Size), abortHandler);
+
+            style._GradientStops.clear();
+
+            for (size_t j = 0; j < Size; ++j)
+            {
+                D2D1_GRADIENT_STOP gs;
+
+                reader->read(&gs.position, sizeof(gs.position), abortHandler);
+                reader->read(&gs.color, sizeof(gs.color), abortHandler);
+
+                style._GradientStops.push_back(gs);
+            }
+
+            reader->read(&style._Opacity, sizeof(style._Opacity), abortHandler);
+            reader->read(&style._Thickness, sizeof(style._Thickness), abortHandler);
+
+            style._FontName = reader->read_string(abortHandler);
+            reader->read(&style._FontSize, sizeof(style._FontSize), abortHandler);
+
+            _Styles.insert({ (VisualElement) Id, style });
+        }
+    }
+    catch (exception & ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Exception while reading CUI styles: %s", core_api::get_my_file_name(), ex.what());
+    }
 }
 
 void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
@@ -351,15 +409,13 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
 
         for (const auto & Iter : _Styles)
         {
-            int Index = (int) Iter.first;
+            int Id = (int) Iter.first;
 
-            writer->write(&Index, sizeof(Index), abortHandler);
+            writer->write(&Id, sizeof(Id), abortHandler);
 
             const Style & style = Iter.second;
 
-            Size = style._Name.length();
-            writer->write(&Size, sizeof(Size), abortHandler);
-            writer->write(style._Name.c_str(), Size + 1, abortHandler);
+            writer->write_string(style._Name, abortHandler);
 
             writer->write(&style._Flags, sizeof(style._Flags), abortHandler);
 
@@ -381,9 +437,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
             writer->write(&style._Opacity, sizeof(style._Opacity), abortHandler);
             writer->write(&style._Thickness, sizeof(style._Thickness), abortHandler);
 
-            Size = style._FontName.length();
-            writer->write(&Size, sizeof(Size), abortHandler);
-            writer->write(style._FontName.c_str(), Size + 1, abortHandler);
+            writer->write_string(style._FontName, abortHandler);
 
             writer->write(&style._FontSize, sizeof(style._FontSize), abortHandler);
         }
