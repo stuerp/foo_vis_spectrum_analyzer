@@ -39,9 +39,12 @@ void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight)
 /// </summary>
 HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 {
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+
     static WCHAR Text[512] = { };
 
-    HRESULT hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
+    if (SUCCEEDED(hr))
+        hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
 
     if (SUCCEEDED(hr))
     {

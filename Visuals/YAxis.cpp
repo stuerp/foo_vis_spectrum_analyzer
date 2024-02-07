@@ -1,8 +1,9 @@
 
-/** $VER: YAXis.cpp (2024.01.16) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.02.07) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
+#include "StyleManager.h"
 #include "DirectWrite.h"
 
 #pragma hdrstop
@@ -10,12 +11,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(const Configuration * configuration)
+void YAxis::Initialize(Configuration * configuration)
 {
     _Configuration = configuration;
-
-    _TextColor = configuration->_YTextColor;
-    _LineColor = configuration->_YLineColor;
 
     _Labels.clear();
 
@@ -59,9 +57,11 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     if (_Configuration->_YAxisMode == YAxisMode::None)
         return;
 
-    CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    const FLOAT StrokeWidth = 1.0f;
+    if (!SUCCEEDED(hr))
+        return;
+
     const FLOAT Width = _Bounds.right - _Bounds.left;
 
     FLOAT OldTextTop = _Bounds.bottom - _Bounds.top + _Height;
@@ -70,20 +70,21 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     {
         // Draw the horizontal grid line.
         {
-            _SolidBrush->SetColor(_Configuration->_UseCustomYLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
 
-            renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), _SolidBrush, StrokeWidth, nullptr);
+            renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), style->_Brush, style->_Thickness, nullptr);
         }
 
         // Draw the label.
+        if (!Iter.Text.empty())
         {
             D2D1_RECT_F TextRect = { _Bounds.left, Iter.y - (_Height / 2.f), _Bounds.left + _Width - 2.f, Iter.y + (_Height / 2.f) };
 
             if (TextRect.bottom < OldTextTop)
             {
-                _SolidBrush->SetColor(_Configuration->_UseCustomYTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+                Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _SolidBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                 OldTextTop = TextRect.top;
             }
@@ -136,10 +137,21 @@ void YAxis::ReleaseDeviceIndependentResources()
 /// </summary>
 HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
-    if (_SolidBrush != nullptr)
-        return S_OK;
+    HRESULT hr = S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
+    if (SUCCEEDED(hr))
+    {
+        for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
+        {
+            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+
+            if (style->_Brush == nullptr)
+                hr = style->CreateDeviceSpecificResources(renderTarget);
+
+            if (!SUCCEEDED(hr))
+                break;
+        }
+    }
 
     return hr;
 }
@@ -149,5 +161,15 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void YAxis::ReleaseDeviceSpecificResources()
 {
-    _SolidBrush.Release();
+    {
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
+
+        style->_Brush.Release();
+    }
+
+    {
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        style->_Brush.Release();
+    }
 }

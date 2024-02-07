@@ -1,5 +1,5 @@
 
-/** $VER: DirectX.cpp (2024.01.28) P. Stuer **/
+/** $VER: DirectX.cpp (2024.01.30) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -7,8 +7,6 @@
 
 #include "DirectX.h"
 
-#include "DXGI.h"
-#include "Direct3D.h"
 #include "Direct2D.h"
 #include "DirectWrite.h"
 #include "WIC.h"
@@ -27,13 +25,7 @@ void Initialize()
     if (_Count > 1)
         return;
 
-    HRESULT hr = _DXGI.Initialize();
-
-    if (SUCCEEDED(hr))
-        hr = _Direct3D.Initialize();
-
-    if (SUCCEEDED(hr))
-        hr = _Direct2D.Initialize();
+    HRESULT hr = _Direct2D.Initialize();
 
     if (SUCCEEDED(hr))
         hr = _DirectWrite.Initialize();
@@ -57,10 +49,6 @@ void Terminate()
     _DirectWrite.Terminate();
 
     _Direct2D.Terminate();
-
-    _Direct3D.Terminate();
-
-    _DXGI.Terminate();
 }
 
 }

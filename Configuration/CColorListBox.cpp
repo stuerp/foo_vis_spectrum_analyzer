@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.cpp (2024.01.21) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2024.02.04) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorListBox.h"
 #include "CColorDialogEx.h"
@@ -47,58 +47,61 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 
     CRect ri = dis->rcItem;
 
-    // Draw the background.
+    if (dis->itemID != (UINT) -1)
     {
-        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHT : COLOR_WINDOW);
-
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
-
-        HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
-
-        HBRUSH hBrush = ::CreateSolidBrush(Color);
-
-        HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
-
-        ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
-
-        if (dis->itemState & ODS_FOCUS)
-            ::DrawFocusRect(hDC, &ri);
-
-        ::SelectObject(hDC, hOldBrush);
-
-        ::DeleteObject(hBrush);
-
-        ::SelectObject(hDC, hOldPen);
-
-        ::DeleteObject(hPen);
-    }
-
-    // Draw the foreground.
-    {
-        COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
-
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
-
-        HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
-
+        // Draw the background.
         {
-            HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_Colors[dis->itemID]));
+            COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHT : COLOR_WINDOW);
+
+            HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
+
+            HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
+
+            HBRUSH hBrush = ::CreateSolidBrush(Color);
 
             HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
-
-            ::InflateRect(&ri, -2, -2);
 
             ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
 
             ::SelectObject(hDC, hOldBrush);
 
             ::DeleteObject(hBrush);
+
+            ::SelectObject(hDC, hOldPen);
+
+            ::DeleteObject(hPen);
         }
 
-        ::SelectObject(hDC, hOldPen);
+        // Draw the foreground.
+        {
+            COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
 
-        ::DeleteObject(hPen);
+            HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
+
+            HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
+
+            {
+                HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_Colors[dis->itemID]));
+
+                HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
+
+                ::InflateRect(&ri, -2, -2);
+
+                ::Rectangle(hDC, ri.left, ri.top, ri.right, ri.bottom);
+
+                ::SelectObject(hDC, hOldBrush);
+
+                ::DeleteObject(hBrush);
+            }
+
+            ::SelectObject(hDC, hOldPen);
+
+            ::DeleteObject(hPen);
+        }
     }
+
+    if (dis->itemState & ODS_FOCUS)
+        ::DrawFocusRect(hDC, &ri);
 }
 
 /// <summary>
@@ -165,7 +168,7 @@ void CColorListBox::SendChangedNotification() const noexcept
 
     ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }
-
+/*
 #pragma region DirectX
 
 /// <summary>
@@ -191,5 +194,5 @@ void CColorListBox::ReleaseDeviceSpecificResources()
 
     __super::ReleaseDeviceSpecificResources();
 }
-
+*/
 #pragma endregion

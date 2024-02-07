@@ -1,8 +1,9 @@
 
-/** $VER: XAXis.cpp (2024.01.16) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
+#include "StyleManager.h"
 #include "DirectWrite.h"
 
 #pragma hdrstop
@@ -10,7 +11,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
     _Configuration = configuration;
 
@@ -22,9 +23,6 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
     _LoFrequency = frequencyBands[0].Ctr;
     _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
     _NumBands = frequencyBands.size();
-
-    _TextColor = _Configuration->_XTextColor;
-    _LineColor = _Configuration->_XLineColor;
 
     _Labels.clear();
 
@@ -89,22 +87,13 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
             }
 
             case XAxisMode::Octaves:
-            case XAxisMode::Notes:
             {
-                double Note = -57.; // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
-                    if (_Mode == XAxisMode::Octaves)
-                    {
-                        if (Frequency < 1000.)
-                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
-                        else
-                            ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
-                    }
-                    else
-                        ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
+                    ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
                     Label lb = { Frequency, Text, 0.f };
 
@@ -113,7 +102,37 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
                     Note += 12.;
                     Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
                 }
+                break;
+            }
 
+            case XAxisMode::Notes:
+            {
+                static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
+                static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
+
+                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+
+                int j = 0;
+
+                while (Frequency < frequencyBands.back().Lo)
+                {
+                    int Octave = (int) ((Note + 57.) / 12.);
+
+                    if (j == 0)
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[j], Octave);
+                    else
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
+
+                    Label lb = { Frequency, Text, 0.f };
+
+                    _Labels.push_back(lb);
+
+                    Note += Step[j];
+                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+
+                    if (j < 6) j++; else j = 0;
+                }
                 break;
             }
         }
@@ -148,9 +167,11 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (_Mode == XAxisMode::None)
         return;
 
-    CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    const FLOAT StrokeWidth = 1.0f;
+    if (!SUCCEEDED(hr))
+        return;
+
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
 
     FLOAT OldTextRight = -_Width;
@@ -162,16 +183,17 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
         // Draw the vertical grid line.
         {
-            _SolidBrush->SetColor(_Configuration->_UseCustomXLineColor ? _LineColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
-            renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), _SolidBrush, StrokeWidth, nullptr);
+            renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), style->_Brush, style->_Thickness, nullptr);
         }
 
         // Draw the label.
+        if (!Iter.Text.empty())
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
+            hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -183,9 +205,9 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
                 if (OldTextRight <= TextRect.left)
                 {
-                    _SolidBrush->SetColor(_Configuration->_UseCustomXTextColor ? _TextColor : ToD2D1_COLOR_F(_Configuration->_DefTextColor));
+                    Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, _SolidBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                     OldTextRight = TextRect.right;
                 }
@@ -242,10 +264,21 @@ void XAxis::ReleaseDeviceIndependentResources()
 /// </summary>
 HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
-    if (_SolidBrush != nullptr)
-        return S_OK;
+    HRESULT hr = S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
+    if (SUCCEEDED(hr))
+    {
+        for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
+        {
+            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+
+            if (style->_Brush == nullptr)
+                hr = style->CreateDeviceSpecificResources(renderTarget);
+
+            if (!SUCCEEDED(hr))
+                break;
+        }
+    }
 
     return hr;
 }
@@ -255,5 +288,15 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void XAxis::ReleaseDeviceSpecificResources()
 {
-    _SolidBrush.Release();
+    {
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
+
+        style->_Brush.Release();
+    }
+
+    {
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
+
+        style->_Brush.Release();
+    }
 }

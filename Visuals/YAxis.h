@@ -1,9 +1,11 @@
 
-/** $VER: YAxis.h (2024.01.16) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.02.07) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
 #include "framework.h"
+
+#include "Element.h"
 #include "Support.h"
 #include "Configuration.h"
 
@@ -13,17 +15,17 @@
 /// <summary>
 /// Implements the Y axis of a graph.
 /// </summary>
-class YAxis
+class YAxis : public Element
 {
 public:
-    YAxis() : _Configuration(nullptr), _TextColor(), _LineColor(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(const Configuration * configuration);
+    void Initialize(Configuration * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -38,7 +40,7 @@ public:
     FLOAT GetWidth() const { return _Width; }
 
 private:
-    const Configuration * _Configuration;
+    Configuration * _Configuration;
 
     struct Label
     {
@@ -49,8 +51,6 @@ private:
 
     std::vector<Label> _Labels;
 
-    D2D1_COLOR_F _TextColor;
-    D2D1_COLOR_F _LineColor;
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 
@@ -60,7 +60,4 @@ private:
     FLOAT _Height; // Height of a label
 
     CComPtr<IDWriteTextFormat> _TextFormat;
-
-    // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.01.26) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.01) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -123,7 +123,7 @@ void UIElement::GenerateLinearFrequencyBands()
 
         ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
 
-        Iter.BackColor = _Configuration._DarkBandColor;
+        Iter.HasDarkBackground = true;
     }
 }
 
@@ -163,7 +163,7 @@ void UIElement::GenerateOctaveFrequencyBands()
 
             ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
 
-            fb.BackColor = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10) ? _Configuration._DarkBandColor : _Configuration._LightBandColor;
+            fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
 
         _FrequencyBands.push_back(fb);
@@ -185,7 +185,7 @@ void UIElement::GenerateAveePlayerFrequencyBands()
         Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
         Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
 
-        Iter.BackColor = _Configuration._DarkBandColor;
+        Iter.HasDarkBackground = true;
     }
 }
 

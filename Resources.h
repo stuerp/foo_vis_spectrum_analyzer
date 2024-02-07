@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.01.29) P. Stuer **/
+/** $VER: Resources.h (2024.02.07) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta-4"
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-rc-1"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -36,7 +36,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta-4"
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-rc-1"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -228,19 +228,6 @@
 
 #define IDC_COMMON                      6000
 
-#define IDC_COLOR_SCHEME_LBL            6010
-#define IDC_COLOR_SCHEME                6012
-
-#define IDC_GRADIENT                    6022
-#define IDC_COLOR_LIST                  6024
-#define IDC_ADD                         6026
-#define IDC_REMOVE                      6028
-#define IDC_REVERSE                     6030
-
-#define IDC_POSITION                    6040
-#define IDC_POSITION_LBL                6042
-#define IDC_SPREAD                      6044
-
 #define IDC_SMOOTHING_METHOD_LBL        6050
 #define IDC_SMOOTHING_METHOD            6052
 
@@ -310,80 +297,64 @@
 
 #pragma endregion
 
-#pragma region Colors
-
-#define IDC_COLORS_GROUP                7000
-
-#define IDC_BACK_COLOR_LBL              7010
-#define IDC_BACK_COLOR                  7012
-#define IDC_BACK_COLOR_DEF              7014
-
-#define IDC_X_TEXT_COLOR_LBL            7016
-#define IDC_X_TEXT_COLOR                7018
-#define IDC_X_TEXT_COLOR_DEF            7020
-
-#define IDC_X_LINE_COLOR_LBL            7022
-#define IDC_X_LINE_COLOR                7024
-#define IDC_X_LINE_COLOR_DEF            7026
-
-#define IDC_Y_TEXT_COLOR_LBL            7028
-#define IDC_Y_TEXT_COLOR                7030
-#define IDC_Y_TEXT_COLOR_DEF            7032
-
-#define IDC_Y_LINE_COLOR_LBL            7034
-#define IDC_Y_LINE_COLOR                7036
-#define IDC_Y_LINE_COLOR_DEF            7038
-
-#pragma endregion
-
 #pragma region Visualization
 
 #define IDC_VISUALIZATION_LBL           7100
 #define IDC_VISUALIZATION               7102
 
+#define IDC_HORIZONTAL_GRADIENT         7104
+
+#define IDC_PEAK_MODE_LBL               7106
+#define IDC_PEAK_MODE                   7108
+
+#define IDC_HOLD_TIME_LBL               7110
+#define IDC_HOLD_TIME                   7112
+
+#define IDC_ACCELERATION_LBL            7114
+#define IDC_ACCELERATION                7116
+
 // Bars
 
-#define IDC_BARS                        7110
+#define IDC_BARS                        7118
 
-#define IDC_DRAW_BAND_BACKGROUND        7112
-#define IDC_LED_MODE                    7114
-#define IDC_HORIZONTAL_GRADIENT         7116
+#define IDC_LED_MODE                    7120
 
-#define IDC_PEAK_MODE_LBL               7120
-#define IDC_PEAK_MODE                   7122
+#pragma endregion
 
-#define IDC_HOLD_TIME_LBL               7130
-#define IDC_HOLD_TIME                   7132
+#pragma region Styles
 
-#define IDC_ACCELERATION_LBL            7140
-#define IDC_ACCELERATION                7142
+#define IDC_STYLES                      7500
 
-#define IDC_WHITE_KEYS_LBL              7150
-#define IDC_WHITE_KEYS                  7152
+#define IDC_COLOR_SOURCE_LBL            7502
+#define IDC_COLOR_SOURCE                7504
 
-#define IDC_BLACK_KEYS_LBL              7154
-#define IDC_BLACK_KEYS                  7156
+#define IDC_COLOR_INDEX_LBL             7506
+#define IDC_COLOR_INDEX                 7508
 
-// Curve
+#define IDC_COLOR_BUTTON_LBL            7510
+#define IDC_COLOR_BUTTON                7512
 
-#define IDC_CURVE                       7200
+#define IDC_OPACITY_LBL                 7514
+#define IDC_OPACITY                     7516
+#define IDC_OPACITY_SPIN                7518
+#define IDC_OPACITY_UNIT                7520
 
-#define IDC_LINE_WIDTH_LBL              7210
-#define IDC_LINE_WIDTH                  7212
-#define IDC_LINE_WIDTH_SPIN             7214
+#define IDC_THICKNESS_LBL               7522
+#define IDC_THICKNESS                   7524
+#define IDC_THICKNESS_SPIN              7526
 
-#define IDC_LINE_COLOR_LBL              7220
-#define IDC_LINE_COLOR                  7222
-#define IDC_LINE_COLOR_DEF              7224
+#define IDC_COLOR_SCHEME_LBL            7530
+#define IDC_COLOR_SCHEME                7532
 
-#define IDC_PEAK_LINE_COLOR_LBL         7230
-#define IDC_PEAK_LINE_COLOR             7232
-#define IDC_PEAK_LINE_COLOR_DEF         7234
+#define IDC_GRADIENT                    7534
+#define IDC_COLOR_LIST                  7536
+#define IDC_ADD                         7538
+#define IDC_REMOVE                      7540
+#define IDC_REVERSE                     7542
 
-#define IDC_AREA_OPACITY_LBL            7240
-#define IDC_AREA_OPACITY                7242
-#define IDC_AREA_OPACITY_SPIN           7244
-#define IDC_AREA_OPACITY_LBL_2          7246
+#define IDC_POSITION                    7544
+#define IDC_POSITION_LBL                7546
+#define IDC_SPREAD                      7548
 
 #pragma endregion
 

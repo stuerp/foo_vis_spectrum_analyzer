@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.01.29) P. Stuer **/
+/** $VER: Configuration.h (2024.02.07) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,8 @@
 #include "Support.h"
 
 #include "WindowFunctions.h"
+
+#include "StyleManager.h"
 
 inline const int MinFFTSize =     1;
 inline const int MaxFFTSize = 32768;
@@ -104,13 +106,6 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
-
-inline const double MinLineWidth =  1.f;
-inline const double MaxLineWidth = 10.f;
-
-inline const double MinAreaOpacity = 0.f;
-inline const double MaxAreaOpacity = 1.f;
-
 inline const double MinArtworkOpacity = 0.f;
 inline const double MaxArtworkOpacity = 1.f;
 
@@ -121,6 +116,16 @@ inline const double MinLightnessThreshold = 0.f;
 inline const double MaxLightnessThreshold = 1.f;
 
 inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
+
+
+
+inline const double MinOpacity = 0.f;
+inline const double MaxOpacity = 1.f;
+
+inline const double MinThickness =  0.f;
+inline const double MaxThickness = 10.f;
+
+
 
 enum class Transform
 {
@@ -229,23 +234,6 @@ enum class YAxisMode
     Logarithmic = 2,
 };
 
-enum class ColorScheme
-{
-    Solid = 0,
-    Custom = 1,
-    Artwork = 2,
-
-    Prism1 = 3,
-    Prism2 = 4,
-    Prism3 = 5,
-
-    foobar2000 = 6,
-    foobar2000DarkMode = 7,
-
-    Fire = 8,
-    Rainbow = 9,
-};
-
 enum class VisualizationType
 {
     Bars = 0,
@@ -269,7 +257,6 @@ enum class BackgroundMode
 
     Solid = 1,
     Artwork = 2,
-    ArtworkAndDominantColor = 3,
 };
 
 enum class ColorOrder
@@ -406,30 +393,15 @@ public:
 
     #pragma region Rendering
 
-        D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);    // Background color of the element
-        bool _UseCustomBackColor;
-
         #pragma region X axis
 
             XAxisMode _XAxisMode;
-
-            D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
-            bool _UseCustomXTextColor;
-
-            D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
-            bool _UseCustomXLineColor;
 
         #pragma endregion
 
         #pragma region Y axis
 
             YAxisMode _YAxisMode;
-
-            D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
-            bool _UseCustomYTextColor;
-
-            D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
-            bool _UseCustomYLineColor;
 
             double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
             double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
@@ -442,8 +414,6 @@ public:
 
         #pragma region Common
 
-            ColorScheme _ColorScheme;
-            std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;       // The custom gradient stops.
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
 
             SmoothingMethod _SmoothingMethod;
@@ -465,30 +435,17 @@ public:
 
             VisualizationType _VisualizationType;
 
+            PeakMode _PeakMode;
+            double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
+            double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
+
             #pragma region Bars
 
-                bool _DrawBandBackground;                               // True if the background for each band should be drawn.
-
-                D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-                D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-
-                bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-
-                PeakMode _PeakMode;
-                double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
-                double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
 
             #pragma endregion
 
             #pragma region Curve
-
-                FLOAT _LineWidth;
-                D2D1::ColorF _LineColor = _DefLineColor;
-                bool _UseCustomLineColor;
-                D2D1::ColorF _PeakLineColor = _DefPeakLineColor;
-                bool _UseCustomPeakLineColor;
-                FLOAT _AreaOpacity;                                     // 0.0 .. 1.0
 
             #pragma endregion
 
@@ -496,19 +453,20 @@ public:
 
     #pragma endregion
 
+    StyleManager _StyleManager;
+
     #pragma region Not Serialized
+    bool _IsDUI;
 
-    t_ui_color _DefBackColor;
-    t_ui_color _DefTextColor;
+    std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    std::vector<D2D1_GRADIENT_STOP> _GradientStops;                     // The current gradient stops.
-    std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The gradient stops extracted from the artwork bitmap.
-
-    const D2D1::ColorF _DefLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
-    const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    D2D1_COLOR_F _DominantColor;
+    GradientStops _GradientStops;                                       // The current gradient stops.
+    GradientStops _ArtworkGradientStops;                                // The gradient stops extracted from the artwork bitmap.
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 
+    int _CurrentStyle;
     #pragma endregion
 
 public:
@@ -526,8 +484,45 @@ public:
         return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
     }
 
-    void UpdateGradientStops();
+private:
+    void ConvertColorSettings() noexcept;
+    const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
+
+private: // Deprecated
+    ColorScheme _ColorScheme;
+    std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
+
+    D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);
+    bool _UseCustomBackColor;
+
+    D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomXTextColor;
+
+    D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomXLineColor;
+
+    D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomYTextColor;
+
+    D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomYLineColor;
+
+    D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
+    FLOAT _LineWidth;
+    D2D1::ColorF _LineColor = _DefLineColor;
+    bool _UseCustomLineColor;
+    D2D1::ColorF _PeakLineColor = _DefPeakLineColor;
+    bool _UseCustomPeakLineColor;
+    FLOAT _AreaOpacity;                                     // 0.0 .. 1.0
+
+    const D2D1::ColorF _DefLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+
+    bool _DrawBandBackground;                               // True if the background for each band should be drawn.
+    bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 13;
+    const size_t _CurrentVersion = 14;
 };

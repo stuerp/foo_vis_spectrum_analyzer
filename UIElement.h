@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.29) P. Stuer **/
+/** $VER: UIElement.h (2024.01.30) P. Stuer **/
 
 #pragma once
 
@@ -21,12 +21,10 @@
 #include <vector>
 #include <complex>
 
-typedef CWinTraits<WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, WS_EX_NOREDIRECTIONBITMAP> CDXGIWinTraits;
-
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement, CWindow, CDXGIWinTraits>, private play_callback_impl_base, now_playing_album_art_notify
+class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
 {
 public:
     UIElement();
@@ -100,15 +98,15 @@ private:
 
     void Configure() noexcept;
     void SetConfiguration() noexcept;
+    void UpdateStyles() noexcept;
 
     void Resize();
 
-    void Render();
-
-    void RenderBackground() const;
-    void RenderForeground();
+    void OnTimer();
 
     void ProcessPlaybackEvent();
+    void UpdateSpectrum();
+    void Render();
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
@@ -130,13 +128,10 @@ private:
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
 
-    HRESULT CreateArtworkGradient();
+    HRESULT CreateArtworkDependentResources();
 
     HRESULT CreateDeviceSpecificResources();
     void ReleaseDeviceSpecificResources();
-
-    void ResizeSwapChain(UINT width, UINT height) noexcept;
-    HRESULT CreateSwapChainBuffers(ID2D1DeviceContext * dc, IDXGISwapChain1 * swapChain) noexcept;
 
     #pragma endregion
 
@@ -207,25 +202,14 @@ private:
 
     FrameCounter _FrameCounter;
     Graph _Graph;
+    UINT _DPI;
 
     #pragma endregion
 
     #pragma region DirectX
 
-    CComPtr<IDXGIDevice> _DXGIDevice;
-    CComPtr<ID2D1Device1> _D2DDevice;
-    CComPtr<IDCompositionDevice> _CompositionDevice;
-
     // Device-specific resources
-//  CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    CComPtr<ID2D1DeviceContext> _DC;
-    CComPtr<IDXGISwapChain1> _SwapChain;
-
-    CComPtr<IDCompositionTarget> _CompositionTarget;
-    CComPtr<IDCompositionVisual> _CompositionVisual;
-
-    UINT _DPI;
+    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     #pragma endregion
 
@@ -250,9 +234,8 @@ private:
     double _Bandwidth;
 
     Artwork _Artwork;
-    bool _NewArtwork; // True when new artwork has arrived.
-    bool _NewArtworkGradient; // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
-    D2D1_COLOR_F _DominantColor;
+    bool _NewArtwork;               // True when new artwork has arrived.
+    bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
-    pfc::string _ScriptResult;
+    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 };

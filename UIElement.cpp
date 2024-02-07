@@ -1,9 +1,10 @@
 
-/** $VER: UIElement.cpp (2024.01.29) P. Stuer **/
+/** $VER: UIElement.cpp (2024.01.31) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
+#include "StyleManager.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -183,12 +184,14 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// </summary>
 void UIElement::OnSize(UINT type, CSize size)
 {
-    if (_DC == nullptr)
+    if (_RenderTarget == nullptr)
         return;
 
     _CriticalSection.Enter();
 
-    ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
+    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
+
+    _RenderTarget->Resize(Size);
 
     Resize();
 
@@ -362,7 +365,7 @@ void UIElement::OnMouseLeave()
 }
 
 /// <summary>
-/// Handles a configuration change.
+/// Handles the WM_CONFIGURATION_CHANGED message.
 /// </summary>
 LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -467,47 +470,9 @@ void UIElement::SetConfiguration() noexcept
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
+    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
+
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
-
-    // Generate the horizontal color gradient, if required.
-    if (_Configuration._HorizontalGradient)
-    {
-        if (_Configuration._GradientStops.size() > 1)
-        {
-            size_t j = 0;
-
-            D2D1_COLOR_F Color1 = _Configuration._GradientStops[0].color;
-            D2D1_COLOR_F Color2 = _Configuration._GradientStops[1].color;
-
-            float i =  0.f;
-            float n = (_Configuration._GradientStops[1].position - _Configuration._GradientStops[0].position) * (float) _FrequencyBands.size();
-
-            for (FrequencyBand & Iter : _FrequencyBands)
-            {
-                Iter.ForeColor = D2D1::ColorF(Color1.r + ((Color2.r - Color1.r) * i / n), Color1.g + ((Color2.g - Color1.g) * i / n), Color1.b + ((Color2.b - Color1.b) * i / n));
-                i++;
-
-                if (i >= n)
-                {
-                    j++;
-
-                    if (j == _Configuration._GradientStops.size() - 1)
-                        break;
-
-                    Color1 = _Configuration._GradientStops[j].color;
-                    Color2 = _Configuration._GradientStops[j + 1].color;
-
-                    i = 0.f;
-                    n = (_Configuration._GradientStops[j + 1].position - _Configuration._GradientStops[j].position) * (float) _FrequencyBands.size();;
-                }
-            }
-        }
-        else
-        {
-            for (FrequencyBand & Iter : _FrequencyBands)
-                Iter.ForeColor = _Configuration._GradientStops[0].color;
-        }
-    }
 
     _Graph.Initialize(&_Configuration, _FrequencyBands);
 
@@ -551,10 +516,10 @@ void UIElement::SetConfiguration() noexcept
 /// </summary>
 void UIElement::Resize()
 {
-    if (_DC == nullptr)
+    if (_RenderTarget == nullptr)
         return;
 
-    D2D1_SIZE_F Size = _DC->GetSize();
+    D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
     // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
@@ -607,9 +572,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
         bool Success = titleformat_compiler::get()->compile(Script, _Configuration._ArtworkFilePath.c_str());
 
-        if (Success && Script.is_valid() && track->format_title(0, _ScriptResult, Script, 0))
+        pfc::string Result;
+
+        if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
         {
-            _Artwork.Initialize(pfc::wideFromUTF8(_ScriptResult).c_str());
+            _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
             _NewArtwork = true;
         }
     }

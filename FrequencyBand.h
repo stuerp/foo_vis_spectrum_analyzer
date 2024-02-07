@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2023.12.30) P. Stuer **/
+/** $VER: FrequencyBand.h (2024.02.01) P. Stuer **/
 
 #pragma once
 
@@ -23,7 +23,6 @@ struct FrequencyBand
     double Opacity;     // The opacity of the indicator (0.0 - 1.0)
 
     WCHAR Label[16];
-
-    D2D1_COLOR_F ForeColor;
-    D2D1_COLOR_F BackColor;
+    bool HasDarkBackground;
+    D2D1_COLOR_F GradientColor;
 };
