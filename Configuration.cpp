@@ -1415,6 +1415,9 @@ void Configuration::ConvertColorSettings() noexcept
     }
 }
 
+/// <summary>
+/// Helper method to initialize the gradient stops vector during conversion.
+/// </summary>
 const GradientStops Configuration::SelectGradientStops(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)

@@ -2348,22 +2348,13 @@ void ConfigurationDialog::UpdateStyleControls()
 
         case ColorSource::Gradient:
         {
-            #pragma warning(disable: 4061) // Enumerator not handled
-            switch (style->_ColorScheme)
-            {
-                default:
-                    style->_GradientStops = GetGradientStops(style->_ColorScheme);
-                    break;
-
-                case ColorScheme::Custom:
-                    style->_GradientStops = style->_CustomGradientStops;
-                    break;
-
-                case ColorScheme::Artwork:
-                    style->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
-                    break;
-            }
-            #pragma warning(default: 4061) // Enumerator not handled
+            if (style->_ColorScheme == ColorScheme::Custom)
+                style->_GradientStops = style->_CustomGradientStops;
+            else
+            if (style->_ColorScheme == ColorScheme::Artwork)
+                style->_GradientStops = !_Configuration->_ArtworkGradientStops.empty() ? _Configuration->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+            else
+                style->_GradientStops = GetGradientStops(style->_ColorScheme);
             break;
         }
 
