@@ -136,8 +136,6 @@ private:
     Configuration * _Configuration;
     Configuration _OldConfiguration;
 
-    StyleManager _OldStyleManager;
-
     CMenuListBox _MenuList;
 
     CButtonMenu _Channels;

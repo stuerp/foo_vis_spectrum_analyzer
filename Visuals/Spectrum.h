@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.02.03) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.07) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -28,7 +28,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(const Configuration * configuration);
+    void Initialize(Configuration * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 

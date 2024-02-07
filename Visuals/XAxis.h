@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.03) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -27,7 +27,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -42,7 +42,7 @@ public:
     FLOAT GetHeight() const { return _Height; }
 
 private:
-    const Configuration * _Configuration;
+    Configuration * _Configuration;
 
     XAxisMode _Mode;
 

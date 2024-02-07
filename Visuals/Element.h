@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.02.05) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.02.07) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -15,5 +15,5 @@ public:
     Element() : _Configuration() {}
 
 protected:
-    const Configuration * _Configuration;
+    Configuration * _Configuration;
 };

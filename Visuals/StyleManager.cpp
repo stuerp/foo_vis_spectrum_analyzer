@@ -1,10 +1,12 @@
 
-/** $VER: StyleManager.cpp (2024.02.05) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.07) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
 #include "Gradients.h"
 #include "Log.h"
+
+#include <exception>
 
 #pragma hdrstop
 
@@ -215,7 +217,7 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
 
     try
     {
-        size_t Version;
+        uint32_t Version;
 
         parser >> Version;
 
@@ -230,12 +232,12 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
 
         for (size_t i = 0; i < StyleCount; ++i)
         {
-            int Id; parser >> Id;
+            uint32_t Id; parser >> Id;
 
             pfc::string Name; parser >> Name;
             size_t Flags; parser >> Flags;
 
-            int colorSource; parser >> colorSource;
+            uint32_t colorSource; parser >> colorSource;
 
             D2D1_COLOR_F CustomColor;
 
@@ -244,8 +246,8 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
             parser >> CustomColor.b;
             parser >> CustomColor.a;
 
-            int ColorIndex; parser >> ColorIndex;
-            int colorScheme; parser >> colorScheme;
+            uint32_t ColorIndex; parser >> ColorIndex;
+            uint32_t colorScheme; parser >> colorScheme;
 
             GradientStops gs;
 
@@ -294,14 +296,14 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
 
         for (const auto & Iter : _Styles)
         {
-            builder << (int) Iter.first;
+            builder << (uint32_t) Iter.first;
 
             const Style & style = Iter.second;
 
             builder << style._Name;
             builder << style._Flags;
 
-            builder << (int) style._ColorSource;
+            builder << (uint32_t) style._ColorSource;
 
             builder << style._CustomColor.r;
             builder << style._CustomColor.g;
@@ -309,7 +311,7 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
             builder << style._CustomColor.a;
 
             builder << style._ColorIndex;
-            builder << (int) style._ColorScheme;
+            builder << (uint32_t) style._ColorScheme;
 
             builder << style._CustomGradientStops.size();
 
@@ -329,7 +331,7 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
             builder << style._FontSize;
         }
     }
-    catch (exception & ex)
+    catch (exception_io & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while writing DUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
@@ -341,7 +343,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     {
         _Styles.clear();
 
-        size_t Version;
+        uint32_t Version;
 
         reader->read(&Version, sizeof(Version), abortHandler);
 
@@ -354,7 +356,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
         for (size_t i = 0; i < StyleCount; ++i)
         {
-            int Id; reader->read(&Id, sizeof(Id), abortHandler);
+            uint32_t Id; reader->read(&Id, sizeof(Id), abortHandler);
 
             Style style;
 
@@ -391,7 +393,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             _Styles.insert({ (VisualElement) Id, style });
         }
     }
-    catch (exception & ex)
+    catch (exception_io & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while reading CUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
@@ -409,7 +411,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
 
         for (const auto & Iter : _Styles)
         {
-            int Id = (int) Iter.first;
+            uint32_t Id = (uint32_t) Iter.first;
 
             writer->write(&Id, sizeof(Id), abortHandler);
 
@@ -442,10 +444,8 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
             writer->write(&style._FontSize, sizeof(style._FontSize), abortHandler);
         }
     }
-    catch (exception & ex)
+    catch (exception_io & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while writing CUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
 }
-
-StyleManager _StyleManager;

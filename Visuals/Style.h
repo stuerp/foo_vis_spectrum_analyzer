@@ -1,11 +1,9 @@
 
-/** $VER: Style.h (2024.02.05) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.07) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
 #include "framework.h"
-
-#include "Configuration.h"
 
 enum class VisualElement
 {
@@ -70,6 +68,23 @@ enum class CUIColor
     ActiveItem,                 // cui::colours::colour_active_item_frame
 };
 
+enum class ColorScheme
+{
+    Solid = 0,
+    Custom = 1,
+    Artwork = 2,
+
+    Prism1 = 3,
+    Prism2 = 4,
+    Prism3 = 5,
+
+    foobar2000 = 6,
+    foobar2000DarkMode = 7,
+
+    Fire = 8,
+    Rainbow = 9,
+};
+
 class Style
 {
 public:
@@ -80,10 +95,10 @@ public:
 
     virtual ~Style()
     {
-        _Brush.Release();
+        ReleaseDeviceSpecificResources();
     }
 
-    Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
+    Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources();
@@ -94,7 +109,7 @@ public:
 
     ColorSource _ColorSource;           // Determines the source of the color
     D2D1_COLOR_F _CustomColor;          // User-specified color
-    int _ColorIndex;                    // User-specified color index in Windows / DUI / CUI list
+    uint32_t _ColorIndex;               // User-specified color index in Windows / DUI / CUI list
     ColorScheme _ColorScheme;           // User-specified color scheme
     GradientStops _CustomGradientStops; // User-specified gradient stops
 

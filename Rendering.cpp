@@ -99,7 +99,7 @@ void UIElement::ProcessPlaybackEvent()
                 _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
                 _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
 
-                _StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
+                _Configuration._StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
 
                 if (_ConfigurationDialog.IsWindow())
                     _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
@@ -311,7 +311,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
         hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-        _StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
+        _Configuration._StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
 
     _IsConfigurationChanged = true;
 
@@ -323,7 +323,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
-    _StyleManager.ReleaseDeviceSpecificResources();
+    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
 
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();

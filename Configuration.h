@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.05) P. Stuer **/
+/** $VER: Configuration.h (2024.02.07) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,8 @@
 #include "Support.h"
 
 #include "WindowFunctions.h"
+
+#include "StyleManager.h"
 
 inline const int MinFFTSize =     1;
 inline const int MaxFFTSize = 32768;
@@ -271,23 +273,6 @@ enum class ColorOrder
     LightnessDescending = 6,
 };
 
-enum class ColorScheme
-{
-    Solid = 0,
-    Custom = 1,
-    Artwork = 2,
-
-    Prism1 = 3,
-    Prism2 = 4,
-    Prism3 = 5,
-
-    foobar2000 = 6,
-    foobar2000DarkMode = 7,
-
-    Fire = 8,
-    Rainbow = 9,
-};
-
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
@@ -467,6 +452,8 @@ public:
         #pragma endregion
 
     #pragma endregion
+
+    StyleManager _StyleManager;
 
     #pragma region Not Serialized
     bool _IsDUI;

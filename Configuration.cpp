@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.02.05) P. Stuer **/
+/** $VER: Configuration.cpp (2024.02.07) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -9,8 +9,6 @@
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
-
-#include "StyleManager.h"
 
 using namespace pfc;
 using namespace stringcvt;
@@ -178,6 +176,8 @@ void Configuration::Reset() noexcept
     _PeakLineColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _UseCustomPeakLineColor = false;
     _AreaOpacity = 0.5f;
+
+    _StyleManager.Reset();
 }
 
 /// <summary>
@@ -348,6 +348,8 @@ Configuration & Configuration::operator=(const Configuration & other)
     _AreaOpacity = other._AreaOpacity;
 
     #pragma endregion
+
+    _StyleManager = other._StyleManager;
 
     return *this;
 }
@@ -608,9 +610,7 @@ void Configuration::Read(ui_element_config_parser & parser) noexcept
         }
 
         if (Version >= 13)
-        {
             parser >> _ArtworkFilePath;
-        }
 
         if (Version >= 14)
             _StyleManager.Read(parser);
@@ -1029,14 +1029,10 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         }
 
         if (Version >= 13)
-        {
             _ArtworkFilePath = reader->read_string(abortHandler);
-        }
 
         if (Version >= 14)
-        {
             _StyleManager.Read(reader, size, abortHandler);
-        }
 
         if (Version <= 13)
             ConvertColorSettings();

@@ -1,9 +1,10 @@
 
-/** $VER: Style.cpp (2024.02.05) P. Stuer **/
+/** $VER: Style.cpp (2024.02.07) P. Stuer **/
 
 #include "Style.h"
 
 #include "Direct2D.h"
+#include "Gradients.h"
 
 #pragma hdrstop
 
@@ -39,7 +40,7 @@ Style & Style::operator=(const Style & other)
     _Color = other._Color;
     _GradientStops = other._GradientStops;
 
-    _Brush.Release();
+    ReleaseDeviceSpecificResources();
 
     return *this;
 }
@@ -47,7 +48,7 @@ Style & Style::operator=(const Style & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, int colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
+Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
 {
     _Name = name;
     _Flags = flags;
@@ -66,7 +67,7 @@ Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_CO
     _FontSize = fontSize;
 
     _Color = customColor;
-    _GradientStops = customGradientStops;
+    _GradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
 }
 
 /// <summary>
@@ -78,9 +79,9 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
     HRESULT hr = S_OK;
 
     if (_ColorSource != ColorSource::Gradient)
-        hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush ** ) &_Brush);
+        hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
     else
-        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, _Flags & Style::Feature::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);

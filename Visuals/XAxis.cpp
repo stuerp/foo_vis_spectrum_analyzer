@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.05) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
     _Configuration = configuration;
 
@@ -117,7 +117,7 @@ void XAxis::Initialize(const Configuration * configuration, const std::vector<Fr
 
                 while (Frequency < frequencyBands.back().Lo)
                 {
-                    int Octave = (Note + 57.) / 12;
+                    int Octave = (int) (Note + 57.) / 12.;
 
                     if (j == 0)
                         ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[j], Octave);
@@ -183,7 +183,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
         // Draw the vertical grid line.
         {
-            Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
             renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), style->_Brush, style->_Thickness, nullptr);
         }
@@ -205,7 +205,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
                 if (OldTextRight <= TextRect.left)
                 {
-                    Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
+                    Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
 
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
@@ -270,7 +270,7 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     {
         for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
         {
-            Style * style = _StyleManager.GetStyle(Iter);
+            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
                 hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -289,13 +289,13 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 void XAxis::ReleaseDeviceSpecificResources()
 {
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
         style->_Brush.Release();
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
+        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
 
         style->_Brush.Release();
     }

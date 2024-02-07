@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.05) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.07) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -16,7 +16,7 @@ Graph::Graph() : _Bounds()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void Graph::Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
     _Configuration = configuration;
 
@@ -73,9 +73,9 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, const std::vector<Frequency
 /// <summary>
 /// Renders the background.
 /// </summary>
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) const
+void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork)
 {
-    Style * style = _StyleManager.GetStyle(VisualElement::Background);
+    const Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_ColorSource != ColorSource::Gradient)
         renderTarget->Clear(style->_Color);
@@ -154,7 +154,7 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
-    Style * style = _StyleManager.GetStyle(VisualElement::Background);
+    Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_Brush == nullptr)
         hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -171,5 +171,5 @@ void Graph::ReleaseDeviceSpecificResources()
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
 
-    _StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
+    _Configuration->_StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
 }

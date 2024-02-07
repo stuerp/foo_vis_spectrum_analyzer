@@ -40,7 +40,5 @@ public:
 private:
     std::map<VisualElement, Style> _Styles;
 
-    const size_t _CurrentVersion = 1;
+    const uint32_t _CurrentVersion = 1;
 };
-
-extern StyleManager _StyleManager;

@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.02.03) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.02.07) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@ public:
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(const Configuration * configuration);
+    void Initialize(Configuration * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -40,7 +40,7 @@ public:
     FLOAT GetWidth() const { return _Width; }
 
 private:
-    const Configuration * _Configuration;
+    Configuration * _Configuration;
 
     struct Label
     {

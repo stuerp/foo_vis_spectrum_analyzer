@@ -22,7 +22,7 @@ public:
     Graph();
     virtual ~Graph() { }
 
-    void Initialize(const Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -43,7 +43,7 @@ public:
 
 private:
     void RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
-    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) const;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork);
 
 private:
     D2D1_RECT_F _Bounds;

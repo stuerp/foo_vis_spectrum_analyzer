@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.01) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.07) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(const Configuration * configuration)
+void Spectrum::Initialize(Configuration * configuration)
 {
     _Configuration = configuration;
 
@@ -66,10 +66,10 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
     FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
 
-    Style * ForegroundStyle = _StyleManager.GetStyle(VisualElement::BarSpectrum);
-    Style * DarkBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
-    Style * LightBackgroundStyle = _StyleManager.GetStyle(VisualElement::BarLightBackground);
-    Style * PeakIndicatorStyle = _StyleManager.GetStyle(VisualElement::BarPeakIndicator);
+    Style * ForegroundStyle = _Configuration->_StyleManager.GetStyle(VisualElement::BarSpectrum);
+    Style * DarkBackgroundStyle = _Configuration->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
+    Style * LightBackgroundStyle = _Configuration->_StyleManager.GetStyle(VisualElement::BarLightBackground);
+    Style * PeakIndicatorStyle = _Configuration->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
@@ -138,7 +138,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
             if (SUCCEEDED(hr))
             {
-                Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakArea);
+                Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
                 renderTarget->FillGeometry(Curve, style->_Brush);
             }
@@ -153,7 +153,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
             if (SUCCEEDED(hr))
             {
-                Style * style = _StyleManager.GetStyle(VisualElement::CurvePeakLine);
+                Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
                 renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
             }
@@ -173,7 +173,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
         if (SUCCEEDED(hr))
         {
-            Style * style = _StyleManager.GetStyle(VisualElement::CurveArea);
+            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::CurveArea);
 
             renderTarget->FillGeometry(Curve, style->_Brush);
         }
@@ -188,7 +188,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<F
 
         if (SUCCEEDED(hr))
         {
-            Style * style = _StyleManager.GetStyle(VisualElement::CurveLine);
+            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::CurveLine);
 
             renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
         }
@@ -215,7 +215,7 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     {
         for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
         {
-            Style * style = _StyleManager.GetStyle(Iter);
+            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
                 hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -374,14 +374,8 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
-    _StyleManager.GetStyle(VisualElement::BarSpectrum)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::BarDarkBackground)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::BarLightBackground)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::BarPeakIndicator)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::CurvePeakArea)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::CurvePeakLine)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::CurveArea)->_Brush.Release();
-    _StyleManager.GetStyle(VisualElement::CurveLine)->_Brush.Release();
+    for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
+        _Configuration->_StyleManager.GetStyle(Iter)->ReleaseDeviceSpecificResources();
 
     _PatternBrush.Release();
 
