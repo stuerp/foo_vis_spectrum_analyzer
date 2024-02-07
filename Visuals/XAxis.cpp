@@ -117,7 +117,7 @@ void XAxis::Initialize(Configuration * configuration, const std::vector<Frequenc
 
                 while (Frequency < frequencyBands.back().Lo)
                 {
-                    int Octave = (int) (Note + 57.) / 12.;
+                    int Octave = (int) ((Note + 57.) / 12.);
 
                     if (j == 0)
                         ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[j], Octave);

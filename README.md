@@ -83,7 +83,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.0.0-beta-5, 2024-xx-xx
+v0.7.0.0-rc-1, 2024-02-07
 
 * New: Styles. Moved all the fragmented visual parameters (color, opacity thickness) into one unified style system.
     * Upon first use the old settings are converted to styles and sensible defaults are set for the new features.
