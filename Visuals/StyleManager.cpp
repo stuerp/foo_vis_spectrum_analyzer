@@ -235,11 +235,11 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
             uint32_t Id; parser >> Id;
 
             pfc::string Name; parser >> Name;
-            size_t Flags; parser >> Flags;
 
+            size_t Flags; parser >> Flags;
             uint32_t colorSource; parser >> colorSource;
 
-            D2D1_COLOR_F CustomColor;
+            D2D1_COLOR_F CustomColor = { };
 
             parser >> CustomColor.r;
             parser >> CustomColor.g;
@@ -257,7 +257,7 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
             {
                 FLOAT Position; parser >> Position;
 
-                D2D1_COLOR_F Color;
+                D2D1_COLOR_F Color = { };
 
                 parser >> Color.r;
                 parser >> Color.g;
@@ -280,7 +280,7 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Exception while reading DUI styles: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -358,37 +358,33 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         {
             uint32_t Id; reader->read(&Id, sizeof(Id), abortHandler);
 
-            Style style;
+            pfc::string Name; Name = reader->read_string(abortHandler);
 
-            style._Name = reader->read_string(abortHandler);
+            size_t Flags; reader->read(&Flags, sizeof(Flags), abortHandler);
+            uint32_t colorSource; reader->read(&colorSource, sizeof(colorSource), abortHandler);
+            D2D1_COLOR_F CustomColor; reader->read(&CustomColor, sizeof(CustomColor), abortHandler);
+            uint32_t ColorIndex; reader->read(&ColorIndex, sizeof(ColorIndex), abortHandler);
+            uint32_t colorScheme; reader->read(&colorScheme, sizeof(colorScheme), abortHandler);
 
-            reader->read(&style._Flags, sizeof(style._Flags), abortHandler);
-            reader->read(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
-            reader->read(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
-            reader->read(&style._ColorIndex, sizeof(style._ColorIndex), abortHandler);
-            reader->read(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
+            GradientStops gs;
 
-            size_t Size = style._CustomGradientStops.size();
+            size_t GradientStopCount; reader->read(&GradientStopCount, sizeof(GradientStopCount), abortHandler);
 
-            reader->read(&Size, sizeof(Size), abortHandler);
-
-            style._GradientStops.clear();
-
-            for (size_t j = 0; j < Size; ++j)
+            for (size_t j = 0; j < GradientStopCount; ++j)
             {
-                D2D1_GRADIENT_STOP gs;
+                FLOAT Position; reader->read(&Position, sizeof(Position), abortHandler);
+                D2D1_COLOR_F Color; reader->read(&Color, sizeof(Color), abortHandler);
 
-                reader->read(&gs.position, sizeof(gs.position), abortHandler);
-                reader->read(&gs.color, sizeof(gs.color), abortHandler);
-
-                style._GradientStops.push_back(gs);
+                gs.push_back({ Position, Color });
             }
 
-            reader->read(&style._Opacity, sizeof(style._Opacity), abortHandler);
-            reader->read(&style._Thickness, sizeof(style._Thickness), abortHandler);
+            FLOAT Opacity; reader->read(&Opacity, sizeof(Opacity), abortHandler);
+            FLOAT Thickness; reader->read(&Thickness, sizeof(Thickness), abortHandler);
 
-            style._FontName = reader->read_string(abortHandler);
-            reader->read(&style._FontSize, sizeof(style._FontSize), abortHandler);
+            pfc::string FontName = reader->read_string(abortHandler);
+            FLOAT FontSize; reader->read(&FontSize, sizeof(FontSize), abortHandler);
+
+            Style style = { Name, Flags, (ColorSource) colorSource, CustomColor, ColorIndex, (ColorScheme) colorScheme, gs, Opacity, Thickness, FontName, FontSize };
 
             _Styles.insert({ (VisualElement) Id, style });
         }
@@ -396,6 +392,8 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     catch (std::exception & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while reading CUI styles: %s", core_api::get_my_file_name(), ex.what());
+
+        Reset();
     }
 }
 
