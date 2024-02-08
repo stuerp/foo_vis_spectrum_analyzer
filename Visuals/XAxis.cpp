@@ -288,15 +288,10 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void XAxis::ReleaseDeviceSpecificResources()
 {
+    for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
     {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _Configuration->_StyleManager.GetStyle(Iter);
 
-        style->_Brush.Release();
-    }
-
-    {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
-
-        style->_Brush.Release();
+        style->ReleaseDeviceSpecificResources();
     }
 }

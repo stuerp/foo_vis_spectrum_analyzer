@@ -207,8 +207,17 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// </summary>
 void StyleManager::ReleaseDeviceSpecificResources()
 {
+    Log::Write(Log::Level::Trace, "");
+    Log::Write(Log::Level::Trace, "StyleManager::ReleaseDeviceSpecificResources");
+
     for (auto & Iter : _Styles)
+    {
         Iter.second.ReleaseDeviceSpecificResources();
+
+        Log::Write(Log::Level::Trace, "Delete Style %08X: Brush %08X", &Iter.second, Iter.second._Brush);
+    }
+
+    Log::Write(Log::Level::Trace, "");
 }
 
 void StyleManager::Read(ui_element_config_parser & parser) noexcept
@@ -217,16 +226,12 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
 
     try
     {
-        uint32_t Version;
-
-        parser >> Version;
+        uint32_t Version; parser >> Version;
 
         if (Version > _CurrentVersion)
             return;
 
-        size_t StyleCount;
-
-        parser >> StyleCount;
+        size_t StyleCount; parser >> StyleCount;
 
         _Styles.clear();
 
@@ -236,7 +241,7 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
 
             pfc::string Name; parser >> Name;
 
-            size_t Flags; parser >> Flags;
+            uint64_t Flags; parser >> Flags;
             uint32_t colorSource; parser >> colorSource;
 
             D2D1_COLOR_F CustomColor = { };
@@ -301,8 +306,8 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
             const Style & style = Iter.second;
 
             builder << style._Name;
-            builder << style._Flags;
 
+            builder << style._Flags;
             builder << (uint32_t) style._ColorSource;
 
             builder << style._CustomColor.r;

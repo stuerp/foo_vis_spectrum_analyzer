@@ -1,10 +1,12 @@
 
-/** $VER: Style.cpp (2024.02.07) P. Stuer **/
+/** $VER: Style.cpp (2024.02.08) P. Stuer **/
 
 #include "Style.h"
 
 #include "Direct2D.h"
 #include "Gradients.h"
+
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -85,6 +87,8 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
+
+    Log::Write(Log::Level::Trace, "Create Style %08X: Brush %08X", this, _Brush);
 
     return hr;
 }

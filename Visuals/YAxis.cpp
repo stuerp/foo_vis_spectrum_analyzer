@@ -161,15 +161,10 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void YAxis::ReleaseDeviceSpecificResources()
 {
+    for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
     {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
+        Style * style = _Configuration->_StyleManager.GetStyle(Iter);
 
-        style->_Brush.Release();
-    }
-
-    {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-        style->_Brush.Release();
+        style->ReleaseDeviceSpecificResources();
     }
 }

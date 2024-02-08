@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.04) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.08) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -31,7 +31,7 @@ struct DialogParameters
 class ConfigurationDialog : public CDialogImpl<ConfigurationDialog>, public CDialogResize<ConfigurationDialog>
 {
 public:
-    ConfigurationDialog() : m_bMsgHandled(false), _hParent() { }
+    ConfigurationDialog() : m_bMsgHandled(false), _hParent(), _IsInitializing() { }
 
     ConfigurationDialog(const ConfigurationDialog &) = delete;
     ConfigurationDialog & operator=(const ConfigurationDialog &) = delete;
@@ -191,4 +191,6 @@ private:
     CNumericEdit _Thickness;
 
     fb2k::CCoreDarkModeHooks _DarkMode;
+
+    bool _IsInitializing;
 };
