@@ -278,7 +278,7 @@ void StyleManager::Read(ui_element_config_parser & parser) noexcept
             _Styles.insert({ (VisualElement) Id, style });
         }
     }
-    catch (exception_io & ex)
+    catch (std::exception & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while reading DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
 
@@ -331,7 +331,7 @@ void StyleManager::Write(ui_element_config_builder & builder) const noexcept
             builder << style._FontSize;
         }
     }
-    catch (exception_io & ex)
+    catch (std::exception & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while writing DUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
@@ -393,7 +393,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             _Styles.insert({ (VisualElement) Id, style });
         }
     }
-    catch (exception_io & ex)
+    catch (std::exception & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while reading CUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
@@ -440,11 +440,10 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
             writer->write(&style._Thickness, sizeof(style._Thickness), abortHandler);
 
             writer->write_string(style._FontName, abortHandler);
-
             writer->write(&style._FontSize, sizeof(style._FontSize), abortHandler);
         }
     }
-    catch (exception_io & ex)
+    catch (std::exception & ex)
     {
         Log::Write(Log::Level::Error, "%s: Exception while writing CUI styles: %s", core_api::get_my_file_name(), ex.what());
     }
