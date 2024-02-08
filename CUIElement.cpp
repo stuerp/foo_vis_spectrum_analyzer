@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.02.04) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.08) P. Stuer **/
 
 #include "CUIElement.h"
 
@@ -95,7 +95,7 @@ void CUIElement::ToggleFullScreen() noexcept
                 ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style * (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
 
                 SetParent(::GetDesktopWindow());
-                SetWindowPos(NULL, mix.rcWork.left, mix.rcWork.top, mix.rcWork.right - mix.rcWork.left, mix.rcWork.bottom - mix.rcWork.top, SWP_NOZORDER);
+                SetWindowPos(HWND_TOP, &mix.rcWork, SWP_ASYNCWINDOWPOS | SWP_SHOWWINDOW);
 
                 _IsFullScreen = true;
             }
