@@ -176,8 +176,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
     FLOAT OldTextRight = -_Width;
 
-    Style * Style1 = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
-    Style * Style2 = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
+    Style * LineStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
+    Style * TextStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
 
     for (const Label & Iter : _Labels)
     {
@@ -185,7 +185,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
             continue;
 
         // Draw the vertical grid line.
-        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), Style1->_Brush, Style1->_Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
 
         // Draw the label.
         if (Iter.Text.empty())
@@ -205,7 +205,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             if (OldTextRight <= TextRect.left)
             {
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, Style2->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                 OldTextRight = TextRect.right;
             }

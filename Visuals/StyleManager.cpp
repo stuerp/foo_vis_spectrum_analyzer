@@ -1,9 +1,8 @@
 
-/** $VER: StyleManager.cpp (2024.02.07) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
-#include "Gradients.h"
 #include "Log.h"
 
 #include <exception>
@@ -34,125 +33,7 @@ StyleManager & StyleManager::operator=(const StyleManager & other)
 /// </summary>
 void StyleManager::Reset() noexcept
 {
-    _Styles.clear();
-
-    _Styles.insert
-    ({
-        VisualElement::Background,
-        {
-            "Background", Style::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::XAxisLine,
-        {
-            "X-axis Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::XAxisText,
-        {
-            "X-axis Text", Style::SupportsOpacity | Style::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::YAxisLine,
-        {
-            "Y-axis Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
-            "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::YAxisText,
-        {
-            "Y-axis Text", Style::SupportsOpacity | Style::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::BarSpectrum,
-        {
-            "Bar Spectrum", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::BarDarkBackground,
-        {
-            "Bar Dark Background", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::BarLightBackground,
-        {
-            "Bar Light Background", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::BarPeakIndicator,
-        {
-            "Bar Peak Indicator", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::CurveLine,
-        {
-            "Curve Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::CurveArea,
-        {
-            "Curve Area", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::CurvePeakLine,
-        {
-            "Curve Peak Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
-        }
-    });
-
-    _Styles.insert
-    ({
-        VisualElement::CurvePeakArea,
-        {
-            "Curve Peak Area", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f, "", 0.f,
-        }
-    });
+    _Styles = _DefaultStyles;
 
     for (auto & Iter : _Styles)
     {
@@ -207,17 +88,8 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// </summary>
 void StyleManager::ReleaseDeviceSpecificResources()
 {
-    Log::Write(Log::Level::Trace, "");
-    Log::Write(Log::Level::Trace, "StyleManager::ReleaseDeviceSpecificResources");
-
     for (auto & Iter : _Styles)
-    {
         Iter.second.ReleaseDeviceSpecificResources();
-
-        Log::Write(Log::Level::Trace, "Delete Style %08X: Brush %08X", &Iter.second, Iter.second._Brush);
-    }
-
-    Log::Write(Log::Level::Trace, "");
 }
 
 void StyleManager::Read(ui_element_config_parser & parser) noexcept

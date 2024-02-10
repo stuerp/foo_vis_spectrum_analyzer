@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.07) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.10) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -95,7 +95,6 @@ public:
 
     virtual ~Style()
     {
-        ReleaseDeviceSpecificResources();
     }
 
     Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
