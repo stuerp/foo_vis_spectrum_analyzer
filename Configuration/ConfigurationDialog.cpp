@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.07) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -19,6 +19,8 @@
 /// </summary>
 BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 {
+    _IsInitializing = true;
+
     _Theme.Initialize(_DarkMode);
 
     DlgResize_Init(true, true, WS_CLIPCHILDREN);
@@ -43,6 +45,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     MoveWindow(&_Configuration->_DialogBounds);
 
     _DarkMode.AddDialogWithControls(*this);
+
+    _IsInitializing = false;
 
     return TRUE;
 }
@@ -1204,7 +1208,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1483,7 +1488,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1709,7 +1715,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             return;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1912,7 +1919,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1967,7 +1975,8 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             return -1;
     }
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -2000,7 +2009,8 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 
     UpdateChannelsMenu();
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    if (!_IsInitializing)
+        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>

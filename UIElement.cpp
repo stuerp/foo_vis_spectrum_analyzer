@@ -98,7 +98,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     // Create the timer.
     CreateTimer();
 
-    // Applies the initial configuration.
+    // Apply the initial configuration.
     SetConfiguration();
 
     return 0;
@@ -400,7 +400,7 @@ void UIElement::ToggleHardwareRendering() noexcept
 }
 
 /// <summary>
-/// Shows the Options dialog.
+/// Shows the configuration dialog.
 /// </summary>
 void UIElement::Configure() noexcept
 {
@@ -470,14 +470,6 @@ void UIElement::SetConfiguration() noexcept
 
     _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
 
-    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
-
-    _NewArtworkGradient = true; // Request an update of the artwork gradient.
-
-    _Graph.Initialize(&_Configuration, _FrequencyBands);
-
-    _ToolTipControl.Activate(_Configuration._ShowToolTips);
-
     // Forces the recreation of the Brown-Puckette window function.
     if (_BrownPucketteKernel != nullptr)
     {
@@ -505,6 +497,14 @@ void UIElement::SetConfiguration() noexcept
         delete _CQTAnalyzer;
         _CQTAnalyzer = nullptr;
     }
+
+    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
+
+    _NewArtworkGradient = true; // Request an update of the artwork gradient.
+
+    _Graph.Initialize(&_Configuration, _FrequencyBands);
+
+    _ToolTipControl.Activate(_Configuration._ShowToolTips);
 
     Resize();
 
@@ -566,6 +566,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
     if (_SampleRate == 0)
         _SampleRate = 44100;
 
+    // Use the script from the configuration to load the album art.
     if (track.is_valid() && !_Configuration._ArtworkFilePath.isEmpty())
     {
         titleformat_object::ptr Script;
@@ -607,6 +608,7 @@ void UIElement::on_playback_pause(bool)
 
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
+    // The script in the configuration takes precedence over the album art supplied by the track.
     if (!_Configuration._ArtworkFilePath.isEmpty())
         return;
 

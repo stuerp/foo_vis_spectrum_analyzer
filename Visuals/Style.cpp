@@ -1,10 +1,12 @@
 
-/** $VER: Style.cpp (2024.02.07) P. Stuer **/
+/** $VER: Style.cpp (2024.02.10) P. Stuer **/
 
 #include "Style.h"
 
 #include "Direct2D.h"
 #include "Gradients.h"
+
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -39,8 +41,6 @@ Style & Style::operator=(const Style & other)
 
     _Color = other._Color;
     _GradientStops = other._GradientStops;
-
-    ReleaseDeviceSpecificResources();
 
     return *this;
 }

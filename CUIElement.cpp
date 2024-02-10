@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.02.04) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.08) P. Stuer **/
 
 #include "CUIElement.h"
 
@@ -80,8 +80,6 @@ void CUIElement::ToggleFullScreen() noexcept
 {
     _CriticalSection.Enter();
 
-    LONG_PTR Style = ::GetWindowLongPtrW(m_hWnd, GWL_STYLE);
-
     if (!_IsFullScreen)
     {
         HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
@@ -92,10 +90,22 @@ void CUIElement::ToggleFullScreen() noexcept
 
             if (::GetMonitorInfoW(hMonitor, &mix))
             {
-                ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style * (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
+                GetWindowRect(&_OldBounds);
 
+                CWindow(_hParent).ScreenToClient(&_OldBounds);
+
+                ShowWindow(SW_HIDE);
                 SetParent(::GetDesktopWindow());
-                SetWindowPos(NULL, mix.rcWork.left, mix.rcWork.top, mix.rcWork.right - mix.rcWork.left, mix.rcWork.bottom - mix.rcWork.top, SWP_NOZORDER);
+
+                LONG_PTR Style = ::GetWindowLongPtrW(m_hWnd, GWL_STYLE);
+
+                ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_CHILD) | (LONG_PTR) WS_POPUP);
+
+                SetWindowPos(HWND_TOP, &mix.rcWork, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+                _Host->relinquish_ownership(nullptr);
+
+                SetConfiguration();
 
                 _IsFullScreen = true;
             }
@@ -103,14 +113,18 @@ void CUIElement::ToggleFullScreen() noexcept
     }
     else
     {
-        RECT cr;
-
-        ::GetClientRect(_hParent, &cr);
-
-        ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style * (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
-
-        SetWindowPos(NULL, cr.left, cr.top, cr.right - cr.left, cr.bottom - cr.top, SWP_NOZORDER);
+        ShowWindow(SW_HIDE);
         SetParent(_hParent);
+
+        LONG_PTR Style = ::GetWindowLongPtrW(m_hWnd, GWL_STYLE);
+
+        ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
+
+        SetWindowPos(NULL, &_OldBounds, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+        _Host->relinquish_ownership(_hParent);
+
+        SetConfiguration();
 
         _IsFullScreen = false;
     }

@@ -52,6 +52,7 @@ protected:
     }
 
     virtual void OnContextMenu(CWindow wnd, CPoint point);
+    void SetConfiguration() noexcept;
 
 private:
     #pragma region CWindowImpl
@@ -97,9 +98,6 @@ private:
     void ToggleHardwareRendering() noexcept;
 
     void Configure() noexcept;
-    void SetConfiguration() noexcept;
-    void UpdateStyles() noexcept;
-
     void Resize();
 
     void OnTimer();
@@ -168,6 +166,7 @@ private:
 protected:
     Configuration _Configuration;
     CriticalSection _CriticalSection;
+    RECT _OldBounds;
     bool _IsFullScreen;
 
 private:

@@ -88,6 +88,7 @@ void UIElement::ProcessPlaybackEvent()
     switch (_PlaybackEvent)
     {
         default:
+
         case PlaybackEvent::None:
             break;
 

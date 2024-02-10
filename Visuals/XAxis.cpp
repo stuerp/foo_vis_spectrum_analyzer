@@ -176,41 +176,38 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
     FLOAT OldTextRight = -_Width;
 
+    Style * LineStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
+    Style * TextStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
+
     for (const Label & Iter : _Labels)
     {
         if (Iter.x < _Bounds.left)
             continue;
 
         // Draw the vertical grid line.
-        {
-            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
-
-            renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), style->_Brush, style->_Thickness, nullptr);
-        }
+        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
 
         // Draw the label.
-        if (!Iter.Text.empty())
+        if (Iter.Text.empty())
+            continue;
+
+        CComPtr<IDWriteTextLayout> TextLayout;
+
+        hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
+
+        if (SUCCEEDED(hr))
         {
-            CComPtr<IDWriteTextLayout> TextLayout;
+            DWRITE_TEXT_METRICS TextMetrics = { };
 
-            hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
+            TextLayout->GetMetrics(&TextMetrics);
 
-            if (SUCCEEDED(hr))
+            D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), Height - _Height, Iter.x + (TextMetrics.width / 2.f), Height };
+
+            if (OldTextRight <= TextRect.left)
             {
-                DWRITE_TEXT_METRICS TextMetrics = { };
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
-                TextLayout->GetMetrics(&TextMetrics);
-
-                D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), Height - _Height, Iter.x + (TextMetrics.width / 2.f), Height };
-
-                if (OldTextRight <= TextRect.left)
-                {
-                    Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
-
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-
-                    OldTextRight = TextRect.right;
-                }
+                OldTextRight = TextRect.right;
             }
         }
     }
@@ -288,15 +285,10 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void XAxis::ReleaseDeviceSpecificResources()
 {
+    for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
     {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _Configuration->_StyleManager.GetStyle(Iter);
 
-        style->_Brush.Release();
-    }
-
-    {
-        Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
-
-        style->_Brush.Release();
+        style->ReleaseDeviceSpecificResources();
     }
 }

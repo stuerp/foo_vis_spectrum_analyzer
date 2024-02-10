@@ -1,11 +1,11 @@
 
-/** $VER: Style.h (2024.02.07) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.10) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
 #include "framework.h"
 
-enum class VisualElement
+enum class VisualElement : uint32_t
 {
     Background,
     XAxisText,
@@ -24,7 +24,7 @@ enum class VisualElement
     CurvePeakArea
 };
 
-enum class ColorSource
+enum class ColorSource : uint32_t
 {
     None,
     Solid,
@@ -34,7 +34,7 @@ enum class ColorSource
     UserInterface,
 };
 
-enum class WindowsColor
+enum class WindowsColor : uint32_t
 {
     WindowBackground,           // COLOR_WINDOW
     WindowText,                 // COLOR_WINDOWTEXT
@@ -46,7 +46,7 @@ enum class WindowsColor
     HotLight,                   // COLOR_HOTLIGHT
 };
 
-enum class DUIColor
+enum class DUIColor : uint32_t
 {
     Text,
     Background,
@@ -55,7 +55,7 @@ enum class DUIColor
     DarkMode
 };
 
-enum class CUIColor
+enum class CUIColor : uint32_t
 {
     Text,                       // cui::colours::colour_text
     SelectedText,               // cui::colours::colour_selection_text
@@ -68,7 +68,7 @@ enum class CUIColor
     ActiveItem,                 // cui::colours::colour_active_item_frame
 };
 
-enum class ColorScheme
+enum class ColorScheme : uint32_t
 {
     Solid = 0,
     Custom = 1,
@@ -95,7 +95,6 @@ public:
 
     virtual ~Style()
     {
-        ReleaseDeviceSpecificResources();
     }
 
     Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
