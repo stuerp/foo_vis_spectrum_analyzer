@@ -5,7 +5,7 @@
 
 #include "framework.h"
 
-enum class VisualElement
+enum class VisualElement : uint32_t
 {
     Background,
     XAxisText,
@@ -24,7 +24,7 @@ enum class VisualElement
     CurvePeakArea
 };
 
-enum class ColorSource
+enum class ColorSource : uint32_t
 {
     None,
     Solid,
@@ -34,7 +34,7 @@ enum class ColorSource
     UserInterface,
 };
 
-enum class WindowsColor
+enum class WindowsColor : uint32_t
 {
     WindowBackground,           // COLOR_WINDOW
     WindowText,                 // COLOR_WINDOWTEXT
@@ -46,7 +46,7 @@ enum class WindowsColor
     HotLight,                   // COLOR_HOTLIGHT
 };
 
-enum class DUIColor
+enum class DUIColor : uint32_t
 {
     Text,
     Background,
@@ -55,7 +55,7 @@ enum class DUIColor
     DarkMode
 };
 
-enum class CUIColor
+enum class CUIColor : uint32_t
 {
     Text,                       // cui::colours::colour_text
     SelectedText,               // cui::colours::colour_selection_text
@@ -68,7 +68,7 @@ enum class CUIColor
     ActiveItem,                 // cui::colours::colour_active_item_frame
 };
 
-enum class ColorScheme
+enum class ColorScheme : uint32_t
 {
     Solid = 0,
     Custom = 1,

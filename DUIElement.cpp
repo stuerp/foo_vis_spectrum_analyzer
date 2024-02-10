@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.02.03) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.02.10) P. Stuer **/
 
 #include "DUIElement.h"
 
@@ -64,18 +64,11 @@ GUID DUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr DUIElement::g_get_default_configuration()
 {
+    Configuration DefaultConfiguration;
+
     ui_element_config_builder Builder;
 
-    try
-    {
-        Configuration DefaultConfiguration;
-
-        DefaultConfiguration.Write(Builder);
-    }
-    catch (exception_io & ex)
-    {
-        Log::Write(Log::Level::Error, "%s: Exception while writing DUI default configuration data: %s", core_api::get_my_file_name(), ex.what());
-    }
+    DefaultConfiguration.Write(&Builder.m_stream);
 
     return Builder.finish(g_get_guid());
 }
@@ -98,7 +91,7 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    _Configuration.Read(Parser);
+    _Configuration.Read(&Parser.m_stream, Parser.get_remaining());
 }
 
 /// <summary>
@@ -108,7 +101,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _Configuration.Write(Builder);
+    _Configuration.Write(&Builder.m_stream);
 
     return Builder.finish(g_get_guid());
 }

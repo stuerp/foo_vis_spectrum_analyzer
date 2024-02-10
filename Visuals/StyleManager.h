@@ -27,8 +27,8 @@ public:
     void Read(ui_element_config_parser & parser) noexcept;
     void Write(ui_element_config_builder & builder) const noexcept;
 
-    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept;
-    void Write(stream_writer * writer, abort_callback & abortHandler) const noexcept;
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
+    void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
     Style * GetStyle(VisualElement visualElement);
 
@@ -150,5 +150,5 @@ private:
     }
     };
 
-    const uint32_t _CurrentVersion = 1;
+    const uint32_t _CurrentVersion = 2;
 };
