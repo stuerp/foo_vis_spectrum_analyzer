@@ -66,14 +66,13 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 
     FLOAT OldTextTop = _Bounds.bottom - _Bounds.top + _Height;
 
+    Style * Style1 = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
+    Style * Style2 = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
+
     for (const Label & Iter : _Labels)
     {
         // Draw the horizontal grid line.
-        {
-            Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
-
-            renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), style->_Brush, style->_Thickness, nullptr);
-        }
+        renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), Style1->_Brush, Style1->_Thickness, nullptr);
 
         // Draw the label.
         if (!Iter.Text.empty())
@@ -82,9 +81,7 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 
             if (TextRect.bottom < OldTextTop)
             {
-                Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, Style2->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
                 OldTextTop = TextRect.top;
             }

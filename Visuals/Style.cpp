@@ -42,8 +42,6 @@ Style & Style::operator=(const Style & other)
     _Color = other._Color;
     _GradientStops = other._GradientStops;
 
-    ReleaseDeviceSpecificResources();
-
     return *this;
 }
 
@@ -87,8 +85,6 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
-
-    Log::Write(Log::Level::Trace, "Create Style %08X: Brush %08X", this, _Brush);
 
     return hr;
 }
