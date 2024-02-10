@@ -83,6 +83,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.0.0-rc-2, 2024-02-10
+
+* Fixed (RC 1 regression): A couple of small bugs that could cause horrible crashes.
+
 v0.7.0.0-rc-1, 2024-02-07
 
 * New: Styles. Moved all the fragmented visual parameters (color, opacity thickness) into one unified style system.
