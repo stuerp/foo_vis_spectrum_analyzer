@@ -46,6 +46,130 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
     _DarkMode.AddDialogWithControls(*this);
 
+    // Create the tooltip control.
+    {
+        _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
+
+        const std::map<int, LPCWSTR> Tips =
+        {
+            { IDC_METHOD, L"Method used to transform the samples" },
+            { IDC_WINDOW_FUNCTION, L"Window function applied to the samples" },
+            { IDC_WINDOW_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows" },
+            { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
+            { IDC_CHANNELS, L"Determines which channels supply samples" },
+
+            { IDC_FFT_SIZE, L"Number of FFT bins" },
+            { IDC_FFT_SIZE_PARAMETER, L"Parameter used to calculate the number of FFT bins" },
+
+            { IDC_SUMMATION_METHOD, L"Method used to aggregate FFT coefficients" },
+            { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
+
+            { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
+            { IDC_SMOOTH_GAIN_TRANSITION, L"Smoother frequency slope on sum modes" },
+
+            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel" },
+
+            { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
+            { IDC_BW_CAP, L"Minimum Brown-Puckette CQT kernel size" },
+            { IDC_BW_AMOUNT, L"Brown-Puckette CQT kernel size" },
+
+            { IDC_GRANULAR_BW, L"Enable to don't constrain the bandwidth to powers of 2" },
+
+            { IDC_KERNEL_SHAPE, L"Shape of the Brown-Puckette CQT kernel" },
+            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter by certain window functions like Gaussian and Kaiser windows." },
+            { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
+
+            { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
+            { IDC_NUM_BANDS, L"Determines how many frequency bands are used" },
+
+            { IDC_LO_FREQUENCY, L"Lowest frequency" },
+            { IDC_HI_FREQUENCY, L"Highest frequency" },
+
+            { IDC_MIN_NOTE, L"Note that determines the lowest frequency" },
+            { IDC_MAX_NOTE, L"Note that determines the highest frequency" },
+
+            { IDC_BANDS_PER_OCTAVE, L"Number of frequency bands per octave" },
+
+            { IDC_PITCH, L"Tuning frequency" },
+            { IDC_TRANSPOSE, L"Transposes the frequencies using semitones" },
+
+            { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum" },
+            { IDC_BANDWIDTH, L"Distance between low and high frequency boundaries for each band" },
+
+            { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
+
+            { IDC_SLOPE_FN_OFFS, L"Offset of the slope function" },
+            { IDC_SLOPE_OFFS, L"Frequency slope" },
+            { IDC_SLOPE, L"Frequency slope offset" },
+
+            { IDC_EQ_AMT, L"Equalization amount" },
+            { IDC_EQ_DEPTH, L"Equalization offset" },
+            { IDC_EQ_OFFS, L"Equalization depth" },
+
+            { IDC_WT_AMT, L"Weighting amount" },
+
+            { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork" },
+            { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light" },
+            { IDC_COLOR_ORDER, L"Determines how to sort the selected colors" },
+
+            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
+            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
+
+            { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
+
+            { IDC_BACKGROUND_MODE, L"Determines how to render the spectrum background" },
+
+            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork" },
+            { IDC_FILE_PATH, L"foobar2000 script that returns the file path of an image to display instead of the artwork" },
+
+            { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
+
+            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
+            { IDC_AMPLITUDE_LO, L"Lowest amplitude to display on the Y-axis" },
+            { IDC_AMPLITUDE_HI, L"Highest amplitude to display on the Y-axis" },
+            { IDC_AMPLITUDE_STEP, L"Amplitude increment" },
+
+            { IDC_USE_ABSOLUTE, L"Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled" },
+            { IDC_GAMMA, L"Gamma correction of the logarithmic scale" },
+
+            { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
+
+            { IDC_PEAK_MODE, L"Determines how to display the peak coefficients" },
+            { IDC_HOLD_TIME, L"Determines how long the peak coefficients is held" },
+            { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
+
+            { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
+
+            { IDC_STYLES, L"List of available styles" },
+
+            { IDC_COLOR_SOURCE, L"Determines the source of a color" },
+            { IDC_COLOR_INDEX, L"Named Windows, DUI or CUI color" },
+            { IDC_COLOR_BUTTON, L"Color to use" },
+            { IDC_COLOR_SCHEME, L"Color scheme to use" },
+
+            { IDC_GRADIENT, L"Gradient created using the color list" },
+            { IDC_COLOR_LIST, L"List of colors in the current color scheme" },
+
+            { IDC_ADD, L"Adds a color to the color list after the selected one" },
+            { IDC_REMOVE, L"Removes the selected color from the list" },
+            { IDC_REVERSE, L"Reverses the list of colors" },
+
+            { IDC_POSITION, L"Position of the color in the gradient (in % of the total length of the gradient)" },
+            { IDC_SPREAD, L"Evenly spreads the colors of the list in the gradient" },
+
+            { IDC_HORIZONTAL_GRADIENT, L"Generates a horizontal instead of a vertical gradient" },
+
+            { IDC_OPACITY, L"Opacity of the resulting color brush" },
+            { IDC_THICKNESS, L"Thickness of the resulting color brush" },
+        };
+
+        for (const auto & Iter : Tips)
+            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(Iter.first).m_hWnd, nullptr, (LPWSTR) Iter.second));
+
+        _ToolTipControl.SetMaxTipWidth(200);
+    }
+
     _IsInitializing = false;
 
     return TRUE;
@@ -890,6 +1014,9 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    if (_ToolTipControl.IsWindow())
+        _ToolTipControl.DestroyWindow();
+
     _MenuList.Terminate();
 
     _Channels.Terminate();
