@@ -130,7 +130,8 @@ inline const double MaxThickness = 10.f;
 enum class Transform
 {
     FFT = 0,
-    CQT = 1
+    CQT = 1,
+    SWIFT = 2,
 };
 
 enum class FFTMode
@@ -212,8 +213,10 @@ enum class SummationMethod
 
 enum class SmoothingMethod
 {
-    Average = 0,
-    Peak = 1
+    None = 0,
+
+    Average = 1,
+    Peak = 2,
 };
 
 enum class XAxisMode
@@ -467,19 +470,7 @@ public:
     #pragma endregion
 
 public:
-    /// <summary>
-    /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
-    /// </summary>
-    /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
-    double ScaleA(double value) const
-    {
-        if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
-            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
-
-        double Exponent = 1.0 / _Gamma;
-
-        return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
-    }
+    double ScaleA(double value) const;
 
 private:
     void ConvertColorSettings() noexcept;
@@ -521,5 +512,5 @@ private: // Deprecated
     bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 14;
+    const size_t _CurrentVersion = 15;
 };

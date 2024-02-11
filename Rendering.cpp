@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.04) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.10) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -126,6 +126,8 @@ void UIElement::ProcessPlaybackEvent()
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
+    const double ReactionAlignment = 0.5;
+
     double PlaybackTime; // in seconds
 
     // Update the graph.
@@ -135,7 +137,7 @@ void UIElement::UpdateSpectrum()
 
         audio_chunk_impl Chunk;
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
+        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / (ReactionAlignment / 2.0 + 0.5)), WindowSize))
             ProcessAudioChunk(Chunk);
     }
 
@@ -218,8 +220,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE,
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
@@ -228,7 +229,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         if (SUCCEEDED(hr))
         {
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-            _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             // Resize some elements based on the size of the render target.
             Resize();
@@ -243,9 +244,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         s.ReleaseDeviceSpecificResources();
 
         hr = _Artwork.Realize(_RenderTarget);
+        _NewArtworkGradient = true;
 
         _NewArtwork = false;
-        _NewArtworkGradient = true;
     }
 
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.

@@ -22,7 +22,7 @@ CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTAnalyzer::GetFrequencyBands(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const
+bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const
 {
     for (FrequencyBand & Iter : frequencyBands)
     {

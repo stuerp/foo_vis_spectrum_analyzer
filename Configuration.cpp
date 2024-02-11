@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.02.07) P. Stuer **/
+/** $VER: Configuration.cpp (2024.02.11) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -101,7 +101,7 @@ void Configuration::Reset() noexcept
     _SkewFactor = 0.0;
     _Bandwidth = 0.5;
 
-    _SmoothingMethod = SmoothingMethod::Peak;
+    _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
 
     _KernelSize = 32;
@@ -355,6 +355,20 @@ Configuration & Configuration::operator=(const Configuration & other)
 }
 
 /// <summary>
+/// Scales the specified value to a relative amplitude between 0.0 and 1.0.
+/// </summary>
+/// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
+double Configuration::ScaleA(double value) const
+{
+    if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
+        return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+
+    double Exponent = 1.0 / _Gamma;
+
+    return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+}
+
+/// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
 void Configuration::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
@@ -387,17 +401,24 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         reader->read(&_Transform, sizeof(_Transform), abortHandler);
 
     #pragma region FFT
+
         reader->read(&_FFTMode, sizeof(_FFTMode), abortHandler);
         reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
         reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
 
         reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
         reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
+
+        // SmoothingMethod::None was inserted before SmoothingMethod::Average.
+        if (Version <= 14)
+            _SmoothingMethod = (SmoothingMethod) ((int) _SmoothingMethod + 1);
+
         reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);
         reader->read(&_KernelSize, sizeof(_KernelSize), abortHandler);
         reader->read(&_SummationMethod, sizeof(_SummationMethod), abortHandler);
         reader->read(&_SmoothLowerFrequencies, sizeof(_SmoothLowerFrequencies), abortHandler);
         reader->read(&_SmoothGainTransition, sizeof(_SmoothGainTransition), abortHandler);
+
     #pragma endregion
 
     #pragma region Frequencies
@@ -420,6 +441,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
     #pragma endregion
 
     #pragma region Rendering
+
         reader->read(&_BackColor, sizeof(_BackColor), abortHandler);
 
         reader->read(&_XAxisMode, sizeof(_XAxisMode), abortHandler);
@@ -441,6 +463,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
         reader->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
         reader->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
         reader->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
+
     #pragma endregion
 
         _CustomGradientStops.clear();

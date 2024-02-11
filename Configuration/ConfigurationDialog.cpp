@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.11) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -79,7 +79,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Fast Fourier", L"Constant-Q" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);
@@ -676,7 +676,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Average", L"Peak" })
+        for (const auto & x : { L"None", L"Average", L"Peak" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
@@ -2210,9 +2210,13 @@ void ConfigurationDialog::UpdateControls()
 
     // FFT
     bool IsFFT = (_Configuration->_Transform == Transform::FFT);
+    bool IsFT = IsFFT || (_Configuration->_Transform == Transform::SWIFT);
 
-    for (const auto & Iter : { IDC_DISTRIBUTION, IDC_FFT_SIZE, IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+    for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
         GetDlgItem(Iter).EnableWindow(IsFFT);
+
+    for (const auto & Iter : { IDC_FFT_SIZE, IDC_DISTRIBUTION })
+        GetDlgItem(Iter).EnableWindow(IsFT);
 
     bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
 
@@ -2238,7 +2242,7 @@ void ConfigurationDialog::UpdateControls()
         #pragma warning (default: 4061)
 
     // Brown-Puckette CQT
-    bool IsBrownPuckette = (_Configuration->_MappingMethod == Mapping::BrownPuckette);
+    bool IsBrownPuckette = (_Configuration->_MappingMethod == Mapping::BrownPuckette) && IsFFT;
 
         for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
             GetDlgItem(Iter).EnableWindow(IsBrownPuckette);

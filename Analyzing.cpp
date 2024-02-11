@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.01) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.11) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -29,40 +29,60 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 
         size_t SampleCount = chunk.get_sample_count();
 
-        if (_Configuration._Transform == Transform::FFT)
+        switch (_Configuration._Transform)
         {
-            _FFTAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
-
-            _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
-
-            switch (_Configuration._MappingMethod)
+            case Transform::FFT:
             {
-                default:
+                _FFTAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
 
-                case Mapping::Standard:
-                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
-                    break;
+                _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
 
-                case Mapping::TriangularFilterBank:
-                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
-                    break;
+                switch (_Configuration._MappingMethod)
+                {
+                    default:
 
-                case Mapping::BrownPuckette:
-                    _FFTAnalyzer->GetFrequencyBands(_FrequencyCoefficients, _SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
-                    break;
+                    case Mapping::Standard:
+                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
+                        break;
+
+                    case Mapping::TriangularFilterBank:
+                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
+                        break;
+
+                    case Mapping::BrownPuckette:
+                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
+                        break;
+                }
+                break;
+            }
+
+            case Transform::CQT:
+            {
+                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
+                break;
+            }
+
+            case Transform::SWIFT:
+            {
+                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
             }
         }
-        else
-            _CQTAnalyzer->GetFrequencyBands(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
     }
 
     // Filter the spectrum.
-    ApplyAcousticWeighting();
+    if (_Configuration._WeightingType != WeightingType::None)
+        ApplyAcousticWeighting();
 
     // Smooth the spectrum.
     switch (_Configuration._SmoothingMethod)
     {
         default:
+
+        case SmoothingMethod::None:
+        {
+            ApplyAverageSmoothing(0.);
+            break;
+        }
 
         case SmoothingMethod::Average:
         {
@@ -101,6 +121,13 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if (_CQTAnalyzer == nullptr)
         _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
+
+    if (_SWIFTAnalyzer == nullptr)
+    {
+        _SWIFTAnalyzer = new SWIFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction);
+
+        _SWIFTAnalyzer->Initialize(_FrequencyBands, 4, 600., 1.);
+    }
 }
 
 /// <summary>
