@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.02.11) P. Stuer **/
+/** $VER: Configuration.cpp (2024.02.12) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -38,6 +38,7 @@ void Configuration::Reset() noexcept
 
     _UseZeroTrigger = false;
     _WindowDuration = 50;
+    _ReactionAlignment = 0.5;
 
     // Transform
     _Transform = Transform::FFT;
@@ -55,6 +56,11 @@ void Configuration::Reset() noexcept
     _FFTDuration = 100.;
 
     _MappingMethod = Mapping::Standard;
+
+    // SWIFT
+    _FilterBankOrder = 4;
+    _TimeResolution = 600.;
+    _SWIFTBandwidth = 1.;
 
     // Brown-Puckette CQT-specific
     _BandwidthOffset = 1.;
@@ -195,6 +201,7 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
+    _ReactionAlignment = other._ReactionAlignment;
 
     #pragma region Transform
 
@@ -222,6 +229,14 @@ Configuration & Configuration::operator=(const Configuration & other)
     _SummationMethod = other._SummationMethod;
     _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
     _SmoothGainTransition = other._SmoothGainTransition;
+
+    #pragma endregion
+
+    #pragma region SWIFT
+
+    _FilterBankOrder = other._FilterBankOrder;
+    _TimeResolution = other._TimeResolution;
+    _SWIFTBandwidth = other._SWIFTBandwidth;
 
     #pragma endregion
 

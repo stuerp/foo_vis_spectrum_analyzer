@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.h (2024.01.02) P. Stuer **/
+/** $VER: CQTAnalyzer.h (2024.02.12) P. Stuer **/
 
 #pragma once
 
@@ -27,9 +27,11 @@ public:
     virtual ~CQTAnalyzer() { }
 
     CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample, const Configuration * configuration);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const;
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const;
 
 private:
+    const Configuration * _Configuration;
+
     double _BandwidthOffset;
     double _Alignment;
     double _DownSample;

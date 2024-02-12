@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.07) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.12) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -294,7 +294,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyB
         if (Iter.Ctr > (sampleRate / 2.))
             break;
 
-        double Value = !usePeak ? ((_Configuration->_Transform != Transform::SWIFT) ? _Configuration->ScaleA(Iter.CurValue) : Iter.CurValue * 50.) : Iter.Peak;
+        double Value = !usePeak ? _Configuration->ScaleA(Iter.CurValue) : Iter.Peak;
 
         y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 

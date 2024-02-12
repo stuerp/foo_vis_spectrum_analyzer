@@ -30,8 +30,6 @@ public:
     void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
     void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
 
-    void UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept;
-
 private:
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;

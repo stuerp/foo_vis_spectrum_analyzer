@@ -187,6 +187,7 @@
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
+    <ClInclude Include="Analyzers\WaveformGenerator.h" />
     <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
@@ -239,6 +240,7 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\FFTProvider.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
+    <ClCompile Include="Analyzers\WaveformGenerator.cpp" />
     <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />

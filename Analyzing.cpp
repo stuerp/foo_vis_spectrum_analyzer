@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.11) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.12) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -58,13 +58,13 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 
             case Transform::CQT:
             {
-                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
+                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
                 break;
             }
 
             case Transform::SWIFT:
             {
-                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Configuration._SelectedChannels, _FrequencyBands);
+                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
             }
         }
     }
@@ -103,30 +103,32 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 /// </summary>
 void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
-    uint32_t ChannelCount = chunk.get_channel_count();
-    uint32_t ChannelSetup = chunk.get_channel_config();
-
     if (_WindowFunction == nullptr)
         _WindowFunction = WindowFunction::Create(_Configuration._WindowFunction, _Configuration._WindowParameter, _Configuration._WindowSkew, _Configuration._Truncate);
 
-    if (_BrownPucketteKernel == nullptr)
+    if ((_BrownPucketteKernel == nullptr) && (_Configuration._MappingMethod == Mapping::BrownPuckette))
         _BrownPucketteKernel = WindowFunction::Create(_Configuration._KernelShape, _Configuration._KernelShapeParameter, _Configuration._KernelAsymmetry, _Configuration._Truncate);
 
-    if (_FFTAnalyzer == nullptr)
-    {
-        _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _FFTSize, &_Configuration);
+    uint32_t ChannelCount = chunk.get_channel_count();
+    uint32_t ChannelSetup = chunk.get_channel_config();
 
-        _FrequencyCoefficients.resize(_FFTSize);
+    if ((_FFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::FFT))
+    {
+        _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _NumBins, &_Configuration);
+
+        _FrequencyCoefficients.resize(_NumBins);
     }
 
-    if (_CQTAnalyzer == nullptr)
-        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
-
-    if (_SWIFTAnalyzer == nullptr)
+    if ((_CQTAnalyzer == nullptr) && (_Configuration._Transform == Transform::CQT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction);
+        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
+    }
 
-        _SWIFTAnalyzer->Initialize(_FrequencyBands, 4, 600., 1.);
+    if ((_SWIFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::SWIFT))
+    {
+        _SWIFTAnalyzer = new SWIFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, &_Configuration);
+
+        _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }
 }
 
@@ -140,17 +142,19 @@ void UIElement::GenerateLinearFrequencyBands()
 
     _FrequencyBands.resize(_Configuration._NumBands);
 
-    for (size_t i = 0; i < _FrequencyBands.size(); ++i)
-    {
-        FrequencyBand& Iter = _FrequencyBands[i];
+    double i = 0.;
 
-        Iter.Lo  = DeScaleF(Map((double) i - _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Ctr = DeScaleF(Map((double) i,              0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
-        Iter.Hi  = DeScaleF(Map((double) i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+    for (FrequencyBand & Iter: _FrequencyBands)
+    {
+        Iter.Lo  = DeScaleF(Map(i - _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Ctr = DeScaleF(Map(i,              0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
+        Iter.Hi  = DeScaleF(Map(i + _Bandwidth, 0., (double)(_Configuration._NumBands - 1), MinFreq, MaxFreq), _Configuration._ScalingFunction, _Configuration._SkewFactor);
 
         ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
 
         Iter.HasDarkBackground = true;
+
+        ++i;
     }
 }
 
@@ -204,15 +208,16 @@ void UIElement::GenerateAveePlayerFrequencyBands()
 {
     _FrequencyBands.resize(_Configuration._NumBands);
 
-    for (size_t i = 0; i < _FrequencyBands.size(); ++i)
-    {
-        FrequencyBand& Iter = _FrequencyBands[i];
+    double i = 0.;
 
-        Iter.Lo  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
-        Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, (double) i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+    for (FrequencyBand & Iter : _FrequencyBands)
+    {
+        Iter.Lo  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, i - _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Ctr = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, i,              _Configuration._NumBands - 1, _Configuration._SkewFactor);
+        Iter.Hi  = LogSpace(_Configuration._LoFrequency, _Configuration._HiFrequency, i + _Bandwidth, _Configuration._NumBands - 1, _Configuration._SkewFactor);
 
         Iter.HasDarkBackground = true;
+        ++i;
     }
 }
 
@@ -317,7 +322,7 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
 /// </summary>
 void UIElement::ApplyAcousticWeighting()
 {
-    const double Offset = ((_Configuration._SlopeFunctionOffset * (double) _SampleRate) / (double) _FFTSize);
+    const double Offset = ((_Configuration._SlopeFunctionOffset * (double) _SampleRate) / (double) _NumBins);
 
     for (FrequencyBand & Iter : _FrequencyBands)
         Iter.NewValue *= GetWeight(Iter.Ctr + Offset);

@@ -26,13 +26,15 @@ public:
 
     virtual ~SWIFTAnalyzer() { }
 
-    SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction);
+    SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const Configuration * configuration);
 
-    bool Initialize(const vector<FrequencyBand> & frequencyBands, size_t order, double timeRes, double bandwidth);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands);
+    bool Initialize(const vector<FrequencyBand> & frequencyBands);
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
 
 private:
-    struct Point
+    const Configuration * _Configuration;
+
+    struct Value
     {
         double x;
         double y;
@@ -42,10 +44,9 @@ private:
     {
         double rX;
         double rY;
-        double decay;
-        std::vector<Point> coeffs;
+        double Decay;
+        std::vector<Value> Values;
     };
 
     std::vector<Coef> _Coefs;
-    double * _spectrumData;
 };

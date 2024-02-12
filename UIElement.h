@@ -105,6 +105,7 @@ private:
 
     void ProcessPlaybackEvent();
     void UpdateSpectrum();
+    void UpdatePeakIndicators() noexcept;
     void Render();
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
@@ -118,6 +119,8 @@ private:
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
+
+    void DeleteResources();
 
     static double ScaleF(double x, ScalingFunction function, double factor);
     static double DeScaleF(double x, ScalingFunction function, double factor);
@@ -232,7 +235,7 @@ private:
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
-    size_t _FFTSize;
+    size_t _NumBins;
     uint32_t _SampleRate;
     double _Bandwidth;
 

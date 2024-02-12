@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.10) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.12) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -11,6 +11,7 @@
 #include "Gradients.h"
 #include "StyleManager.h"
 
+#include "WaveformGenerator.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -68,7 +69,13 @@ void UIElement::OnTimer()
     _FrameCounter.NewFrame();
 
     ProcessPlaybackEvent();
+
     UpdateSpectrum();
+
+    // Update the peak indicators.
+    if (_Configuration._PeakMode != PeakMode::None)
+        UpdatePeakIndicators();
+
     Render();
 
     _CriticalSection.Leave();
@@ -112,7 +119,7 @@ void UIElement::ProcessPlaybackEvent()
         {
             _Artwork.Release();
 
-            for (auto & Iter : _FrequencyBands)
+            for (FrequencyBand & Iter : _FrequencyBands)
                 Iter.CurValue = 0.;
             break;
         }
@@ -121,29 +128,117 @@ void UIElement::ProcessPlaybackEvent()
     _PlaybackEvent = PlaybackEvent::None;
 }
 
+#ifdef _DEBUG
+#define USE_FAKE_WAVEFORM
+#endif
+
+#ifdef USE_FAKE_WAVEFORM
+WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
+#endif
+
 /// <summary>
 /// Updates the spectrum using the next audio chunk.
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    const double ReactionAlignment = 0.5;
-
     double PlaybackTime; // in seconds
 
     // Update the graph.
     if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
     {
-        double WindowSize = (double) _FFTSize / (double) _SampleRate;
-
         audio_chunk_impl Chunk;
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / (ReactionAlignment / 2.0 + 0.5)), WindowSize))
-            ProcessAudioChunk(Chunk);
-    }
+     #ifndef USE_FAKE_WAVEFORM
+        double WindowSize = (double) _NumBins / (double) _SampleRate;
+        double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
 
-    // Update the peak indicators.
-    if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
-        _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+            ProcessAudioChunk(Chunk);
+    #else
+        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
+            ProcessAudioChunk(Chunk);
+    #endif
+    }
+}
+
+/// <summary>
+/// Updates the position of the peak indicators.
+/// </summary>
+void UIElement::UpdatePeakIndicators() noexcept
+{
+    for (FrequencyBand & Iter : _FrequencyBands)
+    {
+        double Amplitude = Clamp(_Configuration.ScaleA(Iter.CurValue), 0., 1.);
+
+        if (Amplitude >= Iter.Peak)
+        {
+            if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration._HoldTime;
+            else
+                Iter.HoldTime = _Configuration._HoldTime;
+
+            Iter.Peak = Amplitude;
+            Iter.DecaySpeed = 0.;
+            Iter.Opacity = 1.;
+        }
+        else
+        {
+            if (Iter.HoldTime >= 0.)
+            {
+                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration._HoldTime;
+
+                Iter.HoldTime -= 1.;
+
+                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration._HoldTime);
+            }
+            else
+            {
+                switch (_Configuration._PeakMode)
+                {
+                    default:
+
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
+                        Iter.DecaySpeed = _Configuration._Acceleration / 256.;
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::Gravity:
+                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::AIMP:
+                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::FadeOut:
+                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.Opacity -= Iter.DecaySpeed;
+
+                        if (Iter.Opacity <= 0.)
+                            Iter.Peak = Amplitude;
+                        break;
+
+                    case PeakMode::FadingAIMP:
+                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.Peak -= Iter.DecaySpeed;
+                        Iter.Opacity -= Iter.DecaySpeed;
+
+                        if (Iter.Opacity <= 0.)
+                            Iter.Peak = Amplitude;
+                        break;
+                }
+            }
+
+            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+        }
+    }
 }
 
 /// <summary>

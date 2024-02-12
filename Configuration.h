@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.10) P. Stuer **/
+/** $VER: Configuration.h (2024.02.12) P. Stuer **/
 
 #pragma once
 
@@ -311,6 +311,8 @@ public:
     bool _UseAntialiasing;
 
     size_t _WindowDuration;                                             // μs
+    double _ReactionAlignment;                                          // ms
+
     bool _UseZeroTrigger;
 
     #pragma region Transform
@@ -348,6 +350,14 @@ public:
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
+
+    #pragma endregion
+
+    #pragma region SWIFT
+
+        size_t _FilterBankOrder;                                        // 1 .. 8, SWIFT filter bank order
+        double _TimeResolution;                                         // 0 .. 1000, Max. time resolution
+        double _SWIFTBandwidth;                                         // 0 .. 8, SWIFT Bandwidth
 
     #pragma endregion
 

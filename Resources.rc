@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.02.05) P. Stuer **/
+/** $VER: Resources.rc (2024.02.12) P. Stuer **/
 
 #include "Resources.h"
 
@@ -71,16 +71,16 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         pushbutton      "Channels",                 IDC_CHANNELS,                   X_A88, Y_A88, W_A88, H_A88
 
-    groupbox "FFT", IDC_FFT_GROUP, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Fourier Transform", IDC_FFT_GROUP, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Size:"                     IDC_FFT_SIZE_LBL,               X_A03, Y_A03 + 2, W_A03, H_A03
-        combobox                                    IDC_FFT_SIZE,                   X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "No. of bins:"              IDC_NUM_BINS_LBL,               X_A03, Y_A03 + 2, W_A03, H_A03
+        combobox                                    IDC_NUM_BINS,                   X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           ""                          IDC_FFT_SIZE_PARAMETER_NAME,    X_A61, Y_A61 + 2, W_A61, H_A61
-        edittext                                    IDC_FFT_SIZE_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        ltext           "samples",                  IDC_FFT_SIZE_PARAMETER_UNIT,    X_A60, Y_A60 + 2, W_A60, H_A60
+        rtext           ""                          IDC_NUM_BINS_PARAMETER_NAME,    X_A61, Y_A61 + 2, W_A61, H_A61
+        edittext                                    IDC_NUM_BINS_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext           "samples",                  IDC_NUM_BINS_PARAMETER_UNIT,    X_A60, Y_A60 + 2, W_A60, H_A60
 
-        rtext           "Summation:",               IDC_SUMMATION_METHOD_LBL,       X_A15, Y_A15 + 2, W_A15, H_A15
+        rtext           "Coeff. aggregation:"       IDC_SUMMATION_METHOD_LBL,       X_A15, Y_A15 + 2, W_A15, H_A15
         combobox                                    IDC_SUMMATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Mapping:",                 IDC_MAPPING_METHOD_LBL,         X_A65, Y_A65 + 2, W_A65, H_A65

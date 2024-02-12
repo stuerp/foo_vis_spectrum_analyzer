@@ -90,11 +90,11 @@
 
 #define IDC_FFT_GROUP                   2040
 
-#define IDC_FFT_SIZE_LBL                2050
-#define IDC_FFT_SIZE                    2052
-#define IDC_FFT_SIZE_PARAMETER_NAME     2054
-#define IDC_FFT_SIZE_PARAMETER          2056
-#define IDC_FFT_SIZE_PARAMETER_UNIT     2058
+#define IDC_NUM_BINS_LBL                2050
+#define IDC_NUM_BINS                    2052
+#define IDC_NUM_BINS_PARAMETER_NAME     2054
+#define IDC_NUM_BINS_PARAMETER          2056
+#define IDC_NUM_BINS_PARAMETER_UNIT     2058
 
 #define IDC_SUMMATION_METHOD_LBL        2060
 #define IDC_SUMMATION_METHOD            2062

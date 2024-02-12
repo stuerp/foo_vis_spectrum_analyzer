@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.h (2024.02.11) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.02.12) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -12,17 +12,17 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+SWIFTAnalyzer::SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, WindowFunction())
 {
-    _spectrumData = nullptr;
+    _Configuration = configuration;
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands, size_t order, double timeResolution, double bandwidth)
+bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 {
-    const double Factor = 4. * bandwidth / _SampleRate - 1. / (timeResolution * _SampleRate / 2000.);
+    const double Factor = 4. * _Configuration->_SWIFTBandwidth / _SampleRate - 1. / (_Configuration->_TimeResolution * _SampleRate / 2000.);
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
     for (const FrequencyBand & Iter : frequencyBands)
@@ -35,7 +35,7 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands, siz
             ::exp(-::abs(Iter.Hi - Iter.Lo) * Factor),
         };
 
-        c.coeffs.resize(order, { 0., 0.});
+        c.Values.resize(_Configuration->_FilterBankOrder, { 0., 0.});
 
         _Coefs.push_back(c);
     }
@@ -46,42 +46,43 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands, siz
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands)
+bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands)
 {
     for (auto & Iter : frequencyBands)
         Iter.NewValue = 0.;
 
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        audio_sample Sample = AverageSamples(&sampleData[i], channelMask);
+        const audio_sample Sample = AverageSamples(&sampleData[i], _Configuration->_SelectedChannels);
 
         size_t k = 0;
 
-        for (auto & c : _Coefs)
+        for (auto & Coef : _Coefs)
         {
             size_t j = 0;
-            Point OldInput = { };
+            Value OldValue = { };
 
-            for (auto & p : c.coeffs)
+            for (auto & value : Coef.Values)
             {
-                Point input;
+                Value NewValue;
 
                 if (j == 0)
-                    input = { Sample, 0. };
+                    NewValue = { Sample, 0. };
                 else
-                    input = OldInput;
+                    NewValue = OldValue;
 
-                p =
+                value =
                 {
-                    (p.x * c.rX - p.y * c.rY) * c.decay + input.x * (1. - c.decay),
-                    (p.x * c.rY + p.y * c.rX) * c.decay + input.y * (1. - c.decay)
+                    (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + NewValue.x * (1. - Coef.Decay),
+                    (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + NewValue.y * (1. - Coef.Decay)
                 };
 
-                OldInput = p;
+                OldValue = value;
                 j++;
             }
 
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (OldInput.x * OldInput.x) + (OldInput.y * OldInput.y));
+            // OldValue now contains the last calculated value.
+            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
             k++;
         }
     }

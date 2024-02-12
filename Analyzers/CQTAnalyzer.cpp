@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.cpp (2024.01.02) P. Stuer **/
+/** $VER: CQTAnalyzer.cpp (2024.02.12) P. Stuer **/
 
 #include "CQTAnalyzer.h"
 
@@ -14,6 +14,8 @@
 /// </summary>
 CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
 {
+    _Configuration = configuration;
+
     _BandwidthOffset = bandwidthOffset;
     _Alignment = alignment;
     _DownSample = downSample;
@@ -22,7 +24,7 @@ CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channelMask, vector<FrequencyBand> & frequencyBands) const
+bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const
 {
     for (FrequencyBand & Iter : frequencyBands)
     {
@@ -50,7 +52,7 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
             Norm += w;
 
             // Goertzel transform
-            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], channelMask) * w) + (Coeff * f1) - f2;
+            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _Configuration->_SelectedChannels) * w) + (Coeff * f1) - f2;
 
             f2 = f1;
             f1 = Sine;
