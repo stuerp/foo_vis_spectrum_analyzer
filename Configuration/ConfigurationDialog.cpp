@@ -1354,6 +1354,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     switch (id)
     {
         #pragma region FFT
+
         case IDC_NUM_BINS_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -1395,6 +1396,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
             break;
         }
+
         #pragma endregion
 
         #pragma region Brown-Puckette CQT
@@ -1630,7 +1632,33 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     switch (id)
     {
         // FFT
+        case IDC_NUM_BINS_PARAMETER:
+        {
+            #pragma warning (disable: 4061)
+            switch (_Configuration->_FFTMode)
+            {
+                default:
+                    break;
+
+                case FFTMode::FFTCustom:
+                {
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int(_Configuration->_FFTCustom)));
+                    break;
+                }
+
+                case FFTMode::FFTDuration:
+                {
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 2)));
+                    break;
+                }
+            }
+            #pragma warning (default: 4061)
+            break;
+        }
+
         case IDC_KERNEL_SIZE:           { SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize))); break; }
+        case IDC_WINDOW_PARAMETER:      { SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 0, 2))); break; }
+        case IDC_WINDOW_SKEW:           { SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 0, 2))); break; }
 
         // Brown-Puckette CQT
         case IDC_BW_OFFSET:             { SetDouble(id, _Configuration->_BandwidthOffset); break; }

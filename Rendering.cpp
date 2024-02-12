@@ -17,7 +17,7 @@
 #pragma hdrstop
 
 #ifdef _DEBUG
-#define USE_FAKE_WAVEFORM
+//#define USE_FAKE_WAVEFORM
 #endif
 
 #ifdef USE_FAKE_WAVEFORM

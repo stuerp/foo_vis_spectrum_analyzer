@@ -12,12 +12,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-* Fast Fourier (FFT) and Constant-Q (CQT) transforms
+* Fast Fourier (FFT), Constant-Q (CQT) and Sliding Windowed Infinite Fourier (SWIFT) transforms
 * Multiple frequency range and smoothing options
-* Color schemes
+* Styling of all visual elements
 * Uses DirectX rendering.
 * Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
-* Supports foobar2000 2.0 and later (32-bit and 64-bit version)
+* Supports dark mode.
+* Supports foobar2000 2.0 and later (32-bit and 64-bit version).
 
 ## Requirements
 
@@ -83,6 +84,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.1.0, 2024-xx-xx
+
+* New: Sliding Windowed Infinite Fourier Transform (SWIFT).
+* Fixed: Added some missing range checks in the configuration dialog.
+
 v0.7.0.0, 2024-02-12
 
 * New: Tooltips that provides some explanation about the various configuration settings.
@@ -120,7 +126,7 @@ v0.7.0.0-beta-2, 2024-01-26
 * New: Acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468))
 * Improved: Curve mode no longer has vertical lines at the beginning and the end of the spectrum.
 * Improved: The Curve line color can be specified.
-* Improved: The Curve Peak line color can be specified.
+* Improved: The Curve peak line color can be specified.
 * Fixed (Beta 1 regression): Crash when switching to full screen or when modifying the layout.
 
 v0.7.0.0-beta-1, 2024-01-21
@@ -291,6 +297,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * [Constant-Q transform](https://en.wikipedia.org/wiki/Constant-Q_transform)
 * [Mel-frequency cepstrum](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
 * [Mel scale](https://en.wikipedia.org/wiki/Mel_scale)
+* [Sliding windowed infinite Fourier transform](https://en.wikipedia.org/wiki/Sliding_DFT)
 
 ## Test Material
 

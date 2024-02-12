@@ -10,7 +10,7 @@
 
 #include "StyleManager.h"
 
-inline const int MinFFTSize =     1;
+inline const int MinFFTSize =     2;
 inline const int MaxFFTSize = 32768;
 
 inline const double MinFFTDuration =   1.; // ms
