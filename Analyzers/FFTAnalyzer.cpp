@@ -20,7 +20,7 @@ FFTAnalyzer::FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sa
 /// <summary>
 /// Maps Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
-void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
@@ -105,7 +105,7 @@ void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & co
 /// Maps Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
@@ -131,7 +131,7 @@ void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & co
 /// Maps Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept
 {
     const double HzToBin = (double) coefficients.size() / sampleRate;
 
@@ -167,86 +167,6 @@ void FFTAnalyzer::GetFrequencyBands(const std::vector<std::complex<double>> & co
         }
 
         Iter.NewValue = ::hypot(re, im);
-    }
-}
-
-/// <summary>
-/// Calculates the position of the peak indicators.
-/// </summary>
-void FFTAnalyzer::UpdatePeakIndicators(std::vector<FrequencyBand> & frequencyBands) const noexcept
-{
-    for (FrequencyBand & Iter : frequencyBands)
-    {
-        double Amplitude = Clamp(_Configuration->ScaleA(Iter.CurValue), 0., 1.);
-
-        if (Amplitude >= Iter.Peak)
-        {
-            if ((_Configuration->_PeakMode == PeakMode::AIMP) || (_Configuration->_PeakMode == PeakMode::FadingAIMP))
-                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration->_HoldTime;
-            else
-                Iter.HoldTime = _Configuration->_HoldTime;
-
-            Iter.Peak = Amplitude;
-            Iter.DecaySpeed = 0.;
-            Iter.Opacity = 1.;
-        }
-        else
-        {
-            if (Iter.HoldTime >= 0.)
-            {
-                if ((_Configuration->_PeakMode == PeakMode::AIMP) || (_Configuration->_PeakMode == PeakMode::FadingAIMP))
-                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration->_HoldTime;
-
-                Iter.HoldTime -= 1.;
-
-                if ((_Configuration->_PeakMode == PeakMode::AIMP) || (_Configuration->_PeakMode == PeakMode::FadingAIMP))
-                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration->_HoldTime);
-            }
-            else
-            {
-                switch (_Configuration->_PeakMode)
-                {
-                    default:
-
-                    case PeakMode::None:
-                        break;
-
-                    case PeakMode::Classic:
-                        Iter.DecaySpeed = _Configuration->_Acceleration / 256.;
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::Gravity:
-                        Iter.DecaySpeed += _Configuration->_Acceleration / 256.;
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_Configuration->_Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::FadeOut:
-                        Iter.DecaySpeed += _Configuration->_Acceleration / 256.;
-                        Iter.Opacity -= Iter.DecaySpeed;
-
-                        if (Iter.Opacity <= 0.)
-                            Iter.Peak = Amplitude;
-                        break;
-
-                    case PeakMode::FadingAIMP:
-                        Iter.DecaySpeed = (_Configuration->_Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                        Iter.Peak -= Iter.DecaySpeed;
-                        Iter.Opacity -= Iter.DecaySpeed;
-
-                        if (Iter.Opacity <= 0.)
-                            Iter.Peak = Amplitude;
-                        break;
-                }
-            }
-
-            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
-        }
     }
 }
 

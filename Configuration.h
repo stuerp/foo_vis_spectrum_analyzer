@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.10) P. Stuer **/
+/** $VER: Configuration.h (2024.02.12) P. Stuer **/
 
 #pragma once
 
@@ -130,7 +130,8 @@ inline const double MaxThickness = 10.f;
 enum class Transform
 {
     FFT = 0,
-    CQT = 1
+    CQT = 1,
+    SWIFT = 2,
 };
 
 enum class FFTMode
@@ -212,8 +213,10 @@ enum class SummationMethod
 
 enum class SmoothingMethod
 {
-    Average = 0,
-    Peak = 1
+    None = 0,
+
+    Average = 1,
+    Peak = 2,
 };
 
 enum class XAxisMode
@@ -308,14 +311,16 @@ public:
     bool _UseAntialiasing;
 
     size_t _WindowDuration;                                             // μs
+    double _ReactionAlignment;                                          // ms
+
     bool _UseZeroTrigger;
 
     #pragma region Transform
 
-        Transform _Transform;                                           // FFT or CQT
+        Transform _Transform;                                           // FFT, CQT or SWIFT
 
         WindowFunctions _WindowFunction;
-        double _WindowParameter;                                        // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
+        double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
 
@@ -345,6 +350,14 @@ public:
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
+
+    #pragma endregion
+
+    #pragma region SWIFT
+
+        size_t _FilterBankOrder;                                        // 1 .. 8, SWIFT filter bank order
+        double _TimeResolution;                                         // 0 .. 1000, Max. time resolution
+        double _SWIFTBandwidth;                                         // 0 .. 8, SWIFT Bandwidth
 
     #pragma endregion
 
@@ -467,19 +480,7 @@ public:
     #pragma endregion
 
 public:
-    /// <summary>
-    /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
-    /// </summary>
-    /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
-    double ScaleA(double value) const
-    {
-        if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
-            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
-
-        double Exponent = 1.0 / _Gamma;
-
-        return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
-    }
+    double ScaleA(double value) const;
 
 private:
     void ConvertColorSettings() noexcept;
@@ -521,5 +522,5 @@ private: // Deprecated
     bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 14;
+    const size_t _CurrentVersion = 15;
 };

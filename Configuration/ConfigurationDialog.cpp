@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.12) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -46,6 +46,130 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
     _DarkMode.AddDialogWithControls(*this);
 
+    // Create the tooltip control.
+    {
+        _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
+
+        const std::map<int, LPCWSTR> Tips =
+        {
+            { IDC_METHOD, L"Method used to transform the samples" },
+            { IDC_WINDOW_FUNCTION, L"Window function applied to the samples" },
+            { IDC_WINDOW_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows" },
+            { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
+            { IDC_CHANNELS, L"Determines which channels supply samples" },
+
+            { IDC_NUM_BINS, L"Sets the number of bins used by the Fourier transforms" },
+            { IDC_NUM_BINS_PARAMETER, L"Sets the parameter used to calculate the number of Fourier transform bins" },
+
+            { IDC_SUMMATION_METHOD, L"Method used to aggregate FFT coefficients" },
+            { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
+
+            { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
+            { IDC_SMOOTH_GAIN_TRANSITION, L"Smoother frequency slope on sum modes" },
+
+            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel" },
+
+            { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
+            { IDC_BW_CAP, L"Minimum Brown-Puckette CQT kernel size" },
+            { IDC_BW_AMOUNT, L"Brown-Puckette CQT kernel size" },
+
+            { IDC_GRANULAR_BW, L"Enable to don't constrain the bandwidth to powers of 2" },
+
+            { IDC_KERNEL_SHAPE, L"Shape of the Brown-Puckette CQT kernel" },
+            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter by certain window functions like Gaussian and Kaiser windows." },
+            { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
+
+            { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
+            { IDC_NUM_BANDS, L"Determines how many frequency bands are used" },
+
+            { IDC_LO_FREQUENCY, L"Lowest frequency" },
+            { IDC_HI_FREQUENCY, L"Highest frequency" },
+
+            { IDC_MIN_NOTE, L"Note that determines the lowest frequency" },
+            { IDC_MAX_NOTE, L"Note that determines the highest frequency" },
+
+            { IDC_BANDS_PER_OCTAVE, L"Number of frequency bands per octave" },
+
+            { IDC_PITCH, L"Tuning frequency" },
+            { IDC_TRANSPOSE, L"Transposes the frequencies using semitones" },
+
+            { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum" },
+            { IDC_BANDWIDTH, L"Distance between low and high frequency boundaries for each band" },
+
+            { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
+
+            { IDC_SLOPE_FN_OFFS, L"Offset of the slope function" },
+            { IDC_SLOPE_OFFS, L"Frequency slope" },
+            { IDC_SLOPE, L"Frequency slope offset" },
+
+            { IDC_EQ_AMT, L"Equalization amount" },
+            { IDC_EQ_DEPTH, L"Equalization offset" },
+            { IDC_EQ_OFFS, L"Equalization depth" },
+
+            { IDC_WT_AMT, L"Weighting amount" },
+
+            { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork" },
+            { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light" },
+            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork" },
+
+            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
+            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
+
+            { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
+
+            { IDC_BACKGROUND_MODE, L"Determines how to render the spectrum background" },
+
+            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
+            { IDC_FILE_PATH, L"foobar2000 script that returns the file path of an image to display instead of the artwork" },
+
+            { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
+
+            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
+            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis" },
+            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis" },
+            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment" },
+
+            { IDC_USE_ABSOLUTE, L"Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled" },
+            { IDC_GAMMA, L"Gamma correction of the logarithmic scale" },
+
+            { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
+
+            { IDC_PEAK_MODE, L"Determines how to display the peak coefficients" },
+            { IDC_HOLD_TIME, L"Determines how long the peak coefficients are held before they decay" },
+            { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
+
+            { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
+
+            { IDC_STYLES, L"Selects the visual element that will be styled" },
+
+            { IDC_COLOR_SOURCE, L"Determines the source of the color that will be used to render the visual element" },
+            { IDC_COLOR_INDEX, L"Selects the specific Windows, DUI or CUI color to use" },
+            { IDC_COLOR_BUTTON, L"Shows the color that will be used to render the visual element. Click to modify it." },
+            { IDC_COLOR_SCHEME, L"Selects the color scheme used to create a gradient with." },
+
+            { IDC_GRADIENT, L"Shows the gradient created using the current color list" },
+            { IDC_COLOR_LIST, L"Shows the colors in the current color scheme" },
+
+            { IDC_ADD, L"Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted and the Custom color scheme will be activated." },
+            { IDC_REMOVE, L"Removes the selected color from the list" },
+            { IDC_REVERSE, L"Reverses the list of colors" },
+
+            { IDC_POSITION, L"Determines the position of the color in the gradient (in % of the total length of the gradient)" },
+            { IDC_SPREAD, L"Evenly spreads the colors of the list in the gradient" },
+
+            { IDC_HORIZONTAL_GRADIENT, L"Generates a horizontal instead of a vertical gradient" },
+
+            { IDC_OPACITY, L"Determines the opacity of the resulting color brush" },
+            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable" },
+        };
+
+        for (const auto & Iter : Tips)
+            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(Iter.first).m_hWnd, nullptr, (LPWSTR) Iter.second));
+
+        _ToolTipControl.SetMaxTipWidth(200);
+    }
+
     _IsInitializing = false;
 
     return TRUE;
@@ -79,7 +203,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Fast Fourier", L"Constant-Q" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);
@@ -99,7 +223,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region FFT
     {
-        auto w = (CComboBox) GetDlgItem(IDC_FFT_SIZE);
+        auto w = (CComboBox) GetDlgItem(IDC_NUM_BINS);
 
         w.ResetContent();
 
@@ -676,7 +800,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Average", L"Peak" })
+        for (const auto & x : { L"None", L"Average", L"Peak" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
@@ -890,6 +1014,9 @@ void ConfigurationDialog::Initialize()
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
 void ConfigurationDialog::Terminate()
 {
+    if (_ToolTipControl.IsWindow())
+        _ToolTipControl.DestroyWindow();
+
     _MenuList.Terminate();
 
     _Channels.Terminate();
@@ -1011,7 +1138,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
 
         #pragma region FFT
-        case IDC_FFT_SIZE:
+        case IDC_NUM_BINS:
         {
             _Configuration->_FFTMode = (FFTMode) SelectedIndex;
 
@@ -1227,7 +1354,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     switch (id)
     {
         #pragma region FFT
-        case IDC_FFT_SIZE_PARAMETER:
+        case IDC_NUM_BINS_PARAMETER:
         {
             #pragma warning (disable: 4061)
             switch (_Configuration->_FFTMode)
@@ -2030,7 +2157,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         // FFT
         IDC_FFT_GROUP,
-            IDC_FFT_SIZE_LBL, IDC_FFT_SIZE, IDC_FFT_SIZE_PARAMETER_NAME, IDC_FFT_SIZE_PARAMETER, IDC_FFT_SIZE_PARAMETER_UNIT,
+            IDC_NUM_BINS_LBL, IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER_NAME, IDC_NUM_BINS_PARAMETER, IDC_NUM_BINS_PARAMETER_UNIT,
             IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
             IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES,
@@ -2197,6 +2324,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateControls()
 {
+    const bool IsFFT = (_Configuration->_Transform == Transform::FFT);
+    const bool IsSWIFT = (_Configuration->_Transform == Transform::SWIFT);
+
     // Transform
     bool HasParameter = (_Configuration->_WindowFunction == WindowFunctions::PowerOfSine)
                      || (_Configuration->_WindowFunction == WindowFunctions::PowerOfCircle)
@@ -2206,39 +2336,42 @@ void ConfigurationDialog::UpdateControls()
                      || (_Configuration->_WindowFunction == WindowFunctions::Poison)
                      || (_Configuration->_WindowFunction == WindowFunctions::HyperbolicSecant);
 
-    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter);
+    GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsSWIFT);
+    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsSWIFT);
+    GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsSWIFT);
 
     // FFT
-    bool IsFFT = (_Configuration->_Transform == Transform::FFT);
-
-    for (const auto & Iter : { IDC_DISTRIBUTION, IDC_FFT_SIZE, IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+    for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
         GetDlgItem(Iter).EnableWindow(IsFFT);
 
-    bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
+    for (const auto & Iter : { IDC_NUM_BINS, IDC_DISTRIBUTION })
+        GetDlgItem(Iter).EnableWindow(IsFFT || IsSWIFT);
 
-        GetDlgItem(IDC_FFT_SIZE_PARAMETER).EnableWindow(IsFFT && NotFixed);
+    const bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
+
+        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow(IsFFT && NotFixed);
 
         #pragma warning (disable: 4061)
         switch (_Configuration->_FFTMode)
         {
             default:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"");
+                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"");
                 break;
 
             case FFTMode::FFTCustom:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"samples");
+                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
+                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
                 break;
 
             case FFTMode::FFTDuration:
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 1)));
-                SetDlgItemTextW(IDC_FFT_SIZE_PARAMETER_UNIT, L"ms");
+                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 1)));
+                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
                 break;
         }
         #pragma warning (default: 4061)
 
     // Brown-Puckette CQT
-    bool IsBrownPuckette = (_Configuration->_MappingMethod == Mapping::BrownPuckette);
+    const bool IsBrownPuckette = (_Configuration->_MappingMethod == Mapping::BrownPuckette) && IsFFT;
 
         for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
             GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
@@ -2246,8 +2379,8 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
 
     // Frequencies
-    bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);
-    bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+    const bool IsOctaves = (_Configuration->_FrequencyDistribution == FrequencyDistribution::Octaves);
+    const bool IsAveePlayer = (_Configuration->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
         GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && !IsOctaves);
         GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
@@ -2260,31 +2393,31 @@ void ConfigurationDialog::UpdateControls()
             GetDlgItem(Iter).EnableWindow(IsOctaves);
 
     // Filters
-    bool HasFilter = (_Configuration->_WeightingType != WeightingType::None);
+    const bool HasFilter = (_Configuration->_WeightingType != WeightingType::None);
 
         for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
             GetDlgItem(Iter).EnableWindow(HasFilter);
 
     // Background Mode
-    bool UseArtworkForBackground = (_Configuration->_BackgroundMode == BackgroundMode::Artwork);
+    const bool UseArtworkForBackground = (_Configuration->_BackgroundMode == BackgroundMode::Artwork);
 
         GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
         GetDlgItem(IDC_FILE_PATH).EnableWindow(UseArtworkForBackground);
 
     // Y axis
-    bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
+    const bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
             GetDlgItem(Iter).EnableWindow(IsLogarithmic);
 
     // Visualization
-    bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
+    const bool ShowPeaks = (_Configuration->_PeakMode != PeakMode::None);
 
         for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
             GetDlgItem(Iter).EnableWindow(ShowPeaks);
  
     // Bars
-    bool IsBars = _Configuration->_VisualizationType == VisualizationType::Bars;
+    const bool IsBars = _Configuration->_VisualizationType == VisualizationType::Bars;
 
         for (const auto & Iter : { IDC_LED_MODE })
             GetDlgItem(Iter).EnableWindow(IsBars);
@@ -2422,6 +2555,7 @@ void ConfigurationDialog::UpdateStyleControls()
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor) || (style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
+    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsOpacity));
     GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsThickness));
 

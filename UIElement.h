@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.01.30) P. Stuer **/
+/** $VER: UIElement.h (2024.02.11) P. Stuer **/
 
 #pragma once
 
@@ -17,6 +17,7 @@
 
 #include "FFTAnalyzer.h"
 #include "CQTAnalyzer.h"
+#include "SWIFTAnalyzer.h"
 
 #include <vector>
 #include <complex>
@@ -104,6 +105,7 @@ private:
 
     void ProcessPlaybackEvent();
     void UpdateSpectrum();
+    void UpdatePeakIndicators() noexcept;
     void Render();
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
@@ -117,6 +119,8 @@ private:
 
     void ApplyAverageSmoothing(double factor);
     void ApplyPeakSmoothing(double factor);
+
+    void DeleteResources();
 
     static double ScaleF(double x, ScalingFunction function, double factor);
     static double DeScaleF(double x, ScalingFunction function, double factor);
@@ -222,13 +226,16 @@ private:
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
+
     FFTAnalyzer * _FFTAnalyzer;
     std::vector<std::complex<double>> _FrequencyCoefficients;
 
     CQTAnalyzer * _CQTAnalyzer;
 
+    SWIFTAnalyzer * _SWIFTAnalyzer;
+
     std::vector<FrequencyBand> _FrequencyBands;
-    size_t _FFTSize;
+    size_t _NumBins;
     uint32_t _SampleRate;
     double _Bandwidth;
 

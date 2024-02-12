@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.01.31) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.12) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _FFTSize(), _SampleRate(44100), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _NumBins(), _SampleRate(44100), _Bandwidth()
 {
 }
 
@@ -119,29 +119,7 @@ void UIElement::OnDestroy()
         _ThreadPoolTimer = nullptr;
     }
 
-    if (_BrownPucketteKernel)
-    {
-        delete _BrownPucketteKernel;
-        _BrownPucketteKernel = nullptr;
-    }
-
-    if (_WindowFunction)
-    {
-        delete _WindowFunction;
-        _WindowFunction = nullptr;
-    }
-
-    if (_FFTAnalyzer)
-    {
-        delete _FFTAnalyzer;
-        _FFTAnalyzer = nullptr;
-    }
-
-    if (_CQTAnalyzer)
-    {
-        delete _CQTAnalyzer;
-        _CQTAnalyzer = nullptr;
-    }
+    DeleteResources();
 
     {
         auto Manager = now_playing_album_art_notify_manager::tryGet();
@@ -455,21 +433,41 @@ void UIElement::SetConfiguration() noexcept
     switch (_Configuration._FFTMode)
     {
         default:
-            _FFTSize = (size_t) (64. * ::exp2((long) _Configuration._FFTMode));
+            _NumBins = (size_t) (64. * ::exp2((long) _Configuration._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _FFTSize = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
+            _NumBins = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _FFTSize = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
+            _NumBins = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _Bandwidth = ((_Configuration._Transform == Transform::CQT) || ((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank))) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = (((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) || (_Configuration._Transform == Transform::CQT)) ? _Configuration._Bandwidth : 0.5;
 
+    DeleteResources();
+
+    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
+
+    _NewArtworkGradient = true; // Request an update of the artwork gradient.
+
+    _Graph.Initialize(&_Configuration, _FrequencyBands);
+
+    _ToolTipControl.Activate(_Configuration._ShowToolTips);
+
+    Resize();
+
+    _CriticalSection.Leave();
+}
+
+/// <summary>
+/// Deletes some analysis resources.
+/// </summary>
+void UIElement::DeleteResources()
+{
     // Forces the recreation of the Brown-Puckette window function.
     if (_BrownPucketteKernel != nullptr)
     {
@@ -498,17 +496,12 @@ void UIElement::SetConfiguration() noexcept
         _CQTAnalyzer = nullptr;
     }
 
-    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
-
-    _NewArtworkGradient = true; // Request an update of the artwork gradient.
-
-    _Graph.Initialize(&_Configuration, _FrequencyBands);
-
-    _ToolTipControl.Activate(_Configuration._ShowToolTips);
-
-    Resize();
-
-    _CriticalSection.Leave();
+    // Forces the recreation of the Sliding Window Infinite Fourier transform.
+    if (_SWIFTAnalyzer != nullptr)
+    {
+        delete _SWIFTAnalyzer;
+        _SWIFTAnalyzer = nullptr;
+    }
 }
 
 /// <summary>

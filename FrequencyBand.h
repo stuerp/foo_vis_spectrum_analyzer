@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2024.02.01) P. Stuer **/
+/** $VER: FrequencyBand.h (2024.02.12) P. Stuer **/
 
 #pragma once
 
@@ -7,8 +7,8 @@
 
 struct FrequencyBand
 {
-    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi() { }
-    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h) { }
+    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
+    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
 
     double NewValue;
     double CurValue;

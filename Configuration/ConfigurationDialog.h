@@ -133,6 +133,8 @@ private:
 private:
     HWND _hParent;
 
+    CToolTipCtrl _ToolTipControl;
+
     Configuration * _Configuration;
     Configuration _OldConfiguration;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.04) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.12) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -11,6 +11,7 @@
 #include "Gradients.h"
 #include "StyleManager.h"
 
+#include "WaveformGenerator.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -68,7 +69,13 @@ void UIElement::OnTimer()
     _FrameCounter.NewFrame();
 
     ProcessPlaybackEvent();
+
     UpdateSpectrum();
+
+    // Update the peak indicators.
+    if (_Configuration._PeakMode != PeakMode::None)
+        UpdatePeakIndicators();
+
     Render();
 
     _CriticalSection.Leave();
@@ -112,7 +119,7 @@ void UIElement::ProcessPlaybackEvent()
         {
             _Artwork.Release();
 
-            for (auto & Iter : _FrequencyBands)
+            for (FrequencyBand & Iter : _FrequencyBands)
                 Iter.CurValue = 0.;
             break;
         }
@@ -120,6 +127,14 @@ void UIElement::ProcessPlaybackEvent()
 
     _PlaybackEvent = PlaybackEvent::None;
 }
+
+#ifdef _DEBUG
+#define USE_FAKE_WAVEFORM
+#endif
+
+#ifdef USE_FAKE_WAVEFORM
+WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
+#endif
 
 /// <summary>
 /// Updates the spectrum using the next audio chunk.
@@ -131,17 +146,99 @@ void UIElement::UpdateSpectrum()
     // Update the graph.
     if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
     {
-        double WindowSize = (double) _FFTSize / (double) _SampleRate;
-
         audio_chunk_impl Chunk;
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime - (WindowSize / 2.), WindowSize))
-            ProcessAudioChunk(Chunk);
-    }
+     #ifndef USE_FAKE_WAVEFORM
+        double WindowSize = (double) _NumBins / (double) _SampleRate;
+        double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
 
-    // Update the peak indicators.
-    if ((_FFTAnalyzer != nullptr) && (_Configuration._PeakMode != PeakMode::None))
-        _FFTAnalyzer->UpdatePeakIndicators(_FrequencyBands);
+        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+            ProcessAudioChunk(Chunk);
+    #else
+        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
+            ProcessAudioChunk(Chunk);
+    #endif
+    }
+}
+
+/// <summary>
+/// Updates the position of the peak indicators.
+/// </summary>
+void UIElement::UpdatePeakIndicators() noexcept
+{
+    for (FrequencyBand & Iter : _FrequencyBands)
+    {
+        double Amplitude = Clamp(_Configuration.ScaleA(Iter.CurValue), 0., 1.);
+
+        if (Amplitude >= Iter.Peak)
+        {
+            if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration._HoldTime;
+            else
+                Iter.HoldTime = _Configuration._HoldTime;
+
+            Iter.Peak = Amplitude;
+            Iter.DecaySpeed = 0.;
+            Iter.Opacity = 1.;
+        }
+        else
+        {
+            if (Iter.HoldTime >= 0.)
+            {
+                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration._HoldTime;
+
+                Iter.HoldTime -= 1.;
+
+                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
+                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration._HoldTime);
+            }
+            else
+            {
+                switch (_Configuration._PeakMode)
+                {
+                    default:
+
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
+                        Iter.DecaySpeed = _Configuration._Acceleration / 256.;
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::Gravity:
+                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::AIMP:
+                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.Peak -= Iter.DecaySpeed;
+                        break;
+
+                    case PeakMode::FadeOut:
+                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.Opacity -= Iter.DecaySpeed;
+
+                        if (Iter.Opacity <= 0.)
+                            Iter.Peak = Amplitude;
+                        break;
+
+                    case PeakMode::FadingAIMP:
+                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.Peak -= Iter.DecaySpeed;
+                        Iter.Opacity -= Iter.DecaySpeed;
+
+                        if (Iter.Opacity <= 0.)
+                            Iter.Peak = Amplitude;
+                        break;
+                }
+            }
+
+            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+        }
+    }
 }
 
 /// <summary>
@@ -218,8 +315,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE,
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
@@ -228,7 +324,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         if (SUCCEEDED(hr))
         {
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-            _RenderTarget->SetAntialiasMode(_Configuration._UseAntialiasing ? D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             // Resize some elements based on the size of the render target.
             Resize();
@@ -243,9 +339,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         s.ReleaseDeviceSpecificResources();
 
         hr = _Artwork.Realize(_RenderTarget);
+        _NewArtworkGradient = true;
 
         _NewArtwork = false;
-        _NewArtworkGradient = true;
     }
 
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.

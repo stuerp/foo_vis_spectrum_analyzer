@@ -46,7 +46,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
 
     for (Label & Iter : _Labels)
-        Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0.0, 1.0, Height, _Height / 2.f);
+        Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., Height, _Height / 2.f);
 }
 
 /// <summary>

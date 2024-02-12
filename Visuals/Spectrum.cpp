@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.07) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.12) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -288,13 +288,13 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyB
     FLOAT y = 0.f;
 
     // Create all the knots.
-    for (size_t i = 0; i < frequencyBands.size(); ++i)
+    for (const auto & Iter: frequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if (frequencyBands[i].Ctr > (sampleRate / 2.))
+        if (Iter.Ctr > (sampleRate / 2.))
             break;
 
-        double Value = !usePeak ? _Configuration->ScaleA(frequencyBands[i].CurValue) : frequencyBands[i].Peak;
+        double Value = !usePeak ? _Configuration->ScaleA(Iter.CurValue) : Iter.Peak;
 
         y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 
@@ -306,6 +306,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyB
         x += BandWidth;
     }
 
+    // Create all the control points.
     const size_t n = gp.p0.size();
 
     if (n > 1)
