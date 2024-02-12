@@ -12,7 +12,7 @@ bool WaveformGenerator::GetChunk(audio_chunk & chunk, unsigned int sampleRate)
 {
     for (size_t i = 0; i < _ChunkSize; i++)
     {
-        _Data[i] = ::sin(_Clock / (double) sampleRate * _Frequency * M_PI * 2.) * _Amplitude + (0.5 - (double) ::rand() / (double) RAND_MAX) * _NoiseAmplitude;
+        _Data[i] = (audio_sample) (::sin(_Clock / (double) sampleRate * _Frequency * M_PI * 2.) * _Amplitude + (0.5 - (double) ::rand() / (double) RAND_MAX) * _NoiseAmplitude);
         _Clock++;
     }
 

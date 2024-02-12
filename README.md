@@ -83,9 +83,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.0.0, 2024-02-xx
+v0.7.0.0, 2024-02-12
 
-* New: Tooltips that provides some explanation about the various controls.
+* New: Tooltips that provides some explanation about the various configuration settings.
 
 v0.7.0.0-rc-2, 2024-02-10
 

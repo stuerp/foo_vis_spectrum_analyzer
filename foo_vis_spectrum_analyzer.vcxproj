@@ -300,6 +300,7 @@
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
+    <None Include="Analyzers\WaveformGenerator.n" />
     <None Include="Build-FB2KComponent.ps1" />
     <None Include="Analyzers\FFT.h" />
     <None Include="README.md" />

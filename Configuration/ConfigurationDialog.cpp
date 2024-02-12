@@ -203,7 +203,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"FFT", L"CQT", L"SWIFT" })
+        for (const auto & x : { L"FFT", L"CQT" })//, L"SWIFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);

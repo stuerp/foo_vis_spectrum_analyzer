@@ -16,6 +16,14 @@
 
 #pragma hdrstop
 
+#ifdef _DEBUG
+#define USE_FAKE_WAVEFORM
+#endif
+
+#ifdef USE_FAKE_WAVEFORM
+WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
+#endif
+
 /// <summary>
 /// Creates the timer.
 /// </summary>
@@ -128,14 +136,6 @@ void UIElement::ProcessPlaybackEvent()
     _PlaybackEvent = PlaybackEvent::None;
 }
 
-#ifdef _DEBUG
-#define USE_FAKE_WAVEFORM
-#endif
-
-#ifdef USE_FAKE_WAVEFORM
-WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
-#endif
-
 /// <summary>
 /// Updates the spectrum using the next audio chunk.
 /// </summary>
@@ -148,14 +148,14 @@ void UIElement::UpdateSpectrum()
     {
         audio_chunk_impl Chunk;
 
-     #ifndef USE_FAKE_WAVEFORM
+     #ifdef USE_FAKE_WAVEFORM
+        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
+            ProcessAudioChunk(Chunk);
+    #else
         double WindowSize = (double) _NumBins / (double) _SampleRate;
         double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
 
         if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-            ProcessAudioChunk(Chunk);
-    #else
-        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
             ProcessAudioChunk(Chunk);
     #endif
     }
