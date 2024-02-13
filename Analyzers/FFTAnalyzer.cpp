@@ -24,12 +24,11 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, size_t fftSize) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction)
+FFTAnalyzer::FFTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
     _FFT.Initialize(_FFTSize);
-    _TimeData.resize(_FFTSize);
 
     // Create the ring buffer for the samples.
     _Size = _FFTSize;
@@ -39,16 +38,44 @@ FFTAnalyzer::FFTAnalyzer(const Configuration * configuration, double sampleRate,
 
     _Curr = 0;
 
-    _FreqData.resize(fftSize);
+    _TimeData.resize(_FFTSize);
+    _FreqData.resize(_FFTSize);
+}
+
+/// <summary>
+/// Calculates the transform and returns the frequency bands.
+/// </summary>
+bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, vector<FrequencyBand> & frequencyBands)
+{
+    Add(samples, sampleCount);
+
+    Transform();
+
+    switch (_Configuration->_MappingMethod)
+    {
+        default:
+
+        case Mapping::Standard:
+            AnalyzeSamples(_SampleRate, _Configuration->_SummationMethod, frequencyBands);
+            break;
+
+        case Mapping::TriangularFilterBank:
+            AnalyzeSamples(_SampleRate, frequencyBands);
+            break;
+
+        case Mapping::BrownPuckette:
+            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _Configuration->_BandwidthOffset, _Configuration->_BandwidthCap, _Configuration->_BandwidthAmount, _Configuration->_GranularBW, frequencyBands);
+            break;
+    }
+
+    return true;
 }
 
 /// <summary>
 /// Adds multiple samples to the analyzer buffer.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-/// <param name="samples">Array that contains samples</param>
-/// <param name="sampleCount">Number of samples to add to the provider</param>
-void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t channelMask) noexcept
+void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount) noexcept
 {
 //  Log::Write(Log::Level::Trace, "%5d, %5d, %5d", _Size, _Curr, sampleCount / 2);
 
@@ -61,14 +88,14 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&samples[i], channelMask);
+        _Data[_Curr] = AverageSamples(&samples[i], _Configuration->_SelectedChannels);
 
         _Curr = (_Curr + 1) % _Size;
     }
 }
 
 /// <summary>
-/// Calculates the Fast Fourier Transform and returns the frequency data in the result buffer.
+/// Calculates the Fast Fourier Transform and updates the frequency data.
 /// </summary>
 void FFTAnalyzer::Transform() noexcept
 {
@@ -109,7 +136,7 @@ void FFTAnalyzer::Transform() noexcept
 }
 
 /// <summary>
-/// Maps Fast Fourier Transform coefficients on the frequency bands.
+/// Maps the Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
 void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
@@ -193,7 +220,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationM
 }
 
 /// <summary>
-/// Maps Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
+/// Maps the Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
@@ -219,7 +246,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand>
 }
 
 /// <summary>
-/// Maps Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
+/// Maps the Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
 void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept

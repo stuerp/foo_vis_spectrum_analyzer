@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
 {
 }
 
@@ -21,7 +21,7 @@ SWIFTAnalyzer::SWIFTAnalyzer(const Configuration * configuration, double sampleR
 /// </summary>
 bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 {
-    const double Factor = 4. * _Configuration->_SWIFTBandwidth / _SampleRate - 1. / (_Configuration->_TimeResolution * _SampleRate / 2000.);
+    const double Factor = 4. * _Configuration->_SWIFTBandwidth / (double) _SampleRate - 1. / (_Configuration->_TimeResolution * (double) _SampleRate / 2000.);
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
     for (const FrequencyBand & Iter : frequencyBands)
@@ -29,8 +29,8 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
         // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
         Coef c =
         {
-            ::cos(Iter.Ctr * M_PI * 2. / _SampleRate),
-            ::sin(Iter.Ctr * M_PI * 2. / _SampleRate),
+            ::cos(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
+            ::sin(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
             ::exp(-::abs(Iter.Hi - Iter.Lo) * Factor),
         };
 

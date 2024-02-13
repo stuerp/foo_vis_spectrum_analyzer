@@ -33,26 +33,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
         {
             case Transform::FFT:
             {
-                _FFTAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
-
-                _FFTAnalyzer->Transform();
-
-                switch (_Configuration._MappingMethod)
-                {
-                    default:
-
-                    case Mapping::Standard:
-                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, _Configuration._SummationMethod, _FrequencyBands);
-                        break;
-
-                    case Mapping::TriangularFilterBank:
-                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, _FrequencyBands);
-                        break;
-
-                    case Mapping::BrownPuckette:
-                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
-                        break;
-                }
+                _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
                 break;
             }
 
@@ -106,7 +87,7 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
     if (_WindowFunction == nullptr)
         _WindowFunction = WindowFunction::Create(_Configuration._WindowFunction, _Configuration._WindowParameter, _Configuration._WindowSkew, _Configuration._Truncate);
 
-    if ((_BrownPucketteKernel == nullptr) && (_Configuration._MappingMethod == Mapping::BrownPuckette))
+    if (_BrownPucketteKernel == nullptr)
         _BrownPucketteKernel = WindowFunction::Create(_Configuration._KernelShape, _Configuration._KernelShapeParameter, _Configuration._KernelAsymmetry, _Configuration._Truncate);
 
     uint32_t ChannelCount = chunk.get_channel_count();
@@ -114,17 +95,17 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if ((_FFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, _NumBins);
+        _FFTAnalyzer = new FFTAnalyzer(&_Configuration, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _NumBins);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_Configuration._Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+        _CQTAnalyzer = new CQTAnalyzer(&_Configuration, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup);
+        _SWIFTAnalyzer = new SWIFTAnalyzer(&_Configuration, _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }

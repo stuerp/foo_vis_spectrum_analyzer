@@ -28,9 +28,9 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    Analyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _Configuration(configuration), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
+    Analyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _Configuration(configuration), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
     {
-        _NyquistFrequency = _SampleRate / 2.;
+        _NyquistFrequency = (double) _SampleRate / 2.;
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public:
 
 protected:
     const Configuration * _Configuration;
-    double _SampleRate;
+    uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelSetup;
     const WindowFunction & _WindowFunction;
