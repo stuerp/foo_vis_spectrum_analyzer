@@ -74,6 +74,24 @@ void CUIElement::destroy_window()
 }
 
 /// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
+{
+    RECT cr;
+
+    GetClientRect(&cr);
+
+    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_Configuration._UserInterfaceColors[3]));
+
+    ::FillRect(hDC, &cr, hBrush);
+
+    ::DeleteObject((HGDIOBJ) hBrush);
+
+    return 1;
+}
+
+/// <summary>
 /// Toggles full screen mode.
 /// </summary>
 void CUIElement::ToggleFullScreen() noexcept

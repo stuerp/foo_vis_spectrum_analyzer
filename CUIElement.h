@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2024.01.28) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2024.02.13) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -24,6 +24,7 @@ public:
     CUIElement(CUIElement &&) = delete;
     CUIElement & operator=(CUIElement &&) = delete;
 
+    LRESULT OnEraseBackground(CDCHandle hDC);
     void ToggleFullScreen() noexcept override final;
 
     #pragma region uie::window interface

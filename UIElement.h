@@ -52,6 +52,7 @@ protected:
         return guid;
     }
 
+    virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     void SetConfiguration() noexcept;
 
@@ -60,7 +61,6 @@ private:
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
-    LRESULT OnEraseBackground(CDCHandle dc);
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     void OnLButtonDblClk(UINT nFlags, CPoint point);

@@ -88,6 +88,7 @@ v0.7.1.0, 2024-xx-xx
 
 * New: Sliding Windowed Infinite Fourier Transform (SWIFT).
 * Fixed: Added some missing range checks in the configuration dialog.
+* Fixed (Regression): Incorrect background color during startup caused a bright flash in dark mode.
 
 v0.7.0.0, 2024-02-12
 

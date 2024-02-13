@@ -141,14 +141,6 @@ void UIElement::OnDestroy()
 }
 
 /// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
-{
-    return 1;
-}
-
-/// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
