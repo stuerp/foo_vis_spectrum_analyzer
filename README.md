@@ -88,6 +88,8 @@ v0.7.1.0, 2024-xx-xx
 
 * New: Sliding Windowed Infinite Fourier Transform (SWIFT).
 * New: Reaction Alignment parameter allow you to adjust the overlap of the sample window.
+* New: The X-axis can be displayed on top, below or on both sides of the spectrum.
+* New: The Y-axis can be displayed on left, right or on both sides of the spectrum.
 * Fixed: Added some missing range checks in the configuration dialog.
 * Fixed (Regression): Incorrect background color during startup caused a bright flash in dark mode.
 

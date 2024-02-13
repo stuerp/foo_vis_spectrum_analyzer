@@ -125,8 +125,13 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FILE_PATH, L"foobar2000 script that returns the file path of an image to display instead of the artwork" },
 
             { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
+            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the spectrum" },
+            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the spectrum" },
 
             { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
+            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the spectrum" },
+            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the spectrum" },
+
             { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis" },
             { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis" },
             { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment" },
@@ -728,6 +733,11 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration->_XAxisMode);
     }
+
+    {
+        SendDlgItemMessageW(IDC_X_AXIS_TOP, BM_SETCHECK, _Configuration->_XAxisTop);
+        SendDlgItemMessageW(IDC_X_AXIS_BOTTOM, BM_SETCHECK, _Configuration->_XAxisBottom);
+    }
     #pragma endregion
 
     #pragma region Y Axis
@@ -741,6 +751,11 @@ void ConfigurationDialog::Initialize()
                 w.AddString(x);
 
             w.SetCurSel((int) _Configuration->_YAxisMode);
+        }
+
+        {
+            SendDlgItemMessageW(IDC_Y_AXIS_LEFT, BM_SETCHECK, _Configuration->_YAxisLeft);
+            SendDlgItemMessageW(IDC_Y_AXIS_RIGHT, BM_SETCHECK, _Configuration->_YAxisRight);
         }
 
         {
@@ -1764,6 +1779,30 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_X_AXIS_TOP:
+        {
+            _Configuration->_XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_X_AXIS_BOTTOM:
+        {
+            _Configuration->_XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_LEFT:
+        {
+            _Configuration->_YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_RIGHT:
+        {
+            _Configuration->_YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_USE_ABSOLUTE:
         {
             _Configuration->_UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2264,10 +2303,12 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         // X axis
         IDC_X_AXIS,
             IDC_X_AXIS_MODE_LBL, IDC_X_AXIS_MODE,
+            IDC_X_AXIS_TOP, IDC_X_AXIS_BOTTOM,
 
         // Y axis
         IDC_Y_AXIS,
             IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
+            IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT,
             IDC_AMPLITUDE_LBL_1, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_LO_SPIN, IDC_AMPLITUDE_LBL_2, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_HI_SPIN, IDC_AMPLITUDE_LBL_3,
             IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
             IDC_USE_ABSOLUTE,
@@ -2448,7 +2489,14 @@ void ConfigurationDialog::UpdateControls()
         GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
         GetDlgItem(IDC_FILE_PATH).EnableWindow(UseArtworkForBackground);
 
+    // X axis
+    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(_Configuration->_XAxisMode != XAxisMode::None);
+    GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(_Configuration->_XAxisMode != XAxisMode::None);
+
     // Y axis
+    GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(_Configuration->_YAxisMode != YAxisMode::None);
+    GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(_Configuration->_YAxisMode != YAxisMode::None);
+
     const bool IsLogarithmic = (_Configuration->_YAxisMode == YAxisMode::Logarithmic);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })

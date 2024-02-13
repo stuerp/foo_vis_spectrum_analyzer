@@ -271,6 +271,9 @@
 #define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
+#define IDC_X_AXIS_TOP                 4006
+#define IDC_X_AXIS_BOTTOM                4008
+
 #pragma endregion
 
 #pragma region Y axis
@@ -279,6 +282,9 @@
 
 #define IDC_Y_AXIS_MODE_LBL             5002
 #define IDC_Y_AXIS_MODE                 5004
+
+#define IDC_Y_AXIS_LEFT                  5006
+#define IDC_Y_AXIS_RIGHT               5008
 
 #define IDC_AMPLITUDE_LBL_1             5010
 #define IDC_AMPLITUDE_LO                5012

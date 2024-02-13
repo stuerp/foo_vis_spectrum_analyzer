@@ -233,49 +233,57 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
     groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Mode:",            IDC_X_AXIS_MODE_LBL,        X_A05, Y_A05 + 2, W_A05, H_A05
-        combobox                            IDC_X_AXIS_MODE,            X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Mode:",                    IDC_X_AXIS_MODE_LBL,        X_A05, Y_A05 + 2, W_A05, H_A05
+        combobox                                    IDC_X_AXIS_MODE,            X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        control         "Top",                      IDC_X_AXIS_TOP,    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G15, Y_G15, W_G15, H_G15
+        control         "Bottom",                   IDC_X_AXIS_BOTTOM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G16, Y_G16, W_G16, H_G16
 
     groupbox "Y axis", IDC_Y_AXIS, X_B03, Y_B03, W_B03, H_B03, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Mode:",            IDC_Y_AXIS_MODE_LBL,        X_A07, Y_A07 + 2, W_A07, H_A07
-        combobox                            IDC_Y_AXIS_MODE,            X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Mode:",                    IDC_Y_AXIS_MODE_LBL,        X_A07, Y_A07 + 2, W_A07, H_A07
+        combobox                                    IDC_Y_AXIS_MODE,            X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Amplitude range:"  IDC_AMPLITUDE_LBL_1         X_A45, Y_A45 + 2, W_A45, H_A45
-        edittext                            IDC_AMPLITUDE_LO,           X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                 IDC_AMPLITUDE_LO_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ctext           "-"                 IDC_AMPLITUDE_LBL_2         X_A47, Y_A47 + 2, W_A47, H_A47
-        edittext                            IDC_AMPLITUDE_HI,           X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                 IDC_AMPLITUDE_HI_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "dB"                IDC_AMPLITUDE_LBL_3         X_A49, Y_A49 + 2, W_A49, H_A49
+        control         "Left",                     IDC_Y_AXIS_LEFT,  "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G17, Y_G17, W_G17, H_G17
+        control         "Right",                    IDC_Y_AXIS_RIGHT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G18, Y_G18, W_G18, H_G18
 
-        rtext           "Amplitude step:"   IDC_AMPLITUDE_STEP_LBL_1,   X_A84, Y_A84 + 2, W_A84, H_A84
-        edittext                            IDC_AMPLITUDE_STEP,         X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control         "",                 IDC_AMPLITUDE_STEP_SPIN     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "dB"                IDC_AMPLITUDE_STEP_LBL_2,   X_A86, Y_A86 + 2, W_A86, H_A86
+        rtext           "Amplitude range:"          IDC_AMPLITUDE_LBL_1         X_A45, Y_A45 + 2, W_A45, H_A45
+        edittext                                    IDC_AMPLITUDE_LO,           X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_AMPLITUDE_LO_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ctext           "-"                         IDC_AMPLITUDE_LBL_2         X_A47, Y_A47 + 2, W_A47, H_A47
+        edittext                                    IDC_AMPLITUDE_HI,           X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_AMPLITUDE_HI_SPIN       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "dB"                        IDC_AMPLITUDE_LBL_3         X_A49, Y_A49 + 2, W_A49, H_A49
 
-        control         "Use absolute",     IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
+        rtext           "Amplitude step:"           IDC_AMPLITUDE_STEP_LBL_1,   X_A84, Y_A84 + 2, W_A84, H_A84
+        edittext                                    IDC_AMPLITUDE_STEP,         X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "",                         IDC_AMPLITUDE_STEP_SPIN     "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext           "dB"                        IDC_AMPLITUDE_STEP_LBL_2,   X_A86, Y_A86 + 2, W_A86, H_A86
 
-        rtext           "Gamma:"            IDC_GAMMA_LBL,              X_A41, Y_A41 + 2, W_A41, H_A41
-        edittext                            IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control         "Use absolute",             IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
 
-    rtext           "Type:",          IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01
-    combobox                          IDC_VISUALIZATION,     X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Gamma:"                    IDC_GAMMA_LBL,              X_A41, Y_A41 + 2, W_A41, H_A41
+        edittext                                    IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    // Peak indicators
-    rtext           "Peak mode:",               IDC_PEAK_MODE_LBL,              X_A11, Y_A11 + 2, W_A11, H_A11
-    combobox                                    IDC_PEAK_MODE,                  X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    // Visualization
+    rtext           "Type:",                    IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01
+    combobox                                    IDC_VISUALIZATION,     X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    rtext           "Hold time:"                IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
-    edittext                                    IDC_HOLD_TIME,                  X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        // Peak indicators
+        rtext           "Peak mode:",               IDC_PEAK_MODE_LBL,              X_A11, Y_A11 + 2, W_A11, H_A11
+        combobox                                    IDC_PEAK_MODE,                  X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    rtext           "Acceleration:"             IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
-    edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Hold time:"                IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
+        edittext                                    IDC_HOLD_TIME,                  X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
+        rtext           "Acceleration:"             IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
+        edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+        groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
+            control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+
+    // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Color source:",            IDC_COLOR_SOURCE_LBL,           X_I02, Y_I02 + 2, W_I02, H_I02

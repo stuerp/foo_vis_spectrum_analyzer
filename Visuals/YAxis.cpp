@@ -60,8 +60,8 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT xl = _Bounds.left  + _Width; // Left axis
-    const FLOAT xr = _Bounds.right - _Width; // Right axis
+    const FLOAT xl = _Bounds.left  + (_Configuration->_YAxisLeft ?  _Width : 0.f); // Left axis
+    const FLOAT xr = _Bounds.right - (_Configuration->_YAxisRight ? _Width : 0.f); // Right axis
 
     FLOAT OldTextTop = _Bounds.bottom + _Height;
 
@@ -76,13 +76,22 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the label.
         if (!Iter.Text.empty())
         {
-            D2D1_RECT_F TextRect = { _Bounds.left, Iter.y - (_Height / 2.f), xl - 2.f, Iter.y + (_Height / 2.f) };
+            FLOAT y = Iter.y - (_Height / 2.f);
+
+            if (y <_Bounds.top)
+                y = _Bounds.top;
+
+            if (y + _Height > _Bounds.bottom)
+                y = _Bounds.bottom - _Height;
+
+            D2D1_RECT_F TextRect = { _Bounds.left, y, xl - 2.f, y + _Height };
 
             if (TextRect.bottom < OldTextTop)
             {
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                if (_Configuration->_YAxisLeft)
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
-                if (_Configuration->_RightYAxis)
+                if (_Configuration->_YAxisRight)
                 {
                     TextRect.left  = xr + 2.f;
                     TextRect.right = _Bounds.right;

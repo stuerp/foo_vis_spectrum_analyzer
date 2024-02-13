@@ -776,6 +776,7 @@
 #define Y_B02   DY
 
     #pragma region X axis
+
     // Label
     #define W_A05    60
     #define H_A05    H_LBL
@@ -787,10 +788,23 @@
     #define H_A06    H_CBX
     #define X_A06    X_A05 + W_A05 + IX
     #define Y_A06    Y_A05
+
+    // Checkbox: Top
+    #define W_G15    39
+    #define H_G15    H_CHB
+    #define X_G15    X_A06
+    #define Y_G15    Y_A06 + H_A06 + IY
+
+    // Checkbox: Bottom
+    #define W_G16    39
+    #define H_G16    H_CHB
+    #define X_G16    X_G15 + W_G15 + IX
+    #define Y_G16    Y_G15
+
     #pragma endregion
 
 #define W_B02  176 // 5 + W_A05 + IX + W_A06 + 5
-#define H_B02   11 + H_A06 + 7
+#define H_B02   11 + H_A06 + IY + H_G15 + 7
 #pragma endregion
 
 #pragma region Y axis
@@ -799,6 +813,7 @@
 #define Y_B03   Y_B02 + H_B02 + IY
 
     #pragma region Y axis
+
     // Label
     #define W_A07    60
     #define H_A07    H_LBL
@@ -810,6 +825,19 @@
     #define H_A08    H_CBX
     #define X_A08    X_A07 + W_A07 + IX
     #define Y_A08    Y_A07
+
+    // Checkbox: Left
+    #define W_G17    39
+    #define H_G17    H_CHB
+    #define X_G17    X_A08
+    #define Y_G17    Y_A08 + H_A08 + IY
+
+    // Checkbox: Right
+    #define W_G18    39
+    #define H_G18    H_CHB
+    #define X_G18    X_G17 + W_G17 + IX
+    #define Y_G18    Y_G17
+
     #pragma endregion
 
     #pragma region Amplitude range: [Lo] - [Hi] dB
@@ -817,7 +845,7 @@
     #define W_A45    60
     #define H_A45    H_LBL
     #define X_A45    X_A07
-    #define Y_A45    Y_A08 + H_A08 + IY
+    #define Y_A45    Y_G17 + H_G17 + IY
 
     // Textbox (Lo)
     #define W_A46    40
@@ -887,7 +915,7 @@
     #pragma endregion
 
 #define W_B03   176 //  5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
-#define H_B03   11 + H_A08 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
+#define H_B03   11 + H_A08 + IY + H_G17 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 #pragma endregion
 
 #pragma region Visualization

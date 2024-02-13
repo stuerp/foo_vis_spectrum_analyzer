@@ -73,7 +73,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
-        D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, Height - PaddingY };
+        D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, _Bounds.bottom - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
         if ((LightBackgroundStyle->_ColorSource != ColorSource::None) && !Iter.HasDarkBackground)

@@ -415,14 +415,16 @@ public:
         #pragma region X axis
 
             XAxisMode _XAxisMode;
-            bool _TopXAxis;
+            bool _XAxisTop;
+            bool _XAxisBottom;
 
         #pragma endregion
 
         #pragma region Y axis
 
             YAxisMode _YAxisMode;
-            bool _RightYAxis;
+            bool _YAxisLeft;
+            bool _YAxisRight;
 
             double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
             double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0

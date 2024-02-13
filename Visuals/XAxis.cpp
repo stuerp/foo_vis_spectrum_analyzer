@@ -172,8 +172,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT yt = _Bounds.top    + _Height;  // Top axis
-    const FLOAT yb = _Bounds.bottom - _Height;  // Bottom axis
+    const FLOAT yt = _Bounds.top    + (_Configuration->_XAxisTop    ? _Height : 0.f);  // Top axis
+    const FLOAT yb = _Bounds.bottom - (_Configuration->_XAxisBottom ? _Height : 0.f);  // Bottom axis
 
     FLOAT OldTextRight = -_Width;
 
@@ -204,11 +204,12 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), yb, Iter.x + (TextMetrics.width / 2.f), yb + _Height };
 
-            if (OldTextRight <= TextRect.left)
+            if ((OldTextRight <= TextRect.left) && (TextRect.left < _Bounds.right))
             {
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                if (_Configuration->_XAxisBottom)
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
-                if (_Configuration->_TopXAxis)
+                if (_Configuration->_XAxisTop)
                 {
                     TextRect.top    = _Bounds.top;
                     TextRect.bottom = _Bounds.top + _Height;
