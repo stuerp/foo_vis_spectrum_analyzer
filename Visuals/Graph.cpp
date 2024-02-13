@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.07) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.13) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -85,12 +85,12 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
     else
         renderTarget->FillRectangle(_Bounds, style->_Brush);
 
-    // Render the album art if there is any.
+    // Render the bitmap if there is one.
     if ((artwork.Bitmap() == nullptr) || (_Configuration->_BackgroundMode != BackgroundMode::Artwork))
         return;
 
+    D2D1_RECT_F Rect = GetSpectrum().GetBounds();
     D2D1_SIZE_F Size = artwork.Size();
-    D2D1_RECT_F Rect = _Bounds;
 
     FLOAT MaxWidth  = Rect.right  - Rect.left;
     FLOAT MaxHeight = Rect.bottom - Rect.top;
@@ -107,10 +107,10 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
         Size.height *= Scalar;
     }
 
-    Rect.left   = (MaxWidth  - Size.width)  / 2.f;
-    Rect.top    = (MaxHeight - Size.height) / 2.f;
-    Rect.right  = Rect.left + Size.width;
-    Rect.bottom = Rect.top  + Size.height;
+    Rect.left   += (MaxWidth  - Size.width)  / 2.f;
+    Rect.top    += (MaxHeight - Size.height) / 2.f;
+    Rect.right   = Rect.left + Size.width;
+    Rect.bottom  = Rect.top  + Size.height;
 
     renderTarget->DrawBitmap(artwork.Bitmap(), Rect, _Configuration->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
