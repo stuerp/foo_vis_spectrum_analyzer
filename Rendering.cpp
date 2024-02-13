@@ -149,8 +149,8 @@ void UIElement::UpdateSpectrum()
         {
             audio_chunk_impl Chunk;
 
-            double WindowSize = (double) _NumBins / (double) _SampleRate;
-            double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
+            const double WindowSize = (double) _NumBins / (double) _SampleRate;
+            const double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _Configuration._ReactionAlignment)) : PlaybackTime;
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
                 ProcessAudioChunk(Chunk);

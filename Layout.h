@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.02.05) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.02.13) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -35,7 +35,7 @@
 
     #pragma region Method
     // Label
-    #define W_A62    62
+    #define W_A62    64
     #define H_A62    H_LBL
     #define X_A62    X_B05 + 5
     #define Y_A62    Y_B05 + 11
@@ -48,53 +48,67 @@
     #pragma endregion
 
     #pragma region Window Function
-    // Label
-    #define W_C01    62
+
+    // Label: Window function
+    #define W_C01    64
     #define H_C01    H_LBL
     #define X_C01    X_A62
     #define Y_C01    Y_A63 + H_A63 + IY
 
-    // Combobox
+    // Combobox: Window function
     #define W_C02    82
     #define H_C02    H_CBX
     #define X_C02    X_C01 + W_C01 + IX
     #define Y_C02    Y_C01
 
-    // Label
-    #define W_C03    62
+    // Label: Window parameter
+    #define W_C03    64
     #define H_C03    H_LBL
     #define X_C03    X_C01
     #define Y_C03    Y_C02 + H_C02 + IY
 
-    // Textbox
+    // Textbox: Window parameter
     #define W_C04    30
     #define H_C04    H_CBX
     #define X_C04    X_C03 + W_C03 + IX
     #define Y_C04    Y_C03
 
-    // Label
-    #define W_C05    62
+    // Label: Window Skew
+    #define W_C05    64
     #define H_C05    H_LBL
     #define X_C05    X_C03
     #define Y_C05    Y_C04 + H_C04 + IY
 
-    // Textbox
+    // Textbox: Window Skew
     #define W_C06    30
     #define H_C06    H_CBX
     #define X_C06    X_C05 + W_C05 + IX
     #define Y_C06    Y_C05
+
     #pragma endregion
+
+    // Label: Reaction Alignment
+    #define W_C07    64
+    #define H_C07    H_LBL
+    #define X_C07    X_C05
+    #define Y_C07    Y_C06 + H_C06 + IY
+
+    // Textbox: Reaction Alignment
+    #define W_C08    30
+    #define H_C08    H_CBX
+    #define X_C08    X_C07 + W_C07 + IX
+    #define Y_C08    Y_C07
 
     #pragma region Channels
     // Button
     #define W_A88    82
     #define H_A88    H_BTN
-    #define X_A88    X_C06
-    #define Y_A88    Y_C06 + H_C06 + IY
+    #define X_A88    X_C08
+    #define Y_A88    Y_C08 + H_C08 + IY
     #pragma endregion
 
-#define W_B05   174
-#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_A88 + 7
+#define W_B05   178
+#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 + IY + H_A88 + 7
 #pragma endregion
 
 #pragma region FFT
@@ -104,7 +118,7 @@
 
     #pragma region Size
     // Label
-    #define W_A03   60
+    #define W_A03   64
     #define H_A03   H_LBL
     #define X_A03   X_B00 + 5
     #define Y_A03   Y_B00 + 11
@@ -118,7 +132,7 @@
 
     #pragma region Size Parameter
     // Label
-    #define W_A61   60
+    #define W_A61   64
     #define H_A61   H_LBL
     #define X_A61   X_A03
     #define Y_A61   Y_A04 + H_A04 + IY
@@ -138,7 +152,7 @@
 
     #pragma region Summation Method
     // Label
-    #define W_A15    60
+    #define W_A15    64
     #define H_A15    H_LBL
     #define X_A15    X_A03
     #define Y_A15    Y_A59 + H_A59 + IY
@@ -152,7 +166,7 @@
 
     #pragma region Mapping
     // Label
-    #define W_A65    60
+    #define W_A65    64
     #define H_A65    H_LBL
     #define X_A65    X_A15
     #define Y_A65    Y_A16 + H_A16 + IY
@@ -182,7 +196,7 @@
 
     #pragma region Lanczos Kernel
     // Label
-    #define W_A39    60
+    #define W_A39    64
     #define H_A39    H_LBL
     #define X_A39    X_A15
     #define Y_A39    Y_A44 + H_A44 + IY

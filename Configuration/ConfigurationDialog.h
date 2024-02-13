@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.13) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -93,9 +93,9 @@ private:
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
 
-    void SetDouble(int id, double frequency) noexcept;
+    void SetInteger(int id, int64_t value) noexcept;
+    void SetDouble(int id, double value, unsigned width = 0, unsigned precision = 2) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
-    void SetDecibel(int id, double decibel) noexcept;
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -146,6 +146,8 @@ private:
 
     CNumericEdit _WindowParameter;
     CNumericEdit _WindowSkew;
+
+    CNumericEdit _ReactionAlignment;
 
     CNumericEdit _BandwidthOffset;
     CNumericEdit _BandwidthCap;

@@ -87,6 +87,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.1.0, 2024-xx-xx
 
 * New: Sliding Windowed Infinite Fourier Transform (SWIFT).
+* New: Reaction Alignment parameter allow you to adjust the overlap of the sample window.
 * Fixed: Added some missing range checks in the configuration dialog.
 * Fixed (Regression): Incorrect background color during startup caused a bright flash in dark mode.
 

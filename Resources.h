@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.02.12) P. Stuer **/
+/** $VER: Resources.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
@@ -77,7 +77,10 @@
 #define IDC_WINDOW_SKEW_LBL             2028
 #define IDC_WINDOW_SKEW                 2030
 
-#define IDC_CHANNELS                    2036
+#define IDC_REACTION_ALIGNMENT_LBL      2032
+#define IDC_REACTION_ALIGNMENT          2034
+
+#define IDC_CHANNELS                    2038
 
 #define IDM_CHANNELS                    9000
 

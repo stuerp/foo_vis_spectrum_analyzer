@@ -40,7 +40,6 @@ void Configuration::Reset() noexcept
 
     _UseZeroTrigger = false;
     _WindowDuration = 50;
-    _ReactionAlignment = 0.5;
 
     // Transform
     _Transform = Transform::FFT;
@@ -49,6 +48,8 @@ void Configuration::Reset() noexcept
     _WindowParameter = 1.;
     _WindowSkew = 0.;
     _Truncate = true;
+
+    _ReactionAlignment = 0.25;
 
     _SelectedChannels = AllChannels;
 
@@ -209,7 +210,6 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
-    _ReactionAlignment = other._ReactionAlignment;
 
     #pragma region Transform
 
@@ -219,6 +219,8 @@ Configuration & Configuration::operator=(const Configuration & other)
         _WindowParameter = other._WindowParameter;
         _WindowSkew = other._WindowSkew;
         _Truncate = other._Truncate;
+
+        _ReactionAlignment = other._ReactionAlignment;
 
         _SelectedChannels = other._SelectedChannels;
 

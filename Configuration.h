@@ -26,6 +26,9 @@ inline const double MaxWindowParameter = 10.;
 inline const double MinWindowSkew = -1.;
 inline const double MaxWindowSkew =  1.;
 
+inline const double MinReactionAlignment = 0.;
+inline const double MaxReactionAlignment = 1.;
+
 // Brown-Puckette CQT
 inline const double MinBandwidthOffset = 0.;
 inline const double MaxBandwidthOffset = 1.;
@@ -311,7 +314,6 @@ public:
     bool _UseAntialiasing;
 
     size_t _WindowDuration;                                             // μs
-    double _ReactionAlignment;                                          // ms
 
     #pragma region Transform
 
@@ -321,6 +323,7 @@ public:
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
+        double _ReactionAlignment;                                      // 0.0 .. 1.0
 
         uint32_t _SelectedChannels;
 

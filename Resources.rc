@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.02.12) P. Stuer **/
+/** $VER: Resources.rc (2024.02.13) P. Stuer **/
 
 #include "Resources.h"
 
@@ -68,6 +68,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         rtext           "Window skew:"              IDC_WINDOW_SKEW_LBL,            X_C05, Y_C05 + 2, W_C05, H_C05
         edittext                                    IDC_WINDOW_SKEW,                X_C06, Y_C06, W_C06, H_C06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext           "Reaction alignment:"       IDC_REACTION_ALIGNMENT_LBL,     X_C07, Y_C07 + 2, W_C07, H_C07
+        edittext                                    IDC_REACTION_ALIGNMENT          X_C08, Y_C08, W_C08, H_C08, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         pushbutton      "Channels",                 IDC_CHANNELS,                   X_A88, Y_A88, W_A88, H_A88
 

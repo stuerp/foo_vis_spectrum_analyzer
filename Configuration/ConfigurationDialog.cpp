@@ -56,6 +56,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_WINDOW_FUNCTION, L"Window function applied to the samples" },
             { IDC_WINDOW_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows" },
             { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
+            { IDC_REACTION_ALIGNMENT, L"allow you to adjust the overlap of the sample window." },
             { IDC_CHANNELS, L"Determines which channels supply samples" },
 
             { IDC_NUM_BINS, L"Sets the number of bins used by the Fourier transforms" },
@@ -268,7 +269,7 @@ void ConfigurationDialog::Initialize()
     {
         _KernelSize.Initialize(GetDlgItem(IDC_KERNEL_SIZE));
 
-        SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize)));
+        SetInteger(IDC_KERNEL_SIZE, _Configuration->_KernelSize);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
 
@@ -303,12 +304,17 @@ void ConfigurationDialog::Initialize()
     {
         _WindowParameter.Initialize(GetDlgItem(IDC_WINDOW_PARAMETER));
 
-        SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 4, 2)));
+        SetDouble(IDC_WINDOW_PARAMETER, _Configuration->_WindowParameter);
     }
     {
         _WindowSkew.Initialize(GetDlgItem(IDC_WINDOW_SKEW));
 
-        SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 4, 2)));
+        SetDouble(IDC_WINDOW_SKEW, _Configuration->_WindowSkew);
+    }
+    {
+        _ReactionAlignment.Initialize(GetDlgItem(IDC_REACTION_ALIGNMENT));
+
+        SetDouble(IDC_REACTION_ALIGNMENT, _Configuration->_ReactionAlignment);
     }
     #pragma endregion
 
@@ -317,17 +323,17 @@ void ConfigurationDialog::Initialize()
     {
         _BandwidthOffset.Initialize(GetDlgItem(IDC_BW_OFFSET));
 
-        SetDlgItemTextW(IDC_BW_OFFSET, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthOffset, 4, 2)));
+        SetDouble(IDC_BW_OFFSET, _Configuration->_BandwidthOffset);
     }
     {
         _BandwidthCap.Initialize(GetDlgItem(IDC_BW_CAP));
 
-        SetDlgItemTextW(IDC_BW_CAP, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthCap, 4, 2)));
+        SetDouble(IDC_BW_CAP, _Configuration->_BandwidthCap);
     }
     {
         _BandwidthAmount.Initialize(GetDlgItem(IDC_BW_AMOUNT));
 
-        SetDlgItemTextW(IDC_BW_AMOUNT, pfc::wideFromUTF8(pfc::format_float(_Configuration->_BandwidthAmount, 4, 2)));
+        SetDouble(IDC_BW_AMOUNT, _Configuration->_BandwidthAmount);
     }
 
     SendDlgItemMessageW(IDC_GRANULAR_BW, BM_SETCHECK, _Configuration->_GranularBW);
@@ -357,12 +363,12 @@ void ConfigurationDialog::Initialize()
     {
         _KernelShapeParameter.Initialize(GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER));
 
-        SetDlgItemTextW(IDC_KERNEL_SHAPE_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_KernelShapeParameter, 4, 2)));
+        SetDouble(IDC_KERNEL_SHAPE_PARAMETER, _Configuration->_KernelShapeParameter);
     }
     {
         _KernelAsymmetry.Initialize(GetDlgItem(IDC_KERNEL_ASYMMETRY));
 
-        SetDlgItemTextW(IDC_KERNEL_ASYMMETRY, pfc::wideFromUTF8(pfc::format_float(_Configuration->_KernelAsymmetry, 4, 2)));
+        SetDouble(IDC_KERNEL_ASYMMETRY, _Configuration->_KernelAsymmetry);
     }
     #pragma endregion
 
@@ -389,7 +395,7 @@ void ConfigurationDialog::Initialize()
 
             _NumBands.Initialize(GetDlgItem(IDC_NUM_BANDS));
 
-            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_NumBands)));
+            SetInteger(IDC_NUM_BANDS, (int64_t) _Configuration->_NumBands);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS_SPIN));
 
@@ -463,7 +469,7 @@ void ConfigurationDialog::Initialize()
         {
             _BandsPerOctave.Initialize(GetDlgItem(IDC_BANDS_PER_OCTAVE));
 
-            SetDlgItemTextW(IDC_BANDS_PER_OCTAVE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_BandsPerOctave)));
+            SetInteger(IDC_BANDS_PER_OCTAVE, _Configuration->_BandsPerOctave);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
 
@@ -496,7 +502,7 @@ void ConfigurationDialog::Initialize()
         {
             _Transpose.Initialize(GetDlgItem(IDC_TRANSPOSE));
 
-            SetDlgItemTextW(IDC_TRANSPOSE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_Transpose)));
+            SetInteger(IDC_TRANSPOSE, _Configuration->_Transpose);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN));
 
@@ -525,7 +531,7 @@ void ConfigurationDialog::Initialize()
 
             _SkewFactor.Initialize(GetDlgItem(IDC_SKEW_FACTOR));
 
-            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
+            SetDouble(IDC_SKEW_FACTOR, _Configuration->_SkewFactor);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_SKEW_FACTOR_SPIN));
 
@@ -546,7 +552,7 @@ void ConfigurationDialog::Initialize()
 
             _Bandwidth.Initialize(GetDlgItem(IDC_BANDWIDTH));
 
-            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
+            SetDouble(IDC_BANDWIDTH, _Configuration->_Bandwidth, 0, 1);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_BANDWIDTH_SPIN));
 
@@ -749,7 +755,7 @@ void ConfigurationDialog::Initialize()
             {
                 _AmplitudeLo.Initialize(GetDlgItem(IDC_AMPLITUDE_LO));
 
-                SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
+                SetDouble(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo, 0, 1);
 
                 auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
 
@@ -762,7 +768,7 @@ void ConfigurationDialog::Initialize()
             {
                 _AmplitudeHi.Initialize(GetDlgItem(IDC_AMPLITUDE_HI));
 
-                SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
+                SetDouble(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi, 0, 1);
 
                 auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
 
@@ -775,7 +781,7 @@ void ConfigurationDialog::Initialize()
             {
                 _AmplitudeStep.Initialize(GetDlgItem(IDC_AMPLITUDE_STEP));
 
-                SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
+                SetDouble(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep, 0, 1);
 
                 auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
 
@@ -790,7 +796,7 @@ void ConfigurationDialog::Initialize()
 
         _Gamma.Initialize(GetDlgItem(IDC_GAMMA));
 
-        SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1)));
+        SetDouble(IDC_GAMMA, _Configuration->_Gamma, 0, 1);
     }
     #pragma endregion
 
@@ -805,7 +811,7 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _Configuration->_SmoothingMethod);
 
-        SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1)));
+        SetDouble(IDC_SMOOTHING_FACTOR, _Configuration->_SmoothingFactor, 0, 1);
     }
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _Configuration->_ShowToolTips);
@@ -830,7 +836,7 @@ void ConfigurationDialog::Initialize()
 
         _ArtworkOpacity.Initialize(GetDlgItem(IDC_ARTWORK_OPACITY));
 
-        SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
+        SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_Configuration->_ArtworkOpacity * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_ARTWORK_OPACITY_SPIN));
 
@@ -849,7 +855,7 @@ void ConfigurationDialog::Initialize()
 
         _ArtworkColors.Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS));
 
-        SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors))));
+        SetInteger(IDC_NUM_ARTWORK_COLORS, _Configuration->_NumArtworkColors);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_ARTWORK_COLORS_SPIN));
 
@@ -867,7 +873,7 @@ void ConfigurationDialog::Initialize()
 
         _LightnessThreshold.Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD));
 
-        SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f))));
+        SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_Configuration->_LightnessThreshold * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_LIGHTNESS_THRESHOLD_SPIN));
 
@@ -914,8 +920,8 @@ void ConfigurationDialog::Initialize()
     }
 
     {
-        SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1)));
-        SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1)));
+        SetDouble(IDC_HOLD_TIME, _Configuration->_HoldTime, 0, 1);
+        SetDouble(IDC_ACCELERATION, _Configuration->_Acceleration, 0, 1);
     }
 
     #pragma region Bars
@@ -1025,6 +1031,8 @@ void ConfigurationDialog::Terminate()
 
     _WindowParameter.Terminate();
     _WindowSkew.Terminate();
+
+    _ReactionAlignment.Terminate();
 
     _BandwidthOffset.Terminate();
     _BandwidthCap.Terminate();
@@ -1315,7 +1323,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
                 return;
 
                 t_int64 Position = (t_int64) (style->_GradientStops[Index].position * 100.f);
-                SetDlgItemTextW(IDC_POSITION, pfc::wideFromUTF8(pfc::format_int(Position)));
+                SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
             bool HasSelection = (Index != LB_ERR);
@@ -1394,6 +1402,12 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_WINDOW_SKEW:
         {
             _Configuration->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
+            break;
+        }
+
+        case IDC_REACTION_ALIGNMENT:
+        {
+            _Configuration->_ReactionAlignment = Clamp(::_wtof(Text), MinReactionAlignment, MaxReactionAlignment);
             break;
         }
 
@@ -1642,13 +1656,13 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
                 case FFTMode::FFTCustom:
                 {
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
+                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _Configuration->_FFTCustom);
                     break;
                 }
 
                 case FFTMode::FFTDuration:
                 {
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 2)));
+                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _Configuration->_FFTDuration);
                     break;
                 }
             }
@@ -1656,9 +1670,10 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_KERNEL_SIZE:           { SetDlgItemTextW(IDC_KERNEL_SIZE, pfc::wideFromUTF8(pfc::format_int(_Configuration->_KernelSize))); break; }
-        case IDC_WINDOW_PARAMETER:      { SetDlgItemTextW(IDC_WINDOW_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowParameter, 0, 2))); break; }
-        case IDC_WINDOW_SKEW:           { SetDlgItemTextW(IDC_WINDOW_SKEW, pfc::wideFromUTF8(pfc::format_float(_Configuration->_WindowSkew, 0, 2))); break; }
+        case IDC_KERNEL_SIZE:           { SetInteger(id, _Configuration->_KernelSize); break; }
+        case IDC_WINDOW_PARAMETER:      { SetDouble(id, _Configuration->_WindowParameter); break; }
+        case IDC_WINDOW_SKEW:           { SetDouble(id, _Configuration->_WindowSkew); break; }
+        case IDC_REACTION_ALIGNMENT:    { SetDouble(id, _Configuration->_ReactionAlignment); break; }
 
         // Brown-Puckette CQT
         case IDC_BW_OFFSET:             { SetDouble(id, _Configuration->_BandwidthOffset); break; }
@@ -1668,45 +1683,45 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_KERNEL_ASYMMETRY:      { SetDouble(id, _Configuration->_KernelAsymmetry); break; }
 
         // Frequencies
-        case IDC_NUM_BANDS:             { SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands))); break; }
-        case IDC_LO_FREQUENCY:          { SetDouble(IDC_LO_FREQUENCY, _Configuration->_LoFrequency); break; }
-        case IDC_HI_FREQUENCY:          { SetDouble(IDC_HI_FREQUENCY, _Configuration->_HiFrequency); break; }
-        case IDC_PITCH:                 { SetDouble(IDC_PITCH, _Configuration->_Pitch); break; }
-        case IDC_SKEW_FACTOR:           { SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2))); break; }
-        case IDC_BANDWIDTH:             { SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1))); break; }
+        case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _Configuration->_NumBands); break; }
+        case IDC_LO_FREQUENCY:          { SetDouble(id, _Configuration->_LoFrequency); break; }
+        case IDC_HI_FREQUENCY:          { SetDouble(id, _Configuration->_HiFrequency); break; }
+        case IDC_PITCH:                 { SetDouble(id, _Configuration->_Pitch); break; }
+        case IDC_SKEW_FACTOR:           { SetDouble(id, _Configuration->_SkewFactor); break; }
+        case IDC_BANDWIDTH:             { SetDouble(id, _Configuration->_Bandwidth, 0, 1); break; }
 
         // Filters
-        case IDC_SLOPE_FN_OFFS:         { SetDouble(IDC_SLOPE_FN_OFFS, _Configuration->_SlopeFunctionOffset); break; }
-        case IDC_SLOPE:                 { SetDouble(IDC_SLOPE, _Configuration->_Slope); break; }
-        case IDC_SLOPE_OFFS:            { SetDouble(IDC_SLOPE_OFFS, _Configuration->_SlopeOffset); break; }
-        case IDC_EQ_AMT:                { SetDouble(IDC_EQ_AMT, _Configuration->_EqualizeAmount); break; }
-        case IDC_EQ_OFFS:               { SetDouble(IDC_EQ_OFFS, _Configuration->_EqualizeOffset); break; }
-        case IDC_EQ_DEPTH:              { SetDouble(IDC_EQ_DEPTH, _Configuration->_EqualizeDepth); break; }
-        case IDC_WT_AMT:                { SetDouble(IDC_WT_AMT, _Configuration->_WeightingAmount); break; }
+        case IDC_SLOPE_FN_OFFS:         { SetDouble(id, _Configuration->_SlopeFunctionOffset); break; }
+        case IDC_SLOPE:                 { SetDouble(id, _Configuration->_Slope); break; }
+        case IDC_SLOPE_OFFS:            { SetDouble(id, _Configuration->_SlopeOffset); break; }
+        case IDC_EQ_AMT:                { SetDouble(id, _Configuration->_EqualizeAmount); break; }
+        case IDC_EQ_OFFS:               { SetDouble(id, _Configuration->_EqualizeOffset); break; }
+        case IDC_EQ_DEPTH:              { SetDouble(id, _Configuration->_EqualizeDepth); break; }
+        case IDC_WT_AMT:                { SetDouble(id, _Configuration->_WeightingAmount); break; }
 
         // Artwork Colors
-        case IDC_NUM_ARTWORK_COLORS:    { SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_NumArtworkColors)))); break; }
-        case IDC_LIGHTNESS_THRESHOLD:   { SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f)))); break; }
+        case IDC_NUM_ARTWORK_COLORS:    { SetInteger(id, _Configuration->_NumArtworkColors); break; }
+        case IDC_LIGHTNESS_THRESHOLD:   { SetInteger(id, (int64_t) (_Configuration->_LightnessThreshold * 100.f)); break; }
 
         // Artwork Image
-        case IDC_ARTWORK_OPACITY:       { SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f)))); break; }
+        case IDC_ARTWORK_OPACITY:       { SetInteger(id, (int64_t) (_Configuration->_ArtworkOpacity * 100.f)); break; }
 
         // Y axis
-        case IDC_AMPLITUDE_LO:          { SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo); break; }
-        case IDC_AMPLITUDE_HI:          { SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi); break; }
-        case IDC_AMPLITUDE_STEP:        { SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep); break; }
-        case IDC_GAMMA:                 { SetDlgItemTextW(IDC_GAMMA, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Gamma, 0, 1))); break; }
+        case IDC_AMPLITUDE_LO:          { SetDouble(id, _Configuration->_AmplitudeLo, 0, 1); break; }
+        case IDC_AMPLITUDE_HI:          { SetDouble(id, _Configuration->_AmplitudeHi, 0, 1); break; }
+        case IDC_AMPLITUDE_STEP:        { SetDouble(id, _Configuration->_AmplitudeStep, 0, 1); break; }
+        case IDC_GAMMA:                 { SetDouble(id, _Configuration->_Gamma, 0, 1); break; }
 
         // Spectrum smoothing
-        case IDC_SMOOTHING_FACTOR:      { SetDlgItemTextW(IDC_SMOOTHING_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SmoothingFactor, 0, 1))); break; }
+        case IDC_SMOOTHING_FACTOR:      { SetDouble(id, _Configuration->_SmoothingFactor, 0, 1); break; }
 
         // Peak indicator
-        case IDC_HOLD_TIME:             { SetDlgItemTextW(IDC_HOLD_TIME, pfc::wideFromUTF8(pfc::format_float(_Configuration->_HoldTime, 0, 1))); break; }
-        case IDC_ACCELERATION:          { SetDlgItemTextW(IDC_ACCELERATION, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Acceleration, 0, 1))); break; }
+        case IDC_HOLD_TIME:             { SetDouble(id, _Configuration->_HoldTime, 0, 1); break; }
+        case IDC_ACCELERATION:          { SetDouble(id, _Configuration->_Acceleration, 0, 1); break; }
 
         // Styles
-        case IDC_THICKNESS:             { SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(_Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Thickness, 0, 1))); break; }
-        case IDC_OPACITY:               { SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Opacity * 100.f)))); break; }
+        case IDC_OPACITY:               { SetInteger(id, (int64_t) (_Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Opacity * 100.f)); break; }
+        case IDC_THICKNESS:             { SetDouble(id, _Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle)->_Thickness, 0, 1); break; }
     }
 
     return;
@@ -1909,7 +1924,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_NUM_BANDS_SPIN:
         {
             _Configuration->_NumBands = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
-            SetDlgItemTextW(IDC_NUM_BANDS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumBands)));
+            SetInteger(IDC_NUM_BANDS, (int64_t) _Configuration->_NumBands);
             break;
         }
 
@@ -1999,56 +2014,56 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         case IDC_AMPLITUDE_LO_SPIN:
         {
             _Configuration->_AmplitudeLo = Min(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _Configuration->_AmplitudeHi);
-            SetDecibel(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo);
+            SetDouble(IDC_AMPLITUDE_LO, _Configuration->_AmplitudeLo, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
             _Configuration->_AmplitudeHi = Max(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _Configuration->_AmplitudeLo);
-            SetDecibel(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi);
+            SetDouble(IDC_AMPLITUDE_HI, _Configuration->_AmplitudeHi, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
             _Configuration->_AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
-            SetDecibel(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep);
+            SetDouble(IDC_AMPLITUDE_STEP, _Configuration->_AmplitudeStep, 0, 1);
             break;
         }
 
         case IDC_SKEW_FACTOR_SPIN:
         {
             _Configuration->_SkewFactor = ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.);
-            SetDlgItemTextW(IDC_SKEW_FACTOR, pfc::wideFromUTF8(pfc::format_float(_Configuration->_SkewFactor, 0, 2)));
+            SetDouble(IDC_SKEW_FACTOR, _Configuration->_SkewFactor);
             break;
         }
 
         case IDC_BANDWIDTH_SPIN:
         {
             _Configuration->_Bandwidth = ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.);
-            SetDlgItemTextW(IDC_BANDWIDTH, pfc::wideFromUTF8(pfc::format_float(_Configuration->_Bandwidth, 0, 1)));
+            SetDouble(IDC_BANDWIDTH, _Configuration->_Bandwidth, 0, 1);
             break;
         }
 
         case IDC_NUM_ARTWORK_COLORS_SPIN:
         {
             _Configuration->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
-            SetDlgItemTextW(IDC_NUM_ARTWORK_COLORS, pfc::wideFromUTF8(pfc::format_int((int) _Configuration->_NumArtworkColors)));
+            SetInteger(IDC_NUM_ARTWORK_COLORS, _Configuration->_NumArtworkColors);
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD_SPIN:
         {
             _Configuration->_LightnessThreshold = (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.);
-            SetDlgItemTextW(IDC_LIGHTNESS_THRESHOLD, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_LightnessThreshold * 100.f))));
+            SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_Configuration->_LightnessThreshold * 100.f));
             break;
         }
 
         case IDC_ARTWORK_OPACITY_SPIN:
         {
             _Configuration->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
-            SetDlgItemTextW(IDC_ARTWORK_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (_Configuration->_ArtworkOpacity * 100.f))));
+            SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_Configuration->_ArtworkOpacity * 100.f));
             break;
         }
 
@@ -2057,7 +2072,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             Style * style = _Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
             style->_Opacity = (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.);
-            SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
+            SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
             break;
         }
 
@@ -2066,7 +2081,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             Style * style = _Configuration->_StyleManager.GetStyle((VisualElement) _Configuration->_CurrentStyle);
 
             style->_Thickness = (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.);
-            SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(style->_Thickness, 0, 1)));
+            SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
             break;
         }
 
@@ -2181,6 +2196,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
             IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
             IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+            IDC_REACTION_ALIGNMENT_LBL, IDC_REACTION_ALIGNMENT,
             IDC_CHANNELS,
 
         // FFT
@@ -2387,12 +2403,12 @@ void ConfigurationDialog::UpdateControls()
                 break;
 
             case FFTMode::FFTCustom:
-                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
+                SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _Configuration->_FFTCustom);
                 SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
                 break;
 
             case FFTMode::FFTDuration:
-                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_float(_Configuration->_FFTDuration, 0, 1)));
+                SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _Configuration->_FFTDuration);
                 SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
                 break;
         }
@@ -2574,10 +2590,10 @@ void ConfigurationDialog::UpdateStyleControls()
 
     SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, style->_Flags & Style::HorizontalGradient);
 
-    SetDlgItemTextW(IDC_OPACITY, pfc::wideFromUTF8(pfc::format_int((t_int64) (style->_Opacity * 100.f))));
+    SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
 
-    SetDlgItemTextW(IDC_THICKNESS, pfc::wideFromUTF8(pfc::format_float(style->_Thickness, 0, 1)));
+    SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
     ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
 
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
@@ -2733,15 +2749,19 @@ double ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValu
 }
 
 /// <summary>
-/// Sets the display version of the frequency.
+/// Sets the display version of an integer number.
 /// </summary>
-void ConfigurationDialog::SetDouble(int id, double value) noexcept
+void ConfigurationDialog::SetInteger(int id, int64_t value) noexcept
 {
-    WCHAR Text[16] = { };
+    SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_int(value)));
+}
 
-    ::StringCchPrintfW(Text, _countof(Text), L"%.2f", value);
-
-    SetDlgItemTextW(id, Text);
+/// <summary>
+/// Sets the display version of a real number.
+/// </summary>
+void ConfigurationDialog::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
+{
+    SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
 }
 
 /// <summary>
@@ -2757,18 +2777,6 @@ void ConfigurationDialog::SetNote(int id, uint32_t noteNumber) noexcept
     int Octave = (int) (noteNumber / 12);
 
     ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
-
-    SetDlgItemTextW(id, Text);
-}
-
-/// <summary>
-/// Sets the display version of the amplitude.
-/// </summary>
-void ConfigurationDialog::SetDecibel(int id, double decibel) noexcept
-{
-    WCHAR Text[16] = { };
-
-    ::StringCchPrintfW(Text, _countof(Text), L"%.1f", decibel);
 
     SetDlgItemTextW(id, Text);
 }
