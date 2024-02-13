@@ -1,11 +1,12 @@
 
-/** $VER: UIElement.cpp (2024.02.12) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.13) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
 #include "StyleManager.h"
 
+#include "ToneGenerator.h"
 #include "Support.h"
 #include "Log.h"
 
@@ -461,6 +462,8 @@ void UIElement::SetConfiguration() noexcept
     Resize();
 
     _CriticalSection.Leave();
+
+    _ToneGenerator.Initialize(440., 1., 0., _NumBins);
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.02.12) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.02.13) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -12,9 +12,8 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
 {
-    _Configuration = configuration;
 }
 
 /// <summary>

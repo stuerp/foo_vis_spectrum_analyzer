@@ -1,5 +1,5 @@
 
-/** $VER: TransformProvider.h (2023.12.30) P. Stuer **/
+/** $VER: Analyzer.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
@@ -7,27 +7,28 @@
 
 using namespace std;
 
+#include "Configuration.h"
 #include "WindowFunctions.h"
 
 /// <summary>
-/// Provides a base class for transform providers.
+/// Provides a base class for analyzers.
 /// </summary>
-class TransformProvider
+class Analyzer
 {
 public:
-    TransformProvider() = delete;
+    Analyzer() = delete;
 
-    TransformProvider(const TransformProvider &) = delete;
-    TransformProvider & operator=(const TransformProvider &) = delete;
-    TransformProvider(TransformProvider &&) = delete;
-    TransformProvider & operator=(TransformProvider &&) = delete;
+    Analyzer(const Analyzer &) = delete;
+    Analyzer & operator=(const Analyzer &) = delete;
+    Analyzer(Analyzer &&) = delete;
+    Analyzer & operator=(Analyzer &&) = delete;
 
-    virtual ~TransformProvider() { }
+    virtual ~Analyzer() { }
 
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    TransformProvider(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction) : _ChannelCount(channelCount), _ChannelSetup(channelSetup), _SampleRate(sampleRate), _WindowFunction(windowFunction)
+    Analyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _Configuration(configuration), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = _SampleRate / 2.;
     }
@@ -53,9 +54,10 @@ public:
     }
 
 protected:
+    const Configuration * _Configuration;
+    double _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelSetup;
-    double _SampleRate;
     const WindowFunction & _WindowFunction;
 
     double _NyquistFrequency;

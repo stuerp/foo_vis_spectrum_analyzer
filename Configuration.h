@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.12) P. Stuer **/
+/** $VER: Configuration.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
@@ -290,7 +290,7 @@ public:
 
     void Reset() noexcept;
 
-    void Read(stream_reader * reader, size_t size, abort_callback & abortHandle = fb2k::noAbort) noexcept;
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
     /// <summary>
@@ -312,8 +312,6 @@ public:
 
     size_t _WindowDuration;                                             // μs
     double _ReactionAlignment;                                          // ms
-
-    bool _UseZeroTrigger;
 
     #pragma region Transform
 
@@ -350,6 +348,14 @@ public:
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
+
+    #pragma endregion
+
+    #pragma region CQT
+
+        double _CQTBandwidthOffset;
+        double _CQTAlignment;
+        double _CQTDownSample;
 
     #pragma endregion
 
@@ -466,17 +472,20 @@ public:
     StyleManager _StyleManager;
 
     #pragma region Not Serialized
-    bool _IsDUI;
+
+    bool _IsDUI;                                                        // True if the Default User Interface is being used.
+    bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    D2D1_COLOR_F _DominantColor;
+    D2D1_COLOR_F _DominantColor;                                        // The current dominant color extracted from the artwork bitmap.
     GradientStops _GradientStops;                                       // The current gradient stops.
-    GradientStops _ArtworkGradientStops;                                // The gradient stops extracted from the artwork bitmap.
+    GradientStops _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 
     int _CurrentStyle;
+
     #pragma endregion
 
 public:
@@ -487,6 +496,8 @@ private:
     const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
 
 private: // Deprecated
+    bool _UseZeroTrigger;                                               // Deprecated
+
     ColorScheme _ColorScheme;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
 

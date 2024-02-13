@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2024.02.12) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.13) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -203,7 +203,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"FFT", L"CQT" })//, L"SWIFT" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _Configuration->_Transform);
@@ -1642,7 +1642,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
                 case FFTMode::FFTCustom:
                 {
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int(_Configuration->_FFTCustom)));
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER, pfc::wideFromUTF8(pfc::format_int((t_int64) _Configuration->_FFTCustom)));
                     break;
                 }
 
@@ -2377,7 +2377,7 @@ void ConfigurationDialog::UpdateControls()
 
     const bool NotFixed = (_Configuration->_FFTMode == FFTMode::FFTCustom) || (_Configuration->_FFTMode == FFTMode::FFTDuration);
 
-        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow(IsFFT && NotFixed);
+        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsSWIFT) && NotFixed);
 
         #pragma warning (disable: 4061)
         switch (_Configuration->_FFTMode)

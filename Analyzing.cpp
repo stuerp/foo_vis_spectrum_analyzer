@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.12) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -27,7 +27,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
         if (Samples == nullptr)
             return;
 
-        size_t SampleCount = chunk.get_sample_count();
+        const size_t SampleCount = chunk.get_sample_count();
 
         switch (_Configuration._Transform)
         {
@@ -114,19 +114,19 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if ((_FFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, _NumBins, &_Configuration);
+        _FFTAnalyzer = new FFTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, _NumBins);
 
         _FrequencyCoefficients.resize(_NumBins);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_Configuration._Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, *_WindowFunction, 1.0, 1.0, 0.0, &_Configuration);
+        _CQTAnalyzer = new CQTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(ChannelCount, ChannelSetup, (double) _SampleRate, &_Configuration);
+        _SWIFTAnalyzer = new SWIFTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }

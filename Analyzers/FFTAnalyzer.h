@@ -1,18 +1,19 @@
 
-/** $VER: FFTAnalyzer.h (2024.01.26) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "Configuration.h"
-#include "FFTProvider.h"
+#include "Analyzer.h"
 #include "FrequencyBand.h"
+
+#include "FFT.h"
 
 /// <summary>
 /// Implements a Fast Fourier Transform analyzer.
 /// </summary>
-class FFTAnalyzer : public FFTProvider
+class FFTAnalyzer : public Analyzer
 {
 public:
     FFTAnalyzer() = delete;
@@ -22,9 +23,12 @@ public:
     FFTAnalyzer(FFTAnalyzer &&) = delete;
     FFTAnalyzer & operator=(FFTAnalyzer &&) = delete;
 
-    virtual ~FFTAnalyzer() { };
+    virtual ~FFTAnalyzer();
 
-    FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration);
+    FFTAnalyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, size_t fftSize);
+
+    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
+    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
 
     void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
     void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
@@ -33,6 +37,14 @@ public:
 private:
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;
+
+    /// <summary>
+    /// Gets the current FFT size.
+    /// </summary>
+    size_t GetFFTSize() const
+    {
+        return _FFTSize;
+    }
 
     /// <summary>
     /// Gets the band index of the specified frequency.
@@ -67,5 +79,12 @@ private:
     }
 
 private:
-    const Configuration * _Configuration;
+    FFT _FFT;
+    size_t _FFTSize;
+
+    audio_sample * _Data;
+    size_t _Size;
+    size_t _Curr;
+
+    vector<complex<double>> _TimeData;
 };

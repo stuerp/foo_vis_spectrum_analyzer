@@ -187,7 +187,7 @@
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\WaveformGenerator.h" />
+    <ClInclude Include="Analyzers\ToneGenerator.h" />
     <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
@@ -208,7 +208,6 @@
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
-    <ClInclude Include="Analyzers\FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="Log.h" />
@@ -228,7 +227,7 @@
     <ClInclude Include="DUIElement.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
-    <ClInclude Include="Analyzers\TransformProvider.h" />
+    <ClInclude Include="Analyzers\Analyzer.h" />
     <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
@@ -238,9 +237,8 @@
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\FFTProvider.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\WaveformGenerator.cpp" />
+    <ClCompile Include="Analyzers\ToneGenerator.cpp" />
     <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
@@ -300,7 +298,6 @@
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
-    <None Include="Analyzers\WaveformGenerator.n" />
     <None Include="Build-FB2KComponent.ps1" />
     <None Include="Analyzers\FFT.h" />
     <None Include="README.md" />

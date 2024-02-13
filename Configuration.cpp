@@ -1,5 +1,5 @@
 
-/** $VER: Configuration.cpp (2024.02.12) P. Stuer **/
+/** $VER: Configuration.cpp (2024.02.13) P. Stuer **/
 
 #include "Configuration.h"
 #include "Resources.h"
@@ -28,6 +28,8 @@ Configuration::Configuration()
 /// </summary>
 void Configuration::Reset() noexcept
 {
+    _UseToneGenerator = true;
+
     _DialogBounds = { };
     _PageIndex = 0;
 
@@ -56,6 +58,12 @@ void Configuration::Reset() noexcept
     _FFTDuration = 100.;
 
     _MappingMethod = Mapping::Standard;
+
+    // CQT
+    _CQTBandwidthOffset = 1.;
+    _CQTAlignment = 1.;
+    _CQTDownSample = 0.;
+
 
     // SWIFT
     _FilterBankOrder = 4;
@@ -205,125 +213,135 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     #pragma region Transform
 
-    _Transform = other._Transform;
+        _Transform = other._Transform;
 
-    _WindowFunction = other._WindowFunction;
-    _WindowParameter = other._WindowParameter;
-    _WindowSkew = other._WindowSkew;
-    _Truncate = other._Truncate;
+        _WindowFunction = other._WindowFunction;
+        _WindowParameter = other._WindowParameter;
+        _WindowSkew = other._WindowSkew;
+        _Truncate = other._Truncate;
 
-    _SelectedChannels = other._SelectedChannels;
+        _SelectedChannels = other._SelectedChannels;
 
     #pragma endregion
 
     #pragma region FFT
 
-    _FFTMode = other._FFTMode;
-    _FFTCustom = other._FFTCustom;
-    _FFTDuration = other._FFTDuration;
+        _FFTMode = other._FFTMode;
+        _FFTCustom = other._FFTCustom;
+        _FFTDuration = other._FFTDuration;
 
-    _MappingMethod = other._MappingMethod;
-    _SmoothingMethod = other._SmoothingMethod;
-    _SmoothingFactor = other._SmoothingFactor;
-    _KernelSize = other._KernelSize;
-    _SummationMethod = other._SummationMethod;
-    _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-    _SmoothGainTransition = other._SmoothGainTransition;
+        _KernelSize = other._KernelSize;
+        _SummationMethod = other._SummationMethod;
+        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
+        _SmoothGainTransition = other._SmoothGainTransition;
+
+        _MappingMethod = other._MappingMethod;
+
+        #pragma region Brown-Puckette CQT
+
+            _BandwidthOffset = other._BandwidthOffset;
+            _BandwidthCap = other._BandwidthCap;
+            _BandwidthAmount = other._BandwidthAmount;
+            _GranularBW = other._GranularBW;
+
+            _KernelShape = other._KernelShape;
+            _KernelShapeParameter = other._KernelShapeParameter;
+            _KernelAsymmetry = other._KernelAsymmetry;
+
+        #pragma endregion
+
+    #pragma endregion
+
+    #pragma region CQT
+
+        _CQTBandwidthOffset = other._CQTBandwidthOffset;
+        _CQTAlignment = other._CQTAlignment;
+        _CQTDownSample = other._CQTDownSample;
 
     #pragma endregion
 
     #pragma region SWIFT
 
-    _FilterBankOrder = other._FilterBankOrder;
-    _TimeResolution = other._TimeResolution;
-    _SWIFTBandwidth = other._SWIFTBandwidth;
-
-    #pragma endregion
-
-    #pragma region Brown-Puckette CQT
-
-    _BandwidthOffset = other._BandwidthOffset;
-    _BandwidthCap = other._BandwidthCap;
-    _BandwidthAmount = other._BandwidthAmount;
-    _GranularBW = other._GranularBW;
-
-    _KernelShape = other._KernelShape;
-    _KernelShapeParameter = other._KernelShapeParameter;
-    _KernelAsymmetry = other._KernelAsymmetry;
+        _FilterBankOrder = other._FilterBankOrder;
+        _TimeResolution = other._TimeResolution;
+        _SWIFTBandwidth = other._SWIFTBandwidth;
 
     #pragma endregion
 
     #pragma region Frequencies
 
-    _FrequencyDistribution = other._FrequencyDistribution;
+        _FrequencyDistribution = other._FrequencyDistribution;
 
-    _NumBands = other._NumBands;
-    _LoFrequency = other._LoFrequency;
-    _HiFrequency = other._HiFrequency;
+        _NumBands = other._NumBands;
+        _LoFrequency = other._LoFrequency;
+        _HiFrequency = other._HiFrequency;
 
-    // Note range
-    _MinNote = other._MinNote;
-    _MaxNote = other._MaxNote;
-    _BandsPerOctave = other._BandsPerOctave;
-    _Pitch = other._Pitch;
-    _Transpose = other._Transpose;
+        // Note range
+        _MinNote = other._MinNote;
+        _MaxNote = other._MaxNote;
+        _BandsPerOctave = other._BandsPerOctave;
+        _Pitch = other._Pitch;
+        _Transpose = other._Transpose;
 
-    _ScalingFunction = other._ScalingFunction;
-    _SkewFactor = other._SkewFactor;
-    _Bandwidth = other._Bandwidth;
+        _ScalingFunction = other._ScalingFunction;
+        _SkewFactor = other._SkewFactor;
+        _Bandwidth = other._Bandwidth;
 
     #pragma endregion
 
     #pragma region Filters
 
-    _WeightingType = other._WeightingType;
+        _WeightingType = other._WeightingType;
 
-    _SlopeFunctionOffset = other._SlopeFunctionOffset;
+        _SlopeFunctionOffset = other._SlopeFunctionOffset;
 
-    _Slope = other._Slope;
-    _SlopeOffset = other._SlopeOffset;
+        _Slope = other._Slope;
+        _SlopeOffset = other._SlopeOffset;
 
-    _EqualizeAmount = other._EqualizeAmount;
-    _EqualizeOffset = other._EqualizeOffset;
-    _EqualizeDepth = other._EqualizeDepth;
+        _EqualizeAmount = other._EqualizeAmount;
+        _EqualizeOffset = other._EqualizeOffset;
+        _EqualizeDepth = other._EqualizeDepth;
 
-    _WeightingAmount = other._WeightingAmount;
+        _WeightingAmount = other._WeightingAmount;
 
     #pragma endregion
 
     #pragma region Rendering
 
-    _BackColor = other._BackColor;
-    _UseCustomBackColor = other._UseCustomBackColor;
+        _BackColor = other._BackColor;
+        _UseCustomBackColor = other._UseCustomBackColor;
 
-    // X axis
-    _XAxisMode = other._XAxisMode;
+        // X axis
+        _XAxisMode = other._XAxisMode;
 
-    _XTextColor = other._XTextColor;
-    _UseCustomXTextColor = other._UseCustomXTextColor;
+        _XTextColor = other._XTextColor;
+        _UseCustomXTextColor = other._UseCustomXTextColor;
 
-    _XLineColor = other._XLineColor;
-    _UseCustomXLineColor = other._UseCustomXLineColor;
+        _XLineColor = other._XLineColor;
+        _UseCustomXLineColor = other._UseCustomXLineColor;
 
-    // Y axis
-    _YAxisMode = other._YAxisMode;
+        // Y axis
+        _YAxisMode = other._YAxisMode;
 
-    _YTextColor = other._YTextColor;
-    _UseCustomYTextColor = other._UseCustomYTextColor;
+        _YTextColor = other._YTextColor;
+        _UseCustomYTextColor = other._UseCustomYTextColor;
 
-    _YLineColor = other._YLineColor;
-    _UseCustomYLineColor = other._UseCustomYLineColor;
+        _YLineColor = other._YLineColor;
+        _UseCustomYLineColor = other._UseCustomYLineColor;
 
-    _AmplitudeLo = other._AmplitudeLo;
-    _AmplitudeHi = other._AmplitudeHi;
-    _AmplitudeStep = other._AmplitudeStep;
+        _AmplitudeLo = other._AmplitudeLo;
+        _AmplitudeHi = other._AmplitudeHi;
+        _AmplitudeStep = other._AmplitudeStep;
 
-    _UseAbsolute = other._UseAbsolute;
+        _UseAbsolute = other._UseAbsolute;
 
-    _Gamma = other._Gamma;
+        _Gamma = other._Gamma;
 
     // Common
     _ColorScheme = other._ColorScheme;
+
+    _SmoothingMethod = other._SmoothingMethod;
+    _SmoothingFactor = other._SmoothingFactor;
 
     _GradientStops = other._GradientStops;
     _CustomGradientStops = other._CustomGradientStops;

@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.12) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -11,18 +11,10 @@
 #include "Gradients.h"
 #include "StyleManager.h"
 
-#include "WaveformGenerator.h"
+#include "ToneGenerator.h"
 #include "Log.h"
 
 #pragma hdrstop
-
-#ifdef _DEBUG
-//#define USE_FAKE_WAVEFORM
-#endif
-
-#ifdef USE_FAKE_WAVEFORM
-WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
-#endif
 
 /// <summary>
 /// Creates the timer.
@@ -111,7 +103,7 @@ void UIElement::ProcessPlaybackEvent()
         {
             if (_Artwork.Bitmap() == nullptr)
             {
-                // Get the default colors for the artwork dominant color and gradient.
+                // Set the default dominant color and gradient for the artwork color scheme.
                 _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
                 _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
 
@@ -141,23 +133,28 @@ void UIElement::ProcessPlaybackEvent()
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    double PlaybackTime; // in seconds
-
-    // Update the graph.
-    if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+    if (_Configuration._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
 
-     #ifdef USE_FAKE_WAVEFORM
-        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
+        if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
             ProcessAudioChunk(Chunk);
-    #else
-        double WindowSize = (double) _NumBins / (double) _SampleRate;
-        double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
+    }
+    else
+    {
+        double PlaybackTime; // in seconds
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-            ProcessAudioChunk(Chunk);
-    #endif
+        // Update the graph.
+        if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+        {
+            audio_chunk_impl Chunk;
+
+            double WindowSize = (double) _NumBins / (double) _SampleRate;
+            double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
+
+            if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+                ProcessAudioChunk(Chunk);
+        }
     }
 }
 
