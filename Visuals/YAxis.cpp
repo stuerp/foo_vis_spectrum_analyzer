@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.02.07) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.02.13) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
@@ -43,10 +43,8 @@ void YAxis::Move(const D2D1_RECT_F & rect)
     _Bounds = rect;
 
     // Calculate the position of the labels based on the height.
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
-
     for (Label & Iter : _Labels)
-        Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., Height, _Height / 2.f);
+        Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., _Bounds.bottom, _Bounds.top);
 }
 
 /// <summary>
@@ -62,9 +60,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT Width = _Bounds.right - _Bounds.left;
+    const FLOAT xl = _Bounds.left  + _Width; // Left axis
+    const FLOAT xr = _Bounds.right - _Width; // Right axis
 
-    FLOAT OldTextTop = _Bounds.bottom - _Bounds.top + _Height;
+    FLOAT OldTextTop = _Bounds.bottom + _Height;
 
     Style * LineStyle = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
     Style * TextStyle = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
@@ -72,16 +71,24 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     for (const Label & Iter : _Labels)
     {
         // Draw the horizontal grid line.
-        renderTarget->DrawLine(D2D1_POINT_2F(_Bounds.left + _Width, Iter.y), D2D1_POINT_2F(Width, Iter.y), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(xl, Iter.y), D2D1_POINT_2F(xr, Iter.y), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
 
         // Draw the label.
         if (!Iter.Text.empty())
         {
-            D2D1_RECT_F TextRect = { _Bounds.left, Iter.y - (_Height / 2.f), _Bounds.left + _Width - 2.f, Iter.y + (_Height / 2.f) };
+            D2D1_RECT_F TextRect = { _Bounds.left, Iter.y - (_Height / 2.f), xl - 2.f, Iter.y + (_Height / 2.f) };
 
             if (TextRect.bottom < OldTextTop)
             {
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+                if (_Configuration->_RightYAxis)
+                {
+                    TextRect.left  = xr + 2.f;
+                    TextRect.right = _Bounds.right;
+
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                }
 
                 OldTextTop = TextRect.top;
             }

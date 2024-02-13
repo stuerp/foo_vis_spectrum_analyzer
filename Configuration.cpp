@@ -130,6 +130,7 @@ void Configuration::Reset() noexcept
 
     // X axis
     _XAxisMode = XAxisMode::Notes;
+    _TopXAxis = true;
 
     _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
     _UseCustomXTextColor = true;
@@ -139,6 +140,7 @@ void Configuration::Reset() noexcept
 
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
+    _RightYAxis = true;
 
     _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
     _UseCustomYTextColor = true;
@@ -315,6 +317,7 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // X axis
         _XAxisMode = other._XAxisMode;
+        _TopXAxis = other._TopXAxis;
 
         _XTextColor = other._XTextColor;
         _UseCustomXTextColor = other._UseCustomXTextColor;
@@ -324,6 +327,7 @@ Configuration & Configuration::operator=(const Configuration & other)
 
         // Y axis
         _YAxisMode = other._YAxisMode;
+        _RightYAxis = other._RightYAxis;
 
         _YTextColor = other._YTextColor;
         _UseCustomYTextColor = other._UseCustomYTextColor;
@@ -781,8 +785,14 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         // Version 13
         writer->write_string(_ArtworkFilePath, abortHandler);
 
-        // Version 14
+        // Version 15
         _StyleManager.Write(writer, abortHandler);
+
+        // Version 16
+        writer->write_object_t(_ReactionAlignment, abortHandler);
+
+        writer->write_object_t(_TopXAxis, abortHandler);
+        writer->write_object_t(_RightYAxis, abortHandler);
     }
     catch (exception & ex)
     {

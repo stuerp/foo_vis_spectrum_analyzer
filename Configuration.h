@@ -27,7 +27,7 @@ inline const double MinWindowSkew = -1.;
 inline const double MaxWindowSkew =  1.;
 
 inline const double MinReactionAlignment = 0.;
-inline const double MaxReactionAlignment = 1.;
+inline const double MaxReactionAlignment = 5.;
 
 // Brown-Puckette CQT
 inline const double MinBandwidthOffset = 0.;
@@ -323,7 +323,7 @@ public:
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
-        double _ReactionAlignment;                                      // 0.0 .. 1.0
+        double _ReactionAlignment;                                      // 0.0 .. 5.0
 
         uint32_t _SelectedChannels;
 
@@ -415,12 +415,14 @@ public:
         #pragma region X axis
 
             XAxisMode _XAxisMode;
+            bool _TopXAxis;
 
         #pragma endregion
 
         #pragma region Y axis
 
             YAxisMode _YAxisMode;
+            bool _RightYAxis;
 
             double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
             double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
@@ -536,5 +538,5 @@ private: // Deprecated
     bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 15;
+    const size_t _CurrentVersion = 16;
 };

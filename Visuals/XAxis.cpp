@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.13) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -172,7 +172,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
+    const FLOAT yt = _Bounds.top    + _Height;  // Top axis
+    const FLOAT yb = _Bounds.bottom - _Height;  // Bottom axis
 
     FLOAT OldTextRight = -_Width;
 
@@ -185,7 +186,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
             continue;
 
         // Draw the vertical grid line.
-        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, 0.f), D2D1_POINT_2F(Iter.x, Height -_Height), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, yt), D2D1_POINT_2F(Iter.x, yb), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
 
         // Draw the label.
         if (Iter.Text.empty())
@@ -201,11 +202,19 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             TextLayout->GetMetrics(&TextMetrics);
 
-            D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), Height - _Height, Iter.x + (TextMetrics.width / 2.f), Height };
+            D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), yb, Iter.x + (TextMetrics.width / 2.f), yb + _Height };
 
             if (OldTextRight <= TextRect.left)
             {
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+                if (_Configuration->_TopXAxis)
+                {
+                    TextRect.top    = _Bounds.top;
+                    TextRect.bottom = _Bounds.top + _Height;
+
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                }
 
                 OldTextRight = TextRect.right;
             }

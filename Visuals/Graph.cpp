@@ -34,23 +34,26 @@ void Graph::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
 
-    const FLOAT dw = (_Configuration->_YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT dh = (_Configuration->_XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT dy1 = (_Configuration->_YAxisMode != YAxisMode::None) ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT dy2 = (_Configuration->_RightYAxis ? dy1 : 0.f);
+
+    const FLOAT dx1 = (_Configuration->_XAxisMode != XAxisMode::None) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT dx2 = (_Configuration->_TopXAxis ? dx1 : 0.f);
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, _Bounds.right, _Bounds.bottom - dh);
+        D2D1_RECT_F Rect(dy1, dx2, _Bounds.right - dy2, _Bounds.bottom - dx1);
 
         _Spectrum.Move(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(dw, 0.f, _Bounds.right, _Bounds.bottom);
+        D2D1_RECT_F Rect(dy1, 0.f, _Bounds.right - dy2, _Bounds.bottom);
 
         _XAxis.Move(Rect);
     }
 
     {
-        D2D1_RECT_F Rect(0.f, 0.f, _Bounds.right, _Bounds.bottom - dh);
+        D2D1_RECT_F Rect(0.f, dx2, _Bounds.right, _Bounds.bottom - dx1);
 
         _YAxis.Move(Rect);
     }
