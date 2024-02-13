@@ -35,22 +35,22 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
             {
                 _FFTAnalyzer->Add(Samples, SampleCount, _Configuration._SelectedChannels);
 
-                _FFTAnalyzer->GetFrequencyCoefficients(_FrequencyCoefficients);
+                _FFTAnalyzer->Transform();
 
                 switch (_Configuration._MappingMethod)
                 {
                     default:
 
                     case Mapping::Standard:
-                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, _Configuration._SummationMethod, _FrequencyBands);
+                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, _Configuration._SummationMethod, _FrequencyBands);
                         break;
 
                     case Mapping::TriangularFilterBank:
-                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, _FrequencyBands);
+                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, _FrequencyBands);
                         break;
 
                     case Mapping::BrownPuckette:
-                        _FFTAnalyzer->AnalyzeSamples(_FrequencyCoefficients, _SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
+                        _FFTAnalyzer->AnalyzeSamples(_SampleRate, *_BrownPucketteKernel, _Configuration._BandwidthOffset, _Configuration._BandwidthCap, _Configuration._BandwidthAmount, _Configuration._GranularBW, _FrequencyBands);
                         break;
                 }
                 break;
@@ -115,8 +115,6 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
     if ((_FFTAnalyzer == nullptr) && (_Configuration._Transform == Transform::FFT))
     {
         _FFTAnalyzer = new FFTAnalyzer(&_Configuration, (double) _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, _NumBins);
-
-        _FrequencyCoefficients.resize(_NumBins);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_Configuration._Transform == Transform::CQT))

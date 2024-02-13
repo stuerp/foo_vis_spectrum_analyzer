@@ -27,12 +27,14 @@ public:
 
     FFTAnalyzer(const Configuration * configuration, double sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, size_t fftSize);
 
-    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
-    void GetFrequencyCoefficients(vector<complex<double>> & freqData) noexcept;
+    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
 
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void Add(const audio_sample * samples, size_t count, uint32_t channelMask) noexcept;
+    void Transform() noexcept;
+
+    void AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
 
 private:
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
@@ -82,9 +84,11 @@ private:
     FFT _FFT;
     size_t _FFTSize;
 
+    // Wrap-around sample buffer
     audio_sample * _Data;
     size_t _Size;
     size_t _Curr;
 
     vector<complex<double>> _TimeData;
+    vector<complex<double>> _FreqData;
 };

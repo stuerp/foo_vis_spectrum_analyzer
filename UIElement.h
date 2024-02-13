@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.11) P. Stuer **/
+/** $VER: UIElement.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
@@ -228,10 +228,7 @@ private:
     const WindowFunction * _BrownPucketteKernel;
 
     FFTAnalyzer * _FFTAnalyzer;
-    std::vector<std::complex<double>> _FrequencyCoefficients;
-
     CQTAnalyzer * _CQTAnalyzer;
-
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;

@@ -28,7 +28,7 @@ Configuration::Configuration()
 /// </summary>
 void Configuration::Reset() noexcept
 {
-    _UseToneGenerator = true;
+    _UseToneGenerator = false;
 
     _DialogBounds = { };
     _PageIndex = 0;
