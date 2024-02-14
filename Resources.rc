@@ -228,6 +228,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_SMOOTHING_FACTOR,           X_A38, Y_A38, W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         control         "Tool tips",                IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
+        control         "Suppress mirror image:", , IDC_SUPPRESS_MIRROR_IMAGE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
 
         rtext           "Background mode:",         IDC_BACKGROUND_MODE_LBL,        X_G01, Y_G01 + 2, W_G01, H_G01
         combobox                                    IDC_BACKGROUND_MODE,            X_G02, Y_G02,     W_G02, H_G02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP

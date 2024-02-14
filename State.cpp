@@ -163,6 +163,7 @@ void State::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
+    _SuppressMirrorImage = true;
 
     _BackgroundMode = BackgroundMode::Artwork;
     _ArtworkOpacity = 1.f;
@@ -354,6 +355,7 @@ State & State::operator=(const State & other)
     _CustomGradientStops = other._CustomGradientStops;
 
     _ShowToolTips = other._ShowToolTips;
+    _SuppressMirrorImage = other._SuppressMirrorImage;
 
     _NumArtworkColors = other._NumArtworkColors;
     _LightnessThreshold = other._LightnessThreshold;
@@ -633,6 +635,8 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_FilterBankOrder, abortHandler);
             reader->read_object_t(_TimeResolution, abortHandler);
             reader->read_object_t(_SWIFTBandwidth, abortHandler);
+
+            reader->read_object_t(_SuppressMirrorImage, abortHandler);
         }
     }
     catch (exception & ex)
@@ -825,6 +829,8 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write_object_t(_FilterBankOrder, abortHandler);
         writer->write_object_t(_TimeResolution, abortHandler);
         writer->write_object_t(_SWIFTBandwidth, abortHandler);
+
+        writer->write_object_t(_SuppressMirrorImage, abortHandler);
     }
     catch (exception & ex)
     {

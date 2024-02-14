@@ -90,6 +90,7 @@ v0.7.1.0-beta-1, 2024-xx-xx
 * New: Reaction Alignment parameter allow you to control the delay between the actual playback and the visualization.
 * New: The X-axis can be displayed on top, below or on both sides of the spectrum.
 * New: The Y-axis can be displayed on left, right or on both sides of the spectrum.
+* New: Option to enable or disable the rendering of the mirror image of the spectrum (Anything above the Nyquist frequency). Default is disabled.
 * Changed: Y-axis mode Logarithmic is now called Linear/n-th root.
 * Fixed: Added some missing range checks in the configuration dialog that could lead to a crash.
 * Fixed (Regression): Incorrect background color during startup caused a bright flash in dark mode.

@@ -760,11 +760,23 @@
     #pragma endregion
 
     #pragma region Tool tips
+
     // Checkbox
     #define W_A87    80
     #define H_A87    H_CHB
     #define X_A87    X_A38
     #define Y_A87    Y_A38 + H_A38 + IY
+
+    #pragma endregion
+
+    #pragma region Suppress mirror image
+
+    // Checkbox
+    #define W_G19    80
+    #define H_G19    H_CHB
+    #define X_G19    X_A87
+    #define Y_G19    Y_A87 + H_A87 + IY
+
     #pragma endregion
 
     #pragma region Background Mode
@@ -772,7 +784,7 @@
     #define W_G01    66
     #define H_G01    H_LBL
     #define X_G01    X_A37
-    #define Y_G01    Y_A87 + H_A87 + IY
+    #define Y_G01    Y_G19 + H_G19 + IY
 
     // Combobox
     #define W_G02    100
@@ -816,7 +828,7 @@
     #pragma endregion
 
 #define W_B04  180 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
+#define H_B04   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
 
 #pragma region X axis

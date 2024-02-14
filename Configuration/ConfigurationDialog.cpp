@@ -130,6 +130,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
 
             { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
+            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
 
             { IDC_BACKGROUND_MODE, L"Determines how to render the spectrum background" },
 
@@ -814,6 +815,7 @@ void ConfigurationDialog::Initialize()
     }
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTips);
+        SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
     }
     {
         auto w = (CComboBox) GetDlgItem(IDC_BACKGROUND_MODE);
@@ -1624,6 +1626,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_USE_ABSOLUTE: { _State->_UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
         case IDC_SHOW_TOOLTIPS: { _State->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+        case IDC_SUPPRESS_MIRROR_IMAGE: { _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
 
         case IDC_LED_MODE: { _State->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
 
@@ -2101,7 +2104,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         // Common
         IDC_COMMON,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
-            IDC_SHOW_TOOLTIPS,
+            IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
 
             IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,

@@ -449,6 +449,7 @@ public:
         #pragma region Common
 
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
+            bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
 
             SmoothingMethod _SmoothingMethod;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0

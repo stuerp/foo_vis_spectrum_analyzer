@@ -251,6 +251,7 @@
 #define IDC_SMOOTHING_FACTOR            6062
 
 #define IDC_SHOW_TOOLTIPS               6070
+#define IDC_SUPPRESS_MIRROR_IMAGE       6072
 
 #define IDC_BACKGROUND_MODE_LBL         6080
 #define IDC_BACKGROUND_MODE             6082

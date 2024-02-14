@@ -82,8 +82,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
         if ((DarkBackgroundStyle->_ColorSource != ColorSource::None) && Iter.HasDarkBackground)
             renderTarget->FillRectangle(Rect,  DarkBackgroundStyle->_Brush);
 
-        // Don't render bar foreground above the Nyquist frequency.
-        if (Iter.Ctr < (sampleRate / 2.))
+        if ((Iter.Ctr < (sampleRate / 2.)) || ((Iter.Ctr >= (sampleRate / 2.)) && !_State->_SuppressMirrorImage))
         {
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
@@ -291,7 +290,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyB
     for (const auto & Iter: frequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if (Iter.Ctr > (sampleRate / 2.))
+        if ((Iter.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
         double Value = !usePeak ? _State->ScaleA(Iter.CurValue) : Iter.Peak;
