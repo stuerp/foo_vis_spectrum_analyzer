@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.02.12) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.02.13) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -12,9 +12,8 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
 {
-    _Configuration = configuration;
 }
 
 /// <summary>
@@ -22,7 +21,7 @@ SWIFTAnalyzer::SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, doubl
 /// </summary>
 bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 {
-    const double Factor = 4. * _Configuration->_SWIFTBandwidth / _SampleRate - 1. / (_Configuration->_TimeResolution * _SampleRate / 2000.);
+    const double Factor = 4. * _State->_SWIFTBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
     for (const FrequencyBand & Iter : frequencyBands)
@@ -30,12 +29,12 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
         // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
         Coef c =
         {
-            ::cos(Iter.Ctr * M_PI * 2. / _SampleRate),
-            ::sin(Iter.Ctr * M_PI * 2. / _SampleRate),
+            ::cos(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
+            ::sin(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
             ::exp(-::abs(Iter.Hi - Iter.Lo) * Factor),
         };
 
-        c.Values.resize(_Configuration->_FilterBankOrder, { 0., 0.});
+        c.Values.resize(_State->_FilterBankOrder, { 0., 0.});
 
         _Coefs.push_back(c);
     }
@@ -53,7 +52,7 @@ bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampl
 
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&sampleData[i], _Configuration->_SelectedChannels);
+        const audio_sample Sample = AverageSamples(&sampleData[i], _State->_SelectedChannels);
 
         size_t k = 0;
 

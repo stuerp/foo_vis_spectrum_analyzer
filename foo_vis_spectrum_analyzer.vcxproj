@@ -187,7 +187,7 @@
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\WaveformGenerator.h" />
+    <ClInclude Include="Analyzers\ToneGenerator.h" />
     <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
@@ -195,7 +195,7 @@
     <ClInclude Include="Configuration\CDirectXControl.h" />
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
-    <ClInclude Include="Configuration.h" />
+    <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
@@ -208,7 +208,6 @@
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
-    <ClInclude Include="Analyzers\FFTProvider.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FrequencyBand.h" />
     <ClInclude Include="Log.h" />
@@ -228,7 +227,7 @@
     <ClInclude Include="DUIElement.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
-    <ClInclude Include="Analyzers\TransformProvider.h" />
+    <ClInclude Include="Analyzers\Analyzer.h" />
     <ClInclude Include="Analyzers\WindowFunctions.h" />
     <ClInclude Include="Visuals\XAxis.h" />
     <ClInclude Include="Visuals\YAxis.h" />
@@ -238,16 +237,15 @@
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\FFTProvider.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\WaveformGenerator.cpp" />
+    <ClCompile Include="Analyzers\ToneGenerator.cpp" />
     <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
-    <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />
@@ -306,6 +304,10 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Bars.png" />
+    <Image Include="Resources\Curve.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

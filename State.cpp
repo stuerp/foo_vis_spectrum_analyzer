@@ -1,7 +1,7 @@
 
-/** $VER: Configuration.cpp (2024.02.12) P. Stuer **/
+/** $VER: State.cpp (2024.02.14) P. Stuer **/
 
-#include "Configuration.h"
+#include "State.h"
 #include "Resources.h"
 
 #include "Gradients.h"
@@ -18,7 +18,7 @@ using namespace stringcvt;
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Configuration::Configuration()
+State::State()
 {
     Reset();
 }
@@ -26,8 +26,10 @@ Configuration::Configuration()
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Configuration::Reset() noexcept
+void State::Reset() noexcept
 {
+    _UseToneGenerator = false;
+
     _DialogBounds = { };
     _PageIndex = 0;
 
@@ -38,7 +40,6 @@ void Configuration::Reset() noexcept
 
     _UseZeroTrigger = false;
     _WindowDuration = 50;
-    _ReactionAlignment = 0.5;
 
     // Transform
     _Transform = Transform::FFT;
@@ -48,6 +49,8 @@ void Configuration::Reset() noexcept
     _WindowSkew = 0.;
     _Truncate = true;
 
+    _ReactionAlignment = 0.25;
+
     _SelectedChannels = AllChannels;
 
     // FFT
@@ -56,6 +59,11 @@ void Configuration::Reset() noexcept
     _FFTDuration = 100.;
 
     _MappingMethod = Mapping::Standard;
+
+    // CQT
+    _CQTBandwidthOffset = 1.;
+    _CQTAlignment = 1.;
+    _CQTDownSample = 0.;
 
     // SWIFT
     _FilterBankOrder = 4;
@@ -121,6 +129,8 @@ void Configuration::Reset() noexcept
 
     // X axis
     _XAxisMode = XAxisMode::Notes;
+    _XAxisTop = true;
+    _XAxisBottom = true;
 
     _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
     _UseCustomXTextColor = true;
@@ -130,6 +140,8 @@ void Configuration::Reset() noexcept
 
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
+    _YAxisLeft = true;
+    _YAxisRight = true;
 
     _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
     _UseCustomYTextColor = true;
@@ -151,6 +163,7 @@ void Configuration::Reset() noexcept
     _CustomGradientStops = GetGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
+    _SuppressMirrorImage = true;
 
     _BackgroundMode = BackgroundMode::Artwork;
     _ArtworkOpacity = 1.f;
@@ -189,7 +202,7 @@ void Configuration::Reset() noexcept
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-Configuration & Configuration::operator=(const Configuration & other)
+State & State::operator=(const State & other)
 {
     _DialogBounds = other._DialogBounds;
     _PageIndex = other._PageIndex;
@@ -201,134 +214,148 @@ Configuration & Configuration::operator=(const Configuration & other)
 
     _UseZeroTrigger = other._UseZeroTrigger;
     _WindowDuration = other._WindowDuration;
-    _ReactionAlignment = other._ReactionAlignment;
 
     #pragma region Transform
 
-    _Transform = other._Transform;
+        _Transform = other._Transform;
 
-    _WindowFunction = other._WindowFunction;
-    _WindowParameter = other._WindowParameter;
-    _WindowSkew = other._WindowSkew;
-    _Truncate = other._Truncate;
+        _WindowFunction = other._WindowFunction;
+        _WindowParameter = other._WindowParameter;
+        _WindowSkew = other._WindowSkew;
+        _Truncate = other._Truncate;
 
-    _SelectedChannels = other._SelectedChannels;
+        _ReactionAlignment = other._ReactionAlignment;
+
+        _SelectedChannels = other._SelectedChannels;
 
     #pragma endregion
 
     #pragma region FFT
 
-    _FFTMode = other._FFTMode;
-    _FFTCustom = other._FFTCustom;
-    _FFTDuration = other._FFTDuration;
+        _FFTMode = other._FFTMode;
+        _FFTCustom = other._FFTCustom;
+        _FFTDuration = other._FFTDuration;
 
-    _MappingMethod = other._MappingMethod;
-    _SmoothingMethod = other._SmoothingMethod;
-    _SmoothingFactor = other._SmoothingFactor;
-    _KernelSize = other._KernelSize;
-    _SummationMethod = other._SummationMethod;
-    _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-    _SmoothGainTransition = other._SmoothGainTransition;
+        _KernelSize = other._KernelSize;
+        _SummationMethod = other._SummationMethod;
+        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
+        _SmoothGainTransition = other._SmoothGainTransition;
+
+        _MappingMethod = other._MappingMethod;
+
+        #pragma region Brown-Puckette CQT
+
+            _BandwidthOffset = other._BandwidthOffset;
+            _BandwidthCap = other._BandwidthCap;
+            _BandwidthAmount = other._BandwidthAmount;
+            _GranularBW = other._GranularBW;
+
+            _KernelShape = other._KernelShape;
+            _KernelShapeParameter = other._KernelShapeParameter;
+            _KernelAsymmetry = other._KernelAsymmetry;
+
+        #pragma endregion
+
+    #pragma endregion
+
+    #pragma region CQT
+
+        _CQTBandwidthOffset = other._CQTBandwidthOffset;
+        _CQTAlignment = other._CQTAlignment;
+        _CQTDownSample = other._CQTDownSample;
 
     #pragma endregion
 
     #pragma region SWIFT
 
-    _FilterBankOrder = other._FilterBankOrder;
-    _TimeResolution = other._TimeResolution;
-    _SWIFTBandwidth = other._SWIFTBandwidth;
-
-    #pragma endregion
-
-    #pragma region Brown-Puckette CQT
-
-    _BandwidthOffset = other._BandwidthOffset;
-    _BandwidthCap = other._BandwidthCap;
-    _BandwidthAmount = other._BandwidthAmount;
-    _GranularBW = other._GranularBW;
-
-    _KernelShape = other._KernelShape;
-    _KernelShapeParameter = other._KernelShapeParameter;
-    _KernelAsymmetry = other._KernelAsymmetry;
+        _FilterBankOrder = other._FilterBankOrder;
+        _TimeResolution = other._TimeResolution;
+        _SWIFTBandwidth = other._SWIFTBandwidth;
 
     #pragma endregion
 
     #pragma region Frequencies
 
-    _FrequencyDistribution = other._FrequencyDistribution;
+        _FrequencyDistribution = other._FrequencyDistribution;
 
-    _NumBands = other._NumBands;
-    _LoFrequency = other._LoFrequency;
-    _HiFrequency = other._HiFrequency;
+        _NumBands = other._NumBands;
+        _LoFrequency = other._LoFrequency;
+        _HiFrequency = other._HiFrequency;
 
-    // Note range
-    _MinNote = other._MinNote;
-    _MaxNote = other._MaxNote;
-    _BandsPerOctave = other._BandsPerOctave;
-    _Pitch = other._Pitch;
-    _Transpose = other._Transpose;
+        // Note range
+        _MinNote = other._MinNote;
+        _MaxNote = other._MaxNote;
+        _BandsPerOctave = other._BandsPerOctave;
+        _Pitch = other._Pitch;
+        _Transpose = other._Transpose;
 
-    _ScalingFunction = other._ScalingFunction;
-    _SkewFactor = other._SkewFactor;
-    _Bandwidth = other._Bandwidth;
+        _ScalingFunction = other._ScalingFunction;
+        _SkewFactor = other._SkewFactor;
+        _Bandwidth = other._Bandwidth;
 
     #pragma endregion
 
     #pragma region Filters
 
-    _WeightingType = other._WeightingType;
+        _WeightingType = other._WeightingType;
 
-    _SlopeFunctionOffset = other._SlopeFunctionOffset;
+        _SlopeFunctionOffset = other._SlopeFunctionOffset;
 
-    _Slope = other._Slope;
-    _SlopeOffset = other._SlopeOffset;
+        _Slope = other._Slope;
+        _SlopeOffset = other._SlopeOffset;
 
-    _EqualizeAmount = other._EqualizeAmount;
-    _EqualizeOffset = other._EqualizeOffset;
-    _EqualizeDepth = other._EqualizeDepth;
+        _EqualizeAmount = other._EqualizeAmount;
+        _EqualizeOffset = other._EqualizeOffset;
+        _EqualizeDepth = other._EqualizeDepth;
 
-    _WeightingAmount = other._WeightingAmount;
+        _WeightingAmount = other._WeightingAmount;
 
     #pragma endregion
 
     #pragma region Rendering
 
-    _BackColor = other._BackColor;
-    _UseCustomBackColor = other._UseCustomBackColor;
+        _BackColor = other._BackColor;
+        _UseCustomBackColor = other._UseCustomBackColor;
 
-    // X axis
-    _XAxisMode = other._XAxisMode;
+        // X axis
+        _XAxisMode = other._XAxisMode;
+        _XAxisTop = other._XAxisTop;
 
-    _XTextColor = other._XTextColor;
-    _UseCustomXTextColor = other._UseCustomXTextColor;
+        _XTextColor = other._XTextColor;
+        _UseCustomXTextColor = other._UseCustomXTextColor;
 
-    _XLineColor = other._XLineColor;
-    _UseCustomXLineColor = other._UseCustomXLineColor;
+        _XLineColor = other._XLineColor;
+        _UseCustomXLineColor = other._UseCustomXLineColor;
 
-    // Y axis
-    _YAxisMode = other._YAxisMode;
+        // Y axis
+        _YAxisMode = other._YAxisMode;
+        _YAxisRight = other._YAxisRight;
 
-    _YTextColor = other._YTextColor;
-    _UseCustomYTextColor = other._UseCustomYTextColor;
+        _YTextColor = other._YTextColor;
+        _UseCustomYTextColor = other._UseCustomYTextColor;
 
-    _YLineColor = other._YLineColor;
-    _UseCustomYLineColor = other._UseCustomYLineColor;
+        _YLineColor = other._YLineColor;
+        _UseCustomYLineColor = other._UseCustomYLineColor;
 
-    _AmplitudeLo = other._AmplitudeLo;
-    _AmplitudeHi = other._AmplitudeHi;
-    _AmplitudeStep = other._AmplitudeStep;
+        _AmplitudeLo = other._AmplitudeLo;
+        _AmplitudeHi = other._AmplitudeHi;
+        _AmplitudeStep = other._AmplitudeStep;
 
-    _UseAbsolute = other._UseAbsolute;
+        _UseAbsolute = other._UseAbsolute;
 
-    _Gamma = other._Gamma;
+        _Gamma = other._Gamma;
 
     // Common
     _ColorScheme = other._ColorScheme;
+
+    _SmoothingMethod = other._SmoothingMethod;
+    _SmoothingFactor = other._SmoothingFactor;
 
     _GradientStops = other._GradientStops;
     _CustomGradientStops = other._CustomGradientStops;
 
     _ShowToolTips = other._ShowToolTips;
+    _SuppressMirrorImage = other._SuppressMirrorImage;
 
     _NumArtworkColors = other._NumArtworkColors;
     _LightnessThreshold = other._LightnessThreshold;
@@ -373,20 +400,31 @@ Configuration & Configuration::operator=(const Configuration & other)
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
 /// </summary>
 /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
-double Configuration::ScaleA(double value) const
+double State::ScaleA(double value) const
 {
-    if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
-        return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+    switch (_YAxisMode)
+    {
+        case YAxisMode::None:
+            return 0.;
 
-    double Exponent = 1.0 / _Gamma;
+        default:
 
-    return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+        case YAxisMode::Decibels:
+            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+
+        case YAxisMode::Linear:
+        {
+            const double Exponent = 1.0 / _Gamma;
+
+            return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+        }
+    }
 }
 
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void Configuration::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
+void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
 {
     Reset();
 
@@ -576,14 +614,30 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
         }
 
+        if (Version <= 13)
+            ConvertColorSettings();
+
         if (Version >= 13)
             _ArtworkFilePath = reader->read_string(abortHandler);
 
         if (Version >= 14)
             _StyleManager.Read(reader, size, abortHandler);
 
-        if (Version <= 13)
-            ConvertColorSettings();
+        if (Version >= 16)
+        {
+            reader->read_object_t(_ReactionAlignment, abortHandler);
+
+            reader->read_object_t(_XAxisTop, abortHandler);
+            reader->read_object_t(_XAxisBottom, abortHandler);
+            reader->read_object_t(_YAxisLeft, abortHandler);
+            reader->read_object_t(_YAxisRight, abortHandler);
+
+            reader->read_object_t(_FilterBankOrder, abortHandler);
+            reader->read_object_t(_TimeResolution, abortHandler);
+            reader->read_object_t(_SWIFTBandwidth, abortHandler);
+
+            reader->read_object_t(_SuppressMirrorImage, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -596,7 +650,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void Configuration::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
+void State::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
 {
     try
     {
@@ -761,8 +815,22 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         // Version 13
         writer->write_string(_ArtworkFilePath, abortHandler);
 
-        // Version 14
+        // Version 15
         _StyleManager.Write(writer, abortHandler);
+
+        // Version 16
+        writer->write_object_t(_ReactionAlignment, abortHandler);
+
+        writer->write_object_t(_XAxisTop, abortHandler);
+        writer->write_object_t(_XAxisBottom, abortHandler);
+        writer->write_object_t(_YAxisLeft, abortHandler);
+        writer->write_object_t(_YAxisRight, abortHandler);
+
+        writer->write_object_t(_FilterBankOrder, abortHandler);
+        writer->write_object_t(_TimeResolution, abortHandler);
+        writer->write_object_t(_SWIFTBandwidth, abortHandler);
+
+        writer->write_object_t(_SuppressMirrorImage, abortHandler);
     }
     catch (exception & ex)
     {
@@ -773,7 +841,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
 /// <summary>
 /// One time conversion of old color settings.
 /// </summary>
-void Configuration::ConvertColorSettings() noexcept
+void State::ConvertColorSettings() noexcept
 {
     {
         Style * style = _StyleManager.GetStyle(VisualElement::Background);
@@ -966,7 +1034,7 @@ void Configuration::ConvertColorSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops Configuration::SelectGradientStops(ColorScheme colorScheme) const noexcept
+const GradientStops State::SelectGradientStops(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops;

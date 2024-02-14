@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.h (2024.01.05) P. Stuer - Default User Interface support **/
+/** $VER: DUIElement.h (2024.02.13) P. Stuer - Default User Interface support **/
 
 #pragma once
 
@@ -22,6 +22,7 @@ public:
     DUIElement(DUIElement &&) = delete;
     DUIElement & operator=(DUIElement &&) = delete;
 
+    LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void OnContextMenu(CWindow wnd, CPoint position) override final;
     void ToggleFullScreen() noexcept override final;
 

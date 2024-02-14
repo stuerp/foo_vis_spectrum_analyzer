@@ -1,11 +1,12 @@
 
-/** $VER: UIElement.cpp (2024.02.12) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.13) P. Stuer **/
 
 #include "UIElement.h"
 
 #include "DirectX.h"
 #include "StyleManager.h"
 
+#include "ToneGenerator.h"
 #include "Support.h"
 #include "Log.h"
 
@@ -140,14 +141,6 @@ void UIElement::OnDestroy()
 }
 
 /// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT UIElement::OnEraseBackground(CDCHandle hDC)
-{
-    return 1;
-}
-
-/// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
@@ -190,8 +183,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, !_IsFullScreen ? L"Full-Screen Mode" : L"Exit Full-Screen Mode");
-        Menu.AppendMenu((UINT) MF_STRING | (_Configuration._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
-//      Menu.AppendMenu((UINT) MF_STRING | (_Configuration._UseHardwareRendering ? MF_CHECKED : 0), IDM_TOGGLE_HARDWARE_RENDERING, L"Hardware Rendering");
+        Menu.AppendMenu((UINT) MF_STRING | (_State._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {
             RefreshRateLimitMenu.CreatePopupMenu();
@@ -199,7 +191,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_Configuration._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_State._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
                     pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
@@ -225,27 +217,27 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             break;
 
         case IDM_REFRESH_RATE_LIMIT_20:
-            _Configuration._RefreshRateLimit = 20;
+            _State._RefreshRateLimit = 20;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_30:
-            _Configuration._RefreshRateLimit = 30;
+            _State._RefreshRateLimit = 30;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
-            _Configuration._RefreshRateLimit = 60;
+            _State._RefreshRateLimit = 60;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
-            _Configuration._RefreshRateLimit = 100;
+            _State._RefreshRateLimit = 100;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
-            _Configuration._RefreshRateLimit = 200;
+            _State._RefreshRateLimit = 200;
             StartTimer();
             break;
 
@@ -364,7 +356,7 @@ void UIElement::ToggleFullScreen() noexcept
 /// </summary>
 void UIElement::ToggleFrameCounter() noexcept
 {
-    _Configuration._ShowFrameCounter = !_Configuration._ShowFrameCounter;
+    _State._ShowFrameCounter = !_State._ShowFrameCounter;
 }
 
 /// <summary>
@@ -372,7 +364,7 @@ void UIElement::ToggleFrameCounter() noexcept
 /// </summary>
 void UIElement::ToggleHardwareRendering() noexcept
 {
-    _Configuration._UseHardwareRendering = !_Configuration._UseHardwareRendering;
+    _State._UseHardwareRendering = !_State._UseHardwareRendering;
 
     ReleaseDeviceSpecificResources();
 }
@@ -386,7 +378,7 @@ void UIElement::Configure() noexcept
     {
         _CriticalSection.Enter();
 
-        DialogParameters dp = { m_hWnd, &_Configuration };
+        DialogParameters dp = { m_hWnd, &_State };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
@@ -406,9 +398,9 @@ void UIElement::SetConfiguration() noexcept
 
     // Initialize the frequency bands.
     {
-        if (_Configuration._Transform == Transform::FFT)
+        if (_State._Transform == Transform::FFT)
         {
-            switch (_Configuration._FrequencyDistribution)
+            switch (_State._FrequencyDistribution)
             {
                 default:
 
@@ -430,37 +422,39 @@ void UIElement::SetConfiguration() noexcept
     }
 
     #pragma warning (disable: 4061)
-    switch (_Configuration._FFTMode)
+    switch (_State._FFTMode)
     {
         default:
-            _NumBins = (size_t) (64. * ::exp2((long) _Configuration._FFTMode));
+            _NumBins = (size_t) (64. * ::exp2((long) _State._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _NumBins = (_Configuration._FFTCustom > 0) ? (size_t) _Configuration._FFTCustom : 64;
+            _NumBins = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _NumBins = (_Configuration._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _Configuration._FFTDuration) / 1000.) : 64;
+            _NumBins = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _Bandwidth = (((_Configuration._Transform == Transform::FFT) && (_Configuration._MappingMethod == Mapping::TriangularFilterBank)) || (_Configuration._Transform == Transform::CQT)) ? _Configuration._Bandwidth : 0.5;
+    _Bandwidth = (((_State._Transform == Transform::FFT) && (_State._MappingMethod == Mapping::TriangularFilterBank)) || (_State._Transform == Transform::CQT)) ? _State._Bandwidth : 0.5;
 
     DeleteResources();
 
-    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
+    _State._StyleManager.ReleaseDeviceSpecificResources();
 
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
-    _Graph.Initialize(&_Configuration, _FrequencyBands);
+    _Graph.Initialize(&_State, _FrequencyBands);
 
-    _ToolTipControl.Activate(_Configuration._ShowToolTips);
+    _ToolTipControl.Activate(_State._ShowToolTips);
 
     Resize();
 
     _CriticalSection.Leave();
+
+    _ToneGenerator.Initialize(440., 1., 0., _NumBins);
 }
 
 /// <summary>
@@ -560,11 +554,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         _SampleRate = 44100;
 
     // Use the script from the configuration to load the album art.
-    if (track.is_valid() && !_Configuration._ArtworkFilePath.isEmpty())
+    if (track.is_valid() && !_State._ArtworkFilePath.isEmpty())
     {
         titleformat_object::ptr Script;
 
-        bool Success = titleformat_compiler::get()->compile(Script, _Configuration._ArtworkFilePath.c_str());
+        bool Success = titleformat_compiler::get()->compile(Script, _State._ArtworkFilePath.c_str());
 
         pfc::string Result;
 
@@ -602,7 +596,7 @@ void UIElement::on_playback_pause(bool)
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
     // The script in the configuration takes precedence over the album art supplied by the track.
-    if (!_Configuration._ArtworkFilePath.isEmpty())
+    if (!_State._ArtworkFilePath.isEmpty())
         return;
 
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());

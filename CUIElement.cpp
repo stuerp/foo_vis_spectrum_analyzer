@@ -15,21 +15,21 @@ namespace uie
 /// </summary>
 CUIElement::CUIElement()
 {
-    _Configuration._IsDUI = false;
+    _State._IsDUI = false;
 
     cui::colours::helper Helper(pfc::guid_null);
 
-    _Configuration._UserInterfaceColors.clear();
+    _State._UserInterfaceColors.clear();
 
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
 /// <summary>
@@ -71,6 +71,24 @@ void CUIElement::destroy_window()
     ::DestroyWindow(*this);
 
     _Host.release();
+}
+
+/// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
+{
+    RECT cr;
+
+    GetClientRect(&cr);
+
+    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_State._UserInterfaceColors[3]));
+
+    ::FillRect(hDC, &cr, hBrush);
+
+    ::DeleteObject((HGDIOBJ) hBrush);
+
+    return 1;
 }
 
 /// <summary>

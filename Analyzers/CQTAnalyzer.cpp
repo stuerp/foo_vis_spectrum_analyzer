@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.cpp (2024.02.12) P. Stuer **/
+/** $VER: CQTAnalyzer.cpp (2024.02.13) P. Stuer **/
 
 #include "CQTAnalyzer.h"
 
@@ -12,13 +12,8 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTAnalyzer::CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample, const Configuration * configuration) : TransformProvider(channelCount, channelSetup, sampleRate, windowFunction)
+CQTAnalyzer::CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction)
 {
-    _Configuration = configuration;
-
-    _BandwidthOffset = bandwidthOffset;
-    _Alignment = alignment;
-    _DownSample = downSample;
 }
 
 /// <summary>
@@ -28,19 +23,19 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
 {
     for (FrequencyBand & Iter : frequencyBands)
     {
-        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + (_SampleRate / (double) sampleCount) * _BandwidthOffset;
-        double TLen = Min(1. / Bandwidth, (double) sampleCount / _SampleRate);
+        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
+        double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
 
-        double DownsampleAmount = Max(1.0, ::trunc((_SampleRate * _DownSample) / (Iter.Ctr + TLen)));
-        double Coeff = 2. * ::cos(2. * M_PI * Iter.Ctr / _SampleRate * DownsampleAmount);
+        double DownsampleAmount = Max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (Iter.Ctr + TLen)));
+        double Coeff = 2. * ::cos(2. * M_PI * Iter.Ctr / (double) _SampleRate * DownsampleAmount);
 
         double f1 = 0.;
         double f2 = 0.;
         double Sine = 0.;
-        double Offset = ::trunc(((double) sampleCount - TLen * _SampleRate) * (0.5 + _Alignment / 2.));
+        double Offset = ::trunc(((double) sampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
 
         double LoIdx = Offset;
-        double HiIdx = ::trunc(TLen * _SampleRate) + Offset - 1.;
+        double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
         double Norm = 0.;
 
         for (double Idx = ::trunc(LoIdx / DownsampleAmount); Idx <= ::trunc(HiIdx / DownsampleAmount); ++Idx)
@@ -52,7 +47,7 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
             Norm += w;
 
             // Goertzel transform
-            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _Configuration->_SelectedChannels) * w) + (Coeff * f1) - f2;
+            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _State->_SelectedChannels) * w) + (Coeff * f1) - f2;
 
             f2 = f1;
             f1 = Sine;

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.14) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -7,7 +7,7 @@
 #include "Support.h"
 
 #include "Resources.h"
-#include "Configuration.h"
+#include "State.h"
 
 #include "CMenuListBox.h"
 #include "CNumericEdit.h"
@@ -22,7 +22,7 @@
 struct DialogParameters
 {
     HWND _hWnd;
-    Configuration * _Configuration;
+    State * _State;
 };
 
 /// <summary>
@@ -51,7 +51,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_Configuration->_DialogBounds);
+        GetWindowRect(&_State->_DialogBounds);
 
         Terminate();
 
@@ -93,9 +93,9 @@ private:
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
 
-    void SetDouble(int id, double frequency) noexcept;
+    void SetInteger(int id, int64_t value) noexcept;
+    void SetDouble(int id, double value, unsigned width = 0, unsigned precision = 2) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
-    void SetDecibel(int id, double decibel) noexcept;
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -135,62 +135,18 @@ private:
 
     CToolTipCtrl _ToolTipControl;
 
-    Configuration * _Configuration;
-    Configuration _OldConfiguration;
+    State * _State;
+    State _OldConfiguration;
 
     CMenuListBox _MenuList;
 
     CButtonMenu _Channels;
 
-    CNumericEdit _KernelSize;
-
-    CNumericEdit _WindowParameter;
-    CNumericEdit _WindowSkew;
-
-    CNumericEdit _BandwidthOffset;
-    CNumericEdit _BandwidthCap;
-    CNumericEdit _BandwidthAmount;
-
-    CNumericEdit _KernelShapeParameter;
-    CNumericEdit _KernelAsymmetry;
-
-    CNumericEdit _NumBands;
-    CNumericEdit _LoFrequency;
-    CNumericEdit _HiFrequency;
-    CNumericEdit _MinNote;
-    CNumericEdit _MaxNote;
-    CNumericEdit _BandsPerOctave;
-    CNumericEdit _Pitch;
-    CNumericEdit _Transpose;
-    CNumericEdit _SkewFactor;
-    CNumericEdit _Bandwidth;
-
-    CNumericEdit _AmplitudeLo;
-    CNumericEdit _AmplitudeHi;
-    CNumericEdit _AmplitudeStep;
-
-    CNumericEdit _Gamma;
-
-    CNumericEdit _SlopeFunctionOffset;
-    CNumericEdit _Slope;
-    CNumericEdit _SlopeOffset;
-
-    CNumericEdit _EqualizeAmount;
-    CNumericEdit _EqualizeOffset;
-    CNumericEdit _EqualizeDepth;
-
-    CNumericEdit _WeightingAmount;
-
-    CNumericEdit _ArtworkOpacity;
-    CNumericEdit _ArtworkColors;
-    CNumericEdit _LightnessThreshold;
+    std::vector<CNumericEdit *> _NumericEdits;
 
     CColorButton _Color;
     CColorButton _Gradient;
     CColorListBox _Colors;
-    CNumericEdit _Position;
-    CNumericEdit _Opacity;
-    CNumericEdit _Thickness;
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 

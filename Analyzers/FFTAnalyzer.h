@@ -1,18 +1,19 @@
 
-/** $VER: FFTAnalyzer.h (2024.01.26) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "Configuration.h"
-#include "FFTProvider.h"
+#include "Analyzer.h"
 #include "FrequencyBand.h"
+
+#include "FFT.h"
 
 /// <summary>
 /// Implements a Fast Fourier Transform analyzer.
 /// </summary>
-class FFTAnalyzer : public FFTProvider
+class FFTAnalyzer : public Analyzer
 {
 public:
     FFTAnalyzer() = delete;
@@ -22,17 +23,29 @@ public:
     FFTAnalyzer(FFTAnalyzer &&) = delete;
     FFTAnalyzer & operator=(FFTAnalyzer &&) = delete;
 
-    virtual ~FFTAnalyzer() { };
+    virtual ~FFTAnalyzer();
 
-    FFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, size_t fftSize, const Configuration * configuration);
-
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
-    void AnalyzeSamples(const std::vector<std::complex<double>> & coefficients, uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
+    FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
+    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
 
 private:
+    void Add(const audio_sample * samples, size_t count) noexcept;
+    void Transform() noexcept;
+
+    void AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept;
+    void AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept;
+
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;
+
+    /// <summary>
+    /// Gets the current FFT size.
+    /// </summary>
+    size_t GetFFTSize() const
+    {
+        return _FFTSize;
+    }
 
     /// <summary>
     /// Gets the band index of the specified frequency.
@@ -67,5 +80,16 @@ private:
     }
 
 private:
-    const Configuration * _Configuration;
+    FFT _FFT;
+    size_t _FFTSize;
+
+    // Wrap-around sample buffer
+    audio_sample * _Data;
+    size_t _Size;
+    size_t _Curr;
+
+    vector<complex<double>> _TimeData;
+    vector<complex<double>> _FreqData;
+
+    const WindowFunction & _BrownPucketteKernel;
 };

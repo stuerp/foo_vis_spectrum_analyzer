@@ -1,11 +1,11 @@
 
-/** $VER: UIElement.h (2024.02.11) P. Stuer **/
+/** $VER: UIElement.h (2024.02.13) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "Configuration.h"
+#include "State.h"
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
@@ -52,6 +52,7 @@ protected:
         return guid;
     }
 
+    virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     void SetConfiguration() noexcept;
 
@@ -60,7 +61,6 @@ private:
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
-    LRESULT OnEraseBackground(CDCHandle dc);
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
@@ -168,7 +168,7 @@ private:
     #pragma endregion
 
 protected:
-    Configuration _Configuration;
+    State _State;
     CriticalSection _CriticalSection;
     RECT _OldBounds;
     bool _IsFullScreen;
@@ -228,10 +228,7 @@ private:
     const WindowFunction * _BrownPucketteKernel;
 
     FFTAnalyzer * _FFTAnalyzer;
-    std::vector<std::complex<double>> _FrequencyCoefficients;
-
     CQTAnalyzer * _CQTAnalyzer;
-
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;

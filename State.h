@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.12) P. Stuer **/
+/** $VER: State.h (2024.02.14) P. Stuer **/
 
 #pragma once
 
@@ -10,7 +10,7 @@
 
 #include "StyleManager.h"
 
-inline const int MinFFTSize =     1;
+inline const int MinFFTSize =     2;
 inline const int MaxFFTSize = 32768;
 
 inline const double MinFFTDuration =   1.; // ms
@@ -26,6 +26,9 @@ inline const double MaxWindowParameter = 10.;
 inline const double MinWindowSkew = -1.;
 inline const double MaxWindowSkew =  1.;
 
+inline const double MinReactionAlignment = 0.;
+inline const double MaxReactionAlignment = 5.;
+
 // Brown-Puckette CQT
 inline const double MinBandwidthOffset = 0.;
 inline const double MaxBandwidthOffset = 1.;
@@ -36,7 +39,15 @@ inline const double MaxBandwidthCap = 1.;
 inline const double MinBandwidthAmount =   0.;
 inline const double MaxBandwidthAmount = 256.;
 
+// SWIFT
+inline const size_t MinFilterBankOrder = 1;
+inline const size_t MaxFilterBankOrder = 8;
 
+inline const double MinTimeResolution = 0.; 
+inline const double MaxTimeResolution = 1000.;
+
+inline const double MinSWIFTBandwidth = 0.;
+inline const double MaxSWIFTBandwidth = 8.;
 
 // Frequencies
 inline const int MinBands =   2;
@@ -234,7 +245,7 @@ enum class YAxisMode
     None = 0,
 
     Decibels = 1,
-    Logarithmic = 2,
+    Linear = 2,
 };
 
 enum class VisualizationType
@@ -279,18 +290,18 @@ enum class ColorOrder
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
-class Configuration
+class State
 {
 public:
-    Configuration();
+    State();
 
-    Configuration & operator=(const Configuration & other);
+    State & operator=(const State & other);
 
-    virtual ~Configuration() { }
+    virtual ~State() { }
 
     void Reset() noexcept;
 
-    void Read(stream_reader * reader, size_t size, abort_callback & abortHandle = fb2k::noAbort) noexcept;
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
     /// <summary>
@@ -311,9 +322,6 @@ public:
     bool _UseAntialiasing;
 
     size_t _WindowDuration;                                             // μs
-    double _ReactionAlignment;                                          // ms
-
-    bool _UseZeroTrigger;
 
     #pragma region Transform
 
@@ -323,6 +331,10 @@ public:
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
+        double _ReactionAlignment;                                      // Like in Vizzy.io. Controls the delay between the actual playback and the visualization.
+                                                                        // < 0: All samples are ahead the actual playback (with the first sample equal to the actual playback)
+                                                                        //   0: The first half of samples are behind the actual playback and the second half are ahead of it (just like original foo_musical_spectrum and basically any get_spectrum_absolute() visualizations
+                                                                        // > 0: All samples are behind the playback (similar to VST audio analyzer plugins like Voxengo SPAN) with the last sample equal to the actual playback.
 
         uint32_t _SelectedChannels;
 
@@ -350,6 +362,14 @@ public:
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
+
+    #pragma endregion
+
+    #pragma region CQT
+
+        double _CQTBandwidthOffset;
+        double _CQTAlignment;
+        double _CQTDownSample;
 
     #pragma endregion
 
@@ -388,16 +408,16 @@ public:
 
         WeightingType _WeightingType;
 
-        double _SlopeFunctionOffset = 1.;                               // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
+        double _SlopeFunctionOffset;                                    // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
 
-        double _Slope = 0.;                                             // -12 .. 12, Frequency slope (dB per octave)
-        double _SlopeOffset = 1000.;                                    // 0 .. 96000, Frequency slope offset (Hz = 0dB)
+        double _Slope;                                                  // -12 .. 12, Frequency slope (dB per octave)
+        double _SlopeOffset;                                            // 0 .. 96000, Frequency slope offset (Hz = 0dB)
 
-        double _EqualizeAmount = 0.;                                    // -12 .. 12, Equalize amount
-        double _EqualizeOffset = 44100.;                                // 0 .. 96000, Equalize offset
-        double _EqualizeDepth = 1024.;                                  // 0 .. 96000, Equalize depth
+        double _EqualizeAmount;                                         // -12 .. 12, Equalize amount
+        double _EqualizeOffset;                                         // 0 .. 96000, Equalize offset
+        double _EqualizeDepth;                                          // 0 .. 96000, Equalize depth
 
-        double _WeightingAmount = 0.;                                   // -1 .. 1, Weighting amount
+        double _WeightingAmount;                                        // -1 .. 1, Weighting amount
 
     #pragma endregion
 
@@ -406,25 +426,30 @@ public:
         #pragma region X axis
 
             XAxisMode _XAxisMode;
+            bool _XAxisTop;
+            bool _XAxisBottom;
 
         #pragma endregion
 
         #pragma region Y axis
 
             YAxisMode _YAxisMode;
+            bool _YAxisLeft;
+            bool _YAxisRight;
 
-            double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
-            double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
+            double _AmplitudeLo;                                        // Lower amplitude, -120.0 .. 0.0
+            double _AmplitudeHi;                                        // Upper amplitude, -120.0 .. 0.0
             double _AmplitudeStep;
 
-            bool _UseAbsolute = true;                                   // Logarithmic scale: Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-            double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
+            bool _UseAbsolute;                                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+            double _Gamma;                                              // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
         #pragma endregion
 
         #pragma region Common
 
             bool _ShowToolTips;                                         // True if tooltips should be displayed.
+            bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
 
             SmoothingMethod _SmoothingMethod;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
@@ -466,17 +491,20 @@ public:
     StyleManager _StyleManager;
 
     #pragma region Not Serialized
-    bool _IsDUI;
+
+    bool _IsDUI;                                                        // True if the Default User Interface is being used.
+    bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    D2D1_COLOR_F _DominantColor;
+    D2D1_COLOR_F _DominantColor;                                        // The current dominant color extracted from the artwork bitmap.
     GradientStops _GradientStops;                                       // The current gradient stops.
-    GradientStops _ArtworkGradientStops;                                // The gradient stops extracted from the artwork bitmap.
+    GradientStops _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 
     int _CurrentStyle;
+
     #pragma endregion
 
 public:
@@ -487,6 +515,8 @@ private:
     const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
 
 private: // Deprecated
+    bool _UseZeroTrigger;                                               // Deprecated
+
     ColorScheme _ColorScheme;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
 
@@ -522,5 +552,5 @@ private: // Deprecated
     bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 15;
+    const size_t _CurrentVersion = 16;
 };

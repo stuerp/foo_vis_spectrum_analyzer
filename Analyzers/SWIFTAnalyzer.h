@@ -1,12 +1,12 @@
 
-/** $VER: SWIFTAnalyzer.h (2024.02.11) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.h (2024.02.13) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "Configuration.h"
-#include "TransformProvider.h"
+#include "State.h"
+#include "Analyzer.h"
 #include "FrequencyBand.h"
 
 #include <vector>
@@ -14,7 +14,7 @@
 /// <summary>
 /// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
 /// </summary>
-class SWIFTAnalyzer : public TransformProvider
+class SWIFTAnalyzer : public Analyzer
 {
 public:
     SWIFTAnalyzer() = delete;
@@ -26,14 +26,12 @@ public:
 
     virtual ~SWIFTAnalyzer() { }
 
-    SWIFTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const Configuration * configuration);
+    SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
 
 private:
-    const Configuration * _Configuration;
-
     struct Value
     {
         double x;

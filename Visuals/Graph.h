@@ -5,7 +5,7 @@
 
 #include "framework.h"
 #include "Support.h"
-#include "Configuration.h"
+#include "State.h"
 #include "Artwork.h"
 
 #include "Element.h"
@@ -22,7 +22,7 @@ public:
     Graph();
     virtual ~Graph() { }
 
-    void Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands);
 
     void Move(const D2D1_RECT_F & rect);
 

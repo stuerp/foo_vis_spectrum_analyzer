@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.12) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -11,7 +11,7 @@
 #include "Gradients.h"
 #include "StyleManager.h"
 
-#include "WaveformGenerator.h"
+#include "ToneGenerator.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -34,7 +34,7 @@ void UIElement::StartTimer() const noexcept
 
     FILETIME DueTime = { };
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _Configuration._RefreshRateLimit, 0);
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _State._RefreshRateLimit, 0);
 }
 
 /// <summary>
@@ -73,7 +73,7 @@ void UIElement::OnTimer()
     UpdateSpectrum();
 
     // Update the peak indicators.
-    if (_Configuration._PeakMode != PeakMode::None)
+    if (_State._PeakMode != PeakMode::None)
         UpdatePeakIndicators();
 
     Render();
@@ -103,11 +103,11 @@ void UIElement::ProcessPlaybackEvent()
         {
             if (_Artwork.Bitmap() == nullptr)
             {
-                // Get the default colors for the artwork dominant color and gradient.
-                _Configuration._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
-                _Configuration._DominantColor = _Configuration._ArtworkGradientStops[0].color;
+                // Set the default dominant color and gradient for the artwork color scheme.
+                _State._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
+                _State._DominantColor = _State._ArtworkGradientStops[0].color;
 
-                _Configuration._StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
+                _State._StyleManager.SetArtworkDependentParameters(_State._ArtworkGradientStops, _State._DominantColor);
 
                 if (_ConfigurationDialog.IsWindow())
                     _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
@@ -128,36 +128,33 @@ void UIElement::ProcessPlaybackEvent()
     _PlaybackEvent = PlaybackEvent::None;
 }
 
-#ifdef _DEBUG
-#define USE_FAKE_WAVEFORM
-#endif
-
-#ifdef USE_FAKE_WAVEFORM
-WaveformGenerator _WaveformGenerator(440., 1., .01, 735);
-#endif
-
 /// <summary>
 /// Updates the spectrum using the next audio chunk.
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    double PlaybackTime; // in seconds
-
-    // Update the graph.
-    if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+    if (_State._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
 
-     #ifndef USE_FAKE_WAVEFORM
-        double WindowSize = (double) _NumBins / (double) _SampleRate;
-        double Offset = (_Configuration._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (_Configuration._ReactionAlignment / 2.0 + 0.5)) : PlaybackTime;
+        if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
+            ProcessAudioChunk(Chunk);
+    }
+    else
+    {
+        double PlaybackTime; // in seconds
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-            ProcessAudioChunk(Chunk);
-    #else
-        if (_WaveformGenerator.GetChunk(Chunk, _SampleRate))
-            ProcessAudioChunk(Chunk);
-    #endif
+        // Update the graph.
+        if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+        {
+            audio_chunk_impl Chunk;
+
+            const double WindowSize = (double) _NumBins / (double) _SampleRate;
+            const double Offset = (_State._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _State._ReactionAlignment)) : PlaybackTime;
+
+            if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+                ProcessAudioChunk(Chunk);
+        }
     }
 }
 
@@ -168,14 +165,14 @@ void UIElement::UpdatePeakIndicators() noexcept
 {
     for (FrequencyBand & Iter : _FrequencyBands)
     {
-        double Amplitude = Clamp(_Configuration.ScaleA(Iter.CurValue), 0., 1.);
+        double Amplitude = Clamp(_State.ScaleA(Iter.CurValue), 0., 1.);
 
         if (Amplitude >= Iter.Peak)
         {
-            if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
-                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _Configuration._HoldTime;
+            if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
+                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _State._HoldTime;
             else
-                Iter.HoldTime = _Configuration._HoldTime;
+                Iter.HoldTime = _State._HoldTime;
 
             Iter.Peak = Amplitude;
             Iter.DecaySpeed = 0.;
@@ -185,17 +182,17 @@ void UIElement::UpdatePeakIndicators() noexcept
         {
             if (Iter.HoldTime >= 0.)
             {
-                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
-                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _Configuration._HoldTime;
+                if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _State._HoldTime;
 
                 Iter.HoldTime -= 1.;
 
-                if ((_Configuration._PeakMode == PeakMode::AIMP) || (_Configuration._PeakMode == PeakMode::FadingAIMP))
-                    Iter.HoldTime = Min(Iter.HoldTime, _Configuration._HoldTime);
+                if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
+                    Iter.HoldTime = Min(Iter.HoldTime, _State._HoldTime);
             }
             else
             {
-                switch (_Configuration._PeakMode)
+                switch (_State._PeakMode)
                 {
                     default:
 
@@ -203,22 +200,22 @@ void UIElement::UpdatePeakIndicators() noexcept
                         break;
 
                     case PeakMode::Classic:
-                        Iter.DecaySpeed = _Configuration._Acceleration / 256.;
+                        Iter.DecaySpeed = _State._Acceleration / 256.;
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::Gravity:
-                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.DecaySpeed += _State._Acceleration / 256.;
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_State._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::FadeOut:
-                        Iter.DecaySpeed += _Configuration._Acceleration / 256.;
+                        Iter.DecaySpeed += _State._Acceleration / 256.;
                         Iter.Opacity -= Iter.DecaySpeed;
 
                         if (Iter.Opacity <= 0.)
@@ -226,7 +223,7 @@ void UIElement::UpdatePeakIndicators() noexcept
                         break;
 
                     case PeakMode::FadingAIMP:
-                        Iter.DecaySpeed = (_Configuration._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_State._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         Iter.Peak -= Iter.DecaySpeed;
                         Iter.Opacity -= Iter.DecaySpeed;
 
@@ -254,7 +251,7 @@ void UIElement::Render()
 
         _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
 
-        if (_Configuration._ShowFrameCounter)
+        if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
@@ -315,7 +312,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _Configuration._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _State._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
@@ -363,15 +360,15 @@ HRESULT UIElement::CreateArtworkDependentResources()
     // Get the colors from the artwork.
     std::vector<D2D1_COLOR_F> Colors;
 
-    HRESULT hr = _Artwork.GetColors(Colors, _Configuration._NumArtworkColors, _Configuration._LightnessThreshold, _Configuration._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(Colors, _State._NumArtworkColors, _State._LightnessThreshold, _State._TransparencyThreshold);
 
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _Configuration._DominantColor = Colors[0];
+        _State._DominantColor = Colors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_Configuration._ColorOrder)
+        switch (_State._ColorOrder)
         {
             case ColorOrder::None:
                 break;
@@ -405,10 +402,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
 
     // Create the gradient stops.
     if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(Colors, _Configuration._ArtworkGradientStops);
+        hr = _Direct2D.CreateGradientStops(Colors, _State._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-        _Configuration._StyleManager.SetArtworkDependentParameters(_Configuration._ArtworkGradientStops, _Configuration._DominantColor);
+        _State._StyleManager.SetArtworkDependentParameters(_State._ArtworkGradientStops, _State._DominantColor);
 
     _IsConfigurationChanged = true;
 
@@ -420,7 +417,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
-    _Configuration._StyleManager.ReleaseDeviceSpecificResources();
+    _State._StyleManager.ReleaseDeviceSpecificResources();
 
     _Graph.ReleaseDeviceSpecificResources();
     _FrameCounter.ReleaseDeviceSpecificResources();

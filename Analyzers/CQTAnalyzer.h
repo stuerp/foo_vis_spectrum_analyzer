@@ -5,8 +5,8 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
-#include "TransformProvider.h"
+#include "State.h"
+#include "Analyzer.h"
 #include "FrequencyBand.h"
 
 #include <vector>
@@ -14,7 +14,7 @@
 /// <summary>
 /// Implements a Constant-Q Transform analyzer.
 /// </summary>
-class CQTAnalyzer : public TransformProvider
+class CQTAnalyzer : public Analyzer
 {
 public:
     CQTAnalyzer() = delete;
@@ -26,13 +26,6 @@ public:
 
     virtual ~CQTAnalyzer() { }
 
-    CQTAnalyzer(uint32_t channelCount, uint32_t channelSetup, double sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double alignment, double downSample, const Configuration * configuration);
+    CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const;
-
-private:
-    const Configuration * _Configuration;
-
-    double _BandwidthOffset;
-    double _Alignment;
-    double _DownSample;
 };
