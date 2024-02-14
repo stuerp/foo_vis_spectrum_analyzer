@@ -84,7 +84,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.1.0-beta-1, 2024-xx-xx
+v0.7.1.0-beta-1, 2024-02-14
 
 * New: Sliding Windowed Infinite Fourier Transform (SWIFT).
 * New: Reaction Alignment parameter allow you to control the delay between the actual playback and the visualization.
