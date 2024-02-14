@@ -7,7 +7,7 @@
 
 #include "Element.h"
 #include "Support.h"
-#include "Configuration.h"
+#include "State.h"
 
 #include <vector>
 #include <string>
@@ -18,14 +18,14 @@
 class YAxis : public Element
 {
 public:
-    YAxis() : _Configuration(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _State(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(Configuration * configuration);
+    void Initialize(State * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -40,7 +40,7 @@ public:
     FLOAT GetWidth() const { return _Width; }
 
 private:
-    Configuration * _Configuration;
+    State * _State;
 
     struct Label
     {

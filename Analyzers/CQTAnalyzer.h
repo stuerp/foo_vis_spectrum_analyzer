@@ -5,7 +5,7 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
+#include "State.h"
 #include "Analyzer.h"
 #include "FrequencyBand.h"
 
@@ -26,6 +26,6 @@ public:
 
     virtual ~CQTAnalyzer() { }
 
-    CQTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
+    CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const;
 };

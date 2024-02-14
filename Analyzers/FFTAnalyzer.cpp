@@ -24,7 +24,7 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+FFTAnalyzer::FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
@@ -51,12 +51,12 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
 
     Transform();
 
-    switch (_Configuration->_MappingMethod)
+    switch (_State->_MappingMethod)
     {
         default:
 
         case Mapping::Standard:
-            AnalyzeSamples(_SampleRate, _Configuration->_SummationMethod, frequencyBands);
+            AnalyzeSamples(_SampleRate, _State->_SummationMethod, frequencyBands);
             break;
 
         case Mapping::TriangularFilterBank:
@@ -64,7 +64,7 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
             break;
 
         case Mapping::BrownPuckette:
-            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _Configuration->_BandwidthOffset, _Configuration->_BandwidthCap, _Configuration->_BandwidthAmount, _Configuration->_GranularBW, frequencyBands);
+            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _State->_BandwidthOffset, _State->_BandwidthCap, _State->_BandwidthAmount, _State->_GranularBW, frequencyBands);
             break;
     }
 
@@ -88,7 +88,7 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount) noexcept
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&samples[i], _Configuration->_SelectedChannels);
+        _Data[_Curr] = AverageSamples(&samples[i], _State->_SelectedChannels);
 
         _Curr = (_Curr + 1) % _Size;
     }
@@ -140,7 +140,7 @@ void FFTAnalyzer::Transform() noexcept
 /// </summary>
 void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
 {
-    const bool UseBandGain = (_Configuration->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
+    const bool UseBandGain = (_State->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
 
     std::vector<double> Values(16);
@@ -150,8 +150,8 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationM
         const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), _FreqData.size(), sampleRate);
         const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), _FreqData.size(), sampleRate);
 
-        const int LoIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
-                int HiIdx = (int) (_Configuration->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
+        const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
+                int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
 
         const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
@@ -214,7 +214,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationM
         {
             const double Value = Iter.Ctr * (double) _FreqData.size() / sampleRate;
 
-            Iter.NewValue = ::fabs(Lanzcos(_FreqData, Value, _Configuration->_KernelSize)) * BandGain;
+            Iter.NewValue = ::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
         }
     }
 }

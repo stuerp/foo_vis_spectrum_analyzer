@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.02.13) P. Stuer **/
+/** $VER: Resources.rc (2024.02.14) P. Stuer **/
 
 #include "Resources.h"
 
@@ -44,12 +44,12 @@ filesubtype     VFT2_UNKNOWN
     }
 }
 
-/** Configuration dialog **/
+/** State dialog **/
 
 #include "Layout.h"
 
 IDD_CONFIGURATION dialogex 0, 0, W_A00, H_A00
-caption "Spectrum Analyzer Configuration"
+caption "Spectrum Analyzer State"
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN
 {
@@ -112,6 +112,15 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_KERNEL_SHAPE_PARAMETER,     X_A92, Y_A92,     W_A92, H_A92, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         rtext           "Kernel asymmetry:"         IDC_KERNEL_ASYMMETRY_LBL,       X_A93, Y_A93 + 2, W_A93, H_A93
         edittext                                    IDC_KERNEL_ASYMMETRY,           X_A94, Y_A94,     W_A94, H_A94, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    groupbox "SWIFT", IDC_SWIFT_GROUP, X_B11, Y_B11, W_B11, H_B11, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext           "Filter bank order:",       IDC_FBO_LBL,                    X_F11, Y_F11 + 2, W_F11, H_F11
+        edittext                                    IDC_FBO,                        X_F12, Y_F12,     W_F12, H_F12, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Time resolution:",         IDC_TR_LBL,                     X_F13, Y_F13 + 2, W_F13, H_F13
+        edittext                                    IDC_TR,                         X_F14, Y_F14,     W_F14, H_F14, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Bandwidth:",               IDC_BW_SWIFT_LBL,               X_F15, Y_F15 + 2, W_F15, H_F15
+        edittext                                    IDC_BW_SWIFT,                   X_F16, Y_F16,     W_F16, H_F16, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Frequencies", IDC_FREQUENCIES_GROUP, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 

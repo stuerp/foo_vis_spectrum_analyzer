@@ -5,7 +5,7 @@
 
 #include "framework.h"
 #include "Support.h"
-#include "Configuration.h"
+#include "State.h"
 
 #include "RingBuffer.h"
 

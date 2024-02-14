@@ -195,7 +195,7 @@
     <ClInclude Include="Configuration\CDirectXControl.h" />
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
-    <ClInclude Include="Configuration.h" />
+    <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
@@ -245,7 +245,7 @@
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
-    <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.h" />

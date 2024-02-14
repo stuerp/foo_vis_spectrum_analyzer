@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Configuration.h (2024.02.13) P. Stuer **/
+/** $VER: State.h (2024.02.14) P. Stuer **/
 
 #pragma once
 
@@ -39,7 +39,15 @@ inline const double MaxBandwidthCap = 1.;
 inline const double MinBandwidthAmount =   0.;
 inline const double MaxBandwidthAmount = 256.;
 
+// SWIFT
+inline const size_t MinFilterBankOrder = 1;
+inline const size_t MaxFilterBankOrder = 8;
 
+inline const double MinTimeResolution = 0.; 
+inline const double MaxTimeResolution = 1000.;
+
+inline const double MinSWIFTBandwidth = 0.;
+inline const double MaxSWIFTBandwidth = 8.;
 
 // Frequencies
 inline const int MinBands =   2;
@@ -282,14 +290,14 @@ enum class ColorOrder
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
-class Configuration
+class State
 {
 public:
-    Configuration();
+    State();
 
-    Configuration & operator=(const Configuration & other);
+    State & operator=(const State & other);
 
-    virtual ~Configuration() { }
+    virtual ~State() { }
 
     void Reset() noexcept;
 

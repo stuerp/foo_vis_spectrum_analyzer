@@ -6,14 +6,14 @@
 #include "framework.h"
 #include "Support.h"
 
-#include "Configuration.h"
+#include "State.h"
 #include "Style.h"
 
 class Element
 {
 public:
-    Element() : _Configuration() {}
+    Element() : _State() {}
 
 protected:
-    Configuration * _Configuration;
+    State * _State;
 };

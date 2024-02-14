@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTAnalyzer::CQTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction)
+CQTAnalyzer::CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
@@ -23,16 +23,16 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
 {
     for (FrequencyBand & Iter : frequencyBands)
     {
-        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + ((double) _SampleRate / (double) sampleCount) * _Configuration->_CQTBandwidthOffset;
+        double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
         double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
 
-        double DownsampleAmount = Max(1.0, ::trunc(((double) _SampleRate * _Configuration->_CQTDownSample) / (Iter.Ctr + TLen)));
+        double DownsampleAmount = Max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (Iter.Ctr + TLen)));
         double Coeff = 2. * ::cos(2. * M_PI * Iter.Ctr / (double) _SampleRate * DownsampleAmount);
 
         double f1 = 0.;
         double f2 = 0.;
         double Sine = 0.;
-        double Offset = ::trunc(((double) sampleCount - TLen * (double) _SampleRate) * (0.5 + _Configuration->_CQTAlignment / 2.));
+        double Offset = ::trunc(((double) sampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
 
         double LoIdx = Offset;
         double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
@@ -47,7 +47,7 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
             Norm += w;
 
             // Goertzel transform
-            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _Configuration->_SelectedChannels) * w) + (Coeff * f1) - f2;
+            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _State->_SelectedChannels) * w) + (Coeff * f1) - f2;
 
             f2 = f1;
             f1 = Sine;

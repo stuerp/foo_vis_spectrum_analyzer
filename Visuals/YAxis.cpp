@@ -11,18 +11,18 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(Configuration * configuration)
+void YAxis::Initialize(State * configuration)
 {
-    _Configuration = configuration;
+    _State = configuration;
 
     _Labels.clear();
 
-    if (_Configuration->_YAxisMode == YAxisMode::None)
+    if (_State->_YAxisMode == YAxisMode::None)
         return;
 
     // Precalculate the labels and their position.
     {
-        for (double Amplitude = _Configuration->_AmplitudeLo; Amplitude <= _Configuration->_AmplitudeHi; Amplitude -= _Configuration->_AmplitudeStep)
+        for (double Amplitude = _State->_AmplitudeLo; Amplitude <= _State->_AmplitudeHi; Amplitude -= _State->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -44,7 +44,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 
     // Calculate the position of the labels based on the height.
     for (Label & Iter : _Labels)
-        Iter.y = Map(_Configuration->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., _Bounds.bottom, _Bounds.top);
+        Iter.y = Map(_State->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., _Bounds.bottom, _Bounds.top);
 }
 
 /// <summary>
@@ -52,7 +52,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void YAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if (_Configuration->_YAxisMode == YAxisMode::None)
+    if (_State->_YAxisMode == YAxisMode::None)
         return;
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
@@ -60,13 +60,13 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT xl = _Bounds.left  + (_Configuration->_YAxisLeft ?  _Width : 0.f); // Left axis
-    const FLOAT xr = _Bounds.right - (_Configuration->_YAxisRight ? _Width : 0.f); // Right axis
+    const FLOAT xl = _Bounds.left  + (_State->_YAxisLeft ?  _Width : 0.f); // Left axis
+    const FLOAT xr = _Bounds.right - (_State->_YAxisRight ? _Width : 0.f); // Right axis
 
     FLOAT OldTextTop = _Bounds.bottom + _Height;
 
-    Style * LineStyle = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisLine);
-    Style * TextStyle = _Configuration->_StyleManager.GetStyle(VisualElement::YAxisText);
+    Style * LineStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisLine);
+    Style * TextStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
     for (const Label & Iter : _Labels)
     {
@@ -88,10 +88,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 
             if (TextRect.bottom < OldTextTop)
             {
-                if (_Configuration->_YAxisLeft)
+                if (_State->_YAxisLeft)
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
-                if (_Configuration->_YAxisRight)
+                if (_State->_YAxisRight)
                 {
                     TextRect.left  = xr + 2.f;
                     TextRect.right = _Bounds.right;
@@ -156,7 +156,7 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     {
         for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
         {
-            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+            Style * style = _State->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
                 hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -176,7 +176,7 @@ void YAxis::ReleaseDeviceSpecificResources()
 {
     for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
     {
-        Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+        Style * style = _State->_StyleManager.GetStyle(Iter);
 
         style->ReleaseDeviceSpecificResources();
     }

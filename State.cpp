@@ -1,7 +1,7 @@
 
-/** $VER: Configuration.cpp (2024.02.13) P. Stuer **/
+/** $VER: State.cpp (2024.02.14) P. Stuer **/
 
-#include "Configuration.h"
+#include "State.h"
 #include "Resources.h"
 
 #include "Gradients.h"
@@ -18,7 +18,7 @@ using namespace stringcvt;
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Configuration::Configuration()
+State::State()
 {
     Reset();
 }
@@ -26,7 +26,7 @@ Configuration::Configuration()
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Configuration::Reset() noexcept
+void State::Reset() noexcept
 {
     _UseToneGenerator = false;
 
@@ -64,7 +64,6 @@ void Configuration::Reset() noexcept
     _CQTBandwidthOffset = 1.;
     _CQTAlignment = 1.;
     _CQTDownSample = 0.;
-
 
     // SWIFT
     _FilterBankOrder = 4;
@@ -202,7 +201,7 @@ void Configuration::Reset() noexcept
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-Configuration & Configuration::operator=(const Configuration & other)
+State & State::operator=(const State & other)
 {
     _DialogBounds = other._DialogBounds;
     _PageIndex = other._PageIndex;
@@ -399,7 +398,7 @@ Configuration & Configuration::operator=(const Configuration & other)
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
 /// </summary>
 /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
-double Configuration::ScaleA(double value) const
+double State::ScaleA(double value) const
 {
     if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
         return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
@@ -412,7 +411,7 @@ double Configuration::ScaleA(double value) const
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void Configuration::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
+void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
 {
     Reset();
 
@@ -602,14 +601,28 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
             reader->read(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
         }
 
+        if (Version <= 13)
+            ConvertColorSettings();
+
         if (Version >= 13)
             _ArtworkFilePath = reader->read_string(abortHandler);
 
         if (Version >= 14)
             _StyleManager.Read(reader, size, abortHandler);
 
-        if (Version <= 13)
-            ConvertColorSettings();
+        if (Version >= 16)
+        {
+            reader->read_object_t(_ReactionAlignment, abortHandler);
+
+            reader->read_object_t(_XAxisTop, abortHandler);
+            reader->read_object_t(_XAxisBottom, abortHandler);
+            reader->read_object_t(_YAxisLeft, abortHandler);
+            reader->read_object_t(_YAxisRight, abortHandler);
+
+            reader->read_object_t(_FilterBankOrder, abortHandler);
+            reader->read_object_t(_TimeResolution, abortHandler);
+            reader->read_object_t(_SWIFTBandwidth, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -622,7 +635,7 @@ void Configuration::Read(stream_reader * reader, size_t size, abort_callback & a
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void Configuration::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
+void State::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
 {
     try
     {
@@ -797,6 +810,10 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
         writer->write_object_t(_XAxisBottom, abortHandler);
         writer->write_object_t(_YAxisLeft, abortHandler);
         writer->write_object_t(_YAxisRight, abortHandler);
+
+        writer->write_object_t(_FilterBankOrder, abortHandler);
+        writer->write_object_t(_TimeResolution, abortHandler);
+        writer->write_object_t(_SWIFTBandwidth, abortHandler);
     }
     catch (exception & ex)
     {
@@ -807,7 +824,7 @@ void Configuration::Write(stream_writer * writer, abort_callback & abortHandler)
 /// <summary>
 /// One time conversion of old color settings.
 /// </summary>
-void Configuration::ConvertColorSettings() noexcept
+void State::ConvertColorSettings() noexcept
 {
     {
         Style * style = _StyleManager.GetStyle(VisualElement::Background);
@@ -1000,7 +1017,7 @@ void Configuration::ConvertColorSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops Configuration::SelectGradientStops(ColorScheme colorScheme) const noexcept
+const GradientStops State::SelectGradientStops(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops;

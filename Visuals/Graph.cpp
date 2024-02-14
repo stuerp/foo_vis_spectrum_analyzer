@@ -16,9 +16,9 @@ Graph::Graph() : _Bounds()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void Graph::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
-    _Configuration = configuration;
+    _State = configuration;
 
     _Spectrum.Initialize(configuration);
 
@@ -34,11 +34,11 @@ void Graph::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
 
-    const FLOAT xt = ((_Configuration->_XAxisMode != XAxisMode::None) && _Configuration->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
-    const FLOAT xb = ((_Configuration->_XAxisMode != XAxisMode::None) && _Configuration->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xt = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xb = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
 
-    const FLOAT yl = ((_Configuration->_YAxisMode != YAxisMode::None) && _Configuration->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT yr = ((_Configuration->_YAxisMode != YAxisMode::None) && _Configuration->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yl = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yr = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
 
     {
         D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
@@ -78,7 +78,7 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, const std::vector<Frequency
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork)
 {
-    const Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::Background);
+    const Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_ColorSource != ColorSource::Gradient)
         renderTarget->Clear(style->_Color);
@@ -86,7 +86,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
         renderTarget->FillRectangle(_Bounds, style->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() == nullptr) || (_Configuration->_BackgroundMode != BackgroundMode::Artwork))
+    if ((artwork.Bitmap() == nullptr) || (_State->_BackgroundMode != BackgroundMode::Artwork))
         return;
 
     D2D1_RECT_F Rect = GetSpectrum().GetBounds();
@@ -112,7 +112,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
     Rect.right   = Rect.left + Size.width;
     Rect.bottom  = Rect.top  + Size.height;
 
-    renderTarget->DrawBitmap(artwork.Bitmap(), Rect, _Configuration->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    renderTarget->DrawBitmap(artwork.Bitmap(), Rect, _State->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
@@ -157,7 +157,7 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
-    Style * style = _Configuration->_StyleManager.GetStyle(VisualElement::Background);
+    Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_Brush == nullptr)
         hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -174,5 +174,5 @@ void Graph::ReleaseDeviceSpecificResources()
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
 
-    _Configuration->_StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
+    _State->_StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
 }

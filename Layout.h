@@ -1,9 +1,9 @@
 
-/** $VER: Layout.h (2024.02.13) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.02.14) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
-#define H_LBL        8  // Label
+#define H_LBL        8 // Label
 
 #define W_BTN       50 // Button
 #define H_BTN       14 // Button
@@ -224,7 +224,7 @@
     #define Y_F04    Y_B10 + 11
 
     // Textbox
-    #define W_F05    40
+    #define W_F05    30
     #define H_F05    H_TBX
     #define X_F05    X_F04 + W_F04 + IX
     #define Y_F05    Y_F04
@@ -236,7 +236,7 @@
     #define Y_F06    Y_F05 + H_F05 + IX
 
     // Textbox
-    #define W_F07    40
+    #define W_F07    30
     #define H_F07    H_TBX
     #define X_F07    X_F06 + W_F06 + IX
     #define Y_F07    Y_F06
@@ -248,7 +248,7 @@
     #define Y_F08    Y_F07 + H_F07 + IX
 
     // Textbox
-    #define W_F09    40
+    #define W_F09    30
     #define H_F09    H_TBX
     #define X_F09    X_F08 + W_F08 + IX
     #define Y_F09    Y_F08
@@ -297,9 +297,58 @@
 
 #define W_B10   W_B05
 #define H_B10   11 + H_F05 + IY + H_F07 + IY + H_F09 + IY + H_F10 + IY + H_A90 + IY + H_A92 + IY + H_A94 + 7
+
+#pragma endregion
+
+#pragma region SWIFT
+
+// Groupbox
+#define X_B11   X_B10
+#define Y_B11   Y_B10 + H_B10 + IY
+
+    // Label: Filter bank order
+    #define W_F11    78
+    #define H_F11    H_LBL
+    #define X_F11    X_B11 + 5
+    #define Y_F11    Y_B11 + 11
+
+    // Textbox
+    #define W_F12    30
+    #define H_F12    H_TBX
+    #define X_F12    X_F11 + W_F11 + IX
+    #define Y_F12    Y_F11
+
+    // Label: Time resolution
+    #define W_F13    78
+    #define H_F13    H_LBL
+    #define X_F13    X_F11
+    #define Y_F13    Y_F12 + H_F12 + IY
+
+    // Textbox
+    #define W_F14    30
+    #define H_F14    H_TBX
+    #define X_F14    X_F13 + W_F13 + IX
+    #define Y_F14    Y_F13
+
+    // Label: Bandwidth
+    #define W_F15    78
+    #define H_F15    H_LBL
+    #define X_F15    X_F13
+    #define Y_F15    Y_F14 + H_F14 + IY
+
+    // Textbox
+    #define W_F16    30
+    #define H_F16    H_TBX
+    #define X_F16    X_F15 + W_F15 + IX
+    #define Y_F16    Y_F15
+
+#define W_B11   W_B10
+#define H_B11   11 + H_F12 + IY + H_F14 + IY + H_F16 + 7
+
 #pragma endregion
 
 #pragma region Frequencies
+
 // Groupbox
 #define X_B01   X_D01 + W_D01 + IX
 #define Y_B01   Y_D01

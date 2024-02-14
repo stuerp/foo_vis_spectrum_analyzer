@@ -14,15 +14,15 @@
 /// </summary>
 DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
-    _Configuration._IsDUI = true;
+    _State._IsDUI = true;
 
-    _Configuration._UserInterfaceColors.clear();
+    _State._UserInterfaceColors.clear();
 
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
-    _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
+    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
 
     set_configuration(data);
 }
@@ -64,7 +64,7 @@ GUID DUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr DUIElement::g_get_default_configuration()
 {
-    Configuration DefaultConfiguration;
+    State DefaultConfiguration;
 
     ui_element_config_builder Builder;
 
@@ -91,7 +91,7 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    _Configuration.Read(&Parser.m_stream, Parser.get_remaining());
+    _State.Read(&Parser.m_stream, Parser.get_remaining());
 }
 
 /// <summary>
@@ -101,7 +101,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _Configuration.Write(&Builder.m_stream);
+    _State.Write(&Builder.m_stream);
 
     return Builder.finish(g_get_guid());
 }
@@ -113,13 +113,13 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
 {
     if (what == ui_element_notify_colors_changed)
     {
-        _Configuration._UserInterfaceColors.clear();
+        _State._UserInterfaceColors.clear();
 
-        _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
-        _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
-        _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
-        _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
-        _Configuration._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
+        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
+        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
+        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
+        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
+        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
 
         Invalidate();
     }
@@ -138,7 +138,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_Configuration._UserInterfaceColors[1]));
+    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_State._UserInterfaceColors[1]));
 
     ::FillRect(hDC, &cr, hBrush);
 

@@ -7,7 +7,7 @@
 #include "Support.h"
 
 #include "Element.h"
-#include "Configuration.h"
+#include "State.h"
 #include "Gradients.h"
 
 #include "FrequencyBand.h"
@@ -28,7 +28,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(Configuration * configuration);
+    void Initialize(State * configuration);
 
     void Move(const D2D1_RECT_F & rect);
 

@@ -7,7 +7,7 @@
 
 #include "Element.h"
 #include "Support.h"
-#include "Configuration.h"
+#include "State.h"
 
 #include "FrequencyBand.h"
 
@@ -20,14 +20,14 @@
 class XAxis : public Element
 {
 public:
-    XAxis() : _Configuration(), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
+    XAxis() : _State(), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands);
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -42,7 +42,7 @@ public:
     FLOAT GetHeight() const { return _Height; }
 
 private:
-    Configuration * _Configuration;
+    State * _State;
 
     XAxisMode _Mode;
 

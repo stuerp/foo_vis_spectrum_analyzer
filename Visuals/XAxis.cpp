@@ -11,14 +11,14 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(Configuration * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
-    _Configuration = configuration;
+    _State = configuration;
 
     if (frequencyBands.size() == 0)
         return;
 
-    _Mode = _Configuration->_XAxisMode;
+    _Mode = _State->_XAxisMode;
 
     _LoFrequency = frequencyBands[0].Ctr;
     _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
@@ -89,7 +89,7 @@ void XAxis::Initialize(Configuration * configuration, const std::vector<Frequenc
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
@@ -100,7 +100,7 @@ void XAxis::Initialize(Configuration * configuration, const std::vector<Frequenc
                     _Labels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
                 }
                 break;
             }
@@ -111,7 +111,7 @@ void XAxis::Initialize(Configuration * configuration, const std::vector<Frequenc
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _Configuration->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
 
@@ -129,7 +129,7 @@ void XAxis::Initialize(Configuration * configuration, const std::vector<Frequenc
                     _Labels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _Configuration->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
@@ -172,13 +172,13 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT yt = _Bounds.top    + (_Configuration->_XAxisTop    ? _Height : 0.f);  // Top axis
-    const FLOAT yb = _Bounds.bottom - (_Configuration->_XAxisBottom ? _Height : 0.f);  // Bottom axis
+    const FLOAT yt = _Bounds.top    + (_State->_XAxisTop    ? _Height : 0.f);  // Top axis
+    const FLOAT yb = _Bounds.bottom - (_State->_XAxisBottom ? _Height : 0.f);  // Bottom axis
 
     FLOAT OldTextRight = -_Width;
 
-    Style * LineStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisLine);
-    Style * TextStyle = _Configuration->_StyleManager.GetStyle(VisualElement::XAxisText);
+    Style * LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+    Style * TextStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
     for (const Label & Iter : _Labels)
     {
@@ -206,10 +206,10 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             if ((OldTextRight <= TextRect.left) && (TextRect.left < _Bounds.right))
             {
-                if (_Configuration->_XAxisBottom)
+                if (_State->_XAxisBottom)
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
-                if (_Configuration->_XAxisTop)
+                if (_State->_XAxisTop)
                 {
                     TextRect.top    = _Bounds.top;
                     TextRect.bottom = _Bounds.top + _Height;
@@ -277,7 +277,7 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     {
         for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
         {
-            Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+            Style * style = _State->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
                 hr = style->CreateDeviceSpecificResources(renderTarget);
@@ -297,7 +297,7 @@ void XAxis::ReleaseDeviceSpecificResources()
 {
     for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
     {
-        Style * style = _Configuration->_StyleManager.GetStyle(Iter);
+        Style * style = _State->_StyleManager.GetStyle(Iter);
 
         style->ReleaseDeviceSpecificResources();
     }

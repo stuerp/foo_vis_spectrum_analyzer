@@ -5,7 +5,7 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
+#include "State.h"
 #include "Analyzer.h"
 #include "FrequencyBand.h"
 
@@ -26,7 +26,7 @@ public:
 
     virtual ~SWIFTAnalyzer() { }
 
-    SWIFTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
+    SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands);

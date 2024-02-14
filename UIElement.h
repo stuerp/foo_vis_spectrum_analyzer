@@ -5,7 +5,7 @@
 
 #include "framework.h"
 
-#include "Configuration.h"
+#include "State.h"
 #include "ConfigurationDialog.h"
 
 #include "FrameCounter.h"
@@ -168,7 +168,7 @@ private:
     #pragma endregion
 
 protected:
-    Configuration _Configuration;
+    State _State;
     CriticalSection _CriticalSection;
     RECT _OldBounds;
     bool _IsFullScreen;

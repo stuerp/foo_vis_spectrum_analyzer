@@ -25,7 +25,7 @@ public:
 
     virtual ~FFTAnalyzer();
 
-    FFTAnalyzer(const Configuration * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
+    FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
     bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
 
 private:

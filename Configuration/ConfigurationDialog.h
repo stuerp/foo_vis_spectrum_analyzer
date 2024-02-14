@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.14) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -7,7 +7,7 @@
 #include "Support.h"
 
 #include "Resources.h"
-#include "Configuration.h"
+#include "State.h"
 
 #include "CMenuListBox.h"
 #include "CNumericEdit.h"
@@ -22,7 +22,7 @@
 struct DialogParameters
 {
     HWND _hWnd;
-    Configuration * _Configuration;
+    State * _State;
 };
 
 /// <summary>
@@ -51,7 +51,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_Configuration->_DialogBounds);
+        GetWindowRect(&_State->_DialogBounds);
 
         Terminate();
 
@@ -135,12 +135,14 @@ private:
 
     CToolTipCtrl _ToolTipControl;
 
-    Configuration * _Configuration;
-    Configuration _OldConfiguration;
+    State * _State;
+    State _OldConfiguration;
 
     CMenuListBox _MenuList;
 
     CButtonMenu _Channels;
+
+    std::vector<CNumericEdit *> _NumericEdits;
 
     CNumericEdit _KernelSize;
 

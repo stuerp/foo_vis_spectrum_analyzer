@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.02.13) P. Stuer **/
+/** $VER: Resources.h (2024.02.14) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta-1"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -36,7 +36,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta-1"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -55,7 +55,7 @@
 
 #define CC_GRADIENT_STOPS               1   // The gradient stops have changed.
 
-/** Configuration **/
+/** State **/
 
 #define IDD_CONFIGURATION               1000
 
@@ -131,6 +131,19 @@
 #define IDC_KERNEL_SHAPE_PARAMETER      2332
 #define IDC_KERNEL_ASYMMETRY_LBL        2334
 #define IDC_KERNEL_ASYMMETRY            2336
+
+#pragma endregion
+
+#pragma region SWIFT
+
+#define IDC_SWIFT_GROUP                 2400
+
+#define IDC_FBO_LBL                     2402
+#define IDC_FBO                         2404
+#define IDC_TR_LBL                      2406
+#define IDC_TR                          2408
+#define IDC_BW_SWIFT_LBL                2410
+#define IDC_BW_SWIFT                    2412
 
 #pragma endregion
 
