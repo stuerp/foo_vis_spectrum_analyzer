@@ -245,7 +245,7 @@ enum class YAxisMode
     None = 0,
 
     Decibels = 1,
-    Logarithmic = 2,
+    Linear = 2,
 };
 
 enum class VisualizationType
@@ -331,7 +331,10 @@ public:
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
-        double _ReactionAlignment;                                      // 0.0 .. 5.0
+        double _ReactionAlignment;                                      // Like in Vizzy.io. Controls the delay between the actual playback and the visualization.
+                                                                        // < 0: All samples are ahead the actual playback (with the first sample equal to the actual playback)
+                                                                        //   0: The first half of samples are behind the actual playback and the second half are ahead of it (just like original foo_musical_spectrum and basically any get_spectrum_absolute() visualizations
+                                                                        // > 0: All samples are behind the playback (similar to VST audio analyzer plugins like Voxengo SPAN) with the last sample equal to the actual playback.
 
         uint32_t _SelectedChannels;
 
@@ -405,16 +408,16 @@ public:
 
         WeightingType _WeightingType;
 
-        double _SlopeFunctionOffset = 1.;                               // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
+        double _SlopeFunctionOffset;                                    // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
 
-        double _Slope = 0.;                                             // -12 .. 12, Frequency slope (dB per octave)
-        double _SlopeOffset = 1000.;                                    // 0 .. 96000, Frequency slope offset (Hz = 0dB)
+        double _Slope;                                                  // -12 .. 12, Frequency slope (dB per octave)
+        double _SlopeOffset;                                            // 0 .. 96000, Frequency slope offset (Hz = 0dB)
 
-        double _EqualizeAmount = 0.;                                    // -12 .. 12, Equalize amount
-        double _EqualizeOffset = 44100.;                                // 0 .. 96000, Equalize offset
-        double _EqualizeDepth = 1024.;                                  // 0 .. 96000, Equalize depth
+        double _EqualizeAmount;                                         // -12 .. 12, Equalize amount
+        double _EqualizeOffset;                                         // 0 .. 96000, Equalize offset
+        double _EqualizeDepth;                                          // 0 .. 96000, Equalize depth
 
-        double _WeightingAmount = 0.;                                   // -1 .. 1, Weighting amount
+        double _WeightingAmount;                                        // -1 .. 1, Weighting amount
 
     #pragma endregion
 
@@ -434,12 +437,12 @@ public:
             bool _YAxisLeft;
             bool _YAxisRight;
 
-            double _AmplitudeLo;                                         // Lower amplitude, -120.0 .. 0.0
-            double _AmplitudeHi;                                         // Upper amplitude, -120.0 .. 0.0
+            double _AmplitudeLo;                                        // Lower amplitude, -120.0 .. 0.0
+            double _AmplitudeHi;                                        // Upper amplitude, -120.0 .. 0.0
             double _AmplitudeStep;
 
-            bool _UseAbsolute = true;                                   // Logarithmic scale: Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-            double _Gamma;                                              // Logarithmic scale: Gamma, 0.5 .. 10.0
+            bool _UseAbsolute;                                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+            double _Gamma;                                              // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
         #pragma endregion
 

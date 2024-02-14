@@ -400,12 +400,23 @@ State & State::operator=(const State & other)
 /// <remarks>FIXME: This should not live here but it's pretty convenient...</remarks>
 double State::ScaleA(double value) const
 {
-    if ((_YAxisMode == YAxisMode::Decibels) || (_YAxisMode == YAxisMode::None))
-        return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+    switch (_YAxisMode)
+    {
+        case YAxisMode::None:
+            return 0.;
 
-    double Exponent = 1.0 / _Gamma;
+        default:
 
-    return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+        case YAxisMode::Decibels:
+            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+
+        case YAxisMode::Linear:
+        {
+            const double Exponent = 1.0 / _Gamma;
+
+            return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+        }
+    }
 }
 
 /// <summary>

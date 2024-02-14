@@ -87,10 +87,11 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.1.0-beta-1, 2024-xx-xx
 
 * New: Sliding Windowed Infinite Fourier Transform (SWIFT).
-* New: Reaction Alignment parameter allow you to adjust the overlap of the sample window.
+* New: Reaction Alignment parameter allow you to control the delay between the actual playback and the visualization.
 * New: The X-axis can be displayed on top, below or on both sides of the spectrum.
 * New: The Y-axis can be displayed on left, right or on both sides of the spectrum.
-* Fixed: Added some missing range checks in the configuration dialog.
+* Changed: Y-axis mode Logarithmic is now called Linear/n-th root.
+* Fixed: Added some missing range checks in the configuration dialog that could lead to a crash.
 * Fixed (Regression): Incorrect background color during startup caused a bright flash in dark mode.
 
 v0.7.0.0, 2024-02-12

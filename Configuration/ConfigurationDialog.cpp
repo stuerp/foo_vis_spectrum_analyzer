@@ -1,4 +1,4 @@
-
+﻿
 /** $VER: ConfigurationDialog.cpp (2024.02.14) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
@@ -53,14 +53,19 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
         const std::map<int, LPCWSTR> Tips =
         {
             { IDC_METHOD, L"Method used to transform the samples" },
+
             { IDC_WINDOW_FUNCTION, L"Window function applied to the samples" },
             { IDC_WINDOW_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows" },
             { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
-            { IDC_REACTION_ALIGNMENT, L"allow you to adjust the overlap of the sample window." },
+
+            { IDC_REACTION_ALIGNMENT, L"Controls the delay between the actual playback and the visualization.\n"
+                                       "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample)\n"
+                                       "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
+                                       "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
             { IDC_CHANNELS, L"Determines which channels supply samples" },
 
             { IDC_NUM_BINS, L"Sets the number of bins used by the Fourier transforms" },
-            { IDC_NUM_BINS_PARAMETER, L"Sets the parameter used to calculate the number of Fourier transform bins" },
+            { IDC_NUM_BINS_PARAMETER, L"Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
             { IDC_SUMMATION_METHOD, L"Method used to aggregate FFT coefficients" },
             { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
@@ -68,7 +73,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
             { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes" },
 
-            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel" },
+            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel used for interpolating the spectrum" },
 
             // Brown-Puckette CQT
             { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
@@ -103,12 +108,12 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
             { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum" },
-            { IDC_BANDWIDTH, L"Distance between low and high frequency boundaries for each band" },
+            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
 
             { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
 
-            { IDC_SLOPE_FN_OFFS, L"Offset of the slope function" },
-            { IDC_SLOPE_OFFS, L"Frequency slope" },
+            { IDC_SLOPE_FN_OFFS, L"Slope function offset expressed in sample rate / FFT size in samples" },
+            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
             { IDC_SLOPE, L"Frequency slope offset" },
 
             { IDC_EQ_AMT, L"Equalization amount" },
@@ -131,10 +136,12 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
             { IDC_FILE_PATH, L"foobar2000 script that returns the file path of an image to display instead of the artwork" },
 
+            // X-axis
             { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
             { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the spectrum" },
             { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the spectrum" },
 
+            // Y-axis
             { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
             { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the spectrum" },
             { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the spectrum" },
@@ -143,9 +150,10 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis" },
             { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment" },
 
-            { IDC_USE_ABSOLUTE, L"Sets the min. dB range to -Infinity dB (0.0 on linear amplitude) when enabled" },
-            { IDC_GAMMA, L"Gamma correction of the logarithmic scale" },
+            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
+            { IDC_GAMMA, L"Index n of the n-th root calculation" },
 
+            // Visualization
             { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
 
             { IDC_PEAK_MODE, L"Determines how to display the peak coefficients" },
@@ -154,6 +162,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
 
+            // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
 
             { IDC_COLOR_SOURCE, L"Determines the source of the color that will be used to render the visual element" },
@@ -727,7 +736,7 @@ void ConfigurationDialog::Initialize()
 
             w.ResetContent();
 
-            for (const auto & x : { L"None", L"Decibel", L"Logarithmic" })
+            for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
                 w.AddString(x);
 
             w.SetCurSel((int) _State->_YAxisMode);
@@ -781,9 +790,10 @@ void ConfigurationDialog::Initialize()
             }
         }
 
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _State->_UseAbsolute);
-
+        // Used by the Linear/n-th root y-axis mode.
         {
+            SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _State->_UseAbsolute);
+
             CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne); SetDouble(IDC_GAMMA, _State->_Gamma, 0, 1);
         }
     }
@@ -1834,7 +1844,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_EQ_DEPTH_SPIN:
         {
-            _State->_EqualizeDepth = ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.);
+            _State->_EqualizeDepth = ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.); 
             SetDouble(IDC_EQ_DEPTH, _State->_EqualizeDepth);
             break;
         }
@@ -2301,10 +2311,10 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(_State->_YAxisMode != YAxisMode::None);
     GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(_State->_YAxisMode != YAxisMode::None);
 
-    const bool IsLogarithmic = (_State->_YAxisMode == YAxisMode::Logarithmic);
+    const bool IsLinear = (_State->_YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLogarithmic);
+            GetDlgItem(Iter).EnableWindow(IsLinear);
 
     // Visualization
     const bool ShowPeaks = (_State->_PeakMode != PeakMode::None);
