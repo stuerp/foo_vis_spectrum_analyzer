@@ -144,57 +144,9 @@ private:
 
     std::vector<CNumericEdit *> _NumericEdits;
 
-    CNumericEdit _KernelSize;
-
-    CNumericEdit _WindowParameter;
-    CNumericEdit _WindowSkew;
-
-    CNumericEdit _ReactionAlignment;
-
-    CNumericEdit _BandwidthOffset;
-    CNumericEdit _BandwidthCap;
-    CNumericEdit _BandwidthAmount;
-
-    CNumericEdit _KernelShapeParameter;
-    CNumericEdit _KernelAsymmetry;
-
-    CNumericEdit _NumBands;
-    CNumericEdit _LoFrequency;
-    CNumericEdit _HiFrequency;
-    CNumericEdit _MinNote;
-    CNumericEdit _MaxNote;
-    CNumericEdit _BandsPerOctave;
-    CNumericEdit _Pitch;
-    CNumericEdit _Transpose;
-    CNumericEdit _SkewFactor;
-    CNumericEdit _Bandwidth;
-
-    CNumericEdit _AmplitudeLo;
-    CNumericEdit _AmplitudeHi;
-    CNumericEdit _AmplitudeStep;
-
-    CNumericEdit _Gamma;
-
-    CNumericEdit _SlopeFunctionOffset;
-    CNumericEdit _Slope;
-    CNumericEdit _SlopeOffset;
-
-    CNumericEdit _EqualizeAmount;
-    CNumericEdit _EqualizeOffset;
-    CNumericEdit _EqualizeDepth;
-
-    CNumericEdit _WeightingAmount;
-
-    CNumericEdit _ArtworkOpacity;
-    CNumericEdit _ArtworkColors;
-    CNumericEdit _LightnessThreshold;
-
     CColorButton _Color;
     CColorButton _Gradient;
     CColorListBox _Colors;
-    CNumericEdit _Position;
-    CNumericEdit _Opacity;
-    CNumericEdit _Thickness;
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 
