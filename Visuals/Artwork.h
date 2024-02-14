@@ -1,9 +1,11 @@
 
-/** $VER: Artwork.h (2024.01.29) P. Stuer  **/
+/** $VER: Artwork.h (2024.02.14) P. Stuer  **/
 
 #pragma once
 
 #include "framework.h"
+
+#include "State.h"
 
 class Artwork
 {
@@ -19,6 +21,8 @@ public:
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) const noexcept;
 
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
+
+    void Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const State * state) const noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 

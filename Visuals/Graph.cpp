@@ -86,33 +86,8 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
         renderTarget->FillRectangle(_Bounds, style->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() == nullptr) || (_State->_BackgroundMode != BackgroundMode::Artwork))
-        return;
-
-    D2D1_RECT_F Rect = GetSpectrum().GetBounds();
-    D2D1_SIZE_F Size = artwork.Size();
-
-    FLOAT MaxWidth  = Rect.right  - Rect.left;
-    FLOAT MaxHeight = Rect.bottom - Rect.top;
-
-    // Fit big images (Free / FitBig / FitWidth / FitHeight)
-    {
-        // Fit big images.
-        FLOAT HScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
-        FLOAT VScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
-
-        FLOAT Scalar = (std::min)(HScalar, VScalar);
-
-        Size.width  *= Scalar;
-        Size.height *= Scalar;
-    }
-
-    Rect.left   += (MaxWidth  - Size.width)  / 2.f;
-    Rect.top    += (MaxHeight - Size.height) / 2.f;
-    Rect.right   = Rect.left + Size.width;
-    Rect.bottom  = Rect.top  + Size.height;
-
-    renderTarget->DrawBitmap(artwork.Bitmap(), Rect, _State->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    if ((artwork.Bitmap() != nullptr) && (_State->_BackgroundMode == BackgroundMode::Artwork))
+        artwork.Render(renderTarget, GetSpectrum().GetBounds(), _State);
 }
 
 /// <summary>

@@ -287,6 +287,15 @@ enum class ColorOrder
     LightnessDescending = 6,
 };
 
+enum class ZoomMode
+{
+    Free = 0,
+
+    FitBig,
+    FitWidth,
+    FitHeight,
+};
+
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
@@ -457,6 +466,7 @@ public:
             BackgroundMode _BackgroundMode;
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
             pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
+            ZoomMode _ZoomMode;
 
             uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0

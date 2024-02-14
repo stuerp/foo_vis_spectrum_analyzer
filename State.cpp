@@ -168,6 +168,7 @@ void State::Reset() noexcept
     _BackgroundMode = BackgroundMode::Artwork;
     _ArtworkOpacity = 1.f;
     _ArtworkFilePath.clear();
+    _ZoomMode = ZoomMode::FitBig;
 
     _NumArtworkColors = 10;
     _LightnessThreshold = 250.f / 255.f;
@@ -366,6 +367,7 @@ State & State::operator=(const State & other)
     _BackgroundMode = other._BackgroundMode;
     _ArtworkOpacity = other._ArtworkOpacity;
     _ArtworkFilePath = other._ArtworkFilePath;
+    _ZoomMode = other._ZoomMode;
 
     // Visualization
     _VisualizationType = other._VisualizationType;
@@ -831,6 +833,8 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write_object_t(_SWIFTBandwidth, abortHandler);
 
         writer->write_object_t(_SuppressMirrorImage, abortHandler);
+
+        writer->write(&_ZoomMode, sizeof(_ZoomMode), abortHandler);
     }
     catch (exception & ex)
     {

@@ -15,6 +15,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 * Fast Fourier (FFT), Constant-Q (CQT) and Sliding Windowed Infinite Fourier (SWIFT) transforms
 * Multiple frequency range and smoothing options
 * Styling of all visual elements
+* Artwork background and color extraction
 * Uses DirectX rendering.
 * Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
 * Supports dark mode.
@@ -83,6 +84,10 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.7.1.0-beta-2, 2024-02-xx
+
+*
 
 v0.7.1.0-beta-1, 2024-02-14
 

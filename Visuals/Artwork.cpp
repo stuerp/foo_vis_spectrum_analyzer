@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.01.28) P. Stuer **/
+/** $VER: Artwork.cpp (2024.02.14) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -36,6 +36,42 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
     _Raster.clear();
 
     return S_OK;
+}
+
+/// <summary>
+/// Renders this instance to the specified render target.
+/// </summary>
+void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const State * state) const noexcept
+{
+    if (_Bitmap == nullptr)
+        return;
+
+    D2D1_RECT_F Rect = bounds;
+    D2D1_SIZE_F Size = _Bitmap->GetSize();
+
+    const FLOAT MaxWidth  = Rect.right  - Rect.left;
+    const FLOAT MaxHeight = Rect.bottom - Rect.top;
+
+    FLOAT WScalar = 1.f;
+    FLOAT HScalar = 1.f;
+
+    if ((state->_ZoomMode == ZoomMode::FitWidth) || (state->_ZoomMode == ZoomMode::FitBig))
+        WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+
+    if ((state->_ZoomMode == ZoomMode::FitHeight) || (state->_ZoomMode == ZoomMode::FitBig))
+        HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+
+    const FLOAT Scalar = (std::min)(WScalar, HScalar);
+
+    Size.width  *= Scalar;
+    Size.height *= Scalar;
+
+    Rect.left   += (MaxWidth  - Size.width)  / 2.f;
+    Rect.top    += (MaxHeight - Size.height) / 2.f;
+    Rect.right   = Rect.left + Size.width;
+    Rect.bottom  = Rect.top  + Size.height;
+
+    renderTarget->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 }
 
 /// <summary>
