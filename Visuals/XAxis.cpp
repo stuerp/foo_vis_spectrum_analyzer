@@ -11,9 +11,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * state, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
-    _State = state;
+    _State = configuration;
 
     if (frequencyBands.size() == 0)
         return;

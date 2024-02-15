@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _NumBins(), _SampleRate(44100), _Bandwidth()
 {
 }
 
@@ -427,15 +427,15 @@ void UIElement::SetConfiguration() noexcept
     switch (_State._FFTMode)
     {
         default:
-            _State._NumBins = (size_t) (64. * ::exp2((long) _State._FFTMode));
+            _NumBins = (size_t) (64. * ::exp2((long) _State._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _State._NumBins = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
+            _NumBins = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _State._NumBins = (_State._FFTDuration > 0.) ? (size_t) (((double) _State._SampleRate * _State._FFTDuration) / 1000.) : 64;
+            _NumBins = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
@@ -456,7 +456,7 @@ void UIElement::SetConfiguration() noexcept
 
     _CriticalSection.Leave();
 
-    _ToneGenerator.Initialize(440., 1., 0., _State._NumBins);
+    _ToneGenerator.Initialize(440., 1., 0., _NumBins);
 }
 
 /// <summary>
@@ -550,10 +550,10 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
     // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
-    _State._SampleRate = (uint32_t) track->get_info_ref()->info().info_get_int("samplerate");
+    _SampleRate = (uint32_t) track->get_info_ref()->info().info_get_int("samplerate");
 
-    if (_State._SampleRate == 0)
-        _State._SampleRate = 44100;
+    if (_SampleRate == 0)
+        _SampleRate = 44100;
 
     // Use the script from the configuration to load the album art.
     if (track.is_valid() && !_State._ArtworkFilePath.isEmpty())
@@ -579,7 +579,7 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
     _PlaybackEvent = PlaybackEvent::Stop;
 
-    _State._SampleRate = 44100;
+    _SampleRate = 44100;
 
     _Artwork.Release();
 }

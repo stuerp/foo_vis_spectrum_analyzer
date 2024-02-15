@@ -16,36 +16,38 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// </summary>
 void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 {
-    const audio_sample * Samples = chunk.get_data();
+    _SampleRate = chunk.get_sample_rate();
 
-    if (Samples == nullptr)
-        return;
-
-    const size_t SampleCount = chunk.get_sample_count();
-
-    _State._SampleRate = chunk.get_sample_rate();
-
-    // Get the spectrum.
     GetAnalyzer(chunk);
 
-    switch (_State._Transform)
+    // Get the spectrum.
     {
-        case Transform::FFT:
-        {
-            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-            break;
-        }
+        const audio_sample * Samples = chunk.get_data();
 
-        case Transform::CQT:
-        {
-            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-            break;
-        }
+        if (Samples == nullptr)
+            return;
 
-        case Transform::SWIFT:
+        const size_t SampleCount = chunk.get_sample_count();
+
+        switch (_State._Transform)
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-            break;
+            case Transform::FFT:
+            {
+                _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+                break;
+            }
+
+            case Transform::CQT:
+            {
+                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+                break;
+            }
+
+            case Transform::SWIFT:
+            {
+                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+                break;
+            }
         }
     }
 
@@ -94,17 +96,17 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if ((_FFTAnalyzer == nullptr) && (_State._Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(&_State, _State._SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _State._NumBins);
+        _FFTAnalyzer = new FFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _NumBins);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State._Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(&_State, _State._SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+        _CQTAnalyzer = new CQTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_State._Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(&_State, _State._SampleRate, ChannelCount, ChannelSetup);
+        _SWIFTAnalyzer = new SWIFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }
@@ -300,7 +302,7 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
 /// </summary>
 void UIElement::ApplyAcousticWeighting()
 {
-    const double Offset = ((_State._SlopeFunctionOffset * (double) _State._SampleRate) / (double) _State._NumBins);
+    const double Offset = ((_State._SlopeFunctionOffset * (double) _SampleRate) / (double) _NumBins);
 
     for (FrequencyBand & Iter : _FrequencyBands)
         Iter.NewValue *= GetWeight(Iter.Ctr + Offset);

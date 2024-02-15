@@ -16,15 +16,15 @@ Graph::Graph() : _Bounds()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * state, const std::vector<FrequencyBand> & frequencyBands)
+void Graph::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
 {
-    _State = state;
+    _State = configuration;
 
-    _Spectrum.Initialize(state);
+    _Spectrum.Initialize(configuration);
 
-    _XAxis.Initialize(state, frequencyBands);
+    _XAxis.Initialize(configuration, frequencyBands);
     
-    _YAxis.Initialize(state);
+    _YAxis.Initialize(configuration);
 }
 
 /// <summary>

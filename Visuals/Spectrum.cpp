@@ -15,9 +15,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state)
+void Spectrum::Initialize(State * configuration)
 {
-    _State = state;
+    _State = configuration;
 
     ReleaseDeviceSpecificResources();
 }
