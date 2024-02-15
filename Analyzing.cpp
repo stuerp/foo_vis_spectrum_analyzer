@@ -96,7 +96,7 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if ((_FFTAnalyzer == nullptr) && (_State._Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _NumBins);
+        _FFTAnalyzer = new FFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _BinCount);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State._Transform == Transform::CQT))
@@ -126,9 +126,9 @@ void UIElement::GenerateLinearFrequencyBands()
 
     for (FrequencyBand & Iter: _FrequencyBands)
     {
-        Iter.Lo  = DeScaleF(Map(i - _Bandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
-        Iter.Ctr = DeScaleF(Map(i,              0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
-        Iter.Hi  = DeScaleF(Map(i + _Bandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
+        Iter.Lo  = DeScaleF(Map(i - _RealBandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
+        Iter.Ctr = DeScaleF(Map(i,                  0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
+        Iter.Hi  = DeScaleF(Map(i + _RealBandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
 
         ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
 
@@ -161,9 +161,9 @@ void UIElement::GenerateOctaveFrequencyBands()
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, (i - _Bandwidth) * NoteGroup + _State._Transpose),
-            C0 * ::pow(Root24,  i               * NoteGroup + _State._Transpose),
-            C0 * ::pow(Root24, (i + _Bandwidth) * NoteGroup + _State._Transpose),
+            C0 * ::pow(Root24, (i - _RealBandwidth) * NoteGroup + _State._Transpose),
+            C0 * ::pow(Root24,  i                   * NoteGroup + _State._Transpose),
+            C0 * ::pow(Root24, (i + _RealBandwidth) * NoteGroup + _State._Transpose),
         };
 
         // Pre-calculate the tooltip text and the bar background color.
@@ -192,9 +192,9 @@ void UIElement::GenerateAveePlayerFrequencyBands()
 
     for (FrequencyBand & Iter : _FrequencyBands)
     {
-        Iter.Lo  = LogSpace(_State._LoFrequency, _State._HiFrequency, i - _Bandwidth, _State._NumBands - 1, _State._SkewFactor);
-        Iter.Ctr = LogSpace(_State._LoFrequency, _State._HiFrequency, i,              _State._NumBands - 1, _State._SkewFactor);
-        Iter.Hi  = LogSpace(_State._LoFrequency, _State._HiFrequency, i + _Bandwidth, _State._NumBands - 1, _State._SkewFactor);
+        Iter.Lo  = LogSpace(_State._LoFrequency, _State._HiFrequency, i - _RealBandwidth, _State._NumBands - 1, _State._SkewFactor);
+        Iter.Ctr = LogSpace(_State._LoFrequency, _State._HiFrequency, i,                  _State._NumBands - 1, _State._SkewFactor);
+        Iter.Hi  = LogSpace(_State._LoFrequency, _State._HiFrequency, i + _RealBandwidth, _State._NumBands - 1, _State._SkewFactor);
 
         Iter.HasDarkBackground = true;
         ++i;
@@ -302,7 +302,7 @@ double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor
 /// </summary>
 void UIElement::ApplyAcousticWeighting()
 {
-    const double Offset = ((_State._SlopeFunctionOffset * (double) _SampleRate) / (double) _NumBins);
+    const double Offset = ((_State._SlopeFunctionOffset * (double) _SampleRate) / (double) _BinCount);
 
     for (FrequencyBand & Iter : _FrequencyBands)
         Iter.NewValue *= GetWeight(Iter.Ctr + Offset);

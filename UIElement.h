@@ -232,9 +232,9 @@ private:
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
-    size_t _NumBins;
+    size_t _BinCount;
     uint32_t _SampleRate;
-    double _Bandwidth;
+    double _RealBandwidth;
     double _OldPlaybackTime;
 
     Artwork _Artwork;

@@ -183,7 +183,7 @@ void UIElement::UpdateSpectrum()
                 ProcessAudioChunk(Chunk);
 */
             const bool IsSlidingWindow = _State._Transform == Transform::SWIFT;
-            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _NumBins / (double) _SampleRate;
+            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _BinCount / (double) _SampleRate;
             const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _State._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))

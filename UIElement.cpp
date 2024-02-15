@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _NumBins(), _SampleRate(44100), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _BinCount(), _SampleRate(44100), _RealBandwidth()
 {
 }
 
@@ -427,20 +427,20 @@ void UIElement::SetConfiguration() noexcept
     switch (_State._FFTMode)
     {
         default:
-            _NumBins = (size_t) (64. * ::exp2((long) _State._FFTMode));
+            _BinCount = (size_t) (64. * ::exp2((long) _State._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _NumBins = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
+            _BinCount = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _NumBins = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
+            _BinCount = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _Bandwidth = (((_State._Transform == Transform::FFT) && (_State._MappingMethod == Mapping::TriangularFilterBank)) || (_State._Transform == Transform::CQT)) ? _State._Bandwidth : 0.5;
+    _RealBandwidth = (((_State._Transform == Transform::FFT) && (_State._MappingMethod == Mapping::TriangularFilterBank)) || (_State._Transform == Transform::CQT)) ? _State._Bandwidth : 0.5;
 
     DeleteResources();
 
@@ -456,7 +456,7 @@ void UIElement::SetConfiguration() noexcept
 
     _CriticalSection.Leave();
 
-    _ToneGenerator.Initialize(440., 1., 0., _NumBins);
+    _ToneGenerator.Initialize(440., 1., 0., _BinCount);
 }
 
 /// <summary>
