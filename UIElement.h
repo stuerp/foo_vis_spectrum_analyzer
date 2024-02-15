@@ -10,17 +10,11 @@
 
 #include "FrameCounter.h"
 #include "Graph.h"
-#include "XAxis.h"
-#include "YAxis.h"
-#include "Spectrum.h"
 #include "Artwork.h"
 
-#include "FFTAnalyzer.h"
-#include "CQTAnalyzer.h"
-#include "SWIFTAnalyzer.h"
+#include "Analysis.h"
 
 #include <vector>
-#include <complex>
 
 /// <summary>
 /// Implements the UIElement and Playback interface.
@@ -224,6 +218,8 @@ private:
     POINT _LastMousePos;
     size_t _LastIndex;
 
+    std::vector<Analysis> _Analyses;
+
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
 
@@ -232,8 +228,7 @@ private:
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
     std::vector<FrequencyBand> _FrequencyBands;
-    size_t _NumBins;
-    uint32_t _SampleRate;
+
     double _Bandwidth;
     double _OldPlaybackTime;
 

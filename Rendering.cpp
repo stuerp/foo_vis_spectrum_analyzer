@@ -3,6 +3,13 @@
 
 #include "UIElement.h"
 
+#include "FrameCounter.h"
+#include "Graph.h"
+#include "XAxis.h"
+#include "YAxis.h"
+#include "Spectrum.h"
+#include "Artwork.h"
+
 #include "Direct2D.h"
 #include "DirectWrite.h"
 #include "WIC.h"
@@ -133,13 +140,12 @@ void UIElement::Render()
 
         UpdateSpectrum();
 
-        // Update the peak indicators.
         if (_State._PeakMode != PeakMode::None)
             UpdatePeakIndicators();
 
         _RenderTarget->BeginDraw();
 
-        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
+        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _State._SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -164,7 +170,7 @@ void UIElement::UpdateSpectrum()
     {
         audio_chunk_impl Chunk;
 
-        if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
+        if (_ToneGenerator.GetChunk(Chunk, _State._SampleRate))
             ProcessAudioChunk(Chunk);
     }
     else
@@ -183,7 +189,7 @@ void UIElement::UpdateSpectrum()
                 ProcessAudioChunk(Chunk);
 */
             const bool IsSlidingWindow = _State._Transform == Transform::SWIFT;
-            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _NumBins / (double) _SampleRate;
+            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _State._NumBins / (double) _State._SampleRate;
             const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _State._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
