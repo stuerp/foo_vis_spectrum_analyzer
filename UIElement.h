@@ -234,6 +234,7 @@ private:
     std::vector<FrequencyBand> _FrequencyBands;
     size_t _BinCount;
     uint32_t _SampleRate;
+
     double _RealBandwidth;
     double _OldPlaybackTime;
 

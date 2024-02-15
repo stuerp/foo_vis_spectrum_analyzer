@@ -133,7 +133,6 @@ void UIElement::Render()
 
         UpdateSpectrum();
 
-        // Update the peak indicators.
         if (_State._PeakMode != PeakMode::None)
             UpdatePeakIndicators();
 

@@ -16,38 +16,36 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// </summary>
 void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 {
+    const audio_sample * Samples = chunk.get_data();
+
+    if (Samples == nullptr)
+        return;
+
+    const size_t SampleCount = chunk.get_sample_count();
+
     _SampleRate = chunk.get_sample_rate();
 
+    // Get the spectrum.
     GetAnalyzer(chunk);
 
-    // Get the spectrum.
+    switch (_State._Transform)
     {
-        const audio_sample * Samples = chunk.get_data();
-
-        if (Samples == nullptr)
-            return;
-
-        const size_t SampleCount = chunk.get_sample_count();
-
-        switch (_State._Transform)
+        case Transform::FFT:
         {
-            case Transform::FFT:
-            {
-                _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-                break;
-            }
+            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            break;
+        }
 
-            case Transform::CQT:
-            {
-                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-                break;
-            }
+        case Transform::CQT:
+        {
+            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            break;
+        }
 
-            case Transform::SWIFT:
-            {
-                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
-                break;
-            }
+        case Transform::SWIFT:
+        {
+            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            break;
         }
     }
 
