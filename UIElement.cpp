@@ -72,7 +72,9 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
         VisualisationManager->create_stream(_VisualisationStream, visualisation_manager::KStreamFlagNewFFT);
 
-        _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+//      _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+        _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
+
     }
     catch (std::exception & ex)
     {
@@ -147,7 +149,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 {
     StartTimer();
 
-    ValidateRect(nullptr);
+    ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
 }
 
 /// <summary>

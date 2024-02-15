@@ -66,29 +66,23 @@ void UIElement::OnTimer()
     if (!_CriticalSection.TryEnter())
         return;
 
-    _FrameCounter.NewFrame();
-
     ProcessPlaybackEvent();
-
-    UpdateSpectrum();
-
-    // Update the peak indicators.
-    if (_State._PeakMode != PeakMode::None)
-        UpdatePeakIndicators();
 
     Render();
 
     _CriticalSection.Leave();
 
+    // Notify the configuration dialog about the changed gradient colors.
     if (_IsConfigurationChanged && _ConfigurationDialog.IsWindow())
     {
-        _IsConfigurationChanged = false;
         _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+
+        _IsConfigurationChanged = false;
     }
 }
 
 /// <summary>
-/// Allows the rendering thread to react to playback events in the main thread.
+/// Allows the rendering thread to react to playback events captured in the main thread.
 /// </summary>
 void UIElement::ProcessPlaybackEvent()
 {
@@ -101,6 +95,8 @@ void UIElement::ProcessPlaybackEvent()
 
         case PlaybackEvent::NewTrack:
         {
+            _OldPlaybackTime = 0.;
+
             if (_Artwork.Bitmap() == nullptr)
             {
                 // Set the default dominant color and gradient for the artwork color scheme.
@@ -109,8 +105,7 @@ void UIElement::ProcessPlaybackEvent()
 
                 _State._StyleManager.SetArtworkDependentParameters(_State._ArtworkGradientStops, _State._DominantColor);
 
-                if (_ConfigurationDialog.IsWindow())
-                    _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
+                _IsConfigurationChanged = true;
             }
             break;
         }
@@ -126,6 +121,43 @@ void UIElement::ProcessPlaybackEvent()
     }
 
     _PlaybackEvent = PlaybackEvent::None;
+}
+
+/// <summary>
+/// Renders a frame.
+/// </summary>
+void UIElement::Render()
+{
+    HRESULT hr = CreateDeviceSpecificResources();
+
+    if (SUCCEEDED(hr) && IsWindowVisible() && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+    {
+        _FrameCounter.NewFrame();
+
+        UpdateSpectrum();
+
+        // Update the peak indicators.
+        if (_State._PeakMode != PeakMode::None)
+            UpdatePeakIndicators();
+
+        _RenderTarget->BeginDraw();
+
+        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
+
+        if (_State._ShowFrameCounter)
+            _FrameCounter.Render(_RenderTarget);
+
+        hr = _RenderTarget->EndDraw();
+
+        if (hr == D2DERR_RECREATE_TARGET)
+        {
+            ReleaseDeviceSpecificResources();
+
+            hr = S_OK;
+        }
+    }
+    else
+        Log::Write(Log::Level::Trace, "%08X: Hidden", GetTickCount64());
 }
 
 /// <summary>
@@ -148,12 +180,22 @@ void UIElement::UpdateSpectrum()
         if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
         {
             audio_chunk_impl Chunk;
-
+/* Old code
             const double WindowSize = (double) _NumBins / (double) _SampleRate;
             const double Offset = (_State._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _State._ReactionAlignment)) : PlaybackTime;
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
                 ProcessAudioChunk(Chunk);
+*/
+            const bool IsSlidingWindow = _State._Transform == Transform::SWIFT;
+            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _NumBins / (double) _SampleRate;
+            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _State._ReactionAlignment));
+
+            if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+              ProcessAudioChunk(Chunk);
+
+            _OldPlaybackTime = PlaybackTime;
+
         }
     }
 }
@@ -234,33 +276,6 @@ void UIElement::UpdatePeakIndicators() noexcept
             }
 
             Iter.Peak = Clamp(Iter.Peak, 0., 1.);
-        }
-    }
-}
-
-/// <summary>
-/// Renders a frame.
-/// </summary>
-void UIElement::Render()
-{
-    HRESULT hr = CreateDeviceSpecificResources();
-
-    if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
-    {
-        _RenderTarget->BeginDraw();
-
-        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
-
-        if (_State._ShowFrameCounter)
-            _FrameCounter.Render(_RenderTarget);
-
-        hr = _RenderTarget->EndDraw();
-
-        if (hr == D2DERR_RECREATE_TARGET)
-        {
-            ReleaseDeviceSpecificResources();
-
-            hr = S_OK;
         }
     }
 }

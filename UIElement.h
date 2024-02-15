@@ -235,6 +235,7 @@ private:
     size_t _NumBins;
     uint32_t _SampleRate;
     double _Bandwidth;
+    double _OldPlaybackTime;
 
     Artwork _Artwork;
     bool _NewArtwork;               // True when new artwork has arrived.

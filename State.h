@@ -287,7 +287,7 @@ enum class ColorOrder
     LightnessDescending = 6,
 };
 
-enum class ZoomMode
+enum class FitMode
 {
     Free = 0,
 
@@ -466,7 +466,7 @@ public:
             BackgroundMode _BackgroundMode;
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
             pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
-            ZoomMode _ZoomMode;
+            FitMode _FitMode;
 
             uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
@@ -562,5 +562,5 @@ private: // Deprecated
     bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 16;
+    const size_t _CurrentVersion = 17;
 };

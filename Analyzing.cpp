@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.13) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.14) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -46,6 +46,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
             case Transform::SWIFT:
             {
                 _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+                break;
             }
         }
     }

@@ -123,6 +123,11 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
 
         Invalidate();
     }
+    else
+    if (what == ui_element_notify_font_changed)
+    {
+//      m_callback->query_font_ex(ui_font_default);
+    }
 }
 
 static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Factory;

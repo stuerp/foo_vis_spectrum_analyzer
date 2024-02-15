@@ -168,7 +168,7 @@ void State::Reset() noexcept
     _BackgroundMode = BackgroundMode::Artwork;
     _ArtworkOpacity = 1.f;
     _ArtworkFilePath.clear();
-    _ZoomMode = ZoomMode::FitBig;
+    _FitMode = FitMode::FitBig;
 
     _NumArtworkColors = 10;
     _LightnessThreshold = 250.f / 255.f;
@@ -367,7 +367,7 @@ State & State::operator=(const State & other)
     _BackgroundMode = other._BackgroundMode;
     _ArtworkOpacity = other._ArtworkOpacity;
     _ArtworkFilePath = other._ArtworkFilePath;
-    _ZoomMode = other._ZoomMode;
+    _FitMode = other._FitMode;
 
     // Visualization
     _VisualizationType = other._VisualizationType;
@@ -640,6 +640,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
             reader->read_object_t(_SuppressMirrorImage, abortHandler);
         }
+
+        if (Version >= 17)
+        {
+            reader->read(&_FitMode, sizeof(_FitMode), abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -834,7 +839,8 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         writer->write_object_t(_SuppressMirrorImage, abortHandler);
 
-        writer->write(&_ZoomMode, sizeof(_ZoomMode), abortHandler);
+        // Version 17
+        writer->write(&_FitMode, sizeof(_FitMode), abortHandler);
     }
     catch (exception & ex)
     {

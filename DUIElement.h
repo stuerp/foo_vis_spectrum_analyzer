@@ -28,6 +28,7 @@ public:
 
     // Default User Interface
     #pragma region ui_element_instance interface
+
     static void g_get_name(pfc::string_base & p_out);
     static const char * g_get_description();
     static GUID g_get_guid();
@@ -37,7 +38,8 @@ public:
     void initialize_window(HWND p_parent);
     virtual void set_configuration(ui_element_config::ptr p_data);
     virtual ui_element_config::ptr get_configuration();
-    virtual void notify(const GUID & p_what, t_size p_param1, const void * p_param2, t_size p_param2size);
+    virtual void notify(const GUID & what, t_size param1, const void * param2, t_size param2Size);
+
     #pragma endregion
 
 protected:
