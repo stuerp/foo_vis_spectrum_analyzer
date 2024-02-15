@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
+    <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Analyzers\ToneGenerator.h" />
     <ClInclude Include="Configuration\CButtonMenu.h" />
@@ -236,6 +237,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
+    <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\ToneGenerator.cpp" />
