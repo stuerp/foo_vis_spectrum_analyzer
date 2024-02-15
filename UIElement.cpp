@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.13) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.15) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -98,9 +98,6 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         _ToolTipControl.SetMaxTipWidth(100);
     }
 
-    // Create the timer.
-    CreateTimer();
-
     // Apply the initial configuration.
     SetConfiguration();
 
@@ -116,11 +113,7 @@ void UIElement::OnDestroy()
 
     _CriticalSection.Enter();
 
-    if (_ThreadPoolTimer)
-    {
-        ::CloseThreadpoolTimer(_ThreadPoolTimer);
-        _ThreadPoolTimer = nullptr;
-    }
+    StopTimer();
 
     DeleteResources();
 
@@ -199,6 +192,9 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
 
+        Menu.AppendMenu((UINT) MF_SEPARATOR);
+        Menu.AppendMenu((UINT) MF_STRING | (_IsFrozen ? MF_CHECKED : 0), IDM_FREEZE, L"Frozen");
+
         Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
 
@@ -245,6 +241,10 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
         case IDM_CONFIGURE:
             Configure();
+            break;
+
+        case IDM_FREEZE:
+            _IsFrozen = !_IsFrozen;
             break;
     }
 

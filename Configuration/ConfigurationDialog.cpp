@@ -252,7 +252,7 @@ void ConfigurationDialog::Initialize()
 
         WCHAR Text[32] = { };
 
-        for (int i = 64, j = 0; i <= 32768; i *= 2, ++j)
+        for (int i = 64, j = 0; i <= 65536; i *= 2, ++j)
         {
             ::StringCchPrintfW(Text, _countof(Text), L"%i", i);
 

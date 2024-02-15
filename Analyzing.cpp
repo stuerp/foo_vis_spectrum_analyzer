@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.14) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.15) P. Stuer **/
 
 #include "UIElement.h"
 

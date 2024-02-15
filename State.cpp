@@ -458,14 +458,19 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
     #pragma region FFT
 
         reader->read(&_FFTMode, sizeof(_FFTMode), abortHandler);
+
+        // v17: FFTMode::65536 was added before FFTMode::Custom
+        if (Version < 17)
+            _FFTMode = (FFTMode) ((int) _FFTMode + 1);
+
         reader->read(&_FFTCustom, sizeof(_FFTCustom), abortHandler);
         reader->read(&_FFTDuration, sizeof(_FFTDuration), abortHandler);
 
         reader->read(&_MappingMethod, sizeof(_MappingMethod), abortHandler);
         reader->read(&_SmoothingMethod, sizeof(_SmoothingMethod), abortHandler);
 
-        // SmoothingMethod::None was inserted before SmoothingMethod::Average.
-        if (Version <= 14)
+        // v15: SmoothingMethod::None was inserted before SmoothingMethod::Average.
+        if (Version < 15)
             _SmoothingMethod = (SmoothingMethod) ((int) _SmoothingMethod + 1);
 
         reader->read(&_SmoothingFactor, sizeof(_SmoothingFactor), abortHandler);

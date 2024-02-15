@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.14) P. Stuer **/
+/** $VER: State.h (2024.02.15) P. Stuer **/
 
 #pragma once
 
@@ -13,8 +13,8 @@
 inline const int MinFFTSize =     2;
 inline const int MaxFFTSize = 32768;
 
-inline const double MinFFTDuration =   1.; // ms
-inline const double MaxFFTDuration = 100.; // ms
+inline const double MinFFTDuration =    1.; // ms
+inline const double MaxFFTDuration = 2000.; // ms
 
 inline const int MinKernelSize =  1;
 inline const int MaxKernelSize = 64;
@@ -157,9 +157,10 @@ enum class FFTMode
     FFT8192     = 7,
     FFT16384    = 8,
     FFT32768    = 9,
+    FFT65536    = 10,
 
-    FFTCustom   = 10,
-    FFTDuration = 11,
+    FFTCustom   = 11,
+    FFTDuration = 12,
 };
 
 enum class Mapping

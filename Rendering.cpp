@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.13) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.15) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -17,20 +17,14 @@
 #pragma hdrstop
 
 /// <summary>
-/// Creates the timer.
-/// </summary>
-void UIElement::CreateTimer() noexcept
-{
-    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
-}
-
-/// <summary>
 /// Starts the timer.
 /// </summary>
-void UIElement::StartTimer() const noexcept
+void UIElement::StartTimer() noexcept
 {
-    if (_ThreadPoolTimer == nullptr)
-        return;
+    if (_ThreadPoolTimer != nullptr)
+        StopTimer();
+
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
 
     FILETIME DueTime = { };
 
@@ -40,14 +34,17 @@ void UIElement::StartTimer() const noexcept
 /// <summary>
 /// Stops the timer.
 /// </summary>
-void UIElement::StopTimer() const noexcept
+void UIElement::StopTimer() noexcept
 {
     if (_ThreadPoolTimer == nullptr)
         return;
 
-    FILETIME DueTime = { };
+    ::SetThreadpoolTimer(_ThreadPoolTimer, nullptr, 0, 0);
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 0, 0);
+    ::WaitForThreadpoolTimerCallbacks(_ThreadPoolTimer, true);
+
+    ::CloseThreadpoolTimer(_ThreadPoolTimer);
+    _ThreadPoolTimer = nullptr;
 }
 
 /// <summary>
@@ -63,7 +60,7 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// </summary>
 void UIElement::OnTimer()
 {
-    if (!_CriticalSection.TryEnter())
+    if (_IsFrozen || !_CriticalSection.TryEnter())
         return;
 
     ProcessPlaybackEvent();
@@ -156,8 +153,6 @@ void UIElement::Render()
             hr = S_OK;
         }
     }
-    else
-        Log::Write(Log::Level::Trace, "%08X: Hidden", GetTickCount64());
 }
 
 /// <summary>

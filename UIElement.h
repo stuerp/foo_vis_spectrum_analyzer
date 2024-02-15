@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.13) P. Stuer **/
+/** $VER: UIElement.h (2024.02.15) P. Stuer **/
 
 #pragma once
 
@@ -139,9 +139,8 @@ private:
 
     #pragma region Timer
 
-    void CreateTimer() noexcept;
-    void StartTimer() const noexcept;
-    void StopTimer() const noexcept;
+    void StartTimer() noexcept;
+    void StopTimer() noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
@@ -187,6 +186,7 @@ private:
         IDM_REFRESH_RATE_LIMIT_200,
 
         IDM_CONFIGURE,
+        IDM_FREEZE,
     };
 
     PTP_TIMER _ThreadPoolTimer;
@@ -242,4 +242,5 @@ private:
     bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
+    bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
 };
