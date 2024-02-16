@@ -39,6 +39,10 @@ public:
     FLOAT GetHeight() const { return _Height; }
 
 private:
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+private:
     State * _State;
 
     XAxisMode _Mode;

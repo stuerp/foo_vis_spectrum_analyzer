@@ -15,6 +15,10 @@ void XAxis::Initialize(State * state, Analyses & analyses) noexcept
 {
     _State = state;
 
+    CreateDeviceIndependentResources();
+
+    _Labels.clear();
+
     if (analyses[0]->_FrequencyBands.size() == 0)
         return;
 
@@ -24,8 +28,6 @@ void XAxis::Initialize(State * state, Analyses & analyses) noexcept
 
     _LoFrequency = analyses[0]->_FrequencyBands[0].Ctr;
     _HiFrequency = analyses[0]->_FrequencyBands[_NumBands - 1].Ctr;
-
-    _Labels.clear();
 
     if (analyses[0]->_FrequencyBands.size() == 0)
         return;
@@ -230,15 +232,16 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     TextStyle->_Brush->SetOpacity(Opacity);
 }
 
+#pragma region DirectX
+
 /// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// Creates resources which are not bound to any D3D device.
 /// </summary>
-HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT XAxis::CreateDeviceIndependentResources()
 {
     HRESULT hr = S_OK;
 
-    if (_TextFormat == nullptr)
+    if (_TextFormat == 0)
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
@@ -266,6 +269,25 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
             }
         }
     }
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void XAxis::ReleaseDeviceIndependentResources()
+{
+    _TextFormat.Release();
+}
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// </summary>
+HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+{
+    HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr))
     {
@@ -298,6 +320,6 @@ void XAxis::ReleaseDeviceSpecificResources()
 
         style->ReleaseDeviceSpecificResources();
     }
-
-    _TextFormat.Release();
 }
+
+#pragma endregion

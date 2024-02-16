@@ -25,7 +25,7 @@ public:
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(State * configuration);
+    void Initialize(State * configuration) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -35,6 +35,10 @@ public:
     void ReleaseDeviceSpecificResources();
 
     FLOAT GetWidth() const { return _Width; }
+
+private:
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
 
 private:
     State * _State;
