@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.15) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.16) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -111,7 +111,7 @@ void UIElement::ProcessPlaybackEvent()
         {
             _Artwork.Release();
 
-            for (FrequencyBand & Iter : _FrequencyBands)
+            for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
                 Iter.CurValue = 0.;
             break;
         }
@@ -138,7 +138,7 @@ void UIElement::Render()
 
         _RenderTarget->BeginDraw();
 
-        _Graph.Render(_RenderTarget, _FrequencyBands, (double) _SampleRate, _Artwork);
+        _Graph.Render(_RenderTarget, _Analyses[0]->_FrequencyBands, (double) _SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -199,7 +199,7 @@ void UIElement::UpdateSpectrum()
 /// </summary>
 void UIElement::UpdatePeakIndicators() noexcept
 {
-    for (FrequencyBand & Iter : _FrequencyBands)
+    for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
     {
         double Amplitude = Clamp(_State.ScaleA(Iter.CurValue), 0., 1.);
 

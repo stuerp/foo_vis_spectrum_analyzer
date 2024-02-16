@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.15) P. Stuer **/
+/** $VER: UIElement.h (2024.02.16) P. Stuer **/
 
 #pragma once
 
@@ -108,9 +108,6 @@ private:
 
     void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
-    void GenerateLinearFrequencyBands();
-    void GenerateOctaveFrequencyBands();
-    void GenerateAveePlayerFrequencyBands();
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -119,9 +116,6 @@ private:
     void ApplyPeakSmoothing(double factor);
 
     void DeleteResources();
-
-    static double ScaleF(double x, ScalingFunction function, double factor);
-    static double DeScaleF(double x, ScalingFunction function, double factor);
 
     #pragma region DirectX
 
@@ -222,8 +216,6 @@ private:
     POINT _LastMousePos;
     size_t _LastIndex;
 
-    std::vector<Analysis> _Analyses;
-
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
 
@@ -231,11 +223,11 @@ private:
     CQTAnalyzer * _CQTAnalyzer;
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
-    std::vector<FrequencyBand> _FrequencyBands;
     size_t _BinCount;
     uint32_t _SampleRate;
 
-    double _RealBandwidth;
+    Analyses _Analyses;
+
     double _OldPlaybackTime;
 
     Artwork _Artwork;

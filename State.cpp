@@ -2,7 +2,6 @@
 /** $VER: State.cpp (2024.02.14) P. Stuer **/
 
 #include "State.h"
-#include "Resources.h"
 
 #include "Gradients.h"
 #include "Log.h"
@@ -84,7 +83,7 @@ void State::Reset() noexcept
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
     // Frequency range
-    _NumBands = 320;
+    _BandCount = 320;
     _LoFrequency = 20.;
     _HiFrequency = 20000.;
 
@@ -279,7 +278,7 @@ State & State::operator=(const State & other)
 
         _FrequencyDistribution = other._FrequencyDistribution;
 
-        _NumBands = other._NumBands;
+        _BandCount = other._BandCount;
         _LoFrequency = other._LoFrequency;
         _HiFrequency = other._HiFrequency;
 
@@ -484,7 +483,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
     #pragma region Frequencies
         reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-        reader->read(&_NumBands, sizeof(_NumBands), abortHandler);
+        reader->read(&_BandCount, sizeof(_BandCount), abortHandler);
 
         reader->read(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
         reader->read(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
@@ -704,7 +703,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         writer->write(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
-        writer->write(&_NumBands, sizeof(_NumBands), abortHandler);
+        writer->write(&_BandCount, sizeof(_BandCount), abortHandler);
         writer->write(&_LoFrequency, sizeof(_LoFrequency), abortHandler);
         writer->write(&_HiFrequency, sizeof(_HiFrequency), abortHandler);
 

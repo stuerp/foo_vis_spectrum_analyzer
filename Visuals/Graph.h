@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.02.05) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2024.02.16) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include "Support.h"
 #include "State.h"
 #include "Artwork.h"
+#include "Analysis.h"
 
 #include "Element.h"
 #include "Spectrum.h"
@@ -22,11 +23,11 @@ public:
     Graph();
     virtual ~Graph() { }
 
-    void Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(State * state, Analyses & analyses) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Artwork & artwork);
+    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork);
 
     HRESULT CreateDeviceIndependentResources();
     void ReleaseDeviceIndependentResources();
@@ -42,7 +43,7 @@ public:
     Spectrum & GetSpectrum() { return _Spectrum; }
 
 private:
-    void RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork);
 
 private:

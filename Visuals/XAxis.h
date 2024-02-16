@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.16) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -9,7 +9,7 @@
 #include "Support.h"
 #include "State.h"
 
-#include "FrequencyBand.h"
+#include "Analysis.h"
 
 #include <vector>
 #include <string>
@@ -27,7 +27,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(State * state, Analyses & analyses) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 

@@ -32,7 +32,7 @@ public:
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
@@ -58,11 +58,11 @@ private:
         }
     };
 
-    HRESULT CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
+    HRESULT CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
     HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
-    void RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
-    void RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
 private:
     const FLOAT PaddingX = 1.f;

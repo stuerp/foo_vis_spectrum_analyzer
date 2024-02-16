@@ -414,14 +414,14 @@ void ConfigurationDialog::Initialize()
                 { 3, 50 },
             };
 
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_NUM_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_BANDS, (int64_t) _State->_NumBands);
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_NUM_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS_SPIN));
 
             w.SetAccel(_countof(Accel), Accel);
 
             w.SetRange32(MinBands, MaxBands);
-            w.SetPos32((int) _State->_NumBands);
+            w.SetPos32((int) _State->_BandCount);
         }
 
         {
@@ -1361,7 +1361,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Frequencies
 
-        case IDC_NUM_BANDS: { _State->_NumBands = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands); break; }
+        case IDC_NUM_BANDS: { _State->_BandCount = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands); break; }
 
         case IDC_LO_FREQUENCY:
         {
@@ -1552,7 +1552,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_BW_SWIFT:              { SetDouble(id, _State->_SWIFTBandwidth); break; }
 
         // Frequencies
-        case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_NumBands); break; }
+        case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_BandCount); break; }
         case IDC_LO_FREQUENCY:          { SetDouble(id, _State->_LoFrequency); break; }
         case IDC_HI_FREQUENCY:          { SetDouble(id, _State->_HiFrequency); break; }
         case IDC_PITCH:                 { SetDouble(id, _State->_Pitch); break; }
@@ -1771,8 +1771,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_NUM_BANDS_SPIN:
         {
-            _State->_NumBands = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
-            SetInteger(IDC_NUM_BANDS, (int64_t) _State->_NumBands);
+            _State->_BandCount = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
+            SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
             break;
         }
 

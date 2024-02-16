@@ -196,6 +196,7 @@
     <ClInclude Include="Configuration\CDirectXControl.h" />
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
@@ -210,7 +211,7 @@
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="FrequencyBand.h" />
+    <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Windows\Raster.h" />

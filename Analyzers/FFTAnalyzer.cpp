@@ -138,7 +138,7 @@ void FFTAnalyzer::Transform() noexcept
 /// <summary>
 /// Maps the Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
-void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, FrequencyBands & freqBands) const noexcept
 {
     const bool UseBandGain = (_State->_SmoothGainTransition && (summationMethod == SummationMethod::Sum || summationMethod == SummationMethod::RMSSum));
     const bool IsRMS = (summationMethod == SummationMethod::RMS || summationMethod == SummationMethod::RMSSum);
@@ -223,7 +223,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, SummationMethod summationM
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
     for (FrequencyBand & Iter : freqBands)
     {
@@ -249,7 +249,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, std::vector<FrequencyBand>
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, std::vector<FrequencyBand> & freqBands) const noexcept
+void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, FrequencyBands & freqBands) const noexcept
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 

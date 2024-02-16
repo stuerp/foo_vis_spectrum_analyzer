@@ -1,5 +1,5 @@
 
-/** $VER: Analyzing.cpp (2024.02.15) P. Stuer **/
+/** $VER: Analyzing.cpp (2024.02.16) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -32,19 +32,19 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
     {
         case Transform::FFT:
         {
-            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
             break;
         }
 
         case Transform::CQT:
         {
-            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
             break;
         }
 
         case Transform::SWIFT:
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
             break;
         }
     }
@@ -106,192 +106,10 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
     {
         _SWIFTAnalyzer = new SWIFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup);
 
-        _SWIFTAnalyzer->Initialize(_FrequencyBands);
+        _SWIFTAnalyzer->Initialize(_Analyses[0]->_FrequencyBands);
     }
 }
 
-/// <summary>
-/// Generates frequency bands.
-/// </summary>
-void UIElement::GenerateLinearFrequencyBands()
-{
-    const double MinFreq = ScaleF(_State._LoFrequency, _State._ScalingFunction, _State._SkewFactor);
-    const double MaxFreq = ScaleF(_State._HiFrequency, _State._ScalingFunction, _State._SkewFactor);
-
-    _FrequencyBands.resize(_State._NumBands);
-
-    double i = 0.;
-
-    for (FrequencyBand & Iter: _FrequencyBands)
-    {
-        Iter.Lo  = DeScaleF(Map(i - _RealBandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
-        Iter.Ctr = DeScaleF(Map(i,                  0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
-        Iter.Hi  = DeScaleF(Map(i + _RealBandwidth, 0., (double)(_State._NumBands - 1), MinFreq, MaxFreq), _State._ScalingFunction, _State._SkewFactor);
-
-        ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
-
-        Iter.HasDarkBackground = true;
-
-        ++i;
-    }
-}
-
-/// <summary>
-/// Generates frequency bands based on the frequencies of musical notes.
-/// </summary>
-void UIElement::GenerateOctaveFrequencyBands()
-{
-    const double Root24 = ::exp2(1. / 24.);
-
-    const double Pitch = (_State._Pitch > 0.) ? ::round((::log2(_State._Pitch) - 4.) * 12.) * 2. : 0.;
-    const double C0 = _State._Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
-
-    const double NoteGroup = 24. / _State._BandsPerOctave;
-
-    const double LoNote = ::round(_State._MinNote * 2. / NoteGroup);
-    const double HiNote = ::round(_State._MaxNote * 2. / NoteGroup);
-
-    _FrequencyBands.clear();
-
-    static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
-
-    for (double i = LoNote; i <= HiNote; ++i)
-    {
-        FrequencyBand fb = 
-        {
-            C0 * ::pow(Root24, (i - _RealBandwidth) * NoteGroup + _State._Transpose),
-            C0 * ::pow(Root24,  i                   * NoteGroup + _State._Transpose),
-            C0 * ::pow(Root24, (i + _RealBandwidth) * NoteGroup + _State._Transpose),
-        };
-
-        // Pre-calculate the tooltip text and the bar background color.
-        {
-            int Note = (int) (i * (NoteGroup / 2.));
-
-            int n = Note % 12;
-
-            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
-
-            fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
-        }
-
-        _FrequencyBands.push_back(fb);
-    }
-}
-
-/// <summary>
-/// Generates frequency bands of AveePlayer.
-/// </summary>
-void UIElement::GenerateAveePlayerFrequencyBands()
-{
-    _FrequencyBands.resize(_State._NumBands);
-
-    double i = 0.;
-
-    for (FrequencyBand & Iter : _FrequencyBands)
-    {
-        Iter.Lo  = LogSpace(_State._LoFrequency, _State._HiFrequency, i - _RealBandwidth, _State._NumBands - 1, _State._SkewFactor);
-        Iter.Ctr = LogSpace(_State._LoFrequency, _State._HiFrequency, i,                  _State._NumBands - 1, _State._SkewFactor);
-        Iter.Hi  = LogSpace(_State._LoFrequency, _State._HiFrequency, i + _RealBandwidth, _State._NumBands - 1, _State._SkewFactor);
-
-        Iter.HasDarkBackground = true;
-        ++i;
-    }
-}
-
-/// <summary>
-/// Scales the frequency.
-/// </summary>
-double UIElement::ScaleF(double x, ScalingFunction function, double skewFactor)
-{
-    switch (function)
-    {
-        default:
-
-        case ScalingFunction::Linear:
-            return x;
-
-        case ScalingFunction::Logarithmic:
-            return ::log2(x);
-
-        case ScalingFunction::ShiftedLogarithmic:
-            return ::log2(::pow(10, skewFactor * 4.0) + x);
-
-        case ScalingFunction::Mel:
-            return ::log2(1.0 + x / 700.0);
-
-        case ScalingFunction::Bark: // "Critical bands"
-            return (26.81 * x) / (1960.0 + x) - 0.53;
-
-        case ScalingFunction::AdjustableBark:
-            return (26.81 * x) / (::pow(10, skewFactor * 4.0) + x);
-
-        case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
-            return ::log2(1.0 + 0.00437 * x);
-
-        case ScalingFunction::Cams:
-            return ::log2((x / 1000.0 + 0.312) / (x / 1000.0 + 14.675));
-
-        case ScalingFunction::HyperbolicSine:
-            return ::asinh(x / ::pow(10, skewFactor * 4));
-
-        case ScalingFunction::NthRoot:
-            return ::pow(x, (1.0 / (11.0 - skewFactor * 10.0)));
-
-        case ScalingFunction::NegativeExponential:
-            return -::exp2(-x / ::exp2(7 + skewFactor * 8));
-
-        case ScalingFunction::Period:
-            return 1.0 / x;
-    }
-}
-
-/// <summary>
-/// Descales the frequency.
-/// </summary>
-double UIElement::DeScaleF(double x, ScalingFunction function, double skewFactor)
-{
-    switch (function)
-    {
-        default:
-
-        case ScalingFunction::Linear:
-            return x;
-
-        case ScalingFunction::Logarithmic:
-            return ::exp2(x);
-
-        case ScalingFunction::ShiftedLogarithmic:
-            return ::exp2(x) - ::pow(10.0, skewFactor * 4.0);
-
-        case ScalingFunction::Mel:
-            return 700.0 * (::exp2(x) - 1.0);
-
-        case ScalingFunction::Bark: // "Critical bands"
-            return 1960.0 / (26.81 / (x + 0.53) - 1.0);
-
-        case ScalingFunction::AdjustableBark:
-            return ::pow(10.0, (skewFactor * 4.0)) / (26.81 / x - 1.0);
-
-        case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
-            return (1 / 0.00437) * (::exp2(x) - 1);
-
-        case ScalingFunction::Cams:
-            return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
-
-        case ScalingFunction::HyperbolicSine:
-            return ::sinh(x) * ::pow(10.0, skewFactor * 4);
-
-        case ScalingFunction::NthRoot:
-            return ::pow(x, ((11.0 - skewFactor * 10.0)));
-
-        case ScalingFunction::NegativeExponential:
-            return -::log2(-x) * ::exp2(7.0 + skewFactor * 8.0);
-
-        case ScalingFunction::Period:
-            return 1.0 / x;
-    }
-}
 
 #pragma region Acoustic Weighting
 
@@ -302,7 +120,7 @@ void UIElement::ApplyAcousticWeighting()
 {
     const double Offset = ((_State._SlopeFunctionOffset * (double) _SampleRate) / (double) _BinCount);
 
-    for (FrequencyBand & Iter : _FrequencyBands)
+    for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
         Iter.NewValue *= GetWeight(Iter.Ctr + Offset);
 }
 
@@ -382,13 +200,13 @@ void UIElement::ApplyAverageSmoothing(double factor)
 {
     if (factor != 0.0)
     {
-        for (FrequencyBand & Iter : _FrequencyBands)
+        for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
             Iter.CurValue = (::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0) + (::isfinite(Iter.NewValue) ? Iter.NewValue * (1.0 - factor) : 0.0);
 
     }
     else
     {
-        for (FrequencyBand & Iter : _FrequencyBands)
+        for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
             Iter.CurValue = Iter.NewValue;
     }
 }
@@ -398,6 +216,6 @@ void UIElement::ApplyAverageSmoothing(double factor)
 /// </summary>
 void UIElement::ApplyPeakSmoothing(double factor)
 {
-    for (FrequencyBand & Iter : _FrequencyBands)
+    for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
         Iter.CurValue = Max(::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0, ::isfinite(Iter.NewValue) ? Iter.NewValue : 0.0);
 }

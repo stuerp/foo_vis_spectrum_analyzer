@@ -1,21 +1,22 @@
 
-/** $VER: Analysis.h (2024.02.15) P. Stuer **/
+/** $VER: Analysis.h (2024.02.16) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "FFTAnalyzer.h"
-#include "CQTAnalyzer.h"
-#include "SWIFTAnalyzer.h"
+#include "State.h"
+#include "FrequencyBand.h"
+
+#include <vector>
 
 /// <summary>
-/// Aggregates the analyzer and its output.
+/// Represents the analysis of the sample data.
 /// </summary>
 class Analysis
 {
 public:
-    Analysis() = delete;
+    Analysis() { };
 
     Analysis(const Analysis &) = delete;
     Analysis & operator=(const Analysis &) = delete;
@@ -24,13 +25,18 @@ public:
 
     virtual ~Analysis() { };
 
+    void Initialize(const State & state) noexcept;
+
+private:
+    void GenerateLinearFrequencyBands(const State & state);
+    void GenerateOctaveFrequencyBands(const State & state);
+    void GenerateAveePlayerFrequencyBands(const State & state);
+
+    static double ScaleF(double x, ScalingFunction function, double factor);
+    static double DeScaleF(double x, ScalingFunction function, double factor);
+
 public:
-    const WindowFunction * _WindowFunction;
-    const WindowFunction * _BrownPucketteKernel;
-
-    FFTAnalyzer * _FFTAnalyzer;
-    CQTAnalyzer * _CQTAnalyzer;
-    SWIFTAnalyzer * _SWIFTAnalyzer;
-
-    std::vector<FrequencyBand> _FrequencyBands;
+    FrequencyBands _FrequencyBands;
 };
+
+typedef std::vector<Analysis *> Analyses;

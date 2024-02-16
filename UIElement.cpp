@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.15) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.16) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _BinCount(), _SampleRate(44100), _RealBandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _BinCount(), _SampleRate(44100)
 {
 }
 
@@ -307,12 +307,12 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-            size_t Index = (size_t) ::floor(Map(ScaledX, _Graph.GetSpectrum().GetLeft(), _Graph.GetSpectrum().GetRight(), 0., (double) _FrequencyBands.size()));
+            size_t Index = (size_t) ::floor(Map(ScaledX, _Graph.GetSpectrum().GetLeft(), _Graph.GetSpectrum().GetRight(), 0., (double) _Analyses[0]->_FrequencyBands.size()));
 
             if (Index != _LastIndex)
             {
-                if (InRange(Index, (size_t) 0U, _FrequencyBands.size() - 1))
-                    _TrackingToolInfo->lpszText = _FrequencyBands[Index].Label;
+                if (InRange(Index, (size_t) 0U, _Analyses[0]->_FrequencyBands.size() - 1))
+                    _TrackingToolInfo->lpszText = _Analyses[0]->_FrequencyBands[Index].Label;
 
                 _ToolTipControl.UpdateTipText(_TrackingToolInfo);
 
@@ -398,30 +398,16 @@ void UIElement::SetConfiguration() noexcept
 {
     _CriticalSection.Enter();
 
-    // Initialize the frequency bands.
-    {
-        if (_State._Transform == Transform::FFT)
-        {
-            switch (_State._FrequencyDistribution)
-            {
-                default:
+    for (auto & Iter : _Analyses)
+        delete Iter;
 
-                case FrequencyDistribution::Linear:
-                    GenerateLinearFrequencyBands();
-                    break;
+    _Analyses.clear();
 
-                case FrequencyDistribution::Octaves:
-                    GenerateOctaveFrequencyBands();
-                    break;
+    auto * a = new Analysis();
 
-                case FrequencyDistribution::AveePlayer:
-                    GenerateAveePlayerFrequencyBands();
-                    break;
-            }
-        }
-        else
-            GenerateOctaveFrequencyBands();
-    }
+    a->Initialize(_State);
+
+    _Analyses.push_back(a);
 
     #pragma warning (disable: 4061)
     switch (_State._FFTMode)
@@ -440,15 +426,13 @@ void UIElement::SetConfiguration() noexcept
     }
     #pragma warning (default: 4061)
 
-    _RealBandwidth = (((_State._Transform == Transform::FFT) && (_State._MappingMethod == Mapping::TriangularFilterBank)) || (_State._Transform == Transform::CQT)) ? _State._Bandwidth : 0.5;
-
     DeleteResources();
 
     _State._StyleManager.ReleaseDeviceSpecificResources();
 
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
-    _Graph.Initialize(&_State, _FrequencyBands);
+    _Graph.Initialize(&_State, _Analyses);
 
     _ToolTipControl.Activate(_State._ShowToolTips);
 

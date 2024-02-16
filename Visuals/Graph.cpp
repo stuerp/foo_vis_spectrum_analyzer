@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.15) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.16) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -16,15 +16,15 @@ Graph::Graph() : _Bounds()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void Graph::Initialize(State * state, Analyses & analyses) noexcept
 {
-    _State = configuration;
+    _State = state;
 
-    _Spectrum.Initialize(configuration);
+    _Spectrum.Initialize(state);
 
-    _XAxis.Initialize(configuration, frequencyBands);
+    _XAxis.Initialize(state, analyses);
     
-    _YAxis.Initialize(configuration);
+    _YAxis.Initialize(state);
 }
 
 /// <summary>
@@ -62,7 +62,7 @@ void Graph::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate, const Artwork & artwork)
+void Graph::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -93,7 +93,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
     _XAxis.Render(renderTarget);
 

@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.13) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.16) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -11,22 +11,23 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(State * state, Analyses & analyses) noexcept
 {
-    _State = configuration;
+    _State = state;
 
-    if (frequencyBands.size() == 0)
+    if (analyses[0]->_FrequencyBands.size() == 0)
         return;
 
     _Mode = _State->_XAxisMode;
 
-    _LoFrequency = frequencyBands[0].Ctr;
-    _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
-    _NumBands = frequencyBands.size();
+    _NumBands = analyses[0]->_FrequencyBands.size();
+
+    _LoFrequency = analyses[0]->_FrequencyBands[0].Ctr;
+    _HiFrequency = analyses[0]->_FrequencyBands[_NumBands - 1].Ctr;
 
     _Labels.clear();
 
-    if (frequencyBands.size() == 0)
+    if (analyses[0]->_FrequencyBands.size() == 0)
         return;
 
     // Precalculate the labels.
@@ -42,9 +43,9 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
 
             case XAxisMode::Bands:
             {
-                for (size_t i = 0; i < frequencyBands.size(); i += 10)
+                for (size_t i = 0; i < analyses[0]->_FrequencyBands.size(); i += 10)
                 {
-                    double Frequency = frequencyBands[i].Ctr;
+                    double Frequency = analyses[0]->_FrequencyBands[i].Ctr;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
@@ -64,7 +65,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < analyses[0]->_FrequencyBands.back().Lo)
                 {
                     Frequency = j * i;
 
@@ -91,7 +92,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                 double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
-                for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
+                for (int i = 0; Frequency < analyses[0]->_FrequencyBands.back().Lo; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
@@ -115,7 +116,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
 
                 int j = 0;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < analyses[0]->_FrequencyBands.back().Lo)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 

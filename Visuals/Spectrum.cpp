@@ -15,9 +15,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * configuration)
+void Spectrum::Initialize(State * state)
 {
-    _State = configuration;
+    _State = state;
 
     ReleaseDeviceSpecificResources();
 }
@@ -33,7 +33,7 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Spectrum::Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -57,7 +57,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const std::vector<Freque
 /// <summary>
 /// Renders the spectrum analysis as bars.
 /// </summary>
-void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
@@ -117,7 +117,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<Fr
 /// <summary>
 /// Renders the spectrum analysis as a curve.
 /// </summary>
-void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate)
+void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
     HRESULT hr = S_OK;
 
@@ -272,7 +272,7 @@ HRESULT Spectrum::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// </summary>
-HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp)
+HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp)
 {
     if (frequencyBands.size() < 2)
         return E_FAIL;

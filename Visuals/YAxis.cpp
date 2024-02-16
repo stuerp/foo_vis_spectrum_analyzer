@@ -11,9 +11,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(State * configuration)
+void YAxis::Initialize(State * state)
 {
-    _State = configuration;
+    _State = state;
 
     _Labels.clear();
 
