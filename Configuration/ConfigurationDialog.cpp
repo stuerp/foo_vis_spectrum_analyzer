@@ -1299,7 +1299,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     }
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1505,7 +1505,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     }
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1734,7 +1734,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
     }
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>
@@ -1938,7 +1938,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
     }
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -1994,7 +1994,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
     }
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
     return 0;
 }
@@ -2028,7 +2028,7 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
     UpdateChannelsMenu();
 
     if (!_IsInitializing)
-        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 }
 
 /// <summary>

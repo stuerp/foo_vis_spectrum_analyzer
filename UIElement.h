@@ -196,7 +196,8 @@ private:
     #pragma region Rendering
 
     FrameCounter _FrameCounter;
-    Graph _Graph;
+
+    std::vector<Graph *> _Graphs;
     UINT _DPI;
 
     #pragma endregion

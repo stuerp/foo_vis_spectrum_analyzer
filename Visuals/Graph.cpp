@@ -33,30 +33,6 @@ void Graph::Initialize(State * state, Analyses & analyses) noexcept
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
     _Bounds = rect;
-
-    const FLOAT xt = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
-    const FLOAT xb = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
-
-    const FLOAT yl = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT yr = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
-
-        _Spectrum.Move(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom);
-
-        _XAxis.Move(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb);
-
-        _YAxis.Move(Rect);
-    }
 }
 
 /// <summary>
@@ -68,6 +44,8 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & freq
 
     if (SUCCEEDED(hr))
     {
+        MoveVisuals(_Bounds);
+
         RenderBackground(renderTarget, artwork);
         RenderForeground(renderTarget, frequencyBands, sampleRate);
     }
@@ -103,25 +81,33 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 }
 
 /// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Move the visuals.
 /// </summary>
-HRESULT Graph::CreateDeviceIndependentResources() noexcept
+void Graph::MoveVisuals(const D2D1_RECT_F & rect) noexcept
 {
-    HRESULT hr = _XAxis.CreateDeviceIndependentResources();
+    const FLOAT xt = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xb = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
 
-    if (SUCCEEDED(hr))
-        hr = _YAxis.CreateDeviceIndependentResources();
+    const FLOAT yl = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yr = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
 
-    return hr;
-}
+    {
+        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
 
-/// <summary>
-/// Releases the device independent resources.
-/// </summary>
-void Graph::ReleaseDeviceIndependentResources() noexcept
-{
-    _YAxis.ReleaseDeviceIndependentResources();
-    _XAxis.ReleaseDeviceIndependentResources();
+        _Spectrum.Move(Rect);
+    }
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom);
+
+        _XAxis.Move(Rect);
+    }
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb);
+
+        _YAxis.Move(Rect);
+    }
 }
 
 /// <summary>

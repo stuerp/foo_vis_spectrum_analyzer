@@ -281,7 +281,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 
     if (!_IsTracking)
     {
-        if (pt.x < (LONG) _Graph.GetSpectrum().GetLeft())
+        if (pt.x < (LONG) _Graphs[0]->GetSpectrum().GetLeft())
             return;
 
         {
@@ -307,7 +307,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-            size_t Index = (size_t) ::floor(Map(ScaledX, _Graph.GetSpectrum().GetLeft(), _Graph.GetSpectrum().GetRight(), 0., (double) _Analyses[0]->_FrequencyBands.size()));
+            size_t Index = (size_t) ::floor(Map(ScaledX, _Graphs[0]->GetSpectrum().GetLeft(), _Graphs[0]->GetSpectrum().GetRight(), 0., (double) _Analyses[0]->_FrequencyBands.size()));
 
             if (Index != _LastIndex)
             {
@@ -417,6 +417,19 @@ void UIElement::SetConfiguration() noexcept
         _Analyses.push_back(a);
     }
 
+    {
+        for (auto & Iter : _Graphs)
+            delete Iter;
+
+        _Graphs.clear();
+
+        auto * g = new Graph();
+
+        g->Initialize(&_State, _Analyses);
+
+        _Graphs.push_back(g);
+    }
+
     #pragma warning (disable: 4061)
     switch (_State._FFTMode)
     {
@@ -439,8 +452,6 @@ void UIElement::SetConfiguration() noexcept
     _State._StyleManager.ReleaseDeviceSpecificResources();
 
     _NewArtworkGradient = true; // Request an update of the artwork gradient.
-
-    _Graph.Initialize(&_State, _Analyses);
 
     _ToolTipControl.Activate(_State._ShowToolTips);
 
@@ -508,7 +519,8 @@ void UIElement::Resize()
     // Resize the graph area.
     const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
 
-    _Graph.Move(Bounds);
+    for (auto * Iter : _Graphs)
+        Iter->Move(Bounds);
 
     // Adjust the tracking tool tip.
     {

@@ -125,7 +125,7 @@ void XAxis::Initialize(State * state, Analyses & analyses) noexcept
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
 
-                    Label lb = { Frequency, Text, 0.f };
+                    Label lb = { Frequency, Text, 0.f, j != 0 };
 
                     _Labels.push_back(lb);
 
@@ -181,6 +181,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     Style * LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
     Style * TextStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
+    FLOAT Opacity = TextStyle->_Brush->GetOpacity();
+
     for (const Label & Iter : _Labels)
     {
         if (Iter.x < _Bounds.left)
@@ -205,6 +207,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), yb, Iter.x + (TextMetrics.width / 2.f), yb + _Height };
 
+            TextStyle->_Brush->SetOpacity(Iter.Dim ? Opacity * .5f : Opacity);
+
             if ((OldTextRight <= TextRect.left) && (TextRect.left < _Bounds.right))
             {
                 if (_State->_XAxisBottom)
@@ -222,48 +226,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
             }
         }
     }
-}
 
-/// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
-/// </summary>
-HRESULT XAxis::CreateDeviceIndependentResources()
-{
-    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
-
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-    if (SUCCEEDED(hr))
-    {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
-
-        if (SUCCEEDED(hr))
-        {
-            DWRITE_TEXT_METRICS TextMetrics = { };
-
-            TextLayout->GetMetrics(&TextMetrics);
-
-            // Calculate the height.
-            _Width  = TextMetrics.width;
-            _Height = 2.f + TextMetrics.height + 2.f;
-        }
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device independent resources.
-/// </summary>
-void XAxis::ReleaseDeviceIndependentResources()
-{
-    _TextFormat.Release();
+    TextStyle->_Brush->SetOpacity(Opacity);
 }
 
 /// <summary>
@@ -273,6 +237,35 @@ void XAxis::ReleaseDeviceIndependentResources()
 HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
+
+    if (_TextFormat == nullptr)
+    {
+        const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+        if (SUCCEEDED(hr))
+        {
+            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+
+            CComPtr<IDWriteTextLayout> TextLayout;
+
+            hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+
+            if (SUCCEEDED(hr))
+            {
+                DWRITE_TEXT_METRICS TextMetrics = { };
+
+                TextLayout->GetMetrics(&TextMetrics);
+
+                // Calculate the height.
+                _Width  = TextMetrics.width;
+                _Height = 2.f + TextMetrics.height + 2.f;
+            }
+        }
+    }
 
     if (SUCCEEDED(hr))
     {
@@ -305,4 +298,6 @@ void XAxis::ReleaseDeviceSpecificResources()
 
         style->ReleaseDeviceSpecificResources();
     }
+
+    _TextFormat.Release();
 }

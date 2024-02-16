@@ -139,7 +139,8 @@ void UIElement::Render()
 
         _RenderTarget->BeginDraw();
 
-        _Graph.Render(_RenderTarget, _Analyses[0]->_FrequencyBands, (double) _SampleRate, _Artwork);
+        for (Graph * Iter : _Graphs)
+            Iter->Render(_RenderTarget, _Analyses[0]->_FrequencyBands, (double) _SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -284,9 +285,6 @@ HRESULT UIElement::CreateDeviceIndependentResources()
 {
     HRESULT hr = _FrameCounter.CreateDeviceIndependentResources();
 
-    if (SUCCEEDED(hr))
-        hr = _Graph.CreateDeviceIndependentResources();
-
     return hr;
 }
 
@@ -295,8 +293,6 @@ HRESULT UIElement::CreateDeviceIndependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceIndependentResources()
 {
-    _Graph.ReleaseDeviceIndependentResources();
-
     _FrameCounter.ReleaseDeviceIndependentResources();
 }
 
@@ -341,9 +337,12 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _NewArtwork)
     {
-        Spectrum & s = _Graph.GetSpectrum();
+        for (Graph * Iter : _Graphs)
+        {
+            Spectrum & s = Iter->GetSpectrum();
 
-        s.ReleaseDeviceSpecificResources();
+            s.ReleaseDeviceSpecificResources();
+        }
 
         hr = _Artwork.Realize(_RenderTarget);
         _NewArtworkGradient = true;
@@ -429,7 +428,9 @@ void UIElement::ReleaseDeviceSpecificResources()
 {
     _State._StyleManager.ReleaseDeviceSpecificResources();
 
-    _Graph.ReleaseDeviceSpecificResources();
+    for (Graph * Iter : _Graphs)
+        Iter->ReleaseDeviceSpecificResources();
+
     _FrameCounter.ReleaseDeviceSpecificResources();
 
     _Artwork.Release();

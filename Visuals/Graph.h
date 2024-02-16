@@ -36,15 +36,14 @@ public:
 
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
-    HRESULT CreateDeviceIndependentResources() noexcept;
-    void ReleaseDeviceIndependentResources() noexcept;
-
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
     void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
     void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) noexcept;
+
+    void MoveVisuals(const D2D1_RECT_F & rect) noexcept;
 
 private:
     D2D1_RECT_F _Bounds;

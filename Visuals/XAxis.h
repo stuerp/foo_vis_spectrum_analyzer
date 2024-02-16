@@ -33,9 +33,6 @@ public:
 
     void Render(ID2D1RenderTarget * renderTarget);
 
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
-
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
@@ -58,6 +55,7 @@ private:
         double Frequency;
         std::wstring Text;
         FLOAT x;
+        bool Dim;
     };
 
     std::vector<Label> _Labels;

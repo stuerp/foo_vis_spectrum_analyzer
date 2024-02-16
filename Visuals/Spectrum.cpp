@@ -61,7 +61,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 {
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT BandWidth = ::ceil(Max((Width / (FLOAT) frequencyBands.size()), 1.f));
+    const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
     FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;

@@ -78,10 +78,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         {
             FLOAT y = Iter.y - (_Height / 2.f);
 
-            if (y <_Bounds.top)
+            if ((!_State->_XAxisTop) && (y <_Bounds.top))
                 y = _Bounds.top;
 
-            if (y + _Height > _Bounds.bottom)
+            if ((!_State->_XAxisBottom) && (y + _Height > _Bounds.bottom))
                 y = _Bounds.bottom - _Height;
 
             D2D1_RECT_F TextRect = { _Bounds.left, y, xl - 2.f, y + _Height };
@@ -106,51 +106,38 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 }
 
 /// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
-/// </summary>
-HRESULT YAxis::CreateDeviceIndependentResources()
-{
-    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
-
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-    if (SUCCEEDED(hr))
-    {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
-
-        if (SUCCEEDED(hr))
-        {
-            DWRITE_TEXT_METRICS TextMetrics = { };
-
-            TextLayout->GetMetrics(&TextMetrics);
-
-            _Height = TextMetrics.height;
-        }
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device independent resources.
-/// </summary>
-void YAxis::ReleaseDeviceIndependentResources()
-{
-    _TextFormat.Release();
-}
-
-/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
+
+    if (_TextFormat == nullptr)
+    {
+        const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+        if (SUCCEEDED(hr))
+        {
+            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
+            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+
+            CComPtr<IDWriteTextLayout> TextLayout;
+
+            hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+
+            if (SUCCEEDED(hr))
+            {
+                DWRITE_TEXT_METRICS TextMetrics = { };
+
+                TextLayout->GetMetrics(&TextMetrics);
+
+                _Height = TextMetrics.height;
+            }
+        }
+    }
 
     if (SUCCEEDED(hr))
     {
@@ -183,4 +170,6 @@ void YAxis::ReleaseDeviceSpecificResources()
 
         style->ReleaseDeviceSpecificResources();
     }
+
+    _TextFormat.Release();
 }
