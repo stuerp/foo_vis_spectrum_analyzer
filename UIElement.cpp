@@ -447,6 +447,12 @@ void UIElement::UpdateState() noexcept
         g->Initialize(&_RenderState, _Analyses);
 
         _Graphs.push_back(g);
+
+        g = new Graph();
+
+        g->Initialize(&_RenderState, _Analyses);
+
+        _Graphs.push_back(g);
     }
 
     DeleteResources();

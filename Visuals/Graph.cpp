@@ -81,8 +81,8 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
     const Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
 
     if (style->_ColorSource != ColorSource::Gradient)
-        renderTarget->Clear(style->_Color);
-    else
+//        renderTarget->Clear(style->_Color);
+//    else
         renderTarget->FillRectangle(_Bounds, style->_Brush);
 
     // Render the bitmap if there is one.
