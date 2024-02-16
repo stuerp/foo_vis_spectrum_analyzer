@@ -45,14 +45,14 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands)
+bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analysis * analysis) noexcept
 {
-    for (auto & Iter : frequencyBands)
+    for (auto & Iter : analysis->_FrequencyBands)
         Iter.NewValue = 0.;
 
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&sampleData[i], _State->_SelectedChannels);
+        const audio_sample Sample = AverageSamples(&sampleData[i], analysis->_Channels);
 
         size_t k = 0;
 
@@ -81,12 +81,12 @@ bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampl
             }
 
             // OldValue now contains the last calculated value.
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
+            analysis->_FrequencyBands[k].NewValue = Max(analysis->_FrequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
             k++;
         }
     }
 
-    for (auto & Iter : frequencyBands)
+    for (auto & Iter : analysis->_FrequencyBands)
         Iter.NewValue = ::sqrt(Iter.NewValue);
 
     return true;

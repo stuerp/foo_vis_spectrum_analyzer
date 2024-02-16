@@ -16,7 +16,7 @@
 class Analysis
 {
 public:
-    Analysis() { };
+    Analysis(uint32_t channels) : _Channels(channels) { };
 
     Analysis(const Analysis &) = delete;
     Analysis & operator=(const Analysis &) = delete;
@@ -37,6 +37,7 @@ private:
 
 public:
     FrequencyBands _FrequencyBands;
+    uint32_t _Channels;
 };
 
 typedef std::vector<Analysis *> Analyses;

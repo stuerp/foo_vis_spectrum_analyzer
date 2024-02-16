@@ -88,6 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.1.0-beta-2, 2024-02-xx
 
 * New: Context menu item to freeze and unfreeze the component.
+* Improved: To reduce the load on the computer rendering and spectrum computation are not performed when the component window is hidden.
 
 v0.7.1.0-beta-1, 2024-02-14
 

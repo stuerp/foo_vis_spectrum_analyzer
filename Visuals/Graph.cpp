@@ -30,7 +30,7 @@ void Graph::Initialize(State * state, Analyses & analyses) noexcept
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void Graph::Move(const D2D1_RECT_F & rect)
+void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
     _Bounds = rect;
 
@@ -62,7 +62,7 @@ void Graph::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork)
+void Graph::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -76,7 +76,7 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & freq
 /// <summary>
 /// Renders the background.
 /// </summary>
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork)
+void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) noexcept
 {
     const Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
 
@@ -93,7 +93,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & a
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
 {
     _XAxis.Render(renderTarget);
 
@@ -105,7 +105,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT Graph::CreateDeviceIndependentResources()
+HRESULT Graph::CreateDeviceIndependentResources() noexcept
 {
     HRESULT hr = _XAxis.CreateDeviceIndependentResources();
 
@@ -118,7 +118,7 @@ HRESULT Graph::CreateDeviceIndependentResources()
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void Graph::ReleaseDeviceIndependentResources()
+void Graph::ReleaseDeviceIndependentResources() noexcept
 {
     _YAxis.ReleaseDeviceIndependentResources();
     _XAxis.ReleaseDeviceIndependentResources();
@@ -128,7 +128,7 @@ void Graph::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -143,7 +143,7 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Graph::ReleaseDeviceSpecificResources()
+void Graph::ReleaseDeviceSpecificResources() noexcept
 {
     _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();

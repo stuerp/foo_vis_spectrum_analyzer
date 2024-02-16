@@ -403,7 +403,7 @@ void UIElement::SetConfiguration() noexcept
 
     _Analyses.clear();
 
-    auto * a = new Analysis();
+    auto * a = new Analysis(_State._SelectedChannels);
 
     a->Initialize(_State);
 

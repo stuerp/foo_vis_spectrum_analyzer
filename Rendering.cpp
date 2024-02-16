@@ -65,7 +65,8 @@ void UIElement::OnTimer()
 
     ProcessPlaybackEvent();
 
-    Render();
+    if (IsWindowVisible())
+        Render();
 
     _CriticalSection.Leave();
 
@@ -127,7 +128,7 @@ void UIElement::Render()
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
-    if (SUCCEEDED(hr) && IsWindowVisible() && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
+    if (SUCCEEDED(hr) && !(_RenderTarget->CheckWindowState() & D2D1_WINDOW_STATE_OCCLUDED))
     {
         _FrameCounter.NewFrame();
 

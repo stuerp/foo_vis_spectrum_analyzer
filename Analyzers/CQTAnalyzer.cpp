@@ -19,9 +19,9 @@ CQTAnalyzer::CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const
+bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analysis * analysis) const
 {
-    for (FrequencyBand & Iter : frequencyBands)
+    for (FrequencyBand & Iter : analysis->_FrequencyBands)
     {
         double Bandwidth = ::fabs(Iter.Hi - Iter.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
         double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
@@ -47,7 +47,7 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
             Norm += w;
 
             // Goertzel transform
-            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], _State->_SelectedChannels) * w) + (Coeff * f1) - f2;
+            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], analysis->_Channels) * w) + (Coeff * f1) - f2;
 
             f2 = f1;
             f1 = Sine;

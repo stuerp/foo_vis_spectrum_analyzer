@@ -7,7 +7,7 @@
 
 #include "State.h"
 #include "Analyzer.h"
-#include "FrequencyBand.h"
+#include "Analysis.h"
 
 #include <vector>
 
@@ -29,7 +29,7 @@ public:
     SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands);
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analysis * analysis) noexcept;
 
 private:
     struct Value

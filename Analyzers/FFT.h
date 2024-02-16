@@ -42,13 +42,13 @@ public:
     /// </summary>
     /// <param name="timeData"></param>
     /// <param name="freqData">freqData[0] = DC; freqData[1] = 1Hz; freqData[fftSize / 2] = Nyquist frequency</param>
-    bool Transform(const vector<complex<double>> & timeData, std::vector<complex<double>> & freqData) const noexcept
+    bool Transform(const vector<complex<double>> & timeData, std::vector<complex<double>> & freqData) noexcept
     {
         freqData = timeData;
 
         try
         {
-            Fft::transform(freqData, false);
+            Fft::transform(freqData, _Exp, false);
         }
         catch (exception)
         {
@@ -60,4 +60,6 @@ public:
 
 private:
     size_t _FFTSize;
+
+    vector<complex<double>> _Exp; // Trigonometric table
 };

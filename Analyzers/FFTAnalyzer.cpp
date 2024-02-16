@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.02.13) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2024.02.16) P. Stuer **/
 
 #include "FFTAnalyzer.h"
 
@@ -45,9 +45,9 @@ FFTAnalyzer::FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, vector<FrequencyBand> & frequencyBands)
+bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, Analysis * analysis)
 {
-    Add(samples, sampleCount);
+    Add(samples, sampleCount, analysis->_Channels);
 
     Transform();
 
@@ -56,15 +56,15 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
         default:
 
         case Mapping::Standard:
-            AnalyzeSamples(_SampleRate, _State->_SummationMethod, frequencyBands);
+            AnalyzeSamples(_SampleRate, _State->_SummationMethod, analysis->_FrequencyBands);
             break;
 
         case Mapping::TriangularFilterBank:
-            AnalyzeSamples(_SampleRate, frequencyBands);
+            AnalyzeSamples(_SampleRate, analysis->_FrequencyBands);
             break;
 
         case Mapping::BrownPuckette:
-            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _State->_BandwidthOffset, _State->_BandwidthCap, _State->_BandwidthAmount, _State->_GranularBW, frequencyBands);
+            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _State->_BandwidthOffset, _State->_BandwidthCap, _State->_BandwidthAmount, _State->_GranularBW, analysis->_FrequencyBands);
             break;
     }
 
@@ -75,7 +75,7 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
 /// Adds multiple samples to the analyzer buffer.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount) noexcept
+void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
 {
 //  Log::Write(Log::Level::Trace, "%5d, %5d, %5d", _Size, _Curr, sampleCount / 2);
 
@@ -88,7 +88,7 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount) noexcept
     // Merge the samples of all channels into one averaged sample.
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&samples[i], _State->_SelectedChannels);
+        _Data[_Curr] = AverageSamples(&samples[i], channels);
 
         _Curr = (_Curr + 1) % _Size;
     }

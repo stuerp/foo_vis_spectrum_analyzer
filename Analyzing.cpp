@@ -32,19 +32,19 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
     {
         case Transform::FFT:
         {
-            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
+            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]);
             break;
         }
 
         case Transform::CQT:
         {
-            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
+            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]);
             break;
         }
 
         case Transform::SWIFT:
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]->_FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Analyses[0]);
             break;
         }
     }

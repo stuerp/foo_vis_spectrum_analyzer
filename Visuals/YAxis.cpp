@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.02.13) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.02.16) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 

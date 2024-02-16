@@ -25,26 +25,26 @@ public:
 
     void Initialize(State * state, Analyses & analyses) noexcept;
 
-    void Move(const D2D1_RECT_F & rect);
+    void Move(const D2D1_RECT_F & rect) noexcept;
 
-    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork);
+    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, const Artwork & artwork) noexcept;
 
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
+    const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
+    FLOAT GetLeft() const noexcept { return _Bounds.left; }
+    FLOAT GetRight() const noexcept { return _Bounds.right; }
 
-    const D2D1_RECT_F & GetBounds() const { return _Bounds; }
+    Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
-    FLOAT GetLeft() const { return _Bounds.left; }
-    FLOAT GetRight() const { return _Bounds.right; }
+    HRESULT CreateDeviceIndependentResources() noexcept;
+    void ReleaseDeviceIndependentResources() noexcept;
 
-    Spectrum & GetSpectrum() { return _Spectrum; }
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork);
+    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) noexcept;
 
 private:
     D2D1_RECT_F _Bounds;
