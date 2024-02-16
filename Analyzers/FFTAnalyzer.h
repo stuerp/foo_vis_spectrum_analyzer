@@ -26,7 +26,7 @@ public:
     virtual ~FFTAnalyzer();
 
     FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
-    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, Analysis * analysis);
+    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, Analyses & analyses);
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;

@@ -29,7 +29,7 @@ public:
     SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analysis * analysis) noexcept;
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analyses & analyses) noexcept;
 
 private:
     struct Value

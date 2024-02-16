@@ -398,16 +398,24 @@ void UIElement::SetConfiguration() noexcept
 {
     _CriticalSection.Enter();
 
-    for (auto & Iter : _Analyses)
-        delete Iter;
+    {
+        for (auto & Iter : _Analyses)
+            delete Iter;
 
-    _Analyses.clear();
+        _Analyses.clear();
 
-    auto * a = new Analysis(_State._SelectedChannels);
+        auto * a = new Analysis(audio_chunk::channel_front_left);
 
-    a->Initialize(_State);
+        a->Initialize(_State);
 
-    _Analyses.push_back(a);
+        _Analyses.push_back(a);
+
+        a = new Analysis(audio_chunk::channel_front_right);
+
+        a->Initialize(_State);
+
+        _Analyses.push_back(a);
+    }
 
     #pragma warning (disable: 4061)
     switch (_State._FFTMode)
