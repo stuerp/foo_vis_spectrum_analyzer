@@ -52,7 +52,7 @@ protected:
 
     virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
-    void SetConfiguration() noexcept;
+    void UpdateState() noexcept;
 
 private:
     #pragma region CWindowImpl
@@ -101,6 +101,7 @@ private:
 
     void OnTimer();
 
+    void UpdateRenderState() noexcept;
     void ProcessPlaybackEvent();
     void UpdateSpectrum();
     void UpdatePeakIndicators() noexcept;
@@ -191,24 +192,6 @@ private:
         Stop,
     } _PlaybackEvent;
 
-    visualisation_stream_v2::ptr _VisualisationStream;
-
-    #pragma region Rendering
-
-    FrameCounter _FrameCounter;
-
-    std::vector<Graph *> _Graphs;
-    UINT _DPI;
-
-    #pragma endregion
-
-    #pragma region DirectX
-
-    // Device-specific resources
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    #pragma endregion
-
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
@@ -217,6 +200,27 @@ private:
     POINT _LastMousePos;
     size_t _LastIndex;
 
+    size_t _BinCount;
+    uint32_t _SampleRate;
+
+    Artwork _Artwork;
+    bool _NewArtwork;               // True when new artwork has arrived.
+    bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
+
+    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
+
+    #pragma region Render thread
+
+    State _RenderState;
+
+    visualisation_stream_v2::ptr _VisualisationStream;
+
+    FrameCounter _FrameCounter;
+
+    Analyses _Analyses;
+    std::vector<Graph *> _Graphs;
+    UINT _DPI;
+
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
 
@@ -224,17 +228,12 @@ private:
     CQTAnalyzer * _CQTAnalyzer;
     SWIFTAnalyzer * _SWIFTAnalyzer;
 
-    size_t _BinCount;
-    uint32_t _SampleRate;
-
-    Analyses _Analyses;
+    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     double _OldPlaybackTime;
 
-    Artwork _Artwork;
-    bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
-
-    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
+
+    #pragma endregion
+
 };

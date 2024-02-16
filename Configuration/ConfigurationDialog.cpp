@@ -1298,8 +1298,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         #pragma endregion
     }
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 }
 
 /// <summary>
@@ -1504,8 +1503,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 }
 
 /// <summary>
@@ -1606,6 +1604,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
     switch (id)
     {
+        default:
+            return;
+
         case IDC_CHANNELS:
         {
             BOOL Handled = TRUE;
@@ -1709,8 +1710,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _State->Reset();
 
             Initialize();
-
-            return ;
+            break;
         }
 
         case IDOK:
@@ -1728,13 +1728,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _State = nullptr;
             break;
         }
-
-        default:
-            return;
     }
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 }
 
 /// <summary>
@@ -1749,6 +1745,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
     switch (nmhd->idFrom)
     {
+        default:
+            return -1;
+
         case IDC_KERNEL_SIZE_SPIN:
         {
             _State->_KernelSize = ClampNewSpinPosition(nmud, MinKernelSize, MaxKernelSize);
@@ -1932,13 +1931,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
             break;
         }
-
-        default:
-            return -1;
     }
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 
     return 0;
 }
@@ -1953,6 +1948,9 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
     switch (nmhd->idFrom)
     {
+        default:
+            return -1;
+
         case IDC_COLOR_LIST:
         {
             Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
@@ -1988,13 +1986,9 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
             UpdateStyleControls();
             break;
         }
-
-        default:
-            return -1;
     }
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 
     return 0;
 }
@@ -2027,8 +2021,7 @@ void ConfigurationDialog::OnChannels(UINT, int id, HWND)
 
     UpdateChannelsMenu();
 
-    if (!_IsInitializing)
-;//        ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ConfigurationChanged();
 }
 
 /// <summary>
@@ -2644,4 +2637,17 @@ void ConfigurationDialog::SetNote(int id, uint32_t noteNumber) noexcept
     ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
 
     SetDlgItemTextW(id, Text);
+}
+
+/// <summary>
+/// Notifies the main thread update the change.
+/// </summary>
+void ConfigurationDialog::ConfigurationChanged() const noexcept
+{
+    if (_IsInitializing)
+        return;
+
+    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+
+//  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
 }

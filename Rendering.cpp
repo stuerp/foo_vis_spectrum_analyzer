@@ -28,7 +28,7 @@ void UIElement::StartTimer() noexcept
 
     FILETIME DueTime = { };
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _State._RefreshRateLimit, 0);
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _RenderState._RefreshRateLimit, 0);
 }
 
 /// <summary>
@@ -63,10 +63,18 @@ void UIElement::OnTimer()
     if (_IsFrozen || !_CriticalSection.TryEnter())
         return;
 
+    // Stop the timer to prevent overlapping callbacks.
+    ::SetThreadpoolTimer(_ThreadPoolTimer, nullptr, 0, 0);
+
     ProcessPlaybackEvent();
 
     if (IsWindowVisible())
         Render();
+
+    // Start the timer again.
+    FILETIME DueTime = { };
+
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _RenderState._RefreshRateLimit, 0);
 
     _CriticalSection.Leave();
 
@@ -98,10 +106,10 @@ void UIElement::ProcessPlaybackEvent()
             if (_Artwork.Bitmap() == nullptr)
             {
                 // Set the default dominant color and gradient for the artwork color scheme.
-                _State._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
-                _State._DominantColor = _State._ArtworkGradientStops[0].color;
+                _RenderState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
+                _RenderState._DominantColor = _RenderState._ArtworkGradientStops[0].color;
 
-                _State._StyleManager.SetArtworkDependentParameters(_State._ArtworkGradientStops, _State._DominantColor);
+                _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
 
                 _IsConfigurationChanged = true;
             }
@@ -134,7 +142,7 @@ void UIElement::Render()
 
         UpdateSpectrum();
 
-        if (_State._PeakMode != PeakMode::None)
+        if (_RenderState._PeakMode != PeakMode::None)
             UpdatePeakIndicators();
 
         _RenderTarget->BeginDraw();
@@ -142,7 +150,7 @@ void UIElement::Render()
         for (Graph * Iter : _Graphs)
             Iter->Render(_RenderTarget, _Analyses[0]->_FrequencyBands, (double) _SampleRate, _Artwork);
 
-        if (_State._ShowFrameCounter)
+        if (_RenderState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
@@ -161,7 +169,7 @@ void UIElement::Render()
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    if (_State._UseToneGenerator)
+    if (_RenderState._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
 
@@ -178,20 +186,19 @@ void UIElement::UpdateSpectrum()
             audio_chunk_impl Chunk;
 /* Old code
             const double WindowSize = (double) _NumBins / (double) _SampleRate;
-            const double Offset = (_State._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _State._ReactionAlignment)) : PlaybackTime;
+            const double Offset = (_RenderState._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _RenderState._ReactionAlignment)) : PlaybackTime;
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
                 ProcessAudioChunk(Chunk);
 */
-            const bool IsSlidingWindow = _State._Transform == Transform::SWIFT;
+            const bool IsSlidingWindow = _RenderState._Transform == Transform::SWIFT;
             const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _BinCount / (double) _SampleRate;
-            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _State._ReactionAlignment));
+            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
               ProcessAudioChunk(Chunk);
 
             _OldPlaybackTime = PlaybackTime;
-
         }
     }
 }
@@ -203,14 +210,14 @@ void UIElement::UpdatePeakIndicators() noexcept
 {
     for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
     {
-        double Amplitude = Clamp(_State.ScaleA(Iter.CurValue), 0., 1.);
+        double Amplitude = Clamp(_RenderState.ScaleA(Iter.CurValue), 0., 1.);
 
         if (Amplitude >= Iter.Peak)
         {
-            if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
-                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _State._HoldTime;
+            if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
+                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _RenderState._HoldTime;
             else
-                Iter.HoldTime = _State._HoldTime;
+                Iter.HoldTime = _RenderState._HoldTime;
 
             Iter.Peak = Amplitude;
             Iter.DecaySpeed = 0.;
@@ -220,17 +227,17 @@ void UIElement::UpdatePeakIndicators() noexcept
         {
             if (Iter.HoldTime >= 0.)
             {
-                if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
-                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _State._HoldTime;
+                if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
+                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _RenderState._HoldTime;
 
                 Iter.HoldTime -= 1.;
 
-                if ((_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP))
-                    Iter.HoldTime = Min(Iter.HoldTime, _State._HoldTime);
+                if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
+                    Iter.HoldTime = Min(Iter.HoldTime, _RenderState._HoldTime);
             }
             else
             {
-                switch (_State._PeakMode)
+                switch (_RenderState._PeakMode)
                 {
                     default:
 
@@ -238,22 +245,22 @@ void UIElement::UpdatePeakIndicators() noexcept
                         break;
 
                     case PeakMode::Classic:
-                        Iter.DecaySpeed = _State._Acceleration / 256.;
+                        Iter.DecaySpeed = _RenderState._Acceleration / 256.;
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::Gravity:
-                        Iter.DecaySpeed += _State._Acceleration / 256.;
+                        Iter.DecaySpeed += _RenderState._Acceleration / 256.;
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_State._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         Iter.Peak -= Iter.DecaySpeed;
                         break;
 
                     case PeakMode::FadeOut:
-                        Iter.DecaySpeed += _State._Acceleration / 256.;
+                        Iter.DecaySpeed += _RenderState._Acceleration / 256.;
                         Iter.Opacity -= Iter.DecaySpeed;
 
                         if (Iter.Opacity <= 0.)
@@ -261,7 +268,7 @@ void UIElement::UpdatePeakIndicators() noexcept
                         break;
 
                     case PeakMode::FadingAIMP:
-                        Iter.DecaySpeed = (_State._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                        Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
                         Iter.Peak -= Iter.DecaySpeed;
                         Iter.Opacity -= Iter.DecaySpeed;
 
@@ -275,6 +282,84 @@ void UIElement::UpdatePeakIndicators() noexcept
         }
     }
 }
+
+/// <summary>
+/// Resizes all visual elements.
+/// </summary>
+void UIElement::Resize()
+{
+    if (_RenderTarget == nullptr)
+        return;
+
+    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+
+    // Reposition the frame counter.
+    _FrameCounter.Resize(Size.width, Size.height);
+
+    // Resize the graph area.
+    const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
+
+    for (auto * Iter : _Graphs)
+        Iter->Move(Bounds);
+
+    // Adjust the tracking tool tip.
+    {
+        if (_TrackingToolInfo != nullptr)
+        {
+            _ToolTipControl.DelTool(_TrackingToolInfo);
+
+            delete _TrackingToolInfo;
+        }
+
+        _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
+
+        ::SetRect(&_TrackingToolInfo->rect, (int) Bounds.left, (int) Bounds.top, (int) Bounds.right, (int) Bounds.bottom);
+
+        _ToolTipControl.AddTool(_TrackingToolInfo);
+    }
+}
+
+/// <summary>
+/// Deletes some analysis resources.
+/// </summary>
+void UIElement::DeleteResources()
+{
+    // Forces the recreation of the Brown-Puckette window function.
+    if (_BrownPucketteKernel != nullptr)
+    {
+        delete _BrownPucketteKernel;
+        _BrownPucketteKernel = nullptr;
+    }
+
+    // Forces the recreation of the window function.
+    if (_WindowFunction != nullptr)
+    {
+        delete _WindowFunction;
+        _WindowFunction = nullptr;
+    }
+
+    // Forces the recreation of the spectrum analyzer.
+    if (_FFTAnalyzer != nullptr)
+    {
+        delete _FFTAnalyzer;
+        _FFTAnalyzer = nullptr;
+    }
+
+    // Forces the recreation of the Constant-Q transform.
+    if (_CQTAnalyzer != nullptr)
+    {
+        delete _CQTAnalyzer;
+        _CQTAnalyzer = nullptr;
+    }
+
+    // Forces the recreation of the Sliding Window Infinite Fourier transform.
+    if (_SWIFTAnalyzer != nullptr)
+    {
+        delete _SWIFTAnalyzer;
+        _SWIFTAnalyzer = nullptr;
+    }
+}
+
 
 #pragma region DirectX
 
@@ -318,7 +403,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _State._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _RenderState._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
@@ -369,15 +454,15 @@ HRESULT UIElement::CreateArtworkDependentResources()
     // Get the colors from the artwork.
     std::vector<D2D1_COLOR_F> Colors;
 
-    HRESULT hr = _Artwork.GetColors(Colors, _State._NumArtworkColors, _State._LightnessThreshold, _State._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(Colors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
 
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _State._DominantColor = Colors[0];
+        _RenderState._DominantColor = Colors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_State._ColorOrder)
+        switch (_RenderState._ColorOrder)
         {
             case ColorOrder::None:
                 break;
@@ -411,10 +496,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
 
     // Create the gradient stops.
     if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(Colors, _State._ArtworkGradientStops);
+        hr = _Direct2D.CreateGradientStops(Colors, _RenderState._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-        _State._StyleManager.SetArtworkDependentParameters(_State._ArtworkGradientStops, _State._DominantColor);
+        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
 
     _IsConfigurationChanged = true;
 
@@ -426,7 +511,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
-    _State._StyleManager.ReleaseDeviceSpecificResources();
+    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 
     for (Graph * Iter : _Graphs)
         Iter->ReleaseDeviceSpecificResources();

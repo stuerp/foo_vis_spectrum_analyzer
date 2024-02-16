@@ -91,7 +91,7 @@ void XAxis::Initialize(State * state, Analyses & analyses) noexcept
 
             case XAxisMode::Octaves:
             {
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < analyses[0]->_FrequencyBands.back().Lo; ++i)
@@ -113,7 +113,7 @@ void XAxis::Initialize(State * state, Analyses & analyses) noexcept
                 static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
@@ -209,7 +209,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
             D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), yb, Iter.x + (TextMetrics.width / 2.f), yb + _Height };
 
-            TextStyle->_Brush->SetOpacity(Iter.Dim ? Opacity * .5f : Opacity);
+            TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
             if ((OldTextRight <= TextRect.left) && (TextRect.left < _Bounds.right))
             {

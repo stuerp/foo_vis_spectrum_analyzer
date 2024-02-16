@@ -109,7 +109,7 @@ void Analysis::GenerateOctaveFrequencyBands(const State & state)
 }
 
 /// <summary>
-/// Generates frequency bands of AveePlayer.
+/// Generates frequency bands like AveePlayer.
 /// </summary>
 void Analysis::GenerateAveePlayerFrequencyBands(const State & state)
 {
@@ -126,6 +126,8 @@ void Analysis::GenerateAveePlayerFrequencyBands(const State & state)
         Iter.Hi  = LogSpace(state._LoFrequency, state._HiFrequency, i + Width, state._BandCount - 1, state._SkewFactor);
 
         Iter.HasDarkBackground = true;
+        ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
+
         ++i;
     }
 }

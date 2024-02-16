@@ -90,6 +90,8 @@ private:
     void UpdateChannelsMenu();
     void UpdatePages(size_t index) const noexcept;
 
+    void ConfigurationChanged() const noexcept;
+
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
 

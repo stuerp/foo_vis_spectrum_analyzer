@@ -28,7 +28,7 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
     // Get the spectrum.
     GetAnalyzer(chunk);
 
-    switch (_State._Transform)
+    switch (_RenderState._Transform)
     {
         case Transform::FFT:
         {
@@ -50,11 +50,11 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
     }
 
     // Filter the spectrum.
-    if (_State._WeightingType != WeightingType::None)
+    if (_RenderState._WeightingType != WeightingType::None)
         ApplyAcousticWeighting();
 
     // Smooth the spectrum.
-    switch (_State._SmoothingMethod)
+    switch (_RenderState._SmoothingMethod)
     {
         default:
 
@@ -66,13 +66,13 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 
         case SmoothingMethod::Average:
         {
-            ApplyAverageSmoothing(_State._SmoothingFactor);
+            ApplyAverageSmoothing(_RenderState._SmoothingFactor);
             break;
         }
 
         case SmoothingMethod::Peak:
         {
-            ApplyPeakSmoothing(_State._SmoothingFactor);
+            ApplyPeakSmoothing(_RenderState._SmoothingFactor);
             break;
         }
     }
@@ -84,27 +84,27 @@ void UIElement::ProcessAudioChunk(const audio_chunk & chunk) noexcept
 void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
     if (_WindowFunction == nullptr)
-        _WindowFunction = WindowFunction::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
+        _WindowFunction = WindowFunction::Create(_RenderState._WindowFunction, _RenderState._WindowParameter, _RenderState._WindowSkew, _RenderState._Truncate);
 
     if (_BrownPucketteKernel == nullptr)
-        _BrownPucketteKernel = WindowFunction::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
+        _BrownPucketteKernel = WindowFunction::Create(_RenderState._KernelShape, _RenderState._KernelShapeParameter, _RenderState._KernelAsymmetry, _RenderState._Truncate);
 
     uint32_t ChannelCount = chunk.get_channel_count();
     uint32_t ChannelSetup = chunk.get_channel_config();
 
-    if ((_FFTAnalyzer == nullptr) && (_State._Transform == Transform::FFT))
+    if ((_FFTAnalyzer == nullptr) && (_RenderState._Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _BinCount);
+        _FFTAnalyzer = new FFTAnalyzer(&_RenderState, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _BinCount);
     }
 
-    if ((_CQTAnalyzer == nullptr) && (_State._Transform == Transform::CQT))
+    if ((_CQTAnalyzer == nullptr) && (_RenderState._Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+        _CQTAnalyzer = new CQTAnalyzer(&_RenderState, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
     }
 
-    if ((_SWIFTAnalyzer == nullptr) && (_State._Transform == Transform::SWIFT))
+    if ((_SWIFTAnalyzer == nullptr) && (_RenderState._Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(&_State, _SampleRate, ChannelCount, ChannelSetup);
+        _SWIFTAnalyzer = new SWIFTAnalyzer(&_RenderState, _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_Analyses[0]->_FrequencyBands);
     }
@@ -118,7 +118,7 @@ void UIElement::GetAnalyzer(const audio_chunk & chunk) noexcept
 /// </summary>
 void UIElement::ApplyAcousticWeighting()
 {
-    const double Offset = ((_State._SlopeFunctionOffset * (double) _SampleRate) / (double) _BinCount);
+    const double Offset = ((_RenderState._SlopeFunctionOffset * (double) _SampleRate) / (double) _BinCount);
 
     for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
         Iter.NewValue *= GetWeight(Iter.Ctr + Offset);
@@ -129,9 +129,9 @@ void UIElement::ApplyAcousticWeighting()
 /// </summary>
 double UIElement::GetWeight(double x) const noexcept
 {
-    const double a = GetFrequencyTilt(x, _State._Slope, _State._SlopeOffset);
-    const double b = Equalize(x, _State._EqualizeAmount, _State._EqualizeDepth, _State._EqualizeOffset);
-    const double c = GetAcousticWeight(x, _State._WeightingType, _State._WeightingAmount);
+    const double a = GetFrequencyTilt(x, _RenderState._Slope, _RenderState._SlopeOffset);
+    const double b = Equalize(x, _RenderState._EqualizeAmount, _RenderState._EqualizeDepth, _RenderState._EqualizeOffset);
+    const double c = GetAcousticWeight(x, _RenderState._WeightingType, _RenderState._WeightingAmount);
 
     return a * b * c;
 }

@@ -59,7 +59,7 @@ private:
         double Frequency;
         std::wstring Text;
         FLOAT x;
-        bool Dim;
+        bool IsDimmed;
     };
 
     std::vector<Label> _Labels;

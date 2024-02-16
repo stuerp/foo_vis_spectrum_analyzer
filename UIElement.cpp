@@ -99,7 +99,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     // Apply the initial configuration.
-    SetConfiguration();
+    UpdateState();
 
     return 0;
 }
@@ -112,8 +112,6 @@ void UIElement::OnDestroy()
     StopTimer();
 
     _CriticalSection.Enter();
-
-    StopTimer();
 
     DeleteResources();
 
@@ -140,6 +138,8 @@ void UIElement::OnDestroy()
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
 {
+//  Log::Write(Log::Level::Trace, "%08X: OnPaint", GetTickCount64());
+
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
@@ -341,7 +341,7 @@ void UIElement::OnMouseLeave()
 /// </summary>
 LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    SetConfiguration();
+    UpdateState();
 
     return 0;
 }
@@ -378,57 +378,23 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        _CriticalSection.Enter();
-
         DialogParameters dp = { m_hWnd, &_State };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
-
-        _CriticalSection.Leave();
     }
     else
         _ConfigurationDialog.BringWindowToTop();
 }
 
 /// <summary>
-/// Sets the current configuration.
+/// Updates the state.
 /// </summary>
-void UIElement::SetConfiguration() noexcept
+void UIElement::UpdateState() noexcept
 {
+//  Log::Write(Log::Level::Trace, "%08X: UpdateState", GetTickCount64());
+
     _CriticalSection.Enter();
-
-    {
-        for (auto & Iter : _Analyses)
-            delete Iter;
-
-        _Analyses.clear();
-
-        auto * a = new Analysis(audio_chunk::channel_front_left);
-
-        a->Initialize(_State);
-
-        _Analyses.push_back(a);
-
-        a = new Analysis(audio_chunk::channel_front_right);
-
-        a->Initialize(_State);
-
-        _Analyses.push_back(a);
-    }
-
-    {
-        for (auto & Iter : _Graphs)
-            delete Iter;
-
-        _Graphs.clear();
-
-        auto * g = new Graph();
-
-        g->Initialize(&_State, _Analyses);
-
-        _Graphs.push_back(g);
-    }
 
     #pragma warning (disable: 4061)
     switch (_State._FFTMode)
@@ -447,96 +413,53 @@ void UIElement::SetConfiguration() noexcept
     }
     #pragma warning (default: 4061)
 
+    _ToneGenerator.Initialize(440., 1., 0., _BinCount);
+
+    _RenderState = _State;
+
+    {
+        for (auto & Iter : _Analyses)
+            delete Iter;
+
+        _Analyses.clear();
+
+        auto * a = new Analysis(audio_chunk::channel_front_left);
+
+        a->Initialize(_RenderState);
+
+        _Analyses.push_back(a);
+
+        a = new Analysis(audio_chunk::channel_front_right);
+
+        a->Initialize(_RenderState);
+
+        _Analyses.push_back(a);
+    }
+
+    {
+        for (auto & Iter : _Graphs)
+            delete Iter;
+
+        _Graphs.clear();
+
+        auto * g = new Graph();
+
+        g->Initialize(&_RenderState, _Analyses);
+
+        _Graphs.push_back(g);
+    }
+
     DeleteResources();
 
-    _State._StyleManager.ReleaseDeviceSpecificResources();
-
-    _NewArtworkGradient = true; // Request an update of the artwork gradient.
-
-    _ToolTipControl.Activate(_State._ShowToolTips);
-
-    Resize();
+    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 
     _CriticalSection.Leave();
 
-    _ToneGenerator.Initialize(440., 1., 0., _BinCount);
-}
+    _NewArtworkGradient = true; // Request an update of the artwork gradient.
 
-/// <summary>
-/// Deletes some analysis resources.
-/// </summary>
-void UIElement::DeleteResources()
-{
-    // Forces the recreation of the Brown-Puckette window function.
-    if (_BrownPucketteKernel != nullptr)
-    {
-        delete _BrownPucketteKernel;
-        _BrownPucketteKernel = nullptr;
-    }
+    _ToolTipControl.Activate(_RenderState._ShowToolTips);
 
-    // Forces the recreation of the window function.
-    if (_WindowFunction != nullptr)
-    {
-        delete _WindowFunction;
-        _WindowFunction = nullptr;
-    }
-
-    // Forces the recreation of the spectrum analyzer.
-    if (_FFTAnalyzer != nullptr)
-    {
-        delete _FFTAnalyzer;
-        _FFTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Constant-Q transform.
-    if (_CQTAnalyzer != nullptr)
-    {
-        delete _CQTAnalyzer;
-        _CQTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Sliding Window Infinite Fourier transform.
-    if (_SWIFTAnalyzer != nullptr)
-    {
-        delete _SWIFTAnalyzer;
-        _SWIFTAnalyzer = nullptr;
-    }
-}
-
-/// <summary>
-/// Resizes all render targets.
-/// </summary>
-void UIElement::Resize()
-{
-    if (_RenderTarget == nullptr)
-        return;
-
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
-
-    // Reposition the frame counter.
-    _FrameCounter.Resize(Size.width, Size.height);
-
-    // Resize the graph area.
-    const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
-
-    for (auto * Iter : _Graphs)
-        Iter->Move(Bounds);
-
-    // Adjust the tracking tool tip.
-    {
-        if (_TrackingToolInfo != nullptr)
-        {
-            _ToolTipControl.DelTool(_TrackingToolInfo);
-
-            delete _TrackingToolInfo;
-        }
-
-        _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
-
-        ::SetRect(&_TrackingToolInfo->rect, (int) Bounds.left, (int) Bounds.top, (int) Bounds.right, (int) Bounds.bottom);
-
-        _ToolTipControl.AddTool(_TrackingToolInfo);
-    }
+    Resize();
 }
 
 #pragma endregion
@@ -550,7 +473,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _PlaybackEvent = PlaybackEvent::NewTrack;
 
-    SetConfiguration();
+    UpdateState();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
     // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
