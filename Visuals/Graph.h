@@ -26,7 +26,7 @@ public:
     void Initialize(State * state, uint32_t channels, const std::wstring & description) noexcept;
 
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, double sampleRate, const Artwork & artwork) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;
     void Clear();
 
     void Process(const audio_chunk & chunk) noexcept
@@ -47,7 +47,7 @@ public:
 
 private:
     void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
-    void RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) noexcept;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
 
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
 

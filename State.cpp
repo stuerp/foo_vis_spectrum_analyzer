@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.02.14) P. Stuer **/
+/** $VER: State.cpp (2024.02.17) P. Stuer **/
 
 #include "State.h"
 
@@ -73,7 +73,7 @@ void State::Reset() noexcept
     _BandwidthOffset = 1.;
     _BandwidthCap = 1.;
     _BandwidthAmount = 6.;
-    _GranularBW = true;
+    _UseGranularBandwidth = true;
 
     _KernelShape = WindowFunctions::Nuttall;
     _KernelShapeParameter = 1.;
@@ -248,7 +248,7 @@ State & State::operator=(const State & other)
             _BandwidthOffset = other._BandwidthOffset;
             _BandwidthCap = other._BandwidthCap;
             _BandwidthAmount = other._BandwidthAmount;
-            _GranularBW = other._GranularBW;
+            _UseGranularBandwidth = other._UseGranularBandwidth;
 
             _KernelShape = other._KernelShape;
             _KernelShapeParameter = other._KernelShapeParameter;
@@ -619,7 +619,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read(&_BandwidthOffset, sizeof(_BandwidthOffset), abortHandler);
             reader->read(&_BandwidthCap, sizeof(_BandwidthCap), abortHandler);
             reader->read(&_BandwidthAmount, sizeof(_BandwidthAmount), abortHandler);
-            reader->read(&_GranularBW, sizeof(_GranularBW), abortHandler);
+            reader->read(&_UseGranularBandwidth, sizeof(_UseGranularBandwidth), abortHandler);
 
             reader->read(&_KernelShape, sizeof(_KernelShape), abortHandler);
             reader->read(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);
@@ -823,7 +823,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write(&_BandwidthOffset, sizeof(_BandwidthOffset), abortHandler);
         writer->write(&_BandwidthCap, sizeof(_BandwidthCap), abortHandler);
         writer->write(&_BandwidthAmount, sizeof(_BandwidthAmount), abortHandler);
-        writer->write(&_GranularBW, sizeof(_GranularBW), abortHandler);
+        writer->write(&_UseGranularBandwidth, sizeof(_UseGranularBandwidth), abortHandler);
 
         writer->write(&_KernelShape, sizeof(_KernelShape), abortHandler);
         writer->write(&_KernelShapeParameter, sizeof(_KernelShapeParameter), abortHandler);

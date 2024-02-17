@@ -95,10 +95,8 @@ private:
 
     void OnTimer();
 
-    void UpdateRenderState() noexcept;
     void ProcessPlaybackEvent();
     void UpdateSpectrum();
-    void UpdatePeakIndicators() noexcept;
     void Render();
 
     #pragma region DirectX

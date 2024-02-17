@@ -143,6 +143,7 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 }
+
 /// <summary>
 /// Generates frequency bands using a linear distribution.
 /// </summary>
@@ -451,26 +452,106 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 /// <summary>
 /// Smooths the spectrum using averages.
 /// </summary>
-void Analysis::ApplyAverageSmoothing(double factor)
+void Analysis::ApplyAverageSmoothing(double factor) noexcept
 {
     if (factor != 0.0)
     {
-        for (FrequencyBand & Iter : _FrequencyBands)
-            Iter.CurValue = (::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0) + (::isfinite(Iter.NewValue) ? Iter.NewValue * (1.0 - factor) : 0.0);
+        for (FrequencyBand & fb : _FrequencyBands)
+            fb.CurValue = (::isfinite(fb.CurValue) ? fb.CurValue * factor : 0.0) + (::isfinite(fb.NewValue) ? fb.NewValue * (1.0 - factor) : 0.0);
 
     }
     else
     {
-        for (FrequencyBand & Iter : _FrequencyBands)
-            Iter.CurValue = Iter.NewValue;
+        for (FrequencyBand & fb : _FrequencyBands)
+            fb.CurValue = fb.NewValue;
     }
 }
 
 /// <summary>
 /// Smooths the spectrum using peak decay.
 /// </summary>
-void Analysis::ApplyPeakSmoothing(double factor)
+void Analysis::ApplyPeakSmoothing(double factor) noexcept
 {
-    for (FrequencyBand & Iter : _FrequencyBands)
-        Iter.CurValue = Max(::isfinite(Iter.CurValue) ? Iter.CurValue * factor : 0.0, ::isfinite(Iter.NewValue) ? Iter.NewValue : 0.0);
+    for (FrequencyBand & fb : _FrequencyBands)
+        fb.CurValue = Max(::isfinite(fb.CurValue) ? fb.CurValue * factor : 0.0, ::isfinite(fb.NewValue) ? fb.NewValue : 0.0);
+}
+
+/// <summary>
+/// Updates the value of the peak indicators.
+/// </summary>
+void Analysis::UpdatePeakIndicators() noexcept
+{
+    for (FrequencyBand & fb : _FrequencyBands)
+    {
+        const double Amplitude = Clamp(_State->ScaleA(fb.CurValue), 0., 1.);
+
+        if (Amplitude >= fb.Peak)
+        {
+            if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (Amplitude - fb.Peak) * _State->_HoldTime;
+            else
+                fb.HoldTime = _State->_HoldTime;
+
+            fb.Peak = Amplitude;
+            fb.DecaySpeed = 0.;
+            fb.Opacity = 1.;
+        }
+        else
+        {
+            if (fb.HoldTime >= 0.)
+            {
+                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    fb.Peak += (fb.HoldTime - Max(fb.HoldTime - 1., 0.)) / _State->_HoldTime;
+
+                fb.HoldTime -= 1.;
+
+                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    fb.HoldTime = Min(fb.HoldTime, _State->_HoldTime);
+            }
+            else
+            {
+                switch (_State->_PeakMode)
+                {
+                    default:
+
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
+                        fb.DecaySpeed = _State->_Acceleration / 256.;
+                        fb.Peak -= fb.DecaySpeed;
+                        break;
+
+                    case PeakMode::Gravity:
+                        fb.DecaySpeed += _State->_Acceleration / 256.;
+                        fb.Peak -= fb.DecaySpeed;
+                        break;
+
+                    case PeakMode::AIMP:
+                        fb.DecaySpeed = (_State->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
+                        fb.Peak -= fb.DecaySpeed;
+                        break;
+
+                    case PeakMode::FadeOut:
+                        fb.DecaySpeed += _State->_Acceleration / 256.;
+                        fb.Opacity -= fb.DecaySpeed;
+
+                        if (fb.Opacity <= 0.)
+                            fb.Peak = Amplitude;
+                        break;
+
+                    case PeakMode::FadingAIMP:
+                        fb.DecaySpeed = (_State->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
+                        fb.Peak -= fb.DecaySpeed;
+                        fb.Opacity -= fb.DecaySpeed;
+
+                        if (fb.Opacity <= 0.)
+                            fb.Peak = Amplitude;
+                        break;
+                }
+            }
+
+            fb.Peak = Clamp(fb.Peak, 0., 1.);
+        }
+    }
 }

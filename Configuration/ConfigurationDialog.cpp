@@ -344,7 +344,7 @@ void ConfigurationDialog::Initialize()
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BW_AMOUNT)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_AMOUNT, _State->_BandwidthAmount);
     }
 
-    SendDlgItemMessageW(IDC_GRANULAR_BW, BM_SETCHECK, _State->_GranularBW);
+    SendDlgItemMessageW(IDC_GRANULAR_BW, BM_SETCHECK, _State->_UseGranularBandwidth);
 
     {
         auto w = (CComboBox) GetDlgItem(IDC_KERNEL_SHAPE);
@@ -1616,7 +1616,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             return;
         }
 
-        case IDC_GRANULAR_BW: { _State->_GranularBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+        case IDC_GRANULAR_BW: { _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
         case IDC_SMOOTH_LOWER_FREQUENCIES: { _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
         case IDC_SMOOTH_GAIN_TRANSITION: { _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
 

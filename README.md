@@ -87,6 +87,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.1.0-beta-2, 2024-02-xx
 
+* New: Multiple graphs. Each graph can be configured to show the analysis of one or more channels.
 * New: Context menu item to freeze and unfreeze the component.
 * Improved: Rendering and spectrum computation are not performed when the component window is hidden (to reduce the load on the computer).
 
@@ -314,6 +315,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Test Material
 
 * [The SOS Audio Test Files](https://www.soundonsound.com/techniques/sos-audio-test-files)
+* [HTML5 AAC Audio Playback Tests - Multichannel](https://www2.iis.fraunhofer.de/AAC/multichannel.html)
 
 ## Links
 

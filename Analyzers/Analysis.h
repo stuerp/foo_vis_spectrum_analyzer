@@ -32,6 +32,7 @@ public:
 
     void Initialize(const State * state, uint32_t channels) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
+    void UpdatePeakIndicators() noexcept;
 
     void Reset();
 
@@ -41,8 +42,8 @@ private:
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
 
-    void ApplyAverageSmoothing(double factor);
-    void ApplyPeakSmoothing(double factor);
+    void ApplyAverageSmoothing(double factor) noexcept;
+    void ApplyPeakSmoothing(double factor) noexcept;
 
     void GenerateLinearFrequencyBands(const State * state);
     void GenerateOctaveFrequencyBands(const State * state);

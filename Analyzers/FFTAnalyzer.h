@@ -32,9 +32,9 @@ private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
     void Transform() noexcept;
 
-    void AnalyzeSamples(uint32_t sampleRate, SummationMethod summationMethod, FrequencyBands & freqBands) const noexcept;
     void AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
-    void AnalyzeSamples(uint32_t sampleRate, const WindowFunction & windowFunction, double bandwidthOffset, double bandwidthCap, double bandwidthAmount, bool granularBW, FrequencyBands & freqBands) const noexcept;
+    void AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
+    void AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
 
     double Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;

@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2024.01.16) P. Stuer **/
+/** $VER: FrameCounter.cpp (2024.02.17) P. Stuer **/
 
 #include "FrameCounter.h"
 #include "DirectWrite.h"
@@ -9,7 +9,7 @@
 /// <summary>
 /// Registers the time when starting a new frame.
 /// </summary>
-void FrameCounter::NewFrame()
+void FrameCounter::NewFrame() noexcept
 {
     LARGE_INTEGER Counter;
 
@@ -18,7 +18,10 @@ void FrameCounter::NewFrame()
     _Times.Add(Counter.QuadPart);
 }
 
-float FrameCounter::GetFPS()
+/// <summary>
+/// Gets the current frame rate.
+/// </summary>
+float FrameCounter::GetFPS() const noexcept
 {
     float FPS = (float)((_Times.Count() - 1) * _Frequency.QuadPart) / (float) (_Times.Last() - _Times.First());
 
@@ -28,7 +31,7 @@ float FrameCounter::GetFPS()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight)
+void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 {
     _ClientWidth = clientWidth;
     _ClientHeight = clientHeight;
@@ -37,7 +40,7 @@ void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight)
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
+HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -52,18 +55,18 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 
         // Draw the background.
         {
-            _SolidBrush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
+            _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
             const FLOAT Inset = 4.f;
 
-            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _SolidBrush);
+            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
         }
 
         // Draw the text.
         {
-            _SolidBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+            _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-            renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _SolidBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
@@ -73,7 +76,7 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT FrameCounter::CreateDeviceIndependentResources()
+HRESULT FrameCounter::CreateDeviceIndependentResources() noexcept
 {
     const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
@@ -107,7 +110,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources()
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void FrameCounter::ReleaseDeviceIndependentResources()
+void FrameCounter::ReleaseDeviceIndependentResources() noexcept
 {
     _TextFormat.Release();
 }
@@ -116,12 +119,12 @@ void FrameCounter::ReleaseDeviceIndependentResources()
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
-    if (_SolidBrush != nullptr)
+    if (_Brush != nullptr)
         return S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidBrush);
+    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
 
     return hr;
 }
@@ -129,7 +132,7 @@ HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTa
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void FrameCounter::ReleaseDeviceSpecificResources()
+void FrameCounter::ReleaseDeviceSpecificResources() noexcept
 {
-    _SolidBrush.Release();
+    _Brush.Release();
 }

@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.h (2024.01.16) P. Stuer - Represents and renders the frame counter display. **/
+/** $VER: FrameCounter.h (2024.02.17) P. Stuer - Represents and renders the frame counter display. **/
 
 #pragma once
 
@@ -29,19 +29,19 @@ public:
     FrameCounter(FrameCounter &&) = delete;
     FrameCounter & operator=(FrameCounter &&) = delete;
 
-    void Resize(FLOAT clientWidth, FLOAT clientHeight);
+    void Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept;
 
-    void NewFrame();
-    HRESULT Render(ID2D1RenderTarget * renderTarget);
+    void NewFrame() noexcept;
+    HRESULT Render(ID2D1RenderTarget * renderTarget) noexcept;
 
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
+    HRESULT CreateDeviceIndependentResources() noexcept;
+    void ReleaseDeviceIndependentResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    float GetFPS();
+    float GetFPS() const noexcept;
 
 private:
     LARGE_INTEGER _Frequency;
@@ -60,5 +60,5 @@ private:
     FLOAT _TextHeight;
 
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
+    CComPtr<ID2D1SolidColorBrush> _Brush;
 };

@@ -83,7 +83,7 @@ public:
         double _BandwidthOffset;                                        // 0.0 .. 1.0, Transition smoothness
         double _BandwidthCap;                                           // 0.0 .. 1.0, Minimum Brown-Puckette kernel size
         double _BandwidthAmount;                                        // 0 .. 256, Brown-Puckette kernel size
-        bool _GranularBW;                                               // True: Don't constrain bandwidth to powers of 2.
+        bool _UseGranularBandwidth;                                               // True: Don't constrain bandwidth to powers of 2.
 
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.

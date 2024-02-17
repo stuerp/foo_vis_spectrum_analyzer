@@ -67,7 +67,7 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, double sampleRate, const Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -90,7 +90,7 @@ void Graph::Clear()
 /// <summary>
 /// Renders the background.
 /// </summary>
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, const Artwork & artwork) noexcept
+void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
     const Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
 

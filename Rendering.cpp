@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.16) P. Stuer **/
+/** $VER: Rendering.cpp (2024.02.17) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -28,7 +28,7 @@ void UIElement::StartTimer() noexcept
 
     FILETIME DueTime = { };
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _RenderState._RefreshRateLimit, 0);
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _State._RefreshRateLimit, 0);
 }
 
 /// <summary>
@@ -63,18 +63,10 @@ void UIElement::OnTimer()
     if (_IsFrozen || !_CriticalSection.TryEnter())
         return;
 
-    // Stop the timer to prevent overlapping callbacks.
-    ::SetThreadpoolTimer(_ThreadPoolTimer, nullptr, 0, 0);
-
     ProcessPlaybackEvent();
 
     if (IsWindowVisible())
         Render();
-
-    // Start the timer again.
-    FILETIME DueTime = { };
-
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _RenderState._RefreshRateLimit, 0);
 
     _CriticalSection.Leave();
 
@@ -143,15 +135,12 @@ void UIElement::Render()
 
         UpdateSpectrum();
 
-        if (_RenderState._PeakMode != PeakMode::None)
-            UpdatePeakIndicators();
-
         _RenderTarget->BeginDraw();
 
         for (Graph * Iter : _Graphs)
             Iter->Render(_RenderTarget, (double) _SampleRate, _Artwork);
 
-        if (_RenderState._ShowFrameCounter)
+        if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
@@ -166,17 +155,19 @@ void UIElement::Render()
 }
 
 /// <summary>
-/// Updates the spectrum using the next audio chunk.
+/// Updates the spectra of all the graphs using the next audio chunk.
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    if (_RenderState._UseToneGenerator)
+    if (_State._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
 
         if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
+        {
             for (Graph * graph : _Graphs)
                 graph->Process(Chunk);
+        }
     }
     else
     {
@@ -192,94 +183,20 @@ void UIElement::UpdateSpectrum()
             const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+            {
                 for (Graph * graph : _Graphs)
                     graph->Process(Chunk);
+            }
 
             _OldPlaybackTime = PlaybackTime;
         }
     }
-}
 
-/// <summary>
-/// Updates the position of the peak indicators.
-/// </summary>
-void UIElement::UpdatePeakIndicators() noexcept
-{
-    for (Graph * graph : _Graphs)
+    // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
+    if (_State._PeakMode != PeakMode::None)
     {
-        for (FrequencyBand & Iter : graph->GetAnalysis()._FrequencyBands)
-        {
-            double Amplitude = Clamp(_RenderState.ScaleA(Iter.CurValue), 0., 1.);
-
-            if (Amplitude >= Iter.Peak)
-            {
-                if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                    Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _RenderState._HoldTime;
-                else
-                    Iter.HoldTime = _RenderState._HoldTime;
-
-                Iter.Peak = Amplitude;
-                Iter.DecaySpeed = 0.;
-                Iter.Opacity = 1.;
-            }
-            else
-            {
-                if (Iter.HoldTime >= 0.)
-                {
-                    if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                        Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _RenderState._HoldTime;
-
-                    Iter.HoldTime -= 1.;
-
-                    if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                        Iter.HoldTime = Min(Iter.HoldTime, _RenderState._HoldTime);
-                }
-                else
-                {
-                    switch (_RenderState._PeakMode)
-                    {
-                        default:
-
-                        case PeakMode::None:
-                            break;
-
-                        case PeakMode::Classic:
-                            Iter.DecaySpeed = _RenderState._Acceleration / 256.;
-                            Iter.Peak -= Iter.DecaySpeed;
-                            break;
-
-                        case PeakMode::Gravity:
-                            Iter.DecaySpeed += _RenderState._Acceleration / 256.;
-                            Iter.Peak -= Iter.DecaySpeed;
-                            break;
-
-                        case PeakMode::AIMP:
-                            Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                            Iter.Peak -= Iter.DecaySpeed;
-                            break;
-
-                        case PeakMode::FadeOut:
-                            Iter.DecaySpeed += _RenderState._Acceleration / 256.;
-                            Iter.Opacity -= Iter.DecaySpeed;
-
-                            if (Iter.Opacity <= 0.)
-                                Iter.Peak = Amplitude;
-                            break;
-
-                        case PeakMode::FadingAIMP:
-                            Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                            Iter.Peak -= Iter.DecaySpeed;
-                            Iter.Opacity -= Iter.DecaySpeed;
-
-                            if (Iter.Opacity <= 0.)
-                                Iter.Peak = Amplitude;
-                            break;
-                    }
-                }
-
-                Iter.Peak = Clamp(Iter.Peak, 0., 1.);
-            }
-        }
+        for (Graph * graph : _Graphs)
+            graph->GetAnalysis().UpdatePeakIndicators();
     }
 }
 
@@ -368,7 +285,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _RenderState._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _State._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
