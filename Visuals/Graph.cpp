@@ -16,6 +16,13 @@ Graph::Graph() : _Bounds(), _FontFamilyName(L"Segoe UI"), _FontSize(14.f)
 }
 
 /// <summary>
+/// Destroys this instance.
+/// </summary>
+Graph::~Graph()
+{
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
 void Graph::Initialize(State * state, uint32_t channels, const std::wstring & description) noexcept
@@ -85,6 +92,18 @@ void Graph::Clear()
 {
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
+}
+
+/// <summary>
+/// Gets the tool area of this graph.
+/// </summary>
+CToolInfo * Graph::GetToolInfo(HWND hParent) noexcept
+{
+    CToolInfo * ToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hParent, (UINT_PTR) hParent, nullptr, nullptr);
+
+    ::SetRect(&ToolInfo->rect, (int) _Bounds.left, (int) _Bounds.top, (int) _Bounds.right, (int) _Bounds.bottom);
+
+    return ToolInfo;
 }
 
 /// <summary>
@@ -164,7 +183,7 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), _Description.length(), _TextFormat, _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top, &TextLayout);
+            hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _TextFormat, _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top, &TextLayout);
 
             if (SUCCEEDED(hr))
             {

@@ -21,7 +21,7 @@ class Graph : public Element
 {
 public:
     Graph();
-    virtual ~Graph() { }
+    virtual ~Graph();
 
     void Initialize(State * state, uint32_t channels, const std::wstring & description) noexcept;
 
@@ -42,6 +42,41 @@ public:
 
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
+    CToolInfo * GetToolInfo(HWND hParent) noexcept;
+
+    bool ContainsPoint(const CPoint & pt) const noexcept
+    {
+        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+
+        if ((FLOAT) pt.x < Bounds.left)
+            return false;
+
+        if ((FLOAT) pt.x > Bounds.right)
+            return false;
+
+        if ((FLOAT) pt.y < Bounds.top)
+            return false;
+
+        if ((FLOAT) pt.y > Bounds.bottom)
+            return false;
+
+        return true;
+    }
+
+    size_t GetToolTip(FLOAT x, std::wstring & toolTip)
+    {
+        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+
+        if ((x < Bounds.left) || (Bounds.right < x))
+            return ~0U;
+
+        size_t Index = (size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size() - 1.));
+
+        toolTip = _Analysis._FrequencyBands[Index].Label;
+
+        return Index;
+    }
+
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
@@ -52,8 +87,9 @@ private:
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
 
 private:
-    D2D1_RECT_F _Bounds;
     std::wstring _Description;
+
+    D2D1_RECT_F _Bounds;
 
     Analysis _Analysis;
 

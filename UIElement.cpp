@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
+UIElement::UIElement(): _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
 {
 }
 
@@ -113,10 +113,12 @@ void UIElement::OnDestroy()
 
     _CriticalSection.Enter();
 
-    for (auto & Iter : _Graphs)
-        delete Iter;
+    {
+        for (auto & Iter : _Graphs)
+            delete Iter;
 
-    _Graphs.clear();
+        _Graphs.clear();
+    }
 
     {
         auto Manager = now_playing_album_art_notify_manager::tryGet();
@@ -281,12 +283,15 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 {
     if (!_ToolTipControl.IsWindow())
         return;
-/*FIXME
-    if (!_IsTracking)
+
+    if (_TrackingGraph == nullptr)
     {
-        if (pt.x < (LONG) _Graphs[0]->GetSpectrum().GetLeft())
+        _TrackingGraph = GetGraph(pt);
+
+        if (_TrackingGraph == nullptr)
             return;
 
+        // Tell Windows we want to know when the mouse leaves this window.
         {
             TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
 
@@ -299,36 +304,49 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
         _LastMousePos = POINT(-1, -1);
         _LastIndex = ~0U;
 
-        _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
-        _IsTracking = true;
+        _TrackingToolInfo = _TrackingGraph->GetToolInfo(m_hWnd);
+
+        if (_TrackingToolInfo != nullptr)
+            _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
     }
     else
     {
-        if (_TrackingToolInfo && ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
+        if (_TrackingGraph && (pt != _LastMousePos))// ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
         {
             _LastMousePos = pt;
-    
+
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+            std::wstring ToolTip;
 
-            size_t Index = (size_t) ::floor(Map(ScaledX, _Graphs[0]->GetSpectrum().GetLeft(), _Graphs[0]->GetSpectrum().GetRight(), 0., (double) _Analyses[0]->_FrequencyBands.size()));
+            size_t Index = _TrackingGraph->GetToolTip(ScaledX, ToolTip);
 
-            if (Index != _LastIndex)
+            if (Index != ~0U)
             {
-                if (InRange(Index, (size_t) 0U, _Analyses[0]->_FrequencyBands.size() - 1))
-                    _TrackingToolInfo->lpszText = _Analyses[0]->_FrequencyBands[Index].Label;
+                if (Index != _LastIndex)
+                {
+                    _TrackingToolInfo->lpszText = (LPWSTR) ToolTip.c_str();
 
-                _ToolTipControl.UpdateTipText(_TrackingToolInfo);
+                    _ToolTipControl.UpdateTipText(_TrackingToolInfo);
 
-                _LastIndex = Index;
+                    _LastIndex = Index;
+                }
+
+                // Reposition the tooltip.
+                ::ClientToScreen(m_hWnd, &pt);
+
+                _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
             }
+            else
+            {
+                _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
 
-            // Reposition the tooltip.
-            ::ClientToScreen(m_hWnd, &pt);
+                delete _TrackingToolInfo;
+                _TrackingToolInfo = nullptr;
 
-            _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
+                _TrackingGraph = nullptr;
+            }
         }
     }
-*/
 }
 
 /// <summary>
@@ -337,7 +355,11 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 void UIElement::OnMouseLeave()
 {
     _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-    _IsTracking = false;
+
+    delete _TrackingToolInfo;
+    _TrackingToolInfo = nullptr;
+
+    _TrackingGraph = nullptr;
 }
 
 /// <summary>
@@ -426,7 +448,13 @@ void UIElement::UpdateState() noexcept
             delete Iter;
 
         _Graphs.clear();
+/*
+        auto * g = new Graph();
 
+        g->Initialize(&_RenderState, audio_chunk::channel_config_2point1, L"Stereo");
+
+        _Graphs.push_back(g);
+*/
         auto * g = new Graph();
 
         g->Initialize(&_RenderState, audio_chunk::channel_front_left, L"Left");
@@ -449,6 +477,20 @@ void UIElement::UpdateState() noexcept
     _ToolTipControl.Activate(_RenderState._ShowToolTips);
 
     Resize();
+}
+
+/// <summary>
+/// Gets the tool info of the graph that contains the specified point.
+/// </summary>
+Graph * UIElement::GetGraph(const CPoint & pt) noexcept
+{
+    for (Graph * graph : _Graphs)
+    {
+        if (graph->ContainsPoint(pt))
+            return graph;;
+    }
+
+    return nullptr;
 }
 
 #pragma endregion

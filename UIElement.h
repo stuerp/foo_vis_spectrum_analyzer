@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.16) P. Stuer **/
+/** $VER: UIElement.h (2024.02.17) P. Stuer **/
 
 #pragma once
 
@@ -99,6 +99,8 @@ private:
     void UpdateSpectrum();
     void Render();
 
+    Graph * GetGraph(const CPoint & pt) noexcept;
+
     #pragma region DirectX
 
     HRESULT CreateDeviceIndependentResources();
@@ -176,8 +178,9 @@ private:
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
+
+    Graph * _TrackingGraph;
     CToolInfo * _TrackingToolInfo;
-    bool _IsTracking;
     POINT _LastMousePos;
     size_t _LastIndex;
 

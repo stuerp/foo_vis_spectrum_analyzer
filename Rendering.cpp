@@ -213,33 +213,21 @@ void UIElement::Resize()
     // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
 
-    // Resize the graph area.
+    // Resize each of the graph areas.
     FLOAT Width = Size.width / (FLOAT) _Graphs.size();
 
     D2D1_RECT_F Bounds(0.f, 0.f, Width, Size.height);
 
     for (auto * Iter : _Graphs)
     {
+        _ToolTipControl.DelTool(Iter->GetToolInfo(m_hWnd));
+
         Iter->Move(Bounds);
-
-        // Adjust the tracking tool tip.
-        {
-            if (_TrackingToolInfo != nullptr)
-            {
-                _ToolTipControl.DelTool(_TrackingToolInfo);
-
-                delete _TrackingToolInfo;
-            }
-
-            _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
-
-            ::SetRect(&_TrackingToolInfo->rect, (int) Bounds.left, (int) Bounds.top, (int) Bounds.right, (int) Bounds.bottom);
-
-            _ToolTipControl.AddTool(_TrackingToolInfo);
-        }
 
         Bounds.left  += Width;
         Bounds.right += Width;
+
+        _ToolTipControl.AddTool(Iter->GetToolInfo(m_hWnd));
     }
 }
 
