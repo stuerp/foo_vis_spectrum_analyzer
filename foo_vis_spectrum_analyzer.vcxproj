@@ -242,7 +242,6 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\ToneGenerator.cpp" />
-    <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
@@ -311,6 +310,7 @@
   <ItemGroup>
     <Image Include="Resources\Bars.png" />
     <Image Include="Resources\Curve.png" />
+    <Image Include="Resources\Preview.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -27,7 +27,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * state, Analyses & analyses) noexcept;
+    void Initialize(State * state, Analysis & analysis) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 

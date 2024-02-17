@@ -120,8 +120,9 @@ void UIElement::ProcessPlaybackEvent()
         {
             _Artwork.Release();
 
-            for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
-                Iter.CurValue = 0.;
+            for (Graph * Iter : _Graphs)
+                Iter->Clear();
+
             break;
         }
     }
@@ -148,7 +149,7 @@ void UIElement::Render()
         _RenderTarget->BeginDraw();
 
         for (Graph * Iter : _Graphs)
-            Iter->Render(_RenderTarget, _Analyses[0]->_FrequencyBands, (double) _SampleRate, _Artwork);
+            Iter->Render(_RenderTarget, (double) _SampleRate, _Artwork);
 
         if (_RenderState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -174,7 +175,8 @@ void UIElement::UpdateSpectrum()
         audio_chunk_impl Chunk;
 
         if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
-            ProcessAudioChunk(Chunk);
+            for (Graph * graph : _Graphs)
+                graph->Process(Chunk);
     }
     else
     {
@@ -184,19 +186,14 @@ void UIElement::UpdateSpectrum()
         if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
         {
             audio_chunk_impl Chunk;
-/* Old code
-            const double WindowSize = (double) _NumBins / (double) _SampleRate;
-            const double Offset = (_RenderState._Transform != Transform::SWIFT) ? PlaybackTime - (WindowSize / (0.5 + _RenderState._ReactionAlignment)) : PlaybackTime;
 
-            if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-                ProcessAudioChunk(Chunk);
-*/
             const bool IsSlidingWindow = _RenderState._Transform == Transform::SWIFT;
-            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _BinCount / (double) _SampleRate;
+            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _State._BinCount / (double) _SampleRate;
             const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-              ProcessAudioChunk(Chunk);
+                for (Graph * graph : _Graphs)
+                    graph->Process(Chunk);
 
             _OldPlaybackTime = PlaybackTime;
         }
@@ -208,77 +205,80 @@ void UIElement::UpdateSpectrum()
 /// </summary>
 void UIElement::UpdatePeakIndicators() noexcept
 {
-    for (FrequencyBand & Iter : _Analyses[0]->_FrequencyBands)
+    for (Graph * graph : _Graphs)
     {
-        double Amplitude = Clamp(_RenderState.ScaleA(Iter.CurValue), 0., 1.);
-
-        if (Amplitude >= Iter.Peak)
+        for (FrequencyBand & Iter : graph->GetAnalysis()._FrequencyBands)
         {
-            if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _RenderState._HoldTime;
-            else
-                Iter.HoldTime = _RenderState._HoldTime;
+            double Amplitude = Clamp(_RenderState.ScaleA(Iter.CurValue), 0., 1.);
 
-            Iter.Peak = Amplitude;
-            Iter.DecaySpeed = 0.;
-            Iter.Opacity = 1.;
-        }
-        else
-        {
-            if (Iter.HoldTime >= 0.)
+            if (Amplitude >= Iter.Peak)
             {
                 if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                    Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _RenderState._HoldTime;
+                    Iter.HoldTime = (::isfinite(Iter.HoldTime) ? Iter.HoldTime : 0.) + (Amplitude - Iter.Peak) * _RenderState._HoldTime;
+                else
+                    Iter.HoldTime = _RenderState._HoldTime;
 
-                Iter.HoldTime -= 1.;
-
-                if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
-                    Iter.HoldTime = Min(Iter.HoldTime, _RenderState._HoldTime);
+                Iter.Peak = Amplitude;
+                Iter.DecaySpeed = 0.;
+                Iter.Opacity = 1.;
             }
             else
             {
-                switch (_RenderState._PeakMode)
+                if (Iter.HoldTime >= 0.)
                 {
-                    default:
+                    if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
+                        Iter.Peak += (Iter.HoldTime - Max(Iter.HoldTime - 1., 0.)) / _RenderState._HoldTime;
 
-                    case PeakMode::None:
-                        break;
+                    Iter.HoldTime -= 1.;
 
-                    case PeakMode::Classic:
-                        Iter.DecaySpeed = _RenderState._Acceleration / 256.;
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::Gravity:
-                        Iter.DecaySpeed += _RenderState._Acceleration / 256.;
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::AIMP:
-                        Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                        Iter.Peak -= Iter.DecaySpeed;
-                        break;
-
-                    case PeakMode::FadeOut:
-                        Iter.DecaySpeed += _RenderState._Acceleration / 256.;
-                        Iter.Opacity -= Iter.DecaySpeed;
-
-                        if (Iter.Opacity <= 0.)
-                            Iter.Peak = Amplitude;
-                        break;
-
-                    case PeakMode::FadingAIMP:
-                        Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
-                        Iter.Peak -= Iter.DecaySpeed;
-                        Iter.Opacity -= Iter.DecaySpeed;
-
-                        if (Iter.Opacity <= 0.)
-                            Iter.Peak = Amplitude;
-                        break;
+                    if ((_RenderState._PeakMode == PeakMode::AIMP) || (_RenderState._PeakMode == PeakMode::FadingAIMP))
+                        Iter.HoldTime = Min(Iter.HoldTime, _RenderState._HoldTime);
                 }
-            }
+                else
+                {
+                    switch (_RenderState._PeakMode)
+                    {
+                        default:
 
-            Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+                        case PeakMode::None:
+                            break;
+
+                        case PeakMode::Classic:
+                            Iter.DecaySpeed = _RenderState._Acceleration / 256.;
+                            Iter.Peak -= Iter.DecaySpeed;
+                            break;
+
+                        case PeakMode::Gravity:
+                            Iter.DecaySpeed += _RenderState._Acceleration / 256.;
+                            Iter.Peak -= Iter.DecaySpeed;
+                            break;
+
+                        case PeakMode::AIMP:
+                            Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                            Iter.Peak -= Iter.DecaySpeed;
+                            break;
+
+                        case PeakMode::FadeOut:
+                            Iter.DecaySpeed += _RenderState._Acceleration / 256.;
+                            Iter.Opacity -= Iter.DecaySpeed;
+
+                            if (Iter.Opacity <= 0.)
+                                Iter.Peak = Amplitude;
+                            break;
+
+                        case PeakMode::FadingAIMP:
+                            Iter.DecaySpeed = (_RenderState._Acceleration / 256.) * (1. + (int) (Iter.Peak < 0.5));
+                            Iter.Peak -= Iter.DecaySpeed;
+                            Iter.Opacity -= Iter.DecaySpeed;
+
+                            if (Iter.Opacity <= 0.)
+                                Iter.Peak = Amplitude;
+                            break;
+                    }
+                }
+
+                Iter.Peak = Clamp(Iter.Peak, 0., 1.);
+            }
         }
     }
 }
@@ -325,48 +325,6 @@ void UIElement::Resize()
         Bounds.right += Width;
     }
 }
-
-/// <summary>
-/// Deletes some analysis resources.
-/// </summary>
-void UIElement::DeleteResources()
-{
-    // Forces the recreation of the Brown-Puckette window function.
-    if (_BrownPucketteKernel != nullptr)
-    {
-        delete _BrownPucketteKernel;
-        _BrownPucketteKernel = nullptr;
-    }
-
-    // Forces the recreation of the window function.
-    if (_WindowFunction != nullptr)
-    {
-        delete _WindowFunction;
-        _WindowFunction = nullptr;
-    }
-
-    // Forces the recreation of the spectrum analyzer.
-    if (_FFTAnalyzer != nullptr)
-    {
-        delete _FFTAnalyzer;
-        _FFTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Constant-Q transform.
-    if (_CQTAnalyzer != nullptr)
-    {
-        delete _CQTAnalyzer;
-        _CQTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Sliding Window Infinite Fourier transform.
-    if (_SWIFTAnalyzer != nullptr)
-    {
-        delete _SWIFTAnalyzer;
-        _SWIFTAnalyzer = nullptr;
-    }
-}
-
 
 #pragma region DirectX
 

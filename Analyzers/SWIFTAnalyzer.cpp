@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.02.16) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(state, sampleRate, channelCount, channelSetup, WindowFunction())
 {
 }
 
@@ -45,52 +45,49 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, Analyses & analyses) noexcept
+bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
-    for (Analysis * analysis : analyses)
+    for (auto & Iter : frequencyBands)
+        Iter.NewValue = 0.;
+
+    for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        for (auto & Iter : analysis->_FrequencyBands)
-            Iter.NewValue = 0.;
+        const audio_sample Sample = AverageSamples(&sampleData[i], channels);
 
-        for (size_t i = 0; i < sampleCount; i += _ChannelCount)
+        size_t k = 0;
+
+        for (auto & Coef : _Coefs)
         {
-            const audio_sample Sample = AverageSamples(&sampleData[i], analysis->_Channels);
+            size_t j = 0;
+            Value OldValue = { };
 
-            size_t k = 0;
-
-            for (auto & Coef : _Coefs)
+            for (auto & value : Coef.Values)
             {
-                size_t j = 0;
-                Value OldValue = { };
+                Value NewValue;
 
-                for (auto & value : Coef.Values)
+                if (j == 0)
+                    NewValue = { Sample, 0. };
+                else
+                    NewValue = OldValue;
+
+                value =
                 {
-                    Value NewValue;
+                    (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + NewValue.x * (1. - Coef.Decay),
+                    (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + NewValue.y * (1. - Coef.Decay)
+                };
 
-                    if (j == 0)
-                        NewValue = { Sample, 0. };
-                    else
-                        NewValue = OldValue;
-
-                    value =
-                    {
-                        (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + NewValue.x * (1. - Coef.Decay),
-                        (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + NewValue.y * (1. - Coef.Decay)
-                    };
-
-                    OldValue = value;
-                    j++;
-                }
-
-                // OldValue now contains the last calculated value.
-                analysis->_FrequencyBands[k].NewValue = Max(analysis->_FrequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
-                k++;
+                OldValue = value;
+                j++;
             }
-        }
 
-        for (auto & Iter : analysis->_FrequencyBands)
-            Iter.NewValue = ::sqrt(Iter.NewValue);
+            // OldValue now contains the last calculated value.
+            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
+            k++;
+        }
     }
+
+    for (auto & Iter : frequencyBands)
+        Iter.NewValue = ::sqrt(Iter.NewValue);
 
     return true;
 }

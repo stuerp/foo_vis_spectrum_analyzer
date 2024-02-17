@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.02.16) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer **/
 
 #include "FFTAnalyzer.h"
 
@@ -24,7 +24,7 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(configuration, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+FFTAnalyzer::FFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
@@ -45,30 +45,27 @@ FFTAnalyzer::FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, Analyses & analyses)
+bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
-    for (Analysis * analysis : analyses)
+    Add(samples, sampleCount, channels);
+
+    Transform();
+
+    switch (_State->_MappingMethod)
     {
-        Add(samples, sampleCount, analysis->_Channels);
+        default:
 
-        Transform();
+        case Mapping::Standard:
+            AnalyzeSamples(_SampleRate, _State->_SummationMethod, frequencyBands);
+            break;
 
-        switch (_State->_MappingMethod)
-        {
-            default:
+        case Mapping::TriangularFilterBank:
+            AnalyzeSamples(_SampleRate, frequencyBands);
+            break;
 
-            case Mapping::Standard:
-                AnalyzeSamples(_SampleRate, _State->_SummationMethod, analysis->_FrequencyBands);
-                break;
-
-            case Mapping::TriangularFilterBank:
-                AnalyzeSamples(_SampleRate, analysis->_FrequencyBands);
-                break;
-
-            case Mapping::BrownPuckette:
-                AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _State->_BandwidthOffset, _State->_BandwidthCap, _State->_BandwidthAmount, _State->_GranularBW, analysis->_FrequencyBands);
-                break;
-        }
+        case Mapping::BrownPuckette:
+            AnalyzeSamples(_SampleRate, _BrownPucketteKernel, _State->_BandwidthOffset, _State->_BandwidthCap, _State->_BandwidthAmount, _State->_GranularBW, frequencyBands);
+            break;
     }
 
     return true;

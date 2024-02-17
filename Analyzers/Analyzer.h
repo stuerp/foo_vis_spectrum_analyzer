@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2024.02.13) P. Stuer **/
+/** $VER: Analyzer.h (2024.02.16) P. Stuer **/
 
 #pragma once
 
@@ -28,7 +28,7 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    Analyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(configuration), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
+    Analyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }
@@ -36,14 +36,14 @@ public:
     /// <summary>
     /// Calculates the average of the specified samples.
     /// </summary>
-    audio_sample AverageSamples(const audio_sample * samples, uint32_t channelMask) const noexcept
+    audio_sample AverageSamples(const audio_sample * samples, uint32_t channels) const noexcept
     {
         audio_sample Average = 0.;
         uint32_t n = 0;
 
-        for (uint32_t i = 0; (i < _ChannelCount) && (channelMask != 0); ++i, ++samples, channelMask >>= 1)
+        for (uint32_t i = 0; (i < _ChannelCount) && (channels != 0); ++i, ++samples, channels >>= 1)
         {
-            if (channelMask & 1)
+            if (channels & 1)
             {
                 Average += *samples;
                 n++;

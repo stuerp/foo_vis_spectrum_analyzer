@@ -1,14 +1,19 @@
 
-/** $VER: Analysis.h (2024.02.16) P. Stuer **/
+/** $VER: Analysis.h (2024.02.17) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include "State.h"
-#include "FrequencyBand.h"
 
-#include <vector>
+#include "WindowFunctions.h"
+
+#include "FFTAnalyzer.h"
+#include "CQTAnalyzer.h"
+#include "SWIFTAnalyzer.h"
+
+#include "FrequencyBand.h"
 
 /// <summary>
 /// Represents the analysis of the sample data.
@@ -16,28 +21,48 @@
 class Analysis
 {
 public:
-    Analysis(uint32_t channels) : _Channels(channels) { };
+    Analysis() { };
 
     Analysis(const Analysis &) = delete;
     Analysis & operator=(const Analysis &) = delete;
     Analysis(Analysis &&) = delete;
     Analysis & operator=(Analysis &&) = delete;
 
-    virtual ~Analysis() { };
+    virtual ~Analysis() { Reset(); };
 
-    void Initialize(const State & state) noexcept;
+    void Initialize(const State * state, uint32_t channels) noexcept;
+    void Process(const audio_chunk & chunk) noexcept;
+
+    void Reset();
 
 private:
-    void GenerateLinearFrequencyBands(const State & state);
-    void GenerateOctaveFrequencyBands(const State & state);
-    void GenerateAveePlayerFrequencyBands(const State & state);
+    void GetAnalyzer(const audio_chunk & chunk) noexcept;
+
+    void ApplyAcousticWeighting();
+    double GetWeight(double x) const noexcept;
+
+    void ApplyAverageSmoothing(double factor);
+    void ApplyPeakSmoothing(double factor);
+
+    void GenerateLinearFrequencyBands(const State * state);
+    void GenerateOctaveFrequencyBands(const State * state);
+    void GenerateAveePlayerFrequencyBands(const State * state);
 
     static double ScaleF(double x, ScalingFunction function, double factor);
     static double DeScaleF(double x, ScalingFunction function, double factor);
 
 public:
-    FrequencyBands _FrequencyBands;
+    const State * _State;
     uint32_t _Channels;
-};
 
-typedef std::vector<Analysis *> Analyses;
+    uint32_t _SampleRate;
+
+    const WindowFunction * _WindowFunction;
+    const WindowFunction * _BrownPucketteKernel;
+
+    FFTAnalyzer * _FFTAnalyzer;
+    CQTAnalyzer * _CQTAnalyzer;
+    SWIFTAnalyzer * _SWIFTAnalyzer;
+
+    FrequencyBands _FrequencyBands;
+};

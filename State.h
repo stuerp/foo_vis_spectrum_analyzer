@@ -222,6 +222,8 @@ public:
     bool _IsDUI;                                                        // True if the Default User Interface is being used.
     bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
+    size_t _BinCount;
+
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
     D2D1_COLOR_F _DominantColor;                                        // The current dominant color extracted from the artwork bitmap.

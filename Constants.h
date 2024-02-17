@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.02.16) P. Stuer **/
+/** $VER: Constans.h (2024.02.17) P. Stuer **/
 
 #pragma once
 
@@ -19,8 +19,8 @@ inline const double MaxWindowParameter = 10.;
 inline const double MinWindowSkew = -1.;
 inline const double MaxWindowSkew =  1.;
 
-inline const double MinReactionAlignment = 0.;
-inline const double MaxReactionAlignment = 5.;
+inline const double MinReactionAlignment = -0.5;
+inline const double MaxReactionAlignment =  0.5;
 
 // Brown-Puckette CQT
 inline const double MinBandwidthOffset = 0.;

@@ -1,12 +1,12 @@
 
-/** $VER: FFTAnalyzer.h (2024.02.16) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2024.02.17) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
 #include "Analyzer.h"
-#include "Analysis.h"
+#include "FrequencyBand.h"
 
 #include "FFT.h"
 
@@ -25,8 +25,8 @@ public:
 
     virtual ~FFTAnalyzer();
 
-    FFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
-    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, Analyses & analyses);
+    FFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
+    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;

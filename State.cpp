@@ -394,6 +394,12 @@ State & State::operator=(const State & other)
 
     _StyleManager = other._StyleManager;
 
+    #pragma region Not serialized
+
+    _BinCount = other._BinCount;
+
+    #pragma endregion
+
     return *this;
 }
 

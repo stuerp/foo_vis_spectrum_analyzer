@@ -48,13 +48,13 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 
     if (SUCCEEDED(hr))
     {
-        static const FLOAT Inset = 4.f;
-
         const D2D1_RECT_F Rect = { _ClientWidth - 2.f - _TextWidth, 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
 
         // Draw the background.
         {
             _SolidBrush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
+
+            const FLOAT Inset = 4.f;
 
             renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _SolidBrush);
         }
@@ -75,7 +75,7 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 HRESULT FrameCounter::CreateDeviceIndependentResources()
 {
-    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
     HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 

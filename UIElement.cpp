@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.16) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.17) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _BinCount(), _SampleRate(44100)
+UIElement::UIElement(): _ThreadPoolTimer(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
 {
 }
 
@@ -113,7 +113,10 @@ void UIElement::OnDestroy()
 
     _CriticalSection.Enter();
 
-    DeleteResources();
+    for (auto & Iter : _Graphs)
+        delete Iter;
+
+    _Graphs.clear();
 
     {
         auto Manager = now_playing_album_art_notify_manager::tryGet();
@@ -278,7 +281,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 {
     if (!_ToolTipControl.IsWindow())
         return;
-
+/*FIXME
     if (!_IsTracking)
     {
         if (pt.x < (LONG) _Graphs[0]->GetSpectrum().GetLeft())
@@ -325,6 +328,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
             _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
         }
     }
+*/
 }
 
 /// <summary>
@@ -400,41 +404,22 @@ void UIElement::UpdateState() noexcept
     switch (_State._FFTMode)
     {
         default:
-            _BinCount = (size_t) (64. * ::exp2((long) _State._FFTMode));
+            _State._BinCount = (size_t) (64. * ::exp2((long) _State._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _BinCount = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
+            _State._BinCount = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _BinCount = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
+            _State._BinCount = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _ToneGenerator.Initialize(440., 1., 0., _BinCount);
+    _ToneGenerator.Initialize(440., 1., 0., _State._BinCount);
 
     _RenderState = _State;
-
-    {
-        for (auto & Iter : _Analyses)
-            delete Iter;
-
-        _Analyses.clear();
-
-        auto * a = new Analysis(audio_chunk::channel_front_left);
-
-        a->Initialize(_RenderState);
-
-        _Analyses.push_back(a);
-
-        a = new Analysis(audio_chunk::channel_front_right);
-
-        a->Initialize(_RenderState);
-
-        _Analyses.push_back(a);
-    }
 
     {
         for (auto & Iter : _Graphs)
@@ -444,18 +429,16 @@ void UIElement::UpdateState() noexcept
 
         auto * g = new Graph();
 
-        g->Initialize(&_RenderState, _Analyses);
+        g->Initialize(&_RenderState, audio_chunk::channel_front_left, L"Left");
 
         _Graphs.push_back(g);
 
         g = new Graph();
 
-        g->Initialize(&_RenderState, _Analyses);
+        g->Initialize(&_RenderState, audio_chunk::channel_front_right, L"Right");
 
         _Graphs.push_back(g);
     }
-
-    DeleteResources();
 
     _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 

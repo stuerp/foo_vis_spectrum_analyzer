@@ -8,15 +8,9 @@
 #include "State.h"
 #include "ConfigurationDialog.h"
 
-#include "FrameCounter.h"
 #include "Graph.h"
 #include "Artwork.h"
-
-#include "Analysis.h"
-
-#include "FFTAnalyzer.h"
-#include "CQTAnalyzer.h"
-#include "SWIFTAnalyzer.h"
+#include "FrameCounter.h"
 
 #include <vector>
 
@@ -107,17 +101,6 @@ private:
     void UpdatePeakIndicators() noexcept;
     void Render();
 
-    void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
-    void GetAnalyzer(const audio_chunk & chunk) noexcept;
-
-    void ApplyAcousticWeighting();
-    double GetWeight(double x) const noexcept;
-
-    void ApplyAverageSmoothing(double factor);
-    void ApplyPeakSmoothing(double factor);
-
-    void DeleteResources();
-
     #pragma region DirectX
 
     HRESULT CreateDeviceIndependentResources();
@@ -200,7 +183,6 @@ private:
     POINT _LastMousePos;
     size_t _LastIndex;
 
-    size_t _BinCount;
     uint32_t _SampleRate;
 
     Artwork _Artwork;
@@ -217,16 +199,8 @@ private:
 
     FrameCounter _FrameCounter;
 
-    Analyses _Analyses;
-    std::vector<Graph *> _Graphs;
+    Graphs _Graphs;
     UINT _DPI;
-
-    const WindowFunction * _WindowFunction;
-    const WindowFunction * _BrownPucketteKernel;
-
-    FFTAnalyzer * _FFTAnalyzer;
-    CQTAnalyzer * _CQTAnalyzer;
-    SWIFTAnalyzer * _SWIFTAnalyzer;
 
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
