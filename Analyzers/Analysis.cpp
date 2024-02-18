@@ -202,7 +202,7 @@ void Analysis::GenerateOctaveFrequencyBands(const State * state)
             C0 * ::pow(Root24, (i + Width) * NoteGroup + state->_Transpose),
         };
 
-        // Pre-calculate the tooltip text and the bar background color.
+        // Pre-calculate the tooltip text and the band background color.
         {
             int Note = (int) (i * (NoteGroup / 2.));
 

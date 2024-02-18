@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.02.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.02.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -8,11 +8,14 @@
 #include "State.h"
 #include "Artwork.h"
 #include "Analysis.h"
+#include "GraphSettings.h"
 
 #include "Element.h"
 #include "Spectrum.h"
 #include "XAxis.h"
 #include "YAxis.h"
+
+#include "Log.h"
 
 /// <summary>
 /// Implements a graphical representation of the spectrum analysis.
@@ -23,7 +26,7 @@ public:
     Graph();
     virtual ~Graph();
 
-    void Initialize(State * state, uint32_t channels, const std::wstring & description) noexcept;
+    void Initialize(State * state, const GraphSettings & settings) noexcept;
 
     void Move(const D2D1_RECT_F & rect) noexcept;
     void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;
@@ -43,6 +46,10 @@ public:
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
     CToolInfo * GetToolInfo(HWND hParent) noexcept;
+
+    /// <summary>
+    /// Returns true if the specified points lies with our bounds.
+    /// </summary>
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
         const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
@@ -61,19 +68,8 @@ public:
 
         return true;
     }
-    size_t GetToolTip(FLOAT x, std::wstring & toolTip)
-    {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
 
-        if ((x < Bounds.left) || (Bounds.right < x))
-            return ~0U;
-
-        size_t Index = (size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size() - 1.));
-
-        toolTip = _Analysis._FrequencyBands[Index].Label;
-
-        return Index;
-    }
+    bool GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
@@ -101,6 +97,9 @@ private:
     CComPtr<IDWriteTextFormat> _TextFormat;
     FLOAT _TextWidth;
     FLOAT _TextHeight;
+
+    Style * _BackgroundStyle;
+    Style * _DescriptionStyle;
 };
 
 typedef std::vector<Graph *> Graphs;

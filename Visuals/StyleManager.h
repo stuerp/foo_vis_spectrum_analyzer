@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.02.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.02.18) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -45,10 +45,18 @@ private:
     const std::map<VisualElement, Style> _DefaultStyles
     {
     {
-        VisualElement::Background,
+        VisualElement::GraphBackground,
         {
-            "Background", Style::SupportsOpacity,
+            "Graph Background", Style::SupportsOpacity,
             ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+        }
+    },
+
+    {
+        VisualElement::GraphDescription,
+        {
+            "Graph Description", Style::SupportsOpacity | Style::SupportsFont,
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
         }
     },
 
@@ -150,5 +158,5 @@ private:
     }
     };
 
-    const uint32_t _CurrentVersion = 2;
+    const uint32_t _CurrentVersion = 3;
 };

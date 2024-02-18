@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -25,18 +25,22 @@ Graph::~Graph()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * state, uint32_t channels, const std::wstring & description) noexcept
+void Graph::Initialize(State * state, const GraphSettings & settings) noexcept
 {
     _State = state;
-    _Description = description;
 
-    _Analysis.Initialize(state, channels);
+    _FlipHorizontally = settings._FlipHorizontally;
+    _FlipVertically   = settings._FlipVertically;
 
-    _Spectrum.Initialize(state);
+    _Description = settings._Description;
 
-    _XAxis.Initialize(state, _Analysis);
+    _Analysis.Initialize(state, settings._Channels);
+
+    _Spectrum.Initialize(state, settings._FlipHorizontally, settings._FlipVertically);
+
+    _XAxis.Initialize(state, _Analysis._FrequencyBands, settings._FlipHorizontally);
     
-    _YAxis.Initialize(state);
+    _YAxis.Initialize(state, settings._FlipVertically);
 }
 
 /// <summary>
@@ -107,13 +111,31 @@ CToolInfo * Graph::GetToolInfo(HWND hParent) noexcept
 }
 
 /// <summary>
+/// Gets the tooltip at the specified x position.
+/// </summary>
+bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const noexcept
+{
+    const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+
+    if (!InRange(x, Bounds.left, Bounds.right))
+        return false;
+
+    if (_FlipHorizontally)
+        x = (Bounds.right + Bounds.left) - x;
+
+    index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), 0U, _Analysis._FrequencyBands.size() - 1U);
+
+    toolTip = _Analysis._FrequencyBands[index].Label;
+
+    return true;
+}
+
+/// <summary>
 /// Renders the background.
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
-    const Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
-
-    renderTarget->FillRectangle(_Bounds, style->_Brush);
+    renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
     if ((artwork.Bitmap() != nullptr) && (_State->_BackgroundMode == BackgroundMode::Artwork))
@@ -139,8 +161,6 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 /// </summary>
 void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 {
-    const Style * style = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
-
     const FLOAT Inset = 2.f;
 
     D2D1_RECT_F Rect = { };
@@ -150,16 +170,15 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
     Rect.right  = Rect.left + _TextWidth + (Inset * 2.f);
     Rect.bottom = Rect.top + _TextHeight + (Inset * 2.f);
 
-    // FIXME
-    FLOAT Opacity = style->_Brush->GetOpacity();
+    FLOAT Opacity = _DescriptionStyle->_Brush->GetOpacity();
 
-    style->_Brush->SetOpacity(Opacity * 0.25f);
+    _DescriptionStyle->_Brush->SetOpacity(Opacity * 0.25f);
 
-    renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), style->_Brush);
+    renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionStyle->_Brush);
 
-    style->_Brush->SetOpacity(Opacity);
+    _DescriptionStyle->_Brush->SetOpacity(Opacity);
 
-    renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _TextFormat, Rect, style->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _TextFormat, Rect, _DescriptionStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -191,27 +210,33 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
                 TextLayout->GetMetrics(&TextMetrics);
 
-                DWRITE_OVERHANG_METRICS OverhangMetrics = { };
-
-                TextLayout->GetOverhangMetrics(&OverhangMetrics);
-
-                _TextWidth  = TextMetrics.width  + (OverhangMetrics.right - OverhangMetrics.left);
-                _TextHeight = TextMetrics.height + (OverhangMetrics.bottom - OverhangMetrics.top);
+                _TextWidth  = TextMetrics.width;
+                _TextHeight = TextMetrics.height;
             }
         }
     }
 
-    if (SUCCEEDED(hr))
+    if (((_BackgroundStyle == nullptr) || (_DescriptionStyle == nullptr)) && SUCCEEDED(hr))
     {
-        Style * style = _State->_StyleManager.GetStyle(VisualElement::Background);
+        Style * style = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
 
         if (style->_Brush == nullptr)
+        {
             hr = style->CreateDeviceSpecificResources(renderTarget);
 
-        style = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
+            if (SUCCEEDED(hr))
+                _BackgroundStyle = style;
+        }
+
+        style = _State->_StyleManager.GetStyle(VisualElement::GraphDescription);
 
         if (style->_Brush == nullptr)
+        {
             hr = style->CreateDeviceSpecificResources(renderTarget);
+
+            if (SUCCEEDED(hr))
+                _DescriptionStyle = style;
+        }
     }
 
     return hr;
@@ -226,8 +251,15 @@ void Graph::ReleaseDeviceSpecificResources() noexcept
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
 
-    _State->_StyleManager.GetStyle(VisualElement::XAxisText)->ReleaseDeviceSpecificResources();
-    _State->_StyleManager.GetStyle(VisualElement::Background)->ReleaseDeviceSpecificResources();
+    _DescriptionStyle = nullptr;
+    _BackgroundStyle = nullptr;
+
+    for (const auto & Iter : { VisualElement::GraphBackground, VisualElement::GraphDescription })
+    {
+        Style * style = _State->_StyleManager.GetStyle(Iter);
+
+        style->ReleaseDeviceSpecificResources();
+    }
 
     _TextFormat.Release();
 }

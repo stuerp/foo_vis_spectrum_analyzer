@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.16) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.18) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -20,14 +20,14 @@
 class XAxis : public Element
 {
 public:
-    XAxis() : _State(), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
+    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * state, Analysis & analysis) noexcept;
+    void Initialize(State * state, const FrequencyBands & frequencyBands, bool isMirrored) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -43,13 +43,9 @@ private:
     void ReleaseDeviceIndependentResources();
 
 private:
-    State * _State;
-
-    XAxisMode _Mode;
-
+    size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
-    size_t _NumBands;
 
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
@@ -58,8 +54,13 @@ private:
     {
         double Frequency;
         std::wstring Text;
-        FLOAT x;
         bool IsDimmed;
+
+        D2D1_POINT_2F PointT;
+        D2D1_POINT_2F PointB;
+
+        D2D1_RECT_F RectT;
+        D2D1_RECT_F RectB;
     };
 
     std::vector<Label> _Labels;
@@ -70,4 +71,7 @@ private:
 
     // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
+
+    const Style * _LineStyle;
+    const Style * _TextStyle;
 };

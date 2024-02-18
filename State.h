@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.16) P. Stuer **/
+/** $VER: State.h (2024.02.18) P. Stuer **/
 
 #pragma once
 
@@ -10,6 +10,7 @@
 #include "WindowFunctions.h"
 
 #include "StyleManager.h"
+#include "GraphSettings.h"
 
 #include <vector>
 
@@ -216,6 +217,7 @@ public:
     #pragma endregion
 
     StyleManager _StyleManager;
+    std::vector<GraphSettings> _GraphSettings;
 
     #pragma region Not Serialized
 

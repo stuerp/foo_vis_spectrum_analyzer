@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.02.07) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.02.18) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -16,4 +16,6 @@ public:
 
 protected:
     State * _State;
+    bool _FlipHorizontally;
+    bool _FlipVertically;
 };

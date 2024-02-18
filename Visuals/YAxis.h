@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.02.16) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.02.18) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -18,14 +18,14 @@
 class YAxis : public Element
 {
 public:
-    YAxis() : _State(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(State * configuration) noexcept;
+    void Initialize(State * state, bool flipVertically) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
@@ -41,7 +41,7 @@ private:
     void ReleaseDeviceIndependentResources();
 
 private:
-    State * _State;
+    bool _FlipVertically;
 
     struct Label
     {

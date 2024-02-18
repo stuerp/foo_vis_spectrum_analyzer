@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.02.17) P. Stuer **/
+/** $VER: State.cpp (2024.02.18) P. Stuer **/
 
 #include "State.h"
 
@@ -197,6 +197,20 @@ void State::Reset() noexcept
     _AreaOpacity = 0.5f;
 
     _StyleManager.Reset();
+
+    _GraphSettings.clear();
+
+    static const GraphSettings gs[] =
+    {
+        { L"Stereo", audio_chunk::channel_config_2point1, false, false },
+/*
+        { L"Left", audio_chunk::channel_front_left, true, false },
+        { L"Right", audio_chunk::channel_front_right, false, false },
+*/
+    };
+
+    for (const auto & Iter : gs)
+        _GraphSettings.push_back(Iter);
 }
 
 /// <summary>
@@ -320,6 +334,7 @@ State & State::operator=(const State & other)
         // X axis
         _XAxisMode = other._XAxisMode;
         _XAxisTop = other._XAxisTop;
+        _XAxisBottom = other._XAxisBottom;
 
         _XTextColor = other._XTextColor;
         _UseCustomXTextColor = other._UseCustomXTextColor;
@@ -329,6 +344,7 @@ State & State::operator=(const State & other)
 
         // Y axis
         _YAxisMode = other._YAxisMode;
+        _YAxisLeft = other._YAxisLeft;
         _YAxisRight = other._YAxisRight;
 
         _YTextColor = other._YTextColor;
@@ -393,6 +409,7 @@ State & State::operator=(const State & other)
     #pragma endregion
 
     _StyleManager = other._StyleManager;
+    _GraphSettings = other._GraphSettings;
 
     #pragma region Not serialized
 
@@ -864,7 +881,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 void State::ConvertColorSettings() noexcept
 {
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::Background);
+        Style * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
 
         style->_CustomGradientStops = _CustomGradientStops;
 

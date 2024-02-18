@@ -931,7 +931,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Styles
     {
-        _State->_CurrentStyle = (int) VisualElement::Background;
+        _State->_CurrentStyle = (int) VisualElement::GraphBackground;
 
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.12) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.18) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -15,9 +15,11 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state)
+void Spectrum::Initialize(State * state, bool flipHorizontally, bool flipVertically)
 {
     _State = state;
+    _FlipHorizontally = flipHorizontally;
+    _FlipVertically = flipVertically;
 
     ReleaseDeviceSpecificResources();
 }
@@ -63,13 +65,13 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-    FLOAT x1 = _Bounds.left;
-    FLOAT x2 = x1 + BandWidth;
+    const Style * ForegroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarSpectrum);
+    const Style * DarkBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
+    const Style * LightBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
+    const Style * PeakIndicatorStyle = _State->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
 
-    Style * ForegroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarSpectrum);
-    Style * DarkBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
-    Style * LightBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
-    Style * PeakIndicatorStyle = _State->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
+    FLOAT x1 = !_FlipHorizontally ? _Bounds.left : _Bounds.right - BandWidth;
+    FLOAT x2 = x1 + BandWidth;
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
@@ -82,7 +84,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         if ((DarkBackgroundStyle->_ColorSource != ColorSource::None) && Iter.HasDarkBackground)
             renderTarget->FillRectangle(Rect,  DarkBackgroundStyle->_Brush);
 
-        if ((Iter.Ctr < (sampleRate / 2.)) || ((Iter.Ctr >= (sampleRate / 2.)) && !_State->_SuppressMirrorImage))
+        const bool GreaterThanNyquist = Iter.Ctr >= (sampleRate / 2.);
+
+        if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
@@ -109,8 +113,16 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             }
         }
 
-        x1  = x2;
-        x2 += BandWidth;
+        if (!_FlipHorizontally)
+        {
+            x1  = x2;
+            x2 += BandWidth;
+        }
+        else
+        {
+            x2  = x1;
+            x1 -= BandWidth;
+        }
     }
 }
 

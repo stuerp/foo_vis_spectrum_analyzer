@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.10) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.18) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -7,7 +7,9 @@
 
 enum class VisualElement : uint32_t
 {
-    Background,
+    GraphBackground,
+    GraphDescription,
+
     XAxisText,
     XAxisLine,
     YAxisText,
@@ -21,7 +23,7 @@ enum class VisualElement : uint32_t
     CurveLine,
     CurveArea,
     CurvePeakLine,
-    CurvePeakArea
+    CurvePeakArea,
 };
 
 enum class ColorSource : uint32_t

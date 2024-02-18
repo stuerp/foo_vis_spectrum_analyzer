@@ -311,16 +311,16 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     }
     else
     {
-        if (_TrackingGraph && (pt != _LastMousePos))// ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
+        if (_TrackingGraph && (pt != _LastMousePos))
         {
             _LastMousePos = pt;
 
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+
             std::wstring ToolTip;
+            size_t Index;
 
-            size_t Index = _TrackingGraph->GetToolTip(ScaledX, ToolTip);
-
-            if (Index != ~0U)
+            if (_TrackingGraph->GetToolTip(ScaledX, ToolTip, Index))
             {
                 if (Index != _LastIndex)
                 {
@@ -443,32 +443,24 @@ void UIElement::UpdateState() noexcept
 
     _RenderState = _State;
 
+    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
+
+    // Create the graphs.
     {
         for (auto & Iter : _Graphs)
             delete Iter;
 
         _Graphs.clear();
-/*
-        auto * g = new Graph();
 
-        g->Initialize(&_RenderState, audio_chunk::channel_config_2point1, L"Stereo");
+        for (const auto & Iter : _State._GraphSettings)
+        {
+            auto * g = new Graph();
 
-        _Graphs.push_back(g);
-*/
-        auto * g = new Graph();
+            g->Initialize(&_RenderState, Iter);
 
-        g->Initialize(&_RenderState, audio_chunk::channel_front_left, L"Left");
-
-        _Graphs.push_back(g);
-
-        g = new Graph();
-
-        g->Initialize(&_RenderState, audio_chunk::channel_front_right, L"Right");
-
-        _Graphs.push_back(g);
+            _Graphs.push_back(g);
+        }
     }
-
-    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 
     _CriticalSection.Leave();
 
