@@ -15,11 +15,9 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state, bool flipHorizontally, bool flipVertically)
+void Spectrum::Initialize(State * state)
 {
     _State = state;
-    _FlipHorizontally = flipHorizontally;
-    _FlipVertically = flipVertically;
 
     ReleaseDeviceSpecificResources();
 }
@@ -65,12 +63,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-    const Style * ForegroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarSpectrum);
-    const Style * DarkBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
-    const Style * LightBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
-    const Style * PeakIndicatorStyle = _State->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
-
-    FLOAT x1 = !_FlipHorizontally ? _Bounds.left : _Bounds.right - BandWidth;
+    FLOAT x1 = _Bounds.left;
     FLOAT x2 = x1 + BandWidth;
 
     for (const FrequencyBand & Iter : frequencyBands)
@@ -78,11 +71,11 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, _Bounds.bottom - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
-        if ((LightBackgroundStyle->_ColorSource != ColorSource::None) && !Iter.HasDarkBackground)
-            renderTarget->FillRectangle(Rect,  LightBackgroundStyle->_Brush);
+        if ((_LightBackgroundStyle->_ColorSource != ColorSource::None) && !Iter.HasDarkBackground)
+            renderTarget->FillRectangle(Rect,  _LightBackgroundStyle->_Brush);
 
-        if ((DarkBackgroundStyle->_ColorSource != ColorSource::None) && Iter.HasDarkBackground)
-            renderTarget->FillRectangle(Rect,  DarkBackgroundStyle->_Brush);
+        if ((_DarkBackgroundStyle->_ColorSource != ColorSource::None) && Iter.HasDarkBackground)
+            renderTarget->FillRectangle(Rect,  _DarkBackgroundStyle->_Brush);
 
         const bool GreaterThanNyquist = Iter.Ctr >= (sampleRate / 2.);
 
@@ -93,7 +86,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             {
                 Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _State->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
 
-                renderTarget->FillRectangle(Rect, ForegroundStyle->_Brush);
+                renderTarget->FillRectangle(Rect, _ForegroundStyle->_Brush);
 
                 if (_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _PatternBrush);
@@ -102,27 +95,19 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             // Draw the peak indicator.
             if ((_State->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak) - (PeakIndicatorStyle->_Thickness / 2.f)), _Bounds.top, _Bounds.bottom));
-                Rect.bottom = ::ceil(Clamp(Rect.top                                      + (PeakIndicatorStyle->_Thickness / 2.f),  _Bounds.top, _Bounds.bottom));
+                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak) - (_PeakIndicatorStyle->_Thickness / 2.f)), _Bounds.top, _Bounds.bottom));
+                Rect.bottom = ::ceil(Clamp(Rect.top                                      + (_PeakIndicatorStyle->_Thickness / 2.f),  _Bounds.top, _Bounds.bottom));
 
-                FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Iter.Opacity : PeakIndicatorStyle->_Opacity;
+                FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Iter.Opacity : _PeakIndicatorStyle->_Opacity;
 
-                PeakIndicatorStyle->_Brush->SetOpacity(Opacity);
+                _PeakIndicatorStyle->_Brush->SetOpacity(Opacity);
 
-                renderTarget->FillRectangle(Rect, PeakIndicatorStyle->_Brush);
+                renderTarget->FillRectangle(Rect, _PeakIndicatorStyle->_Brush);
             }
         }
 
-        if (!_FlipHorizontally)
-        {
-            x1  = x2;
-            x2 += BandWidth;
-        }
-        else
-        {
-            x2  = x1;
-            x1 -= BandWidth;
-        }
+        x1  = x2;
+        x2 += BandWidth;
     }
 }
 
@@ -133,26 +118,22 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 {
     HRESULT hr = S_OK;
 
-    GeometryPoints gp;
+    GeometryPoints Points;
     CComPtr<ID2D1PathGeometry> Curve;
 
     if (_State->_PeakMode != PeakMode::None)
     {
-        gp.Clear();
+        Points.Clear();
 
-        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, true, gp);
+        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, true, Points);
 
         // Draw the area with the peak values.
         if (SUCCEEDED(hr))
         {
-            hr = CreateCurve(gp, true, &Curve);
+            hr = CreateCurve(Points, true, &Curve);
 
             if (SUCCEEDED(hr))
-            {
-                Style * style = _State->_StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-                renderTarget->FillGeometry(Curve, style->_Brush);
-            }
+                renderTarget->FillGeometry(Curve, _CurvePeakArea->_Brush);
 
             Curve.Release();
         }
@@ -160,34 +141,27 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
         // Draw the line with the peak values.
         if (SUCCEEDED(hr))
         {
-            hr = CreateCurve(gp, false, &Curve);
+            hr = CreateCurve(Points, false, &Curve);
 
             if (SUCCEEDED(hr))
-            {
-                Style * style = _State->_StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-                renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
-            }
+                renderTarget->DrawGeometry(Curve, _CurvePeakLine->_Brush, _CurvePeakLine->_Thickness);
 
             Curve.Release();
         }
     }
 
-    gp.Clear();
+    Points.Clear();
 
-    hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, gp);
+    if (SUCCEEDED(hr))
+        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, Points);
 
     // Draw the area with the current values.
     if (SUCCEEDED(hr))
     {
-        hr = CreateCurve(gp, true, &Curve);
+        hr = CreateCurve(Points, true, &Curve);
 
         if (SUCCEEDED(hr))
-        {
-            Style * style = _State->_StyleManager.GetStyle(VisualElement::CurveArea);
-
-            renderTarget->FillGeometry(Curve, style->_Brush);
-        }
+            renderTarget->FillGeometry(Curve, _CurveArea->_Brush);
 
         Curve.Release();
     }
@@ -195,14 +169,10 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
     // Draw the line with the current values.
     if (SUCCEEDED(hr))
     {
-        hr = CreateCurve(gp, false, &Curve);
+        hr = CreateCurve(Points, false, &Curve);
 
         if (SUCCEEDED(hr))
-        {
-            Style * style = _State->_StyleManager.GetStyle(VisualElement::CurveLine);
-
-            renderTarget->DrawGeometry(Curve, style->_Brush, style->_Thickness);
-        }
+            renderTarget->DrawGeometry(Curve, _CurveLine->_Brush, _CurveLine->_Thickness);
 
         Curve.Release();
     }
@@ -216,23 +186,37 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 {
     HRESULT hr = S_OK;
 
-    if ((_SolidColorBrush == nullptr) && SUCCEEDED(hr))
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_SolidColorBrush);
-
     if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
         hr = CreatePatternBrush(renderTarget);
 
-    if (SUCCEEDED(hr))
+    if (!_GotStyles && SUCCEEDED(hr))
     {
+        const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
+
         for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
         {
             Style * style = _State->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget);
+                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
 
             if (!SUCCEEDED(hr))
                 break;
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            _ForegroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarSpectrum);
+            _DarkBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
+            _LightBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
+            _PeakIndicatorStyle = _State->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
+
+            _CurveLine = _State->_StyleManager.GetStyle(VisualElement::CurveLine);
+            _CurveArea = _State->_StyleManager.GetStyle(VisualElement::CurveArea);
+            _CurvePeakLine = _State->_StyleManager.GetStyle(VisualElement::CurvePeakLine);
+            _CurvePeakArea = _State->_StyleManager.GetStyle(VisualElement::CurvePeakArea);
+
+            _GotStyles = true;
         }
     }
 
@@ -284,7 +268,7 @@ HRESULT Spectrum::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// </summary>
-HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp)
+HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & points)
 {
     if (frequencyBands.size() < 2)
         return E_FAIL;
@@ -299,17 +283,17 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
     FLOAT y = 0.f;
 
     // Create all the knots.
-    for (const auto & Iter: frequencyBands)
+    for (const auto & fb: frequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if ((Iter.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
+        if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-        double Value = !usePeak ? _State->ScaleA(Iter.CurValue) : Iter.Peak;
+        double Value = !usePeak ? _State->ScaleA(fb.CurValue) : fb.Peak;
 
         y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 
-        gp.p0.push_back(D2D1::Point2F(x, y));
+        points.p0.push_back(D2D1::Point2F(x, y));
 
         if (y < _Bounds.bottom)
             IsFlatLine = false;
@@ -318,20 +302,20 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
     }
 
     // Create all the control points.
-    const size_t n = gp.p0.size();
+    const size_t n = points.p0.size();
 
     if (n > 1)
     {
-        gp.p1.reserve(n - 1);
-        gp.p2.reserve(n - 1);
+        points.p1.reserve(n - 1);
+        points.p2.reserve(n - 1);
 
         // Create all the control points.
-        BezierSpline::GetControlPoints(gp.p0, n, gp.p1, gp.p2);
+        BezierSpline::GetControlPoints(points.p0, n, points.p1, points.p2);
 
         for (size_t i = 0; i < (n - 1); ++i)
         {
-            gp.p1[i].y = Clamp(gp.p1[i].y, _Bounds.top, _Bounds.bottom);
-            gp.p2[i].y = Clamp(gp.p2[i].y, _Bounds.top, _Bounds.bottom);
+            points.p1[i].y = Clamp(points.p1[i].y, _Bounds.top, _Bounds.bottom);
+            points.p2[i].y = Clamp(points.p2[i].y, _Bounds.top, _Bounds.bottom);
         }
     }
 
@@ -386,10 +370,20 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
+    _GotStyles = false;
+
+    _CurveLine = nullptr;
+    _CurveArea = nullptr;
+    _CurvePeakLine = nullptr;
+    _CurvePeakArea = nullptr;
+
+    _ForegroundStyle = nullptr;
+    _DarkBackgroundStyle = nullptr;
+    _LightBackgroundStyle = nullptr;
+    _PeakIndicatorStyle = nullptr;
+
     for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
         _State->_StyleManager.GetStyle(Iter)->ReleaseDeviceSpecificResources();
 
     _PatternBrush.Release();
-
-    _SolidColorBrush.Release();
 }

@@ -47,7 +47,12 @@ private:
     {
         double Amplitude;
         std::wstring Text;
-        FLOAT y;
+
+        D2D1_POINT_2F PointL;
+        D2D1_POINT_2F PointR;
+
+        D2D1_RECT_F RectL;
+        D2D1_RECT_F RectR;
     };
 
     std::vector<Label> _Labels;
@@ -61,4 +66,8 @@ private:
     FLOAT _Height; // Height of a label
 
     CComPtr<IDWriteTextFormat> _TextFormat;
+
+    Style * _LineStyle;
+    Style * _TextStyle;
+
 };

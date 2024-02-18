@@ -36,7 +36,7 @@ void Graph::Initialize(State * state, const GraphSettings & settings) noexcept
 
     _Analysis.Initialize(state, settings._Channels);
 
-    _Spectrum.Initialize(state, settings._FlipHorizontally, settings._FlipVertically);
+    _Spectrum.Initialize(state);
 
     _XAxis.Initialize(state, _Analysis._FrequencyBands, settings._FlipHorizontally);
     
@@ -151,7 +151,29 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 
     _YAxis.Render(renderTarget);
 
+    if (_FlipHorizontally)
+    {
+        const FLOAT Width = _Bounds.right - _Bounds.left;
+
+        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, 0.f, 0.f);
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(Width, 0.f);
+
+        renderTarget->SetTransform(Flip * Translate);
+    }
+
+    if (_FlipVertically)
+    {
+        const FLOAT Height = _Bounds.bottom - _Bounds.top;
+
+        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height * 2.f);
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(0.f, Height);
+
+        renderTarget->SetTransform(Flip * Translate);
+    }
+
     _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+
+    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     RenderDescription(renderTarget);
 }
@@ -218,25 +240,23 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
     if (((_BackgroundStyle == nullptr) || (_DescriptionStyle == nullptr)) && SUCCEEDED(hr))
     {
+        const D2D1_SIZE_F Size = renderTarget->GetSize();
+
         Style * style = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
 
         if (style->_Brush == nullptr)
-        {
-            hr = style->CreateDeviceSpecificResources(renderTarget);
+            hr = style->CreateDeviceSpecificResources(renderTarget, Size);
 
-            if (SUCCEEDED(hr))
-                _BackgroundStyle = style;
-        }
+        if (SUCCEEDED(hr))
+            _BackgroundStyle = style;
 
         style = _State->_StyleManager.GetStyle(VisualElement::GraphDescription);
 
         if (style->_Brush == nullptr)
-        {
-            hr = style->CreateDeviceSpecificResources(renderTarget);
+            hr = style->CreateDeviceSpecificResources(renderTarget, Size);
 
-            if (SUCCEEDED(hr))
-                _DescriptionStyle = style;
-        }
+        if (SUCCEEDED(hr))
+            _DescriptionStyle = style;
     }
 
     return hr;

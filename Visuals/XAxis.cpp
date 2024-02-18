@@ -206,12 +206,12 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the vertical grid line.
         renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
-        // Draw the label.
         _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
         // Prevent overdraw of the labels.
         if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
         {
+            // Draw the labels.
             if (_State->_XAxisTop)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
@@ -284,12 +284,14 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 
     if (_LineStyle == nullptr || _TextStyle == nullptr)
     {
+        const D2D1_SIZE_F Size = renderTarget->GetSize();
+
         for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
         {
             Style * style = _State->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget);
+                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
 
             if (!SUCCEEDED(hr))
                 break;

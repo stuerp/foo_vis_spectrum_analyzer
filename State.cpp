@@ -202,11 +202,11 @@ void State::Reset() noexcept
 
     static const GraphSettings gs[] =
     {
-        { L"Stereo", audio_chunk::channel_config_2point1, false, false },
-/*
-        { L"Left", audio_chunk::channel_front_left, true, false },
+//      { L"Stereo", audio_chunk::channel_config_2point1, false, true },
+
+        { L"Left",  audio_chunk::channel_front_left,  true,  false },
         { L"Right", audio_chunk::channel_front_right, false, false },
-*/
+
     };
 
     for (const auto & Iter : gs)

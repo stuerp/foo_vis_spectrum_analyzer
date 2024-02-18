@@ -214,20 +214,41 @@ void UIElement::Resize()
     _FrameCounter.Resize(Size.width, Size.height);
 
     // Resize each of the graph areas.
-    FLOAT Width = Size.width / (FLOAT) _Graphs.size();
-
-    D2D1_RECT_F Bounds(0.f, 0.f, Width, Size.height);
-
-    for (auto * Iter : _Graphs)
+    if (true)
     {
-        _ToolTipControl.DelTool(Iter->GetToolInfo(m_hWnd));
+        FLOAT Width = Size.width / (FLOAT) _Graphs.size();
 
-        Iter->Move(Bounds);
+        D2D1_RECT_F Bounds(0.f, 0.f, Width, Size.height);
 
-        Bounds.left  += Width;
-        Bounds.right += Width;
+        for (Graph * graph : _Graphs)
+        {
+            _ToolTipControl.DelTool(graph->GetToolInfo(m_hWnd));
 
-        _ToolTipControl.AddTool(Iter->GetToolInfo(m_hWnd));
+            graph->Move(Bounds);
+
+            Bounds.left  += Width;
+            Bounds.right += Width;
+
+            _ToolTipControl.AddTool(graph->GetToolInfo(m_hWnd));
+        }
+    }
+    else
+    {
+        FLOAT Height = Size.height / (FLOAT) _Graphs.size();
+
+        D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Height);
+
+        for (Graph * graph : _Graphs)
+        {
+            _ToolTipControl.DelTool(graph->GetToolInfo(m_hWnd));
+
+            graph->Move(Bounds);
+
+            Bounds.top    += Height;
+            Bounds.bottom += Height;
+
+            _ToolTipControl.AddTool(graph->GetToolInfo(m_hWnd));
+        }
     }
 }
 

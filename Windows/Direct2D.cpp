@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.02.05) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.02.18) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -193,7 +193,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -204,10 +204,8 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
 
     if (SUCCEEDED(hr))
     {
-        D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, 0.f);
-        D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(Size.width, Size.height / 2.f) : D2D1::Point2F(Size.width / 2.f, Size.height);
+        D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, size.height / 2.f) : D2D1::Point2F(size.width / 2.f, 0.f);
+        D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, size.height / 2.f) : D2D1::Point2F(size.width / 2.f, size.height);
 
         hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, gradientBrush);
     }

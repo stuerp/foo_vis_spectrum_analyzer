@@ -101,7 +101,7 @@ public:
 
     Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
 
 public:

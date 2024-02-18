@@ -74,14 +74,14 @@ Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_CO
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept
 {
     HRESULT hr = S_OK;
 
     if (_ColorSource != ColorSource::Gradient)
         hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
     else
-        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
