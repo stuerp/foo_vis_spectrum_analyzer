@@ -117,7 +117,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 
     // Render the bitmap if there is one.
     if ((artwork.Bitmap() != nullptr) && (_State->_BackgroundMode == BackgroundMode::Artwork))
-        artwork.Render(renderTarget, GetSpectrum().GetBounds(), _State);
+        artwork.Render(renderTarget, _Spectrum.GetBounds(), _State);
 }
 
 /// <summary>

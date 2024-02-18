@@ -35,15 +35,14 @@ public:
     }
 
     const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
-    Analysis & GetAnalysis() noexcept { return _Analysis; }
 
     FLOAT GetLeft() const noexcept { return _Bounds.left; }
     FLOAT GetRight() const noexcept { return _Bounds.right; }
 
+    Analysis & GetAnalysis() noexcept { return _Analysis; }
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
     CToolInfo * GetToolInfo(HWND hParent) noexcept;
-
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
         const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
@@ -62,7 +61,6 @@ public:
 
         return true;
     }
-
     size_t GetToolTip(FLOAT x, std::wstring & toolTip)
     {
         const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();

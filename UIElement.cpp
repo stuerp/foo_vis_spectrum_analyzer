@@ -480,7 +480,7 @@ void UIElement::UpdateState() noexcept
 }
 
 /// <summary>
-/// Gets the tool info of the graph that contains the specified point.
+/// Gets the graph that contains the specified point.
 /// </summary>
 Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 {
