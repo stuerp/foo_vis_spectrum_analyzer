@@ -1,15 +1,17 @@
 
-/** $VER: Spectrum.h (2024.02.18) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.19) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
 
-#include "Element.h"
 #include "State.h"
+#include "GraphSettings.h"
+
 #include "Gradients.h"
 
+#include "Element.h"
 #include "FrequencyBand.h"
 
 #include <vector>
@@ -28,7 +30,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(State * state);
+    void Initialize(State * state, const GraphSettings * settings);
 
     void Move(const D2D1_RECT_F & rect);
 

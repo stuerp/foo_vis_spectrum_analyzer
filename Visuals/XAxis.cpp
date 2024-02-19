@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.18) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -11,10 +11,12 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * state, const FrequencyBands & frequencyBands, bool flipHorizontally) noexcept
+void XAxis::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands) noexcept
 {
     _State = state;
-    _FlipHorizontally = flipHorizontally;
+    _GraphSettings = settings;
+
+    _FlipHorizontally = settings->_FlipHorizontally;
 
     CreateDeviceIndependentResources();
 
@@ -32,7 +34,7 @@ void XAxis::Initialize(State * state, const FrequencyBands & frequencyBands, boo
     {
         WCHAR Text[32] = { };
 
-        switch (_State->_XAxisMode)
+        switch (settings->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -152,8 +154,8 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 
     const FLOAT StartX = !_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
 
-    const FLOAT yt = _Bounds.top    + (_State->_XAxisTop    ? _Height : 0.f);  // Top axis
-    const FLOAT yb = _Bounds.bottom - (_State->_XAxisBottom ? _Height : 0.f);  // Bottom axis
+    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _Height : 0.f);  // Top axis
+    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _Height : 0.f);  // Bottom axis
 
     for (Label & Iter : _Labels)
     {

@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.18) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -27,7 +27,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * state, const FrequencyBands & frequencyBands, bool isMirrored) noexcept;
+    void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 

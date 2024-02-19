@@ -25,22 +25,23 @@ Graph::~Graph()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * state, const GraphSettings & settings) noexcept
+void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 {
     _State = state;
+    _GraphSettings = settings;
 
-    _FlipHorizontally = settings._FlipHorizontally;
-    _FlipVertically   = settings._FlipVertically;
+    _FlipHorizontally = settings->_FlipHorizontally;
+    _FlipVertically   = settings->_FlipVertically;
 
-    _Description = settings._Description;
+    _Description = settings->_Description;
 
-    _Analysis.Initialize(state, settings._Channels);
+    _Analysis.Initialize(state, settings->_Channels);
 
-    _Spectrum.Initialize(state);
+    _Spectrum.Initialize(state, settings);
 
-    _XAxis.Initialize(state, _Analysis._FrequencyBands, settings._FlipHorizontally);
+    _XAxis.Initialize(state, settings, _Analysis._FrequencyBands);
     
-    _YAxis.Initialize(state, settings._FlipVertically);
+    _YAxis.Initialize(state, settings);
 }
 
 /// <summary>

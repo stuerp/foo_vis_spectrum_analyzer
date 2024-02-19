@@ -84,7 +84,7 @@ public:
         double _BandwidthOffset;                                        // 0.0 .. 1.0, Transition smoothness
         double _BandwidthCap;                                           // 0.0 .. 1.0, Minimum Brown-Puckette kernel size
         double _BandwidthAmount;                                        // 0 .. 256, Brown-Puckette kernel size
-        bool _UseGranularBandwidth;                                               // True: Don't constrain bandwidth to powers of 2.
+        bool _UseGranularBandwidth;                                     // True: Don't constrain bandwidth to powers of 2.
 
         WindowFunctions _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
@@ -113,7 +113,7 @@ public:
         FrequencyDistribution _FrequencyDistribution;
 
         // Frequency range
-        size_t _BandCount;                                               // Number of frequency bands, 2 .. 512
+        size_t _BandCount;                                              // Number of frequency bands, 2 .. 512
         double _LoFrequency;                                            // Hz, 0 .. 96000
         double _HiFrequency;                                            // Hz, 0 .. 96000
 
@@ -199,8 +199,8 @@ public:
             VisualizationType _VisualizationType;
 
             PeakMode _PeakMode;
-            double _HoldTime;                                       // Peak hold time, 0.0 .. 120.0
-            double _Acceleration;                                   // Peak fall acceleration rate, 0.0 .. 2.0
+            double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
+            double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
 
             #pragma region Bars
 
@@ -247,10 +247,12 @@ public:
 
 private:
     void ConvertColorSettings() noexcept;
+    void ConvertGraphSettings() noexcept;
+
     const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
 
 private: // Deprecated
-    bool _UseZeroTrigger;                                               // Deprecated
+    bool _UseZeroTrigger;
 
     ColorScheme _ColorScheme;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
@@ -271,7 +273,7 @@ private: // Deprecated
     bool _UseCustomYLineColor;
 
     D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    D2D1::ColorF _DarkBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    D2D1::ColorF _DarkBandColor  = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
     FLOAT _LineWidth;
     D2D1::ColorF _LineColor = _DefLineColor;

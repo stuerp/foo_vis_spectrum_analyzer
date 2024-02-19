@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.18) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.19) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -15,9 +15,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state)
+void Spectrum::Initialize(State * state, const GraphSettings * settings)
 {
     _State = state;
+    _GraphSettings = settings;
 
     ReleaseDeviceSpecificResources();
 }

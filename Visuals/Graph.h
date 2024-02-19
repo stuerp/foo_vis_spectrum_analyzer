@@ -26,7 +26,7 @@ public:
     Graph();
     virtual ~Graph();
 
-    void Initialize(State * state, const GraphSettings & settings) noexcept;
+    void Initialize(State * state, const GraphSettings * settings) noexcept;
 
     void Move(const D2D1_RECT_F & rect) noexcept;
     void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;

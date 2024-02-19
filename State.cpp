@@ -123,30 +123,30 @@ void State::Reset() noexcept
     _SmoothGainTransition = true;
 
     // Rendering parameters
-    _BackColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);
-    _UseCustomBackColor = true;
+    _BackColor = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);                  // Deprecated
+    _UseCustomBackColor = true;                                     // Deprecated
 
     // X axis
     _XAxisMode = XAxisMode::Notes;
     _XAxisTop = true;
     _XAxisBottom = true;
 
-    _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
-    _UseCustomXTextColor = true;
+    _XTextColor = D2D1::ColorF(D2D1::ColorF::White);                // Deprecated
+    _UseCustomXTextColor = true;                                    // Deprecated
 
-    _XLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
-    _UseCustomXLineColor = true;
+    _XLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);              // Deprecated
+    _UseCustomXLineColor = true;                                    // Deprecated
 
     // Y axis
     _YAxisMode = YAxisMode::Decibels;
     _YAxisLeft = true;
     _YAxisRight = true;
 
-    _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
-    _UseCustomYTextColor = true;
+    _YTextColor = D2D1::ColorF(D2D1::ColorF::White);                // Deprecated
+    _UseCustomYTextColor = true;                                    // Deprecated
 
-    _YLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);
-    _UseCustomYLineColor = true;
+    _YLineColor = D2D1::ColorF(.25f, .25f, .25f, 1.f);              // Deprecated
+    _UseCustomYLineColor = true;                                    // Deprecated
 
     _AmplitudeLo = -90.;
     _AmplitudeHi =   0.;
@@ -203,17 +203,24 @@ void State::Reset() noexcept
 
     _GraphSettings.clear();
 
-    static const GraphSettings gs[] =
+    static const GraphSettings DefaultGraphSettings[] =
     {
 //      { L"Stereo", audio_chunk::channel_config_2point1, false, true },
 
-        { L"Left",  audio_chunk::channel_front_left,  .5f, 1.f, true,  false },
-        { L"Right", audio_chunk::channel_front_right, .5f, 1.f, false, false },
+        {
+            L"Left",  audio_chunk::channel_front_left,  .5f, 1.f, true,  false,
+            XAxisMode::Notes, true, true                                        // X-axis
+
+        },
+        {
+            L"Right", audio_chunk::channel_front_right, .5f, 1.f, false, false,
+            XAxisMode::Notes, true, true                                        // X-axis
+        },
 
     };
 
-    for (const auto & Iter : gs)
-        _GraphSettings.push_back(Iter);
+    for (const auto & gs : DefaultGraphSettings)
+        _GraphSettings.push_back(gs);
 }
 
 /// <summary>
@@ -339,22 +346,22 @@ State & State::operator=(const State & other)
         _XAxisTop = other._XAxisTop;
         _XAxisBottom = other._XAxisBottom;
 
-        _XTextColor = other._XTextColor;
-        _UseCustomXTextColor = other._UseCustomXTextColor;
+        _XTextColor = other._XTextColor;                    // Deprecated
+        _UseCustomXTextColor = other._UseCustomXTextColor;  // Deprecated
 
-        _XLineColor = other._XLineColor;
-        _UseCustomXLineColor = other._UseCustomXLineColor;
+        _XLineColor = other._XLineColor;                    // Deprecated
+        _UseCustomXLineColor = other._UseCustomXLineColor;  // Deprecated
 
         // Y axis
         _YAxisMode = other._YAxisMode;
         _YAxisLeft = other._YAxisLeft;
         _YAxisRight = other._YAxisRight;
 
-        _YTextColor = other._YTextColor;
-        _UseCustomYTextColor = other._UseCustomYTextColor;
+        _YTextColor = other._YTextColor;                    // Deprecated
+        _UseCustomYTextColor = other._UseCustomYTextColor;  // Deprecated
 
-        _YLineColor = other._YLineColor;
-        _UseCustomYLineColor = other._UseCustomYLineColor;
+        _YLineColor = other._YLineColor;                    // Deprecated
+        _UseCustomYLineColor = other._UseCustomYLineColor;  // Deprecated
 
         _AmplitudeLo = other._AmplitudeLo;
         _AmplitudeHi = other._AmplitudeHi;
@@ -675,6 +682,9 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_SuppressMirrorImage, abortHandler);
         }
 
+        if (Version <= 17)
+            ConvertGraphSettings();
+
         if (Version >= 17)
         {
             reader->read(&_FitMode, sizeof(_FitMode), abortHandler);
@@ -883,7 +893,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 }
 
 /// <summary>
-/// One time conversion of old color settings.
+/// One time conversion of the old color settings.
 /// </summary>
 void State::ConvertColorSettings() noexcept
 {
@@ -1072,6 +1082,19 @@ void State::ConvertColorSettings() noexcept
             style->_Color = D2D1::ColorF(0, 0.f);
             style->_GradientStops = SelectGradientStops(_ColorScheme);
             style->_Opacity = _AreaOpacity;
+    }
+}
+
+/// <summary>
+/// One time conversion of the old graph settings.
+/// </summary>
+void State::ConvertGraphSettings() noexcept
+{
+    for (auto & gs : _GraphSettings)
+    {
+        gs._XAxisMode    = _XAxisMode;
+        gs._XAxisTop     = _XAxisTop;
+        gs._XAxisBottom  = _XAxisBottom;
     }
 }
 

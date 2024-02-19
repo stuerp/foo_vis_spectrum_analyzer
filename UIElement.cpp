@@ -458,7 +458,7 @@ void UIElement::UpdateState() noexcept
         {
             auto * g = new Graph();
 
-            g->Initialize(&_RenderState, Iter);
+            g->Initialize(&_RenderState, &Iter);
 
             _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
         }

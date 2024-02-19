@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.02.18) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.02.19) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -7,15 +7,18 @@
 #include "Support.h"
 
 #include "State.h"
+#include "GraphSettings.h"
 #include "Style.h"
 
 class Element
 {
 public:
-    Element() : _State() {}
+    Element() : _State(), _GraphSettings() {}
 
 protected:
     State * _State;
+    const GraphSettings * _GraphSettings;
+
     bool _FlipHorizontally;
     bool _FlipVertically;
 };

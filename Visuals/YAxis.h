@@ -8,6 +8,7 @@
 #include "Element.h"
 #include "Support.h"
 #include "State.h"
+#include "GraphSettings.h"
 
 #include <vector>
 #include <string>
@@ -25,7 +26,7 @@ public:
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(State * state, bool flipVertically) noexcept;
+    void Initialize(State * state, const GraphSettings * settings) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
