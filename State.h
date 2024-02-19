@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.18) P. Stuer **/
+/** $VER: State.h (2024.02.19) P. Stuer **/
 
 #pragma once
 
@@ -217,6 +217,10 @@ public:
     #pragma endregion
 
     StyleManager _StyleManager;
+
+    size_t _GridRowCount;
+    size_t _GridColumnCount;
+
     std::vector<GraphSettings> _GraphSettings;
 
     #pragma region Not Serialized

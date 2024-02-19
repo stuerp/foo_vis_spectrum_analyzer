@@ -123,7 +123,7 @@ bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const no
     if (_FlipHorizontally)
         x = (Bounds.right + Bounds.left) - x;
 
-    index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), 0U, _Analysis._FrequencyBands.size() - 1U);
+    index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
 
     toolTip = _Analysis._FrequencyBands[index].Label;
 

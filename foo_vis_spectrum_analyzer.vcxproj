@@ -203,6 +203,7 @@
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
+    <ClInclude Include="Visuals\Grid.h" />
     <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />

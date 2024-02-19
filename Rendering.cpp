@@ -112,8 +112,8 @@ void UIElement::ProcessPlaybackEvent()
         {
             _Artwork.Release();
 
-            for (Graph * Iter : _Graphs)
-                Iter->Clear();
+            for (auto & Iter : _Grid)
+                Iter._Graph->Clear();
 
             break;
         }
@@ -137,8 +137,8 @@ void UIElement::Render()
 
         _RenderTarget->BeginDraw();
 
-        for (Graph * Iter : _Graphs)
-            Iter->Render(_RenderTarget, (double) _SampleRate, _Artwork);
+        for (auto & Iter : _Grid)
+            Iter._Graph->Render(_RenderTarget, (double) _SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -165,8 +165,8 @@ void UIElement::UpdateSpectrum()
 
         if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
         {
-            for (Graph * graph : _Graphs)
-                graph->Process(Chunk);
+            for (auto & Iter : _Grid)
+                Iter._Graph->Process(Chunk);
         }
     }
     else
@@ -184,8 +184,8 @@ void UIElement::UpdateSpectrum()
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
             {
-                for (Graph * graph : _Graphs)
-                    graph->Process(Chunk);
+                for (auto & Iter : _Grid)
+                    Iter._Graph->Process(Chunk);
             }
 
             _OldPlaybackTime = PlaybackTime;
@@ -195,8 +195,8 @@ void UIElement::UpdateSpectrum()
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     if (_State._PeakMode != PeakMode::None)
     {
-        for (Graph * graph : _Graphs)
-            graph->GetAnalysis().UpdatePeakIndicators();
+        for (auto & Iter : _Grid)
+            Iter._Graph->GetAnalysis().UpdatePeakIndicators();
     }
 }
 
@@ -213,43 +213,14 @@ void UIElement::Resize()
     // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
 
-    // Resize each of the graph areas.
-    if (true)
-    {
-        FLOAT Width = Size.width / (FLOAT) _Graphs.size();
+    // Resize the grid.
+    for (auto & Iter : _Grid)
+        _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
 
-        D2D1_RECT_F Bounds(0.f, 0.f, Width, Size.height);
+    _Grid.Resize(Size.width, Size.height);
 
-        for (Graph * graph : _Graphs)
-        {
-            _ToolTipControl.DelTool(graph->GetToolInfo(m_hWnd));
-
-            graph->Move(Bounds);
-
-            Bounds.left  += Width;
-            Bounds.right += Width;
-
-            _ToolTipControl.AddTool(graph->GetToolInfo(m_hWnd));
-        }
-    }
-    else
-    {
-        FLOAT Height = Size.height / (FLOAT) _Graphs.size();
-
-        D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Height);
-
-        for (Graph * graph : _Graphs)
-        {
-            _ToolTipControl.DelTool(graph->GetToolInfo(m_hWnd));
-
-            graph->Move(Bounds);
-
-            Bounds.top    += Height;
-            Bounds.bottom += Height;
-
-            _ToolTipControl.AddTool(graph->GetToolInfo(m_hWnd));
-        }
-    }
+    for (auto & Iter : _Grid)
+        _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
 }
 
 #pragma region DirectX
@@ -313,9 +284,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _NewArtwork)
     {
-        for (Graph * Iter : _Graphs)
+        for (auto & Iter : _Grid)
         {
-            Spectrum & s = Iter->GetSpectrum();
+            Spectrum & s = Iter._Graph->GetSpectrum();
 
             s.ReleaseDeviceSpecificResources();
         }
@@ -404,8 +375,8 @@ void UIElement::ReleaseDeviceSpecificResources()
 {
     _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 
-    for (Graph * Iter : _Graphs)
-        Iter->ReleaseDeviceSpecificResources();
+    for (auto & Iter : _Grid)
+        Iter._Graph->ReleaseDeviceSpecificResources();
 
     _FrameCounter.ReleaseDeviceSpecificResources();
 

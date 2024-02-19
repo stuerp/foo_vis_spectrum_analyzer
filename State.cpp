@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.02.18) P. Stuer **/
+/** $VER: State.cpp (2024.02.19) P. Stuer **/
 
 #include "State.h"
 
@@ -198,14 +198,17 @@ void State::Reset() noexcept
 
     _StyleManager.Reset();
 
+    _GridRowCount = 1;
+    _GridColumnCount = 2;
+
     _GraphSettings.clear();
 
     static const GraphSettings gs[] =
     {
 //      { L"Stereo", audio_chunk::channel_config_2point1, false, true },
 
-        { L"Left",  audio_chunk::channel_front_left,  true,  false },
-        { L"Right", audio_chunk::channel_front_right, false, false },
+        { L"Left",  audio_chunk::channel_front_left,  .5f, 1.f, true,  false },
+        { L"Right", audio_chunk::channel_front_right, .5f, 1.f, false, false },
 
     };
 
@@ -409,6 +412,10 @@ State & State::operator=(const State & other)
     #pragma endregion
 
     _StyleManager = other._StyleManager;
+
+    _GridRowCount = other._GridRowCount;
+    _GridColumnCount = other._GridColumnCount;
+
     _GraphSettings = other._GraphSettings;
 
     #pragma region Not serialized

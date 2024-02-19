@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.17) P. Stuer **/
+/** $VER: UIElement.h (2024.02.19) P. Stuer **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include "State.h"
 #include "ConfigurationDialog.h"
 
+#include "Grid.h"
 #include "Graph.h"
 #include "Artwork.h"
 #include "FrameCounter.h"
@@ -200,7 +201,7 @@ private:
 
     FrameCounter _FrameCounter;
 
-    Graphs _Graphs;
+    Grid _Grid;
     UINT _DPI;
 
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;

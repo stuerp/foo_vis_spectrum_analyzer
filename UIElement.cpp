@@ -114,10 +114,10 @@ void UIElement::OnDestroy()
     _CriticalSection.Enter();
 
     {
-        for (auto & Iter : _Graphs)
-            delete Iter;
+        for (auto & Iter : _Grid)
+            delete Iter._Graph;
 
-        _Graphs.clear();
+        _Grid.clear();
     }
 
     {
@@ -447,10 +447,12 @@ void UIElement::UpdateState() noexcept
 
     // Create the graphs.
     {
-        for (auto & Iter : _Graphs)
-            delete Iter;
+        for (auto & Iter : _Grid)
+            delete Iter._Graph;
 
-        _Graphs.clear();
+        _Grid.clear();
+
+        _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
 
         for (const auto & Iter : _State._GraphSettings)
         {
@@ -458,7 +460,7 @@ void UIElement::UpdateState() noexcept
 
             g->Initialize(&_RenderState, Iter);
 
-            _Graphs.push_back(g);
+            _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
         }
     }
 
@@ -476,10 +478,10 @@ void UIElement::UpdateState() noexcept
 /// </summary>
 Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 {
-    for (Graph * graph : _Graphs)
+    for (auto & Iter : _Grid)
     {
-        if (graph->ContainsPoint(pt))
-            return graph;;
+        if (Iter._Graph->ContainsPoint(pt))
+            return Iter._Graph;
     }
 
     return nullptr;

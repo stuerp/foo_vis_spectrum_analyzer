@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.02.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.02.19) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -101,5 +101,3 @@ private:
     Style * _BackgroundStyle;
     Style * _DescriptionStyle;
 };
-
-typedef std::vector<Graph *> Graphs;
