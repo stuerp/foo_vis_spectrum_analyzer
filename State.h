@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.19) P. Stuer **/
+/** $VER: State.h (2024.02.21) P. Stuer **/
 
 #pragma once
 
@@ -63,7 +63,7 @@ public:
                                                                         //   0: The first half of samples are behind the actual playback and the second half are ahead of it (just like original foo_musical_spectrum and basically any get_spectrum_absolute() visualizations
                                                                         // > 0: All samples are behind the playback (similar to VST audio analyzer plugins like Voxengo SPAN) with the last sample equal to the actual playback.
 
-        uint32_t _SelectedChannels;
+        uint32_t _Channels_Deprecated;
 
     #pragma endregion
 
@@ -148,30 +148,7 @@ public:
 
     #pragma endregion
 
-    #pragma region Rendering
-
-        #pragma region X axis
-
-            XAxisMode _XAxisMode;
-            bool _XAxisTop;
-            bool _XAxisBottom;
-
-        #pragma endregion
-
-        #pragma region Y axis
-
-            YAxisMode _YAxisMode;
-            bool _YAxisLeft;
-            bool _YAxisRight;
-
-            double _AmplitudeLo;                                        // Lower amplitude, -120.0 .. 0.0
-            double _AmplitudeHi;                                        // Upper amplitude, -120.0 .. 0.0
-            double _AmplitudeStep;
-
-            bool _UseAbsolute;                                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-            double _Gamma;                                              // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
-
-        #pragma endregion
+    #pragma region Graphs
 
         #pragma region Common
 
@@ -181,16 +158,51 @@ public:
             SmoothingMethod _SmoothingMethod;
             double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
 
-            BackgroundMode _BackgroundMode;
-            FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-            pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
-            FitMode _FitMode;
+        #pragma endregion
+
+        #pragma region Artwork
 
             uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
             FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
             FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
 
             ColorOrder _ColorOrder;
+
+            BackgroundMode _BackgroundMode;
+            bool _ShowArtworkOnBackground;
+
+            FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
+            pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
+            FitMode _FitMode;
+
+        #pragma endregion
+
+        #pragma region Graphs
+
+            bool _VerticalLayout;                                       // Shows the graphs vertically instead of horizontally.
+
+        #pragma region X axis
+
+            XAxisMode _XAxisMode_Deprecated;
+            bool _XAxisTop_Deprecated;
+            bool _XAxisBottom_Deprecated;
+
+        #pragma endregion
+
+        #pragma region Y axis
+
+            YAxisMode _YAxisMode_Deprecated;
+            bool _YAxisLeft_Deprecated;
+            bool _YAxisRight_Deprecated;
+
+            double _AmplitudeLo_Deprecated;                             // Lower amplitude, -120.0 .. 0.0
+            double _AmplitudeHi_Deprecated;                             // Upper amplitude, -120.0 .. 0.0
+            double _AmplitudeStep_Deprecated;
+
+            bool _UseAbsolute_Deprecated;                               // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+            double _Gamma_Deprecated;                                   // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
+
+        #pragma endregion
 
         #pragma endregion
 
@@ -238,12 +250,10 @@ public:
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 
-    int _CurrentStyle;
+    size_t _SelectedGraph;
+    int _SelectedStyle;
 
     #pragma endregion
-
-public:
-    double ScaleA(double value) const;
 
 private:
     void ConvertColorSettings() noexcept;
@@ -251,42 +261,42 @@ private:
 
     const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
 
-private: // Deprecated
-    bool _UseZeroTrigger;
+private:
+    bool _UseZeroTrigger_Deprecated;
 
-    ColorScheme _ColorScheme;
-    std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops;
+    ColorScheme _ColorScheme_Deprecated;
+    std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops_Deprecated;
 
-    D2D1::ColorF _BackColor = D2D1::ColorF(D2D1::ColorF::Black);
-    bool _UseCustomBackColor;
+    D2D1::ColorF _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);
+    bool _UseCustomBackColor_Deprecated;
 
-    D2D1::ColorF _XTextColor = D2D1::ColorF(D2D1::ColorF::White);
-    bool _UseCustomXTextColor;
+    D2D1::ColorF _XTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomXTextColor_Deprecated;
 
-    D2D1::ColorF _XLineColor = D2D1::ColorF(D2D1::ColorF::White);
-    bool _UseCustomXLineColor;
+    D2D1::ColorF _XLineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomXLineColor_Deprecated;
 
-    D2D1::ColorF _YTextColor = D2D1::ColorF(D2D1::ColorF::White);
-    bool _UseCustomYTextColor;
+    D2D1::ColorF _YTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomYTextColor_Deprecated;
 
-    D2D1::ColorF _YLineColor = D2D1::ColorF(D2D1::ColorF::White);
-    bool _UseCustomYLineColor;
+    D2D1::ColorF _YLineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    bool _UseCustomYLineColor_Deprecated;
 
-    D2D1::ColorF _LightBandColor = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    D2D1::ColorF _DarkBandColor  = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    D2D1::ColorF _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    D2D1::ColorF _DarkBandColor_Deprecated  = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
-    FLOAT _LineWidth;
-    D2D1::ColorF _LineColor = _DefLineColor;
-    bool _UseCustomLineColor;
-    D2D1::ColorF _PeakLineColor = _DefPeakLineColor;
-    bool _UseCustomPeakLineColor;
-    FLOAT _AreaOpacity;                                     // 0.0 .. 1.0
+    FLOAT _LineWidth_Deprecated;
+    D2D1::ColorF _LineColor_Deprecated = _DefLineColor_Deprecated;
+    bool _UseCustomLineColor_Deprecated;
+    D2D1::ColorF _PeakLineColor_Deprecated = _DefPeakLineColor_Deprecated;
+    bool _UseCustomPeakLineColor_Deprecated;
+    FLOAT _AreaOpacity_Deprecated;                          // 0.0 .. 1.0
 
-    const D2D1::ColorF _DefLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
-    const D2D1::ColorF _DefPeakLineColor = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefLineColor_Deprecated = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefPeakLineColor_Deprecated = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
 
-    bool _DrawBandBackground;                               // True if the background for each band should be drawn.
-    bool _HorizontalGradient;                               // True if the gradient will be used to paint horizontally.
+    bool _DrawBandBackground_Deprecated;                    // True if the background for each band should be drawn.
+    bool _HorizontalGradient_Deprecated;                    // True if the gradient will be used to paint horizontally.
 
 private:
     const size_t _CurrentVersion = 17;

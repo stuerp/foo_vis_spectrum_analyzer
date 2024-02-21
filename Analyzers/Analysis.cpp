@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.02.17) P. Stuer **/
+/** $VER: Analysis.cpp (2024.02.21) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -14,10 +14,10 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Analysis::Initialize(const State * state, uint32_t channels) noexcept
+void Analysis::Initialize(const State * state, const GraphSettings * settings) noexcept
 {
     _State = state;
-    _Channels = channels;
+    _GraphSettings = settings;
 
     if (state->_Transform == Transform::FFT)
     {
@@ -62,19 +62,19 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     {
         case Transform::FFT:
         {
-            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Channels, _FrequencyBands);
+            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
             break;
         }
 
         case Transform::CQT:
         {
-            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Channels, _FrequencyBands);
+            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
             break;
         }
 
         case Transform::SWIFT:
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _Channels, _FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
             break;
         }
     }
@@ -483,7 +483,7 @@ void Analysis::UpdatePeakIndicators() noexcept
 {
     for (FrequencyBand & fb : _FrequencyBands)
     {
-        const double Amplitude = Clamp(_State->ScaleA(fb.CurValue), 0., 1.);
+        const double Amplitude = Clamp(_GraphSettings->ScaleA(fb.CurValue), 0., 1.);
 
         if (Amplitude >= fb.Peak)
         {

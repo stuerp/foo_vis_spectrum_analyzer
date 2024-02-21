@@ -22,12 +22,12 @@ void YAxis::Initialize(State * state, const GraphSettings * settings) noexcept
 
     _Labels.clear();
 
-    if (_State->_YAxisMode == YAxisMode::None)
+    if (_GraphSettings->_YAxisMode == YAxisMode::None)
         return;
 
     // Precalculate the labels and their position.
     {
-        for (double Amplitude = _State->_AmplitudeLo; Amplitude <= _State->_AmplitudeHi; Amplitude -= _State->_AmplitudeStep)
+        for (double Amplitude = _GraphSettings->_AmplitudeLo; Amplitude <= _GraphSettings->_AmplitudeHi; Amplitude -= _GraphSettings->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -47,13 +47,13 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
 
-    const FLOAT xl = _Bounds.left  + (_State->_YAxisLeft ?  _Width : 0.f); // Left axis
-    const FLOAT xr = _Bounds.right - (_State->_YAxisRight ? _Width : 0.f); // Right axis
+    const FLOAT xl = _Bounds.left  + (_GraphSettings->_YAxisLeft  ? _Width : 0.f); // Left axis
+    const FLOAT xr = _Bounds.right - (_GraphSettings->_YAxisRight ? _Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     for (Label & Iter : _Labels)
     {
-        FLOAT y = Map(_State->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
+        FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
 
         // Don't generate any labels outside the bounds.
         if (!InRange(y, _Bounds.top, _Bounds.bottom))
@@ -64,10 +64,10 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 
         y -= (_Height / 2.f);
 
-        if ((!_State->_XAxisTop) && (y <_Bounds.top))
+        if ((!_GraphSettings->_XAxisTop) && (y <_Bounds.top))
             y = _Bounds.top;
 
-        if ((!_State->_XAxisBottom) && (y + _Height > _Bounds.bottom))
+        if ((!_GraphSettings->_XAxisBottom) && (y + _Height > _Bounds.bottom))
             y = _Bounds.bottom - _Height;
 
         Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _Height };
@@ -80,7 +80,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void YAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if ((_State->_YAxisMode == YAxisMode::None) || (!_State->_YAxisLeft && !_State->_YAxisRight))
+    if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
         return;
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
@@ -99,10 +99,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         if (!InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
         {
             // Draw the labels.
-            if (_State->_YAxisLeft)
+            if (_GraphSettings->_YAxisLeft)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_State->_YAxisRight)
+            if (_GraphSettings->_YAxisRight)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             OldRect = Iter.RectL;

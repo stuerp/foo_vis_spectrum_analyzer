@@ -36,6 +36,27 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
+/*
+    if (_FlipHorizontally)
+    {
+        const FLOAT Width = _Bounds.right - _Bounds.left;
+
+        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, 0.f, 0.f);
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(Width, 0.f);
+
+        renderTarget->SetTransform(Flip * Translate);
+    }
+
+    if (_FlipVertically)
+    {
+        const FLOAT Height = _Bounds.bottom - _Bounds.top;
+
+        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height * .25f);
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(0.f, Height);
+
+        renderTarget->SetTransform(Flip * Translate);
+    }
+*/
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
@@ -53,6 +74,8 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
                 break;
         }
     }
+
+    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
 /// <summary>
@@ -85,7 +108,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
             {
-                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _State->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
+                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _GraphSettings->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
 
                 renderTarget->FillRectangle(Rect, _ForegroundStyle->_Brush);
 
@@ -290,7 +313,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
         if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-        double Value = !usePeak ? _State->ScaleA(fb.CurValue) : fb.Peak;
+        double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
 
         y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
 

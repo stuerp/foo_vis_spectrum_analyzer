@@ -189,7 +189,6 @@
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Analyzers\ToneGenerator.h" />
-    <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />

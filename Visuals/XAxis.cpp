@@ -192,7 +192,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void XAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if ((_State->_XAxisMode == XAxisMode::None) || (!_State->_XAxisTop && !_State->_XAxisBottom))
+    if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
         return;
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
@@ -214,10 +214,10 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
         {
             // Draw the labels.
-            if (_State->_XAxisTop)
+            if (_GraphSettings->_XAxisTop)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_State->_XAxisBottom)
+            if (_GraphSettings->_XAxisBottom)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             OldRect = Iter.RectB;

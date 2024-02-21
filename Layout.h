@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.02.14) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.02.21) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -678,17 +678,76 @@
 #define H_B09   11 + H_H02 + IY + H_H04 + IY + H_H06 + IY + H_H09 + IY + H_H12 + IY + H_H14 + IY + H_H17 + IY + H_H20 + 7
 #pragma endregion
 
+/** Page: Graph Common **/
+
 #pragma region Common
 // Groupbox
 #define X_B04   X_D01 + W_D01 + IX
 #define Y_B04   Y_D01
 
+    #pragma region Smoothing Method
+    // Label
+    #define W_A17    66
+    #define H_A17    H_LBL
+    #define X_A17    X_B04 + 5
+    #define Y_A17    Y_B04 + 11
+
+    // Combobox
+    #define W_A18    60
+    #define H_A18    H_CBX
+    #define X_A18    X_A17 + W_A17 + IX
+    #define Y_A18    Y_A17
+    #pragma endregion
+
+    #pragma region Smoothing Factor
+    // Label
+    #define W_A37    66
+    #define H_A37    H_LBL
+    #define X_A37    X_A17
+    #define Y_A37    Y_A18 + H_A18 + IY
+
+    // Textbox
+    #define W_A38    30
+    #define H_A38    H_TBX
+    #define X_A38    X_A37 + W_A37 + IX
+    #define Y_A38    Y_A37
+    #pragma endregion
+
+    #pragma region Tool tips
+
+    // Checkbox
+    #define W_A87    90
+    #define H_A87    H_CHB
+    #define X_A87    X_A38
+    #define Y_A87    Y_A38 + H_A38 + IY
+
+    #pragma endregion
+
+    #pragma region Suppress mirror image
+
+    // Checkbox
+    #define W_G19    90
+    #define H_G19    H_CHB
+    #define X_G19    X_A87
+    #define Y_G19    Y_A87 + H_A87 + IY
+
+    #pragma endregion
+
+#define W_B04  184
+#define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7
+#pragma endregion
+
+#pragma region Artwork
+// Groupbox
+#define X_B06   X_B04
+#define Y_B06   Y_B04 + H_B04 + IY
+
     #pragma region Artwork Colors
     // Label
     #define W_G06    66
     #define H_G06    H_LBL
-    #define X_G06    X_B04 + 5
-    #define Y_G06    Y_B04 + 11
+    #define X_G06    X_B06 + 5
+    #define Y_G06    Y_B06 + 11
 
     // Textbox
     #define W_G07    30
@@ -731,73 +790,17 @@
     #define Y_G12    Y_G11
     #pragma endregion
 
-    #pragma region Smoothing Method
-    // Label
-    #define W_A17    66
-    #define H_A17    H_LBL
-    #define X_A17    X_G11
-    #define Y_A17    Y_G12 + H_G12 + IY
-
-    // Combobox
-    #define W_A18    60
-    #define H_A18    H_CBX
-    #define X_A18    X_A17 + W_A17 + IX
-    #define Y_A18    Y_A17
-    #pragma endregion
-
-    #pragma region Smoothing Factor
-    // Label
-    #define W_A37    66
-    #define H_A37    H_LBL
-    #define X_A37    X_A17
-    #define Y_A37    Y_A18 + H_A18 + IY
-
-    // Textbox
-    #define W_A38    30
-    #define H_A38    H_TBX
-    #define X_A38    X_A37 + W_A37 + IX
-    #define Y_A38    Y_A37
-    #pragma endregion
-
-    #pragma region Tool tips
-
-    // Checkbox
-    #define W_A87    80
-    #define H_A87    H_CHB
-    #define X_A87    X_A38
-    #define Y_A87    Y_A38 + H_A38 + IY
-
-    #pragma endregion
-
-    #pragma region Suppress mirror image
-
-    // Checkbox
-    #define W_G19    80
-    #define H_G19    H_CHB
-    #define X_G19    X_A87
-    #define Y_G19    Y_A87 + H_A87 + IY
-
-    #pragma endregion
-
-    #pragma region Background Mode
-    // Label
-    #define W_G01    66
-    #define H_G01    H_LBL
-    #define X_G01    X_A37
-    #define Y_G01    Y_G19 + H_G19 + IY
-
-    // Combobox
-    #define W_G02    100
-    #define H_G02    H_CBX
-    #define X_G02    X_G01 + W_G01 + IX
-    #define Y_G02    Y_G01
-    #pragma endregion
+    // Checkbox: Show artwork on background
+    #define W_G02    160
+    #define H_G02    H_CHB
+    #define X_G02    X_B06 + 5
+    #define Y_G02    Y_G12 + H_G12 + IY
 
     #pragma region Artwork Opacity
     // Label
     #define W_G03    66
     #define H_G03    H_LBL
-    #define X_G03    X_G01
+    #define X_G03    X_G02
     #define Y_G03    Y_G02 + H_G02 + IY
 
     // Textbox
@@ -827,19 +830,69 @@
     #define Y_G14    Y_G13
     #pragma endregion
 
-#define W_B04  180 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B04   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
+#define W_B06  184
+#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
+
+#pragma region Graphs
+
+// ListBox: Graphs Settings
+#define W_G20    70
+#define H_G20   160
+#define X_G20   X_D01 + W_D01 + IX
+#define Y_G20   Y_D01
+
+    // Button: Add
+    #define W_G21   20
+    #define H_G21   H_BTN
+    #define X_G21   X_G20 + W_G20 + IX
+    #define Y_G21   Y_G20
+
+    // Button: Remove
+    #define W_G22   20
+    #define H_G22   H_BTN
+    #define X_G22   X_G21
+    #define Y_G22   Y_G21 + H_G21 + IY
+
+// Checkbox: Vertical Layout
+#define W_G23   70
+#define H_G23   H_CHB
+#define X_G23   X_G20
+#define Y_G23   Y_G20 + H_G20 + IY
+
+// Label: Description
+#define W_G24   38
+#define H_G24   H_LBL
+#define X_G24   X_G21 + W_G21 + IX
+#define Y_G24   Y_G21
+
+// Editbox: Description
+#define W_G25    80
+#define H_G25    H_TBX
+#define X_G25    X_G24 + W_G24 + IX
+#define Y_G25    Y_G24
+
+// Checkbox: Flip horizontally
+#define W_G26   82
+#define H_G26   H_CHB
+#define X_G26   X_G24
+#define Y_G26   Y_G25 + H_G25 + IY
+
+// Checkbox: Flip vertically
+#define W_G27   82
+#define H_G27   H_CHB
+#define X_G27   X_G26 + W_G26 + IX
+#define Y_G27   Y_G26
 
 #pragma region X axis
 // Groupbox
-#define X_B02   X_B04 + W_B04 + IX
-#define Y_B02   DY
+#define X_B02   X_G26
+#define Y_B02   Y_G26 + H_G26 + IY
 
     #pragma region X axis
 
     // Label
-    #define W_A05    60
+    #define W_A05    54
     #define H_A05    H_LBL
     #define X_A05    X_B02 + 5
     #define Y_A05    Y_B02 + 11
@@ -864,7 +917,7 @@
 
     #pragma endregion
 
-#define W_B02  176 // 5 + W_A05 + IX + W_A06 + 5
+#define W_B02  170
 #define H_B02   11 + H_A06 + IY + H_G15 + 7
 #pragma endregion
 
@@ -876,7 +929,7 @@
     #pragma region Y axis
 
     // Label
-    #define W_A07    60
+    #define W_A07    54
     #define H_A07    H_LBL
     #define X_A07    X_B03 + 5
     #define Y_A07    Y_B03 + 11
@@ -903,7 +956,7 @@
 
     #pragma region Amplitude range: [Lo] - [Hi] dB
     // Label
-    #define W_A45    60
+    #define W_A45    54
     #define H_A45    H_LBL
     #define X_A45    X_A07
     #define Y_A45    Y_G17 + H_G17 + IY
@@ -935,7 +988,7 @@
 
     #pragma region Amplitude increment
     // Label
-    #define W_A84    60
+    #define W_A84    54
     #define H_A84    H_LBL
     #define X_A84    X_A45
     #define Y_A84    Y_A45 + H_A45 + IY + 8
@@ -963,7 +1016,7 @@
 
     #pragma region Gamma
     // Label
-    #define W_A41    60
+    #define W_A41    54
     #define H_A41    H_LBL
     #define X_A41    X_A07
     #define Y_A41    Y_A50 + H_A50 + IY
@@ -975,8 +1028,16 @@
     #define Y_A42    Y_A41
     #pragma endregion
 
-#define W_B03   176 //  5 + W_A45 + IX + W_A46 + IX + W_A47 + IX + W_A48 + IX + W_A49 + 5
+#define W_B03   170
 #define H_B03   11 + H_A08 + IY + H_G17 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
+
+// ListBox: Channels
+#define W_G28    70
+#define H_G28   160
+#define X_G28   X_B02 + W_B02 + IX
+#define Y_G28   Y_G24
+#pragma endregion
+
 #pragma endregion
 
 #pragma region Visualization

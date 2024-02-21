@@ -35,7 +35,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 
     _Description = settings->_Description;
 
-    _Analysis.Initialize(state, settings->_Channels);
+    _Analysis.Initialize(state, settings);
 
     _Spectrum.Initialize(state, settings);
 
@@ -51,11 +51,11 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
     _Bounds = rect;
 
-    const FLOAT xt = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
-    const FLOAT xb = ((_State->_XAxisMode != XAxisMode::None) && _State->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
 
-    const FLOAT yl = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT yr = ((_State->_YAxisMode != YAxisMode::None) && _State->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
 
     {
         D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
@@ -139,7 +139,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
     renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() != nullptr) && (_State->_BackgroundMode == BackgroundMode::Artwork))
+    if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground)
         artwork.Render(renderTarget, _Spectrum.GetBounds(), _State);
 }
 
@@ -148,33 +148,11 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// </summary>
 void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
 {
-    _XAxis.Render(renderTarget);
+//    _XAxis.Render(renderTarget);
 
-    _YAxis.Render(renderTarget);
-
-    if (_FlipHorizontally)
-    {
-        const FLOAT Width = _Bounds.right - _Bounds.left;
-
-        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, 0.f, 0.f);
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(Width, 0.f);
-
-        renderTarget->SetTransform(Flip * Translate);
-    }
-
-    if (_FlipVertically)
-    {
-        const FLOAT Height = _Bounds.bottom - _Bounds.top;
-
-        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height * 2.f);
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(0.f, Height);
-
-        renderTarget->SetTransform(Flip * Translate);
-    }
+//    _YAxis.Render(renderTarget);
 
     _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
-
-    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     RenderDescription(renderTarget);
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.02.17) P. Stuer **/
+/** $VER: Analysis.h (2024.02.21) P. Stuer **/
 
 #pragma once
 
@@ -30,7 +30,7 @@ public:
 
     virtual ~Analysis() { Reset(); };
 
-    void Initialize(const State * state, uint32_t channels) noexcept;
+    void Initialize(const State * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void UpdatePeakIndicators() noexcept;
 
@@ -54,7 +54,7 @@ private:
 
 public:
     const State * _State;
-    uint32_t _Channels;
+    const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;
 

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.02.14) P. Stuer **/
+/** $VER: Resources.rc (2024.02.20) P. Stuer **/
 
 #include "Resources.h"
 
@@ -209,6 +209,17 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
     groupbox "Common", IDC_COMMON, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 
+        rtext           "Spectrum smoothing:",      IDC_SMOOTHING_METHOD_LBL,       X_A17, Y_A17 + 2, W_A17, H_A17
+        combobox                                    IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Smoothing factor:"         IDC_SMOOTHING_FACTOR_LBL,       X_A37, Y_A37 + 2, W_A37, H_A37
+        edittext                                    IDC_SMOOTHING_FACTOR,           X_A38, Y_A38,     W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        control         "Tool tips",                IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
+        control         "Suppress mirror image",    IDC_SUPPRESS_MIRROR_IMAGE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
+
+    groupbox "Artwork", IDC_ARTWORK, X_B06, Y_B06, W_B06, H_B06, BS_GROUPBOX, WS_EX_TRANSPARENT
+
         rtext           "No. artwork colors:"       IDC_NUM_ARTWORK_COLORS_LBL,     X_G06, Y_G06 + 2, W_G06, H_G06
         edittext                                    IDC_NUM_ARTWORK_COLORS,         X_G07, Y_G07, W_G07, H_G07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_NUM_ARTWORK_COLORS_SPIN,    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
@@ -221,25 +232,30 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Sort colors by:",          IDC_COLOR_ORDER_LBL,            X_G11, Y_G11 + 2, W_G11, H_G11
         combobox                                    IDC_COLOR_ORDER,                X_G12, Y_G12,     W_G12, H_G12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Spectrum smoothing:",      IDC_SMOOTHING_METHOD_LBL,       X_A17, Y_A17 + 2, W_A17, H_A17
-        combobox                                    IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-
-        rtext           "Smoothing factor:"         IDC_SMOOTHING_FACTOR_LBL,       X_A37, Y_A37 + 2, W_A37, H_A37
-        edittext                                    IDC_SMOOTHING_FACTOR,           X_A38, Y_A38, W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-
-        control         "Tool tips",                IDC_SHOW_TOOLTIPS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
-        control         "Suppress mirror image:", , IDC_SUPPRESS_MIRROR_IMAGE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
-
-        rtext           "Background mode:",         IDC_BACKGROUND_MODE_LBL,        X_G01, Y_G01 + 2, W_G01, H_G01
-        combobox                                    IDC_BACKGROUND_MODE,            X_G02, Y_G02,     W_G02, H_G02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        control         "Show artwork on background" IDC_ARTWORK_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G02, Y_G02, W_G02, H_G02
 
         rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,        X_G03, Y_G03 + 2, W_G03, H_G03
-        edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04, W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_ARTWORK_OPACITY_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "%"                         IDC_ARTWORK_OPACITY_LBL_2,      X_G05, Y_G05 + 2, W_G05, H_G05
 
         rtext           "Artwork file path:"        IDC_FILE_PATH_LBL,              X_G13, Y_G13 + 2, W_G13, H_G13
-        edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14, W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
+
+    // Graph Settings
+
+    listbox IDC_GRAPH_SETTINGS, X_G20, Y_G20, W_G20, H_G20, LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+
+        pushbutton      "+",                        IDC_ADD_GRAPH,                  X_G21, Y_G21,     W_G21, H_G21
+        pushbutton      "-",                        IDC_REMOVE_GRAPH,               X_G22, Y_G22,     W_G22, H_G22
+
+        control         "Vertical layout" IDC_VERTICAL_LAYOUT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G23, Y_G23, W_G23, H_G23
+
+    rtext           "Description:"                  IDC_GRAPH_DESCRIPTION_LBL       X_G24, Y_G24 + 2, W_G24, H_G24
+    edittext                                        IDC_GRAPH_DESCRIPTION           X_G25, Y_G25,     W_G25, H_G25, ES_AUTOHSCROLL | WS_TABSTOP
+
+    control         "Flip horizontally"             IDC_FLIP_HORIZONTALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G26, Y_G26, W_G26, H_G26
+    control         "Flip vertically"               IDC_FLIP_VERTICALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G27, Y_G27, W_G27, H_G27
 
     groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -274,6 +290,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         rtext           "Gamma:"                    IDC_GAMMA_LBL,              X_A41, Y_A41 + 2, W_A41, H_A41
         edittext                                    IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    listbox IDC_CHANNELS_2, X_G28, Y_G28, W_G28, H_G28, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
     // Visualization
     rtext           "Type:",                    IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01

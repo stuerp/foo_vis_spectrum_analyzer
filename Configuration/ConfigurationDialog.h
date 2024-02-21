@@ -1,9 +1,12 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.14) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.02.21) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
 #include "framework.h"
+
+#include <sdk/coreDarkMode.h>
+
 #include "Support.h"
 
 #include "Resources.h"
@@ -13,9 +16,6 @@
 #include "CNumericEdit.h"
 #include "CColorButton.h"
 #include "CColorListBox.h"
-#include "CButtonMenu.h"
-
-#include <sdk/coreDarkMode.h>
 
 #include "StyleManager.h"
 
@@ -81,13 +81,11 @@ private:
     LRESULT OnDeltaPos(LPNMHDR nmhd);
     LRESULT OnChanged(LPNMHDR nmhd);
 
-    void OnChannels(UINT, int, HWND);
-
     void UpdateControls();
+    void UpdateGraphSettings() noexcept;
     void UpdateColorSchemeControls();
     void UpdateStyleControls();
     void UpdateGradientStopPositons(Style * style);
-    void UpdateChannelsMenu();
     void UpdatePages(size_t index) const noexcept;
 
     void ConfigurationChanged() const noexcept;
@@ -101,12 +99,9 @@ private:
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
-//      MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
         MSG_WM_CLOSE(OnClose)
 
         MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChanged)
-
-        COMMAND_RANGE_HANDLER_EX(IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST, OnChannels);
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
@@ -141,8 +136,6 @@ private:
     State _OldConfiguration;
 
     CMenuListBox _MenuList;
-
-    CButtonMenu _Channels;
 
     std::vector<CNumericEdit *> _NumericEdits;
 

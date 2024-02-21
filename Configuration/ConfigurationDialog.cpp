@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.02.14) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.21) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -13,6 +13,16 @@
 #include "Theme.h"
 
 #include "Log.h"
+
+// Display names for the audio_chunk channel bits.
+static const LPCWSTR ChannelNames[] =
+{
+    L"Front Left", L"Front Right", L"Front Center",
+    L"Low Frequency", L"Back Left", L"Back Right",
+    L"Front Left of Center", L"Front Right of Center",
+    L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
+    L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
+};
 
 /// <summary>
 /// Initializes the dialog.
@@ -122,20 +132,35 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_WT_AMT, L"Weighting amount" },
 
-            { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork" },
-            { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light" },
-            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork" },
-
+            // Common
             { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
             { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
 
             { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
 
-            { IDC_BACKGROUND_MODE, L"Determines how to render the spectrum background" },
+            // Artwork
+            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background" },
+
+            { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
+            { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
+            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork" },
 
             { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
-            { IDC_FILE_PATH, L"foobar2000 script that returns the file path of an image to display instead of the artwork" },
+            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background." },
+
+            // Graphs
+            { IDC_GRAPH_SETTINGS, L"Shows the list of graphs." },
+
+            { IDC_ADD_GRAPH, L"Adds a graph." },
+            { IDC_REMOVE_GRAPH, L"Removes the selected graph." },
+
+            { IDC_VERTICAL_LAYOUT, L"Enable to stack the graphs vertically instead of a horizontal line." },
+
+            { IDC_GRAPH_DESCRIPTION, L"Describes the configuration of this graph." },
+
+            { IDC_FLIP_HORIZONTALLY, L"Renders the spectrum from right to left." },
+            { IDC_FLIP_VERTICALLY, L"Renders the spectrum upside down." },
 
             // X-axis
             { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
@@ -153,6 +178,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
             { IDC_GAMMA, L"Index n of the n-th root calculation" },
+
+            { IDC_CHANNELS_2, L"Determines which channels are used to supply samples used in the spectrum calculation." },
 
             // Visualization
             { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
@@ -211,7 +238,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Graph", L"Visualization", L"Styles" })
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -230,17 +257,6 @@ void ConfigurationDialog::Initialize()
             w.AddString(x);
 
         w.SetCurSel((int) _State->_Transform);
-    }
-    #pragma endregion
-
-    #pragma region Channels
-    {
-        _Channels.Initialize(GetDlgItem(IDC_CHANNELS));
-
-        _Channels.SetExtendedMenuStyle(BMS_EX_CHECKMARKS);
-        _Channels.SetMenu(IDM_CHANNELS);
-
-        UpdateChannelsMenu();
     }
     #pragma endregion
 
@@ -712,94 +728,6 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
-    #pragma region X Axis
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
-
-        w.ResetContent();
-
-        for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
-            w.AddString(x);
-
-        w.SetCurSel((int) _State->_XAxisMode);
-    }
-
-    {
-        SendDlgItemMessageW(IDC_X_AXIS_TOP, BM_SETCHECK, _State->_XAxisTop);
-        SendDlgItemMessageW(IDC_X_AXIS_BOTTOM, BM_SETCHECK, _State->_XAxisBottom);
-    }
-    #pragma endregion
-
-    #pragma region Y Axis
-    {
-        {
-            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
-
-            w.ResetContent();
-
-            for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
-                w.AddString(x);
-
-            w.SetCurSel((int) _State->_YAxisMode);
-        }
-
-        {
-            SendDlgItemMessageW(IDC_Y_AXIS_LEFT, BM_SETCHECK, _State->_YAxisLeft);
-            SendDlgItemMessageW(IDC_Y_AXIS_RIGHT, BM_SETCHECK, _State->_YAxisRight);
-        }
-
-        {
-            UDACCEL Accel[] =
-            {
-                { 1,     10 }, //  0.1
-                { 2,    100 }, //  1.0
-                { 3,    250 }, //  2.5
-                { 4,    500 }, //  5.0
-            };
-
-            {
-                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_LO)); _NumericEdits.push_back(ne); SetDouble(IDC_AMPLITUDE_LO, _State->_AmplitudeLo);
-
-                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
-
-                w.SetAccel(_countof(Accel), Accel);
-
-                w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
-                w.SetPos32((int) (_State->_AmplitudeLo * 10.));
-            }
-
-            {
-                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_HI)); _NumericEdits.push_back(ne); SetDouble(IDC_AMPLITUDE_HI, _State->_AmplitudeHi);
-
-                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
-
-                w.SetAccel(_countof(Accel), Accel);
-
-                w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
-                w.SetPos32((int) (_State->_AmplitudeHi * 10.));
-            }
-
-            {
-                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_STEP)); _NumericEdits.push_back(ne); SetDouble(IDC_AMPLITUDE_STEP, _State->_AmplitudeStep, 0, 1);
-
-                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
-
-                w.SetAccel(_countof(Accel), Accel);
-
-                w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
-                w.SetPos32((int) (_State->_AmplitudeStep * 10.));
-            }
-        }
-
-        // Used by the Linear/n-th root y-axis mode.
-        {
-            SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, _State->_UseAbsolute);
-
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne); SetDouble(IDC_GAMMA, _State->_Gamma, 0, 1);
-        }
-    }
-    #pragma endregion
-
     #pragma region Common
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
@@ -817,16 +745,13 @@ void ConfigurationDialog::Initialize()
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTips);
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
     }
+    #pragma endregion
+
+    #pragma region Artwork
     {
-        auto w = (CComboBox) GetDlgItem(IDC_BACKGROUND_MODE);
-
-        w.ResetContent();
-
-        for (const auto & x : { L"None", L"Solid", L"Artwork" })
-            w.AddString(x);
-
-        w.SetCurSel((int) _State->_BackgroundMode);
+        SendDlgItemMessageW(IDC_ARTWORK_BACKGROUND, BM_SETCHECK, _State->_ShowArtworkOnBackground);
     }
+
     {
         UDACCEL Accel[] =
         {
@@ -891,6 +816,117 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    #pragma region Graphs
+    {
+        _State->_SelectedGraph = 0;
+
+        {
+            auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
+
+            for (const auto & Iter : _State->_GraphSettings)
+                w.AddString(Iter._Description.c_str());
+
+            w.SetCurSel(_State->_SelectedGraph);
+        }
+
+        auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+        {
+            SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
+        }
+
+        // X Axis
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
+
+            w.ResetContent();
+
+            for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
+                w.AddString(x);
+
+            w.SetCurSel((int) gs._XAxisMode);
+        }
+
+        // Y Axis
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
+
+            w.ResetContent();
+
+            for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
+                w.AddString(x);
+
+            w.SetCurSel((int) gs._YAxisMode);
+        }
+
+        {
+            UDACCEL Accel[] =
+            {
+                { 1,     10 }, //  0.1
+                { 2,    100 }, //  1.0
+                { 3,    250 }, //  2.5
+                { 4,    500 }, //  5.0
+            };
+
+            {
+                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_LO)); _NumericEdits.push_back(ne);
+
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+                w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
+
+                SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo);
+                w.SetPos32((int) (gs._AmplitudeLo * 10.));
+            }
+
+            {
+                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_HI)); _NumericEdits.push_back(ne);
+
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+                w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
+
+                SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi);
+                w.SetPos32((int) (gs._AmplitudeHi * 10.));
+            }
+
+            {
+                CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_STEP)); _NumericEdits.push_back(ne);
+
+                auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
+
+                w.SetAccel(_countof(Accel), Accel);
+                w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
+
+                SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+                w.SetPos32((int) (gs._AmplitudeStep* 10.));
+            }
+        }
+
+        // Used by the Linear/n-th root y-axis mode.
+        {
+            SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
+
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
+            SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
+        }
+
+        {
+            assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
+
+            auto w = (CListBox) GetDlgItem(IDC_CHANNELS_2);
+
+            for (const auto & x : ChannelNames)
+                w.AddString(x);
+        }
+
+        UpdateGraphSettings();
+    }
+
+    #pragma endregion
+
     #pragma region Visualization
     {
         auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
@@ -931,7 +967,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Styles
     {
-        _State->_CurrentStyle = (int) VisualElement::GraphBackground;
+        _State->_SelectedStyle = (int) VisualElement::GraphBackground;
 
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
@@ -942,7 +978,7 @@ void ConfigurationDialog::Initialize()
         for (const auto & x : Styles)
             w.AddString(pfc::wideFromUTF8(x._Name));
 
-        w.SetCurSel(_State->_CurrentStyle);
+        w.SetCurSel(_State->_SelectedStyle);
     }
 
     {
@@ -1020,8 +1056,6 @@ void ConfigurationDialog::Terminate()
         _ToolTipControl.DestroyWindow();
 
     _MenuList.Terminate();
-
-    _Channels.Terminate();
 
     _Color.Terminate();
 
@@ -1166,36 +1200,45 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         #pragma endregion
 
-        #pragma region Background Mode
+        #pragma region Graphs
 
-        case IDC_BACKGROUND_MODE:
+        case IDC_GRAPH_SETTINGS:
         {
-            _State->_BackgroundMode = (BackgroundMode) SelectedIndex;
+            _State->_SelectedGraph = (size_t) ((CListBox) w).GetCurSel();
 
-            UpdateControls();
-            break;
+            UpdateGraphSettings();
+
+            return;
         }
-
-        #pragma endregion
 
         #pragma region X axis
 
         case IDC_X_AXIS_MODE:
         {
-            _State->_XAxisMode = (XAxisMode) SelectedIndex;
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._XAxisMode = (XAxisMode) SelectedIndex;
+
+            UpdateGraphSettings();
             break;
         }
 
         #pragma endregion
 
         #pragma region Y axis
+
         case IDC_Y_AXIS_MODE:
         {
-            _State->_YAxisMode = (YAxisMode) SelectedIndex;
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            UpdateControls();
+            gs._YAxisMode = (YAxisMode) SelectedIndex;
+
+            UpdateGraphSettings();
             break;
         }
+
+        #pragma endregion
+
         #pragma endregion
 
         #pragma region Visualization
@@ -1226,7 +1269,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_STYLES:
         {
-            _State->_CurrentStyle = ((CListBox) w).GetCurSel();
+            _State->_SelectedStyle = ((CListBox) w).GetCurSel();
 
             UpdateStyleControls();
 
@@ -1235,7 +1278,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_SOURCE:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_ColorSource = (ColorSource) SelectedIndex;
 
@@ -1246,7 +1289,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_INDEX:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_ColorIndex = (uint32_t) SelectedIndex;
 
@@ -1257,7 +1300,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_SCHEME:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
@@ -1269,7 +1312,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_LIST:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             // Show the position of the selected color of the gradient.
             size_t Index = (size_t) _Colors.GetCurSel();
@@ -1404,9 +1447,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Script
 
-        case IDC_FILE_PATH:
+        case IDC_FILE_PATH: { _State->_ArtworkFilePath = pfc::utf8FromWide(Text); break; }
+
+        #pragma endregion
+
+        #pragma region Graphs
+
+        case IDC_GRAPH_DESCRIPTION:
         {
-            _State->_ArtworkFilePath = pfc::utf8FromWide(Text);
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._Description = Text;
             break;
         }
 
@@ -1414,10 +1465,37 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Y axis
 
-        case IDC_AMPLITUDE_LO: { _State->_AmplitudeLo = Min(Clamp(::_wtof(Text), MinAmplitude, MaxAmplitude), _State->_AmplitudeHi); break; }
-        case IDC_AMPLITUDE_HI: { _State->_AmplitudeHi = Max(Clamp(::_wtof(Text), MinAmplitude, MaxAmplitude), _State->_AmplitudeLo); break; }
-        case IDC_AMPLITUDE_STEP: { _State->_AmplitudeStep = Max(Clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep), _State->_AmplitudeStep); break; }
-        case IDC_GAMMA: { _State->_Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma); break; }
+        case IDC_AMPLITUDE_LO:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeLo = Clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
+            break;
+        }
+
+        case IDC_AMPLITUDE_HI:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeHi = Clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
+            break;
+        }
+
+        case IDC_AMPLITUDE_STEP:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeStep = Clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
+            break;
+        }
+
+        case IDC_GAMMA:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma);
+            break;
+        }
 
         #pragma endregion
 
@@ -1457,7 +1535,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_POSITION:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1483,7 +1561,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_OPACITY:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_Opacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
@@ -1491,7 +1569,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_THICKNESS:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_Thickness = (FLOAT) Clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
@@ -1574,10 +1652,33 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ARTWORK_OPACITY:       { SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f)); break; }
 
         // Y axis
-        case IDC_AMPLITUDE_LO:          { SetDouble(id, _State->_AmplitudeLo, 0, 1); break; }
-        case IDC_AMPLITUDE_HI:          { SetDouble(id, _State->_AmplitudeHi, 0, 1); break; }
-        case IDC_AMPLITUDE_STEP:        { SetDouble(id, _State->_AmplitudeStep, 0, 1); break; }
-        case IDC_GAMMA:                 { SetDouble(id, _State->_Gamma, 0, 1); break; }
+        case IDC_AMPLITUDE_LO:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            SetDouble(id, gs._AmplitudeLo, 0, 1);
+            break;
+        }
+        case IDC_AMPLITUDE_HI:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            SetDouble(id, gs._AmplitudeHi, 0, 1);
+            break;
+        }
+        case IDC_AMPLITUDE_STEP:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            SetDouble(id, gs._AmplitudeStep, 0, 1);
+            break;
+        }
+        case IDC_GAMMA:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            SetDouble(id, gs._Gamma, 0, 1); break;
+        }
 
         // Spectrum smoothing
         case IDC_SMOOTHING_FACTOR:      { SetDouble(id, _State->_SmoothingFactor, 0, 1); break; }
@@ -1587,8 +1688,8 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ACCELERATION:          { SetDouble(id, _State->_Acceleration, 0, 1); break; }
 
         // Styles
-        case IDC_OPACITY:               { SetInteger(id, (int64_t) (_State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle)->_Opacity * 100.f)); break; }
-        case IDC_THICKNESS:             { SetDouble(id, _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle)->_Thickness, 0, 1); break; }
+        case IDC_OPACITY:               { SetInteger(id, (int64_t) (_State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle)->_Opacity * 100.f)); break; }
+        case IDC_THICKNESS:             { SetDouble(id, _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle)->_Thickness, 0, 1); break; }
     }
 
     return;
@@ -1607,33 +1708,133 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         default:
             return;
 
-        case IDC_CHANNELS:
+        case IDC_GRANULAR_BW:
         {
-            BOOL Handled = TRUE;
-
-            _Channels.OnClicked(0, 0, 0, Handled);
-
-            return;
+            _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
         }
 
-        case IDC_GRANULAR_BW: { _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_SMOOTH_LOWER_FREQUENCIES: { _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_SMOOTH_GAIN_TRANSITION: { _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+        case IDC_SMOOTH_LOWER_FREQUENCIES:
+        {
+            _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
 
-        case IDC_X_AXIS_TOP: { _State->_XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_X_AXIS_BOTTOM: { _State->_XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_Y_AXIS_LEFT: { _State->_YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_Y_AXIS_RIGHT: { _State->_YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+        case IDC_SMOOTH_GAIN_TRANSITION:
+        {
+            _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
 
-        case IDC_USE_ABSOLUTE: { _State->_UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_SHOW_TOOLTIPS: { _State->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
-        case IDC_SUPPRESS_MIRROR_IMAGE: { _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+        case IDC_VERTICAL_LAYOUT:
+        {
+            _State->_VerticalLayout = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-        case IDC_LED_MODE: { _State->_LEDMode= (bool) SendDlgItemMessageW(id, BM_GETCHECK); break; }
+            auto lb = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
+
+            if (_State->_VerticalLayout)
+            {
+                _State->_GridRowCount    = (size_t) lb.GetCount();
+                _State->_GridColumnCount = (size_t) 1;
+            }
+            else
+            {
+                _State->_GridRowCount    = (size_t) 1;
+                _State->_GridColumnCount = (size_t) lb.GetCount();
+            }
+
+            for (auto & gs : _State->_GraphSettings)
+            {
+                gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
+                gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
+            }
+            break;
+        }
+
+        case IDC_FLIP_HORIZONTALLY:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_FLIP_VERTICALLY:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_X_AXIS_TOP:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_X_AXIS_BOTTOM:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_LEFT:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_RIGHT:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_USE_ABSOLUTE:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SHOW_TOOLTIPS:
+        {
+            _State->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SUPPRESS_MIRROR_IMAGE:
+        {
+            _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_LED_MODE:
+        {
+            _State->_LEDMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_ARTWORK_BACKGROUND:
+        {
+            _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            UpdateControls();
+            break;
+        }
 
         case IDC_ADD:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1660,7 +1861,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (_Colors.GetCount() == 1)
                 return;
 
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1676,7 +1877,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_REVERSE:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             std::reverse(style->_GradientStops.begin(), style->_GradientStops.end());
 
@@ -1687,7 +1888,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_SPREAD:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
@@ -1696,7 +1897,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_HORIZONTAL_GRADIENT:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
                 style->_Flags |= Style::HorizontalGradient;
@@ -1860,22 +2061,28 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_LO_SPIN:
         {
-            _State->_AmplitudeLo = Min(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _State->_AmplitudeHi);
-            SetDouble(IDC_AMPLITUDE_LO, _State->_AmplitudeLo, 0, 1);
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gs._AmplitudeHi, 10.);
+            SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
-            _State->_AmplitudeHi = Max(ClampNewSpinPosition(nmud, MinAmplitude, MaxAmplitude, 10.), _State->_AmplitudeLo);
-            SetDouble(IDC_AMPLITUDE_HI, _State->_AmplitudeHi, 0, 1);
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeHi = ClampNewSpinPosition(nmud, gs._AmplitudeLo, MaxAmplitude, 10.);
+            SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
-            _State->_AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
-            SetDouble(IDC_AMPLITUDE_STEP, _State->_AmplitudeStep, 0, 1);
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
+            SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
             break;
         }
 
@@ -1916,7 +2123,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_OPACITY_SPIN:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_Opacity = (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.);
             SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
@@ -1925,7 +2132,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_THICKNESS_SPIN:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             style->_Thickness = (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.);
             SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
@@ -1953,7 +2160,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_LIST:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             std::vector<D2D1_COLOR_F> Colors;
 
@@ -1976,7 +2183,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_BUTTON:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_CurrentStyle);
+            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
 
             _Color.GetColor(style->_CustomColor);
 
@@ -1991,37 +2198,6 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
     ConfigurationChanged();
 
     return 0;
-}
-
-/// <summary>
-/// Handles a selection from the Channels menu.
-/// </summary>
-void ConfigurationDialog::OnChannels(UINT, int id, HWND)
-{
-    CMenuHandle & Menu = _Channels.GetMenu();
-
-    bool IsChecked = (Menu.GetMenuState((UINT) id, MF_BYCOMMAND) & MF_CHECKED);
-
-    if (id == IDM_CHANNELS_LAST)
-    {
-        _State->_SelectedChannels = IsChecked ? 0 : AllChannels;
-    }
-    else
-    if (InRange(id, IDM_CHANNELS_FIRST, IDM_CHANNELS_LAST - 1))
-    {
-        uint32_t Mask = 1U << (id - IDM_CHANNELS_FIRST);
-
-        if (IsChecked)
-            _State->_SelectedChannels &= ~Mask;
-        else
-            _State->_SelectedChannels |=  Mask;
-    }
-    else
-        return;
-
-    UpdateChannelsMenu();
-
-    ConfigurationChanged();
 }
 
 /// <summary>
@@ -2099,12 +2275,22 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
 
-            IDC_BACKGROUND_MODE_LBL, IDC_BACKGROUND_MODE,
+        IDC_ARTWORK,
+            IDC_ARTWORK_BACKGROUND,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
+    };
+
+    static const int Page5[] =
+    {
+        IDC_GRAPH_SETTINGS,
+
+            IDC_ADD_GRAPH, IDC_REMOVE_GRAPH, IDC_VERTICAL_LAYOUT,
+
+        IDC_GRAPH_DESCRIPTION_LBL, IDC_GRAPH_DESCRIPTION, IDC_FLIP_HORIZONTALLY, IDC_VERTICAL_LAYOUT, IDC_CHANNELS_2,
 
         // X axis
         IDC_X_AXIS,
@@ -2121,7 +2307,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_GAMMA_LBL, IDC_GAMMA,
     };
 
-    static const int Page5[] =
+    static const int Page6[] =
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
@@ -2132,7 +2318,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_LED_MODE,
     };
 
-    static const int Page6[] =
+    static const int Page7[] =
     {
         IDC_STYLES,
 
@@ -2204,6 +2390,16 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
     for (size_t i = 0; i < _countof(Page6); ++i)
     {
         auto w = GetDlgItem(Page6[i]);
+
+        if (w.IsWindow())
+            w.ShowWindow(Mode);
+    }
+
+    Mode = (index == 6) ? SW_SHOW : SW_HIDE;
+
+    for (size_t i = 0; i < _countof(Page7); ++i)
+    {
+        auto w = GetDlgItem(Page7[i]);
 
         if (w.IsWindow())
             w.ShowWindow(Mode);
@@ -2293,24 +2489,9 @@ void ConfigurationDialog::UpdateControls()
         for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
             GetDlgItem(Iter).EnableWindow(HasFilter);
 
-    // Background Mode
-    const bool UseArtworkForBackground = (_State->_BackgroundMode == BackgroundMode::Artwork);
-
-        GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(UseArtworkForBackground);
-        GetDlgItem(IDC_FILE_PATH).EnableWindow(UseArtworkForBackground);
-
-    // X axis
-    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(_State->_XAxisMode != XAxisMode::None);
-    GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(_State->_XAxisMode != XAxisMode::None);
-
-    // Y axis
-    GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(_State->_YAxisMode != YAxisMode::None);
-    GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(_State->_YAxisMode != YAxisMode::None);
-
-    const bool IsLinear = (_State->_YAxisMode == YAxisMode::Linear);
-
-        for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear);
+    // Artwork
+    GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
+    GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 
     // Visualization
     const bool ShowPeaks = (_State->_PeakMode != PeakMode::None);
@@ -2363,6 +2544,53 @@ static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
     };
 
     return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+}
+
+/// <summary>
+/// Updates the graph settings controls with the current configuration.
+/// </summary>
+void ConfigurationDialog::UpdateGraphSettings() noexcept
+{
+    int Selection = ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).GetCurSel();
+
+    if (!InRange(Selection, 0, (int) _State->_GraphSettings.size() - 1))
+        return;
+
+    const auto & gs = _State->_GraphSettings[(size_t) Selection];
+
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
+
+    CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
+    CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
+
+    // X axis
+    CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
+    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
+
+    CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
+    GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
+
+    // Y axis
+
+    GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(gs._YAxisMode != YAxisMode::None);
+    GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gs._YAxisMode != YAxisMode::None);
+
+    const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
+
+        for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
+            GetDlgItem(Iter).EnableWindow(IsLinear);
+
+    // Channels
+    auto lb = (CListBox) GetDlgItem(IDC_CHANNELS_2);
+
+    uint32_t Channels = gs._Channels;
+
+    for (int i = 0; i < _countof(ChannelNames); ++i)
+    {
+        lb.SetSel(i, (Channels & 1) ? TRUE : FALSE);
+
+        Channels >>= 1;
+    }
 }
 
 /// <summary>
@@ -2545,25 +2773,6 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
     // Save the current result as custom gradient stops.
     style->_ColorScheme = ColorScheme::Custom;
     style->_CustomGradientStops = style->_GradientStops;
-}
-
-/// <summary>
-/// Updates the Channes menu with the current configuration.
-/// </summary>
-void ConfigurationDialog::UpdateChannelsMenu()
-{
-    CMenuHandle & Menu = _Channels.GetMenu();
-
-    uint32_t SelectedChannels = _State->_SelectedChannels;
-
-    for (UINT i = IDM_CHANNELS_FIRST; i < IDM_CHANNELS_LAST; ++i)
-    {
-        Menu.CheckMenuItem(i, (UINT) (MF_BYCOMMAND | ((SelectedChannels & 1) ? MF_CHECKED : 0)));
-
-        SelectedChannels >>= 1;
-    }
-
-    Menu.CheckMenuItem(IDM_CHANNELS_LAST, (UINT) (MF_BYCOMMAND | ((_State->_SelectedChannels == AllChannels) ? MF_CHECKED : 0)));
 }
 
 /// <summary>
