@@ -30,9 +30,6 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _State = state;
     _GraphSettings = settings;
 
-    _FlipHorizontally = settings->_FlipHorizontally;
-    _FlipVertically   = settings->_FlipVertically;
-
     _Description = settings->_Description;
 
     _Analysis.Initialize(state, settings);
@@ -121,7 +118,7 @@ bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const no
     if (!InRange(x, Bounds.left, Bounds.right))
         return false;
 
-    if (_FlipHorizontally)
+    if (_GraphSettings->_FlipHorizontally)
         x = (Bounds.right + Bounds.left) - x;
 
     index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -148,9 +145,9 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// </summary>
 void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
 {
-//    _XAxis.Render(renderTarget);
+    _XAxis.Render(renderTarget);
 
-//    _YAxis.Render(renderTarget);
+    _YAxis.Render(renderTarget);
 
     _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
 

@@ -36,27 +36,28 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-/*
-    if (_FlipHorizontally)
+    D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
+
+    if (_GraphSettings->_FlipHorizontally)
     {
         const FLOAT Width = _Bounds.right - _Bounds.left;
 
-        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, 0.f, 0.f);
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(Width, 0.f);
-
-        renderTarget->SetTransform(Flip * Translate);
+        Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
     }
 
-    if (_FlipVertically)
+    if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
     {
         const FLOAT Height = _Bounds.bottom - _Bounds.top;
 
-        D2D1::Matrix3x2F Flip = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height * .25f);
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(0.f, Height);
+        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
 
-        renderTarget->SetTransform(Flip * Translate);
+        Transform = Transform * FlipV;
     }
-*/
+
+    D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
+
+    renderTarget->SetTransform(Transform * Translate);
+
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
@@ -80,6 +81,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
 
 /// <summary>
 /// Renders the spectrum analysis as bars.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
 void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
@@ -87,12 +89,12 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-    FLOAT x1 = _Bounds.left;
+    FLOAT x1 = 0.f;
     FLOAT x2 = x1 + BandWidth;
 
     for (const FrequencyBand & Iter : frequencyBands)
     {
-        D2D1_RECT_F Rect = { x1, _Bounds.top, x2 - PaddingX, _Bounds.bottom - PaddingY };
+        D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, Height - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
         if ((_LightBackgroundStyle->_ColorSource != ColorSource::None) && !Iter.HasDarkBackground)
@@ -108,7 +110,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             // Draw the foreground.
             if (Iter.CurValue > 0.0)
             {
-                Rect.top = Clamp((FLOAT)(_Bounds.bottom - (Height * _GraphSettings->ScaleA(Iter.CurValue))), _Bounds.top, _Bounds.bottom);
+                Rect.bottom = Clamp((FLOAT)(Height * _GraphSettings->ScaleA(Iter.CurValue)), 0.f, Height);
 
                 renderTarget->FillRectangle(Rect, _ForegroundStyle->_Brush);
 
@@ -119,8 +121,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             // Draw the peak indicator.
             if ((_State->_PeakMode != PeakMode::None) && (Iter.Peak > 0.))
             {
-                Rect.top    = ::ceil(Clamp((FLOAT)(_Bounds.bottom - (Height * Iter.Peak) - (_PeakIndicatorStyle->_Thickness / 2.f)), _Bounds.top, _Bounds.bottom));
-                Rect.bottom = ::ceil(Clamp(Rect.top                                      + (_PeakIndicatorStyle->_Thickness / 2.f),  _Bounds.top, _Bounds.bottom));
+                Rect.top    = ::ceil(Clamp((FLOAT)(Height * Iter.Peak) - (_PeakIndicatorStyle->_Thickness / 2.f), _Bounds.top, _Bounds.bottom));
+                Rect.bottom = ::ceil(Clamp(Rect.top                    + (_PeakIndicatorStyle->_Thickness / 2.f), _Bounds.top, _Bounds.bottom));
 
                 FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Iter.Opacity : _PeakIndicatorStyle->_Opacity;
 
@@ -291,6 +293,7 @@ HRESULT Spectrum::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 
 /// <summary>
 /// Creates the geometry points from the amplitudes of the spectrum.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
 HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & points)
 {
@@ -303,7 +306,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
-    FLOAT x = _Bounds.left + (BandWidth / 2.f); // Make sure the knots are nicely centered in the bar rectangle.
+    FLOAT x = BandWidth / 2.f; // Make sure the knots are nicely centered in the band rectangle.
     FLOAT y = 0.f;
 
     // Create all the knots.
@@ -315,11 +318,11 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
 
         double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
 
-        y = Clamp((FLOAT)(_Bounds.bottom - (Height * Value)), _Bounds.top, _Bounds.bottom);
+        y = Clamp((FLOAT)(Value * Height), 0.f, Height);
 
         points.p0.push_back(D2D1::Point2F(x, y));
 
-        if (y < _Bounds.bottom)
+        if (y > 0.f)
             IsFlatLine = false;
 
         x += BandWidth;
@@ -338,8 +341,8 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
 
         for (size_t i = 0; i < (n - 1); ++i)
         {
-            points.p1[i].y = Clamp(points.p1[i].y, _Bounds.top, _Bounds.bottom);
-            points.p2[i].y = Clamp(points.p2[i].y, _Bounds.top, _Bounds.bottom);
+            points.p1[i].y = Clamp(points.p1[i].y, 0.f, Height);
+            points.p2[i].y = Clamp(points.p2[i].y, 0.f, Height);
         }
     }
 
@@ -367,11 +370,11 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 
         if (isFilled)
         {
-            Sink->BeginFigure(D2D1::Point2F(_Bounds.left, _Bounds.bottom), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
-            Sink->AddLine(D2D1::Point2F(_Bounds.left, gp.p0[0].y));
+            Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+            Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
         }
         else
-            Sink->BeginFigure(D2D1::Point2F(_Bounds.left, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
+            Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
 
         const size_t n = gp.p1.size();
 
@@ -379,7 +382,7 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
             Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
 
         if (isFilled)
-            Sink->AddLine(D2D1::Point2F(gp.p0[n].x, _Bounds.bottom)); // End with a vertical line going down.
+            Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
 
         Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 

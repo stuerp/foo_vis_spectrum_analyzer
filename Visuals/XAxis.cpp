@@ -16,8 +16,6 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
     _State = state;
     _GraphSettings = settings;
 
-    _FlipHorizontally = settings->_FlipHorizontally;
-
     CreateDeviceIndependentResources();
 
     _Labels.clear();
@@ -152,7 +150,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT BandWidth = Max((Width / (FLOAT) _BandCount), 1.f);
 
-    const FLOAT StartX = !_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
+    const FLOAT StartX = !_GraphSettings->_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
 
     const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _Height : 0.f);  // Top axis
     const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _Height : 0.f);  // Bottom axis
@@ -160,7 +158,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
     for (Label & Iter : _Labels)
     {
         const FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
-        const FLOAT x = !_FlipHorizontally ? StartX + dx : StartX - dx;
+        const FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
 
         // Don't generate any labels outside the bounds.
         if (!InRange(x, _Bounds.left, _Bounds.right))

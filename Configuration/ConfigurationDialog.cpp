@@ -72,7 +72,6 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
                                        "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample)\n"
                                        "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
                                        "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
-            { IDC_CHANNELS, L"Determines which channels supply samples" },
 
             { IDC_NUM_BINS, L"Sets the number of bins used by the Fourier transforms" },
             { IDC_NUM_BINS_PARAMETER, L"Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
@@ -179,7 +178,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
             { IDC_GAMMA, L"Index n of the n-th root calculation" },
 
-            { IDC_CHANNELS_2, L"Determines which channels are used to supply samples used in the spectrum calculation." },
+            { IDC_CHANNELS, L"Determines which channels are used to supply samples used in the spectrum calculation." },
 
             // Visualization
             { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
@@ -820,15 +819,6 @@ void ConfigurationDialog::Initialize()
     {
         _State->_SelectedGraph = 0;
 
-        {
-            auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
-
-            for (const auto & Iter : _State->_GraphSettings)
-                w.AddString(Iter._Description.c_str());
-
-            w.SetCurSel(_State->_SelectedGraph);
-        }
-
         auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
         {
@@ -916,7 +906,7 @@ void ConfigurationDialog::Initialize()
         {
             assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
 
-            auto w = (CListBox) GetDlgItem(IDC_CHANNELS_2);
+            auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
             for (const auto & x : ChannelNames)
                 w.AddString(x);
@@ -1234,6 +1224,24 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
             gs._YAxisMode = (YAxisMode) SelectedIndex;
 
             UpdateGraphSettings();
+            break;
+        }
+
+        case IDC_CHANNELS:
+        {
+            auto lb = (CListBox) GetDlgItem(id);
+
+            int Count = lb.GetSelCount();
+            std::vector<int> Items((size_t) Count);
+
+            lb.GetSelItems(Count, Items.data());
+
+            uint32_t Channels = 0;
+
+            for (int Item : Items)
+                Channels |= 1 << Item;
+
+            _State->_GraphSettings[_State->_SelectedGraph]._Channels = Channels;
             break;
         }
 
@@ -1730,24 +1738,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             _State->_VerticalLayout = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            auto lb = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
-
-            if (_State->_VerticalLayout)
-            {
-                _State->_GridRowCount    = (size_t) lb.GetCount();
-                _State->_GridColumnCount = (size_t) 1;
-            }
-            else
-            {
-                _State->_GridRowCount    = (size_t) 1;
-                _State->_GridColumnCount = (size_t) lb.GetCount();
-            }
-
-            for (auto & gs : _State->_GraphSettings)
-            {
-                gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
-                gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
-            }
+            UpdateGraphSettings();
             break;
         }
 
@@ -1764,6 +1755,30 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
             gs._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_ADD_GRAPH:
+        {
+            const std::wstring Description = (LPCWSTR) pfc::wideFromUTF8(pfc::format(_State->_GraphSettings.size() + 1));
+
+            _State->_GraphSettings.insert(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph + 1, GraphSettings(Description));
+
+            _IsInitializing = true;
+
+            UpdateGraphSettings();
+
+            _IsInitializing = false;
+            break;
+        }
+
+        case IDC_REMOVE_GRAPH:
+        {
+            _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph);
+
+            _State->_SelectedGraph = Clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
+
+            UpdateGraphSettings();
             break;
         }
 
@@ -2214,7 +2229,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
             IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
             IDC_REACTION_ALIGNMENT_LBL, IDC_REACTION_ALIGNMENT,
-            IDC_CHANNELS,
 
         // FFT
         IDC_FFT_GROUP,
@@ -2290,7 +2304,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
             IDC_ADD_GRAPH, IDC_REMOVE_GRAPH, IDC_VERTICAL_LAYOUT,
 
-        IDC_GRAPH_DESCRIPTION_LBL, IDC_GRAPH_DESCRIPTION, IDC_FLIP_HORIZONTALLY, IDC_VERTICAL_LAYOUT, IDC_CHANNELS_2,
+        IDC_GRAPH_DESCRIPTION_LBL, IDC_GRAPH_DESCRIPTION, IDC_VERTICAL_LAYOUT, IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY,
 
         // X axis
         IDC_X_AXIS,
@@ -2305,6 +2319,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
+
+        IDC_CHANNELS,
     };
 
     static const int Page6[] =
@@ -2551,12 +2567,37 @@ static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
 /// </summary>
 void ConfigurationDialog::UpdateGraphSettings() noexcept
 {
-    int Selection = ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).GetCurSel();
+    {
+        auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
 
-    if (!InRange(Selection, 0, (int) _State->_GraphSettings.size() - 1))
-        return;
+        w.ResetContent();
 
-    const auto & gs = _State->_GraphSettings[(size_t) Selection];
+        for (const auto & Iter : _State->_GraphSettings)
+            w.AddString(Iter._Description.c_str());
+
+        w.SetCurSel((int) _State->_SelectedGraph);
+    }
+
+    if (_State->_VerticalLayout)
+    {
+        _State->_GridRowCount    = (size_t) _State->_GraphSettings.size();
+        _State->_GridColumnCount = (size_t) 1;
+    }
+    else
+    {
+        _State->_GridRowCount    = (size_t) 1;
+        _State->_GridColumnCount = (size_t) _State->_GraphSettings.size();
+    }
+
+    for (auto & gs : _State->_GraphSettings)
+    {
+        gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
+        gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
+    }
+
+    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphSettings.size() > 1);
+
+    const auto & gs = _State->_GraphSettings[(size_t) _State->_SelectedGraph];
 
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
@@ -2565,12 +2606,14 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
 
     // X axis
     CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
-    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
-
     CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
+
+    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
     GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
 
     // Y axis
+    CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
+    CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
     GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(gs._YAxisMode != YAxisMode::None);
     GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gs._YAxisMode != YAxisMode::None);
@@ -2581,15 +2624,17 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
             GetDlgItem(Iter).EnableWindow(IsLinear);
 
     // Channels
-    auto lb = (CListBox) GetDlgItem(IDC_CHANNELS_2);
-
-    uint32_t Channels = gs._Channels;
-
-    for (int i = 0; i < _countof(ChannelNames); ++i)
     {
-        lb.SetSel(i, (Channels & 1) ? TRUE : FALSE);
+        auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        Channels >>= 1;
+        uint32_t Channels = gs._Channels;
+
+        for (int i = 0; i < _countof(ChannelNames); ++i)
+        {
+            w.SetSel(i, (Channels & 1) ? TRUE : FALSE);
+
+            Channels >>= 1;
+        }
     }
 }
 

@@ -168,7 +168,7 @@ public:
 
             ColorOrder _ColorOrder;
 
-            BackgroundMode _BackgroundMode;
+            BackgroundMode _BackgroundMode_Deprecated;
             bool _ShowArtworkOnBackground;
 
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0

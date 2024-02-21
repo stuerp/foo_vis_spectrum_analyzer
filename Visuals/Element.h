@@ -18,7 +18,4 @@ public:
 protected:
     State * _State;
     const GraphSettings * _GraphSettings;
-
-    bool _FlipHorizontally;
-    bool _FlipVertically;
 };

@@ -171,7 +171,7 @@ void State::Reset() noexcept
 
     _ColorOrder = ColorOrder::None;
 
-    _BackgroundMode = BackgroundMode::Artwork;                      // Deprecated
+    _BackgroundMode_Deprecated = BackgroundMode::Artwork;
     _ShowArtworkOnBackground = true;
     _ArtworkOpacity = 1.f;
     _ArtworkFilePath.clear();
@@ -181,29 +181,12 @@ void State::Reset() noexcept
 
     _GraphSettings.clear();
 
-    static const GraphSettings DefaultGraphSettings[] =
-    {
-//      { L"Stereo", audio_chunk::channel_config_2point1, false, true },
-
-        {
-            L"Left",  audio_chunk::channel_front_left,  .5f, 1.f, true,  false,
-            XAxisMode::Notes, true, true                                        // X-axis
-
-        },
-        {
-            L"Right", audio_chunk::channel_front_right, .5f, 1.f, false, false,
-            XAxisMode::Notes, true, true                                        // X-axis
-        },
-
-    };
-
-    for (const auto & gs : DefaultGraphSettings)
-        _GraphSettings.push_back(gs);
+    _GraphSettings.push_back(GraphSettings(L"Stereo"));
 
     _VerticalLayout = false;
 
     _GridRowCount = 1;
-    _GridColumnCount = 2;
+    _GridColumnCount = 1;
 
     /** Visualization **/
 
@@ -402,7 +385,7 @@ State & State::operator=(const State & other)
 
         _ColorOrder = other._ColorOrder;
 
-        _BackgroundMode = other._BackgroundMode;                //Deprecated
+        _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;                //Deprecated
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
         _ArtworkOpacity = other._ArtworkOpacity;
         _ArtworkFilePath = other._ArtworkFilePath;
@@ -618,9 +601,9 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 10)
         {
-            reader->read(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler); _BackgroundMode = Clamp(_BackgroundMode, BackgroundMode::None, BackgroundMode::Artwork);
+            reader->read(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler); _BackgroundMode_Deprecated = Clamp(_BackgroundMode_Deprecated, BackgroundMode::None, BackgroundMode::Artwork);
 
-            _ShowArtworkOnBackground = (_BackgroundMode == BackgroundMode::Artwork);
+            _ShowArtworkOnBackground = (_BackgroundMode_Deprecated == BackgroundMode::Artwork);
 
             reader->read(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
 
@@ -836,7 +819,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write(&_AreaOpacity_Deprecated, sizeof(_AreaOpacity_Deprecated), abortHandler);
 
         // Version 10
-        writer->write(&_BackgroundMode, sizeof(_BackgroundMode), abortHandler);
+        writer->write(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler);
         writer->write(&_ArtworkOpacity, sizeof(_ArtworkOpacity), abortHandler);
 
         writer->write(&_NumArtworkColors, sizeof(_NumArtworkColors), abortHandler);
@@ -920,9 +903,9 @@ void State::ConvertColorSettings() noexcept
 
         style->_ColorScheme = _ColorScheme_Deprecated;
 
-        if ((_BackgroundMode > BackgroundMode::Artwork) && (_ArtworkGradientStops.size() > 0))
+        if ((_BackgroundMode_Deprecated > BackgroundMode::Artwork) && (_ArtworkGradientStops.size() > 0))
         {
-            _BackgroundMode = BackgroundMode::Artwork;
+            _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style->_ColorSource = ColorSource::DominantColor;
             style->_Color = _DominantColor;

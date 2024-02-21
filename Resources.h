@@ -80,13 +80,6 @@
 #define IDC_REACTION_ALIGNMENT_LBL      2032
 #define IDC_REACTION_ALIGNMENT          2034
 
-#define IDC_CHANNELS                    2038
-
-#define IDM_CHANNELS                    9000
-
-#define IDM_CHANNELS_FIRST              9100
-#define IDM_CHANNELS_LAST               9118
-
 #pragma endregion
 
 #pragma region FFT
@@ -302,7 +295,7 @@
 #define IDC_FLIP_HORIZONTALLY           5112
 #define IDC_FLIP_VERTICALLY             5114
 
-#define IDC_CHANNELS_2                  5116
+#define IDC_CHANNELS                    5116
 
 #pragma endregion
 
