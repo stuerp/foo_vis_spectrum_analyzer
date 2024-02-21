@@ -13,7 +13,7 @@
 struct GraphSettings
 {
 public:
-    GraphSettings(const std::wstring & description)
+    GraphSettings(const pfc::string & description)
     {
         _Description = description;
         _Channels = audio_chunk::channel_config_stereo;
@@ -42,7 +42,7 @@ public:
     double ScaleA(double value) const;
 
 public:
-    std::wstring _Description;
+    pfc::string _Description;
     uint32_t _Channels;
     bool _FlipHorizontally;
     bool _FlipVertically;
@@ -64,4 +64,6 @@ public:
 
     FLOAT _HRatio;
     FLOAT _VRatio;
+
+    static const uint32_t _CurentVersion = 1;
 };

@@ -181,7 +181,7 @@ void State::Reset() noexcept
 
     _GraphSettings.clear();
 
-    _GraphSettings.push_back(GraphSettings(L"Stereo"));
+    _GraphSettings.push_back(GraphSettings("Stereo"));
 
     _VerticalLayout = false;
 
@@ -878,12 +878,38 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         // Version 17
         writer->write(&_FitMode, sizeof(_FitMode), abortHandler);
 
-        // Version 18
-        writer->write_object_t(&_ShowArtworkOnBackground, abortHandler);
+        // Version 18, v0.7.1.0-beta-2
+        writer->write_object_t(_ShowArtworkOnBackground, abortHandler);
 
-//      _GraphSettings.write();
+        writer->write_object_t(GraphSettings::_CurentVersion, abortHandler);
 
-        writer->write_object_t(&_VerticalLayout, abortHandler);
+        writer->write_object_t(_VerticalLayout, abortHandler);
+
+        for (auto & gs : _GraphSettings)
+        {
+            writer->write_string(gs._Description, abortHandler);
+            writer->write_object_t(gs._Channels, abortHandler);
+            writer->write_object_t(gs._FlipHorizontally, abortHandler);
+            writer->write_object_t(gs._FlipVertically, abortHandler);
+
+            writer->write_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
+            writer->write_object_t(gs._XAxisTop, abortHandler);
+            writer->write_object_t(gs._XAxisBottom, abortHandler);
+
+            writer->write_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
+            writer->write_object_t(gs._YAxisLeft, abortHandler);
+            writer->write_object_t(gs._YAxisRight, abortHandler);
+
+            writer->write_object_t(gs._AmplitudeLo, abortHandler);
+            writer->write_object_t(gs._AmplitudeHi, abortHandler);
+            writer->write_object_t(gs._AmplitudeStep, abortHandler);
+
+            writer->write_object_t(gs._UseAbsolute, abortHandler);
+            writer->write_object_t(gs._Gamma, abortHandler);
+
+            writer->write_object_t(gs._HRatio, abortHandler);
+            writer->write_object_t(gs._VRatio, abortHandler);
+        }
     }
     catch (exception & ex)
     {

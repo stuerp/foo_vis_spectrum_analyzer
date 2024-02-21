@@ -1465,7 +1465,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._Description = Text;
+            gs._Description = pfc::utf8FromWide(Text);
             break;
         }
 
@@ -1764,7 +1764,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             int Index = (int) _State->_GraphSettings.size();
 
-            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
+            CHAR Description[32]; ::StringCchPrintfA(Description, _countof(Description), "Graph %d", Index + 1);
 
             NewGraphSettings._Description = Description;
 
@@ -2582,7 +2582,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
         w.ResetContent();
 
         for (const auto & Iter : _State->_GraphSettings)
-            w.AddString(Iter._Description.c_str());
+            w.AddString(pfc::wideFromUTF8(Iter._Description));
 
         w.SetCurSel((int) _State->_SelectedGraph);
     }
@@ -2608,7 +2608,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
 
     const auto & gs = _State->_GraphSettings[(size_t) _State->_SelectedGraph];
 
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, pfc::wideFromUTF8(gs._Description));
 
     CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
     CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
