@@ -90,6 +90,7 @@ v0.7.1.0-beta-2, 2024-02-xx
 * New: Multiple graphs.
   * Each graph can be configured to show the analysis of one or more channels.
   * A graph can be flipped horizontally or vertically.
+  * Graphs can be stacked vertically or on a horizontal line.
 * New: Context menu item to freeze and unfreeze the component.
 * Improved: Rendering and spectrum computation are not performed when the component window is hidden (to reduce the load on the computer).
 

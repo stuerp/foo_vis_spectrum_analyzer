@@ -189,7 +189,7 @@ private:
 
     Artwork _Artwork;
     bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
+    bool _NewArtworkColors;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 

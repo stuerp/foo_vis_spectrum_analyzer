@@ -198,7 +198,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         }
 
         Menu.AppendMenu((UINT) MF_SEPARATOR);
-        Menu.AppendMenu((UINT) MF_STRING | (_IsFrozen ? MF_CHECKED : 0), IDM_FREEZE, L"Frozen");
+        Menu.AppendMenu((UINT) MF_STRING | (_IsFrozen ? MF_CHECKED : 0), IDM_FREEZE, (_IsFrozen ? L"Frozen" : L"Freeze"));
 
         Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
@@ -466,7 +466,7 @@ void UIElement::UpdateState() noexcept
 
     _CriticalSection.Leave();
 
-    _NewArtworkGradient = true; // Request an update of the artwork gradient.
+    _NewArtworkColors = true; // Request an update of the artwork gradient.
 
     _ToolTipControl.Activate(_RenderState._ShowToolTips);
 

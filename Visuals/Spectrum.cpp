@@ -178,8 +178,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 
     Points.Clear();
 
-    if (SUCCEEDED(hr))
-        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, Points);
+    hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, Points);
 
     // Draw the area with the current values.
     if (SUCCEEDED(hr))

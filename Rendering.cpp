@@ -73,10 +73,16 @@ void UIElement::OnTimer()
     // Notify the configuration dialog about the changed gradient colors.
     if (_IsConfigurationChanged && _ConfigurationDialog.IsWindow())
     {
-        _ConfigurationDialog.SendMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+        _CriticalSection.Enter();
 
-        _IsConfigurationChanged = false;
+        _State._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+
+        _CriticalSection.Leave();
+
+        _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
     }
+
+    _IsConfigurationChanged = false;
 }
 
 /// <summary>
@@ -292,17 +298,18 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
 
         hr = _Artwork.Realize(_RenderTarget);
-        _NewArtworkGradient = true;
+
+        _NewArtworkColors = SUCCEEDED(hr);
 
         _NewArtwork = false;
     }
 
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkGradient))
+    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkColors))
     {
         hr = CreateArtworkDependentResources();
 
-        _NewArtworkGradient = false;
+        _NewArtworkColors = false;
     }
 
     return hr;

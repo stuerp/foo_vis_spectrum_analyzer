@@ -178,7 +178,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
             { IDC_GAMMA, L"Index n of the n-th root calculation" },
 
-            { IDC_CHANNELS, L"Determines which channels are used to supply samples used in the spectrum calculation." },
+            { IDC_CHANNELS, L"Determines which channels are used to calculate the spectrum." },
 
             // Visualization
             { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
@@ -1760,15 +1760,24 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD_GRAPH:
         {
-            const std::wstring Description = (LPCWSTR) pfc::wideFromUTF8(pfc::format(_State->_GraphSettings.size() + 1));
+            GraphSettings NewGraphSettings = _State->_GraphSettings[_State->_SelectedGraph];
 
-            _State->_GraphSettings.insert(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph + 1, GraphSettings(Description));
+            int Index = (int) _State->_GraphSettings.size();
+
+            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
+
+            NewGraphSettings._Description = Description;
+
+            _State->_GraphSettings.insert(_State->_GraphSettings.begin() + (int) Index, NewGraphSettings);
 
             _IsInitializing = true;
 
             UpdateGraphSettings();
 
             _IsInitializing = false;
+
+            ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).SetCurSel(Index);
+            _State->_SelectedGraph = (size_t) Index;
             break;
         }
 
@@ -2901,7 +2910,7 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
     if (_IsInitializing)
         return;
 
-    ::SendMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ::PostMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
 
 //  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
 }

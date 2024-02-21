@@ -14,10 +14,9 @@ double GraphSettings::ScaleA(double value) const
 {
     switch (_YAxisMode)
     {
-        case YAxisMode::None:
-            return 0.;
-
         default:
+
+        case YAxisMode::None:
 
         case YAxisMode::Decibels:
             return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
