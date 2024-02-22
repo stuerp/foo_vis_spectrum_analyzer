@@ -678,8 +678,53 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read(&_FitMode, sizeof(_FitMode), abortHandler);
         }
 
+        // Version 18, v0.7.1.0-beta-2
         if (Version >= 18)
         {
+            reader->read_object_t(_ShowArtworkOnBackground, abortHandler);
+
+            reader->read_object_t(_GridRowCount, abortHandler);
+            reader->read_object_t(_GridColumnCount, abortHandler);
+
+            uint32_t GraphSettingsVersion;
+
+            reader->read_object_t(GraphSettingsVersion, abortHandler);
+
+            reader->read_object_t(_VerticalLayout, abortHandler);
+
+            _GraphSettings.clear();
+
+            reader->read_object_t(Count, abortHandler);
+
+            for (size_t i = 0; i < Count; ++i)
+            {
+                GraphSettings gs;
+
+                reader->read_string(gs._Description, abortHandler);
+                reader->read_object_t(gs._Channels, abortHandler);
+                reader->read_object_t(gs._FlipHorizontally, abortHandler);
+                reader->read_object_t(gs._FlipVertically, abortHandler);
+
+                reader->read_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
+                reader->read_object_t(gs._XAxisTop, abortHandler);
+                reader->read_object_t(gs._XAxisBottom, abortHandler);
+
+                reader->read_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
+                reader->read_object_t(gs._YAxisLeft, abortHandler);
+                reader->read_object_t(gs._YAxisRight, abortHandler);
+
+                reader->read_object_t(gs._AmplitudeLo, abortHandler);
+                reader->read_object_t(gs._AmplitudeHi, abortHandler);
+                reader->read_object_t(gs._AmplitudeStep, abortHandler);
+
+                reader->read_object_t(gs._UseAbsolute, abortHandler);
+                reader->read_object_t(gs._Gamma, abortHandler);
+
+                reader->read_object_t(gs._HRatio, abortHandler);
+                reader->read_object_t(gs._VRatio, abortHandler);
+
+                _GraphSettings.push_back(gs);
+            }
         }
     }
     catch (exception & ex)
@@ -881,9 +926,14 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         // Version 18, v0.7.1.0-beta-2
         writer->write_object_t(_ShowArtworkOnBackground, abortHandler);
 
+        writer->write_object_t(_GridRowCount, abortHandler);
+        writer->write_object_t(_GridColumnCount, abortHandler);
+
         writer->write_object_t(GraphSettings::_CurentVersion, abortHandler);
 
         writer->write_object_t(_VerticalLayout, abortHandler);
+
+        writer->write_object_t(_GraphSettings.size(), abortHandler);
 
         for (auto & gs : _GraphSettings)
         {

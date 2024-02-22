@@ -1,5 +1,5 @@
 ﻿
-/** $VER: GraphSettings.h (2024.02.21) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.02.22) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -13,6 +13,8 @@
 struct GraphSettings
 {
 public:
+    GraphSettings() { }
+
     GraphSettings(const pfc::string & description)
     {
         _Description = description;

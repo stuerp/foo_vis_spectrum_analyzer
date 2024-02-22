@@ -299,5 +299,5 @@ private:
     bool _HorizontalGradient_Deprecated;                    // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 17;
+    const size_t _CurrentVersion = 18;
 };
