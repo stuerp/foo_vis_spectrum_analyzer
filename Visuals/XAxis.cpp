@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.13) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -11,29 +11,28 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands)
+void XAxis::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands) noexcept
 {
-    _State = configuration;
+    _State = state;
+    _GraphSettings = settings;
 
-    if (frequencyBands.size() == 0)
-        return;
-
-    _Mode = _State->_XAxisMode;
-
-    _LoFrequency = frequencyBands[0].Ctr;
-    _HiFrequency = frequencyBands[frequencyBands.size() - 1].Ctr;
-    _NumBands = frequencyBands.size();
+    CreateDeviceIndependentResources();
 
     _Labels.clear();
 
     if (frequencyBands.size() == 0)
         return;
 
+    _BandCount = frequencyBands.size();
+
+    _LoFrequency = frequencyBands[0].Ctr;
+    _HiFrequency = frequencyBands[_BandCount - 1].Ctr;
+
     // Precalculate the labels.
     {
         WCHAR Text[32] = { };
 
-        switch (_Mode)
+        switch (settings->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -51,7 +50,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
 
-                    Label lb = { Frequency, Text, 0.f };
+                    Label lb = { Frequency, Text };
 
                     _Labels.push_back(lb);
                 }
@@ -73,7 +72,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
 
-                    Label lb = { Frequency, Text, 0.f };
+                    Label lb = { Frequency, Text };
 
                     _Labels.push_back(lb);
 
@@ -88,14 +87,14 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
 
             case XAxisMode::Octaves:
             {
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    Label lb = { Frequency, Text, 0.f };
+                    Label lb = { Frequency, Text };
 
                     _Labels.push_back(lb);
 
@@ -110,7 +109,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                 static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
@@ -124,7 +123,7 @@ void XAxis::Initialize(State * configuration, const std::vector<FrequencyBand> &
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
 
-                    Label lb = { Frequency, Text, 0.f };
+                    Label lb = { Frequency, Text, j != 0 };
 
                     _Labels.push_back(lb);
 
@@ -148,14 +147,41 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 
     // Calculate the position of the labels based on the width.
     const FLOAT Width = _Bounds.right - _Bounds.left;
-    const FLOAT BandWidth = Max((Width / (FLOAT) _NumBands), 1.f);
-    const FLOAT x = _Bounds.left + (BandWidth / 2.f);
+    const FLOAT Height = _Bounds.bottom - _Bounds.top;
+    const FLOAT BandWidth = Max((Width / (FLOAT) _BandCount), 1.f);
+
+    const FLOAT StartX = !_GraphSettings->_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
+
+    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _Height : 0.f);  // Top axis
+    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _Height : 0.f);  // Bottom axis
 
     for (Label & Iter : _Labels)
     {
-        FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
+        const FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
+        const FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
 
-        Iter.x = x + dx;
+        // Don't generate any labels outside the bounds.
+        if (!InRange(x, _Bounds.left, _Bounds.right))
+            continue;
+
+        Iter.PointT = D2D1_POINT_2F(x, yt);
+        Iter.PointB = D2D1_POINT_2F(x, yb);
+
+        {
+            CComPtr<IDWriteTextLayout> TextLayout;
+
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Width, Height, &TextLayout);
+
+            if (SUCCEEDED(hr))
+            {
+                DWRITE_TEXT_METRICS TextMetrics = { };
+
+                TextLayout->GetMetrics(&TextMetrics);
+
+                Iter.RectT = { x - (TextMetrics.width / 2.f), _Bounds.top, x + (TextMetrics.width / 2.f), yt };
+                Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
+            }
+        }
     }
 }
 
@@ -164,7 +190,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void XAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if (_Mode == XAxisMode::None)
+    if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
         return;
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
@@ -172,85 +198,68 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT yt = _Bounds.top    + (_State->_XAxisTop    ? _Height : 0.f);  // Top axis
-    const FLOAT yb = _Bounds.bottom - (_State->_XAxisBottom ? _Height : 0.f);  // Bottom axis
-
-    FLOAT OldTextRight = -_Width;
-
-    Style * LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
-    Style * TextStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
+    D2D1_RECT_F OldRect = {  };
+    FLOAT Opacity = _TextStyle->_Brush->GetOpacity();
 
     for (const Label & Iter : _Labels)
     {
-        if (Iter.x < _Bounds.left)
-            continue;
-
         // Draw the vertical grid line.
-        renderTarget->DrawLine(D2D1_POINT_2F(Iter.x, yt), D2D1_POINT_2F(Iter.x, yb), LineStyle->_Brush, LineStyle->_Thickness, nullptr);
+        renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
-        // Draw the label.
-        if (Iter.Text.empty())
-            continue;
+        _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, 1920.f, 1080.f, &TextLayout);
-
-        if (SUCCEEDED(hr))
+        // Prevent overdraw of the labels.
+        if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
         {
-            DWRITE_TEXT_METRICS TextMetrics = { };
+            // Draw the labels.
+            if (_GraphSettings->_XAxisTop)
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            TextLayout->GetMetrics(&TextMetrics);
+            if (_GraphSettings->_XAxisBottom)
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            D2D1_RECT_F TextRect = { Iter.x - (TextMetrics.width / 2.f), yb, Iter.x + (TextMetrics.width / 2.f), yb + _Height };
-
-            if ((OldTextRight <= TextRect.left) && (TextRect.left < _Bounds.right))
-            {
-                if (_State->_XAxisBottom)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-
-                if (_State->_XAxisTop)
-                {
-                    TextRect.top    = _Bounds.top;
-                    TextRect.bottom = _Bounds.top + _Height;
-
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-                }
-
-                OldTextRight = TextRect.right;
-            }
+            OldRect = Iter.RectB;
         }
     }
+
+    _TextStyle->_Brush->SetOpacity(Opacity);
 }
 
+#pragma region DirectX
+
 /// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Creates resources which are not bound to any D3D device.
 /// </summary>
 HRESULT XAxis::CreateDeviceIndependentResources()
 {
-    static const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+    HRESULT hr = S_OK;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-    if (SUCCEEDED(hr))
+    if (_TextFormat == 0)
     {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
         if (SUCCEEDED(hr))
         {
-            DWRITE_TEXT_METRICS TextMetrics = { };
+            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-            TextLayout->GetMetrics(&TextMetrics);
+            CComPtr<IDWriteTextLayout> TextLayout;
 
-            // Calculate the height.
-            _Width  = TextMetrics.width;
-            _Height = 2.f + TextMetrics.height + 2.f;
+            hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
+
+            if (SUCCEEDED(hr))
+            {
+                DWRITE_TEXT_METRICS TextMetrics = { };
+
+                TextLayout->GetMetrics(&TextMetrics);
+
+                // Calculate the height.
+                _Width  = TextMetrics.width;
+                _Height = 2.f + TextMetrics.height + 2.f;
+            }
         }
     }
 
@@ -273,19 +282,30 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
+    if (_LineStyle == nullptr || _TextStyle == nullptr)
     {
+        const D2D1_SIZE_F Size = renderTarget->GetSize();
+
         for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
         {
             Style * style = _State->_StyleManager.GetStyle(Iter);
 
             if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget);
+                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
 
             if (!SUCCEEDED(hr))
                 break;
         }
+
+        if (SUCCEEDED(hr))
+        {
+            _LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+            _TextStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
+        }
     }
+
+    if (SUCCEEDED(hr))
+        renderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
     return hr;
 }
@@ -295,6 +315,9 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void XAxis::ReleaseDeviceSpecificResources()
 {
+    _TextStyle = nullptr;
+    _LineStyle = nullptr;
+
     for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
     {
         Style * style = _State->_StyleManager.GetStyle(Iter);
@@ -302,3 +325,5 @@ void XAxis::ReleaseDeviceSpecificResources()
         style->ReleaseDeviceSpecificResources();
     }
 }
+
+#pragma endregion

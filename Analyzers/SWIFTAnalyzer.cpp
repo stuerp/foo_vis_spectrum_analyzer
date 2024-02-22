@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.02.13) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(configuration, sampleRate, channelCount, channelSetup, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(state, sampleRate, channelCount, channelSetup, WindowFunction())
 {
 }
 
@@ -45,14 +45,14 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands)
+bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
     for (auto & Iter : frequencyBands)
         Iter.NewValue = 0.;
 
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&sampleData[i], _State->_SelectedChannels);
+        const audio_sample Sample = AverageSamples(&sampleData[i], channels);
 
         size_t k = 0;
 

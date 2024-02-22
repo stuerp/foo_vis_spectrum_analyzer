@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.13) P. Stuer **/
+/** $VER: UIElement.h (2024.02.19) P. Stuer **/
 
 #pragma once
 
@@ -8,19 +8,12 @@
 #include "State.h"
 #include "ConfigurationDialog.h"
 
-#include "FrameCounter.h"
+#include "Grid.h"
 #include "Graph.h"
-#include "XAxis.h"
-#include "YAxis.h"
-#include "Spectrum.h"
 #include "Artwork.h"
-
-#include "FFTAnalyzer.h"
-#include "CQTAnalyzer.h"
-#include "SWIFTAnalyzer.h"
+#include "FrameCounter.h"
 
 #include <vector>
-#include <complex>
 
 /// <summary>
 /// Implements the UIElement and Playback interface.
@@ -54,7 +47,7 @@ protected:
 
     virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
-    void SetConfiguration() noexcept;
+    void UpdateState() noexcept;
 
 private:
     #pragma region CWindowImpl
@@ -105,25 +98,9 @@ private:
 
     void ProcessPlaybackEvent();
     void UpdateSpectrum();
-    void UpdatePeakIndicators() noexcept;
     void Render();
 
-    void ProcessAudioChunk(const audio_chunk & chunk) noexcept;
-    void GetAnalyzer(const audio_chunk & chunk) noexcept;
-    void GenerateLinearFrequencyBands();
-    void GenerateOctaveFrequencyBands();
-    void GenerateAveePlayerFrequencyBands();
-
-    void ApplyAcousticWeighting();
-    double GetWeight(double x) const noexcept;
-
-    void ApplyAverageSmoothing(double factor);
-    void ApplyPeakSmoothing(double factor);
-
-    void DeleteResources();
-
-    static double ScaleF(double x, ScalingFunction function, double factor);
-    static double DeScaleF(double x, ScalingFunction function, double factor);
+    Graph * GetGraph(const CPoint & pt) noexcept;
 
     #pragma region DirectX
 
@@ -139,9 +116,8 @@ private:
 
     #pragma region Timer
 
-    void CreateTimer() noexcept;
-    void StartTimer() const noexcept;
-    void StopTimer() const noexcept;
+    void StartTimer() noexcept;
+    void StopTimer() noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
@@ -187,6 +163,7 @@ private:
         IDM_REFRESH_RATE_LIMIT_200,
 
         IDM_CONFIGURE,
+        IDM_FREEZE,
     };
 
     PTP_TIMER _ThreadPoolTimer;
@@ -199,46 +176,40 @@ private:
         Stop,
     } _PlaybackEvent;
 
-    visualisation_stream_v2::ptr _VisualisationStream;
-
-    #pragma region Rendering
-
-    FrameCounter _FrameCounter;
-    Graph _Graph;
-    UINT _DPI;
-
-    #pragma endregion
-
-    #pragma region DirectX
-
-    // Device-specific resources
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    #pragma endregion
-
     ConfigurationDialog _ConfigurationDialog;
 
     CToolTipCtrl _ToolTipControl;
+
+    Graph * _TrackingGraph;
     CToolInfo * _TrackingToolInfo;
-    bool _IsTracking;
     POINT _LastMousePos;
     size_t _LastIndex;
 
-    const WindowFunction * _WindowFunction;
-    const WindowFunction * _BrownPucketteKernel;
-
-    FFTAnalyzer * _FFTAnalyzer;
-    CQTAnalyzer * _CQTAnalyzer;
-    SWIFTAnalyzer * _SWIFTAnalyzer;
-
-    std::vector<FrequencyBand> _FrequencyBands;
-    size_t _NumBins;
     uint32_t _SampleRate;
-    double _Bandwidth;
 
     Artwork _Artwork;
     bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkGradient;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
+    bool _NewArtworkColors;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
+
+    #pragma region Render thread
+
+    State _RenderState;
+
+    visualisation_stream_v2::ptr _VisualisationStream;
+
+    FrameCounter _FrameCounter;
+
+    Grid _Grid;
+    UINT _DPI;
+
+    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+    double _OldPlaybackTime;
+
+    bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
+
+    #pragma endregion
+
 };

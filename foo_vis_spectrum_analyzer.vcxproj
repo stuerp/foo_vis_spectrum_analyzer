@@ -84,6 +84,7 @@
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,6 +141,7 @@
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -186,20 +188,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
+    <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Analyzers\ToneGenerator.h" />
-    <ClInclude Include="Configuration\CButtonMenu.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />
     <ClInclude Include="Configuration\CDirectXControl.h" />
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="Visuals\GraphSettings.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
+    <ClInclude Include="Visuals\Grid.h" />
     <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />
@@ -209,7 +214,7 @@
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="FrequencyBand.h" />
+    <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Windows\Raster.h" />
@@ -236,15 +241,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
+    <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\ToneGenerator.cpp" />
-    <ClCompile Include="Analyzing.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
+    <ClCompile Include="Visuals\GraphSettings.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
@@ -308,6 +314,7 @@
   <ItemGroup>
     <Image Include="Resources\Bars.png" />
     <Image Include="Resources\Curve.png" />
+    <Image Include="Resources\Preview.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

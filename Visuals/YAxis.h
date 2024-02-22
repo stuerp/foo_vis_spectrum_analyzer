@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.02.07) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.02.18) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include "Element.h"
 #include "Support.h"
 #include "State.h"
+#include "GraphSettings.h"
 
 #include <vector>
 #include <string>
@@ -18,21 +19,18 @@
 class YAxis : public Element
 {
 public:
-    YAxis() : _State(nullptr), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(State * configuration);
+    void Initialize(State * state, const GraphSettings * settings) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
     void Render(ID2D1RenderTarget * renderTarget);
-
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
@@ -40,13 +38,22 @@ public:
     FLOAT GetWidth() const { return _Width; }
 
 private:
-    State * _State;
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+private:
+    bool _FlipVertically;
 
     struct Label
     {
         double Amplitude;
         std::wstring Text;
-        FLOAT y;
+
+        D2D1_POINT_2F PointL;
+        D2D1_POINT_2F PointR;
+
+        D2D1_RECT_F RectL;
+        D2D1_RECT_F RectR;
     };
 
     std::vector<Label> _Labels;
@@ -60,4 +67,8 @@ private:
     FLOAT _Height; // Height of a label
 
     CComPtr<IDWriteTextFormat> _TextFormat;
+
+    Style * _LineStyle;
+    Style * _TextStyle;
+
 };

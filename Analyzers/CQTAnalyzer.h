@@ -1,15 +1,12 @@
 
-/** $VER: CQTAnalyzer.h (2024.02.12) P. Stuer **/
+/** $VER: CQTAnalyzer.h (2024.02.17) P. Stuer **/
 
 #pragma once
 
 #include "framework.h"
 
-#include "State.h"
 #include "Analyzer.h"
 #include "FrequencyBand.h"
-
-#include <vector>
 
 /// <summary>
 /// Implements a Constant-Q Transform analyzer.
@@ -27,5 +24,5 @@ public:
     virtual ~CQTAnalyzer() { }
 
     CQTAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, vector<FrequencyBand> & frequencyBands) const;
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
 };

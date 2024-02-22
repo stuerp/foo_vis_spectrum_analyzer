@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.18) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -101,7 +101,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     {
         uint32_t Version; reader->read_object_t(Version, abortHandler);
 
-        if (Version < _CurrentVersion)
+        if (Version > _CurrentVersion)
             return;
 
         _Styles.clear();
@@ -111,6 +111,9 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         for (size_t i = 0; i < StyleCount; ++i)
         {
             uint32_t Id; reader->read_object_t(Id, abortHandler);
+
+            if ((Version < 3) && (Id != 0)) // Version 2: VisualElement::GraphDescription was added before VisualElement::XAxisLine
+                Id++;
 
             pfc::string Name = reader->read_string(abortHandler);
 
@@ -141,6 +144,17 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             Style style = { Name, Flags, (ColorSource) colorSource, CustomColor, ColorIndex, (ColorScheme) colorScheme, gs, Opacity, Thickness, FontName, FontSize };
 
             _Styles.insert({ (VisualElement) Id, style });
+
+            if ((Version < 3) && (Id == 0)) // Version 2: VisualElement::GraphDescription was added before VisualElement::XAxisLine
+            {
+                style = 
+                {
+                    "Graph Description", Style::SupportsOpacity | Style::SupportsFont,
+                    ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+                };
+
+                _Styles.insert({ VisualElement::GraphDescription, style });
+            }
         }
     }
     catch (std::exception & ex)

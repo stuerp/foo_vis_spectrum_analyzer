@@ -1,15 +1,17 @@
 
-/** $VER: Spectrum.h (2024.02.07) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.19) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
 #include "framework.h"
 #include "Support.h"
 
-#include "Element.h"
 #include "State.h"
+#include "GraphSettings.h"
+
 #include "Gradients.h"
 
+#include "Element.h"
 #include "FrequencyBand.h"
 
 #include <vector>
@@ -28,11 +30,11 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(State * configuration);
+    void Initialize(State * state, const GraphSettings * settings);
 
     void Move(const D2D1_RECT_F & rect);
 
-    void Render(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
@@ -58,11 +60,11 @@ private:
         }
     };
 
-    HRESULT CreateGeometryPointsFromAmplitude(const std::vector<FrequencyBand> & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
+    HRESULT CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
     HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
-    void RenderBars(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
-    void RenderCurve(ID2D1RenderTarget * renderTarget, const std::vector<FrequencyBand> & frequencyBands, double sampleRate);
+    void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
 private:
     const FLOAT PaddingX = 1.f;
@@ -71,6 +73,17 @@ private:
     D2D1_RECT_F _Bounds;
 
     // Device-dependent resources
-    CComPtr<ID2D1SolidColorBrush> _SolidColorBrush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
- };
+
+    Style * _ForegroundStyle;
+    Style * _DarkBackgroundStyle;
+    Style * _LightBackgroundStyle;
+    Style * _PeakIndicatorStyle;
+
+    Style * _CurveLine;
+    Style * _CurveArea;
+    Style * _CurvePeakLine;
+    Style * _CurvePeakArea;
+
+    bool _GotStyles;
+};

@@ -33,16 +33,16 @@ COLORREF Theme::GetSysColor(int index) const noexcept
             return 0x383838;
 
         case COLOR_HIGHLIGHT:
-            return 0x777777;
+            return ::GetSysColor(COLOR_HOTLIGHT); //0x777777;
 
         case COLOR_HIGHLIGHTTEXT:
-            return 0x101010;
+            return 0xFFFFFF; //0x101010;
 
         case COLOR_GRAYTEXT:
             return 0x777777;
 
         case COLOR_HOTLIGHT:
-            return 0xd69c56;
+            return 0x0D69C56;
 
         default:
             return ::GetSysColor(index);

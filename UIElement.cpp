@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.13) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.17) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _DPI(), _TrackingToolInfo(), _IsTracking(false), _LastMousePos(), _LastIndex(~0U), _WindowFunction(), _BrownPucketteKernel(), _FFTAnalyzer(), _CQTAnalyzer(), _NumBins(), _SampleRate(44100), _Bandwidth()
+UIElement::UIElement(): _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
 {
 }
 
@@ -72,7 +72,9 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
         VisualisationManager->create_stream(_VisualisationStream, visualisation_manager::KStreamFlagNewFFT);
 
-        _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+//      _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+        _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
+
     }
     catch (std::exception & ex)
     {
@@ -96,11 +98,8 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         _ToolTipControl.SetMaxTipWidth(100);
     }
 
-    // Create the timer.
-    CreateTimer();
-
     // Apply the initial configuration.
-    SetConfiguration();
+    UpdateState();
 
     return 0;
 }
@@ -114,13 +113,12 @@ void UIElement::OnDestroy()
 
     _CriticalSection.Enter();
 
-    if (_ThreadPoolTimer)
     {
-        ::CloseThreadpoolTimer(_ThreadPoolTimer);
-        _ThreadPoolTimer = nullptr;
-    }
+        for (auto & Iter : _Grid)
+            delete Iter._Graph;
 
-    DeleteResources();
+        _Grid.clear();
+    }
 
     {
         auto Manager = now_playing_album_art_notify_manager::tryGet();
@@ -145,9 +143,11 @@ void UIElement::OnDestroy()
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
 {
+//  Log::Write(Log::Level::Trace, "%08X: OnPaint", GetTickCount64());
+
     StartTimer();
 
-    ValidateRect(nullptr);
+    ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
 }
 
 /// <summary>
@@ -197,6 +197,9 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
 
+        Menu.AppendMenu((UINT) MF_SEPARATOR);
+        Menu.AppendMenu((UINT) MF_STRING | (_IsFrozen ? MF_CHECKED : 0), IDM_FREEZE, (_IsFrozen ? L"Frozen" : L"Freeze"));
+
         Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
 
@@ -244,6 +247,10 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         case IDM_CONFIGURE:
             Configure();
             break;
+
+        case IDM_FREEZE:
+            _IsFrozen = !_IsFrozen;
+            break;
     }
 
     Invalidate();
@@ -277,11 +284,14 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
     if (!_ToolTipControl.IsWindow())
         return;
 
-    if (!_IsTracking)
+    if (_TrackingGraph == nullptr)
     {
-        if (pt.x < (LONG) _Graph.GetSpectrum().GetLeft())
+        _TrackingGraph = GetGraph(pt);
+
+        if (_TrackingGraph == nullptr)
             return;
 
+        // Tell Windows we want to know when the mouse leaves this window.
         {
             TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
 
@@ -294,33 +304,47 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
         _LastMousePos = POINT(-1, -1);
         _LastIndex = ~0U;
 
-        _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
-        _IsTracking = true;
+        _TrackingToolInfo = _TrackingGraph->GetToolInfo(m_hWnd);
+
+        if (_TrackingToolInfo != nullptr)
+            _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
     }
     else
     {
-        if (_TrackingToolInfo && ((pt.x != _LastMousePos.x) || (pt.y != _LastMousePos.y)))
+        if (_TrackingGraph && (pt != _LastMousePos))
         {
             _LastMousePos = pt;
-    
+
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-            size_t Index = (size_t) ::floor(Map(ScaledX, _Graph.GetSpectrum().GetLeft(), _Graph.GetSpectrum().GetRight(), 0., (double) _FrequencyBands.size()));
+            std::wstring ToolTip;
+            size_t Index;
 
-            if (Index != _LastIndex)
+            if (_TrackingGraph->GetToolTip(ScaledX, ToolTip, Index))
             {
-                if (InRange(Index, (size_t) 0U, _FrequencyBands.size() - 1))
-                    _TrackingToolInfo->lpszText = _FrequencyBands[Index].Label;
+                if (Index != _LastIndex)
+                {
+                    _TrackingToolInfo->lpszText = (LPWSTR) ToolTip.c_str();
 
-                _ToolTipControl.UpdateTipText(_TrackingToolInfo);
+                    _ToolTipControl.UpdateTipText(_TrackingToolInfo);
 
-                _LastIndex = Index;
+                    _LastIndex = Index;
+                }
+
+                // Reposition the tooltip.
+                ::ClientToScreen(m_hWnd, &pt);
+
+                _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
             }
+            else
+            {
+                _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
 
-            // Reposition the tooltip.
-            ::ClientToScreen(m_hWnd, &pt);
+                delete _TrackingToolInfo;
+                _TrackingToolInfo = nullptr;
 
-            _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
+                _TrackingGraph = nullptr;
+            }
         }
     }
 }
@@ -331,7 +355,11 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 void UIElement::OnMouseLeave()
 {
     _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-    _IsTracking = false;
+
+    delete _TrackingToolInfo;
+    _TrackingToolInfo = nullptr;
+
+    _TrackingGraph = nullptr;
 }
 
 /// <summary>
@@ -339,7 +367,7 @@ void UIElement::OnMouseLeave()
 /// </summary>
 LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    SetConfiguration();
+    UpdateState();
 
     return 0;
 }
@@ -376,161 +404,87 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        _CriticalSection.Enter();
-
         DialogParameters dp = { m_hWnd, &_State };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
-
-        _CriticalSection.Leave();
     }
     else
         _ConfigurationDialog.BringWindowToTop();
 }
 
 /// <summary>
-/// Sets the current configuration.
+/// Updates the state.
 /// </summary>
-void UIElement::SetConfiguration() noexcept
+void UIElement::UpdateState() noexcept
 {
+//  Log::Write(Log::Level::Trace, "%08X: UpdateState", GetTickCount64());
+
     _CriticalSection.Enter();
-
-    // Initialize the frequency bands.
-    {
-        if (_State._Transform == Transform::FFT)
-        {
-            switch (_State._FrequencyDistribution)
-            {
-                default:
-
-                case FrequencyDistribution::Linear:
-                    GenerateLinearFrequencyBands();
-                    break;
-
-                case FrequencyDistribution::Octaves:
-                    GenerateOctaveFrequencyBands();
-                    break;
-
-                case FrequencyDistribution::AveePlayer:
-                    GenerateAveePlayerFrequencyBands();
-                    break;
-            }
-        }
-        else
-            GenerateOctaveFrequencyBands();
-    }
 
     #pragma warning (disable: 4061)
     switch (_State._FFTMode)
     {
         default:
-            _NumBins = (size_t) (64. * ::exp2((long) _State._FFTMode));
+            _State._BinCount = (size_t) (64. * ::exp2((long) _State._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _NumBins = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
+            _State._BinCount = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _NumBins = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
+            _State._BinCount = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _Bandwidth = (((_State._Transform == Transform::FFT) && (_State._MappingMethod == Mapping::TriangularFilterBank)) || (_State._Transform == Transform::CQT)) ? _State._Bandwidth : 0.5;
+    _ToneGenerator.Initialize(440., 1., 0., _State._BinCount);
 
-    DeleteResources();
+    _RenderState = _State;
 
-    _State._StyleManager.ReleaseDeviceSpecificResources();
+    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
 
-    _NewArtworkGradient = true; // Request an update of the artwork gradient.
+    // Create the graphs.
+    {
+        for (auto & Iter : _Grid)
+            delete Iter._Graph;
 
-    _Graph.Initialize(&_State, _FrequencyBands);
+        _Grid.clear();
 
-    _ToolTipControl.Activate(_State._ShowToolTips);
+        _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
 
-    Resize();
+        for (const auto & Iter : _State._GraphSettings)
+        {
+            auto * g = new Graph();
+
+            g->Initialize(&_RenderState, &Iter);
+
+            _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+        }
+    }
 
     _CriticalSection.Leave();
 
-    _ToneGenerator.Initialize(440., 1., 0., _NumBins);
+    _NewArtworkColors = true; // Request an update of the artwork gradient.
+
+    _ToolTipControl.Activate(_RenderState._ShowToolTips);
+
+    Resize();
 }
 
 /// <summary>
-/// Deletes some analysis resources.
+/// Gets the graph that contains the specified point.
 /// </summary>
-void UIElement::DeleteResources()
+Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 {
-    // Forces the recreation of the Brown-Puckette window function.
-    if (_BrownPucketteKernel != nullptr)
+    for (auto & Iter : _Grid)
     {
-        delete _BrownPucketteKernel;
-        _BrownPucketteKernel = nullptr;
+        if (Iter._Graph->ContainsPoint(pt))
+            return Iter._Graph;
     }
 
-    // Forces the recreation of the window function.
-    if (_WindowFunction != nullptr)
-    {
-        delete _WindowFunction;
-        _WindowFunction = nullptr;
-    }
-
-    // Forces the recreation of the spectrum analyzer.
-    if (_FFTAnalyzer != nullptr)
-    {
-        delete _FFTAnalyzer;
-        _FFTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Constant-Q transform.
-    if (_CQTAnalyzer != nullptr)
-    {
-        delete _CQTAnalyzer;
-        _CQTAnalyzer = nullptr;
-    }
-
-    // Forces the recreation of the Sliding Window Infinite Fourier transform.
-    if (_SWIFTAnalyzer != nullptr)
-    {
-        delete _SWIFTAnalyzer;
-        _SWIFTAnalyzer = nullptr;
-    }
-}
-
-/// <summary>
-/// Resizes all render targets.
-/// </summary>
-void UIElement::Resize()
-{
-    if (_RenderTarget == nullptr)
-        return;
-
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
-
-    // Reposition the frame counter.
-    _FrameCounter.Resize(Size.width, Size.height);
-
-    // Resize the graph area.
-    const D2D1_RECT_F Bounds(0.f, 0.f, Size.width, Size.height);
-
-    _Graph.Move(Bounds);
-
-    // Adjust the tracking tool tip.
-    {
-        if (_TrackingToolInfo != nullptr)
-        {
-            _ToolTipControl.DelTool(_TrackingToolInfo);
-
-            delete _TrackingToolInfo;
-        }
-
-        _TrackingToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, m_hWnd, (UINT_PTR) m_hWnd, nullptr, nullptr);
-
-        ::SetRect(&_TrackingToolInfo->rect, (int) Bounds.left, (int) Bounds.top, (int) Bounds.right, (int) Bounds.bottom);
-
-        _ToolTipControl.AddTool(_TrackingToolInfo);
-    }
+    return nullptr;
 }
 
 #pragma endregion
@@ -544,7 +498,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _PlaybackEvent = PlaybackEvent::NewTrack;
 
-    SetConfiguration();
+    UpdateState();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
     // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.

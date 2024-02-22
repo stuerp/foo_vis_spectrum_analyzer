@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.01.28) P. Stuer **/
+/** $VER: Artwork.cpp (2024.02.14) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -14,6 +14,8 @@
 /// </summary>
 HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 {
+    _CriticalSection.Enter();
+
     Release();
 
     if ((data != nullptr) && (size != 0))
@@ -21,6 +23,8 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
         _Raster.assign(data, data + size);
         _FilePath.clear();
     }
+
+    _CriticalSection.Leave();
 
     return S_OK;
 }
@@ -30,12 +34,56 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// </summary>
 HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 {
+    _CriticalSection.Enter();
+
     Release();
 
     _FilePath = filePath;
     _Raster.clear();
 
+    _CriticalSection.Leave();
+
     return S_OK;
+}
+
+/// <summary>
+/// Renders this instance to the specified render target.
+/// </summary>
+void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const State * state) noexcept
+{
+    _CriticalSection.Enter();
+
+    if (_Bitmap != nullptr)
+    {
+        D2D1_RECT_F Rect = bounds;
+        D2D1_SIZE_F Size = _Bitmap->GetSize();
+
+        const FLOAT MaxWidth  = Rect.right  - Rect.left;
+        const FLOAT MaxHeight = Rect.bottom - Rect.top;
+
+        FLOAT WScalar = 1.f;
+        FLOAT HScalar = 1.f;
+
+        if ((state->_FitMode == FitMode::FitWidth) || (state->_FitMode == FitMode::FitBig))
+            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+
+        if ((state->_FitMode == FitMode::FitHeight) || (state->_FitMode == FitMode::FitBig))
+            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+
+        const FLOAT Scalar = Min(WScalar, HScalar);
+
+        Size.width  *= Scalar;
+        Size.height *= Scalar;
+
+        Rect.left   += (MaxWidth  - Size.width)  / 2.f;
+        Rect.top    += (MaxHeight - Size.height) / 2.f;
+        Rect.right   = Rect.left + Size.width;
+        Rect.bottom  = Rect.top  + Size.height;
+
+        renderTarget->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+    }
+
+    _CriticalSection.Leave();
 }
 
 /// <summary>
@@ -43,24 +91,30 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 /// </summary>
 HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
-    if (_Raster.empty() && _FilePath.empty())
-        return S_OK;
+    HRESULT hr = S_OK;
 
-    // Load the frame from the raster data.
-    HRESULT hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
+    _CriticalSection.Enter();
 
-    // Create a format coverter to 32bppPBGRA.
-    if (SUCCEEDED(hr))
+    if (!_Raster.empty() || !_FilePath.empty())
     {
-        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+        // Load the frame from the raster data.
+        hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
 
+        // Create a format coverter to 32bppPBGRA.
         if (SUCCEEDED(hr))
-            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        {
+            hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+
+            if (SUCCEEDED(hr))
+                hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        }
+
+        // Create a Direct2D bitmap from the WIC bitmap source.
+        if (SUCCEEDED(hr))
+            hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
     }
 
-    // Create a Direct2D bitmap from the WIC bitmap source.
-    if (SUCCEEDED(hr))
-        hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+    _CriticalSection.Leave();
 
     return hr;
 }

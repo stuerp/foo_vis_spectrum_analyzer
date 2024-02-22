@@ -123,7 +123,7 @@ void CUIElement::ToggleFullScreen() noexcept
 
                 _Host->relinquish_ownership(nullptr);
 
-                SetConfiguration();
+                UpdateState();
 
                 _IsFullScreen = true;
             }
@@ -142,7 +142,7 @@ void CUIElement::ToggleFullScreen() noexcept
 
         _Host->relinquish_ownership(_hParent);
 
-        SetConfiguration();
+        UpdateState();
 
         _IsFullScreen = false;
     }

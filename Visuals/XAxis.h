@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.07) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -9,7 +9,7 @@
 #include "Support.h"
 #include "State.h"
 
-#include "FrequencyBand.h"
+#include "Analysis.h"
 
 #include <vector>
 #include <string>
@@ -20,21 +20,18 @@
 class XAxis : public Element
 {
 public:
-    XAxis() : _State(), _Mode(), _LoFrequency(), _HiFrequency(), _NumBands(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
+    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * configuration, const std::vector<FrequencyBand> & frequencyBands);
+    void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands) noexcept;
 
     void Move(const D2D1_RECT_F & rect);
 
     void Render(ID2D1RenderTarget * renderTarget);
-
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
@@ -42,13 +39,13 @@ public:
     FLOAT GetHeight() const { return _Height; }
 
 private:
-    State * _State;
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
 
-    XAxisMode _Mode;
-
+private:
+    size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
-    size_t _NumBands;
 
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
@@ -57,7 +54,13 @@ private:
     {
         double Frequency;
         std::wstring Text;
-        FLOAT x;
+        bool IsDimmed;
+
+        D2D1_POINT_2F PointT;
+        D2D1_POINT_2F PointB;
+
+        D2D1_RECT_F RectT;
+        D2D1_RECT_F RectB;
     };
 
     std::vector<Label> _Labels;
@@ -68,4 +71,7 @@ private:
 
     // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
+
+    const Style * _LineStyle;
+    const Style * _TextStyle;
 };

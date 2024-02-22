@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.02.14) P. Stuer **/
+/** $VER: Resources.h (2024.02.21) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta-1"
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta-2"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -36,7 +36,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta-1"
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta-2"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -79,13 +79,6 @@
 
 #define IDC_REACTION_ALIGNMENT_LBL      2032
 #define IDC_REACTION_ALIGNMENT          2034
-
-#define IDC_CHANNELS                    2038
-
-#define IDM_CHANNELS                    9000
-
-#define IDM_CHANNELS_FIRST              9100
-#define IDM_CHANNELS_LAST               9118
 
 #pragma endregion
 
@@ -240,6 +233,8 @@
 
 #pragma endregion
 
+/** Common **/
+
 #pragma region Common
 
 #define IDC_COMMON                      6000
@@ -253,8 +248,13 @@
 #define IDC_SHOW_TOOLTIPS               6070
 #define IDC_SUPPRESS_MIRROR_IMAGE       6072
 
-#define IDC_BACKGROUND_MODE_LBL         6080
-#define IDC_BACKGROUND_MODE             6082
+#pragma endregion
+
+#pragma region Artwork
+
+#define IDC_ARTWORK                     6078
+
+#define IDC_ARTWORK_BACKGROUND          6082
 
 #define IDC_ARTWORK_OPACITY_LBL         6090
 #define IDC_ARTWORK_OPACITY             6092
@@ -278,6 +278,27 @@
 
 #pragma endregion
 
+/** Graphs **/
+
+#pragma region Graphs
+
+#define IDC_GRAPH_SETTINGS              5100
+
+#define IDC_ADD_GRAPH                   5102
+#define IDC_REMOVE_GRAPH                5104
+
+#define IDC_VERTICAL_LAYOUT             5106
+
+#define IDC_GRAPH_DESCRIPTION_LBL       5108
+#define IDC_GRAPH_DESCRIPTION           5110
+
+#define IDC_FLIP_HORIZONTALLY           5112
+#define IDC_FLIP_VERTICALLY             5114
+
+#define IDC_CHANNELS                    5116
+
+#pragma endregion
+
 #pragma region X axis
 
 #define IDC_X_AXIS                      4000
@@ -285,8 +306,8 @@
 #define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
-#define IDC_X_AXIS_TOP                 4006
-#define IDC_X_AXIS_BOTTOM                4008
+#define IDC_X_AXIS_TOP                  4006
+#define IDC_X_AXIS_BOTTOM               4008
 
 #pragma endregion
 
@@ -297,8 +318,8 @@
 #define IDC_Y_AXIS_MODE_LBL             5002
 #define IDC_Y_AXIS_MODE                 5004
 
-#define IDC_Y_AXIS_LEFT                  5006
-#define IDC_Y_AXIS_RIGHT               5008
+#define IDC_Y_AXIS_LEFT                 5006
+#define IDC_Y_AXIS_RIGHT                5008
 
 #define IDC_AMPLITUDE_LBL_1             5010
 #define IDC_AMPLITUDE_LO                5012
@@ -319,6 +340,8 @@
 #define IDC_GAMMA                       5052
 
 #pragma endregion
+
+/** Visualization **/
 
 #pragma region Visualization
 
