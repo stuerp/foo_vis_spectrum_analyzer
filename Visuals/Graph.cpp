@@ -159,6 +159,9 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 /// </summary>
 void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 {
+    if ((_DescriptionStyle->_ColorSource == ColorSource::None) || _Description.empty())
+        return;
+
     const FLOAT Inset = 2.f;
 
     D2D1_RECT_F Rect = { };
