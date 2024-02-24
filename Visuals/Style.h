@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.02.18) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.02.24) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -7,23 +7,24 @@
 
 enum class VisualElement : uint32_t
 {
-    GraphBackground,
-    GraphDescription,
+    GraphBackground             =  0,
+    GraphDescriptionText        =  1,
+    GraphDescriptionBackground  = 14,
 
-    XAxisText,
-    XAxisLine,
-    YAxisText,
-    YAxisLine,
+    XAxisText                   =  2,
+    XAxisLine                   =  3,
+    YAxisText                   =  4,
+    YAxisLine                   =  5,
 
-    BarSpectrum,
-    BarPeakIndicator,
-    BarDarkBackground,
-    BarLightBackground,
+    BarSpectrum                 =  6,
+    BarPeakIndicator            =  7,
+    BarDarkBackground           =  8,
+    BarLightBackground          =  9,
 
-    CurveLine,
-    CurveArea,
-    CurvePeakLine,
-    CurvePeakArea,
+    CurveLine                   = 10,
+    CurveArea                   = 11,
+    CurvePeakLine               = 12,
+    CurvePeakArea               = 13,
 };
 
 enum class ColorSource : uint32_t
@@ -95,17 +96,14 @@ public:
     Style(const Style &);
     Style & operator=(const Style & other);
 
-    virtual ~Style()
-    {
-    }
+    virtual ~Style() { }
 
-    Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
+    Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
 
 public:
-    pfc::string _Name;
     uint64_t _Flags;
 
     ColorSource _ColorSource;           // Determines the source of the color

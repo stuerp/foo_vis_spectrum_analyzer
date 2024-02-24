@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.02.19) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.02.24) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -99,5 +99,6 @@ private:
     FLOAT _TextHeight;
 
     Style * _BackgroundStyle;
-    Style * _DescriptionStyle;
+    Style * _DescriptionTextStyle;
+    Style * _DescriptionBackgroundStyle;
 };

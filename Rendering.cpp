@@ -227,6 +227,8 @@ void UIElement::Resize()
 
     for (auto & Iter : _Grid)
         _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
+
+    _RenderState._StyleManager.ResetGradients();
 }
 
 #pragma region DirectX

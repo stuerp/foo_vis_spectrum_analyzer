@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.18) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.24) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -51,12 +51,33 @@ Style * StyleManager::GetStyle(VisualElement visualElement)
 }
 
 /// <summary>
-/// Gets a list of all the styles.
+/// Gets the style of the visual element specified by an index.
 /// </summary>
-void StyleManager::GetStyles(std::vector<Style> & styles) const
+Style * StyleManager::GetStyleByIndex(int index)
 {
-    for (const auto & Iter : _Styles)
-        styles.push_back(Iter.second);
+    static const VisualElement IndexToId[] =
+    {
+        VisualElement::GraphBackground,
+        VisualElement::GraphDescriptionText,
+        VisualElement::GraphDescriptionBackground,
+
+        VisualElement::XAxisText,
+        VisualElement::XAxisLine,
+        VisualElement::YAxisText,
+        VisualElement::YAxisLine,
+
+        VisualElement::BarSpectrum,
+        VisualElement::BarPeakIndicator,
+        VisualElement::BarDarkBackground,
+        VisualElement::BarLightBackground,
+
+        VisualElement::CurveLine,
+        VisualElement::CurveArea,
+        VisualElement::CurvePeakLine,
+        VisualElement::CurvePeakArea,
+    };
+
+    return GetStyle(IndexToId[(size_t) index]);
 }
 
 /// <summary>
@@ -104,8 +125,6 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         if (Version > _CurrentVersion)
             return;
 
-        _Styles.clear();
-
         size_t StyleCount; reader->read_object_t(StyleCount, abortHandler);
 
         for (size_t i = 0; i < StyleCount; ++i)
@@ -115,13 +134,18 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             if ((Version < 3) && (Id != 0)) // Version 2: VisualElement::GraphDescription was added before VisualElement::XAxisLine
                 Id++;
 
-            pfc::string Name = reader->read_string(abortHandler);
+            if (Version < 4)
+                pfc::string Name = reader->read_string(abortHandler);
 
-            uint64_t Flags; reader->read_object_t(Flags, abortHandler);
-            uint32_t colorSource; reader->read_object_t(colorSource, abortHandler);
-            D2D1_COLOR_F CustomColor; reader->read_object(&CustomColor, sizeof(CustomColor), abortHandler);
-            uint32_t ColorIndex; reader->read_object_t(ColorIndex, abortHandler);
-            uint32_t colorScheme; reader->read_object_t(colorScheme, abortHandler);
+            Style & style = _Styles[(VisualElement) Id];
+
+            uint32_t Integer;
+
+            reader->read_object_t(style._Flags, abortHandler);
+            reader->read_object_t(Integer, abortHandler); style._ColorSource = (ColorSource) Integer;
+            reader->read_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
+            reader->read_object_t(style._ColorIndex, abortHandler);
+            reader->read_object_t(Integer, abortHandler); style._ColorScheme = (ColorScheme) Integer;
 
             GradientStops gs;
 
@@ -135,31 +159,18 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
                 gs.push_back({ Position, Color });
             }
 
-            FLOAT Opacity; reader->read_object_t(Opacity, abortHandler);
-            FLOAT Thickness; reader->read_object_t(Thickness, abortHandler);
+            style._CustomGradientStops = gs;
 
-            pfc::string FontName = reader->read_string(abortHandler);
-            FLOAT FontSize; reader->read_object_t(FontSize, abortHandler);
+            reader->read_object_t(style._Opacity, abortHandler);
+            reader->read_object_t(style._Thickness, abortHandler);
 
-            Style style = { Name, Flags, (ColorSource) colorSource, CustomColor, ColorIndex, (ColorScheme) colorScheme, gs, Opacity, Thickness, FontName, FontSize };
-
-            _Styles.insert({ (VisualElement) Id, style });
-
-            if ((Version < 3) && (Id == 0)) // Version 2: VisualElement::GraphDescription was added before VisualElement::XAxisLine
-            {
-                style = 
-                {
-                    "Graph Description", Style::SupportsOpacity | Style::SupportsFont,
-                    ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-                };
-
-                _Styles.insert({ VisualElement::GraphDescription, style });
-            }
+            style._FontName = reader->read_string(abortHandler);
+            reader->read_object_t(style._FontSize, abortHandler);
         }
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while reading CUI styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Exception while reading styles: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -189,8 +200,6 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
             {
                 const Style & style = Iter.second;
 
-                writer->write_string(style._Name, abortHandler);
-
                 writer->write_object_t(style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
                 writer->write_object(&style._Color, sizeof(style._Color), abortHandler);
@@ -217,6 +226,6 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while writing CUI styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Exception while writing styles: %s", core_api::get_my_file_name(), ex.what());
     }
 }

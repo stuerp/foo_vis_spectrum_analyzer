@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.02.24) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -72,6 +72,6 @@ private:
     // Device-independent resources
     CComPtr<IDWriteTextFormat> _TextFormat;
 
-    const Style * _LineStyle;
-    const Style * _TextStyle;
+    Style * _LineStyle;
+    Style * _TextStyle;
 };

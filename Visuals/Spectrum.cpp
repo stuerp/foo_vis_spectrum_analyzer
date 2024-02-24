@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.02.19) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.02.24) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -214,35 +214,64 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
         hr = CreatePatternBrush(renderTarget);
 
-    if (!_GotStyles && SUCCEEDED(hr))
+    const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
+
     {
-        const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
-
-        for (const auto & Iter : { VisualElement::BarSpectrum, VisualElement::BarDarkBackground, VisualElement::BarLightBackground, VisualElement::BarPeakIndicator, VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea })
-        {
-            Style * style = _State->_StyleManager.GetStyle(Iter);
-
-            if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
-
-            if (!SUCCEEDED(hr))
-                break;
-        }
-
-        if (SUCCEEDED(hr))
-        {
+        if ((_ForegroundStyle == nullptr) && SUCCEEDED(hr))
             _ForegroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarSpectrum);
+
+        if ((_ForegroundStyle && (_ForegroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _ForegroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_DarkBackgroundStyle == nullptr) && SUCCEEDED(hr))
             _DarkBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
+
+        if ((_DarkBackgroundStyle && (_DarkBackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _DarkBackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_LightBackgroundStyle == nullptr) && SUCCEEDED(hr))
             _LightBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
+
+        if ((_LightBackgroundStyle && (_LightBackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _LightBackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_PeakIndicatorStyle == nullptr) && SUCCEEDED(hr))
             _PeakIndicatorStyle = _State->_StyleManager.GetStyle(VisualElement::BarPeakIndicator);
 
+        if ((_PeakIndicatorStyle && (_PeakIndicatorStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _PeakIndicatorStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+
+    {
+        if ((_CurveLine == nullptr) && SUCCEEDED(hr))
             _CurveLine = _State->_StyleManager.GetStyle(VisualElement::CurveLine);
+
+        if ((_CurveLine && (_CurveLine->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _CurveLine->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_CurveArea == nullptr) && SUCCEEDED(hr))
             _CurveArea = _State->_StyleManager.GetStyle(VisualElement::CurveArea);
+
+        if ((_CurveArea && (_CurveArea->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _CurveArea->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_CurvePeakLine == nullptr) && SUCCEEDED(hr))
             _CurvePeakLine = _State->_StyleManager.GetStyle(VisualElement::CurvePeakLine);
+
+        if ((_CurvePeakLine && (_CurvePeakLine->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _CurvePeakLine->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_CurvePeakArea == nullptr) && SUCCEEDED(hr))
             _CurvePeakArea = _State->_StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
-            _GotStyles = true;
-        }
+        if ((_CurvePeakArea && (_CurvePeakArea->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _CurvePeakArea->CreateDeviceSpecificResources(renderTarget, Size);
     }
 
     return hr;

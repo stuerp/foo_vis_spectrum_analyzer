@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.21) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.02.24) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -159,7 +159,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
 /// </summary>
 void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 {
-    if ((_DescriptionStyle->_ColorSource == ColorSource::None) || _Description.empty())
+    if (_Description.empty())
         return;
 
     const FLOAT Inset = 2.f;
@@ -171,15 +171,11 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
     Rect.right  = Rect.left + _TextWidth + (Inset * 2.f);
     Rect.bottom = Rect.top + _TextHeight + (Inset * 2.f);
 
-    FLOAT Opacity = _DescriptionStyle->_Brush->GetOpacity();
+    if (_DescriptionBackgroundStyle->_ColorSource != ColorSource::None)
+        renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
 
-    _DescriptionStyle->_Brush->SetOpacity(Opacity * 0.25f);
-
-    renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionStyle->_Brush);
-
-    _DescriptionStyle->_Brush->SetOpacity(Opacity);
-
-    renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _TextFormat, Rect, _DescriptionStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    if (_DescriptionTextStyle->_ColorSource != ColorSource::None)
+        renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -217,25 +213,28 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
         }
     }
 
-    if (((_BackgroundStyle == nullptr) || (_DescriptionStyle == nullptr)) && SUCCEEDED(hr))
+    const D2D1_SIZE_F Size = renderTarget->GetSize();
+
     {
-        const D2D1_SIZE_F Size = renderTarget->GetSize();
+        if ((_BackgroundStyle == nullptr) && SUCCEEDED(hr))
+            _BackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
 
-        Style * style = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
+        if ((_BackgroundStyle && (_BackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _BackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_DescriptionTextStyle == nullptr) && SUCCEEDED(hr))
+            _DescriptionTextStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionText);
 
-        if (style->_Brush == nullptr)
-            hr = style->CreateDeviceSpecificResources(renderTarget, Size);
+        if ((_DescriptionTextStyle && (_DescriptionTextStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _DescriptionTextStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+    {
+        if ((_DescriptionBackgroundStyle == nullptr) && SUCCEEDED(hr))
+            _DescriptionBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
 
-        if (SUCCEEDED(hr))
-            _BackgroundStyle = style;
-
-        style = _State->_StyleManager.GetStyle(VisualElement::GraphDescription);
-
-        if (style->_Brush == nullptr)
-            hr = style->CreateDeviceSpecificResources(renderTarget, Size);
-
-        if (SUCCEEDED(hr))
-            _DescriptionStyle = style;
+        if ((_DescriptionBackgroundStyle && (_DescriptionBackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+            hr = _DescriptionBackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
     }
 
     return hr;
@@ -250,10 +249,11 @@ void Graph::ReleaseDeviceSpecificResources() noexcept
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();
 
-    _DescriptionStyle = nullptr;
+    _DescriptionBackgroundStyle = nullptr;
+    _DescriptionTextStyle = nullptr;
     _BackgroundStyle = nullptr;
 
-    for (const auto & Iter : { VisualElement::GraphBackground, VisualElement::GraphDescription })
+    for (const auto & Iter : { VisualElement::GraphBackground, VisualElement::GraphDescriptionText, VisualElement::GraphDescriptionBackground })
     {
         Style * style = _State->_StyleManager.GetStyle(Iter);
 
