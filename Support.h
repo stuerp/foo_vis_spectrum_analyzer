@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.01.28) P. Stuer **/
+/** $VER: Support.h (2024.02.25) P. Stuer **/
 
 #pragma once
 
@@ -7,7 +7,14 @@
 
 #include <math.h>
 
+#include "Constants.h"
+
 HRESULT GetDPI(HWND hWnd, UINT & dpi);
+
+double ScaleF(double x, ScalingFunction function, double factor);
+double DeScaleF(double x, ScalingFunction function, double factor);
+
+double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor);
 
 /// <summary>
 /// Returns the minimum value of the specified values.
@@ -86,16 +93,6 @@ template<class T, class U>
 inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
     return dstMin + (U) (((double) (value - srcMin) * (dstMax - dstMin)) / (double) (srcMax - srcMin));
-}
-
-/// <summary>
-/// 
-/// </summary>
-inline static double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor)
-{
-    const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
-
-    return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
 }
 
 /// <summary>

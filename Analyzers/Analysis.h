@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.02.21) P. Stuer **/
+/** $VER: Analysis.h (2024.02.25) P. Stuer **/
 
 #pragma once
 
@@ -48,9 +48,6 @@ private:
     void GenerateLinearFrequencyBands(const State * state);
     void GenerateOctaveFrequencyBands(const State * state);
     void GenerateAveePlayerFrequencyBands(const State * state);
-
-    static double ScaleF(double x, ScalingFunction function, double factor);
-    static double DeScaleF(double x, ScalingFunction function, double factor);
 
 public:
     const State * _State;

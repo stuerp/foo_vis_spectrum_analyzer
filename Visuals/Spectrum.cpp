@@ -76,6 +76,13 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
         }
     }
 
+    // Draw the Nyquist frequency.
+    {
+        FLOAT x = Map(sampleRate / 2., frequencyBands.begin()->Ctr, (frequencyBands.end() - 1)->Ctr, _Bounds.left, _Bounds.right);
+
+        renderTarget->DrawLine(D2D1_POINT_2F(x, _Bounds.top), D2D1_POINT_2F(x, _Bounds.bottom), _ForegroundStyle->_Brush, 1.f, nullptr);
+    }
+
     renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 

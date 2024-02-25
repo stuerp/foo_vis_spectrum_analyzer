@@ -87,7 +87,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.1.0-rc-1, 2024-02-xx
 
-* New: The style of the description background can be specfied.
+* New: The style of the graph description background can be specified.
 * Fixed: The graph description will not be shown when the it is left empty or when disabled.
 * Fixed: The gradient brushes were not recreated when the graph was resized.
 

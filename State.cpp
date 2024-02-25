@@ -27,7 +27,7 @@ State::State()
 /// </summary>
 void State::Reset() noexcept
 {
-    _UseToneGenerator = false;
+    _UseToneGenerator = true;
 
     _DialogBounds = { };
     _PageIndex = 0;

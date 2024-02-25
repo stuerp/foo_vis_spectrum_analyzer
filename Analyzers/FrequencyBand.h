@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2024.02.16) P. Stuer **/
+/** $VER: FrequencyBand.h (2024.02.25) P. Stuer **/
 
 #pragma once
 
@@ -9,6 +9,28 @@ struct FrequencyBand
 {
     FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
     FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
+
+    FrequencyBand(const FrequencyBand & other)
+    {
+        NewValue = other.NewValue;
+        CurValue = other.CurValue;
+
+        Lo  = other.Lo;
+        Ctr = other.Ctr;
+        Hi  = other.Hi;
+
+        Peak       = other.Peak;
+        HoldTime   = other.HoldTime;
+        DecaySpeed = other.DecaySpeed;
+        Opacity    = other.Opacity;
+
+        ::memcpy(Label, other.Label, sizeof(Label));
+
+        HasDarkBackground = other.HasDarkBackground;
+        GradientColor     = other.GradientColor;;
+    }
+
+    virtual ~FrequencyBand() { }
 
     double NewValue;    // 0.0 .. 1.0
     double CurValue;    // 0.0 .. 1.0

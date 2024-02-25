@@ -1,10 +1,12 @@
 
-/** $VER: XAXis.cpp (2024.02.24) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.25) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
 #include "StyleManager.h"
 #include "DirectWrite.h"
+
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -145,6 +147,9 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
 
+    const double LoX = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double HiX = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+
     // Calculate the position of the labels based on the width.
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
@@ -157,7 +162,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 
     for (Label & Iter : _Labels)
     {
-        const FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
+        const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), LoX, HiX, 0.f, Width - BandWidth);
         const FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
 
         // Don't generate any labels outside the bounds.
