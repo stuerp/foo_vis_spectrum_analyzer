@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.02.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.26) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -962,9 +962,10 @@ void ConfigurationDialog::Initialize()
         for (const auto & x :
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
-            L"X-axis Line", L"X-axis Text", L"Y-axis Line", L"Y-axis Text",
-            L"Bar Spectrum", L"Bar Dark Background", L"Bar Light Background", L"Bar Peak Indicator",
+            L"X-axis Text", L"X-axis Line", L"Y-axis Text", L"Y-axis Line",
+            L"Bar Spectrum", L"Bar Peak Indicator", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
+            L"Nyquist Frequency",
         })
             w.AddString(x);
 
@@ -1613,7 +1614,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
                 default:
                     break;
 
-                case FFTMode::FFTCustom: { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom); break; }
+                case FFTMode::FFTCustom:   { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom); break; }
                 case FFTMode::FFTDuration: { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration); break; }
             }
             #pragma warning (default: 4061)

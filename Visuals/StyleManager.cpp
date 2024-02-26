@@ -75,6 +75,8 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::CurveArea,
         VisualElement::CurvePeakLine,
         VisualElement::CurvePeakArea,
+
+        VisualElement::NyquistMarker,
     };
 
     return GetStyle(IndexToId[(size_t) index]);

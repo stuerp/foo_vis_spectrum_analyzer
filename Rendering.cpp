@@ -71,18 +71,21 @@ void UIElement::OnTimer()
     _CriticalSection.Leave();
 
     // Notify the configuration dialog about the changed gradient colors.
-    if (_IsConfigurationChanged && _ConfigurationDialog.IsWindow())
+    if (_IsConfigurationChanged)
     {
-        _CriticalSection.Enter();
+        if (_ConfigurationDialog.IsWindow())
+        {
+            _CriticalSection.Enter();
 
-        _State._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+            _State._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
-        _CriticalSection.Leave();
+            _CriticalSection.Leave();
 
-        _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+            _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+        }
+
+        _IsConfigurationChanged = false;
     }
-
-    _IsConfigurationChanged = false;
 }
 
 /// <summary>

@@ -149,8 +149,8 @@ void Analysis::Reset()
 /// </summary>
 void Analysis::GenerateLinearFrequencyBands(const State * state)
 {
-    const double MinFreq = ScaleF(state->_LoFrequency, state->_ScalingFunction, state->_SkewFactor);
-    const double MaxFreq = ScaleF(state->_HiFrequency, state->_ScalingFunction, state->_SkewFactor);
+    const double MinScale = ScaleF(state->_LoFrequency, state->_ScalingFunction, state->_SkewFactor);
+    const double MaxScale = ScaleF(state->_HiFrequency, state->_ScalingFunction, state->_SkewFactor);
 
     const double Bandwidth = (((state->_Transform == Transform::FFT) && (state->_MappingMethod == Mapping::TriangularFilterBank)) || (state->_Transform == Transform::CQT)) ? state->_Bandwidth : 0.5;
 
@@ -158,15 +158,15 @@ void Analysis::GenerateLinearFrequencyBands(const State * state)
 
     double i = 0.;
 
-    for (FrequencyBand & Iter: _FrequencyBands)
+    for (FrequencyBand & fb: _FrequencyBands)
     {
-        Iter.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(state->_BandCount - 1), MinFreq, MaxFreq), state->_ScalingFunction, state->_SkewFactor);
-        Iter.Ctr = DeScaleF(Map(i,             0., (double)(state->_BandCount - 1), MinFreq, MaxFreq), state->_ScalingFunction, state->_SkewFactor);
-        Iter.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(state->_BandCount - 1), MinFreq, MaxFreq), state->_ScalingFunction, state->_SkewFactor);
+        fb.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
+        fb.Ctr = DeScaleF(Map(i,             0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
+        fb.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
 
-        ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
-        Iter.HasDarkBackground = true;
+        fb.HasDarkBackground = true;
 
         ++i;
     }
@@ -193,6 +193,7 @@ void Analysis::GenerateOctaveFrequencyBands(const State * state)
 
     static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
 
+    #pragma loop(hint_parallel(8))
     for (double i = LoNote; i <= HiNote; ++i)
     {
         FrequencyBand fb = 
@@ -228,21 +229,21 @@ void Analysis::GenerateAveePlayerFrequencyBands(const State * state)
 
     double i = 0.;
 
-    for (FrequencyBand & Iter : _FrequencyBands)
+    for (FrequencyBand & fb : _FrequencyBands)
     {
-        Iter.Lo  = LogSpace(state->_LoFrequency, state->_HiFrequency, i - Bandwidth, state->_BandCount - 1, state->_SkewFactor);
-        Iter.Ctr = LogSpace(state->_LoFrequency, state->_HiFrequency, i,             state->_BandCount - 1, state->_SkewFactor);
-        Iter.Hi  = LogSpace(state->_LoFrequency, state->_HiFrequency, i + Bandwidth, state->_BandCount - 1, state->_SkewFactor);
+        fb.Lo  = LogSpace(state->_LoFrequency, state->_HiFrequency, i - Bandwidth, state->_BandCount - 1, state->_SkewFactor);
+        fb.Ctr = LogSpace(state->_LoFrequency, state->_HiFrequency, i,             state->_BandCount - 1, state->_SkewFactor);
+        fb.Hi  = LogSpace(state->_LoFrequency, state->_HiFrequency, i + Bandwidth, state->_BandCount - 1, state->_SkewFactor);
 
-        Iter.HasDarkBackground = true;
-        ::swprintf_s(Iter.Label, _countof(Iter.Label), L"%.2fHz", Iter.Ctr);
+        fb.HasDarkBackground = true;
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
         ++i;
     }
 }
 
 /// <summary>
-/// Gets an analyzer and any supporting objects.
+/// Gets an analyzer and its supporting objects, if any.
 /// </summary>
 void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
@@ -282,8 +283,8 @@ void Analysis::ApplyAcousticWeighting()
 {
     const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
 
-    for (FrequencyBand & Iter : _FrequencyBands)
-        Iter.NewValue *= GetWeight(Iter.Ctr + Offset);
+    for (FrequencyBand & fb : _FrequencyBands)
+        fb.NewValue *= GetWeight(fb.Ctr + Offset);
 }
 
 /// <summary>

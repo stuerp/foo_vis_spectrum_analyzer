@@ -6,6 +6,7 @@
 
 #include "Theme.h"
 #include "Support.h"
+#include "Color.h"
 
 #pragma hdrstop
 
@@ -81,7 +82,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
             HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
             {
-                HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_Colors[dis->itemID]));
+                HBRUSH hBrush = Color::CreateBrush(_Colors[dis->itemID]);
 
                 HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
 

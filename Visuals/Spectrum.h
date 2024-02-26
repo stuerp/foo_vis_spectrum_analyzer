@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.02.19) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.02.26) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -66,6 +66,8 @@ private:
     void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
+    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
+
 private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
@@ -75,15 +77,15 @@ private:
     // Device-dependent resources
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
 
-    Style * _ForegroundStyle;
-    Style * _DarkBackgroundStyle;
-    Style * _LightBackgroundStyle;
-    Style * _PeakIndicatorStyle;
+    Style * _Foreground;
+    Style * _DarkBackground;
+    Style * _LightBackground;
+    Style * _PeakIndicator;
 
     Style * _CurveLine;
     Style * _CurveArea;
     Style * _CurvePeakLine;
     Style * _CurvePeakArea;
 
-    bool _GotStyles;
+    Style * _NyquistMarker;
 };

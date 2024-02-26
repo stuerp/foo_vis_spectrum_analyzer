@@ -1,9 +1,10 @@
 
-/** $VER: CColorButton.cpp (2024.01.16) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2024.02.26) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "CColorButton.h"
 #include "CColorDialogEx.h"
-#include "Support.h"
+
+#include "Color.h"
 
 #pragma hdrstop
 
@@ -46,7 +47,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 {
     _GradientStops = gradientStops;
 
-    _Brush.Release();
+    _Brush = nullptr;
 
     Invalidate();
     UpdateWindow();
@@ -57,7 +58,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 /// </summary>
 void CColorButton::SetColor(COLORREF color)
 {
-    SetColor(ToD2D1_COLOR_F(color));
+    SetColor(Color::ToD2D1_COLOR_F(color));
 }
 
 /// <summary>
@@ -68,7 +69,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
     _Color = color;
     _GradientStops.clear();
 
-    _Brush.Release();
+    _Brush = nullptr;
 
     Invalidate();
     UpdateWindow();
@@ -100,8 +101,11 @@ void CColorButton::OnPaint(HDC)
 
     D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
 
-    _RenderTarget->FillRectangle(Rect, _PatternBrush);
-    _RenderTarget->FillRectangle(Rect, _Brush);
+    if (_PatternBrush)
+        _RenderTarget->FillRectangle(Rect, _PatternBrush);
+
+    if (_Brush)
+        _RenderTarget->FillRectangle(Rect, _Brush);
 
     hr = _RenderTarget->EndDraw();
 
@@ -180,7 +184,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
         }
     }
 
-    if ((_PatternBrush == nullptr) && SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && (_PatternBrush == nullptr))
         hr = CreatePatternBrush(_RenderTarget);
 
     return hr;
@@ -238,8 +242,8 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void CColorButton::ReleaseDeviceSpecificResources()
 {
-    _PatternBrush.Release();
-    _Brush.Release();
+    _PatternBrush = nullptr;
+    _Brush = nullptr;
 
     __super::ReleaseDeviceSpecificResources();
 }

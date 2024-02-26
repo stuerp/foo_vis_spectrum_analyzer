@@ -1,11 +1,12 @@
 
-/** $VER: CUIElement.cpp (2024.02.08) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.26) P. Stuer **/
 
 #include "CUIElement.h"
-
-#pragma hdrstop
+#include "Color.h"
 
 #include "ui_extension.h"
+
+#pragma hdrstop
 
 namespace uie
 {
@@ -82,7 +83,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_State._UserInterfaceColors[3]));
+    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
 
     ::FillRect(hDC, &cr, hBrush);
 

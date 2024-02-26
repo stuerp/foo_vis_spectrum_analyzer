@@ -10,6 +10,7 @@
 /// </summary>
 bool ToneGenerator::GetChunk(audio_chunk & chunk, uint32_t sampleRate)
 {
+    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < _Size; i++)
     {
         _Data[i] = (audio_sample) (::sin(_Clock / (double) sampleRate * _Frequency * M_PI * 2.) * _Amplitude + (0.5 - (double) ::rand() / (double) RAND_MAX) * _NoiseAmplitude);

@@ -133,7 +133,8 @@ bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const no
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
-    renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
+    if (_BackgroundStyle->_ColorSource != ColorSource::None)
+        renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
     if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground)
@@ -215,25 +216,30 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 
     const D2D1_SIZE_F Size = renderTarget->GetSize();
 
+    if (SUCCEEDED(hr))
     {
-        if ((_BackgroundStyle == nullptr) && SUCCEEDED(hr))
+        if (_BackgroundStyle == nullptr)
             _BackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
 
-        if ((_BackgroundStyle && (_BackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+        if (_BackgroundStyle && (_BackgroundStyle->_Brush == nullptr))
             hr = _BackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
     }
+
+    if (SUCCEEDED(hr))
     {
-        if ((_DescriptionTextStyle == nullptr) && SUCCEEDED(hr))
+        if (_DescriptionTextStyle == nullptr)
             _DescriptionTextStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionText);
 
-        if ((_DescriptionTextStyle && (_DescriptionTextStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+        if (_DescriptionTextStyle && (_DescriptionTextStyle->_Brush == nullptr))
             hr = _DescriptionTextStyle->CreateDeviceSpecificResources(renderTarget, Size);
     }
+
+    if (SUCCEEDED(hr))
     {
-        if ((_DescriptionBackgroundStyle == nullptr) && SUCCEEDED(hr))
+        if (_DescriptionBackgroundStyle == nullptr)
             _DescriptionBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
 
-        if ((_DescriptionBackgroundStyle && (_DescriptionBackgroundStyle->_Brush == nullptr)) && SUCCEEDED(hr))
+        if (_DescriptionBackgroundStyle && (_DescriptionBackgroundStyle->_Brush == nullptr))
             hr = _DescriptionBackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
     }
 

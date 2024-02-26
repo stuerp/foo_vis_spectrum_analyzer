@@ -86,6 +86,7 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t
     sampleCount -= (sampleCount % _ChannelCount);
 
     // Merge the samples of all channels into one averaged sample.
+    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
         _Data[_Curr] = AverageSamples(&samples[i], channels);
@@ -145,15 +146,15 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
 
     std::vector<double> Values(16);
 
-    for (FrequencyBand & Iter : freqBands)
+    for (FrequencyBand & fb : freqBands)
     {
-        const double LoHz = HzToFFTIndex(Min(Iter.Hi, Iter.Lo), _FreqData.size(), sampleRate);
-        const double HiHz = HzToFFTIndex(Max(Iter.Hi, Iter.Lo), _FreqData.size(), sampleRate);
+        const double LoHz = HzToFFTIndex(Min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double HiHz = HzToFFTIndex(Max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
 
         const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
-                int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
+              int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
 
-        const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((Iter.Hi - Iter.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+        const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
         if (LoIdx <= HiIdx)
         {
@@ -208,13 +209,13 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
             if (_State->_SummationMethod == SummationMethod::Median)
                 Value = Median(Values);
 
-            Iter.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
+            fb.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
         }
         else
         {
-            const double Value = Iter.Ctr * (double) _FreqData.size() / sampleRate;
+            const double Value = fb.Ctr * (double) _FreqData.size() / sampleRate;
 
-            Iter.NewValue = ::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
+            fb.NewValue = ::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
         }
     }
 }
@@ -225,13 +226,13 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
-    for (FrequencyBand & Iter : freqBands)
+    for (FrequencyBand & fb : freqBands)
     {
         double Sum = 0.;
 
-        const double MinBin = Min(Iter.Lo, Iter.Hi) * (double) _FreqData.size() / sampleRate;
-        const double MidBin = Iter.Ctr              * (double) _FreqData.size() / sampleRate;
-        const double MaxBin = Max(Iter.Lo, Iter.Hi) * (double) _FreqData.size() / sampleRate;
+        const double MinBin = Min(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
+        const double MidBin = fb.Ctr            * (double) _FreqData.size() / sampleRate;
+        const double MaxBin = Max(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
 
         const double OverflowCompensation = Max(0., MaxBin - MinBin - (double) _FreqData.size());
 
@@ -241,7 +242,7 @@ void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & f
         for (double i = ::ceil(MidBin); i <= ::ceil(MaxBin - OverflowCompensation); ++i)
             Sum += ::pow(std::abs(_FreqData[Wrap((size_t) i, _FreqData.size())]) * Max(Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
-        Iter.NewValue = ::sqrt(Sum);
+        fb.NewValue = ::sqrt(Sum);
     }
 }
 
@@ -253,14 +254,14 @@ void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & fr
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 
-    for (FrequencyBand & Iter : freqBands)
+    for (FrequencyBand & fb : freqBands)
     {
         double re = 0.;
         double im = 0.;
 
-        const double Center      = Iter.Ctr * HzToBin;
+        const double Center      = fb.Ctr * HzToBin;
 
-        const double Bandwidth    = ::abs(Iter.Hi - Iter.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
+        const double Bandwidth    = ::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
         const double tlen         = Min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
         const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : Min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
         const double flen         = Min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
@@ -284,7 +285,7 @@ void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & fr
             }
         }
 
-        Iter.NewValue = ::hypot(re, im);
+        fb.NewValue = ::hypot(re, im);
     }
 }
 
@@ -296,6 +297,7 @@ double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, doub
     double re = 0.;
     double im = 0.;
 
+    #pragma loop(hint_parallel(8))
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
         double Pos = ::floor(value) + i;

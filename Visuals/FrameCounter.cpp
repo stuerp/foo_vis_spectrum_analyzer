@@ -49,7 +49,7 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (SUCCEEDED(hr))
         hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
 
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && (_Brush != nullptr))
     {
         const D2D1_RECT_F Rect = { _ClientWidth - 2.f - _TextWidth, 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
 
@@ -134,5 +134,5 @@ HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTa
 /// </summary>
 void FrameCounter::ReleaseDeviceSpecificResources() noexcept
 {
-    _Brush.Release();
+    _Brush = nullptr;
 }

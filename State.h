@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.21) P. Stuer **/
+/** $VER: State.h (2024.02.26) P. Stuer **/
 
 #pragma once
 
