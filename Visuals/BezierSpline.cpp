@@ -31,6 +31,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
     std::vector<FLOAT> rhs(n);
 
     // Set right hand side X values
+    #pragma loop(hint_parallel(8))
     for (size_t i = 1; i < n - 1; ++i)
         rhs[i] = 4.f * knots[i].x + 2.f * knots[i + 1].x;
 
@@ -41,6 +42,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
     std::vector<FLOAT> x = GetFirstControlPoints(rhs);
 
     // Set right hand side Y values
+    #pragma loop(hint_parallel(8))
     for (size_t i = 1; i < n - 1; ++i)
         rhs[i] = 4.f * knots[i].y + 2.f * knots[i + 1].y;
 
@@ -51,6 +53,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
     std::vector<FLOAT> y = GetFirstControlPoints(rhs);
 
     // Fill output arrays.
+    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < n; ++i)
     {
         // First control point
@@ -79,6 +82,7 @@ std::vector<FLOAT> BezierSpline::GetFirstControlPoints(std::vector<FLOAT> rhs) n
     x[0] = rhs[0] / b;
 
     // Decomposition and forward substitution.
+    #pragma loop(hint_parallel(8))
     for (size_t i = 1; i < n; ++i)
     {
         t[i] = 1.f / b;
@@ -86,6 +90,7 @@ std::vector<FLOAT> BezierSpline::GetFirstControlPoints(std::vector<FLOAT> rhs) n
         x[i] = (rhs[i] - x[i - 1]) / b;
     }
 
+    #pragma loop(hint_parallel(8))
     for (size_t i = 1; i < n; ++i)
         x[n - i - 1] -= t[n - i] * x[n - i]; // Backsubstitution.
 

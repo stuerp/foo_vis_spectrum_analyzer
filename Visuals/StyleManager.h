@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.02.18) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.02.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -22,19 +22,33 @@ public:
 
     virtual ~StyleManager() { }
 
-    void Reset() noexcept;
+    Style * operator[] (size_t index)
+    {
+        std::map<VisualElement, Style>::iterator Iter(_Styles.begin());
 
-    void Read(ui_element_config_parser & parser) noexcept;
-    void Write(ui_element_config_builder & builder) const noexcept;
+        std::advance(Iter, index);
+
+        return &Iter->second;
+    }
+
+    void Reset() noexcept;
 
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
     Style * GetStyle(VisualElement visualElement);
-
-    void GetStyles(std::vector<Style> & styles) const;
+    Style * GetStyleByIndex(int index);
 
     void SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor);
+
+    void ResetGradients()
+    {
+        for (auto & Iter : _Styles)
+        {
+            if (Iter.second._ColorSource == ColorSource::Gradient)
+                Iter.second._Brush = nullptr;
+        }
+    }
 
     void ReleaseDeviceSpecificResources();
 
@@ -44,119 +58,135 @@ private:
     #pragma warning(disable: 4868)
     const std::map<VisualElement, Style> _DefaultStyles
     {
-    {
-        VisualElement::GraphBackground,
         {
-            "Graph Background", Style::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::GraphBackground,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::GraphDescription,
         {
-            "Graph Description", Style::SupportsOpacity | Style::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::GraphDescriptionText,
+            {
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::XAxisLine,
         {
-            "X-axis Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
-        }
-    },
+            VisualElement::GraphDescriptionBackground,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(1.f, 1.f, 1.f, .25f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::XAxisText,
         {
-            "X-axis Text", Style::SupportsOpacity | Style::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::XAxisLine,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::YAxisLine,
         {
-            "Y-axis Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
-            "", 0.f,
-        }
-    },
+            VisualElement::XAxisText,
+            {
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::YAxisText,
         {
-            "Y-axis Text", Style::SupportsOpacity | Style::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::YAxisLine,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,
+                "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::BarSpectrum,
         {
-            "Bar Spectrum", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::YAxisText,
+            {
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::BarDarkBackground,
         {
-            "Bar Dark Background", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::BarSpectrum,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::BarLightBackground,
         {
-            "Bar Light Background", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::BarDarkBackground,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::BarPeakIndicator,
         {
-            "Bar Peak Indicator", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
-        }
-    },
+            VisualElement::BarLightBackground,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::CurveLine,
         {
-            "Curve Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
-        }
-    },
+            VisualElement::BarPeakIndicator,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::CurveArea,
         {
-            "Curve Area", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f, "", 0.f,
-        }
-    },
+            VisualElement::CurveLine,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::CurvePeakLine,
         {
-            "Curve Peak Line", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
-        }
-    },
+            VisualElement::CurveArea,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f, "", 0.f,
+            }
+        },
 
-    {
-        VisualElement::CurvePeakArea,
         {
-            "Curve Peak Area", Style::SupportsOpacity | Style::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f, "", 0.f,
+            VisualElement::CurvePeakLine,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, "", 0.f,
+            }
+        },
+
+        {
+            VisualElement::CurvePeakArea,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f, "", 0.f,
+            }
+        },
+
+        {
+            VisualElement::NyquistMarker,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+            }
         }
-    }
     };
 
-    const uint32_t _CurrentVersion = 3;
+    const uint32_t _CurrentVersion = 4;
 };

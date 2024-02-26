@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.02.19) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.02.24) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
@@ -93,10 +93,11 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     for (const Label & Iter : _Labels)
     {
         // Draw the horizontal grid line.
-        renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+        if (_LineStyle->_ColorSource != ColorSource::None)
+            renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         // Prevent overdraw of the labels.
-        if (!InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
+        if (!InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom) && (_TextStyle->_ColorSource != ColorSource::None))
         {
             // Draw the labels.
             if (_GraphSettings->_YAxisLeft)
@@ -164,25 +165,26 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
-    if ((_LineStyle == nullptr) || (_TextStyle == nullptr))
+    const D2D1_SIZE_F Size = renderTarget->GetSize();
+
     {
-        const D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
-        {
-            Style * style = _State->_StyleManager.GetStyle(Iter);
-
-            if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
-
-            if (!SUCCEEDED(hr))
-                break;
-        }
-
         if (SUCCEEDED(hr))
         {
-            _LineStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisLine);
-            _TextStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisText);
+            if (_LineStyle == nullptr)
+                _LineStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisLine);
+
+            if (_LineStyle && (_LineStyle->_Brush == nullptr))
+                hr = _LineStyle->CreateDeviceSpecificResources(renderTarget, Size);
+        }
+    }
+    {
+        if (SUCCEEDED(hr))
+        {
+            if (_TextStyle == nullptr)
+                _TextStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+            if (_TextStyle && (_TextStyle->_Brush == nullptr))
+                hr = _TextStyle->CreateDeviceSpecificResources(renderTarget, Size);
         }
     }
 

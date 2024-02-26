@@ -85,6 +85,16 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.1.0-rc-1, 2024-02-26
+
+* New: The style of the graph description background can be specified.
+* New: A marker for the Nyquist frequency can be enabled on the Styles page.
+* Improved: The frequency tooltip tries to stay within borders of the component.
+* Fixed: The graph description will not be shown when it is left empty or when its color source is set to "None".
+* Fixed: The gradient brushes were not recreated when the graph was resized.
+* Fixed: X-axis scaling did not obey the selected scaling function.
+* Fixed: Most visual elements with color source "None" ignored the setting.
+
 v0.7.1.0-beta-2, 2024-02-22
 
 * New: Multiple graphs.

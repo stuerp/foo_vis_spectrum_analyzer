@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.17) P. Stuer **/
+/** $VER: UIElement.cpp (2024.02.26) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -334,7 +334,24 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
                 // Reposition the tooltip.
                 ::ClientToScreen(m_hWnd, &pt);
 
-                _ToolTipControl.TrackPosition(pt.x + 10, pt.y - 35);
+                RECT tr;
+
+                _ToolTipControl.GetClientRect(&tr);
+
+                int x = pt.x + 4;
+                int y = pt.y - 4 - tr.bottom;
+
+                RECT wr;
+
+                GetWindowRect(&wr);
+
+                if (x + tr.right >=  wr.right)
+                    x = pt.x - 4 - tr.right;
+
+                if (y <=  wr.top)
+                    y = pt.y + 4;
+
+                _ToolTipControl.TrackPosition(x, y);
             }
             else
             {

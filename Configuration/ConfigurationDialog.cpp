@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.02.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.26) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -957,16 +957,19 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Styles
     {
-        _State->_SelectedStyle = (int) VisualElement::GraphBackground;
-
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
-        std::vector<Style> Styles;
+        for (const auto & x :
+        {
+            L"Graph Background", L"Graph Description Text", L"Graph Description Background",
+            L"X-axis Text", L"X-axis Line", L"Y-axis Text", L"Y-axis Line",
+            L"Bar Spectrum", L"Bar Peak Indicator", L"Bar Dark Background", L"Bar Light Background",
+            L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
+            L"Nyquist Frequency",
+        })
+            w.AddString(x);
 
-        _State->_StyleManager.GetStyles(Styles);
-
-        for (const auto & x : Styles)
-            w.AddString(pfc::wideFromUTF8(x._Name));
+        _State->_SelectedStyle = (int) VisualElement::GraphBackground;
 
         w.SetCurSel(_State->_SelectedStyle);
     }
@@ -1286,7 +1289,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_SOURCE:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_ColorSource = (ColorSource) SelectedIndex;
 
@@ -1297,7 +1300,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_INDEX:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_ColorIndex = (uint32_t) SelectedIndex;
 
@@ -1308,7 +1311,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_SCHEME:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
@@ -1320,7 +1323,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         case IDC_COLOR_LIST:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             // Show the position of the selected color of the gradient.
             size_t Index = (size_t) _Colors.GetCurSel();
@@ -1543,7 +1546,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_POSITION:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1569,7 +1572,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_OPACITY:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_Opacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
@@ -1577,7 +1580,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_THICKNESS:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_Thickness = (FLOAT) Clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
@@ -1611,7 +1614,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
                 default:
                     break;
 
-                case FFTMode::FFTCustom: { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom); break; }
+                case FFTMode::FFTCustom:   { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom); break; }
                 case FFTMode::FFTDuration: { SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration); break; }
             }
             #pragma warning (default: 4061)
@@ -1696,8 +1699,17 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ACCELERATION:          { SetDouble(id, _State->_Acceleration, 0, 1); break; }
 
         // Styles
-        case IDC_OPACITY:               { SetInteger(id, (int64_t) (_State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle)->_Opacity * 100.f)); break; }
-        case IDC_THICKNESS:             { SetDouble(id, _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle)->_Thickness, 0, 1); break; }
+        case IDC_OPACITY:
+        {
+            SetInteger(id, (int64_t) (_State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Opacity * 100.f));
+            break;
+        }
+
+        case IDC_THICKNESS:
+        {
+            SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Thickness, 0, 1);
+            break;
+        }
     }
 
     return;
@@ -1858,7 +1870,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1885,7 +1897,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (_Colors.GetCount() == 1)
                 return;
 
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             size_t Index = (size_t) _Colors.GetCurSel();
 
@@ -1901,7 +1913,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_REVERSE:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             std::reverse(style->_GradientStops.begin(), style->_GradientStops.end());
 
@@ -1912,7 +1924,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_SPREAD:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             UpdateGradientStopPositons(style);
             UpdateColorSchemeControls();
@@ -1921,7 +1933,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_HORIZONTAL_GRADIENT:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
                 style->_Flags |= Style::HorizontalGradient;
@@ -2147,7 +2159,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_OPACITY_SPIN:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_Opacity = (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.);
             SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
@@ -2156,7 +2168,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_THICKNESS_SPIN:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             style->_Thickness = (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.);
             SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
@@ -2184,7 +2196,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_LIST:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             std::vector<D2D1_COLOR_F> Colors;
 
@@ -2207,7 +2219,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_BUTTON:
         {
-            Style * style = _State->_StyleManager.GetStyle((VisualElement) _State->_SelectedStyle);
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             _Color.GetColor(style->_CustomColor);
 
@@ -2652,9 +2664,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateStyleControls()
 {
-    int StyleIndex = ((CListBox) GetDlgItem(IDC_STYLES)).GetCurSel();
-
-    Style * style = _State->_StyleManager.GetStyle((VisualElement) StyleIndex);
+    Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
     // Update the controls based on the color source.
     switch (style->_ColorSource)
@@ -2751,9 +2761,7 @@ void ConfigurationDialog::UpdateStyleControls()
 /// </summary>
 void ConfigurationDialog::UpdateColorSchemeControls()
 {
-    int StyleIndex = ((CListBox) GetDlgItem(IDC_STYLES)).GetCurSel();
-
-    Style * style = _State->_StyleManager.GetStyle((VisualElement) StyleIndex);
+    Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
     // Update the color button.
     _Color.SetColor(style->_Color);

@@ -36,6 +36,7 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
         double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
         double Norm = 0.;
 
+        #pragma loop(hint_parallel(8))
         for (double Idx = ::trunc(LoIdx / DownsampleAmount); Idx <= ::trunc(HiIdx / DownsampleAmount); ++Idx)
         {
             double x = ((Idx * DownsampleAmount - LoIdx) / (HiIdx - LoIdx) * 2. - 1.);

@@ -1,10 +1,12 @@
 
-/** $VER: XAXis.cpp (2024.02.19) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.02.25) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
 #include "StyleManager.h"
 #include "DirectWrite.h"
+
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -145,10 +147,13 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
 
+    const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+
     // Calculate the position of the labels based on the width.
     const FLOAT Width = _Bounds.right - _Bounds.left;
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT BandWidth = Max((Width / (FLOAT) _BandCount), 1.f);
+    const FLOAT BandWidth = Max((Width / (FLOAT) _BandCount), 1.f); // In pixels
 
     const FLOAT StartX = !_GraphSettings->_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
 
@@ -157,7 +162,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 
     for (Label & Iter : _Labels)
     {
-        const FLOAT dx = Map(log2(Iter.Frequency), ::log2(_LoFrequency), ::log2(_HiFrequency), 0.f, Width - BandWidth);
+        const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, Width - BandWidth);
         const FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
 
         // Don't generate any labels outside the bounds.
@@ -204,21 +209,25 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     for (const Label & Iter : _Labels)
     {
         // Draw the vertical grid line.
-        renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+        if (_LineStyle->_ColorSource != ColorSource::None)
+            renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
-        _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
-
-        // Prevent overdraw of the labels.
-        if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
+        if (_TextStyle->_ColorSource != ColorSource::None)
         {
-            // Draw the labels.
-            if (_GraphSettings->_XAxisTop)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
-            if (_GraphSettings->_XAxisBottom)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            // Prevent overdraw of the labels.
+            if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
+            {
+                // Draw the labels.
+                if (_GraphSettings->_XAxisTop)
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            OldRect = Iter.RectB;
+                if (_GraphSettings->_XAxisBottom)
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                OldRect = Iter.RectB;
+            }
         }
     }
 
@@ -282,26 +291,24 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
-    if (_LineStyle == nullptr || _TextStyle == nullptr)
+    const D2D1_SIZE_F Size = renderTarget->GetSize();
+
+    if (SUCCEEDED(hr))
     {
-        const D2D1_SIZE_F Size = renderTarget->GetSize();
-
-        for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
-        {
-            Style * style = _State->_StyleManager.GetStyle(Iter);
-
-            if (style->_Brush == nullptr)
-                hr = style->CreateDeviceSpecificResources(renderTarget, Size);
-
-            if (!SUCCEEDED(hr))
-                break;
-        }
-
-        if (SUCCEEDED(hr))
-        {
+        if (_LineStyle == nullptr)
             _LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+
+        if (_LineStyle && (_LineStyle->_Brush == nullptr))
+            hr = _LineStyle->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        if (_TextStyle == nullptr)
             _TextStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisText);
-        }
+
+        if (_TextStyle && (_TextStyle->_Brush == nullptr))
+            hr = _TextStyle->CreateDeviceSpecificResources(renderTarget, Size);
     }
 
     if (SUCCEEDED(hr))

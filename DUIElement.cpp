@@ -1,8 +1,9 @@
 
-/** $VER: DUIElement.cpp (2024.02.10) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.02.26) P. Stuer **/
 
 #include "DUIElement.h"
 
+#include "Color.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -143,7 +144,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = ::CreateSolidBrush(ToCOLORREF(_State._UserInterfaceColors[1]));
+    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 

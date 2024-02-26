@@ -1,5 +1,5 @@
 
-/** $VER: Support.cpp (2024.01.28) P. Stuer **/
+/** $VER: Support.cpp (2024.02.26) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -8,6 +8,7 @@
 #include "Direct2D.h"
 
 #include "SafeModuleHandle.h"
+#include "Support.h"
 
 #pragma hdrstop
 

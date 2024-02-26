@@ -24,14 +24,14 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
     const double Factor = 4. * _State->_SWIFTBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
-    for (const FrequencyBand & Iter : frequencyBands)
+    for (const FrequencyBand & fb : frequencyBands)
     {
         // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
         Coef c =
         {
-            ::cos(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
-            ::sin(Iter.Ctr * M_PI * 2. / (double) _SampleRate),
-            ::exp(-::abs(Iter.Hi - Iter.Lo) * Factor),
+            ::cos(fb.Ctr * M_PI * 2. / (double) _SampleRate),
+            ::sin(fb.Ctr * M_PI * 2. / (double) _SampleRate),
+            ::exp(-::abs(fb.Hi - fb.Lo) * Factor),
         };
 
         c.Values.resize(_State->_FilterBankOrder, { 0., 0.});
@@ -47,9 +47,10 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 /// </summary>
 bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
-    for (auto & Iter : frequencyBands)
-        Iter.NewValue = 0.;
+    for (auto & fb : frequencyBands)
+        fb.NewValue = 0.;
 
+    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
         const audio_sample Sample = AverageSamples(&sampleData[i], channels);
@@ -86,8 +87,8 @@ bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampl
         }
     }
 
-    for (auto & Iter : frequencyBands)
-        Iter.NewValue = ::sqrt(Iter.NewValue);
+    for (auto & fb : frequencyBands)
+        fb.NewValue = ::sqrt(fb.NewValue);
 
     return true;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.02.10) P. Stuer **/
+/** $VER: Style.cpp (2024.02.24) P. Stuer **/
 
 #include "Style.h"
 
@@ -23,7 +23,6 @@ Style::Style(const Style & other)
 /// </summary>
 Style & Style::operator=(const Style & other)
 {
-    _Name = other._Name;
     _Flags = other._Flags;
 
     _ColorSource = other._ColorSource;
@@ -48,9 +47,8 @@ Style & Style::operator=(const Style & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-Style::Style(const char * name, uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
+Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
 {
-    _Name = name;
     _Flags = flags;
 
     _ColorSource = colorSource;
