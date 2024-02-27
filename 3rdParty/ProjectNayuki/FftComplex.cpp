@@ -102,9 +102,6 @@ void Fft::transformRadix2(vector<complex<double>> & vec, vector<complex<double>>
     }
 }
 
-// Trigonometric table
-static vector<complex<double>> expTableBluestein;
-
 void Fft::transformBluestein(vector<complex<double>> & vec, vector<complex<double>> & exp, bool inverse)
 {
     // Find a power-of-2 convolution length m such that m >= n * 2 + 1
@@ -142,17 +139,17 @@ void Fft::transformBluestein(vector<complex<double>> & vec, vector<complex<doubl
 
     vector<complex<double>> bvec(m);
 
-    bvec[0] = expTableBluestein[0];
+    bvec[0] = exp[0];
 
     for (size_t i = 1; i < n; i++)
-        bvec[i] = bvec[m - i] = std::conj(expTableBluestein[i]);
+        bvec[i] = bvec[m - i] = std::conj(exp[i]);
 
     // Convolution
     vector<complex<double>> cvec = convolve(std::move(avec), std::move(bvec), exp);
 
     // Postprocessing
     for (size_t i = 0; i < n; i++)
-        vec[i] = cvec[i] * expTableBluestein[i];
+        vec[i] = cvec[i] * exp[i];
 }
 
 vector<complex<double>> Fft::convolve(vector<complex<double>> xvec, vector<complex<double>> yvec, vector<complex<double>> & exp)
