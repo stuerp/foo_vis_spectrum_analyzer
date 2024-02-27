@@ -85,6 +85,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.1.0, 2024-03-xx
+
+* Improved: Tweaked the background painting again to prevent flashes when resizing the component.
+
 v0.7.1.0-rc-2, 2024-02-27
 
 * Fixed (Regression): Non-radix-2 FFT's caused a crash.
