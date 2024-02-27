@@ -138,7 +138,7 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(WM_CONFIGURATION_CHANGED, OnConfigurationChange)
+        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChange)
     END_MSG_MAP()
 
     #pragma endregion

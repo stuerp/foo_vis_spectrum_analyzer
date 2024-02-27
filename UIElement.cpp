@@ -380,7 +380,7 @@ void UIElement::OnMouseLeave()
 }
 
 /// <summary>
-/// Handles the WM_CONFIGURATION_CHANGED message.
+/// Handles the UM_CONFIGURATION_CHANGED message.
 /// </summary>
 LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
