@@ -85,9 +85,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.1.0, 2024-03-xx
+v0.7.1.0-rc-3, 2024-02-28
 
 * Improved: Tweaked the background painting again to prevent flashes when resizing the component.
+* Fixed: The selected gradient color scheme was not activated after startup.
 
 v0.7.1.0-rc-2, 2024-02-27
 
