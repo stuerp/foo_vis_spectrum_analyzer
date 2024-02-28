@@ -1065,7 +1065,7 @@ void ConfigurationDialog::Terminate()
 }
 
 /// <summary>
-/// Handles the WM_CONFIGURATION_CHANGED message.
+/// Handles the UM_CONFIGURATION_CHANGED message.
 /// </summary>
 LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -2918,7 +2918,7 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, WM_CONFIGURATION_CHANGED, 0, 0);
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
 //  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
 }

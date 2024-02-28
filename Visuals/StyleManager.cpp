@@ -168,6 +168,10 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
             style._FontName = reader->read_string(abortHandler);
             reader->read_object_t(style._FontSize, abortHandler);
+
+            // 'Activate' the values we just read.
+            style._Color = style._CustomColor;
+            style._GradientStops = GetGradientStops(style._ColorScheme);
         }
     }
     catch (std::exception & ex)

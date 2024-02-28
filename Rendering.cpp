@@ -81,7 +81,7 @@ void UIElement::OnTimer()
 
             _CriticalSection.Leave();
 
-            _ConfigurationDialog.PostMessageW(WM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
         }
 
         _IsConfigurationChanged = false;

@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.02.26) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.02.27) P. Stuer **/
 
 #include "CUIElement.h"
 #include "Color.h"
@@ -79,17 +79,26 @@ void CUIElement::destroy_window()
 /// </summary>
 LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 {
-    RECT cr;
+    static bool IsStartup = true;
 
-    GetClientRect(&cr);
+    if (IsStartup)
+    {
+        RECT cr;
 
-    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
+        GetClientRect(&cr);
 
-    ::FillRect(hDC, &cr, hBrush);
+        HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
 
-    ::DeleteObject((HGDIOBJ) hBrush);
+        ::FillRect(hDC, &cr, hBrush);
 
-    return 1;
+        ::DeleteObject((HGDIOBJ) hBrush);
+
+        IsStartup = false;
+
+        return 1;
+    }
+    else
+        return 0;
 }
 
 /// <summary>
