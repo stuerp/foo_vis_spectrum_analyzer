@@ -259,7 +259,7 @@ private:
     void ConvertColorSettings() noexcept;
     void ConvertGraphSettings() noexcept;
 
-    const GradientStops SelectGradientStops(ColorScheme colorScheme) const noexcept;
+    const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
     bool _UseZeroTrigger_Deprecated;
