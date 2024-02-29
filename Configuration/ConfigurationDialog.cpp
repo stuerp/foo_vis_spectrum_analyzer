@@ -959,6 +959,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
+        w.ResetContent();
+
         for (const auto & x :
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
