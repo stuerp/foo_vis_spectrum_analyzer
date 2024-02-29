@@ -133,7 +133,7 @@ bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const no
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
-    if (_BackgroundStyle->_ColorSource != ColorSource::None)
+//  if (_BackgroundStyle->_ColorSource != ColorSource::None)
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.

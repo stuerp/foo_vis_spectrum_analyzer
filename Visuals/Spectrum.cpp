@@ -92,6 +92,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     const FLOAT Height = _Bounds.bottom - _Bounds.top;
     const FLOAT Bandwidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
 
+    const FLOAT Thickness = _PeakIndicator->_Thickness / 2.f;
+
     FLOAT x1 = 0.f;
     FLOAT x2 = x1 + Bandwidth;
 
@@ -103,12 +105,12 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         if (fb.HasDarkBackground)
         {
             if (_DarkBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect,  _DarkBackground->_Brush);
+                renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
         }
         else
         {
             if (_LightBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect,  _LightBackground->_Brush);
+                renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
         }
 
         const bool GreaterThanNyquist = fb.Ctr >= (sampleRate / 2.);
@@ -129,8 +131,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             // Draw the peak indicator.
             if ((_State->_PeakMode != PeakMode::None) && (fb.Peak > 0.) && (_PeakIndicator->_ColorSource != ColorSource::None))
             {
-                Rect.top    = ::ceil(Clamp((FLOAT)(Height * fb.Peak) - (_PeakIndicator->_Thickness / 2.f), _Bounds.top, _Bounds.bottom));
-                Rect.bottom = ::ceil(Clamp(Rect.top                    + (_PeakIndicator->_Thickness / 2.f), _Bounds.top, _Bounds.bottom));
+                Rect.top    = ::ceil(Clamp((FLOAT)(Height * fb.Peak) - Thickness, 0.f, Height));
+                Rect.bottom = ::ceil(Clamp(Rect.top                  + Thickness, 0.f, Height));
 
                 FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _PeakIndicator->_Opacity;
 

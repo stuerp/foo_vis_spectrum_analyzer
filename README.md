@@ -88,6 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.1.0, 2024-02-29
 
 * Fixed: Reversing the colors of a gradient did not recalculate the position of the colors. Instead it spread out the color evenly.
+* Changed: To avoid confusion color source None for the background has been disabled until it can be properly implemented.
 
 v0.7.1.0-rc-3, 2024-02-28
 
