@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.02.21) P. Stuer **/
+/** $VER: State.cpp (2024.02.29) P. Stuer **/
 
 #include "State.h"
 
@@ -1100,7 +1100,7 @@ void State::ConvertColorSettings() noexcept
 
             style->_ColorSource = ColorSource::Gradient;
             style->_Color = D2D1::ColorF(0, 0.f);
-            style->_GradientStops = SelectGradientStops(_ColorScheme_Deprecated);
+            style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
@@ -1135,7 +1135,7 @@ void State::ConvertColorSettings() noexcept
             {
                 style->_ColorSource = ColorSource::Gradient;
                 style->_Color = D2D1::ColorF(0, 0.f);
-                style->_GradientStops = SelectGradientStops(_ColorScheme_Deprecated);
+                style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
             {
@@ -1155,7 +1155,7 @@ void State::ConvertColorSettings() noexcept
 
             style->_ColorSource = ColorSource::Gradient;
             style->_Color = D2D1::ColorF(0, 0.f);
-            style->_GradientStops = SelectGradientStops(_ColorScheme_Deprecated);
+            style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style->_Opacity = _AreaOpacity_Deprecated;
     }
 }
@@ -1187,7 +1187,7 @@ void State::ConvertGraphSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops State::SelectGradientStops(ColorScheme colorScheme) const noexcept
+const GradientStops State::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops_Deprecated;

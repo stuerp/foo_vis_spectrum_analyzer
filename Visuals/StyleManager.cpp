@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.24) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.02.29) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -171,7 +171,11 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
             // 'Activate' the values we just read.
             style._Color = style._CustomColor;
-            style._GradientStops = GetGradientStops(style._ColorScheme);
+
+            if (style._ColorScheme == ColorScheme::Custom)
+                style._GradientStops = style._CustomGradientStops;
+            else
+                style._GradientStops = GetGradientStops(style._ColorScheme);
         }
     }
     catch (std::exception & ex)

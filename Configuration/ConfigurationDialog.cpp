@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.02.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.02.29) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -200,9 +200,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_GRADIENT, L"Shows the gradient created using the current color list" },
             { IDC_COLOR_LIST, L"Shows the colors in the current color scheme" },
 
-            { IDC_ADD, L"Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted and the Custom color scheme will be activated." },
-            { IDC_REMOVE, L"Removes the selected color from the list" },
-            { IDC_REVERSE, L"Reverses the list of colors" },
+            { IDC_ADD, L"Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
+            { IDC_REMOVE, L"Removes the selected color from the list. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
+            { IDC_REVERSE, L"Reverses the list of colors. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
 
             { IDC_POSITION, L"Determines the position of the color in the gradient (in % of the total length of the gradient)" },
             { IDC_SPREAD, L"Evenly spreads the colors of the list in the gradient" },
@@ -1917,7 +1917,13 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             std::reverse(style->_GradientStops.begin(), style->_GradientStops.end());
 
-            UpdateGradientStopPositons(style);
+            for (auto & gs : style->_GradientStops)
+                gs.position = 1.f - gs.position;
+
+            // Save the current result as custom gradient stops.
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_GradientStops;
+
             UpdateColorSchemeControls();
             break;
         }
