@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.02.29) P. Stuer **/
+/** $VER: Resources.h (2024.03.02) P. Stuer **/
 
 #pragma once
 
@@ -8,18 +8,18 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          1
+#define NUM_FILE_PATCH          2
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_PATCH       2
 #define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -36,7 +36,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -127,16 +127,17 @@
 
 #pragma endregion
 
-#pragma region SWIFT
+#pragma region IIR
 
-#define IDC_SWIFT_GROUP                 2400
+#define IDC_IIR_GROUP                   2400
 
 #define IDC_FBO_LBL                     2402
 #define IDC_FBO                         2404
 #define IDC_TR_LBL                      2406
 #define IDC_TR                          2408
-#define IDC_BW_SWIFT_LBL                2410
-#define IDC_BW_SWIFT                    2412
+#define IDC_IIR_BW_LBL                  2410
+#define IDC_IIR_BW                      2412
+#define IDC_CONSTANT_Q                  2414
 
 #pragma endregion
 

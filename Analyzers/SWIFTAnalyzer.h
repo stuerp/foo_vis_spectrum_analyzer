@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.h (2024.02.17) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.h (2024.03.02) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #pragma once
 
@@ -42,7 +42,7 @@ private:
         double rX;
         double rY;
         double Decay;
-        std::vector<Value> Values;
+        Value Values[MaxFilterBankOrder];
     };
 
     std::vector<Coef> _Coefs;

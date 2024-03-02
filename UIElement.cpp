@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.02.26) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.02) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
+UIElement::UIElement(): _IsVisible(true), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
 {
 }
 

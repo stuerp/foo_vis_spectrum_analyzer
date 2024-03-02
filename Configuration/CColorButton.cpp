@@ -169,7 +169,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
         {
             CComPtr<ID2D1GradientStopCollection> Collection;
 
-            hr = _RenderTarget->CreateGradientStopCollection(&_GradientStops[0], (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+            hr = _RenderTarget->CreateGradientStopCollection(_GradientStops.data(), (UINT32) _GradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
 
             if (SUCCEEDED(hr))
             {

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.02.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.02) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -95,10 +95,11 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter by certain window functions like Gaussian and Kaiser windows." },
             { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
 
-            // SWIFT
-            { IDC_FBO, L"Determines the order of the filter bank" },
-            { IDC_TR, L"Determines the maximum time resolution" },
-            { IDC_BW_SWIFT, L"Determines the bandwidth used by the SWIFT transform" },
+            // IIR (SWIFT / Analog-style)
+            { IDC_FBO, L"Determines the order of the filter bank used to calculate the SWIFT and Analog-style transforms." },
+            { IDC_TR, L"Determines the maximum time resolution used by the SWIFT and Analog-style transforms." },
+            { IDC_IIR_BW, L"Determines the bandwidth used by the SWIFT and Analog-style transforms." },
+            { IDC_CONSTANT_Q, L"Uses constant-Q instead of variable-Q in the Anallog-style transform." },
 
             // Frequencies
             { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
@@ -252,7 +253,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"FFT", L"CQT", L"SWIFT" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_Transform);
@@ -392,7 +393,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma endregion
 
-    #pragma region SWIFT
+    #pragma region SWIFT / Analog-style
 
     {
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_FBO)); _NumericEdits.push_back(ne); SetInteger(IDC_FBO, (int64_t) _State->_FilterBankOrder);
@@ -403,8 +404,10 @@ void ConfigurationDialog::Initialize()
     }
 
     {
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BW_SWIFT)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_SWIFT, _State->_SWIFTBandwidth);
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_IIR_BW)); _NumericEdits.push_back(ne); SetDouble(IDC_IIR_BW, _State->_IIRBandwidth);
     }
+
+    SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
 
     #pragma endregion
 
@@ -959,6 +962,8 @@ void ConfigurationDialog::Initialize()
     {
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
+        w.ResetContent();
+
         for (const auto & x :
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
@@ -1404,11 +1409,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
-        #pragma region SWIFT
+        #pragma region SWIFT / Analog-style
 
         case IDC_FBO: { _State->_FilterBankOrder = Clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder); break; }
         case IDC_TR: { _State->_TimeResolution = Clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution); break; }
-        case IDC_BW_SWIFT: { _State->_SWIFTBandwidth = Clamp(::_wtof(Text), MinSWIFTBandwidth, MaxSWIFTBandwidth); break; }
+        case IDC_IIR_BW: { _State->_IIRBandwidth = Clamp(::_wtof(Text), MinSWIFTBandwidth, MaxSWIFTBandwidth); break; }
 
         #pragma endregion
 
@@ -1633,10 +1638,10 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_KERNEL_SHAPE_PARAMETER:{ SetDouble(id, _State->_KernelShapeParameter); break; }
         case IDC_KERNEL_ASYMMETRY:      { SetDouble(id, _State->_KernelAsymmetry); break; }
 
-        // SWIFT
+        // SWIFT / Analog-style
         case IDC_FBO:                   { SetInteger(id, (int64_t) _State->_FilterBankOrder); break; }
         case IDC_TR:                    { SetDouble(id, _State->_TimeResolution); break; }
-        case IDC_BW_SWIFT:              { SetDouble(id, _State->_SWIFTBandwidth); break; }
+        case IDC_IIR_BW:              { SetDouble(id, _State->_IIRBandwidth); break; }
 
         // Frequencies
         case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_BandCount); break; }
@@ -1727,6 +1732,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
     {
         default:
             return;
+
+        case IDC_CONSTANT_Q:
+        {
+            _State->_ConstantQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
 
         case IDC_GRANULAR_BW:
         {
@@ -2271,9 +2282,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_BW_OFFSET_LBL, IDC_BW_OFFSET, IDC_BW_CAP_LBL, IDC_BW_CAP, IDC_BW_AMOUNT_LBL, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
             IDC_KERNEL_SHAPE_LBL, IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER_LBL, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY_LBL, IDC_KERNEL_ASYMMETRY,
 
-        // SWIFT
-        IDC_SWIFT_GROUP,
-            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_BW_SWIFT_LBL, IDC_BW_SWIFT
+        // IIR (SWIFT / Analog-style)
+        IDC_IIR_GROUP,
+            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_IIR_BW_LBL, IDC_IIR_BW, IDC_CONSTANT_Q,
     };
 
     static const int Page2[] =
@@ -2455,7 +2466,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 void ConfigurationDialog::UpdateControls()
 {
     const bool IsFFT = (_State->_Transform == Transform::FFT);
-    const bool IsSWIFT = (_State->_Transform == Transform::SWIFT);
+    const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
 
     // Transform
     bool HasParameter = (_State->_WindowFunction == WindowFunctions::PowerOfSine)
@@ -2466,20 +2477,20 @@ void ConfigurationDialog::UpdateControls()
                      || (_State->_WindowFunction == WindowFunctions::Poison)
                      || (_State->_WindowFunction == WindowFunctions::HyperbolicSecant);
 
-    GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsSWIFT);
-    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsSWIFT);
-    GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsSWIFT);
+    GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
+    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
+    GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
 
     // FFT
     for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
         GetDlgItem(Iter).EnableWindow(IsFFT);
 
     for (const auto & Iter : { IDC_NUM_BINS, IDC_DISTRIBUTION })
-        GetDlgItem(Iter).EnableWindow(IsFFT || IsSWIFT);
+        GetDlgItem(Iter).EnableWindow(IsFFT || IsIIR);
 
     const bool NotFixed = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
 
-        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsSWIFT) && NotFixed);
+        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsIIR) && NotFixed);
 
         #pragma warning (disable: 4061)
         switch (_State->_FFTMode)
@@ -2508,9 +2519,9 @@ void ConfigurationDialog::UpdateControls()
 
     GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
 
-    // SWIFT
-    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_BW_SWIFT, })
-        GetDlgItem(Iter).EnableWindow(IsSWIFT);
+    // IIR (SWIFT / Analog-style)
+    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q })
+        GetDlgItem(Iter).EnableWindow(IsIIR);
 
     // Frequencies
     const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);

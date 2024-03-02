@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.02.17) P. Stuer **/
+/** $VER: Constans.h (2024.03.02) P. Stuer **/
 
 #pragma once
 
@@ -37,10 +37,12 @@ inline const size_t MinFilterBankOrder = 1;
 inline const size_t MaxFilterBankOrder = 8;
 
 inline const double MinTimeResolution = 0.; 
-inline const double MaxTimeResolution = 1000.;
+inline const double MaxTimeResolution = 2000.;
 
 inline const double MinSWIFTBandwidth = 0.;
 inline const double MaxSWIFTBandwidth = 8.;
+
+// Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
 inline const int MinBands =   2;
@@ -136,6 +138,7 @@ enum class Transform
     FFT = 0,
     CQT = 1,
     SWIFT = 2,
+    AnalogStyle = 3,
 };
 
 enum class FFTMode

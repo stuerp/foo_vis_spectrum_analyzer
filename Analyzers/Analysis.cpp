@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.02.21) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.02) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -19,27 +19,36 @@ void Analysis::Initialize(const State * state, const GraphSettings * settings) n
     _State = state;
     _GraphSettings = settings;
 
-    if (state->_Transform == Transform::FFT)
+    switch (state->_Transform)
     {
-        switch (state->_FrequencyDistribution)
+        case Transform::FFT:
         {
-            default:
+            switch (state->_FrequencyDistribution)
+            {
+                default:
 
-            case FrequencyDistribution::Linear:
-                GenerateLinearFrequencyBands(state);
-                break;
+                case FrequencyDistribution::Linear:
+                    GenerateLinearFrequencyBands(state);
+                    break;
 
-            case FrequencyDistribution::Octaves:
-                GenerateOctaveFrequencyBands(state);
-                break;
+                case FrequencyDistribution::Octaves:
+                    GenerateOctaveFrequencyBands(state);
+                    break;
 
-            case FrequencyDistribution::AveePlayer:
-                GenerateAveePlayerFrequencyBands(state);
-                break;
+                case FrequencyDistribution::AveePlayer:
+                    GenerateAveePlayerFrequencyBands(state);
+                    break;
+            }
         }
+
+        break;
+
+        case Transform::CQT:
+        case Transform::SWIFT:
+        case Transform::AnalogStyle:
+            GenerateOctaveFrequencyBands(state);
+            break;
     }
-    else
-        GenerateOctaveFrequencyBands(state);
 }
 
 /// <summary>
@@ -75,6 +84,12 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
         case Transform::SWIFT:
         {
             _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
+            break;
+        }
+
+        case Transform::AnalogStyle:
+        {
+            _AnalogStyleAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
             break;
         }
     }
@@ -113,6 +128,12 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
 /// </summary>
 void Analysis::Reset()
 {
+    if (_AnalogStyleAnalyzer != nullptr)
+    {
+        delete _AnalogStyleAnalyzer;
+        _AnalogStyleAnalyzer = nullptr;
+    }
+
     if (_SWIFTAnalyzer != nullptr)
     {
         delete _SWIFTAnalyzer;
@@ -271,6 +292,13 @@ void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
         _SWIFTAnalyzer = new SWIFTAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
+    }
+
+    if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
+    {
+        _AnalogStyleAnalyzer = new AnalogStyleAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+
+        _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
     }
 }
 

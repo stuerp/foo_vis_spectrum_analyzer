@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "FFTAnalyzer.h"
 

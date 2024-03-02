@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.02.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.03.01) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -183,7 +183,7 @@ private:
             VisualElement::NyquistMarker,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, "", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
             }
         }
     };

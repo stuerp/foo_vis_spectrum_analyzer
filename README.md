@@ -12,7 +12,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-* Fast Fourier (FFT), Constant-Q (CQT) and Sliding Windowed Infinite Fourier (SWIFT) transforms
+* Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 * Multiple frequency range and smoothing options
 * Styling of all visual elements
 * Artwork background and color extraction
@@ -85,6 +85,14 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.2.0-alpha-1, 2024-03-02
+
+* New: Analog-style spectrum analysis. Based on https://codepen.io/TF3RDL/pen/MWLzPoO.
+* Improved: Performance optimization. Rendering will stop when the main window is minimized.
+* Improved: Small performance optimization in SWIFT.
+* Fixed: The style list box in the configuration dialog was not cleared before it was filled again after a reset.
+* Fixed (Regression): Gradient brushes are created again as shown in the configuration dialog.
+
 v0.7.1.0, 2024-02-29
 
 * Fixed: Reversing the colors of a gradient did not recalculate the position of the colors. Instead it spread out the color evenly.
@@ -120,7 +128,7 @@ v0.7.1.0-beta-2, 2024-02-22
 
 v0.7.1.0-beta-1, 2024-02-14
 
-* New: Sliding Windowed Infinite Fourier Transform (SWIFT).
+* New: Sliding Windowed Infinite Fourier Transform (SWIFT). Based on https://codepen.io/TF3RDL/pen/JjBzjeY.
 * New: Reaction Alignment parameter allow you to control the delay between the actual playback and the visualization.
 * New: The X-axis can be displayed on top, below or on both sides of the spectrum.
 * New: The Y-axis can be displayed on left, right or on both sides of the spectrum.

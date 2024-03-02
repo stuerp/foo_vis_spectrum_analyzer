@@ -108,7 +108,9 @@ ui_element_config::ptr DUIElement::get_configuration()
 }
 
 /// <summary>
-/// Used by host to notify the element about various events. See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value. Container classes should dispatch all notifications to their children.
+/// Used by host to notify the element about various events.
+/// See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value.
+/// Container classes should dispatch all notifications to their children.
 /// </summary>
 void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t_size param2Size)
 {
@@ -129,6 +131,11 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
     {
 //      m_callback->query_font_ex(ui_font_default);
     }
+    else
+    if (what == ui_element_notify_visibility_changed)
+    {
+        _IsVisible = (bool) param1;
+    }
 }
 
 static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Factory;
@@ -142,24 +149,22 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 {
     static bool IsStartup = true;
 
-    if (IsStartup)
-    {
-        RECT cr;
-
-        GetClientRect(&cr);
-
-        HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[1]);
-
-        ::FillRect(hDC, &cr, hBrush);
-
-        ::DeleteObject((HGDIOBJ) hBrush);
-
-        IsStartup = false;
-
-        return 1;
-    }
-    else
+    if (!IsStartup)
         return 0;
+
+    RECT cr;
+
+    GetClientRect(&cr);
+
+    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[1]);
+
+    ::FillRect(hDC, &cr, hBrush);
+
+    ::DeleteObject((HGDIOBJ) hBrush);
+
+    IsStartup = false;
+
+    return 1;
 }
 
 /// <summary>
