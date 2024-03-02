@@ -87,6 +87,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.1.1, 2024-03-xx
 
+* Improved: Performance optimization. Rendering will stop when the main window is minimized.
 * Fixed: The style list box in the configuration dialog was not cleared before it was filled again after a reset.
 
 v0.7.1.0, 2024-02-29

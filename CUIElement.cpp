@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.02.27) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.03.01) P. Stuer **/
 
 #include "CUIElement.h"
 #include "Color.h"
@@ -31,6 +31,8 @@ CUIElement::CUIElement()
     _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
     _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
+
+    _IsVisible = true; // CUI does send notifications.
 }
 
 /// <summary>
@@ -81,24 +83,22 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 {
     static bool IsStartup = true;
 
-    if (IsStartup)
-    {
-        RECT cr;
-
-        GetClientRect(&cr);
-
-        HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
-
-        ::FillRect(hDC, &cr, hBrush);
-
-        ::DeleteObject((HGDIOBJ) hBrush);
-
-        IsStartup = false;
-
-        return 1;
-    }
-    else
+    if (!IsStartup)
         return 0;
+
+    RECT cr;
+
+    GetClientRect(&cr);
+
+    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
+
+    ::FillRect(hDC, &cr, hBrush);
+
+    ::DeleteObject((HGDIOBJ) hBrush);
+
+    IsStartup = false;
+
+    return 1;
 }
 
 /// <summary>

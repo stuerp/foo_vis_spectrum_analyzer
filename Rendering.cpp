@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.02.17) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.01) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -60,7 +60,10 @@ void CALLBACK UIElement::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 /// </summary>
 void UIElement::OnTimer()
 {
-    if (_IsFrozen || !_CriticalSection.TryEnter())
+    if (_IsFrozen || !_IsVisible || ::IsIconic(core_api::get_main_window()))
+        return;
+
+    if (!_CriticalSection.TryEnter())
         return;
 
     ProcessPlaybackEvent();

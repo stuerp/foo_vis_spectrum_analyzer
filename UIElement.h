@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.02.19) P. Stuer **/
+/** $VER: UIElement.h (2024.03.01) P. Stuer **/
 
 #pragma once
 
@@ -148,6 +148,7 @@ protected:
     CriticalSection _CriticalSection;
     RECT _OldBounds;
     bool _IsFullScreen;
+    bool _IsVisible;                // True if the component is visible.
 
 private:
     enum
