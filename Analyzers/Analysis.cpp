@@ -19,34 +19,20 @@ void Analysis::Initialize(const State * state, const GraphSettings * settings) n
     _State = state;
     _GraphSettings = settings;
 
-    switch (state->_Transform)
+    switch (state->_FrequencyDistribution)
     {
-        case Transform::FFT:
-        {
-            switch (state->_FrequencyDistribution)
-            {
-                default:
+        default:
 
-                case FrequencyDistribution::Linear:
-                    GenerateLinearFrequencyBands(state);
-                    break;
+        case FrequencyDistribution::Linear:
+            GenerateLinearFrequencyBands(state);
+            break;
 
-                case FrequencyDistribution::Octaves:
-                    GenerateOctaveFrequencyBands(state);
-                    break;
-
-                case FrequencyDistribution::AveePlayer:
-                    GenerateAveePlayerFrequencyBands(state);
-                    break;
-            }
-        }
-
-        break;
-
-        case Transform::CQT:
-        case Transform::SWIFT:
-        case Transform::AnalogStyle:
+        case FrequencyDistribution::Octaves:
             GenerateOctaveFrequencyBands(state);
+            break;
+
+        case FrequencyDistribution::AveePlayer:
+            GenerateAveePlayerFrequencyBands(state);
             break;
     }
 }

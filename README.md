@@ -85,6 +85,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.2.0-alpha-2, 2024-03-xx
+
+* Changed: The grid lines can be displayed without an X or Y-axis.
+  * X-axis and Y-axis mode "None" still disables everything.
+  * The X-axis or Y-axis labels can be controlled with the top, bottom, left and right settings.
+  * The X-axis Line and Y-axis Line style have been renamed to Vertical and Horizontal Grid Line.
+
 v0.7.2.0-alpha-1, 2024-03-02
 
 * New: Analog-style spectrum analysis. Based on https://codepen.io/TF3RDL/pen/MWLzPoO.
@@ -329,7 +336,10 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 ## Acknowledgements / Credits
 
 * Peter Pawlowski for the [foobar2000](https://www.foobar2000.org/) audio player. ![foobar2000](https://www.foobar2000.org/button-small.png)
-* [TF3RDL](https://codepen.io/TF3RDL/pens/) for his [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW), the advice and the help.
+* [TF3RDL](https://codepen.io/TF3RDL/pens/) for the advice, the help and his:
+  * [Frequency bands spectrum analyzer using either FFT or CQT](https://codepen.io/TF3RDL/pen/poQJwRW)
+  * [SWIFT, Sliding Windowed Infinite Fourier Transform](https://codepen.io/TF3RDL/pen/JjBzjeY)
+  * [Analog-style spectrum analyzer and sliding DFT visualization using AudioWorklet](https://codepen.io/TF3RDL/pen/MWLzPoO)
 * [Project Nayuki](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
 * [Holger Stenger](https://github.com/stengerh) for [foo_vis_oscilloscope](https://github.com/stengerh/foo_vis_oscilloscope_d2d).
 * fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.

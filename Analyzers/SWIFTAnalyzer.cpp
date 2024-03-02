@@ -21,7 +21,8 @@ SWIFTAnalyzer::SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t 
 /// </summary>
 bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 {
-    const double Factor = 4. * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
+    const double Factor1 = M_PI * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / (M_PI * 1000.));
+    const double Factor2 = _State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.;
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
     for (const FrequencyBand & fb : frequencyBands)
@@ -31,7 +32,7 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
         {
             ::cos(fb.Ctr * M_PI * 2. / (double) _SampleRate),
             ::sin(fb.Ctr * M_PI * 2. / (double) _SampleRate),
-            ::exp(-::abs(fb.Hi - fb.Lo) * Factor),
+            ::exp(-::abs(fb.Hi - fb.Lo) * Factor1 * Factor2)
         };
 
         for (uint32_t i = 0; i < _State->_FilterBankOrder; ++i)

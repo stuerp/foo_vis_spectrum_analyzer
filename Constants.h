@@ -39,8 +39,8 @@ inline const size_t MaxFilterBankOrder = 8;
 inline const double MinTimeResolution = 0.; 
 inline const double MaxTimeResolution = 2000.;
 
-inline const double MinSWIFTBandwidth = 0.;
-inline const double MaxSWIFTBandwidth = 8.;
+inline const double MinIIRBandwidth =  0.;
+inline const double MaxIIRBandwidth = 64.;
 
 // Analog-style (parallel band-pass IIR filter) transform
 

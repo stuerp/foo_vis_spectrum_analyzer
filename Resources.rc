@@ -120,6 +120,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Bandwidth:",               IDC_IIR_BW_LBL,                 X_F15, Y_F15 + 2, W_F15, H_F15
         edittext                                    IDC_IIR_BW,                     X_F16, Y_F16,     W_F16, H_F16, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "Constant-Q",               IDC_CONSTANT_Q, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_F17, Y_F17, W_F17, H_F17
+        control         "Compensate bandwidth",     IDC_COMPENSATE_BW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_F18, Y_F18, W_F18, H_F18
+        control         "Use prewarped Q",          IDC_PREWARPED_Q, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_F19, Y_F19, W_F19, H_F19
 
     groupbox "Frequencies", IDC_FREQUENCIES_GROUP, X_B01, Y_B01, W_B01, H_B01, BS_GROUPBOX, WS_EX_TRANSPARENT
 

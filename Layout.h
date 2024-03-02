@@ -343,13 +343,25 @@
     #define Y_F16    Y_F15
 
     // Checkbox: Constant-Q
-    #define W_F17    50
+    #define W_F17    100
     #define H_F17    H_CBX
-    #define X_F17    X_F16
+    #define X_F17    X_F15
     #define Y_F17    Y_F16 + H_F16 + IY
 
+    // Checkbox: Compensate bandwidth
+    #define W_F18    100
+    #define H_F18    H_CBX
+    #define X_F18    X_F17
+    #define Y_F18    Y_F17 + H_F17 + IY
+
+    // Checkbox: Use prewarped Q
+    #define W_F19    100
+    #define H_F19    H_CBX
+    #define X_F19    X_F18
+    #define Y_F19    Y_F18 + H_F18 + IY
+
 #define W_B11   W_B10
-#define H_B11   11 + H_F12 + IY + H_F14 + IY + H_F16 + IY + H_F17 + 7
+#define H_B11   11 + H_F12 + IY + H_F14 + IY + H_F16 + IY + H_F17 + IY + H_F18 + IY + H_F19 + 7
 
 #pragma endregion
 

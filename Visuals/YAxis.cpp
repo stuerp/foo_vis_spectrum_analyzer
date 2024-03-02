@@ -80,9 +80,6 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void YAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
-        return;
-
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
@@ -95,6 +92,9 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the horizontal grid line.
         if (_LineStyle->_ColorSource != ColorSource::None)
             renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+
+        if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
+            continue;
 
         // Prevent overdraw of the labels.
         if (!InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom) && (_TextStyle->_ColorSource != ColorSource::None))
@@ -171,7 +171,7 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
         if (SUCCEEDED(hr))
         {
             if (_LineStyle == nullptr)
-                _LineStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisLine);
+                _LineStyle = _State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
             if (_LineStyle && (_LineStyle->_Brush == nullptr))
                 hr = _LineStyle->CreateDeviceSpecificResources(renderTarget, Size);
@@ -202,7 +202,7 @@ void YAxis::ReleaseDeviceSpecificResources()
     _TextStyle = nullptr;
     _LineStyle = nullptr;
 
-    for (const auto & Iter : { VisualElement::YAxisLine, VisualElement::YAxisText })
+    for (const auto & Iter : { VisualElement::HorizontalGridLine, VisualElement::YAxisText })
     {
         Style * style = _State->_StyleManager.GetStyle(Iter);
 

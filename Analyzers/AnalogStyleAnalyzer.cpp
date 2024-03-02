@@ -23,17 +23,16 @@ bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBand
 
     const double TimeResolution =  _State->_ConstantQ ? std::numeric_limits<double>::infinity() : _State->_TimeResolution;
 
-    const bool CompensateBW = true;
-    const bool PreWarpQ = false;
-
     for (const FrequencyBand & fb : frequencyBands)
     {
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
-        const double K = std::tan(M_PI * fb.Ctr / (double) _SampleRate);
-        const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State->_Bandwidth + (1. / (TimeResolution / 1000.));
+        const double rad = M_PI * fb.Ctr / (double) _SampleRate;
 
-        const double QCompensationFactor = PreWarpQ ? (M_PI * fb.Ctr / (double) _SampleRate) / K : 1.;
-        const double Q = fb.Ctr / Bandwidth * QCompensationFactor / (CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.);
+        const double K = std::tan(rad);
+        const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State->_IIRBandwidth + (1. / (TimeResolution / 1000.));
+
+        const double QCompensationFactor = _State->_PreWarpQ ? rad / K : 1.;
+        const double Q = fb.Ctr / Bandwidth * QCompensationFactor / (_State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
         Coef c = { };
@@ -41,7 +40,7 @@ bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBand
         c.a0 = K / Q * Norm;
         c.a1 = 0.;
         c.a2 = -c.a0;
-        c.b1 = 2. * (K * K - 1.) * Norm;
+        c.b1 = 2. * (K * K - 1.)    * Norm;
         c.b2 = (1. - K / Q + K * K) * Norm;
 
         for (uint32_t i = 0; i < _State->_FilterBankOrder; ++i)
