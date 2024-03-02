@@ -12,7 +12,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-* Fast Fourier (FFT), Constant-Q (CQT) and Sliding Windowed Infinite Fourier (SWIFT) transforms
+* Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 * Multiple frequency range and smoothing options
 * Styling of all visual elements
 * Artwork background and color extraction
@@ -91,6 +91,7 @@ v0.7.2.0-alpha-1, 2024-03-02
 * Improved: Performance optimization. Rendering will stop when the main window is minimized.
 * Improved: Small performance optimization in SWIFT.
 * Fixed: The style list box in the configuration dialog was not cleared before it was filled again after a reset.
+* Fixed (Regression): Gradient brushes are created again as shown in the configuration dialog.
 
 v0.7.1.0, 2024-02-29
 
