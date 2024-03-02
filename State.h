@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.02.26) P. Stuer **/
+/** $VER: State.h (2024.03.02) P. Stuer **/
 
 #pragma once
 
@@ -100,11 +100,12 @@ public:
 
     #pragma endregion
 
-    #pragma region SWIFT
+    #pragma region IIR (Infinite Impulse Response, SWIFT / Analog-style analysis)
 
-        size_t _FilterBankOrder;                                        // 1 .. 8, SWIFT filter bank order
-        double _TimeResolution;                                         // 0 .. 1000, Max. time resolution
-        double _SWIFTBandwidth;                                         // 0 .. 8, SWIFT Bandwidth
+        size_t _FilterBankOrder;                                        // 1 .. 8, Filter bank order
+        double _TimeResolution;                                         // 0 .. 2000, Max. time resolution
+        double _IIRBandwidth;                                           // 0 .. 8, SWIFT Bandwidth
+        bool _ConstantQ;                                                // True, Use constant-Q instead of variable-Q.
 
     #pragma endregion
 

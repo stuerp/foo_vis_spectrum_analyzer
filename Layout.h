@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.02.21) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.03.02) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -300,7 +300,7 @@
 
 #pragma endregion
 
-#pragma region SWIFT
+#pragma region IIR
 
 // Groupbox
 #define X_B11   X_B10
@@ -342,8 +342,14 @@
     #define X_F16    X_F15 + W_F15 + IX
     #define Y_F16    Y_F15
 
+    // Checkbox: Constant-Q
+    #define W_F17    50
+    #define H_F17    H_CBX
+    #define X_F17    X_F16
+    #define Y_F17    Y_F16 + H_F16 + IY
+
 #define W_B11   W_B10
-#define H_B11   11 + H_F12 + IY + H_F14 + IY + H_F16 + 7
+#define H_B11   11 + H_F12 + IY + H_F14 + IY + H_F16 + IY + H_F17 + 7
 
 #pragma endregion
 

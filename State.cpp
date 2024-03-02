@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.02.29) P. Stuer **/
+/** $VER: State.cpp (2024.03.02) P. Stuer **/
 
 #include "State.h"
 
@@ -64,10 +64,11 @@ void State::Reset() noexcept
     _CQTAlignment = 1.;
     _CQTDownSample = 0.;
 
-    // SWIFT
+    // IIR
     _FilterBankOrder = 4;
     _TimeResolution = 600.;
-    _SWIFTBandwidth = 1.;
+    _IIRBandwidth = 1.;
+    _ConstantQ = true;
 
     // Brown-Puckette CQT-specific
     _BandwidthOffset = 1.;
@@ -285,7 +286,8 @@ State & State::operator=(const State & other)
 
         _FilterBankOrder = other._FilterBankOrder;
         _TimeResolution = other._TimeResolution;
-        _SWIFTBandwidth = other._SWIFTBandwidth;
+        _IIRBandwidth = other._IIRBandwidth;
+        _ConstantQ = other._ConstantQ;
 
     #pragma endregion
 
@@ -665,7 +667,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
             reader->read_object_t(_FilterBankOrder, abortHandler);
             reader->read_object_t(_TimeResolution, abortHandler);
-            reader->read_object_t(_SWIFTBandwidth, abortHandler);
+            reader->read_object_t(_IIRBandwidth, abortHandler);
 
             reader->read_object_t(_SuppressMirrorImage, abortHandler);
         }
@@ -916,7 +918,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         writer->write_object_t(_FilterBankOrder, abortHandler);
         writer->write_object_t(_TimeResolution, abortHandler);
-        writer->write_object_t(_SWIFTBandwidth, abortHandler);
+        writer->write_object_t(_IIRBandwidth, abortHandler);
 
         writer->write_object_t(_SuppressMirrorImage, abortHandler);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.02.18) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.03.02) P. Stuer **/
 
 #include <CppCoreCheck/Warnings.h>
 
@@ -198,9 +198,17 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
     if (gradientStops.empty())
         return E_FAIL;
 
+    // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
+    auto gs = gradientStops;
+
+    std::reverse(gs.begin(), gs.end());
+
+    for (auto & x : gs)
+        x.position = 1.f - x.position;
+
     CComPtr<ID2D1GradientStopCollection> Collection;
 
-    HRESULT hr = renderTarget->CreateGradientStopCollection(&gradientStops[0], (UINT32) gradientStops.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+    HRESULT hr = renderTarget->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
 
     if (SUCCEEDED(hr))
     {

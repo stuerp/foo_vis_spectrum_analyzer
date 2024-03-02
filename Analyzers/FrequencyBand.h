@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2024.02.25) P. Stuer **/
+/** $VER: FrequencyBand.h (2024.03.02) P. Stuer **/
 
 #pragma once
 
@@ -27,7 +27,7 @@ struct FrequencyBand
         ::memcpy(Label, other.Label, sizeof(Label));
 
         HasDarkBackground = other.HasDarkBackground;
-        GradientColor     = other.GradientColor;;
+        GradientColor     = other.GradientColor;
     }
 
     virtual ~FrequencyBand() { }
