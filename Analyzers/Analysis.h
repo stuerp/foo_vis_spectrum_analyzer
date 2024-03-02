@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.02.25) P. Stuer **/
+/** $VER: Analysis.h (2024.03.02) P. Stuer **/
 
 #pragma once
 
@@ -12,6 +12,7 @@
 #include "FFTAnalyzer.h"
 #include "CQTAnalyzer.h"
 #include "SWIFTAnalyzer.h"
+#include "AnalogStyleAnalyzer.h"
 
 #include "FrequencyBand.h"
 
@@ -61,6 +62,7 @@ public:
     FFTAnalyzer * _FFTAnalyzer;
     CQTAnalyzer * _CQTAnalyzer;
     SWIFTAnalyzer * _SWIFTAnalyzer;
+    AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
 
     FrequencyBands _FrequencyBands;
 };

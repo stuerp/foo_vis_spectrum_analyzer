@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "SWIFTAnalyzer.h"
 
@@ -21,7 +21,7 @@ SWIFTAnalyzer::SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t 
 /// </summary>
 bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
 {
-    const double Factor = 4. * _State->_SWIFTBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
+    const double Factor = 4. * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
     for (const FrequencyBand & fb : frequencyBands)
@@ -34,7 +34,8 @@ bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
             ::exp(-::abs(fb.Hi - fb.Lo) * Factor),
         };
 
-        c.Values.resize(_State->_FilterBankOrder, { 0., 0.});
+        for (uint32_t i = 0; i < _State->_FilterBankOrder; ++i)
+            c.Values[i] = { };
 
         _Coefs.push_back(c);
     }
@@ -59,30 +60,23 @@ bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampl
 
         for (auto & Coef : _Coefs)
         {
-            size_t j = 0;
-            Value OldValue = { };
+            Value CurValue = { Sample, 0. };
 
-            for (auto & value : Coef.Values)
+            for (uint32_t j = 0; j < _State->_FilterBankOrder; ++j)
             {
-                Value NewValue;
-
-                if (j == 0)
-                    NewValue = { Sample, 0. };
-                else
-                    NewValue = OldValue;
+                Value & value = Coef.Values[j];
 
                 value =
                 {
-                    (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + NewValue.x * (1. - Coef.Decay),
-                    (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + NewValue.y * (1. - Coef.Decay)
+                    (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + CurValue.x * (1. - Coef.Decay),
+                    (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + CurValue.y * (1. - Coef.Decay)
                 };
 
-                OldValue = value;
-                j++;
+                CurValue = value;
             }
 
-            // OldValue now contains the last calculated value.
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (OldValue.x * OldValue.x) + (OldValue.y * OldValue.y));
+            // CurValue now contains the last calculated value.
+            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
             k++;
         }
     }
