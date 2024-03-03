@@ -62,9 +62,9 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::GraphDescriptionBackground,
 
         VisualElement::XAxisText,
-        VisualElement::XAxisLine,
         VisualElement::YAxisText,
-        VisualElement::YAxisLine,
+        VisualElement::HorizontalGridLine,
+        VisualElement::VerticalGridLine,
 
         VisualElement::BarSpectrum,
         VisualElement::BarPeakIndicator,

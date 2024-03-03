@@ -195,9 +195,6 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void XAxis::Render(ID2D1RenderTarget * renderTarget)
 {
-    if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
-        return;
-
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
@@ -211,6 +208,9 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the vertical grid line.
         if (_LineStyle->_ColorSource != ColorSource::None)
             renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+
+        if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
+            continue;
 
         if (_TextStyle->_ColorSource != ColorSource::None)
         {
@@ -296,7 +296,7 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     if (SUCCEEDED(hr))
     {
         if (_LineStyle == nullptr)
-            _LineStyle = _State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+            _LineStyle = _State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         if (_LineStyle && (_LineStyle->_Brush == nullptr))
             hr = _LineStyle->CreateDeviceSpecificResources(renderTarget, Size);
@@ -325,7 +325,7 @@ void XAxis::ReleaseDeviceSpecificResources()
     _TextStyle = nullptr;
     _LineStyle = nullptr;
 
-    for (const auto & Iter : { VisualElement::XAxisLine, VisualElement::XAxisText })
+    for (const auto & Iter : { VisualElement::VerticalGridLine, VisualElement::XAxisText })
     {
         Style * style = _State->_StyleManager.GetStyle(Iter);
 

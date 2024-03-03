@@ -83,7 +83,7 @@ private:
         },
 
         {
-            VisualElement::XAxisLine,
+            VisualElement::VerticalGridLine,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, "", 0.f,
@@ -99,7 +99,7 @@ private:
         },
 
         {
-            VisualElement::YAxisLine,
+            VisualElement::HorizontalGridLine,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f,

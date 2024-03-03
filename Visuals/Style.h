@@ -12,9 +12,9 @@ enum class VisualElement : uint32_t
     GraphDescriptionBackground  = 14,
 
     XAxisText                   =  2,
-    XAxisLine                   =  3,
+    VerticalGridLine            =  3,
     YAxisText                   =  4,
-    YAxisLine                   =  5,
+    HorizontalGridLine          =  5,
 
     BarSpectrum                 =  6,
     BarPeakIndicator            =  7,

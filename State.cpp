@@ -69,6 +69,8 @@ void State::Reset() noexcept
     _TimeResolution = 600.;
     _IIRBandwidth = 1.;
     _ConstantQ = true;
+    _CompensateBW = true;
+    _PreWarpQ = false;
 
     // Brown-Puckette CQT-specific
     _BandwidthOffset = 1.;
@@ -282,12 +284,14 @@ State & State::operator=(const State & other)
 
     #pragma endregion
 
-    #pragma region SWIFT
+    #pragma region IIR
 
         _FilterBankOrder = other._FilterBankOrder;
         _TimeResolution = other._TimeResolution;
         _IIRBandwidth = other._IIRBandwidth;
         _ConstantQ = other._ConstantQ;
+        _CompensateBW = other._CompensateBW;
+        _PreWarpQ = other._PreWarpQ;
 
     #pragma endregion
 
@@ -728,6 +732,14 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
                 _GraphSettings.push_back(gs);
             }
         }
+
+        // Version 19, v0.7.2.0
+        if (Version >= 19)
+        {
+            reader->read_object_t(_ConstantQ, abortHandler);
+            reader->read_object_t(_CompensateBW, abortHandler);
+            reader->read_object_t(_PreWarpQ, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -962,6 +974,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
             writer->write_object_t(gs._HRatio, abortHandler);
             writer->write_object_t(gs._VRatio, abortHandler);
         }
+
+        // Version 19, v0.7.2.0
+        writer->write_object_t(_ConstantQ, abortHandler);
+        writer->write_object_t(_CompensateBW, abortHandler);
+        writer->write_object_t(_PreWarpQ, abortHandler);
     }
     catch (exception & ex)
     {
@@ -1006,7 +1023,7 @@ void State::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisLine);
+        Style * style = _StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         style->_CustomColor = _XLineColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1050,7 +1067,7 @@ void State::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisLine);
+        Style * style = _StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         style->_CustomColor = _YLineColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;

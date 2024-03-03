@@ -106,6 +106,8 @@ public:
         double _TimeResolution;                                         // 0 .. 2000, Max. time resolution
         double _IIRBandwidth;                                           // 0 .. 8, SWIFT Bandwidth
         bool _ConstantQ;                                                // True, Use constant-Q instead of variable-Q.
+        bool _CompensateBW;                                             // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
+        bool _PreWarpQ;                                                 // False. Use prewarped Q (analog-style analyzer only)
 
     #pragma endregion
 
@@ -300,5 +302,5 @@ private:
     bool _HorizontalGradient_Deprecated;                    // True if the gradient will be used to paint horizontally.
 
 private:
-    const size_t _CurrentVersion = 18;
+    const size_t _CurrentVersion = 19;
 };

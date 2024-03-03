@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.02.14) P. Stuer **/
+/** $VER: Artwork.cpp (2024.03.03) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -122,10 +122,12 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Creates a palette from the specified bitmap source.
 /// </summary>
-HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) const noexcept
+HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
     if (_FormatConverter == nullptr)
         return E_FAIL;
+
+    _CriticalSection.Enter();
 
     UINT Width = 0, Height = 0;
 
@@ -148,6 +150,8 @@ HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCou
         for (const auto & p : Palette)
             colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
     }
+
+    _CriticalSection.Leave();
 
     return hr;
 }

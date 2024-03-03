@@ -99,7 +99,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FBO, L"Determines the order of the filter bank used to calculate the SWIFT and Analog-style transforms." },
             { IDC_TR, L"Determines the maximum time resolution used by the SWIFT and Analog-style transforms." },
             { IDC_IIR_BW, L"Determines the bandwidth used by the SWIFT and Analog-style transforms." },
-            { IDC_CONSTANT_Q, L"Uses constant-Q instead of variable-Q in the Anallog-style transform." },
+            { IDC_CONSTANT_Q, L"Uses constant-Q instead of variable-Q in the IIR transforms." },
+            { IDC_COMPENSATE_BW, L"Compensate bandwidth for narrowing on higher order IIR filters banks." },
+            { IDC_PREWARPED_Q, L"Prewarps Q to ensure the actual bandwidth is truly logarithmic at anything closer to the Nyquist frequency." },
 
             // Frequencies
             { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
@@ -117,7 +119,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed" },
 
             { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum" },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum." },
             { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
 
             { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
@@ -393,7 +395,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma endregion
 
-    #pragma region SWIFT / Analog-style
+    #pragma region IIR (SWIFT / Analog-style)
 
     {
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_FBO)); _NumericEdits.push_back(ne); SetInteger(IDC_FBO, (int64_t) _State->_FilterBankOrder);
@@ -408,6 +410,8 @@ void ConfigurationDialog::Initialize()
     }
 
     SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
+    SendDlgItemMessageW(IDC_COMPENSATE_BW, BM_SETCHECK, _State->_CompensateBW);
+    SendDlgItemMessageW(IDC_PREWARPED_Q, BM_SETCHECK, _State->_PreWarpQ);
 
     #pragma endregion
 
@@ -967,7 +971,7 @@ void ConfigurationDialog::Initialize()
         for (const auto & x :
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
-            L"X-axis Text", L"X-axis Line", L"Y-axis Text", L"Y-axis Line",
+            L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
             L"Bar Spectrum", L"Bar Peak Indicator", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
             L"Nyquist Frequency",
@@ -1413,7 +1417,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_FBO: { _State->_FilterBankOrder = Clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder); break; }
         case IDC_TR: { _State->_TimeResolution = Clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution); break; }
-        case IDC_IIR_BW: { _State->_IIRBandwidth = Clamp(::_wtof(Text), MinSWIFTBandwidth, MaxSWIFTBandwidth); break; }
+        case IDC_IIR_BW: { _State->_IIRBandwidth = Clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth); break; }
 
         #pragma endregion
 
@@ -1736,6 +1740,18 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_CONSTANT_Q:
         {
             _State->_ConstantQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_COMPENSATE_BW:
+        {
+            _State->_CompensateBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_PREWARPED_Q:
+        {
+            _State->_PreWarpQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2284,7 +2300,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         // IIR (SWIFT / Analog-style)
         IDC_IIR_GROUP,
-            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_IIR_BW_LBL, IDC_IIR_BW, IDC_CONSTANT_Q,
+            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_IIR_BW_LBL, IDC_IIR_BW, IDC_CONSTANT_Q, IDC_COMPENSATE_BW, IDC_PREWARPED_Q,
     };
 
     static const int Page2[] =
@@ -2485,8 +2501,8 @@ void ConfigurationDialog::UpdateControls()
     for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
         GetDlgItem(Iter).EnableWindow(IsFFT);
 
-    for (const auto & Iter : { IDC_NUM_BINS, IDC_DISTRIBUTION })
-        GetDlgItem(Iter).EnableWindow(IsFFT || IsIIR);
+    for (const auto & Iter : { IDC_NUM_BINS,  })
+        GetDlgItem(Iter).EnableWindow(IsFFT);
 
     const bool NotFixed = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
 
@@ -2512,7 +2528,7 @@ void ConfigurationDialog::UpdateControls()
         #pragma warning (default: 4061)
 
     // Brown-Puckette CQT
-    const bool IsBrownPuckette = (_State->_MappingMethod == Mapping::BrownPuckette) && IsFFT;
+    const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
 
         for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
             GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
@@ -2520,18 +2536,20 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
 
     // IIR (SWIFT / Analog-style)
-    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q })
+    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, })
         GetDlgItem(Iter).EnableWindow(IsIIR);
+
+    GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_Transform == Transform::AnalogStyle);
 
     // Frequencies
     const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
     const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
-        GetDlgItem(IDC_NUM_BANDS).EnableWindow(IsFFT && !IsOctaves);
-        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
-        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(IsFFT && !IsOctaves);
-        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(IsFFT && !IsOctaves && !IsAveePlayer);
+        GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
+        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
+        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
 
+        GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
         GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
         for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
