@@ -100,8 +100,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_TR, L"Determines the maximum time resolution used by the SWIFT and Analog-style transforms." },
             { IDC_IIR_BW, L"Determines the bandwidth used by the SWIFT and Analog-style transforms." },
             { IDC_CONSTANT_Q, L"Uses constant-Q instead of variable-Q in the IIR transforms." },
-            { IDC_COMPENSATE_BW, L"Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)." },
-            { IDC_PREWARPED_Q, L"Use prewarped Q in the Analog-style transform." },
+            { IDC_COMPENSATE_BW, L"Compensate bandwidth for narrowing on higher order IIR filters banks." },
+            { IDC_PREWARPED_Q, L"Prewarps Q to ensure the actual bandwidth is truly logarithmic at anything closer to the Nyquist frequency." },
 
             // Frequencies
             { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
@@ -2528,7 +2528,7 @@ void ConfigurationDialog::UpdateControls()
         #pragma warning (default: 4061)
 
     // Brown-Puckette CQT
-    const bool IsBrownPuckette = (_State->_MappingMethod == Mapping::BrownPuckette) && IsFFT;
+    const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
 
         for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
             GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
@@ -2536,8 +2536,10 @@ void ConfigurationDialog::UpdateControls()
     GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
 
     // IIR (SWIFT / Analog-style)
-    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, IDC_PREWARPED_Q, })
+    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, })
         GetDlgItem(Iter).EnableWindow(IsIIR);
+
+    GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_Transform == Transform::AnalogStyle);
 
     // Frequencies
     const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
