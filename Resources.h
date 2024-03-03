@@ -8,25 +8,26 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          2
+#define NUM_FILE_PATCH          3
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       2
+#define NUM_PRODUCT_PATCH       3
 #define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
 #define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2024 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
-#define STR_COMPONENT_COMMENT       "Based on:\n" \
+#define STR_COMPONENT_COMMENT       "\n" \
+                                    "Based on:\n" \
                                     "- The Audio Spectrum project (https://codepen.io/TF3RDL/pen/poQJwRW)\n" \
                                     "- SWIFT, Sliding Windowed Infinite Fourier Transform (https://codepen.io/TF3RDL/pen/JjBzjeY)\n" \
                                     "- Analog-style spectrum analyzer and sliding DFT visualization using AudioWorklet (https://codepen.io/TF3RDL/pen/MWLzPoO)"
@@ -39,7 +40,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -407,6 +408,22 @@
 #define IDC_POSITION                    7544
 #define IDC_POSITION_LBL                7546
 #define IDC_SPREAD                      7548
+
+#pragma endregion
+
+#pragma region Presets
+
+#define IDC_PRESETS_LBL                 7600
+#define IDC_PRESETS_PATH                7602
+#define IDC_PRESETS_PATH_SELECT         7604
+#define IDC_PRESET_FILES                7606
+
+#define IDC_PRESET_FILENAME_LBL         7608
+#define IDC_PRESET_FILENAME             7610
+
+#define IDC_PRESET_LOAD                 7612
+#define IDC_PRESET_SAVE                 7614
+#define IDC_PRESET_DELETE               7616
 
 #pragma endregion
 

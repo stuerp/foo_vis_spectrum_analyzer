@@ -240,7 +240,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles" })
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles", L"Presets" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -1043,6 +1043,12 @@ void ConfigurationDialog::Initialize()
     }
 
     UpdateStyleControls();
+    #pragma endregion
+
+    #pragma region Presets
+    {
+        SetDlgItemTextW(IDC_PRESETS_PATH, pfc::wideFromUTF8(pfc::winUnPrefixPath(_State->_PresetsDirectoryPath)));
+    }
     #pragma endregion
 
     UpdateControls();
@@ -2405,74 +2411,38 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_HORIZONTAL_GRADIENT,
     };
 
-    int Mode = (index == 0) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page1); ++i)
+    static const int Page8[] =
     {
-        auto w = GetDlgItem(Page1[i]);
+        IDC_PRESETS_LBL, IDC_PRESETS_PATH, IDC_PRESETS_PATH_SELECT, IDC_PRESET_FILES,
+        IDC_PRESET_FILENAME_LBL, IDC_PRESET_FILENAME,
+        IDC_PRESET_LOAD, IDC_PRESET_SAVE, IDC_PRESET_DELETE,
+    };
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 1) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page2); ++i)
+    const std::map<const int *, size_t> Pages =
     {
-        auto w = GetDlgItem(Page2[i]);
+        { Page1, _countof(Page1) },
+        { Page2, _countof(Page2) },
+        { Page3, _countof(Page3) },
+        { Page4, _countof(Page4) },
+        { Page5, _countof(Page5) },
+        { Page6, _countof(Page6) },
+        { Page7, _countof(Page7) },
+        { Page8, _countof(Page8) },
+    };
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
+    size_t PageNumber = 0;
 
-    Mode = (index == 2) ? SW_SHOW : SW_HIDE;
+    for (const auto & Page : Pages)
+    {    
+        int Mode = (index == PageNumber++) ? SW_SHOW : SW_HIDE;
 
-    for (size_t i = 0; i < _countof(Page3); ++i)
-    {
-        auto w = GetDlgItem(Page3[i]);
+        for (size_t i = 0; i < Page.second; ++i)
+        {
+            auto w = GetDlgItem(Page.first[i]);
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 3) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page4); ++i)
-    {
-        auto w = GetDlgItem(Page4[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 4) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page5); ++i)
-    {
-        auto w = GetDlgItem(Page5[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 5) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page6); ++i)
-    {
-        auto w = GetDlgItem(Page6[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 6) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page7); ++i)
-    {
-        auto w = GetDlgItem(Page7[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
+            if (w.IsWindow())
+                w.ShowWindow(Mode);
+        }
     }
 }
 

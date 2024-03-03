@@ -215,6 +215,13 @@ void State::Reset() noexcept
     _AreaOpacity_Deprecated = 0.5f;
 
     _StyleManager.Reset();
+
+    pfc::string Path = core_api::get_profile_path();
+
+    if (_PresetsDirectoryPath.startsWith("file://"))
+        _PresetsDirectoryPath = Path + strlen("file://");
+    else
+        _PresetsDirectoryPath = Path;
 }
 
 /// <summary>
@@ -440,6 +447,8 @@ State & State::operator=(const State & other)
         _StyleManager = other._StyleManager;
 
     #pragma endregion
+
+    _PresetsDirectoryPath = core_api::get_profile_path();
 
     #pragma region Not serialized
 

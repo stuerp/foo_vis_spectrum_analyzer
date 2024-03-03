@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.02) P. Stuer **/
+/** $VER: Resources.rc (2024.03.03) P. Stuer **/
 
 #include "Resources.h"
 
@@ -350,6 +350,20 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Thickness:"                IDC_THICKNESS_LBL,              X_I11, Y_I11 + 2, W_I11, H_I11
         edittext                                    IDC_THICKNESS,                  X_I12, Y_I12,     W_I12, H_I12, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_THICKNESS_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+    // Presets
+        rtext           "Directory:"                IDC_PRESETS_LBL,                X_J01, Y_J01 + 2, W_J01, H_J01
+        edittext                                    IDC_PRESETS_PATH,               X_J02, Y_J02,     W_J02, H_J02, ES_AUTOHSCROLL
+        pushbutton      "...",                      IDC_PRESETS_PATH_SELECT,        X_J03, Y_J03,     W_J03, H_J03
+
+        listbox                                     IDC_PRESET_FILES,               X_J04, Y_J04,     W_J04, H_J04, LBS_HASSTRINGS | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "File Name:"                IDC_PRESET_FILENAME_LBL,        X_J05, Y_J05 + 2, W_J05, H_J05
+        edittext                                    IDC_PRESET_FILENAME,            X_J06, Y_J06,     W_J06, H_J06, ES_AUTOHSCROLL
+
+        pushbutton      "Load",                     IDC_PRESET_LOAD,                X_J07, Y_J07,     W_J07, H_J07
+        pushbutton      "Save",                     IDC_PRESET_SAVE,                X_J08, Y_J08,     W_J08, H_J08
+        pushbutton      "Delete",                   IDC_PRESET_DELETE,              X_J09, Y_J09,     W_J09, H_J09
 
     pushbutton      "Reset",    IDC_RESET,  X_A97, Y_A97, W_A97, H_A97
     defpushbutton   "OK",       IDOK,       X_A98, Y_A98, W_A98, H_A98

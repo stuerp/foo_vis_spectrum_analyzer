@@ -212,6 +212,7 @@
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
     <ClInclude Include="Visuals\Grid.h" />
+    <ClInclude Include="Visuals\PresetManager.h" />
     <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />
@@ -224,6 +225,7 @@
     <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
+    <ClInclude Include="Windows\MD5.h" />
     <ClInclude Include="Windows\Raster.h" />
     <ClInclude Include="Windows\SafeModuleHandle.h" />
     <ClInclude Include="Visuals\BezierSpline.h" />
@@ -269,6 +271,7 @@
     <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Visuals\Element.cpp" />
+    <ClCompile Include="Visuals\PresetManager.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
@@ -277,6 +280,7 @@
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Windows\DirectX.cpp" />
+    <ClCompile Include="Windows\MD5.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />
