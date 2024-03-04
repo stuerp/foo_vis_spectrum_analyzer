@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.02.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.03.04) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -87,6 +87,7 @@ private:
     void UpdateStyleControls();
     void UpdateGradientStopPositons(Style * style);
     void UpdatePages(size_t index) const noexcept;
+    void UpdatePresetFiles() noexcept;
 
     void ConfigurationChanged() const noexcept;
 
@@ -144,6 +145,8 @@ private:
     CColorListBox _Colors;
 
     fb2k::CCoreDarkModeHooks _DarkMode;
+
+    std::vector<std::wstring> _FileNames;
 
     bool _IsInitializing;
 };

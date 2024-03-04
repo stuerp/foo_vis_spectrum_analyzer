@@ -84,19 +84,29 @@ bool PresetManager::Save(const pfc::string & filePath, const State * state) noex
     }
 }
 
+/// <summary>
+/// Gets the file names of the preset files.
+/// </summary>
 bool PresetManager::GetFileNames(const pfc::string & directoryPathName, std::vector<std::wstring> & FileNames) noexcept
 {
     WCHAR DirectoryPathName[MAX_PATH];
 
-    HRESULT hResult = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(directoryPathName).c_str(), L"*.fvsa");
+    HRESULT hr = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(directoryPathName).c_str(), L"*.fvsa");
+
+    if (!SUCCEEDED(hr))
+        return false;
 
     WIN32_FIND_DATAW ffd;
 
     HANDLE hFind = ::FindFirstFileW(DirectoryPathName, &ffd);
 
-    while (hFind != INVALID_HANDLE_VALUE)
+    BOOL Success = (hFind != INVALID_HANDLE_VALUE);
+
+    while (Success)
     {
-        ::FindNextFileW(hFind, &ffd);
+        FileNames.push_back(ffd.cFileName);
+
+        Success = ::FindNextFileW(hFind, &ffd);
     }
 
     return true;

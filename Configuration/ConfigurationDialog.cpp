@@ -13,6 +13,10 @@
 
 #include "Log.h"
 
+#include <pathcch.h>
+
+#pragma comment(lib, "pathcch")
+
 // Display names for the audio_chunk channel bits.
 static const LPCWSTR ChannelNames[] =
 {
@@ -1046,7 +1050,9 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Presets
     {
-        SetDlgItemTextW(IDC_PRESETS_PATH, pfc::wideFromUTF8(pfc::winUnPrefixPath(_State->_PresetsDirectoryPath)));
+        SetDlgItemTextW(IDC_PRESETS_PATH, pfc::wideFromUTF8(_State->_PresetsDirectoryPath));
+
+        UpdatePresetFiles();
     }
     #pragma endregion
 
@@ -1360,6 +1366,25 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
                 GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
                 GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
+            return;
+        }
+
+        #pragma endregion
+
+        #pragma region Presets
+
+        case IDC_PRESET_FILES:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_PRESET_FILES);
+
+            SelectedIndex = lb.GetCurSel();
+
+            if (!InRange(SelectedIndex, 0, (int) _FileNames.size()))
+                return;
+
+            SetDlgItemTextW(IDC_PRESET_FILENAME, _FileNames[(size_t) SelectedIndex].c_str());
+
+            UpdateControls();
             return;
         }
 
@@ -1739,9 +1764,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_PRESETS_PATH:
         {
-            std::vector<std::wstring> FileNames;
-
-            PresetManager::GetFileNames(_State->_PresetsDirectoryPath, FileNames);
+            UpdatePresetFiles();
             break;
         }
 
@@ -1999,6 +2022,45 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
                 style->_Flags |= Style::HorizontalGradient;
             else
                 style->_Flags &= ~Style::HorizontalGradient;
+            break;
+        }
+
+        case IDC_PRESET_LOAD:
+        {
+            break;
+        }
+
+        case IDC_PRESET_SAVE:
+        {
+            break;
+        }
+
+        case IDC_PRESET_DELETE:
+        {
+            WCHAR FilePath[MAX_PATH];
+            WCHAR FileName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_FILENAME, FileName, _countof(FileName));
+
+            size_t l = ::wcslen(FileName);
+
+            if (l == 0)
+                return;
+
+            HRESULT hr = ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
+
+            if (!SUCCEEDED(hr))
+                return;
+
+            hr = ::PathCchCombine(FilePath, _countof(FilePath), pfc::wideFromUTF8(_State->_PresetsDirectoryPath), FileName);
+
+            if (!SUCCEEDED(hr))
+                return;
+
+            if (!::DeleteFileW(FilePath))
+                Log::Write(Log::Level::Error, "%s: Failed to delete \"%s\": 0x%08X", core_api::get_my_file_name(), pfc::utf8FromWide(FilePath), GetLastError());
+
+            UpdatePresetFiles();
             break;
         }
 
@@ -2567,6 +2629,17 @@ void ConfigurationDialog::UpdateControls()
 
         for (const auto & Iter : { IDC_LED_MODE })
             GetDlgItem(Iter).EnableWindow(IsBars);
+
+    // Presets
+    bool HasPresets = (_FileNames.size() != 0);
+
+    WCHAR FilePath[MAX_PATH];
+
+    GetDlgItemTextW(IDC_PRESET_FILENAME, FilePath, _countof(FilePath));
+
+    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
+    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
+    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(HasPresets && (FilePath[0] != '\0'));
 }
 
 /// <summary>
@@ -2861,6 +2934,26 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
     // Save the current result as custom gradient stops.
     style->_ColorScheme = ColorScheme::Custom;
     style->_CustomGradientStops = style->_GradientStops;
+}
+
+/// <summary>
+/// Updates the preset file list box.
+/// </summary>
+void ConfigurationDialog::UpdatePresetFiles() noexcept
+{
+    _FileNames.clear();
+
+    auto w = (CListBox) GetDlgItem(IDC_PRESET_FILES);
+
+    w.ResetContent();
+
+    if (PresetManager::GetFileNames(_State->_PresetsDirectoryPath, _FileNames))
+    {
+        for (auto & FileName : _FileNames)
+        {
+            w.AddString(FileName.c_str());
+        }
+    }
 }
 
 /// <summary>

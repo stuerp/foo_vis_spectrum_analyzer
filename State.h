@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.03) P. Stuer **/
+/** $VER: State.h (2024.03.04) P. Stuer **/
 
 #pragma once
 
@@ -309,5 +309,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 19;
+    const size_t _CurrentVersion = 20;
 };

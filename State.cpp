@@ -448,7 +448,11 @@ State & State::operator=(const State & other)
 
     #pragma endregion
 
-    _PresetsDirectoryPath = core_api::get_profile_path();
+    #pragma region Presets
+
+    _PresetsDirectoryPath = other._PresetsDirectoryPath;
+
+    #pragma endregion
 
     #pragma region Not serialized
 
@@ -749,6 +753,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_CompensateBW, abortHandler);
             reader->read_object_t(_PreWarpQ, abortHandler);
         }
+
+        if (Version >= 20)
+        {
+            reader->read_string(_PresetsDirectoryPath, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -988,6 +997,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write_object_t(_ConstantQ, abortHandler);
         writer->write_object_t(_CompensateBW, abortHandler);
         writer->write_object_t(_PreWarpQ, abortHandler);
+
+        // Version 20
+        writer->write_string(_PresetsDirectoryPath, abortHandler);
     }
     catch (exception & ex)
     {

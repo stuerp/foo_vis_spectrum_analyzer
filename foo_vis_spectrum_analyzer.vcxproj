@@ -212,7 +212,7 @@
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
     <ClInclude Include="Visuals\Grid.h" />
-    <ClInclude Include="Visuals\PresetManager.h" />
+    <ClInclude Include="Configuration\PresetManager.h" />
     <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />
@@ -271,7 +271,7 @@
     <ClCompile Include="Visuals\Artwork.cpp" />
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Visuals\Element.cpp" />
-    <ClCompile Include="Visuals\PresetManager.cpp" />
+    <ClCompile Include="Configuration\PresetManager.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
