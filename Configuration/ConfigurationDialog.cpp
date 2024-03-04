@@ -2058,7 +2058,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
                 return;
 
             if (!::DeleteFileW(FilePath))
-                Log::Write(Log::Level::Error, "%s: Failed to delete \"%s\": 0x%08X", core_api::get_my_file_name(), pfc::utf8FromWide(FilePath), GetLastError());
+                Log::Write(Log::Level::Error, "%s: Failed to delete \"%s\": 0x%08X", core_api::get_my_file_name(), pfc::utf8FromWide(FilePath).c_str(), GetLastError());
 
             UpdatePresetFiles();
             break;
