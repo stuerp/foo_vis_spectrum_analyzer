@@ -85,6 +85,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.3.0, 2024-03-xx
+
+* New: Presets.
+  * The configuration can be written to and read from preset files (*.fvsa).
+  * The default location of the preset files is the root of your profile directory but this can be changed.
+
 v0.7.2.0, 2024-03-03
 
 * Changed: The grid lines can be displayed without an X or Y-axis.

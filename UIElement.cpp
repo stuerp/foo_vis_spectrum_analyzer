@@ -80,7 +80,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Critical, "%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Critical, "%s: Unable to create visualisation stream: %s.", core_api::get_my_file_name(), ex.what());
 
         return -1;
     }

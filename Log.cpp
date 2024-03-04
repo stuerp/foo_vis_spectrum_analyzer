@@ -12,7 +12,7 @@ namespace Log
 #ifdef _DEBUG
 static Level _Level = Level::Trace;
 #else
-static Level _Level = Level::None;
+static Level _Level = Level::Information;
 #endif
 
 /// <summary>

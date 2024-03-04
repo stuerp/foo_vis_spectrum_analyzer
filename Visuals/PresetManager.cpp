@@ -1,10 +1,13 @@
 
-/** $VER: PresetManager.cpp (2024.03.03) P. Stuer **/
+/** $VER: PresetManager.cpp (2024.03.04) P. Stuer **/
 
 #include "PresetManager.h"
 
-#include "MD5.h"
 #include "Log.h"
+
+#include <pathcch.h>
+
+#pragma comment(lib, "pathcch")
 
 #pragma hdrstop
 
@@ -47,7 +50,7 @@ bool PresetManager::Load(const pfc::string & filePath, State * state) noexcept
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Trace, ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read preset from \"%s\": %s", core_api::get_my_file_name(), filePath.c_str(), ex.what());
 
         return false;
     }
@@ -75,8 +78,26 @@ bool PresetManager::Save(const pfc::string & filePath, const State * state) noex
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Trace, ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write preset to \"%s\": %s", core_api::get_my_file_name(), filePath.c_str(), ex.what());
 
         return false;
     }
+}
+
+bool PresetManager::GetFileNames(const pfc::string & directoryPathName, std::vector<std::wstring> & FileNames) noexcept
+{
+    WCHAR DirectoryPathName[MAX_PATH];
+
+    HRESULT hResult = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(directoryPathName).c_str(), L"*.fvsa");
+
+    WIN32_FIND_DATAW ffd;
+
+    HANDLE hFind = ::FindFirstFileW(DirectoryPathName, &ffd);
+
+    while (hFind != INVALID_HANDLE_VALUE)
+    {
+        ::FindNextFileW(hFind, &ffd);
+    }
+
+    return true;
 }

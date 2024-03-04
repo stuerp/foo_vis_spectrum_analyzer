@@ -180,7 +180,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while reading styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read styles: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -236,6 +236,6 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while writing styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write styles: %s", core_api::get_my_file_name(), ex.what());
     }
 }

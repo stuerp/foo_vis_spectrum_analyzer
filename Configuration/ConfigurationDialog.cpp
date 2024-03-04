@@ -1,15 +1,14 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.04) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
 #include "Gradients.h"
 #include "Layout.h"
-
 #include "CColorDialogEx.h"
+#include "PresetManager.h"
 
 #include "Direct2D.h"
-
 #include "Theme.h"
 
 #include "Log.h"
@@ -1603,6 +1602,16 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region Presets
+
+        case IDC_PRESETS_PATH:
+        {
+            _State->_PresetsDirectoryPath = pfc::utf8FromWide(Text);
+            break;
+        }
+
+        #pragma endregion
+
         default:
             return;
     }
@@ -1651,7 +1660,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // SWIFT / Analog-style
         case IDC_FBO:                   { SetInteger(id, (int64_t) _State->_FilterBankOrder); break; }
         case IDC_TR:                    { SetDouble(id, _State->_TimeResolution); break; }
-        case IDC_IIR_BW:              { SetDouble(id, _State->_IIRBandwidth); break; }
+        case IDC_IIR_BW:                { SetDouble(id, _State->_IIRBandwidth); break; }
 
         // Frequencies
         case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_BandCount); break; }
@@ -1725,6 +1734,18 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Thickness, 0, 1);
             break;
         }
+
+        #pragma region Presets
+
+        case IDC_PRESETS_PATH:
+        {
+            std::vector<std::wstring> FileNames;
+
+            PresetManager::GetFileNames(_State->_PresetsDirectoryPath, FileNames);
+            break;
+        }
+
+        #pragma endregion
     }
 
     return;
