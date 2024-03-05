@@ -1,5 +1,5 @@
 
-/** $VER: PresetManager.cpp (2024.03.04) P. Stuer **/
+/** $VER: PresetManager.cpp (2024.03.05) P. Stuer **/
 
 #include "PresetManager.h"
 
@@ -14,13 +14,20 @@
 /// <summary>
 /// Loads a state object from a file.
 /// </summary>
-bool PresetManager::Load(const pfc::string & filePath, State * state) noexcept
+bool PresetManager::Load(const pfc::string & rootPath, const pfc::string & presetName, State * state) noexcept
 {
+    WCHAR FileName[MAX_PATH];
+
+    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
+    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
+
+    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+
     try
     {
         file_ptr File;
 
-        filesystem::g_open(File, filePath, filesystem::open_mode_read, fb2k::noAbort);
+        filesystem::g_open(File, FilePath, filesystem::open_mode_read, fb2k::noAbort);
 
         auto Reader = File.get_ptr();
 
@@ -50,7 +57,7 @@ bool PresetManager::Load(const pfc::string & filePath, State * state) noexcept
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to read preset from \"%s\": %s", core_api::get_my_file_name(), filePath.c_str(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
@@ -59,13 +66,20 @@ bool PresetManager::Load(const pfc::string & filePath, State * state) noexcept
 /// <summary>
 /// Saves a state object to a file.
 /// </summary>
-bool PresetManager::Save(const pfc::string & filePath, const State * state) noexcept
+bool PresetManager::Save(const pfc::string & rootPath, const pfc::string & presetName, const State * state) noexcept
 {
+    WCHAR FileName[MAX_PATH];
+
+    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
+    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
+
+    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+
     try
     {
         file_ptr File;
 
-        filesystem::g_open(File, filePath, filesystem::open_mode_write_new, fb2k::noAbort);
+        filesystem::g_open(File, FilePath, filesystem::open_mode_write_new, fb2k::noAbort);
 
         auto Writer = File.get_ptr();
 
@@ -78,20 +92,46 @@ bool PresetManager::Save(const pfc::string & filePath, const State * state) noex
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write preset to \"%s\": %s", core_api::get_my_file_name(), filePath.c_str(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
 }
 
 /// <summary>
-/// Gets the file names of the preset files.
+/// Deletes the specified preset.
 /// </summary>
-bool PresetManager::GetFileNames(const pfc::string & directoryPathName, std::vector<std::wstring> & FileNames) noexcept
+bool PresetManager::Delete(const pfc::string & rootPath, const pfc::string & presetName) noexcept
+{
+    WCHAR FileName[MAX_PATH];
+
+    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
+    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
+
+    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+
+    try
+    {
+        filesystem::g_remove(FilePath, fb2k::noAbort);
+
+        return true;
+    }
+    catch (pfc::exception ex)
+    {
+        Log::Write(Log::Level::Error, "%s: Failed to delete preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
+
+        return false;
+    }
+}
+
+/// <summary>
+/// Gets the names of the preset files.
+/// </summary>
+bool PresetManager::GetPresetNames(const pfc::string & rootPath, std::vector<std::wstring> & presetNames) noexcept
 {
     WCHAR DirectoryPathName[MAX_PATH];
 
-    HRESULT hr = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(directoryPathName).c_str(), L"*.fvsa");
+    HRESULT hr = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(rootPath).c_str(), L"*.fvsa");
 
     if (!SUCCEEDED(hr))
         return false;
@@ -104,7 +144,9 @@ bool PresetManager::GetFileNames(const pfc::string & directoryPathName, std::vec
 
     while (Success)
     {
-        FileNames.push_back(ffd.cFileName);
+        ::PathCchRemoveExtension(ffd.cFileName, _countof(ffd.cFileName));
+
+        presetNames.push_back(ffd.cFileName);
 
         Success = ::FindNextFileW(hFind, &ffd);
     }

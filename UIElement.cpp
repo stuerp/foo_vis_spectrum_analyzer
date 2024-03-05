@@ -103,13 +103,6 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     // Apply the initial configuration.
     UpdateState();
 
-    {
-        pfc::string FilePath = pfc::io::path::combine(_State._PresetsDirectoryPath, "Test.fvsa");
-
-        PresetManager::Save(FilePath, &_State);
-        PresetManager::Load(FilePath, &_State);
-    }
-
     return 0;
 }
 

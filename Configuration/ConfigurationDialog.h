@@ -146,7 +146,7 @@ private:
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 
-    std::vector<std::wstring> _FileNames;
+    std::vector<std::wstring> _PresetNames;
 
     bool _IsInitializing;
 };

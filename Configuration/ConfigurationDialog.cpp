@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.04) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.05) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -1050,7 +1050,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Presets
     {
-        SetDlgItemTextW(IDC_PRESETS_PATH, pfc::wideFromUTF8(_State->_PresetsDirectoryPath));
+        SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(_State->_PresetsDirectoryPath));
 
         UpdatePresetFiles();
     }
@@ -1373,16 +1373,16 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         #pragma region Presets
 
-        case IDC_PRESET_FILES:
+        case IDC_PRESETS_NAMES:
         {
-            auto lb = (CListBox) GetDlgItem(IDC_PRESET_FILES);
+            auto lb = (CListBox) GetDlgItem(IDC_PRESETS_NAMES);
 
             SelectedIndex = lb.GetCurSel();
 
-            if (!InRange(SelectedIndex, 0, (int) _FileNames.size()))
+            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size()))
                 return;
 
-            SetDlgItemTextW(IDC_PRESET_FILENAME, _FileNames[(size_t) SelectedIndex].c_str());
+            SetDlgItemTextW(IDC_PRESET_NAME, _PresetNames[(size_t) SelectedIndex].c_str());
 
             UpdateControls();
             return;
@@ -1629,7 +1629,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Presets
 
-        case IDC_PRESETS_PATH:
+        case IDC_PRESETS_ROOT:
         {
             _State->_PresetsDirectoryPath = pfc::utf8FromWide(Text);
             break;
@@ -1762,7 +1762,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         #pragma region Presets
 
-        case IDC_PRESETS_PATH:
+        case IDC_PRESETS_ROOT:
         {
             UpdatePresetFiles();
             break;
@@ -2027,38 +2027,37 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_PRESET_LOAD:
         {
+            WCHAR PresetName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+            State NewState;
+
+            PresetManager::Load(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName), &NewState);
+
+            UpdatePresetFiles();
             break;
         }
 
         case IDC_PRESET_SAVE:
         {
+            WCHAR PresetName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+            PresetManager::Save(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName), _State);
+
+            UpdatePresetFiles();
             break;
         }
 
         case IDC_PRESET_DELETE:
         {
-            WCHAR FilePath[MAX_PATH];
-            WCHAR FileName[MAX_PATH];
+            WCHAR PresetName[MAX_PATH];
 
-            GetDlgItemTextW(IDC_PRESET_FILENAME, FileName, _countof(FileName));
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-            size_t l = ::wcslen(FileName);
-
-            if (l == 0)
-                return;
-
-            HRESULT hr = ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
-
-            if (!SUCCEEDED(hr))
-                return;
-
-            hr = ::PathCchCombine(FilePath, _countof(FilePath), pfc::wideFromUTF8(_State->_PresetsDirectoryPath), FileName);
-
-            if (!SUCCEEDED(hr))
-                return;
-
-            if (!::DeleteFileW(FilePath))
-                Log::Write(Log::Level::Error, "%s: Failed to delete \"%s\": 0x%08X", core_api::get_my_file_name(), pfc::utf8FromWide(FilePath).c_str(), GetLastError());
+            PresetManager::Delete(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName));
 
             UpdatePresetFiles();
             break;
@@ -2496,8 +2495,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
     static const int Page8[] =
     {
-        IDC_PRESETS_LBL, IDC_PRESETS_PATH, IDC_PRESETS_PATH_SELECT, IDC_PRESET_FILES,
-        IDC_PRESET_FILENAME_LBL, IDC_PRESET_FILENAME,
+        IDC_PRESETS_LBL, IDC_PRESETS_ROOT, IDC_PRESETS_ROOT_SELECT, IDC_PRESETS_NAMES,
+        IDC_PRESET_NAME_LBL, IDC_PRESET_NAME,
         IDC_PRESET_LOAD, IDC_PRESET_SAVE, IDC_PRESET_DELETE,
     };
 
@@ -2631,11 +2630,11 @@ void ConfigurationDialog::UpdateControls()
             GetDlgItem(Iter).EnableWindow(IsBars);
 
     // Presets
-    bool HasPresets = (_FileNames.size() != 0);
+    bool HasPresets = (_PresetNames.size() != 0);
 
     WCHAR FilePath[MAX_PATH];
 
-    GetDlgItemTextW(IDC_PRESET_FILENAME, FilePath, _countof(FilePath));
+    GetDlgItemTextW(IDC_PRESET_NAME, FilePath, _countof(FilePath));
 
     GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
     GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
@@ -2941,17 +2940,17 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
 /// </summary>
 void ConfigurationDialog::UpdatePresetFiles() noexcept
 {
-    _FileNames.clear();
+    _PresetNames.clear();
 
-    auto w = (CListBox) GetDlgItem(IDC_PRESET_FILES);
+    auto w = (CListBox) GetDlgItem(IDC_PRESETS_NAMES);
 
     w.ResetContent();
 
-    if (PresetManager::GetFileNames(_State->_PresetsDirectoryPath, _FileNames))
+    if (PresetManager::GetPresetNames(_State->_PresetsDirectoryPath, _PresetNames))
     {
-        for (auto & FileName : _FileNames)
+        for (auto & PresetName : _PresetNames)
         {
-            w.AddString(FileName.c_str());
+            w.AddString(PresetName.c_str());
         }
     }
 }

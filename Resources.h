@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.03) P. Stuer **/
+/** $VER: Resources.h (2024.03.05) P. Stuer **/
 
 #pragma once
 
@@ -414,12 +414,12 @@
 #pragma region Presets
 
 #define IDC_PRESETS_LBL                 7600
-#define IDC_PRESETS_PATH                7602
-#define IDC_PRESETS_PATH_SELECT         7604
-#define IDC_PRESET_FILES                7606
+#define IDC_PRESETS_ROOT                7602
+#define IDC_PRESETS_ROOT_SELECT         7604
+#define IDC_PRESETS_NAMES               7606
 
-#define IDC_PRESET_FILENAME_LBL         7608
-#define IDC_PRESET_FILENAME             7610
+#define IDC_PRESET_NAME_LBL             7608
+#define IDC_PRESET_NAME                 7610
 
 #define IDC_PRESET_LOAD                 7612
 #define IDC_PRESET_SAVE                 7614
