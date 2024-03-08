@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.05) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -26,6 +26,9 @@ static const LPCWSTR ChannelNames[] =
     L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
 };
+
+static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
+static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept;
 
 /// <summary>
 /// Initializes the dialog.
@@ -1553,9 +1556,23 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Peak indicator
 
-        case IDC_SMOOTHING_FACTOR: { _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor); break; }
-        case IDC_HOLD_TIME: { _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime); break; }
-        case IDC_ACCELERATION: { _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration); break; }
+        case IDC_SMOOTHING_FACTOR:
+        {
+            _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            break;
+        }
+
+        case IDC_HOLD_TIME:
+        {
+            _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            break;
+        }
 
         #pragma endregion
 
@@ -1632,7 +1649,15 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_PRESETS_ROOT:
         {
             _State->_PresetsDirectoryPath = pfc::utf8FromWide(Text);
-            break;
+
+            UpdatePresetFiles();
+            return;
+        }
+
+        case IDC_PRESET_NAME:
+        {
+            UpdatePresetsPage();
+            return;
         }
 
         #pragma endregion
@@ -2025,6 +2050,25 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        #pragma region Presets
+
+        case IDC_PRESETS_ROOT_SELECT:
+        {
+            pfc::string DirectoryPath = _State->_PresetsDirectoryPath;
+
+            if (::uBrowseForFolder(m_hWnd, "Locate preset files...", DirectoryPath))
+            {
+                _State->_PresetsDirectoryPath = DirectoryPath;
+
+                pfc::wstringLite w = pfc::wideFromUTF8(DirectoryPath);
+
+                SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(DirectoryPath));
+
+                UpdatePresetFiles();
+            }
+            break;
+        }
+
         case IDC_PRESET_LOAD:
         {
             WCHAR PresetName[MAX_PATH];
@@ -2048,7 +2092,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             PresetManager::Save(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName), _State);
 
             UpdatePresetFiles();
-            break;
+
+            return;
         }
 
         case IDC_PRESET_DELETE:
@@ -2060,8 +2105,11 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             PresetManager::Delete(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName));
 
             UpdatePresetFiles();
-            break;
+
+            return;
         }
+
+        #pragma endregion
 
         case IDC_RESET:
         {
@@ -2629,56 +2677,7 @@ void ConfigurationDialog::UpdateControls()
         for (const auto & Iter : { IDC_LED_MODE })
             GetDlgItem(Iter).EnableWindow(IsBars);
 
-    // Presets
-    bool HasPresets = (_PresetNames.size() != 0);
-
-    WCHAR FilePath[MAX_PATH];
-
-    GetDlgItemTextW(IDC_PRESET_NAME, FilePath, _countof(FilePath));
-
-    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
-    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(HasPresets && (FilePath[0] != '\0'));
-    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(HasPresets && (FilePath[0] != '\0'));
-}
-
-/// <summary>
-/// Gets the selected Windows color.
-/// </summary>
-static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
-}
-
-/// <summary>
-/// Gets the selected DUI color.
-/// </summary>
-static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+    UpdatePresetsPage();
 }
 
 /// <summary>
@@ -2936,10 +2935,28 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
 }
 
 /// <summary>
+/// Updates the controls of the Presets page.
+/// </summary>
+void ConfigurationDialog::UpdatePresetsPage() noexcept
+{
+    WCHAR PresetName[MAX_PATH];
+
+    GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(PresetName[0] != '\0');
+    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(PresetName[0] != '\0');
+    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(PresetName[0] != '\0');
+}
+
+/// <summary>
 /// Updates the preset file list box.
 /// </summary>
 void ConfigurationDialog::UpdatePresetFiles() noexcept
 {
+    // Make sure the path exists before proceding.
+    if (::GetFileAttributesW(pfc::wideFromUTF8(_State->_PresetsDirectoryPath)) == INVALID_FILE_ATTRIBUTES)
+        return;
+
     _PresetNames.clear();
 
     auto w = (CListBox) GetDlgItem(IDC_PRESETS_NAMES);
@@ -3039,4 +3056,44 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
 //  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
+}
+
+/// <summary>
+/// Gets the selected Windows color.
+/// </summary>
+static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+}
+
+/// <summary>
+/// Gets the selected DUI color.
+/// </summary>
+static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
 }

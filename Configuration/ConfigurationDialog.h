@@ -87,6 +87,7 @@ private:
     void UpdateStyleControls();
     void UpdateGradientStopPositons(Style * style);
     void UpdatePages(size_t index) const noexcept;
+    void UpdatePresetsPage() noexcept;
     void UpdatePresetFiles() noexcept;
 
     void ConfigurationChanged() const noexcept;
