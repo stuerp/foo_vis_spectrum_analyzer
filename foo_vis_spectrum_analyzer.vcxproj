@@ -328,6 +328,7 @@
   <ItemGroup>
     <Image Include="Resources\Bars.png" />
     <Image Include="Resources\Curve.png" />
+    <Image Include="Resources\MultipleGraphs.png" />
     <Image Include="Resources\Preview.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

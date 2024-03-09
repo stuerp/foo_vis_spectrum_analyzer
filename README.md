@@ -10,7 +10,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](Resources/Curve.png?raw=true "Screenshot")
 
-![Screenshot](Resources/Multiple Graphs.png?raw=true "Screenshot")
+![Screenshot](Resources/MultipleGraphs.png?raw=true "Screenshot")
 
 ## Features
 
