@@ -3,8 +3,17 @@
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
 
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <Windows.h>
+#include <d2d1_2.h>
+
+#include <vector>
+
+#pragma warning(disable: 4820)
 struct FrequencyBand
 {
     FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), Peak(), HoldTime(), DecaySpeed(), Opacity() { }

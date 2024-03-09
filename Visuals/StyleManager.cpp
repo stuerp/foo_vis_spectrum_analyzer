@@ -166,7 +166,8 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             reader->read_object_t(style._Opacity, abortHandler);
             reader->read_object_t(style._Thickness, abortHandler);
 
-            style._FontName = reader->read_string(abortHandler);
+            pfc::string FontName= reader->read_string(abortHandler);
+            style._FontName = pfc::wideFromUTF8(FontName);
             reader->read_object_t(style._FontSize, abortHandler);
 
             // 'Activate' the values we just read.
@@ -229,7 +230,8 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
                 writer->write_object_t(style._Opacity, abortHandler);
                 writer->write_object_t(style._Thickness, abortHandler);
 
-                writer->write_string(style._FontName, abortHandler);
+                pfc::string FontName = pfc::utf8FromWide(style._FontName.c_str());
+                writer->write_string(FontName, abortHandler);
                 writer->write_object_t(style._FontSize, abortHandler);
             }
         }

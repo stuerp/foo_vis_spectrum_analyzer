@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.09) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -7,15 +7,12 @@
 #include "Layout.h"
 #include "CColorDialogEx.h"
 #include "PresetManager.h"
+#include "Support.h"
 
 #include "Direct2D.h"
 #include "Theme.h"
 
 #include "Log.h"
-
-#include <pathcch.h>
-
-#pragma comment(lib, "pathcch")
 
 // Display names for the audio_chunk channel bits.
 static const LPCWSTR ChannelNames[] =
@@ -824,7 +821,7 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _State->_ColorOrder);
     }
     {
-        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(pfc::wideFromUTF8(_State->_ArtworkFilePath));
+        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(_State->_ArtworkFilePath.c_str());
     }
     #pragma endregion
 
@@ -1053,7 +1050,7 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Presets
     {
-        SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(_State->_PresetsDirectoryPath));
+        SetDlgItemTextW(IDC_PRESETS_ROOT, _State->_PresetsDirectoryPath.c_str());
 
         UpdatePresetFiles();
     }
@@ -1500,7 +1497,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Script
 
-        case IDC_FILE_PATH: { _State->_ArtworkFilePath = pfc::utf8FromWide(Text); break; }
+        case IDC_FILE_PATH:
+        {
+            _State->_ArtworkFilePath = Text;
+            break;
+        }
 
         #pragma endregion
 
@@ -1510,7 +1511,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._Description = pfc::utf8FromWide(Text);
+            gs._Description = Text;
             break;
         }
 
@@ -1648,7 +1649,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_PRESETS_ROOT:
         {
-            _State->_PresetsDirectoryPath = pfc::utf8FromWide(Text);
+            _State->_PresetsDirectoryPath = Text;
 
             UpdatePresetFiles();
             return;
@@ -1878,7 +1879,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             int Index = (int) _State->_GraphSettings.size();
 
-            CHAR Description[32]; ::StringCchPrintfA(Description, _countof(Description), "Graph %d", Index + 1);
+            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
 
             NewGraphSettings._Description = Description;
 
@@ -2054,11 +2055,11 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_PRESETS_ROOT_SELECT:
         {
-            pfc::string DirectoryPath = _State->_PresetsDirectoryPath;
+            pfc::string DirectoryPath = pfc::utf8FromWide(_State->_PresetsDirectoryPath.c_str());
 
             if (::uBrowseForFolder(m_hWnd, "Locate preset files...", DirectoryPath))
             {
-                _State->_PresetsDirectoryPath = DirectoryPath;
+                _State->_PresetsDirectoryPath = pfc::wideFromUTF8(DirectoryPath);
 
                 pfc::wstringLite w = pfc::wideFromUTF8(DirectoryPath);
 
@@ -2077,7 +2078,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             State NewState;
 
-            PresetManager::Load(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName), &NewState);
+            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
 
             UpdatePresetFiles();
             break;
@@ -2089,7 +2090,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-            PresetManager::Save(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName), _State);
+            PresetManager::Save(_State->_PresetsDirectoryPath, PresetName, _State);
 
             UpdatePresetFiles();
 
@@ -2102,7 +2103,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-            PresetManager::Delete(_State->_PresetsDirectoryPath, pfc::utf8FromWide(PresetName));
+            PresetManager::Delete(_State->_PresetsDirectoryPath, PresetName);
 
             UpdatePresetFiles();
 
@@ -2691,7 +2692,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
         w.ResetContent();
 
         for (const auto & Iter : _State->_GraphSettings)
-            w.AddString(pfc::wideFromUTF8(Iter._Description));
+            w.AddString(Iter._Description.c_str());
 
         w.SetCurSel((int) _State->_SelectedGraph);
     }
@@ -2717,7 +2718,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
 
     const auto & gs = _State->_GraphSettings[(size_t) _State->_SelectedGraph];
 
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, pfc::wideFromUTF8(gs._Description));
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
     CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
     CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
@@ -2954,7 +2955,7 @@ void ConfigurationDialog::UpdatePresetsPage() noexcept
 void ConfigurationDialog::UpdatePresetFiles() noexcept
 {
     // Make sure the path exists before proceding.
-    if (::GetFileAttributesW(pfc::wideFromUTF8(_State->_PresetsDirectoryPath)) == INVALID_FILE_ATTRIBUTES)
+    if (::GetFileAttributesW(_State->_PresetsDirectoryPath.c_str()) == INVALID_FILE_ATTRIBUTES)
         return;
 
     _PresetNames.clear();

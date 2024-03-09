@@ -1,5 +1,5 @@
 
-/** $VER: GraphSettings.cpp (2024.02.21) P. Stuer **/
+/** $VER: GraphSettings.cpp (2024.03.09) P. Stuer **/
 
 #include "GraphSettings.h"
 

@@ -14,13 +14,10 @@
 #include <helpers/helpers.h>
 #undef NOMINMAX
 
-#include <atlbase.h>
-
 #include <dxgi1_3.h>
 #include <d3d11_2.h>
 #include <d2d1_2.h>
 #include <d2d1helper.h>
-#include <dcomp.h>
 #include <dwrite.h>
 
 #include <wincodec.h>
@@ -48,4 +45,3 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
 #endif
 
-typedef std::vector<D2D1_GRADIENT_STOP> GradientStops;

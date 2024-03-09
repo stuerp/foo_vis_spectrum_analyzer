@@ -1,9 +1,20 @@
 
-/** $VER: Log.cpp (2024.01.29) P. Stuer **/
-
-#include "framework.h"
+/** $VER: Log.cpp (2024.03.09) P. Stuer **/
 
 #include "Log.h"
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+
+#define NOMINMAX
+#include <helpers/foobar2000+atl.h>
+#include <helpers/helpers.h>
+#undef NOMINMAX
+
+#include <strsafe.h>
 
 #pragma hdrstop
 

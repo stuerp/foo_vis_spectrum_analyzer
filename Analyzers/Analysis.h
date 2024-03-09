@@ -1,9 +1,15 @@
 
-/** $VER: Analysis.h (2024.03.02) P. Stuer **/
+/** $VER: Analysis.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 4820 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
 #include "State.h"
 

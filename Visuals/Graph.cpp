@@ -30,7 +30,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _State = state;
     _GraphSettings = settings;
 
-    _Description = pfc::wideFromUTF8(settings->_Description);
+    _Description = settings->_Description;
 
     _Analysis.Initialize(state, settings);
 

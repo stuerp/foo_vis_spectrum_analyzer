@@ -1,9 +1,24 @@
 
-/** $VER: CDirectXControl.h (2024.01.21) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.h (2024.03.09) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 4820 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <d2d1_2.h>
+#include <d2d1helper.h>
+
+#include <atlbase.h>
+#include <atltypes.h>
+#include <atlstr.h>
+#include <atlapp.h>
+#include <atlctrls.h>
+#include <atlwin.h>
+#include <atlcom.h>
+#include <atlcrack.h>
 
 class CDirectXControl
 {

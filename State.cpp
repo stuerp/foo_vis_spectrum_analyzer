@@ -1,10 +1,12 @@
 
-/** $VER: State.cpp (2024.03.02) P. Stuer **/
+/** $VER: State.cpp (2024.03.09) P. Stuer **/
 
 #include "State.h"
 
 #include "Gradients.h"
 #include "Log.h"
+
+#include <SDK/file.h>
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -184,7 +186,7 @@ void State::Reset() noexcept
 
     _GraphSettings.clear();
 
-    _GraphSettings.push_back(GraphSettings("Stereo"));
+    _GraphSettings.push_back(GraphSettings(L"Stereo"));
 
     _VerticalLayout = false;
 
@@ -218,10 +220,10 @@ void State::Reset() noexcept
 
     pfc::string Path = core_api::get_profile_path();
 
-    if (_PresetsDirectoryPath.startsWith("file://"))
-        _PresetsDirectoryPath = Path + strlen("file://");
+    if (Path.startsWith("file://"))
+        _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
     else
-        _PresetsDirectoryPath = Path;
+        _PresetsDirectoryPath = ::wideFromUTF8(Path);
 }
 
 /// <summary>
@@ -668,7 +670,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             ConvertColorSettings();
 
         if (Version >= 13)
-            _ArtworkFilePath = reader->read_string(abortHandler);
+        {
+            pfc::string Path = reader->read_string(abortHandler);
+
+            _ArtworkFilePath = pfc::wideFromUTF8(Path);
+        }
 
         if (Version >= 14)
             _StyleManager.Read(reader, size, abortHandler);
@@ -719,7 +725,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             {
                 GraphSettings gs;
 
-                reader->read_string(gs._Description, abortHandler);
+                pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
                 reader->read_object_t(gs._Channels, abortHandler);
                 reader->read_object_t(gs._FlipHorizontally, abortHandler);
                 reader->read_object_t(gs._FlipVertically, abortHandler);
@@ -756,7 +762,9 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 20)
         {
-            reader->read_string(_PresetsDirectoryPath, abortHandler);
+            pfc::string Path;
+
+            reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
         }
     }
     catch (exception & ex)
@@ -933,7 +941,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
 
         // Version 13
-        writer->write_string(_ArtworkFilePath, abortHandler);
+        {
+            pfc::string Path = pfc::utf8FromWide(_ArtworkFilePath.c_str());
+
+            writer->write_string(Path, abortHandler);
+        }
 
         // Version 15
         _StyleManager.Write(writer, abortHandler);
@@ -969,7 +981,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         for (auto & gs : _GraphSettings)
         {
-            writer->write_string(gs._Description, abortHandler);
+            pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
+            writer->write_string(Description, abortHandler);
+
             writer->write_object_t(gs._Channels, abortHandler);
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
@@ -999,7 +1013,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write_object_t(_PreWarpQ, abortHandler);
 
         // Version 20
-        writer->write_string(_PresetsDirectoryPath, abortHandler);
+        {
+            pfc::string Path = pfc::utf8FromWide(_PresetsDirectoryPath.c_str());
+
+            writer->write_string(Path, abortHandler);
+        }
     }
     catch (exception & ex)
     {

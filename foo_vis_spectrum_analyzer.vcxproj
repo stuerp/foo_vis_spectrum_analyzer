@@ -197,7 +197,8 @@
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\ToneGenerator.h" />
+    <ClInclude Include="Configuration\ConfigurationDialog.h" />
+    <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />
@@ -205,6 +206,9 @@
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="Windows\Convert.h" />
+    <ClInclude Include="Windows\Error.h" />
+    <ClInclude Include="Windows\Path.h" />
     <ClInclude Include="Visuals\GraphSettings.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
@@ -225,7 +229,6 @@
     <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
-    <ClInclude Include="Windows\MD5.h" />
     <ClInclude Include="Windows\Raster.h" />
     <ClInclude Include="Windows\SafeModuleHandle.h" />
     <ClInclude Include="Visuals\BezierSpline.h" />
@@ -254,18 +257,16 @@
     <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\ToneGenerator.cpp" />
+    <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
+    <ClCompile Include="ToneGenerator.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
-    <ClCompile Include="framework.cpp" />
     <ClCompile Include="Visuals\GraphSettings.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
-    <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
-    <ClCompile Include="Configuration\ConfigurationDialog.h" />
     <ClCompile Include="CUIElement.cpp" />
     <ClCompile Include="Support.cpp" />
     <ClCompile Include="Visuals\Artwork.cpp" />
@@ -280,7 +281,6 @@
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Windows\DirectX.cpp" />
-    <ClCompile Include="Windows\MD5.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />

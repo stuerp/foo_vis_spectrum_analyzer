@@ -1,17 +1,17 @@
 
-/** $VER: Direct2D.cpp (2024.03.02) P. Stuer **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: Direct2D.cpp (2024.03.09) P. Stuer **/
 
 #include "Direct2D.h"
-#include "WIC.h"
 
 #include "COMException.h"
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
+
+#ifndef THIS_HINSTANCE
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
+#endif
 
 #pragma hdrstop
 

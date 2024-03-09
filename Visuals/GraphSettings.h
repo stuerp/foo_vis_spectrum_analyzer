@@ -1,24 +1,32 @@
 ﻿
-/** $VER: GraphSettings.h (2024.02.22) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.03.09) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <Windows.h>
 
 #include "Constants.h"
+
+#include <string>
 
 /// <summary>
 /// Represents the settings of a graph.
 /// </summary>
+#pragma warning(disable: 4820)
 struct GraphSettings
 {
 public:
     GraphSettings() { }
 
-    GraphSettings(const pfc::string & description)
+    GraphSettings(const std::wstring & description)
     {
         _Description = description;
-        _Channels = audio_chunk::channel_config_stereo;
+        _Channels = (uint32_t) Channel::ConfigStereo;
         _FlipHorizontally = false;
         _FlipVertically = false;
 
@@ -44,7 +52,7 @@ public:
     double ScaleA(double value) const;
 
 public:
-    pfc::string _Description;
+    std::wstring _Description;
     uint32_t _Channels;
     bool _FlipHorizontally;
     bool _FlipVertically;

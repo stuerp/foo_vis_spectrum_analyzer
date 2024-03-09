@@ -1,9 +1,16 @@
 
-/** $VER: Artwork.h (2024.03.03) P. Stuer  **/
+/** $VER: Artwork.h (2024.03.09) P. Stuer  **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+#include <d2d1_2.h>
 
 #include "State.h"
 #include "CriticalSection.h"

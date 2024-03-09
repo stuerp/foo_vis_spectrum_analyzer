@@ -1,9 +1,10 @@
 
-/** $VER: Support.h (2024.02.26) P. Stuer **/
+/** $VER: Support.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <sdkddkver.h>
+#include <Windows.h>
 
 #include <math.h>
 

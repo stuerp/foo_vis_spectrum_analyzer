@@ -1,9 +1,12 @@
 ﻿
-/** $VER: State.h (2024.03.04) P. Stuer **/
+/** $VER: State.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <sdkddkver.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
 #include "Support.h"
 
 #include "Constants.h"
@@ -17,6 +20,7 @@
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
+#pragma warning(disable: 4820)
 class State
 {
 public:
@@ -172,7 +176,7 @@ public:
             bool _ShowArtworkOnBackground;
 
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-            pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
+            std::wstring _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
             FitMode _FitMode;
 
         #pragma endregion
@@ -224,7 +228,7 @@ public:
 
     #pragma endregion
 
-    pfc::string _PresetsDirectoryPath;
+    std::wstring _PresetsDirectoryPath;
 
     #pragma region Not Serialized
 

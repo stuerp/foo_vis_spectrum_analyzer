@@ -1,9 +1,16 @@
 
-/** $VER: WindowFunctions.h (2023.12.30) P. Stuer **/
+/** $VER: WindowFunctions.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <Windows.h>
+
+#include <cmath>
 
 using namespace std;
 
@@ -43,6 +50,7 @@ enum class WindowFunctions
 /// <summary>
 /// Implements the base functor for all window functions.
 /// </summary>
+#pragma warning(disable: 4820)
 class WindowFunction
 {
 public:

@@ -1,9 +1,20 @@
 
-/** $VER: ToneGenerator.h (2024.02.13) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
+/** $VER: ToneGenerator.h (2024.03.09) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
+#define NOMINMAX
+#include <helpers/foobar2000+atl.h>
+#include <helpers/helpers.h>
+#undef NOMINMAX
 
 class ToneGenerator
 {

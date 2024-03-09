@@ -1,33 +1,31 @@
 
-/** $VER: PresetManager.cpp (2024.03.05) P. Stuer **/
+/** $VER: PresetManager.cpp (2024.03.09) P. Stuer **/
 
 #include "PresetManager.h"
 
+#include <Path.h>
+#include <Convert.h>
+#include <Error.h>
+
 #include "Log.h"
-
-#include <pathcch.h>
-
-#pragma comment(lib, "pathcch")
 
 #pragma hdrstop
 
 /// <summary>
 /// Loads a state object from a file.
 /// </summary>
-bool PresetManager::Load(const pfc::string & rootPath, const pfc::string & presetName, State * state) noexcept
+bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName, State * state) noexcept
 {
-    WCHAR FileName[MAX_PATH];
+    Path PresetPath;
 
-    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
-    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
-
-    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+    Path::AddExtension(presetName, L"fvsa", PresetPath);
+    Path::Combine(rootPath, PresetPath, PresetPath);
 
     try
     {
         file_ptr File;
 
-        filesystem::g_open(File, FilePath, filesystem::open_mode_read, fb2k::noAbort);
+        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_read, fb2k::noAbort);
 
         auto Reader = File.get_ptr();
 
@@ -66,20 +64,18 @@ bool PresetManager::Load(const pfc::string & rootPath, const pfc::string & prese
 /// <summary>
 /// Saves a state object to a file.
 /// </summary>
-bool PresetManager::Save(const pfc::string & rootPath, const pfc::string & presetName, const State * state) noexcept
+bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName, const State * state) noexcept
 {
-    WCHAR FileName[MAX_PATH];
+    Path PresetPath;
 
-    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
-    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
-
-    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+    Path::AddExtension(presetName, L"fvsa", PresetPath);
+    Path::Combine(rootPath, PresetPath, PresetPath);
 
     try
     {
         file_ptr File;
 
-        filesystem::g_open(File, FilePath, filesystem::open_mode_write_new, fb2k::noAbort);
+        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_write_new, fb2k::noAbort);
 
         auto Writer = File.get_ptr();
 
@@ -101,44 +97,42 @@ bool PresetManager::Save(const pfc::string & rootPath, const pfc::string & prese
 /// <summary>
 /// Deletes the specified preset.
 /// </summary>
-bool PresetManager::Delete(const pfc::string & rootPath, const pfc::string & presetName) noexcept
+bool PresetManager::Delete(const Path & rootPath, const std::wstring & presetName) noexcept
 {
-    WCHAR FileName[MAX_PATH];
+    Path PresetPath;
 
-    ::wcscpy_s(FileName, _countof(FileName), pfc::wideFromUTF8(presetName));
-    ::PathCchAddExtension(FileName, _countof(FileName), L"fvsa");
+    Path::AddExtension(presetName, L"fvsa", PresetPath);
+    Path::Combine(rootPath, PresetPath, PresetPath);
 
-    pfc::string FilePath = pfc::io::path::combine(rootPath, pfc::utf8FromWide(FileName));
+    BOOL Success = ::DeleteFileW(PresetPath);
 
-    try
+    if (!Success)
     {
-        filesystem::g_remove(FilePath, fb2k::noAbort);
+        Error LastError(::GetLastError());
 
-        return true;
-    }
-    catch (pfc::exception ex)
-    {
-        Log::Write(Log::Level::Error, "%s: Failed to delete preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to delete preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), LastError.Message().c_str());
 
         return false;
     }
+
+    return true;
 }
 
 /// <summary>
 /// Gets the names of the preset files.
 /// </summary>
-bool PresetManager::GetPresetNames(const pfc::string & rootPath, std::vector<std::wstring> & presetNames) noexcept
+bool PresetManager::GetPresetNames(const Path & rootPath, std::vector<std::wstring> & presetNames) noexcept
 {
-    WCHAR DirectoryPathName[MAX_PATH];
+    Path SearchPath = rootPath;
 
-    HRESULT hr = ::PathCchCombine(DirectoryPathName, _countof(DirectoryPathName), pfc::wideFromUTF8(rootPath).c_str(), L"*.fvsa");
+    HRESULT hr = Path::Combine(SearchPath, L"*.fvsa", SearchPath);
 
     if (!SUCCEEDED(hr))
         return false;
 
     WIN32_FIND_DATAW ffd;
 
-    HANDLE hFind = ::FindFirstFileW(DirectoryPathName, &ffd);
+    HANDLE hFind = ::FindFirstFileW(SearchPath, &ffd);
 
     BOOL Success = (hFind != INVALID_HANDLE_VALUE);
 

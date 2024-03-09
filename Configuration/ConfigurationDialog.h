@@ -7,8 +7,6 @@
 
 #include <sdk/coreDarkMode.h>
 
-#include "Support.h"
-
 #include "Resources.h"
 #include "State.h"
 
