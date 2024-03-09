@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.05) P. Stuer **/
+/** $VER: Resources.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -40,7 +40,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -336,10 +336,10 @@
 #define IDC_AMPLITUDE_HI_SPIN           5020
 #define IDC_AMPLITUDE_LBL_3             5022
 
-#define IDC_AMPLITUDE_STEP_LBL_1        5030
+#define IDC_AMPLITUDE_STEP_LBL        5030
 #define IDC_AMPLITUDE_STEP              5032
 #define IDC_AMPLITUDE_STEP_SPIN         5034
-#define IDC_AMPLITUDE_STEP_LBL_2        5036
+#define IDC_AMPLITUDE_STEP_UNIT        5036
 
 #define IDC_USE_ABSOLUTE                5040
 
@@ -409,6 +409,13 @@
 #define IDC_POSITION_LBL                7546
 #define IDC_SPREAD                      7548
 
+#define IDC_FONT_NAME_LBL               7550
+#define IDC_FONT_NAME                   7552
+#define IDC_FONT_NAME_SELECT            7554
+
+#define IDC_FONT_SIZE_LBL               7556
+#define IDC_FONT_SIZE                   7558
+
 #pragma endregion
 
 #pragma region Presets
@@ -416,7 +423,7 @@
 #define IDC_PRESETS_LBL                 7600
 #define IDC_PRESETS_ROOT                7602
 #define IDC_PRESETS_ROOT_SELECT         7604
-#define IDC_PRESET_NAMES               7606
+#define IDC_PRESET_NAMES                7606
 
 #define IDC_PRESET_NAME_LBL             7608
 #define IDC_PRESET_NAME                 7610

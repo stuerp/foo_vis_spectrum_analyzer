@@ -114,22 +114,25 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
-inline const double MinArtworkOpacity = 0.f;
-inline const double MaxArtworkOpacity = 1.f;
+inline const double MinArtworkOpacity = 0.;
+inline const double MaxArtworkOpacity = 1.;
 
 inline const uint32_t MinArtworkColors = 2;
 inline const uint32_t MaxArtworkColors = 16;
 
-inline const double MinLightnessThreshold = 0.f;
-inline const double MaxLightnessThreshold = 1.f;
+inline const double MinLightnessThreshold = 0.;
+inline const double MaxLightnessThreshold = 1.;
 
 
 
-inline const double MinOpacity = 0.f;
-inline const double MaxOpacity = 1.f;
+inline const double MinOpacity = 0.;
+inline const double MaxOpacity = 1.;
 
-inline const double MinThickness =  0.f;
-inline const double MaxThickness = 32.f;
+inline const double MinThickness =  0.;
+inline const double MaxThickness = 32.;
+
+inline const double MinFontSize = 1.;
+inline const double MaxFontSize = 200.;
 
 
 

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.29) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.09) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -175,9 +175,14 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             reader->read_object_t(style._Opacity, abortHandler);
             reader->read_object_t(style._Thickness, abortHandler);
 
-            pfc::string FontName= reader->read_string(abortHandler);
-            style._FontName = pfc::wideFromUTF8(FontName);
-            reader->read_object_t(style._FontSize, abortHandler);
+            pfc::string FontName = reader->read_string(abortHandler);
+            FLOAT FontSize; reader->read_object_t(FontSize, abortHandler);
+
+            if (Version > 4)
+            {
+                style._FontName = pfc::wideFromUTF8(FontName);
+                style._FontSize = FontSize;
+            }
 
             // 'Activate' the values we just read.
             style._Color = style._CustomColor;

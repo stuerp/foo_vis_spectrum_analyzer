@@ -218,7 +218,12 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_OPACITY, L"Determines the opacity of the resulting color brush." },
             { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable." },
 
+            { IDC_FONT_NAME, L"Determines the opacity of the resulting color brush." },
+            { IDC_FONT_NAME_SELECT, L"Opens a dialog to select a font." },
+            { IDC_FONT_SIZE, L"Determines the size of the font in points." },
+
             { IDC_PRESETS_ROOT, L"Specifies the location of the preset files." },
+            { IDC_PRESETS_ROOT_SELECT, L"Opens a dialog to select a location." },
             { IDC_PRESET_NAMES, L"Lists the presets in the current preset location." },
             { IDC_PRESET_NAME, L"Specifies the name of the preset." },
             { IDC_PRESET_LOAD, L"Loads and activates the specified preset." },
@@ -1058,6 +1063,10 @@ void ConfigurationDialog::Initialize()
         w.SetAccel(_countof(Accel), Accel);
     }
 
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_FONT_SIZE)); _NumericEdits.push_back(ne);
+    }
+
     UpdateStyleControls();
     #pragma endregion
 
@@ -1656,6 +1665,22 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_FONT_NAME:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            style->_FontName = Text;
+            break;
+        }
+
+        case IDC_FONT_SIZE:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            style->_FontSize = (FLOAT) Clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Presets
@@ -1776,15 +1801,29 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            SetDouble(id, gs._Gamma, 0, 1); break;
+            SetDouble(id, gs._Gamma, 0, 1);
+            break;
         }
 
         // Spectrum smoothing
-        case IDC_SMOOTHING_FACTOR:      { SetDouble(id, _State->_SmoothingFactor, 0, 1); break; }
+        case IDC_SMOOTHING_FACTOR:
+        {
+            SetDouble(id, _State->_SmoothingFactor, 0, 1);
+            break;
+        }
 
         // Peak indicator
-        case IDC_HOLD_TIME:             { SetDouble(id, _State->_HoldTime, 0, 1); break; }
-        case IDC_ACCELERATION:          { SetDouble(id, _State->_Acceleration, 0, 1); break; }
+        case IDC_HOLD_TIME:
+        {
+            SetDouble(id, _State->_HoldTime, 0, 1);
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            SetDouble(id, _State->_Acceleration, 0, 1);
+            break;
+        }
 
         // Styles
         case IDC_OPACITY:
@@ -1796,6 +1835,17 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_THICKNESS:
         {
             SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Thickness, 0, 1);
+            break;
+        }
+
+        case IDC_FONT_NAME:
+        {
+            break;
+        }
+
+        case IDC_FONT_SIZE:
+        {
+            SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_FontSize, 0, 1);
             break;
         }
 
@@ -2061,6 +2111,38 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
                 style->_Flags |= Style::HorizontalGradient;
             else
                 style->_Flags &= ~Style::HorizontalGradient;
+            break;
+        }
+
+        case IDC_FONT_NAME_SELECT:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            LOGFONTW lf = { };
+
+            lf.lfHeight = -::MulDiv((int) style->_FontSize, (int) ::GetDpiForWindow(m_hWnd), 72);
+            lf.lfWeight = FW_NORMAL;
+            lf.lfCharSet = DEFAULT_CHARSET;
+            lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
+            lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+            lf.lfQuality = CLEARTYPE_QUALITY;
+            lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
+            ::wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), style->_FontName.c_str());
+
+            CHOOSEFONTW cf = { sizeof(cf) };
+
+            cf.hwndOwner = m_hWnd;
+            cf.lpLogFont = &lf;
+            cf.iPointSize = (INT) (style->_FontSize * 10.f);
+            cf.Flags = CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT;
+
+            if (!::ChooseFontW(&cf))
+                return;
+
+            style->_FontName = cf.lpLogFont->lfFaceName;
+            style->_FontSize = (FLOAT) cf.iPointSize / 10.f;
+
+            UpdateStyleControls();
             break;
         }
 
@@ -2523,7 +2605,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
             IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT,
             IDC_AMPLITUDE_LBL_1, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_LO_SPIN, IDC_AMPLITUDE_LBL_2, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_HI_SPIN, IDC_AMPLITUDE_LBL_3,
-            IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
+            IDC_AMPLITUDE_STEP_LBL,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_UNIT,
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
 
@@ -2551,6 +2633,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_OPACITY_LBL, IDC_OPACITY, IDC_OPACITY_SPIN, IDC_OPACITY_UNIT,
         IDC_THICKNESS_LBL, IDC_THICKNESS, IDC_THICKNESS_SPIN,
+        IDC_FONT_NAME_LBL, IDC_FONT_NAME, IDC_FONT_NAME_SELECT,
+        IDC_FONT_SIZE_LBL, IDC_FONT_SIZE,
 
         IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
         IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
@@ -2565,7 +2649,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_PRESET_LOAD, IDC_PRESET_SAVE, IDC_PRESET_DELETE,
     };
 
-    const std::map<const int *, size_t> Pages =
+    const std::vector<std::pair<const int *, size_t>> Pages =
     {
         { Page1, _countof(Page1) },
         { Page2, _countof(Page2) },
@@ -2581,7 +2665,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
     for (const auto & Page : Pages)
     {    
-        int Mode = (index == PageNumber++) ? SW_SHOW : SW_HIDE;
+        int Mode = (index == PageNumber) ? SW_SHOW : SW_HIDE;
 
         for (size_t i = 0; i < Page.second; ++i)
         {
@@ -2590,6 +2674,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             if (w.IsWindow())
                 w.ShowWindow(Mode);
         }
+
+        PageNumber++;
     }
 }
 
@@ -2740,6 +2826,8 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
     CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
 
     // X axis
+    ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
+
     CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
     CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
@@ -2747,11 +2835,20 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
     GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
 
     // Y axis
+    ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
+
     CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
     CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
-    GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(gs._YAxisMode != YAxisMode::None);
-    GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gs._YAxisMode != YAxisMode::None);
+    SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+    SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+    SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+
+    for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
+        GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
+
+    SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
+    SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
 
     const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
 
@@ -2860,12 +2957,17 @@ void ConfigurationDialog::UpdateStyleControls()
     SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
     ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
 
+    SetDlgItemTextW(IDC_FONT_NAME, style->_FontName.c_str());
+    SetDouble(IDC_FONT_SIZE, style->_FontSize, 0, 1);
+
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor) || (style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsOpacity));
     GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsThickness));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
 
     UpdateColorSchemeControls();
 }
@@ -2954,7 +3056,7 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
 /// <summary>
 /// Updates the controls of the Presets page.
 /// </summary>
-void ConfigurationDialog::UpdatePresetsPage() noexcept
+void ConfigurationDialog::UpdatePresetsPage() const noexcept
 {
     WCHAR PresetName[MAX_PATH];
 

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.02.24) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Graph::Graph() : _Bounds(), _FontFamilyName(L"Segoe UI"), _FontSize(14.f)
+Graph::Graph() : _Bounds()
 {
 }
 
@@ -163,20 +163,32 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
     if (_Description.empty())
         return;
 
-    const FLOAT Inset = 2.f;
+    CComPtr<IDWriteTextLayout> TextLayout;
 
-    D2D1_RECT_F Rect = { };
+    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle->_TextFormat, _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top, &TextLayout);
 
-    Rect.left   = _Spectrum.GetBounds().left + 10.f;
-    Rect.top    = _Spectrum.GetBounds().top + 10.f;
-    Rect.right  = Rect.left + _TextWidth + (Inset * 2.f);
-    Rect.bottom = Rect.top + _TextHeight + (Inset * 2.f);
+    DWRITE_TEXT_METRICS TextMetrics = { };
 
-    if (_DescriptionBackgroundStyle->_ColorSource != ColorSource::None)
-        renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
+    if (SUCCEEDED(hr))
+        hr = TextLayout->GetMetrics(&TextMetrics);
 
-    if (_DescriptionTextStyle->_ColorSource != ColorSource::None)
-        renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    if (SUCCEEDED(hr))
+    {
+        const FLOAT Inset = 2.f;
+
+        D2D1_RECT_F Rect = { };
+
+        Rect.left   = _Spectrum.GetBounds().left + 10.f;
+        Rect.top    = _Spectrum.GetBounds().top  + 10.f;
+        Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
+        Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
+
+        if (_DescriptionBackgroundStyle->_ColorSource != ColorSource::None)
+            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
+
+        if (_DescriptionTextStyle->_ColorSource != ColorSource::None)
+            renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    }
 }
 
 /// <summary>
@@ -186,33 +198,6 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
-
-    if (_TextFormat == nullptr)
-    {
-        const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
-
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-            CComPtr<IDWriteTextLayout> TextLayout;
-
-            hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _TextFormat, _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top, &TextLayout);
-
-            if (SUCCEEDED(hr))
-            {
-                DWRITE_TEXT_METRICS TextMetrics = { };
-
-                TextLayout->GetMetrics(&TextMetrics);
-
-                _TextWidth  = TextMetrics.width;
-                _TextHeight = TextMetrics.height;
-            }
-        }
-    }
 
     const D2D1_SIZE_F Size = renderTarget->GetSize();
 
@@ -265,6 +250,4 @@ void Graph::ReleaseDeviceSpecificResources() noexcept
 
         style->ReleaseDeviceSpecificResources();
     }
-
-    _TextFormat.Release();
 }

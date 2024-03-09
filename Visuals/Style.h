@@ -53,6 +53,7 @@ public:
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;
+    CComPtr<IDWriteTextFormat> _TextFormat;
 
     enum Feature
     {

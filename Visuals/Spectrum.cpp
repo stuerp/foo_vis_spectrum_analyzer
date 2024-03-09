@@ -261,7 +261,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, co
     const double MinScale = ScaleF(frequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(frequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double NyquistScale = ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor);
+    const double NyquistScale = Clamp(ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
     FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _Bounds.right - _Bounds.left);
 

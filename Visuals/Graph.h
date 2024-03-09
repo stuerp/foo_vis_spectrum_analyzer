@@ -98,13 +98,6 @@ private:
     XAxis _XAxis;
     YAxis _YAxis;
 
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    CComPtr<IDWriteTextFormat> _TextFormat;
-    FLOAT _TextWidth;
-    FLOAT _TextHeight;
-
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;
     Style * _DescriptionBackgroundStyle;

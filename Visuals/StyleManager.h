@@ -71,7 +71,7 @@ private:
             VisualElement::GraphDescriptionText,
             {
                 Style::SupportsOpacity | Style::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 14.f,
             }
         },
 
@@ -94,7 +94,7 @@ private:
         {
             VisualElement::XAxisText,
             {
-                Style::SupportsOpacity | Style::SupportsFont,
+                Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
@@ -110,7 +110,7 @@ private:
         {
             VisualElement::YAxisText,
             {
-                Style::SupportsOpacity | Style::SupportsFont,
+                Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
@@ -204,5 +204,5 @@ private:
         },
     };
 
-    const uint32_t _CurrentVersion = 4;
+    const uint32_t _CurrentVersion = 5;
 };

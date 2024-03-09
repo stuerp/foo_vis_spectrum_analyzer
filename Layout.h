@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.03.03) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.03.09) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1277,6 +1277,36 @@
 #define H_I12   H_BTN
 #define X_I12   X_I11 + W_I11 + IX
 #define Y_I12   Y_I11
+
+// Label: Font Name
+#define W_I13   48
+#define H_I13   H_LBL
+#define X_I13   X_I11
+#define Y_I13   Y_I12 + H_I12 + IY
+
+// Button: Font Name
+#define W_I14   100
+#define H_I14   H_BTN
+#define X_I14   X_I13 + W_I13 + IX
+#define Y_I14   Y_I13
+
+// Button: Font Select
+#define W_I15   16
+#define H_I15   H_BTN
+#define X_I15   X_I14 + W_I14 + IX
+#define Y_I15   Y_I13
+
+// Label: Font Size
+#define W_I16   48
+#define H_I16   H_LBL
+#define X_I16   X_I13
+#define Y_I16   Y_I14 + H_I14 + IY
+
+// Button: Font Size
+#define W_I17   40
+#define H_I17   H_BTN
+#define X_I17   X_I16 + W_I16 + IX
+#define Y_I17   Y_I16
 
 #pragma endregion
 

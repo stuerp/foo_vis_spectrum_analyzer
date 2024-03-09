@@ -10,10 +10,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](Resources/Curve.png?raw=true "Screenshot")
 
+![Screenshot](Resources/Multiple Graphs.png?raw=true "Screenshot")
+
 ## Features
 
 * Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 * Multiple frequency range and smoothing options
+* Multiple graphs
 * Styling of all visual elements
 * Artwork background and color extraction
 * Uses DirectX rendering.
@@ -85,7 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.3.0, 2024-03-xx
+v0.7.3.0, 2024-03-09
 
 * New: Presets.
   * The configuration of the component can be written to and read from preset files (*.fvsa).
@@ -98,6 +101,7 @@ v0.7.3.0, 2024-03-xx
 * Improved: LED mode properly renders the 'LEDs' as blocks.
 * Improved: The font of the graph description can be specified.
 * Improved: Dark mode tooltips.
+* Fixed: Multiple controls were not updated when switching graphs in the configuration dialog.
 
 v0.7.2.0, 2024-03-03
 
