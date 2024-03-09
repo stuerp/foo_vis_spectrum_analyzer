@@ -66,8 +66,10 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::HorizontalGridLine,
         VisualElement::VerticalGridLine,
 
-        VisualElement::BarSpectrum,
-        VisualElement::BarPeakIndicator,
+        VisualElement::BarArea,
+        VisualElement::BarTop,
+        VisualElement::BarPeakArea,
+        VisualElement::BarPeakTop,
         VisualElement::BarDarkBackground,
         VisualElement::BarLightBackground,
 
@@ -127,6 +129,8 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         if (Version > _CurrentVersion)
             return;
 
+        const uint64_t SystemFlags = Style::SupportsOpacity | Style::SupportsThickness | Style::SupportsFont;
+
         size_t StyleCount; reader->read_object_t(StyleCount, abortHandler);
 
         for (size_t i = 0; i < StyleCount; ++i)
@@ -141,9 +145,14 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
             Style & style = _Styles[(VisualElement) Id];
 
+            uint64_t Flags;
+
+            reader->read_object_t(Flags, abortHandler);
+
+            style._Flags = (style._Flags & SystemFlags) | (Flags & ~SystemFlags); // Make sure the system flags keep their default value.
+
             uint32_t Integer;
 
-            reader->read_object_t(style._Flags, abortHandler);
             reader->read_object_t(Integer, abortHandler); style._ColorSource = (ColorSource) Integer;
             reader->read_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
             reader->read_object_t(style._ColorIndex, abortHandler);

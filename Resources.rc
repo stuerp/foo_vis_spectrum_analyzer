@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.05) P. Stuer **/
+/** $VER: Resources.rc (2024.03.09) P. Stuer **/
 
 #include "Resources.h"
 
@@ -356,7 +356,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_PRESETS_ROOT,               X_J02, Y_J02,     W_J02, H_J02, ES_AUTOHSCROLL
         pushbutton      "...",                      IDC_PRESETS_ROOT_SELECT,        X_J03, Y_J03,     W_J03, H_J03
 
-        listbox                                     IDC_PRESETS_NAMES,              X_J04, Y_J04,     W_J04, H_J04, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+        listbox                                     IDC_PRESET_NAMES,               X_J04, Y_J04,     W_J04, H_J04, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Name:"                     IDC_PRESET_NAME_LBL,            X_J05, Y_J05 + 2, W_J05, H_J05
         edittext                                    IDC_PRESET_NAME,                X_J06, Y_J06,     W_J06, H_J06, ES_AUTOHSCROLL

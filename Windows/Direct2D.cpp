@@ -212,10 +212,10 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
 
     if (SUCCEEDED(hr))
     {
-        D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, size.height / 2.f) : D2D1::Point2F(size.width / 2.f, 0.f);
-        D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, size.height / 2.f) : D2D1::Point2F(size.width / 2.f, size.height);
+        D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
+        D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
 
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), Collection, gradientBrush);
+        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection, gradientBrush);
     }
 
     return hr;

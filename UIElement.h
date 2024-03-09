@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.01) P. Stuer **/
+/** $VER: UIElement.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
@@ -213,4 +213,5 @@ private:
 
     #pragma endregion
 
+    fb2k::CCoreDarkModeHooks _DarkMode;
 };

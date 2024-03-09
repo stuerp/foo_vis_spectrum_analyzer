@@ -90,6 +90,14 @@ v0.7.3.0, 2024-03-xx
 * New: Presets.
   * The configuration of the component can be written to and read from preset files (*.fvsa).
   * The default location of the preset files is the root of your profile directory but this can be changed.
+* New: Extra styles.
+  * Bar Area: The new name for the Bar Spectrum style.
+  * Bar Top: Defines the style for the top of the spectrum bar. Defaults to color source None for backwards compatibility.
+  * Peak Area: Defines the style for the area below the peak indicator. Defaults to color source None for backwards compatibility.
+  * Peak Top: The new name for the Peak Indicator style.
+* Improved: LED mode properly renders the 'LEDs' as blocks.
+* Improved: The font of the graph description can be specified.
+* Improved: Dark mode tooltips.
 
 v0.7.2.0, 2024-03-03
 

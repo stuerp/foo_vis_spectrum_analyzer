@@ -31,7 +31,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
 
         size_t Size = (size_t) Reader->get_size_ex(fb2k::noAbort);
 
-        DWORD Value;
+        uint32_t Value;
 
         Reader->read_object_t(Value, fb2k::noAbort);
         Size -= sizeof(Value);

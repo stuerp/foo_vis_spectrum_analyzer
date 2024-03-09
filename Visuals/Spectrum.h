@@ -51,7 +51,7 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
-    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
 
     struct GeometryPoints
     {
@@ -82,12 +82,14 @@ private:
     D2D1_RECT_F _Bounds;
 
     // Device-dependent resources
-    CComPtr<ID2D1BitmapBrush> _PatternBrush;
+    CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    Style * _Foreground;
+    Style * _BarArea;
+    Style * _BarTop;
+    Style * _PeakArea;
+    Style * _PeakTop;
     Style * _DarkBackground;
     Style * _LightBackground;
-    Style * _PeakIndicator;
 
     Style * _CurveLine;
     Style * _CurveArea;

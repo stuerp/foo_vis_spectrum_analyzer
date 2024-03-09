@@ -123,15 +123,13 @@ inline const uint32_t MaxArtworkColors = 16;
 inline const double MinLightnessThreshold = 0.f;
 inline const double MaxLightnessThreshold = 1.f;
 
-inline const uint32_t AllChannels = ((1 << 18) - 1); // audio_chunk::defined_channel_count
-
 
 
 inline const double MinOpacity = 0.f;
 inline const double MaxOpacity = 1.f;
 
 inline const double MinThickness =  0.f;
-inline const double MaxThickness = 10.f;
+inline const double MaxThickness = 32.f;
 
 
 
@@ -306,8 +304,10 @@ enum class VisualElement : uint32_t
     YAxisText                   =  4,
     HorizontalGridLine          =  5,
 
-    BarSpectrum                 =  6,
-    BarPeakIndicator            =  7,
+    BarArea                     =  6,
+    BarTop                      = 16,
+    BarPeakTop                  =  7,
+    BarPeakArea                 = 17,
     BarDarkBackground           =  8,
     BarLightBackground          =  9,
 
@@ -317,6 +317,7 @@ enum class VisualElement : uint32_t
     CurvePeakArea               = 13,
 
     NyquistMarker               = 15,
+
 };
 
 enum class ColorSource : uint32_t
@@ -383,40 +384,46 @@ enum class ColorScheme : uint32_t
 // Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
 enum class Channel : uint32_t
 {
-    channel_front_left = 1 << 0,
-    channel_front_right = 1 << 1,
-    channel_front_center = 1 << 2,
-    channel_lfe = 1 << 3,
-    channel_back_left = 1 << 4,
-    channel_back_right = 1 << 5,
-    channel_front_center_left = 1 << 6,
-    channel_front_center_right = 1 << 7,
-    channel_back_center = 1 << 8,
-    channel_side_left = 1 << 9,
-    channel_side_right = 1 << 10,
-    channel_top_center = 1 << 11,
-    channel_top_front_left = 1 << 12,
-    channel_top_front_center = 1 << 13,
-    channel_top_front_right = 1 << 14,
-    channel_top_back_left = 1 << 15,
-    channel_top_back_center = 1 << 16,
-    channel_top_back_right = 1 << 17,
+    FrontLeft = 1 << 0,
+    FrontRight = 1 << 1,
+    FrontCenter = 1 << 2,
 
-    channels_back_left_right = channel_back_left | channel_back_right,
-    channels_side_left_right = channel_side_left | channel_side_right,
+    LFE = 1 << 3,
+    BackLeft = 1 << 4,
+    BackRight = 1 << 5,
 
-    channel_config_mono = channel_front_center,
-    ConfigStereo = channel_front_left | channel_front_right,
-    channel_config_2point1 = ConfigStereo | channel_lfe,
-    channel_config_3point0 = ConfigStereo | channel_front_center,
-    channel_config_4point0 = ConfigStereo | channels_back_left_right,
-    channel_config_4point0_side = ConfigStereo | channels_side_left_right,
-    channel_config_4point1 = channel_config_4point0 | channel_lfe,
-    channel_config_5point0 = channel_config_4point0 | channel_front_center,
-    channel_config_6point0 = channel_config_4point0 | channels_side_left_right,
-    channel_config_5point1 = channel_config_4point0 | channel_front_center | channel_lfe,
-    channel_config_5point1_side = channel_config_4point0_side | channel_front_center | channel_lfe,
-    channel_config_7point1 = channel_config_5point1 | channels_side_left_right,
+    FrontCenterLeft = 1 << 6,
+    FrontCenterRight = 1 << 7,
+    BackCenter = 1 << 8,
 
-    defined_channel_count = 18,
+    SideLeft = 1 << 9,
+    SideRight = 1 << 10,
+
+    TopCenter = 1 << 11,
+    TopFrontLeft = 1 << 12,
+    TopFrontCenter = 1 << 13,
+    TopFrontRight = 1 << 14,
+    TopBackLeft = 1 << 15,
+    TopBackCenter = 1 << 16,
+    TopBackRight = 1 << 17,
+
+    BackLeftRight = BackLeft | BackRight,
+    SideLeftRight = SideLeft | SideRight,
+
+    ConfigMono          = FrontCenter,
+    ConfigStereo        = FrontLeft | FrontRight,
+    Config2point1       = ConfigStereo | LFE,
+    Config3point0       = ConfigStereo | FrontCenter,
+    Config4point0       = ConfigStereo | BackLeftRight,
+    Config4point0Side   = ConfigStereo | SideLeftRight,
+    Config4point1       = Config4point0 | LFE,
+    Config5point0       = Config4point0 | FrontCenter,
+    Config6point0       = Config4point0 | SideLeftRight,
+    Config5point1       = Config4point0 | FrontCenter | LFE,
+    Config5point1Side   = Config4point0Side | FrontCenter | LFE,
+    Config7point1       = Config5point1 | SideLeftRight,
+
+    Count = 18,
 };
+
+inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);

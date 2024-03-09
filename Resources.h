@@ -416,7 +416,7 @@
 #define IDC_PRESETS_LBL                 7600
 #define IDC_PRESETS_ROOT                7602
 #define IDC_PRESETS_ROOT_SELECT         7604
-#define IDC_PRESETS_NAMES               7606
+#define IDC_PRESET_NAMES               7606
 
 #define IDC_PRESET_NAME_LBL             7608
 #define IDC_PRESET_NAME                 7610

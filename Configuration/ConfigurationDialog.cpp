@@ -215,14 +215,26 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_HORIZONTAL_GRADIENT, L"Generates a horizontal instead of a vertical gradient" },
 
-            { IDC_OPACITY, L"Determines the opacity of the resulting color brush" },
-            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable" },
+            { IDC_OPACITY, L"Determines the opacity of the resulting color brush." },
+            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable." },
+
+            { IDC_PRESETS_ROOT, L"Specifies the location of the preset files." },
+            { IDC_PRESET_NAMES, L"Lists the presets in the current preset location." },
+            { IDC_PRESET_NAME, L"Specifies the name of the preset." },
+            { IDC_PRESET_LOAD, L"Loads and activates the specified preset." },
+            { IDC_PRESET_SAVE, L"Saves the current configuration as a preset." },
+            { IDC_PRESET_DELETE, L"Deletes the specified preset." },
+
+            { IDC_RESET, L"Resets the configuration to the default values." },
+            { IDOK, L"Closes the dialog box and makes the changes to the configuration final." },
+            { IDCANCEL, L"Closes the dialog box and undoes any changes to the configuration." },
         };
 
         for (const auto & Iter : Tips)
             _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(Iter.first).m_hWnd, nullptr, (LPWSTR) Iter.second));
 
         _ToolTipControl.SetMaxTipWidth(200);
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
     }
 
     _IsInitializing = false;
@@ -915,6 +927,7 @@ void ConfigurationDialog::Initialize()
 
         {
             assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
+            assert(_countof(ChannelNames) == (size_t) Channel::Count);
 
             auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
@@ -975,7 +988,7 @@ void ConfigurationDialog::Initialize()
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
             L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
-            L"Bar Spectrum", L"Bar Peak Indicator", L"Bar Dark Background", L"Bar Light Background",
+            L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
             L"Nyquist Frequency",
         })
@@ -1373,9 +1386,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
         #pragma region Presets
 
-        case IDC_PRESETS_NAMES:
+        case IDC_PRESET_NAMES:
         {
-            auto lb = (CListBox) GetDlgItem(IDC_PRESETS_NAMES);
+            auto lb = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
 
             SelectedIndex = lb.GetCurSel();
 
@@ -2081,6 +2094,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
 
             UpdatePresetFiles();
+
+            *_State = NewState;
+            Initialize();
             break;
         }
 
@@ -2544,7 +2560,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
     static const int Page8[] =
     {
-        IDC_PRESETS_LBL, IDC_PRESETS_ROOT, IDC_PRESETS_ROOT_SELECT, IDC_PRESETS_NAMES,
+        IDC_PRESETS_LBL, IDC_PRESETS_ROOT, IDC_PRESETS_ROOT_SELECT, IDC_PRESET_NAMES,
         IDC_PRESET_NAME_LBL, IDC_PRESET_NAME,
         IDC_PRESET_LOAD, IDC_PRESET_SAVE, IDC_PRESET_DELETE,
     };
@@ -2960,7 +2976,7 @@ void ConfigurationDialog::UpdatePresetFiles() noexcept
 
     _PresetNames.clear();
 
-    auto w = (CListBox) GetDlgItem(IDC_PRESETS_NAMES);
+    auto w = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
 
     w.ResetContent();
 

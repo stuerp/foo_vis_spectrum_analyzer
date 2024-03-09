@@ -200,7 +200,6 @@ void Analysis::GenerateOctaveFrequencyBands(const State * state)
 
     static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
 
-    #pragma loop(hint_parallel(8))
     for (double i = LoNote; i <= HiNote; ++i)
     {
         FrequencyBand fb = 

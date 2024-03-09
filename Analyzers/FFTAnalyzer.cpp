@@ -86,7 +86,7 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t
     sampleCount -= (sampleCount % _ChannelCount);
 
     // Merge the samples of all channels into one averaged sample.
-    #pragma loop(hint_parallel(8))
+    #pragma loop(hint_parallel(2))
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
         _Data[_Curr] = AverageSamples(&samples[i], channels);
@@ -297,7 +297,6 @@ double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, doub
     double re = 0.;
     double im = 0.;
 
-    #pragma loop(hint_parallel(8))
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
         double Pos = ::floor(value) + i;

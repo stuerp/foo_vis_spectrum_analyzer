@@ -1150,7 +1150,7 @@ void State::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarSpectrum);
+        Style * style = _StyleManager.GetStyle(VisualElement::BarArea);
 
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 

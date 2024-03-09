@@ -98,6 +98,8 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
         _ToolTipControl.SetMaxTipWidth(100);
+
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
     }
 
     // Apply the initial configuration.
