@@ -1,9 +1,5 @@
 
-/** $VER: ColorThief.cpp (2024.01.20) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+/** $VER: ColorThief.cpp (2024.03.09) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
 
 #include "ColorThief.h"
 
@@ -329,7 +325,7 @@ std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * 
         bool IsTransparent(uint8_t threshold) const { return Alpha < threshold; }
     };
 
-    #pragma loop(hint_parallel(8)) // Don't forget /Qpar compiler switch.
+    #pragma loop(hint_parallel(4)) // Don't forget /Qpar compiler switch.
     for (uint32_t y = 0; y < height; ++y)
     {
         const Pixel * p = (const Pixel *) pixels;

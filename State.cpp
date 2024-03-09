@@ -1,10 +1,12 @@
 
-/** $VER: State.cpp (2024.03.02) P. Stuer **/
+/** $VER: State.cpp (2024.03.09) P. Stuer **/
 
 #include "State.h"
 
 #include "Gradients.h"
 #include "Log.h"
+
+#include <SDK/file.h>
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -184,7 +186,7 @@ void State::Reset() noexcept
 
     _GraphSettings.clear();
 
-    _GraphSettings.push_back(GraphSettings("Stereo"));
+    _GraphSettings.push_back(GraphSettings(L"Stereo"));
 
     _VerticalLayout = false;
 
@@ -215,6 +217,13 @@ void State::Reset() noexcept
     _AreaOpacity_Deprecated = 0.5f;
 
     _StyleManager.Reset();
+
+    pfc::string Path = core_api::get_profile_path();
+
+    if (Path.startsWith("file://"))
+        _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
+    else
+        _PresetsDirectoryPath = ::wideFromUTF8(Path);
 }
 
 /// <summary>
@@ -441,6 +450,12 @@ State & State::operator=(const State & other)
 
     #pragma endregion
 
+    #pragma region Presets
+
+    _PresetsDirectoryPath = other._PresetsDirectoryPath;
+
+    #pragma endregion
+
     #pragma region Not serialized
 
         _BinCount = other._BinCount;
@@ -655,7 +670,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             ConvertColorSettings();
 
         if (Version >= 13)
-            _ArtworkFilePath = reader->read_string(abortHandler);
+        {
+            pfc::string Path = reader->read_string(abortHandler);
+
+            _ArtworkFilePath = pfc::wideFromUTF8(Path);
+        }
 
         if (Version >= 14)
             _StyleManager.Read(reader, size, abortHandler);
@@ -706,7 +725,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             {
                 GraphSettings gs;
 
-                reader->read_string(gs._Description, abortHandler);
+                pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
                 reader->read_object_t(gs._Channels, abortHandler);
                 reader->read_object_t(gs._FlipHorizontally, abortHandler);
                 reader->read_object_t(gs._FlipVertically, abortHandler);
@@ -740,10 +759,17 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_CompensateBW, abortHandler);
             reader->read_object_t(_PreWarpQ, abortHandler);
         }
+
+        if (Version >= 20)
+        {
+            pfc::string Path;
+
+            reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
+        }
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while writing DUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write DUI configuration: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -915,7 +941,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write(&_KernelAsymmetry, sizeof(_KernelAsymmetry), abortHandler);
 
         // Version 13
-        writer->write_string(_ArtworkFilePath, abortHandler);
+        {
+            pfc::string Path = pfc::utf8FromWide(_ArtworkFilePath.c_str());
+
+            writer->write_string(Path, abortHandler);
+        }
 
         // Version 15
         _StyleManager.Write(writer, abortHandler);
@@ -951,7 +981,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         for (auto & gs : _GraphSettings)
         {
-            writer->write_string(gs._Description, abortHandler);
+            pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
+            writer->write_string(Description, abortHandler);
+
             writer->write_object_t(gs._Channels, abortHandler);
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
@@ -979,10 +1011,17 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
         writer->write_object_t(_ConstantQ, abortHandler);
         writer->write_object_t(_CompensateBW, abortHandler);
         writer->write_object_t(_PreWarpQ, abortHandler);
+
+        // Version 20
+        {
+            pfc::string Path = pfc::utf8FromWide(_PresetsDirectoryPath.c_str());
+
+            writer->write_string(Path, abortHandler);
+        }
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while writing CUI configuration data: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write CUI configuration: %s", core_api::get_my_file_name(), ex.what());
     }
 }
 
@@ -1111,7 +1150,7 @@ void State::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarSpectrum);
+        Style * style = _StyleManager.GetStyle(VisualElement::BarArea);
 
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 

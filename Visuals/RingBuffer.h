@@ -1,9 +1,14 @@
 
-/** $VER: RingBuffer.h (2024.01.17) P. Stuer **/
+/** $VER: RingBuffer.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <Windows.h>
 
 #pragma once
 

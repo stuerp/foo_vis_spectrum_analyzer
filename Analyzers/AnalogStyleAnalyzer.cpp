@@ -60,7 +60,7 @@ bool AnalogStyleAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;
 
-    #pragma loop(hint_parallel(8))
+    #pragma loop(hint_parallel(2))
     for (size_t i = 0; i < sampleCount; i += _ChannelCount)
     {
         const audio_sample Sample = AverageSamples(&sampleData[i], channels);

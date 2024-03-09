@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.03) P. Stuer **/
+/** $VER: Resources.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
@@ -8,12 +8,12 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          2
+#define NUM_FILE_PATCH          3
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       2
+#define NUM_PRODUCT_PATCH       3
 #define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
@@ -26,7 +26,8 @@
 #define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2024 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
-#define STR_COMPONENT_COMMENT       "Based on:\n" \
+#define STR_COMPONENT_COMMENT       "\n" \
+                                    "Based on:\n" \
                                     "- The Audio Spectrum project (https://codepen.io/TF3RDL/pen/poQJwRW)\n" \
                                     "- SWIFT, Sliding Windowed Infinite Fourier Transform (https://codepen.io/TF3RDL/pen/JjBzjeY)\n" \
                                     "- Analog-style spectrum analyzer and sliding DFT visualization using AudioWorklet (https://codepen.io/TF3RDL/pen/MWLzPoO)"
@@ -335,10 +336,10 @@
 #define IDC_AMPLITUDE_HI_SPIN           5020
 #define IDC_AMPLITUDE_LBL_3             5022
 
-#define IDC_AMPLITUDE_STEP_LBL_1        5030
+#define IDC_AMPLITUDE_STEP_LBL        5030
 #define IDC_AMPLITUDE_STEP              5032
 #define IDC_AMPLITUDE_STEP_SPIN         5034
-#define IDC_AMPLITUDE_STEP_LBL_2        5036
+#define IDC_AMPLITUDE_STEP_UNIT        5036
 
 #define IDC_USE_ABSOLUTE                5040
 
@@ -407,6 +408,29 @@
 #define IDC_POSITION                    7544
 #define IDC_POSITION_LBL                7546
 #define IDC_SPREAD                      7548
+
+#define IDC_FONT_NAME_LBL               7550
+#define IDC_FONT_NAME                   7552
+#define IDC_FONT_NAME_SELECT            7554
+
+#define IDC_FONT_SIZE_LBL               7556
+#define IDC_FONT_SIZE                   7558
+
+#pragma endregion
+
+#pragma region Presets
+
+#define IDC_PRESETS_LBL                 7600
+#define IDC_PRESETS_ROOT                7602
+#define IDC_PRESETS_ROOT_SELECT         7604
+#define IDC_PRESET_NAMES                7606
+
+#define IDC_PRESET_NAME_LBL             7608
+#define IDC_PRESET_NAME                 7610
+
+#define IDC_PRESET_LOAD                 7612
+#define IDC_PRESET_SAVE                 7614
+#define IDC_PRESET_DELETE               7616
 
 #pragma endregion
 

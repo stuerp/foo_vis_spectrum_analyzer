@@ -1,9 +1,16 @@
 
-/** $VER: Graph.h (2024.02.24) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.03.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
 #include "Support.h"
 #include "State.h"
 #include "Artwork.h"
@@ -90,13 +97,6 @@ private:
     Spectrum _Spectrum;
     XAxis _XAxis;
     YAxis _YAxis;
-
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    CComPtr<IDWriteTextFormat> _TextFormat;
-    FLOAT _TextWidth;
-    FLOAT _TextHeight;
 
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;

@@ -1,9 +1,16 @@
 
-/** $VER: Spectrum.h (2024.02.26) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.09) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
 #include "Support.h"
 
 #include "State.h"
@@ -44,7 +51,7 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
-    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
 
     struct GeometryPoints
     {
@@ -75,12 +82,14 @@ private:
     D2D1_RECT_F _Bounds;
 
     // Device-dependent resources
-    CComPtr<ID2D1BitmapBrush> _PatternBrush;
+    CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    Style * _Foreground;
+    Style * _BarArea;
+    Style * _BarTop;
+    Style * _PeakArea;
+    Style * _PeakTop;
     Style * _DarkBackground;
     Style * _LightBackground;
-    Style * _PeakIndicator;
 
     Style * _CurveLine;
     Style * _CurveArea;

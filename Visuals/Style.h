@@ -1,95 +1,21 @@
 
-/** $VER: Style.h (2024.02.26) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.03.09) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
 
-enum class VisualElement : uint32_t
-{
-    GraphBackground             =  0,
-    GraphDescriptionText        =  1,
-    GraphDescriptionBackground  = 14,
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-    XAxisText                   =  2,
-    VerticalGridLine            =  3,
-    YAxisText                   =  4,
-    HorizontalGridLine          =  5,
+#include <SDKDDKVer.h>
+#include <Windows.h>
+#include <atlbase.h>
 
-    BarSpectrum                 =  6,
-    BarPeakIndicator            =  7,
-    BarDarkBackground           =  8,
-    BarLightBackground          =  9,
+#include "Gradients.h"
 
-    CurveLine                   = 10,
-    CurveArea                   = 11,
-    CurvePeakLine               = 12,
-    CurvePeakArea               = 13,
+#include <string>
 
-    NyquistMarker               = 15,
-};
-
-enum class ColorSource : uint32_t
-{
-    None,
-    Solid,
-    DominantColor,
-    Gradient,
-    Windows,
-    UserInterface,
-};
-
-enum class WindowsColor : uint32_t
-{
-    WindowBackground,           // COLOR_WINDOW
-    WindowText,                 // COLOR_WINDOWTEXT
-    ButtonBackground,           // COLOR_3DFACE
-    ButtonText,                 // COLOR_BTNTEXT
-    HighlightBackground,        // COLOR_HIGHLIGHT
-    HighlightText,              // COLOR_HIGHLIGHTTEXT
-    GrayText,                   // COLOR_GRAYTEXT
-    HotLight,                   // COLOR_HOTLIGHT
-};
-
-enum class DUIColor : uint32_t
-{
-    Text,
-    Background,
-    Highlight,
-    Selection,
-    DarkMode
-};
-
-enum class CUIColor : uint32_t
-{
-    Text,                       // cui::colours::colour_text
-    SelectedText,               // cui::colours::colour_selection_text
-    InactiveSelectedText,       // cui::colours::colour_inactive_selection_text
-
-    Background,                 // cui::colours::colour_background
-    SelectedBackground,         // cui::colours::colour_selection_background
-    InactiveSelectedBackground, // cui::colours::colour_inactive_selection_background
-
-    ActiveItem,                 // cui::colours::colour_active_item_frame
-};
-
-enum class ColorScheme : uint32_t
-{
-    Solid = 0,
-    Custom = 1,
-    Artwork = 2,
-
-    Prism1 = 3,
-    Prism2 = 4,
-    Prism3 = 5,
-
-    foobar2000 = 6,
-    foobar2000DarkMode = 7,
-
-    Fire = 8,
-    Rainbow = 9,
-};
-
+#pragma warning(disable: 4820)
 class Style
 {
 public:
@@ -100,7 +26,7 @@ public:
 
     virtual ~Style() { }
 
-    Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize);
+    Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
@@ -118,7 +44,7 @@ public:
     FLOAT _Thickness;                   // Line thickness
 
     // Font-specific
-    pfc::string _FontName;
+    std::wstring _FontName;
     FLOAT _FontSize;
 
     // Resulting resources
@@ -127,6 +53,7 @@ public:
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;
+    CComPtr<IDWriteTextFormat> _TextFormat;
 
     enum Feature
     {

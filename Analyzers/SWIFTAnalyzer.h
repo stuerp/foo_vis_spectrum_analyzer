@@ -1,9 +1,15 @@
 
-/** $VER: SWIFTAnalyzer.h (2024.03.02) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.h (2024.03.09) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
 #include "Analyzer.h"
 #include "FrequencyBand.h"
@@ -13,6 +19,7 @@
 /// <summary>
 /// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
 /// </summary>
+#pragma warning(disable: 4820)
 class SWIFTAnalyzer : public Analyzer
 {
 public:

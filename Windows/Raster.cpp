@@ -1,9 +1,7 @@
 
-/** $VER: Raster.cpp (2024.01.16) P. Stuer **/
+/** $VER: Raster.cpp (2024.03.09) P. Stuer **/
 
 #include "Raster.h"
-
-#include "WIC.h"
 
 #pragma hdrstop
 

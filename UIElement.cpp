@@ -10,6 +10,8 @@
 #include "Support.h"
 #include "Log.h"
 
+#include "PresetManager.h"
+
 #pragma hdrstop
 
 /// <summary>
@@ -78,7 +80,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Critical, "%s: Unable to create visualisation stream. %s.", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Critical, "%s: Unable to create visualisation stream: %s.", core_api::get_my_file_name(), ex.what());
 
         return -1;
     }
@@ -96,6 +98,8 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
         _ToolTipControl.SetMaxTipWidth(100);
+
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
     }
 
     // Apply the initial configuration.
@@ -525,11 +529,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         _SampleRate = 44100;
 
     // Use the script from the configuration to load the album art.
-    if (track.is_valid() && !_State._ArtworkFilePath.isEmpty())
+    if (track.is_valid() && !_State._ArtworkFilePath.empty())
     {
         titleformat_object::ptr Script;
 
-        bool Success = titleformat_compiler::get()->compile(Script, _State._ArtworkFilePath.c_str());
+        bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_State._ArtworkFilePath.c_str()));
 
         pfc::string Result;
 
@@ -567,7 +571,7 @@ void UIElement::on_playback_pause(bool)
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
     // The script in the configuration takes precedence over the album art supplied by the track.
-    if (!_State._ArtworkFilePath.isEmpty())
+    if (!_State._ArtworkFilePath.empty())
         return;
 
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());

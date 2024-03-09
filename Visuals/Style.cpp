@@ -1,11 +1,13 @@
 
-/** $VER: Style.cpp (2024.02.24) P. Stuer **/
+/** $VER: Style.cpp (2024.03.09) P. Stuer **/
 
 #include "Style.h"
 
 #include "Direct2D.h"
+#include "DirectWrite.h"
 #include "Gradients.h"
 
+#include "Support.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -47,7 +49,7 @@ Style & Style::operator=(const Style & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const char * fontName, FLOAT fontSize)
+Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize)
 {
     _Flags = flags;
 
@@ -84,6 +86,19 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
 
+    if ((_Flags & SupportsFont) && (_TextFormat == nullptr))
+    {
+        const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+
+        hr = _DirectWrite.Factory->CreateTextFormat(_FontName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+        if (SUCCEEDED(hr))
+        {
+            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        }
+    }
+
     return hr;
 }
 
@@ -92,5 +107,6 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
 /// </summary>
 void Style::ReleaseDeviceSpecificResources()
 {
+    _TextFormat.Release();
     _Brush.Release();
 }

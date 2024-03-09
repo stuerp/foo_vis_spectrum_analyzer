@@ -3,7 +3,12 @@
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <Windows.h>
 
 using namespace std;
 
@@ -13,6 +18,7 @@ using namespace std;
 /// <summary>
 /// Provides a base class for analyzers.
 /// </summary>
+#pragma warning(disable: 4820)
 class Analyzer
 {
 public:

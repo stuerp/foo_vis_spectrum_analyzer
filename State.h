@@ -1,9 +1,12 @@
 ﻿
-/** $VER: State.h (2024.03.02) P. Stuer **/
+/** $VER: State.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <sdkddkver.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
 #include "Support.h"
 
 #include "Constants.h"
@@ -17,6 +20,7 @@
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
+#pragma warning(disable: 4820)
 class State
 {
 public:
@@ -62,8 +66,6 @@ public:
                                                                         // < 0: All samples are ahead the actual playback (with the first sample equal to the actual playback)
                                                                         //   0: The first half of samples are behind the actual playback and the second half are ahead of it (just like original foo_musical_spectrum and basically any get_spectrum_absolute() visualizations
                                                                         // > 0: All samples are behind the playback (similar to VST audio analyzer plugins like Voxengo SPAN) with the last sample equal to the actual playback.
-
-        uint32_t _Channels_Deprecated;
 
     #pragma endregion
 
@@ -171,11 +173,10 @@ public:
 
             ColorOrder _ColorOrder;
 
-            BackgroundMode _BackgroundMode_Deprecated;
             bool _ShowArtworkOnBackground;
 
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-            pfc::string _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
+            std::wstring _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
             FitMode _FitMode;
 
         #pragma endregion
@@ -186,24 +187,9 @@ public:
 
         #pragma region X axis
 
-            XAxisMode _XAxisMode_Deprecated;
-            bool _XAxisTop_Deprecated;
-            bool _XAxisBottom_Deprecated;
-
         #pragma endregion
 
         #pragma region Y axis
-
-            YAxisMode _YAxisMode_Deprecated;
-            bool _YAxisLeft_Deprecated;
-            bool _YAxisRight_Deprecated;
-
-            double _AmplitudeLo_Deprecated;                             // Lower amplitude, -120.0 .. 0.0
-            double _AmplitudeHi_Deprecated;                             // Upper amplitude, -120.0 .. 0.0
-            double _AmplitudeStep_Deprecated;
-
-            bool _UseAbsolute_Deprecated;                               // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-            double _Gamma_Deprecated;                                   // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
         #pragma endregion
 
@@ -233,10 +219,16 @@ public:
 
     StyleManager _StyleManager;
 
+    #pragma region Graphs
+
     size_t _GridRowCount;
     size_t _GridColumnCount;
 
     std::vector<GraphSettings> _GraphSettings;
+
+    #pragma endregion
+
+    std::wstring _PresetsDirectoryPath;
 
     #pragma region Not Serialized
 
@@ -262,10 +254,27 @@ private:
     void ConvertColorSettings() noexcept;
     void ConvertGraphSettings() noexcept;
 
-    const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
-
 private:
     bool _UseZeroTrigger_Deprecated;
+
+    uint32_t _Channels_Deprecated;
+
+    BackgroundMode _BackgroundMode_Deprecated;
+
+    XAxisMode _XAxisMode_Deprecated;
+    bool _XAxisTop_Deprecated;
+    bool _XAxisBottom_Deprecated;
+
+    YAxisMode _YAxisMode_Deprecated;
+    bool _YAxisLeft_Deprecated;
+    bool _YAxisRight_Deprecated;
+
+    double _AmplitudeLo_Deprecated;                             // Lower amplitude, -120.0 .. 0.0
+    double _AmplitudeHi_Deprecated;                             // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeStep_Deprecated;
+
+    bool _UseAbsolute_Deprecated;                               // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+    double _Gamma_Deprecated;                                   // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
     ColorScheme _ColorScheme_Deprecated;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops_Deprecated;
@@ -301,6 +310,8 @@ private:
     bool _DrawBandBackground_Deprecated;                    // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                    // True if the gradient will be used to paint horizontally.
 
+    const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
+
 private:
-    const size_t _CurrentVersion = 19;
+    const size_t _CurrentVersion = 20;
 };

@@ -1,14 +1,16 @@
 
-/** $VER: Element.h (2024.02.19) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.03.09) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
-#include "framework.h"
-#include "Support.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
 
 #include "State.h"
 #include "GraphSettings.h"
-#include "Style.h"
 
 class Element
 {

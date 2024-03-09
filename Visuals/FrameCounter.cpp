@@ -1,8 +1,7 @@
 
-/** $VER: FrameCounter.cpp (2024.02.17) P. Stuer **/
+/** $VER: FrameCounter.cpp (2024.03.09) P. Stuer **/
 
 #include "FrameCounter.h"
-#include "DirectWrite.h"
 
 #pragma hdrstop
 

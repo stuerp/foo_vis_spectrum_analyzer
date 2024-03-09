@@ -1,14 +1,19 @@
 
-/** $VER: YAxis.h (2024.02.18) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.03.09) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
 #include "Element.h"
-#include "Support.h"
 #include "State.h"
-#include "GraphSettings.h"
+#include "FrequencyBand.h"
 
 #include <vector>
 #include <string>
@@ -16,6 +21,7 @@
 /// <summary>
 /// Implements the Y axis of a graph.
 /// </summary>
+#pragma warning(disable: 4820)
 class YAxis : public Element
 {
 public:

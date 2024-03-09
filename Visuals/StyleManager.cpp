@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.02.29) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.09) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -66,8 +66,10 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::HorizontalGridLine,
         VisualElement::VerticalGridLine,
 
-        VisualElement::BarSpectrum,
-        VisualElement::BarPeakIndicator,
+        VisualElement::BarArea,
+        VisualElement::BarTop,
+        VisualElement::BarPeakArea,
+        VisualElement::BarPeakTop,
         VisualElement::BarDarkBackground,
         VisualElement::BarLightBackground,
 
@@ -127,6 +129,8 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         if (Version > _CurrentVersion)
             return;
 
+        const uint64_t SystemFlags = Style::SupportsOpacity | Style::SupportsThickness | Style::SupportsFont;
+
         size_t StyleCount; reader->read_object_t(StyleCount, abortHandler);
 
         for (size_t i = 0; i < StyleCount; ++i)
@@ -141,9 +145,14 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
             Style & style = _Styles[(VisualElement) Id];
 
+            uint64_t Flags;
+
+            reader->read_object_t(Flags, abortHandler);
+
+            style._Flags = (style._Flags & SystemFlags) | (Flags & ~SystemFlags); // Make sure the system flags keep their default value.
+
             uint32_t Integer;
 
-            reader->read_object_t(style._Flags, abortHandler);
             reader->read_object_t(Integer, abortHandler); style._ColorSource = (ColorSource) Integer;
             reader->read_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
             reader->read_object_t(style._ColorIndex, abortHandler);
@@ -166,8 +175,14 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             reader->read_object_t(style._Opacity, abortHandler);
             reader->read_object_t(style._Thickness, abortHandler);
 
-            style._FontName = reader->read_string(abortHandler);
-            reader->read_object_t(style._FontSize, abortHandler);
+            pfc::string FontName = reader->read_string(abortHandler);
+            FLOAT FontSize; reader->read_object_t(FontSize, abortHandler);
+
+            if (Version > 4)
+            {
+                style._FontName = pfc::wideFromUTF8(FontName);
+                style._FontSize = FontSize;
+            }
 
             // 'Activate' the values we just read.
             style._Color = style._CustomColor;
@@ -180,7 +195,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while reading styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read styles: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -229,13 +244,14 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
                 writer->write_object_t(style._Opacity, abortHandler);
                 writer->write_object_t(style._Thickness, abortHandler);
 
-                writer->write_string(style._FontName, abortHandler);
+                pfc::string FontName = pfc::utf8FromWide(style._FontName.c_str());
+                writer->write_string(FontName, abortHandler);
                 writer->write_object_t(style._FontSize, abortHandler);
             }
         }
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Exception while writing styles: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to write styles: %s", core_api::get_my_file_name(), ex.what());
     }
 }

@@ -1,15 +1,15 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.02) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.09) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
 #include "Gradients.h"
 #include "Layout.h"
-
 #include "CColorDialogEx.h"
+#include "PresetManager.h"
+#include "Support.h"
 
 #include "Direct2D.h"
-
 #include "Theme.h"
 
 #include "Log.h"
@@ -23,6 +23,9 @@ static const LPCWSTR ChannelNames[] =
     L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
 };
+
+static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
+static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept;
 
 /// <summary>
 /// Initializes the dialog.
@@ -212,14 +215,31 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_HORIZONTAL_GRADIENT, L"Generates a horizontal instead of a vertical gradient" },
 
-            { IDC_OPACITY, L"Determines the opacity of the resulting color brush" },
-            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable" },
+            { IDC_OPACITY, L"Determines the opacity of the resulting color brush." },
+            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable." },
+
+            { IDC_FONT_NAME, L"Determines the opacity of the resulting color brush." },
+            { IDC_FONT_NAME_SELECT, L"Opens a dialog to select a font." },
+            { IDC_FONT_SIZE, L"Determines the size of the font in points." },
+
+            { IDC_PRESETS_ROOT, L"Specifies the location of the preset files." },
+            { IDC_PRESETS_ROOT_SELECT, L"Opens a dialog to select a location." },
+            { IDC_PRESET_NAMES, L"Lists the presets in the current preset location." },
+            { IDC_PRESET_NAME, L"Specifies the name of the preset." },
+            { IDC_PRESET_LOAD, L"Loads and activates the specified preset." },
+            { IDC_PRESET_SAVE, L"Saves the current configuration as a preset." },
+            { IDC_PRESET_DELETE, L"Deletes the specified preset." },
+
+            { IDC_RESET, L"Resets the configuration to the default values." },
+            { IDOK, L"Closes the dialog box and makes the changes to the configuration final." },
+            { IDCANCEL, L"Closes the dialog box and undoes any changes to the configuration." },
         };
 
         for (const auto & Iter : Tips)
             _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(Iter.first).m_hWnd, nullptr, (LPWSTR) Iter.second));
 
         _ToolTipControl.SetMaxTipWidth(200);
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
     }
 
     _IsInitializing = false;
@@ -240,7 +260,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles" })
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles", L"Presets" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -818,7 +838,7 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _State->_ColorOrder);
     }
     {
-        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(pfc::wideFromUTF8(_State->_ArtworkFilePath));
+        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(_State->_ArtworkFilePath.c_str());
     }
     #pragma endregion
 
@@ -912,6 +932,7 @@ void ConfigurationDialog::Initialize()
 
         {
             assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
+            assert(_countof(ChannelNames) == (size_t) Channel::Count);
 
             auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
@@ -972,7 +993,7 @@ void ConfigurationDialog::Initialize()
         {
             L"Graph Background", L"Graph Description Text", L"Graph Description Background",
             L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
-            L"Bar Spectrum", L"Bar Peak Indicator", L"Bar Dark Background", L"Bar Light Background",
+            L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
             L"Nyquist Frequency",
         })
@@ -1042,7 +1063,19 @@ void ConfigurationDialog::Initialize()
         w.SetAccel(_countof(Accel), Accel);
     }
 
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_FONT_SIZE)); _NumericEdits.push_back(ne);
+    }
+
     UpdateStyleControls();
+    #pragma endregion
+
+    #pragma region Presets
+    {
+        SetDlgItemTextW(IDC_PRESETS_ROOT, _State->_PresetsDirectoryPath.c_str());
+
+        UpdatePresetFiles();
+    }
     #pragma endregion
 
     UpdateControls();
@@ -1359,6 +1392,25 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
         }
 
         #pragma endregion
+
+        #pragma region Presets
+
+        case IDC_PRESET_NAMES:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
+
+            SelectedIndex = lb.GetCurSel();
+
+            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size()))
+                return;
+
+            SetDlgItemTextW(IDC_PRESET_NAME, _PresetNames[(size_t) SelectedIndex].c_str());
+
+            UpdateControls();
+            return;
+        }
+
+        #pragma endregion
     }
 
     ConfigurationChanged();
@@ -1467,7 +1519,11 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Script
 
-        case IDC_FILE_PATH: { _State->_ArtworkFilePath = pfc::utf8FromWide(Text); break; }
+        case IDC_FILE_PATH:
+        {
+            _State->_ArtworkFilePath = Text;
+            break;
+        }
 
         #pragma endregion
 
@@ -1477,7 +1533,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._Description = pfc::utf8FromWide(Text);
+            gs._Description = Text;
             break;
         }
 
@@ -1523,9 +1579,23 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Peak indicator
 
-        case IDC_SMOOTHING_FACTOR: { _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor); break; }
-        case IDC_HOLD_TIME: { _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime); break; }
-        case IDC_ACCELERATION: { _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration); break; }
+        case IDC_SMOOTHING_FACTOR:
+        {
+            _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            break;
+        }
+
+        case IDC_HOLD_TIME:
+        {
+            _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            break;
+        }
 
         #pragma endregion
 
@@ -1595,6 +1665,40 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_FONT_NAME:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            style->_FontName = Text;
+            break;
+        }
+
+        case IDC_FONT_SIZE:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            style->_FontSize = (FLOAT) Clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Presets
+
+        case IDC_PRESETS_ROOT:
+        {
+            _State->_PresetsDirectoryPath = Text;
+
+            UpdatePresetFiles();
+            return;
+        }
+
+        case IDC_PRESET_NAME:
+        {
+            UpdatePresetsPage();
+            return;
+        }
+
         #pragma endregion
 
         default:
@@ -1645,7 +1749,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // SWIFT / Analog-style
         case IDC_FBO:                   { SetInteger(id, (int64_t) _State->_FilterBankOrder); break; }
         case IDC_TR:                    { SetDouble(id, _State->_TimeResolution); break; }
-        case IDC_IIR_BW:              { SetDouble(id, _State->_IIRBandwidth); break; }
+        case IDC_IIR_BW:                { SetDouble(id, _State->_IIRBandwidth); break; }
 
         // Frequencies
         case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_BandCount); break; }
@@ -1697,15 +1801,29 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            SetDouble(id, gs._Gamma, 0, 1); break;
+            SetDouble(id, gs._Gamma, 0, 1);
+            break;
         }
 
         // Spectrum smoothing
-        case IDC_SMOOTHING_FACTOR:      { SetDouble(id, _State->_SmoothingFactor, 0, 1); break; }
+        case IDC_SMOOTHING_FACTOR:
+        {
+            SetDouble(id, _State->_SmoothingFactor, 0, 1);
+            break;
+        }
 
         // Peak indicator
-        case IDC_HOLD_TIME:             { SetDouble(id, _State->_HoldTime, 0, 1); break; }
-        case IDC_ACCELERATION:          { SetDouble(id, _State->_Acceleration, 0, 1); break; }
+        case IDC_HOLD_TIME:
+        {
+            SetDouble(id, _State->_HoldTime, 0, 1);
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            SetDouble(id, _State->_Acceleration, 0, 1);
+            break;
+        }
 
         // Styles
         case IDC_OPACITY:
@@ -1719,6 +1837,27 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Thickness, 0, 1);
             break;
         }
+
+        case IDC_FONT_NAME:
+        {
+            break;
+        }
+
+        case IDC_FONT_SIZE:
+        {
+            SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_FontSize, 0, 1);
+            break;
+        }
+
+        #pragma region Presets
+
+        case IDC_PRESETS_ROOT:
+        {
+            UpdatePresetFiles();
+            break;
+        }
+
+        #pragma endregion
     }
 
     return;
@@ -1803,7 +1942,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             int Index = (int) _State->_GraphSettings.size();
 
-            CHAR Description[32]; ::StringCchPrintfA(Description, _countof(Description), "Graph %d", Index + 1);
+            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
 
             NewGraphSettings._Description = Description;
 
@@ -1974,6 +2113,102 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
                 style->_Flags &= ~Style::HorizontalGradient;
             break;
         }
+
+        case IDC_FONT_NAME_SELECT:
+        {
+            Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+
+            LOGFONTW lf = { };
+
+            lf.lfHeight = -::MulDiv((int) style->_FontSize, (int) ::GetDpiForWindow(m_hWnd), 72);
+            lf.lfWeight = FW_NORMAL;
+            lf.lfCharSet = DEFAULT_CHARSET;
+            lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
+            lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
+            lf.lfQuality = CLEARTYPE_QUALITY;
+            lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
+            ::wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), style->_FontName.c_str());
+
+            CHOOSEFONTW cf = { sizeof(cf) };
+
+            cf.hwndOwner = m_hWnd;
+            cf.lpLogFont = &lf;
+            cf.iPointSize = (INT) (style->_FontSize * 10.f);
+            cf.Flags = CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT;
+
+            if (!::ChooseFontW(&cf))
+                return;
+
+            style->_FontName = cf.lpLogFont->lfFaceName;
+            style->_FontSize = (FLOAT) cf.iPointSize / 10.f;
+
+            UpdateStyleControls();
+            break;
+        }
+
+        #pragma region Presets
+
+        case IDC_PRESETS_ROOT_SELECT:
+        {
+            pfc::string DirectoryPath = pfc::utf8FromWide(_State->_PresetsDirectoryPath.c_str());
+
+            if (::uBrowseForFolder(m_hWnd, "Locate preset files...", DirectoryPath))
+            {
+                _State->_PresetsDirectoryPath = pfc::wideFromUTF8(DirectoryPath);
+
+                pfc::wstringLite w = pfc::wideFromUTF8(DirectoryPath);
+
+                SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(DirectoryPath));
+
+                UpdatePresetFiles();
+            }
+            break;
+        }
+
+        case IDC_PRESET_LOAD:
+        {
+            WCHAR PresetName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+            State NewState;
+
+            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
+
+            UpdatePresetFiles();
+
+            *_State = NewState;
+            Initialize();
+            break;
+        }
+
+        case IDC_PRESET_SAVE:
+        {
+            WCHAR PresetName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+            PresetManager::Save(_State->_PresetsDirectoryPath, PresetName, _State);
+
+            UpdatePresetFiles();
+
+            return;
+        }
+
+        case IDC_PRESET_DELETE:
+        {
+            WCHAR PresetName[MAX_PATH];
+
+            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+            PresetManager::Delete(_State->_PresetsDirectoryPath, PresetName);
+
+            UpdatePresetFiles();
+
+            return;
+        }
+
+        #pragma endregion
 
         case IDC_RESET:
         {
@@ -2370,7 +2605,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_Y_AXIS_MODE_LBL, IDC_Y_AXIS_MODE,
             IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT,
             IDC_AMPLITUDE_LBL_1, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_LO_SPIN, IDC_AMPLITUDE_LBL_2, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_HI_SPIN, IDC_AMPLITUDE_LBL_3,
-            IDC_AMPLITUDE_STEP_LBL_1,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_LBL_2,
+            IDC_AMPLITUDE_STEP_LBL,IDC_AMPLITUDE_STEP, IDC_AMPLITUDE_STEP_SPIN, IDC_AMPLITUDE_STEP_UNIT,
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
 
@@ -2398,6 +2633,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_OPACITY_LBL, IDC_OPACITY, IDC_OPACITY_SPIN, IDC_OPACITY_UNIT,
         IDC_THICKNESS_LBL, IDC_THICKNESS, IDC_THICKNESS_SPIN,
+        IDC_FONT_NAME_LBL, IDC_FONT_NAME, IDC_FONT_NAME_SELECT,
+        IDC_FONT_SIZE_LBL, IDC_FONT_SIZE,
 
         IDC_COLOR_SCHEME_LBL, IDC_COLOR_SCHEME,
         IDC_GRADIENT, IDC_COLOR_LIST, IDC_ADD, IDC_REMOVE, IDC_REVERSE,
@@ -2405,74 +2642,40 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_HORIZONTAL_GRADIENT,
     };
 
-    int Mode = (index == 0) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page1); ++i)
+    static const int Page8[] =
     {
-        auto w = GetDlgItem(Page1[i]);
+        IDC_PRESETS_LBL, IDC_PRESETS_ROOT, IDC_PRESETS_ROOT_SELECT, IDC_PRESET_NAMES,
+        IDC_PRESET_NAME_LBL, IDC_PRESET_NAME,
+        IDC_PRESET_LOAD, IDC_PRESET_SAVE, IDC_PRESET_DELETE,
+    };
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 1) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page2); ++i)
+    const std::vector<std::pair<const int *, size_t>> Pages =
     {
-        auto w = GetDlgItem(Page2[i]);
+        { Page1, _countof(Page1) },
+        { Page2, _countof(Page2) },
+        { Page3, _countof(Page3) },
+        { Page4, _countof(Page4) },
+        { Page5, _countof(Page5) },
+        { Page6, _countof(Page6) },
+        { Page7, _countof(Page7) },
+        { Page8, _countof(Page8) },
+    };
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
+    size_t PageNumber = 0;
 
-    Mode = (index == 2) ? SW_SHOW : SW_HIDE;
+    for (const auto & Page : Pages)
+    {    
+        int Mode = (index == PageNumber) ? SW_SHOW : SW_HIDE;
 
-    for (size_t i = 0; i < _countof(Page3); ++i)
-    {
-        auto w = GetDlgItem(Page3[i]);
+        for (size_t i = 0; i < Page.second; ++i)
+        {
+            auto w = GetDlgItem(Page.first[i]);
 
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
+            if (w.IsWindow())
+                w.ShowWindow(Mode);
+        }
 
-    Mode = (index == 3) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page4); ++i)
-    {
-        auto w = GetDlgItem(Page4[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 4) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page5); ++i)
-    {
-        auto w = GetDlgItem(Page5[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 5) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page6); ++i)
-    {
-        auto w = GetDlgItem(Page6[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
-    }
-
-    Mode = (index == 6) ? SW_SHOW : SW_HIDE;
-
-    for (size_t i = 0; i < _countof(Page7); ++i)
-    {
-        auto w = GetDlgItem(Page7[i]);
-
-        if (w.IsWindow())
-            w.ShowWindow(Mode);
+        PageNumber++;
     }
 }
 
@@ -2576,46 +2779,8 @@ void ConfigurationDialog::UpdateControls()
 
         for (const auto & Iter : { IDC_LED_MODE })
             GetDlgItem(Iter).EnableWindow(IsBars);
-}
 
-/// <summary>
-/// Gets the selected Windows color.
-/// </summary>
-static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
-}
-
-/// <summary>
-/// Gets the selected DUI color.
-/// </summary>
-static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+    UpdatePresetsPage();
 }
 
 /// <summary>
@@ -2629,7 +2794,7 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
         w.ResetContent();
 
         for (const auto & Iter : _State->_GraphSettings)
-            w.AddString(pfc::wideFromUTF8(Iter._Description));
+            w.AddString(Iter._Description.c_str());
 
         w.SetCurSel((int) _State->_SelectedGraph);
     }
@@ -2655,12 +2820,14 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
 
     const auto & gs = _State->_GraphSettings[(size_t) _State->_SelectedGraph];
 
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, pfc::wideFromUTF8(gs._Description));
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
     CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
     CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
 
     // X axis
+    ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
+
     CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
     CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
@@ -2668,11 +2835,20 @@ void ConfigurationDialog::UpdateGraphSettings() noexcept
     GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
 
     // Y axis
+    ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
+
     CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
     CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
-    GetDlgItem(IDC_Y_AXIS_LEFT).EnableWindow(gs._YAxisMode != YAxisMode::None);
-    GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gs._YAxisMode != YAxisMode::None);
+    SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+    SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+    SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+
+    for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
+        GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
+
+    SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
+    SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
 
     const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
 
@@ -2781,12 +2957,17 @@ void ConfigurationDialog::UpdateStyleControls()
     SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
     ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
 
+    SetDlgItemTextW(IDC_FONT_NAME, style->_FontName.c_str());
+    SetDouble(IDC_FONT_SIZE, style->_FontSize, 0, 1);
+
     GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_BUTTON).EnableWindow((style->_ColorSource == ColorSource::Solid) || (style->_ColorSource == ColorSource::DominantColor) || (style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsOpacity));
     GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsThickness));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
 
     UpdateColorSchemeControls();
 }
@@ -2873,6 +3054,44 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style)
 }
 
 /// <summary>
+/// Updates the controls of the Presets page.
+/// </summary>
+void ConfigurationDialog::UpdatePresetsPage() const noexcept
+{
+    WCHAR PresetName[MAX_PATH];
+
+    GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
+
+    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(PresetName[0] != '\0');
+    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(PresetName[0] != '\0');
+    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(PresetName[0] != '\0');
+}
+
+/// <summary>
+/// Updates the preset file list box.
+/// </summary>
+void ConfigurationDialog::UpdatePresetFiles() noexcept
+{
+    // Make sure the path exists before proceding.
+    if (::GetFileAttributesW(_State->_PresetsDirectoryPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+        return;
+
+    _PresetNames.clear();
+
+    auto w = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
+
+    w.ResetContent();
+
+    if (PresetManager::GetPresetNames(_State->_PresetsDirectoryPath, _PresetNames))
+    {
+        for (auto & PresetName : _PresetNames)
+        {
+            w.AddString(PresetName.c_str());
+        }
+    }
+}
+
+/// <summary>
 /// Validates and updates the notification from the up-down control.
 /// </summary>
 int ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept
@@ -2956,4 +3175,44 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
 //  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
+}
+
+/// <summary>
+/// Gets the selected Windows color.
+/// </summary>
+static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+}
+
+/// <summary>
+/// Gets the selected DUI color.
+/// </summary>
+static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
 }

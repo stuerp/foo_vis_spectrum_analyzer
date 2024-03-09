@@ -1,7 +1,9 @@
 
-/** $VER: Constans.h (2024.03.02) P. Stuer **/
+/** $VER: Constans.h (2024.03.09) P. Stuer **/
 
 #pragma once
+
+#include <stdint.h>
 
 inline const int MinFFTSize =     2;
 inline const int MaxFFTSize = 32768;
@@ -112,24 +114,25 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
-inline const double MinArtworkOpacity = 0.f;
-inline const double MaxArtworkOpacity = 1.f;
+inline const double MinArtworkOpacity = 0.;
+inline const double MaxArtworkOpacity = 1.;
 
 inline const uint32_t MinArtworkColors = 2;
 inline const uint32_t MaxArtworkColors = 16;
 
-inline const double MinLightnessThreshold = 0.f;
-inline const double MaxLightnessThreshold = 1.f;
-
-inline const uint32_t AllChannels = ((1 << audio_chunk::defined_channel_count) - 1);
+inline const double MinLightnessThreshold = 0.;
+inline const double MaxLightnessThreshold = 1.;
 
 
 
-inline const double MinOpacity = 0.f;
-inline const double MaxOpacity = 1.f;
+inline const double MinOpacity = 0.;
+inline const double MaxOpacity = 1.;
 
-inline const double MinThickness =  0.f;
-inline const double MaxThickness = 10.f;
+inline const double MinThickness =  0.;
+inline const double MaxThickness = 32.;
+
+inline const double MinFontSize = 1.;
+inline const double MaxFontSize = 200.;
 
 
 
@@ -292,3 +295,138 @@ enum class FitMode
     FitWidth,
     FitHeight,
 };
+
+enum class VisualElement : uint32_t
+{
+    GraphBackground             =  0,
+    GraphDescriptionText        =  1,
+    GraphDescriptionBackground  = 14,
+
+    XAxisText                   =  2,
+    VerticalGridLine            =  3,
+    YAxisText                   =  4,
+    HorizontalGridLine          =  5,
+
+    BarArea                     =  6,
+    BarTop                      = 16,
+    BarPeakTop                  =  7,
+    BarPeakArea                 = 17,
+    BarDarkBackground           =  8,
+    BarLightBackground          =  9,
+
+    CurveLine                   = 10,
+    CurveArea                   = 11,
+    CurvePeakLine               = 12,
+    CurvePeakArea               = 13,
+
+    NyquistMarker               = 15,
+
+};
+
+enum class ColorSource : uint32_t
+{
+    None,
+    Solid,
+    DominantColor,
+    Gradient,
+    Windows,
+    UserInterface,
+};
+
+enum class WindowsColor : uint32_t
+{
+    WindowBackground,           // COLOR_WINDOW
+    WindowText,                 // COLOR_WINDOWTEXT
+    ButtonBackground,           // COLOR_3DFACE
+    ButtonText,                 // COLOR_BTNTEXT
+    HighlightBackground,        // COLOR_HIGHLIGHT
+    HighlightText,              // COLOR_HIGHLIGHTTEXT
+    GrayText,                   // COLOR_GRAYTEXT
+    HotLight,                   // COLOR_HOTLIGHT
+};
+
+enum class DUIColor : uint32_t
+{
+    Text,
+    Background,
+    Highlight,
+    Selection,
+    DarkMode
+};
+
+enum class CUIColor : uint32_t
+{
+    Text,                       // cui::colours::colour_text
+    SelectedText,               // cui::colours::colour_selection_text
+    InactiveSelectedText,       // cui::colours::colour_inactive_selection_text
+
+    Background,                 // cui::colours::colour_background
+    SelectedBackground,         // cui::colours::colour_selection_background
+    InactiveSelectedBackground, // cui::colours::colour_inactive_selection_background
+
+    ActiveItem,                 // cui::colours::colour_active_item_frame
+};
+
+enum class ColorScheme : uint32_t
+{
+    Solid = 0,
+    Custom = 1,
+    Artwork = 2,
+
+    Prism1 = 3,
+    Prism2 = 4,
+    Prism3 = 5,
+
+    foobar2000 = 6,
+    foobar2000DarkMode = 7,
+
+    Fire = 8,
+    Rainbow = 9,
+};
+
+// Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
+enum class Channel : uint32_t
+{
+    FrontLeft = 1 << 0,
+    FrontRight = 1 << 1,
+    FrontCenter = 1 << 2,
+
+    LFE = 1 << 3,
+    BackLeft = 1 << 4,
+    BackRight = 1 << 5,
+
+    FrontCenterLeft = 1 << 6,
+    FrontCenterRight = 1 << 7,
+    BackCenter = 1 << 8,
+
+    SideLeft = 1 << 9,
+    SideRight = 1 << 10,
+
+    TopCenter = 1 << 11,
+    TopFrontLeft = 1 << 12,
+    TopFrontCenter = 1 << 13,
+    TopFrontRight = 1 << 14,
+    TopBackLeft = 1 << 15,
+    TopBackCenter = 1 << 16,
+    TopBackRight = 1 << 17,
+
+    BackLeftRight = BackLeft | BackRight,
+    SideLeftRight = SideLeft | SideRight,
+
+    ConfigMono          = FrontCenter,
+    ConfigStereo        = FrontLeft | FrontRight,
+    Config2point1       = ConfigStereo | LFE,
+    Config3point0       = ConfigStereo | FrontCenter,
+    Config4point0       = ConfigStereo | BackLeftRight,
+    Config4point0Side   = ConfigStereo | SideLeftRight,
+    Config4point1       = Config4point0 | LFE,
+    Config5point0       = Config4point0 | FrontCenter,
+    Config6point0       = Config4point0 | SideLeftRight,
+    Config5point1       = Config4point0 | FrontCenter | LFE,
+    Config5point1Side   = Config4point0Side | FrontCenter | LFE,
+    Config7point1       = Config5point1 | SideLeftRight,
+
+    Count = 18,
+};
+
+inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);

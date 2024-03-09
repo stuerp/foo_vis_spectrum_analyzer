@@ -1,12 +1,22 @@
 
-/** $VER: Direct2D.h (2024.02.18) P. Stuer **/
+/** $VER: Direct2D.h (2024.03.09) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <SDKDDKVer.h>
+#include <d2d1_2.h>
+#include <d2d1helper.h>
+#include <atlbase.h>
 
 #include <vector>
 #include <algorithm>
+
+#include "WIC.h"
+#include "Gradients.h"
 
 class Direct2D
 {
