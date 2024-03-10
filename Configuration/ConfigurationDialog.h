@@ -79,14 +79,19 @@ private:
     LRESULT OnDeltaPos(LPNMHDR nmhd);
     LRESULT OnChanged(LPNMHDR nmhd);
 
-    void UpdateControls();
-    void UpdateGraphSettings() noexcept;
-    void UpdateColorSchemeControls();
-    void UpdateStyleControls();
-    void UpdateGradientStopPositons(Style * style);
     void UpdatePages(size_t index) const noexcept;
+
+    void UpdateTransformPage() noexcept;
+    void UpdateFrequenciesPage() noexcept;
+    void UpdateFiltersPage() noexcept;
+    void UpdateCommonPage() const noexcept;
+    void UpdateGraphsPage() noexcept;
+    void UpdateColorSchemeControls();
+    void UpdateGradientStopPositons(Style * style);
+    void UpdateVisualizationPage() noexcept;
+    void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
-    void UpdatePresetFiles() noexcept;
+    void GetPresetNames() noexcept;
 
     void ConfigurationChanged() const noexcept;
 

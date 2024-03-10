@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.03.09) P. Stuer **/
+/** $VER: Style.cpp (2024.03.10) P. Stuer **/
 
 #include "Style.h"
 
@@ -9,6 +9,8 @@
 
 #include "Support.h"
 #include "Log.h"
+
+#include <cassert>
 
 #pragma hdrstop
 
@@ -81,7 +83,12 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
     if (_ColorSource != ColorSource::Gradient)
         hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
     else
-        hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+    {
+        if (_Flags &= Style::AmplitudeBasedColor)
+            hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
+        else
+            hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+    }
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
@@ -109,4 +116,33 @@ void Style::ReleaseDeviceSpecificResources()
 {
     _TextFormat.Release();
     _Brush.Release();
+}
+
+/// <summary>
+/// Sets the color of a solid color brush from the gradient colors based on a value between 0 and 1.
+/// </summary>
+HRESULT Style::SetBrushColor(double value) noexcept
+{
+    ID2D1SolidColorBrush * ColorBrush = nullptr;
+
+    HRESULT hr = _Brush->QueryInterface(IID_PPV_ARGS(&ColorBrush));
+
+    if (SUCCEEDED(hr))
+    {
+        D2D1_COLOR_F Color(0);
+
+        for (auto & gs : _GradientStops)
+        {
+            if (value > (1. - gs.position))
+                break;
+
+            Color = gs.color;
+        }
+
+        ColorBrush->SetColor(Color);
+
+        ColorBrush->Release();
+    }
+
+    return hr;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.03.09) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -129,8 +129,6 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
         if (Version > _CurrentVersion)
             return;
 
-        const uint64_t SystemFlags = Style::SupportsOpacity | Style::SupportsThickness | Style::SupportsFont;
-
         size_t StyleCount; reader->read_object_t(StyleCount, abortHandler);
 
         for (size_t i = 0; i < StyleCount; ++i)
@@ -149,7 +147,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 
             reader->read_object_t(Flags, abortHandler);
 
-            style._Flags = (style._Flags & SystemFlags) | (Flags & ~SystemFlags); // Make sure the system flags keep their default value.
+            style._Flags = (style._Flags & Style::System) | (Flags & ~Style::System); // Retain the value of system style flags.
 
             uint32_t Integer;
 

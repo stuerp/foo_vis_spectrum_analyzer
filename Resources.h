@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -40,7 +40,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-alpha-1"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -355,22 +355,20 @@
 #define IDC_VISUALIZATION_LBL           7100
 #define IDC_VISUALIZATION               7102
 
-#define IDC_HORIZONTAL_GRADIENT         7104
+#define IDC_PEAK_MODE_LBL               7108
+#define IDC_PEAK_MODE                   7110
 
-#define IDC_PEAK_MODE_LBL               7106
-#define IDC_PEAK_MODE                   7108
+#define IDC_HOLD_TIME_LBL               7112
+#define IDC_HOLD_TIME                   7114
 
-#define IDC_HOLD_TIME_LBL               7110
-#define IDC_HOLD_TIME                   7112
-
-#define IDC_ACCELERATION_LBL            7114
-#define IDC_ACCELERATION                7116
+#define IDC_ACCELERATION_LBL            7116
+#define IDC_ACCELERATION                7118
 
 // Bars
 
-#define IDC_BARS                        7118
+#define IDC_BARS                        7120
 
-#define IDC_LED_MODE                    7120
+#define IDC_LED_MODE                    7122
 
 #pragma endregion
 
@@ -409,12 +407,15 @@
 #define IDC_POSITION_LBL                7546
 #define IDC_SPREAD                      7548
 
-#define IDC_FONT_NAME_LBL               7550
-#define IDC_FONT_NAME                   7552
-#define IDC_FONT_NAME_SELECT            7554
+#define IDC_HORIZONTAL_GRADIENT         7550
+#define IDC_AMPLITUDE_BASED             7552
 
-#define IDC_FONT_SIZE_LBL               7556
-#define IDC_FONT_SIZE                   7558
+#define IDC_FONT_NAME_LBL               7554
+#define IDC_FONT_NAME                   7556
+#define IDC_FONT_NAME_SELECT            7558
+
+#define IDC_FONT_SIZE_LBL               7560
+#define IDC_FONT_SIZE                   7562
 
 #pragma endregion
 

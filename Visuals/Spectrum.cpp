@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.09) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.10) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -131,6 +131,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 // Draw the peak indicator area.
                 if (_PeakArea->_ColorSource != ColorSource::None)
                 {
+                    if (_PeakArea->_Flags & Style::AmplitudeBasedColor)
+                        _PeakArea->SetBrushColor(fb.Peak);
+
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _PeakArea->_Brush);
                     else
@@ -153,12 +156,17 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 
             if (fb.CurValue > 0.0)
             {
+                const double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
+
                 Rect.top    = 0.f;
-                Rect.bottom = Clamp((FLOAT)(Height * _GraphSettings->ScaleA(fb.CurValue)), 0.f, Height);
+                Rect.bottom = Clamp((FLOAT)(Height * Amplitude), 0.f, Height);
 
                 // Draw the area of the bar.
                 if (_BarArea->_ColorSource != ColorSource::None)
                 {
+                    if (_BarArea->_Flags & Style::AmplitudeBasedColor)
+                        _BarArea->SetBrushColor(Amplitude);
+
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _BarArea->_Brush);
                     else

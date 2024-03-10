@@ -88,7 +88,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.3.0, 2024-03-09
+v0.7.4.0, 2024-03-xx
+
+* New: Amplitude-based color selection.
+  * The color of a spectrum bar can be set based on the amplitude of the frequency when using a horizontal gradient.
+
+* v0.7.3.0, 2024-03-09
 
 * New: Presets.
   * The configuration of the component can be written to and read from preset files (*.fvsa).
