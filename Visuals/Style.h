@@ -49,9 +49,9 @@ public:
     std::wstring _FontName;
     FLOAT _FontSize;
 
-    // Resulting resources
-    D2D1_COLOR_F _Color;
-    GradientStops _GradientStops;
+    // Current input value for the DirectX resources
+    D2D1_COLOR_F _CurrentColor;
+    GradientStops _CurrentGradientStops;
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;

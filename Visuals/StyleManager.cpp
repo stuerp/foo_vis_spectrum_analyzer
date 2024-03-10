@@ -37,8 +37,8 @@ void StyleManager::Reset() noexcept
 
     for (auto & Iter : _Styles)
     {
-        Iter.second._Color = Iter.second._CustomColor;
-        Iter.second._GradientStops = GetGradientStops(Iter.second._ColorScheme);
+        Iter.second._CurrentColor = Iter.second._CustomColor;
+        Iter.second._CurrentGradientStops = GetGradientStops(Iter.second._ColorScheme);
     }
 }
 
@@ -95,14 +95,14 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
         {
             if (Iter.second._ColorScheme == ColorScheme::Artwork)
             {
-                Iter.second._GradientStops = gs;
+                Iter.second._CurrentGradientStops = gs;
                 Iter.second.ReleaseDeviceSpecificResources();
             }
         }
         else
         if (Iter.second._ColorSource == ColorSource::DominantColor)
         {
-            Iter.second._Color = dominantColor;
+            Iter.second._CurrentColor = dominantColor;
             Iter.second.ReleaseDeviceSpecificResources();
         }
     }
@@ -183,12 +183,12 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             }
 
             // 'Activate' the values we just read.
-            style._Color = style._CustomColor;
+            style._CurrentColor = style._CustomColor;
 
             if (style._ColorScheme == ColorScheme::Custom)
-                style._GradientStops = style._CustomGradientStops;
+                style._CurrentGradientStops = style._CustomGradientStops;
             else
-                style._GradientStops = GetGradientStops(style._ColorScheme);
+                style._CurrentGradientStops = GetGradientStops(style._ColorScheme);
         }
     }
     catch (std::exception & ex)
@@ -225,7 +225,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
 
                 writer->write_object_t(style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
-                writer->write_object(&style._Color, sizeof(style._Color), abortHandler);
+                writer->write_object(&style._CurrentColor, sizeof(style._CurrentColor), abortHandler);
                 writer->write_object_t(style._ColorIndex, abortHandler);
                 writer->write_object(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
 

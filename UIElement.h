@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.09) P. Stuer **/
+/** $VER: UIElement.h (2024.03.10) P. Stuer **/
 
 #pragma once
 
@@ -50,6 +50,8 @@ protected:
     void UpdateState() noexcept;
 
 private:
+    #pragma region UI thead only
+
     #pragma region CWindowImpl
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -81,12 +83,6 @@ private:
 
     #pragma endregion
 
-    #pragma region Album Art Manager callback methods
-
-    void on_album_art(album_art_data::ptr data);
-
-    #pragma endregion
-
     virtual void ToggleFullScreen() noexcept;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
@@ -94,13 +90,19 @@ private:
     void Configure() noexcept;
     void Resize();
 
+    Graph * GetGraph(const CPoint & pt) noexcept;
+
+    void on_album_art(album_art_data::ptr data);
+
+    #pragma endregion
+
+    #pragma region Render thread only
+
     void OnTimer();
 
-    void ProcessPlaybackEvent();
+    void ProcessEvents();
     void UpdateSpectrum();
     void Render();
-
-    Graph * GetGraph(const CPoint & pt) noexcept;
 
     #pragma region DirectX
 
@@ -120,6 +122,8 @@ private:
     void StopTimer() noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
+    #pragma endregion
 
     #pragma endregion
 
@@ -145,7 +149,11 @@ private:
 
 protected:
     State _State;
+    State _RenderState;
+
     CriticalSection _CriticalSection;
+    ConfigurationDialog _ConfigurationDialog;
+
     RECT _OldBounds;
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
@@ -177,8 +185,6 @@ private:
         Stop,
     } _PlaybackEvent;
 
-    ConfigurationDialog _ConfigurationDialog;
-
     CToolTipCtrl _ToolTipControl;
 
     Graph * _TrackingGraph;
@@ -190,13 +196,11 @@ private:
 
     Artwork _Artwork;
     bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkColors;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
+    bool _NewArtworkColors;         // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 
     #pragma region Render thread
-
-    State _RenderState;
 
     visualisation_stream_v2::ptr _VisualisationStream;
 

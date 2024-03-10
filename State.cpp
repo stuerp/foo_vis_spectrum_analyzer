@@ -1042,20 +1042,20 @@ void State::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style->_ColorSource = ColorSource::DominantColor;
-            style->_Color = _DominantColor;
+            style->_CurrentColor = _DominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style->_ColorSource = ColorSource::UserInterface;
-            style->_Color = _UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style->_CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
             style->_CustomColor = _BackColor_Deprecated;
 
             style->_ColorSource = ColorSource::Solid;
-            style->_Color = style->_CustomColor;
+            style->_CurrentColor = style->_CustomColor;
         }
 
         style->_Flags |= (_HorizontalGradient_Deprecated ? Style::HorizontalGradient : 0);
@@ -1072,15 +1072,15 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = _UserInterfaceColors[0];
+                style->_CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style->_ColorSource = ColorSource::Solid;
-                style->_Color = style->_CustomColor;
+                style->_CurrentColor = style->_CustomColor;
             }
 
-        style->_GradientStops = style->_CustomGradientStops;
+        style->_CurrentGradientStops = style->_CustomGradientStops;
     }
 
     {
@@ -1094,15 +1094,15 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = _UserInterfaceColors[0];
+                style->_CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style->_ColorSource = ColorSource::Solid;
-                style->_Color = style->_CustomColor;
+                style->_CurrentColor = style->_CustomColor;
             }
 
-        style->_GradientStops = style->_CustomGradientStops;
+        style->_CurrentGradientStops = style->_CustomGradientStops;
     }
 
     {
@@ -1116,15 +1116,15 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = _UserInterfaceColors[0];
+                style->_CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style->_ColorSource = ColorSource::Solid;
-                style->_Color = style->_CustomColor;
+                style->_CurrentColor = style->_CustomColor;
             }
 
-        style->_GradientStops = style->_CustomGradientStops;
+        style->_CurrentGradientStops = style->_CustomGradientStops;
     }
 
     {
@@ -1138,15 +1138,15 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_Color = _UserInterfaceColors[0];
+                style->_CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style->_ColorSource = ColorSource::Solid;
-                style->_Color = style->_CustomColor;
+                style->_CurrentColor = style->_CustomColor;
             }
 
-        style->_GradientStops = style->_CustomGradientStops;
+        style->_CurrentGradientStops = style->_CustomGradientStops;
     }
 
     {
@@ -1157,8 +1157,8 @@ void State::ConvertColorSettings() noexcept
         style->_ColorScheme = _ColorScheme_Deprecated;
 
             style->_ColorSource = ColorSource::Gradient;
-            style->_Color = D2D1::ColorF(0, 0.f);
-            style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style->_CurrentColor = D2D1::ColorF(0, 0.f);
+            style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
@@ -1168,7 +1168,7 @@ void State::ConvertColorSettings() noexcept
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 
             style->_ColorSource = ColorSource::Solid;
-            style->_Color = style->_CustomColor;
+            style->_CurrentColor = style->_CustomColor;
     }
 
     {
@@ -1178,7 +1178,7 @@ void State::ConvertColorSettings() noexcept
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 
             style->_ColorSource = ColorSource::Solid;
-            style->_Color = style->_CustomColor;
+            style->_CurrentColor = style->_CustomColor;
     }
 
     {
@@ -1192,13 +1192,13 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::Gradient;
-                style->_Color = D2D1::ColorF(0, 0.f);
-                style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+                style->_CurrentColor = D2D1::ColorF(0, 0.f);
+                style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
             {
                 style->_ColorSource = ColorSource::Solid;
-                style->_Color = style->_CustomColor;
+                style->_CurrentColor = style->_CustomColor;
             }
 
         style->_Thickness = _LineWidth_Deprecated;
@@ -1212,8 +1212,8 @@ void State::ConvertColorSettings() noexcept
         style->_ColorScheme = _ColorScheme_Deprecated;
 
             style->_ColorSource = ColorSource::Gradient;
-            style->_Color = D2D1::ColorF(0, 0.f);
-            style->_GradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style->_CurrentColor = D2D1::ColorF(0, 0.f);
+            style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style->_Opacity = _AreaOpacity_Deprecated;
     }
 }

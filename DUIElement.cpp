@@ -124,7 +124,14 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
         _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
         _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
 
-        Invalidate();
+        _CriticalSection.Enter();
+
+        _RenderState._UserInterfaceColors = _State._UserInterfaceColors;
+
+        _CriticalSection.Leave();
+
+        if (_ConfigurationDialog.IsWindow())
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS);
     }
     else
     if (what == ui_element_notify_font_changed)

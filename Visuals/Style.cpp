@@ -42,8 +42,8 @@ Style & Style::operator=(const Style & other)
     _FontName = other._FontName;
     _FontSize = other._FontSize;
 
-    _Color = other._Color;
-    _GradientStops = other._GradientStops;
+    _CurrentColor = other._CurrentColor;
+    _CurrentGradientStops = other._CurrentGradientStops;
 
     return *this;
 }
@@ -68,8 +68,8 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
     _FontName = fontName;
     _FontSize = fontSize;
 
-    _Color = customColor;
-    _GradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
+    _CurrentColor         = customColor;
+    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
 }
 
 /// <summary>
@@ -81,13 +81,13 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
     HRESULT hr = S_OK;
 
     if (_ColorSource != ColorSource::Gradient)
-        hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
+        hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
         if (_Flags &= Style::AmplitudeBasedColor)
-            hr = renderTarget->CreateSolidColorBrush(_Color, (ID2D1SolidColorBrush **) &_Brush);
+            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
         else
-            hr = _Direct2D.CreateGradientBrush(renderTarget, _GradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
     }
 
     if (_Brush)
@@ -131,7 +131,7 @@ HRESULT Style::SetBrushColor(double value) noexcept
     {
         D2D1_COLOR_F Color(0);
 
-        for (auto & gs : _GradientStops)
+        for (auto & gs : _CurrentGradientStops)
         {
             if (value > (1. - gs.position))
                 break;
