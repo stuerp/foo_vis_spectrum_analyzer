@@ -184,5 +184,4 @@ void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
 void DUIElement::ToggleFullScreen() noexcept
 {
     static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
-    _IsFullScreen = !_IsFullScreen;
 }
