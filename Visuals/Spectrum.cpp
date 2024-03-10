@@ -100,7 +100,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+    if (_State->_LEDMode)
+        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     for (const auto & fb : frequencyBands)
     {
@@ -179,7 +180,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         x2 += Bandwidth;
     }
 
-    renderTarget->SetAntialiasMode(OldAntialiasMode);
+    if (_State->_LEDMode)
+        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 
 /// <summary>

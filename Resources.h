@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.09) P. Stuer **/
+/** $VER: Resources.h (2024.03.10) P. Stuer **/
 
 #pragma once
 
@@ -8,12 +8,12 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          3
+#define NUM_FILE_PATCH          4
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       3
+#define NUM_PRODUCT_PATCH       4
 #define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
