@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.09) P. Stuer **/
+/** $VER: Resources.rc (2024.03.10) P. Stuer **/
 
 #include "Resources.h"
 
@@ -341,6 +341,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03,     W_F03, H_F03
 
         control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
+        control         "Amplitude-based",          IDC_AMPLITUDE_BASED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C14, Y_C14, W_C14, H_C14
 
         rtext           "Opacity:"                  IDC_OPACITY_LBL,                X_I08, Y_I08 + 2, W_I08, H_I08
         edittext                                    IDC_OPACITY,                    X_I09, Y_I09,     W_I09, H_I09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

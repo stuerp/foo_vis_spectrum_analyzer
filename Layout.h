@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.03.09) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.03.10) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1245,6 +1245,12 @@
 #define H_C13    H_CHB
 #define X_C13    X_F03
 #define Y_C13    Y_F03 + H_F03 + IY
+
+// Checkbox: Amplitude-based
+#define W_C14    80
+#define H_C14    H_CHB
+#define X_C14    X_C13 + W_C13 + IX
+#define Y_C14    Y_C13
 
 #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.03.09) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.03.10) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -30,6 +30,8 @@ public:
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
+
+    HRESULT SetBrushColor(double value) noexcept;
 
 public:
     uint64_t _Flags;
@@ -62,5 +64,8 @@ public:
         SupportsFont        = 0x04,
 
         HorizontalGradient  = 0x08,
+        AmplitudeBasedColor = 0x10,
+
+        System              = SupportsOpacity | SupportsThickness | SupportsFont,
     };
 };

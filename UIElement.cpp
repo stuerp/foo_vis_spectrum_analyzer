@@ -186,7 +186,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
-        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, !_IsFullScreen ? L"Full-Screen Mode" : L"Exit Full-Screen Mode");
+        Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Toggle Full-Screen Mode");
         Menu.AppendMenu((UINT) MF_STRING | (_State._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {

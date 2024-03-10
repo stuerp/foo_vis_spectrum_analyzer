@@ -185,14 +185,6 @@ public:
 
             bool _VerticalLayout;                                       // Shows the graphs vertically instead of horizontally.
 
-        #pragma region X axis
-
-        #pragma endregion
-
-        #pragma region Y axis
-
-        #pragma endregion
-
         #pragma endregion
 
         #pragma region Visualization
@@ -206,10 +198,6 @@ public:
             #pragma region Bars
 
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-
-            #pragma endregion
-
-            #pragma region Curve
 
             #pragma endregion
 
