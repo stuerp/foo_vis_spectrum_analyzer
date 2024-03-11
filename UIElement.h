@@ -170,18 +170,16 @@ private:
 
     #pragma region Render thread
 
-    visualisation_stream_v2::ptr _VisualisationStream;
-
-    FrameCounter _FrameCounter;
-
-    Grid _Grid;
     UINT _DPI;
 
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
+    visualisation_stream_v2::ptr _VisualisationStream;
     double _OldPlaybackTime;
-
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
+
+    FrameCounter _FrameCounter;
+    Grid _Grid;
 
     #pragma endregion
 

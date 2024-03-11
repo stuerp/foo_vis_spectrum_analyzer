@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.03.10) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.03.11) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -32,6 +32,10 @@ public:
     void ReleaseDeviceSpecificResources();
 
     HRESULT SetBrushColor(double value) noexcept;
+    void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
+
+private:
+    static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
     uint64_t _Flags;

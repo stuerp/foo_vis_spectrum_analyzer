@@ -17,7 +17,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _DPI(), _SampleRate(44100)
+UIElement::UIElement(): _IsVisible(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100)
 {
 }
 
@@ -517,7 +517,7 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    _Event.Raise(Event::NewTrack);
+    _Event.Raise(Event::PlaybackStartedNewTrack);
 
     UpdateState();
 

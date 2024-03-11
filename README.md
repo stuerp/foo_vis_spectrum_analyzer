@@ -92,6 +92,8 @@ v0.7.4.0, 2024-03-xx
 
 * New: Amplitude-based color selection.
   * The color of a spectrum bar can be set based on the amplitude of the frequency when using a horizontal gradient.
+* Fixed: The Color button of a style will only show the color dialog when Color Source "Solid" is selected.
+* Fixed: The user interface colors and Windows colors were not used and updated consistently after the introduction of styles.
 
 v0.7.3.0, 2024-03-09
 

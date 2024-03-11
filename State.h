@@ -225,11 +225,10 @@ public:
 
     size_t _BinCount;
 
-    std::vector<D2D1_COLOR_F> _UserInterfaceColors;
-
-    D2D1_COLOR_F _DominantColor;                                        // The current dominant color extracted from the artwork bitmap.
-    GradientStops _GradientStops;                                       // The current gradient stops.
+    std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
     GradientStops _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
+
+    GradientStops _GradientStops;                                       // The current gradient stops.
 
     bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
 

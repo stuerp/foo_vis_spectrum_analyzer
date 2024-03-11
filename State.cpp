@@ -1042,13 +1042,13 @@ void State::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style->_ColorSource = ColorSource::DominantColor;
-            style->_CurrentColor = _DominantColor;
+            style->_CurrentColor = _StyleManager._DominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style->_ColorSource = ColorSource::UserInterface;
-            style->_CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style->_CurrentColor = _StyleManager._UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
@@ -1072,7 +1072,7 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
             }
             else
             {
@@ -1094,7 +1094,7 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
             }
             else
             {
@@ -1116,7 +1116,7 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
             }
             else
             {
@@ -1138,7 +1138,7 @@ void State::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
             }
             else
             {

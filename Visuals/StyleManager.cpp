@@ -109,6 +109,15 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 }
 
 /// <summary>
+/// Updates the current color of each style.
+/// </summary>
+void StyleManager::UpdateCurrentColor(const std::vector<D2D1_COLOR_F> & userInterfaceColors)
+{
+    for (auto & Iter : _Styles)
+        Iter.second.UpdateCurrentColor(_DominantColor, userInterfaceColors);
+}
+
+/// <summary>
 /// Releases the device specific resources.
 /// </summary>
 void StyleManager::ReleaseDeviceSpecificResources()
@@ -183,12 +192,12 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             }
 
             // 'Activate' the values we just read.
-            style._CurrentColor = style._CustomColor;
-
             if (style._ColorScheme == ColorScheme::Custom)
                 style._CurrentGradientStops = style._CustomGradientStops;
             else
                 style._CurrentGradientStops = GetGradientStops(style._ColorScheme);
+
+            style.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
         }
     }
     catch (std::exception & ex)

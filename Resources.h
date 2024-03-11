@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.10) P. Stuer **/
+/** $VER: Resources.h (2024.03.11) P. Stuer **/
 
 #pragma once
 
@@ -57,7 +57,7 @@
 
 #define UM_CONFIGURATION_CHANGED        WM_USER + 1
 
-#define CC_GRADIENT_STOPS               1   // The gradient stops have changed.
+#define CC_COLORS                       1       // The colors have changed, either by the render thread or by the user in the main foobar2000 preference dialog.
 
 /** State **/
 

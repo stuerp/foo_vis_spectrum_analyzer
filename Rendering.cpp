@@ -82,8 +82,9 @@ void UIElement::OnTimer()
 
         _CriticalSection.Leave();
 
+        // Notify the configuration dialog.
         if (_ConfigurationDialog.IsWindow())
-            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_GRADIENT_STOPS); // Must be sent outside the critical section.
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
         _IsConfigurationChanged = false;
     }
@@ -94,9 +95,9 @@ void UIElement::OnTimer()
 /// </summary>
 void UIElement::ProcessEvents()
 {
-    Event::Flags Flags = _Event.Get();
+    Event::Flags Flags = _Event.GetFlags();
 
-    if (Event::IsRaised(Flags, Event::NewTrack))
+    if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
         _OldPlaybackTime = 0.;
 
@@ -104,9 +105,9 @@ void UIElement::ProcessEvents()
         {
             // Set the default dominant color and gradient for the artwork color scheme.
             _RenderState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
-            _RenderState._DominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _RenderState._StyleManager._DominantColor = _RenderState._ArtworkGradientStops[0].color;
 
-            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
+            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager._DominantColor);
 
             _IsConfigurationChanged = true;
         }
@@ -119,6 +120,9 @@ void UIElement::ProcessEvents()
         for (auto & Iter : _Grid)
             Iter._Graph->Clear();
     }
+
+    if (Event::IsRaised(Flags, Event::UserInterfaceColorsChanged))
+        ReleaseDeviceSpecificResources();
 }
 
 /// <summary>
@@ -308,14 +312,12 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 HRESULT UIElement::CreateArtworkDependentResources()
 {
     // Get the colors from the artwork.
-    std::vector<D2D1_COLOR_F> Colors;
-
-    HRESULT hr = _Artwork.GetColors(Colors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(_RenderState._ArtworkColors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
 
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderState._DominantColor = Colors[0];
+        _RenderState._StyleManager._DominantColor = _RenderState._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_RenderState._ColorOrder)
@@ -324,27 +326,27 @@ HRESULT UIElement::CreateArtworkDependentResources()
                 break;
 
             case ColorOrder::HueAscending:
-                _Direct2D.SortColorsByHue(Colors, true);
+                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::HueDescending:
-                _Direct2D.SortColorsByHue(Colors, false);
+                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::SaturationAscending:
-                _Direct2D.SortColorsBySaturation(Colors, true);
+                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::SaturationDescending:
-                _Direct2D.SortColorsBySaturation(Colors, false);
+                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::LightnessAscending:
-                _Direct2D.SortColorsByLightness(Colors, true);
+                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::LightnessDescending:
-                _Direct2D.SortColorsByLightness(Colors, false);
+                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, false);
                 break;
         }
         #pragma warning(default: 4061)
@@ -352,10 +354,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
 
     // Create the gradient stops.
     if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(Colors, _RenderState._ArtworkGradientStops);
+        hr = _Direct2D.CreateGradientStops(_RenderState._ArtworkColors, _RenderState._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
+        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager._DominantColor);
 
     _IsConfigurationChanged = true;
 

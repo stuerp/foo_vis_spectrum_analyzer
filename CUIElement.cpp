@@ -20,17 +20,17 @@ CUIElement::CUIElement()
 
     cui::colours::helper Helper(pfc::guid_null);
 
-    _State._UserInterfaceColors.clear();
+    _State._StyleManager._UserInterfaceColors.clear();
 
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
 
     _IsVisible = true; // CUI does send notifications.
 }
@@ -90,7 +90,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[3]);
+    HBRUSH hBrush = Color::CreateBrush(_State._StyleManager._UserInterfaceColors[3]);
 
     ::FillRect(hDC, &cr, hBrush);
 

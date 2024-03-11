@@ -73,6 +73,71 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
 }
 
 /// <summary>
+/// Updates the current color based on the color source.
+/// </summary>
+void Style::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors)
+{
+    switch (_ColorSource)
+    {
+        case ColorSource::None:
+        {
+            _CurrentColor = D2D1::ColorF(0, 0.f);
+            break;
+        }
+
+        case ColorSource::Solid:
+        {
+            _CurrentColor = _CustomColor;
+            break;
+        }
+
+        case ColorSource::DominantColor:
+        {
+            _CurrentColor = dominantColor;
+            break;
+        }
+
+        case ColorSource::Gradient:
+        {
+            _CurrentColor = D2D1::ColorF(0, 0.f);
+            break;
+        }
+
+        case ColorSource::Windows:
+        {
+            _CurrentColor = GetWindowsColor(_ColorIndex);
+            break;
+        }
+
+        case ColorSource::UserInterface:
+        {
+            _CurrentColor = userInterfaceColors[Clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size())];
+            break;
+        }
+    }
+}
+
+/// <summary>
+/// Gets the selected Windows color.
+/// </summary>
+D2D1_COLOR_F Style::GetWindowsColor(uint32_t index) noexcept
+{
+    static const int ColorIndex[] =
+    {
+        COLOR_WINDOW,           // Window Background
+        COLOR_WINDOWTEXT,       // Window Text
+        COLOR_BTNFACE,          // Button Background
+        COLOR_BTNTEXT,          // Button Text
+        COLOR_HIGHLIGHT,        // Highlight Background
+        COLOR_HIGHLIGHTTEXT,    // Highlight Text
+        COLOR_GRAYTEXT,         // Gray Text
+        COLOR_HOTLIGHT,         // Hot Light
+    };
+
+    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>

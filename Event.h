@@ -19,9 +19,10 @@ public:
     {
         None = 0,
 
-        NewTrack,
+        PlaybackStartedNewTrack,
         PlaybackStopped,
-        ConfigurationChanged,
+
+        UserInterfaceColorsChanged,
     };
 
     void Reset()
@@ -29,7 +30,7 @@ public:
         ::InterlockedExchange64(&_Flags, 0);
     }
 
-    Event::Flags Get() noexcept
+    Event::Flags GetFlags() noexcept
     {
         return (Event::Flags) ::InterlockedExchange64(&_Flags, 0);
     }

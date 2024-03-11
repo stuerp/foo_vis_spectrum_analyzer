@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.03.04) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.03.11) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -86,14 +86,16 @@ private:
     void UpdateFiltersPage() noexcept;
     void UpdateCommonPage() const noexcept;
     void UpdateGraphsPage() noexcept;
-    void UpdateColorSchemeControls();
-    void UpdateGradientStopPositons(Style * style);
     void UpdateVisualizationPage() noexcept;
     void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
-    void GetPresetNames() noexcept;
 
     void ConfigurationChanged() const noexcept;
+
+    void UpdateColorControls();
+    void UpdateCurrentColor(Style * style) const noexcept;
+    void UpdateGradientStopPositons(Style * style) const noexcept;
+    void GetPresetNames() noexcept;
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;
