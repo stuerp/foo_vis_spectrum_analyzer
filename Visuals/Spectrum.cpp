@@ -131,7 +131,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 // Draw the peak indicator area.
                 if (_PeakArea->_ColorSource != ColorSource::None)
                 {
-                    if (_PeakArea->_Flags & Style::AmplitudeBasedColor)
+                    if ((_PeakArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
                         _PeakArea->SetBrushColor(fb.Peak);
 
                     if (!_State->_LEDMode)
@@ -154,17 +154,17 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 }
             }
 
-            if (fb.CurValue > 0.0)
-            {
-                const double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
+            double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
 
+            if (Amplitude > 0.0)
+            {
                 Rect.top    = 0.f;
                 Rect.bottom = Clamp((FLOAT)(Height * Amplitude), 0.f, Height);
 
                 // Draw the area of the bar.
                 if (_BarArea->_ColorSource != ColorSource::None)
                 {
-                    if (_BarArea->_Flags & Style::AmplitudeBasedColor)
+                    if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
                         _BarArea->SetBrushColor(Amplitude);
 
                     if (!_State->_LEDMode)

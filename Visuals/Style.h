@@ -56,6 +56,7 @@ public:
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;
     GradientStops _CurrentGradientStops;
+    std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;

@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.03.10) P. Stuer **/
+/** $VER: Style.cpp (2024.03.11) P. Stuer **/
 
 #include "Style.h"
 
@@ -11,6 +11,7 @@
 #include "Log.h"
 
 #include <cassert>
+#include <algorithm>
 
 #pragma hdrstop
 
@@ -149,8 +150,42 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (_Flags &= Style::AmplitudeBasedColor)
+        if ((_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
+        {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+
+            // Create a list of colors based on the gradient colors to map the amplitude to.
+            _AmplitudeMap.clear();
+
+            D2D1_COLOR_F Color1 = _CurrentGradientStops[0].color;
+            FLOAT Position1 = _CurrentGradientStops[0].position;
+
+            for (size_t i = 1; i < _CurrentGradientStops.size(); ++i)
+            {
+                D2D1_COLOR_F Color2 = _CurrentGradientStops[i].color;
+                FLOAT Position2 = _CurrentGradientStops[i].position;
+
+                FLOAT n = ::floor((Position2 * 100.f) - (Position1 * 100.f));
+
+                for (FLOAT j = 0; j < n; ++j)
+                {
+                    D2D1_COLOR_F Color = Color1;
+
+                    Color.r += ((Color2.r - Color1.r) * j) / n;
+                    Color.g += ((Color2.g - Color1.g) * j) / n;
+                    Color.b += ((Color2.b - Color1.b) * j) / n;
+                    Color.a += ((Color2.a - Color1.a) * j) / n;
+
+                    _AmplitudeMap.push_back(Color);
+                }
+
+                Color1 = Color2;
+                Position1 = Position2;
+            }
+
+            // The color in the lowest position should map to the highest amplitude values.
+            std::reverse(_AmplitudeMap.begin(), _AmplitudeMap.end());
+        }
         else
             hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
     }
@@ -184,7 +219,7 @@ void Style::ReleaseDeviceSpecificResources()
 }
 
 /// <summary>
-/// Sets the color of a solid color brush from the gradient colors based on a value between 0 and 1.
+/// Sets the color of a solid color brush from the gradient colors based on a value between 0. and 1..
 /// </summary>
 HRESULT Style::SetBrushColor(double value) noexcept
 {
@@ -194,15 +229,9 @@ HRESULT Style::SetBrushColor(double value) noexcept
 
     if (SUCCEEDED(hr))
     {
-        D2D1_COLOR_F Color(0);
+        size_t Index = Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
-        for (auto & gs : _CurrentGradientStops)
-        {
-            if (value > (1. - gs.position))
-                break;
-
-            Color = gs.color;
-        }
+        D2D1_COLOR_F Color = _AmplitudeMap[Index];
 
         ColorBrush->SetColor(Color);
 

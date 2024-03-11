@@ -19,10 +19,10 @@ public:
     {
         None = 0,
 
-        PlaybackStartedNewTrack,
-        PlaybackStopped,
+        PlaybackStartedNewTrack = 1,
+        PlaybackStopped = 2,
 
-        UserInterfaceColorsChanged,
+        UserInterfaceColorsChanged = 4,
     };
 
     void Reset()
