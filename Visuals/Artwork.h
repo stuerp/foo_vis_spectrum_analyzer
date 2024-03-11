@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.03.09) P. Stuer  **/
+/** $VER: Artwork.h (2024.03.11) P. Stuer  **/
 
 #pragma once
 
@@ -18,6 +18,11 @@
 class Artwork
 {
 public:
+    Artwork()
+    {
+        SetIdle();
+    }
+
     virtual ~Artwork()
     {
         Release();
@@ -35,7 +40,7 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
-    void Release()
+    void Release() noexcept
     {
         _Bitmap.Release();
         _FormatConverter.Release();
@@ -44,7 +49,14 @@ public:
         std::vector<uint8_t> Empty;
 
         _Raster.swap(Empty);
+
+        SetIdle();
     }
+
+    bool IsInitialized() const noexcept { return _State == Initialized; }
+    bool IsRealized() const noexcept { return _State == Realized; }
+    void SetIdle() noexcept { _State = Idle; }
+    void RequestColorUpdate() noexcept { _State = Realized; } // Request an update of the color list because the parameters have changed.
 
 private:
     CriticalSection _CriticalSection;
@@ -55,4 +67,14 @@ private:
     CComPtr<IWICBitmapFrameDecode> _Frame;
     CComPtr<IWICFormatConverter> _FormatConverter;
     CComPtr<ID2D1Bitmap> _Bitmap;
+
+    enum ArtworkState
+    {
+        Idle = 0,
+
+        Initialized,    // A new artwork source has been set.
+        Realized,       // A new bitmap has been generated or the configuration parameters have changed.
+    };
+
+    ArtworkState _State;
 };

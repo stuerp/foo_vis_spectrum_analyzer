@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.h (2024.02.13) P. Stuer - Default User Interface support **/
+/** $VER: DUIElement.h (2024.03.11) P. Stuer - Default User Interface support **/
 
 #pragma once
 
@@ -41,6 +41,9 @@ public:
     virtual void notify(const GUID & what, t_size param1, const void * param2, t_size param2Size);
 
     #pragma endregion
+
+private:
+    void GetColors() noexcept;
 
 protected:
     ui_element_instance_callback::ptr m_callback;

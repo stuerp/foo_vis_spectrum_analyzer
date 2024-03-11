@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.09) P. Stuer **/
+/** $VER: UIElement.h (2024.03.11) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,7 @@
 
 #include "State.h"
 #include "ConfigurationDialog.h"
+#include "Event.h"
 
 #include "Grid.h"
 #include "Graph.h"
@@ -50,6 +51,39 @@ protected:
     void UpdateState() noexcept;
 
 private:
+    #pragma region Render thread
+
+    void OnTimer();
+
+    void ProcessEvents();
+    void UpdateSpectrum();
+    void Render();
+
+    #pragma region Timer
+
+    void StartTimer() noexcept;
+    void StopTimer() noexcept;
+
+    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
+    #pragma endregion
+
+    #pragma region DirectX
+
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+    HRESULT CreateArtworkDependentResources();
+
+    HRESULT CreateDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources();
+
+    #pragma endregion
+
+    #pragma endregion
+
+    #pragma region UI thread
+
     #pragma region CWindowImpl
 
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -62,7 +96,7 @@ private:
     void OnMouseMove(UINT, CPoint);
     void OnMouseLeave();
 
-    LRESULT OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     #pragma endregion
 
@@ -81,12 +115,6 @@ private:
 
     #pragma endregion
 
-    #pragma region Album Art Manager callback methods
-
-    void on_album_art(album_art_data::ptr data);
-
-    #pragma endregion
-
     virtual void ToggleFullScreen() noexcept;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
@@ -94,34 +122,9 @@ private:
     void Configure() noexcept;
     void Resize();
 
-    void OnTimer();
-
-    void ProcessPlaybackEvent();
-    void UpdateSpectrum();
-    void Render();
-
     Graph * GetGraph(const CPoint & pt) noexcept;
 
-    #pragma region DirectX
-
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
-
-    HRESULT CreateArtworkDependentResources();
-
-    HRESULT CreateDeviceSpecificResources();
-    void ReleaseDeviceSpecificResources();
-
-    #pragma endregion
-
-    #pragma region Timer
-
-    void StartTimer() noexcept;
-    void StopTimer() noexcept;
-
-    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
-
-    #pragma endregion
+    void on_album_art(album_art_data::ptr data);
 
     #pragma region CWindowImpl
 
@@ -138,19 +141,50 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChange)
+        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
+
+    #pragma endregion
 
     #pragma endregion
 
 protected:
     State _State;
+    State _RenderState;
+
     CriticalSection _CriticalSection;
+    ConfigurationDialog _ConfigurationDialog;
+
     RECT _OldBounds;
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
 
+    Event _Event;
+
 private:
+    #pragma region Shared
+
+    Artwork _Artwork;
+
+    #pragma endregion
+
+    #pragma region Render thread
+
+    UINT _DPI;
+
+    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+    visualisation_stream_v2::ptr _VisualisationStream;
+    double _OldPlaybackTime;
+    bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
+
+    FrameCounter _FrameCounter;
+    Grid _Grid;
+
+    #pragma endregion
+
+    #pragma region UI thread
+
     enum
     {
         IDM_TOGGLE_FULLSCREEN = 1,
@@ -169,16 +203,6 @@ private:
 
     PTP_TIMER _ThreadPoolTimer;
 
-    enum class PlaybackEvent
-    {
-        None = 0,
-
-        NewTrack,
-        Stop,
-    } _PlaybackEvent;
-
-    ConfigurationDialog _ConfigurationDialog;
-
     CToolTipCtrl _ToolTipControl;
 
     Graph * _TrackingGraph;
@@ -188,30 +212,8 @@ private:
 
     uint32_t _SampleRate;
 
-    Artwork _Artwork;
-    bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkColors;       // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
-
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 
-    #pragma region Render thread
-
-    State _RenderState;
-
-    visualisation_stream_v2::ptr _VisualisationStream;
-
-    FrameCounter _FrameCounter;
-
-    Grid _Grid;
-    UINT _DPI;
-
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
-
-    double _OldPlaybackTime;
-
-    bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
-
-    #pragma endregion
-
     fb2k::CCoreDarkModeHooks _DarkMode;
+    #pragma endregion
 };

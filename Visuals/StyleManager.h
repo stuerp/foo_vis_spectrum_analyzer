@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.09) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.03.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
 
     virtual ~StyleManager() { }
 
-    Style * operator[] (size_t index)
+    Style * operator[](size_t index)
     {
         std::map<VisualElement, Style>::iterator Iter(_Styles.begin());
 
@@ -42,6 +42,8 @@ public:
 
     void SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor);
 
+    void UpdateCurrentColor();
+
     void ResetGradients()
     {
         for (auto & Iter : _Styles)
@@ -52,6 +54,10 @@ public:
     }
 
     void ReleaseDeviceSpecificResources();
+
+public:
+    std::vector<D2D1_COLOR_F> _UserInterfaceColors;
+    D2D1_COLOR_F _DominantColor;                                        // The current dominant color extracted from the artwork bitmap.
 
 private:
     std::map<VisualElement, Style> _Styles;

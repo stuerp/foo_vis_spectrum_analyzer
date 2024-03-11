@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.02.27) P. Stuer **/
+/** $VER: DUIElement.cpp (2024.03.11) P. Stuer **/
 
 #include "DUIElement.h"
 
@@ -17,13 +17,7 @@ DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback
 {
     _State._IsDUI = true;
 
-    _State._UserInterfaceColors.clear();
-
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
-    _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
+    GetColors();
 
     set_configuration(data);
 }
@@ -116,15 +110,22 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
 {
     if (what == ui_element_notify_colors_changed)
     {
-        _State._UserInterfaceColors.clear();
+        GetColors();
 
-        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_text)));
-        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_background)));
-        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_highlight)));
-        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_selection)));
-        _State._UserInterfaceColors.push_back(D2D1::ColorF(m_callback->query_std_color(ui_color_darkmode)));
+        _State._StyleManager.UpdateCurrentColor();
 
-        Invalidate();
+        _CriticalSection.Enter();
+
+        _RenderState._StyleManager._UserInterfaceColors = _State._StyleManager._UserInterfaceColors;
+
+        _CriticalSection.Leave();
+
+        // Notify the render thread.
+        _Event.Raise(Event::UserInterfaceColorsChanged);
+
+        // Notify the configuration dialog.
+        if (_ConfigurationDialog.IsWindow())
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS);
     }
     else
     if (what == ui_element_notify_font_changed)
@@ -156,7 +157,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = Color::CreateBrush(_State._UserInterfaceColors[1]);
+    HBRUSH hBrush = Color::CreateBrush(_State._StyleManager._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 
@@ -184,4 +185,23 @@ void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
 void DUIElement::ToggleFullScreen() noexcept
 {
     static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
+}
+
+inline UINT32 ToRGB(t_ui_color color)
+{
+    return ((color & 0xFF) << 16) | (color & 0x00FF00) | (color >> 16);
+}
+
+/// <summary>
+/// Gets the user interface colors.
+/// </summary>
+void DUIElement::GetColors() noexcept
+{
+    _State._StyleManager._UserInterfaceColors.clear();
+
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(ToRGB(m_callback->query_std_color(ui_color_text))));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(ToRGB(m_callback->query_std_color(ui_color_background))));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(ToRGB(m_callback->query_std_color(ui_color_highlight))));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(ToRGB(m_callback->query_std_color(ui_color_selection))));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(ToRGB(m_callback->query_std_color(ui_color_darkmode))));
 }
