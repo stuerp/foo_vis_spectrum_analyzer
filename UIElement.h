@@ -82,7 +82,7 @@ private:
 
     #pragma endregion
 
-    #pragma region UI thead
+    #pragma region UI thread
 
     #pragma region CWindowImpl
 

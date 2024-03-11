@@ -112,7 +112,7 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
     {
         GetColors();
 
-        _State._StyleManager.UpdateCurrentColor(_State._StyleManager._UserInterfaceColors);
+        _State._StyleManager.UpdateCurrentColor();
 
         _CriticalSection.Enter();
 

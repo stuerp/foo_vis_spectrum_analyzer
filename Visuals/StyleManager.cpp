@@ -111,10 +111,10 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// <summary>
 /// Updates the current color of each style.
 /// </summary>
-void StyleManager::UpdateCurrentColor(const std::vector<D2D1_COLOR_F> & userInterfaceColors)
+void StyleManager::UpdateCurrentColor()
 {
     for (auto & Iter : _Styles)
-        Iter.second.UpdateCurrentColor(_DominantColor, userInterfaceColors);
+        Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
 }
 
 /// <summary>
