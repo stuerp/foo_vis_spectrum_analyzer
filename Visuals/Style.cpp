@@ -158,9 +158,9 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
             _AmplitudeMap.clear();
 
             D2D1_COLOR_F Color1 = _CurrentGradientStops[0].color;
-            FLOAT Position1 = _CurrentGradientStops[0].position;
+            FLOAT Position1 = 0.f;
 
-            for (size_t i = 1; i < _CurrentGradientStops.size(); ++i)
+            for (size_t i = 0; i < _CurrentGradientStops.size(); ++i)
             {
                 D2D1_COLOR_F Color2 = _CurrentGradientStops[i].color;
                 FLOAT Position2 = _CurrentGradientStops[i].position;
