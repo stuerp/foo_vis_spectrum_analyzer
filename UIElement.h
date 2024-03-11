@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.10) P. Stuer **/
+/** $VER: UIElement.h (2024.03.11) P. Stuer **/
 
 #pragma once
 
@@ -7,6 +7,7 @@
 
 #include "State.h"
 #include "ConfigurationDialog.h"
+#include "Event.h"
 
 #include "Grid.h"
 #include "Graph.h"
@@ -50,7 +51,38 @@ protected:
     void UpdateState() noexcept;
 
 private:
-    #pragma region UI thead only
+    #pragma region Render thread
+
+    void OnTimer();
+
+    void ProcessEvents();
+    void UpdateSpectrum();
+    void Render();
+
+    #pragma region Timer
+
+    void StartTimer() noexcept;
+    void StopTimer() noexcept;
+
+    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
+    #pragma endregion
+
+    #pragma region DirectX
+
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+    HRESULT CreateArtworkDependentResources();
+
+    HRESULT CreateDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources();
+
+    #pragma endregion
+
+    #pragma endregion
+
+    #pragma region UI thead
 
     #pragma region CWindowImpl
 
@@ -64,7 +96,7 @@ private:
     void OnMouseMove(UINT, CPoint);
     void OnMouseLeave();
 
-    LRESULT OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     #pragma endregion
 
@@ -94,39 +126,6 @@ private:
 
     void on_album_art(album_art_data::ptr data);
 
-    #pragma endregion
-
-    #pragma region Render thread only
-
-    void OnTimer();
-
-    void ProcessEvents();
-    void UpdateSpectrum();
-    void Render();
-
-    #pragma region DirectX
-
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
-
-    HRESULT CreateArtworkDependentResources();
-
-    HRESULT CreateDeviceSpecificResources();
-    void ReleaseDeviceSpecificResources();
-
-    #pragma endregion
-
-    #pragma region Timer
-
-    void StartTimer() noexcept;
-    void StopTimer() noexcept;
-
-    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
-
-    #pragma endregion
-
-    #pragma endregion
-
     #pragma region CWindowImpl
 
     BEGIN_MSG_MAP_EX(UIElement)
@@ -142,8 +141,10 @@ private:
         MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
-        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChange)
+        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()
+
+    #pragma endregion
 
     #pragma endregion
 
@@ -158,47 +159,14 @@ protected:
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
 
+    Event _Event;
+
 private:
-    enum
-    {
-        IDM_TOGGLE_FULLSCREEN = 1,
-        IDM_TOGGLE_FRAME_COUNTER,
-        IDM_TOGGLE_HARDWARE_RENDERING,
-
-        IDM_REFRESH_RATE_LIMIT_20,
-        IDM_REFRESH_RATE_LIMIT_30,
-        IDM_REFRESH_RATE_LIMIT_60,
-        IDM_REFRESH_RATE_LIMIT_100,
-        IDM_REFRESH_RATE_LIMIT_200,
-
-        IDM_CONFIGURE,
-        IDM_FREEZE,
-    };
-
-    PTP_TIMER _ThreadPoolTimer;
-
-    enum class PlaybackEvent
-    {
-        None = 0,
-
-        NewTrack,
-        Stop,
-    } _PlaybackEvent;
-
-    CToolTipCtrl _ToolTipControl;
-
-    Graph * _TrackingGraph;
-    CToolInfo * _TrackingToolInfo;
-    POINT _LastMousePos;
-    size_t _LastIndex;
-
-    uint32_t _SampleRate;
+    #pragma region Shared
 
     Artwork _Artwork;
-    bool _NewArtwork;               // True when new artwork has arrived.
-    bool _NewArtworkColors;         // True when the artwork gradient needs an update (either a new bitmap or new configuration parameters).
 
-    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
+    #pragma endregion
 
     #pragma region Render thread
 
@@ -217,5 +185,37 @@ private:
 
     #pragma endregion
 
+    #pragma region UI thread
+
+    enum
+    {
+        IDM_TOGGLE_FULLSCREEN = 1,
+        IDM_TOGGLE_FRAME_COUNTER,
+        IDM_TOGGLE_HARDWARE_RENDERING,
+
+        IDM_REFRESH_RATE_LIMIT_20,
+        IDM_REFRESH_RATE_LIMIT_30,
+        IDM_REFRESH_RATE_LIMIT_60,
+        IDM_REFRESH_RATE_LIMIT_100,
+        IDM_REFRESH_RATE_LIMIT_200,
+
+        IDM_CONFIGURE,
+        IDM_FREEZE,
+    };
+
+    PTP_TIMER _ThreadPoolTimer;
+
+    CToolTipCtrl _ToolTipControl;
+
+    Graph * _TrackingGraph;
+    CToolInfo * _TrackingToolInfo;
+    POINT _LastMousePos;
+    size_t _LastIndex;
+
+    uint32_t _SampleRate;
+
+    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
+
     fb2k::CCoreDarkModeHooks _DarkMode;
+    #pragma endregion
 };

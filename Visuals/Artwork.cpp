@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.03.03) P. Stuer **/
+/** $VER: Artwork.cpp (2024.03.11) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -24,6 +24,8 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
         _FilePath.clear();
     }
 
+    _State = Initialized;
+
     _CriticalSection.Leave();
 
     return S_OK;
@@ -40,6 +42,8 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 
     _FilePath = filePath;
     _Raster.clear();
+
+    _State = Initialized;
 
     _CriticalSection.Leave();
 
@@ -111,7 +115,12 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 
         // Create a Direct2D bitmap from the WIC bitmap source.
         if (SUCCEEDED(hr))
+        {
             hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+
+            if (SUCCEEDED(hr))
+                _State = Realized;
+        }
     }
 
     _CriticalSection.Leave();

@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.02) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.11) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -17,7 +17,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _DPI()
+UIElement::UIElement(): _IsVisible(true), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _DPI(), _SampleRate(44100)
 {
 }
 
@@ -386,7 +386,7 @@ void UIElement::OnMouseLeave()
 /// <summary>
 /// Handles the UM_CONFIGURATION_CHANGED message.
 /// </summary>
-LRESULT UIElement::OnConfigurationChange(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     UpdateState();
 
@@ -487,7 +487,7 @@ void UIElement::UpdateState() noexcept
 
     _CriticalSection.Leave();
 
-    _NewArtworkColors = true; // Request an update of the artwork gradient.
+    _Artwork.RequestColorUpdate();
 
     _ToolTipControl.Activate(_RenderState._ShowToolTips);
 
@@ -517,7 +517,7 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    _PlaybackEvent = PlaybackEvent::NewTrack;
+    _Event.Raise(Event::NewTrack);
 
     UpdateState();
 
@@ -538,10 +538,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         pfc::string Result;
 
         if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
-        {
             _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
-            _NewArtwork = true;
-        }
     }
 }
 
@@ -550,11 +547,9 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _PlaybackEvent = PlaybackEvent::Stop;
+    _Event.Raise(Event::PlaybackStopped);
 
     _SampleRate = 44100;
-
-    _Artwork.Release();
 }
 
 /// <summary>
@@ -575,7 +570,6 @@ void UIElement::on_album_art(album_art_data::ptr aad)
         return;
 
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
-    _NewArtwork = true;
 }
 
 #pragma endregion

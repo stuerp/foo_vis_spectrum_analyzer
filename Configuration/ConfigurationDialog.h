@@ -138,7 +138,8 @@ private:
     CToolTipCtrl _ToolTipControl;
 
     State * _State;
-    State _OldConfiguration;
+    State _OldState;
+    bool _IsInitializing;
 
     CMenuListBox _MenuList;
 
@@ -148,9 +149,7 @@ private:
     CColorButton _Gradient;
     CColorListBox _Colors;
 
-    fb2k::CCoreDarkModeHooks _DarkMode;
-
     std::vector<std::wstring> _PresetNames;
 
-    bool _IsInitializing;
+    fb2k::CCoreDarkModeHooks _DarkMode;
 };

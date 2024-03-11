@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.01) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.11) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -94,42 +94,31 @@ void UIElement::OnTimer()
 /// </summary>
 void UIElement::ProcessEvents()
 {
-    switch (_PlaybackEvent)
+    Event::Flags Flags = _Event.Get();
+
+    if (Event::IsRaised(Flags, Event::NewTrack))
     {
-        default:
+        _OldPlaybackTime = 0.;
 
-        case PlaybackEvent::None:
-            break;
-
-        case PlaybackEvent::NewTrack:
+        if (_Artwork.Bitmap() == nullptr)
         {
-            _OldPlaybackTime = 0.;
+            // Set the default dominant color and gradient for the artwork color scheme.
+            _RenderState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
+            _RenderState._DominantColor = _RenderState._ArtworkGradientStops[0].color;
 
-            if (_Artwork.Bitmap() == nullptr)
-            {
-                // Set the default dominant color and gradient for the artwork color scheme.
-                _RenderState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
-                _RenderState._DominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
 
-                _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
-
-                _IsConfigurationChanged = true;
-            }
-            break;
-        }
-
-        case PlaybackEvent::Stop:
-        {
-            _Artwork.Release();
-
-            for (auto & Iter : _Grid)
-                Iter._Graph->Clear();
-
-            break;
+            _IsConfigurationChanged = true;
         }
     }
 
-    _PlaybackEvent = PlaybackEvent::None;
+    if (Event::IsRaised(Flags, Event::PlaybackStopped))
+    {
+        _Artwork.Release();
+
+        for (auto & Iter : _Grid)
+            Iter._Graph->Clear();
+    }
 }
 
 /// <summary>
@@ -294,7 +283,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the artwork.
-    if (SUCCEEDED(hr) && _NewArtwork)
+    if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {
         for (auto & Iter : _Grid)
         {
@@ -304,19 +293,11 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
 
         hr = _Artwork.Realize(_RenderTarget);
-
-        _NewArtworkColors = SUCCEEDED(hr);
-
-        _NewArtwork = false;
     }
 
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && ((_Artwork.Bitmap() != nullptr) && _NewArtworkColors))
-    {
+    if (SUCCEEDED(hr) && _Artwork.IsRealized())
         hr = CreateArtworkDependentResources();
-
-        _NewArtworkColors = false;
-    }
 
     return hr;
 }
@@ -377,6 +358,8 @@ HRESULT UIElement::CreateArtworkDependentResources()
         _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._DominantColor);
 
     _IsConfigurationChanged = true;
+
+    _Artwork.SetIdle();
 
     return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
 }

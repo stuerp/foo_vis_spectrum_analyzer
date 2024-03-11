@@ -51,7 +51,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
         ::MapDialogRect(m_hWnd, &_State->_DialogBounds);
     }
 
-    _OldConfiguration = *_State;
+    _OldState = *_State;
 
     Initialize();
 
@@ -2281,7 +2281,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDCANCEL:
         {
             if (id == IDCANCEL)
-                *_State = _OldConfiguration;
+                *_State = _OldState;
 
             GetWindowRect(&_State->_DialogBounds);
 
