@@ -36,6 +36,7 @@ public:
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
+    static HRESULT CreateAmplitudeMap(const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 public:
     uint64_t _Flags;

@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.03.01) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.03.12) P. Stuer **/
 
 #include "CUIElement.h"
 #include "Color.h"
@@ -18,19 +18,7 @@ CUIElement::CUIElement()
 {
     _State._IsDUI = false;
 
-    cui::colours::helper Helper(pfc::guid_null);
-
-    _State._StyleManager._UserInterfaceColors.clear();
-
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
-
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
-
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    GetColors();
 
     _IsVisible = true; // CUI does send notifications.
 }
@@ -158,6 +146,26 @@ void CUIElement::ToggleFullScreen() noexcept
     }
 
     _CriticalSection.Leave();
+}
+
+/// <summary>
+/// Gets the user interface colors.
+/// </summary>
+void CUIElement::GetColors() noexcept
+{
+    cui::colours::helper Helper(pfc::guid_null);
+
+    _State._StyleManager._UserInterfaceColors.clear();
+
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+
+    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
 static window_factory<CUIElement> _WindowFactory;

@@ -12,9 +12,6 @@
 #include <d2d1helper.h>
 #include <atlbase.h>
 
-#include <vector>
-#include <algorithm>
-
 #include "WIC.h"
 #include "Gradients.h"
 
@@ -35,10 +32,6 @@ public:
 
     HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept;
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
-
-    void SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) const noexcept;
-    void SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) const noexcept;
-    void SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) const noexcept;
 
 private:
     static HRESULT GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize);

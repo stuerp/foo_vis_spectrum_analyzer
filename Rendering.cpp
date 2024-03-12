@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.11) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.12) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -8,6 +8,7 @@
 #include "WIC.h"
 
 #include "Resources.h"
+#include "Color.h"
 #include "Gradients.h"
 #include "StyleManager.h"
 
@@ -96,6 +97,9 @@ void UIElement::OnTimer()
 void UIElement::ProcessEvents()
 {
     Event::Flags Flags = _Event.GetFlags();
+
+    if (Flags == 0)
+        return;
 
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
@@ -330,27 +334,27 @@ HRESULT UIElement::CreateArtworkDependentResources()
                 break;
 
             case ColorOrder::HueAscending:
-                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, true);
+                Color::SortColorsByHue(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::HueDescending:
-                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, false);
+                Color::SortColorsByHue(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::SaturationAscending:
-                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, true);
+                Color::SortColorsBySaturation(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::SaturationDescending:
-                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, false);
+                Color::SortColorsBySaturation(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::LightnessAscending:
-                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, true);
+                Color::SortColorsByLightness(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::LightnessDescending:
-                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, false);
+                Color::SortColorsByLightness(_RenderState._ArtworkColors, false);
                 break;
         }
         #pragma warning(default: 4061)

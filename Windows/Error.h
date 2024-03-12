@@ -1,3 +1,6 @@
+
+/** $VER: Error.h (2024.03.12) P. Stuer - Encapsulates the Win32 error number. **/
+
 #pragma once
 
 #include <CppCoreCheck/Warnings.h>
@@ -51,6 +54,9 @@ inline Error & Error::operator=(DWORD number)
     return *this;
 }
 
+/// <summary>
+/// Gets the message that describes this error.
+/// </summary>
 inline std::wstring Error::Message() const noexcept
 {
     std::wstring Message;

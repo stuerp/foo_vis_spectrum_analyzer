@@ -1,5 +1,5 @@
 
-/** $VER: Color.h (2024.03.09) P. Stuer - Color support **/
+/** $VER: Color.h (2024.03.12) P. Stuer - Color support **/
 
 #pragma once
 
@@ -9,6 +9,8 @@
 
 #include <SDKDDKVer.h>
 #include <d2d1_2.h>
+
+#include <vector>
 
 class Color
 {
@@ -46,4 +48,8 @@ public:
     {
         return ::CreateSolidBrush(ToCOLORREF(color));
     }
+
+    static void SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
+    static void SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
+    static void SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
 };
