@@ -1124,6 +1124,8 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 
             UpdateCurrentColor(style);
             UpdateColorControls();
+
+            _Theme.Initialize(_DarkMode);
             break;
         }
     }
