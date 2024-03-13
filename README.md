@@ -88,12 +88,17 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.4.0, 2024-03-xx
+v0.7.4.0, 2024-03-13
 
 * New: Amplitude-based color selection.
-  * The color of a spectrum bar can be set based on the amplitude of the frequency when using a horizontal gradient.
-* Fixed: The Color button of a style will only show the color dialog when Color Source "Solid" is selected.
+  * The colors of the spectrum bars can be set based on the amplitude of the frequency when using a horizontal gradient.
+  * The colors of the current gradient are used to create a color list. Works with fixed, custom and artwork-based gradients.
+  * Only the Bar Area and Bar Peak Area styles support this feature.
+* Improved: Gradient editing
+  * Adding a color to a gradient will no longer recalculate the position of all colors. The added color will get a position between its predecessor and successor.
+  * Removing a color from a gradient will leave all remaining positions untouched.
 * Fixed: The user interface colors and Windows colors were not consistently used and updated after the introduction of styles.
+* Fixed: Several minor fixes and tweaks to clean up inconsistencies and rough edges.
 
 v0.7.3.0, 2024-03-09
 

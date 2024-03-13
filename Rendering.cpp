@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.11) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -8,6 +8,7 @@
 #include "WIC.h"
 
 #include "Resources.h"
+#include "Color.h"
 #include "Gradients.h"
 #include "StyleManager.h"
 
@@ -97,6 +98,9 @@ void UIElement::ProcessEvents()
 {
     Event::Flags Flags = _Event.GetFlags();
 
+    if (Flags == 0)
+        return;
+
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
         _OldPlaybackTime = 0.;
@@ -123,9 +127,8 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::UserInterfaceColorsChanged))
     {
-        _RenderState._StyleManager.UpdateCurrentColor();
-
-        ReleaseDeviceSpecificResources();
+        _RenderState._StyleManager.UpdateCurrentColors();
+        _RenderState._StyleManager.ReleaseDeviceSpecificResources();
     }
 }
 
@@ -162,7 +165,7 @@ void UIElement::Render()
 }
 
 /// <summary>
-/// Updates the spectra of all the graphs using the next audio chunk.
+/// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
@@ -289,7 +292,21 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             Resize();
         }
     }
+/*
+    // Get the artwork data from the album art.
+    if (SUCCEEDED(hr) && _RenderState._ArtworkFilePath.empty())
+    {
+        auto nm = now_playing_album_art_notify_manager::get();
 
+        if (nm != nullptr)
+        {
+            album_art_data_ptr aad = nm->current();
+
+            if (aad.is_valid())
+                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        }
+    }
+*/
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {
@@ -330,27 +347,27 @@ HRESULT UIElement::CreateArtworkDependentResources()
                 break;
 
             case ColorOrder::HueAscending:
-                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, true);
+                Color::SortColorsByHue(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::HueDescending:
-                _Direct2D.SortColorsByHue(_RenderState._ArtworkColors, false);
+                Color::SortColorsByHue(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::SaturationAscending:
-                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, true);
+                Color::SortColorsBySaturation(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::SaturationDescending:
-                _Direct2D.SortColorsBySaturation(_RenderState._ArtworkColors, false);
+                Color::SortColorsBySaturation(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::LightnessAscending:
-                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, true);
+                Color::SortColorsByLightness(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::LightnessDescending:
-                _Direct2D.SortColorsByLightness(_RenderState._ArtworkColors, false);
+                Color::SortColorsByLightness(_RenderState._ArtworkColors, false);
                 break;
         }
         #pragma warning(default: 4061)

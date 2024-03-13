@@ -1,5 +1,5 @@
 
-/**$VER: Event.h (2024.03.11) P. Stuer - Implements a very simple mechanism between the UI and the render thread. **/
+/**$VER: Event.h (2024.03.12) P. Stuer - Implements a very simple thread-safe event class. **/
 
 #pragma once
 
@@ -13,7 +13,13 @@
 class Event
 {
 public:
-    Event() { Reset(); }
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    Event()
+    {
+        Reset();
+    }
 
     enum Flags
     {
@@ -25,24 +31,36 @@ public:
         UserInterfaceColorsChanged = 4,
     };
 
+    /// <summary>
+    /// Resets this instance.
+    /// </summary>
     void Reset()
     {
         ::InterlockedExchange64(&_Flags, 0);
     }
 
+    /// <summary>
+    /// Gets the current flags and resets them.
+    /// </summary>
     Event::Flags GetFlags() noexcept
     {
         return (Event::Flags) ::InterlockedExchange64(&_Flags, 0);
     }
 
+    /// <summary>
+    /// Raises the specified flags.
+    /// </summary>
     void Raise(Event::Flags flags) noexcept
     {
         ::InterlockedOr64(&_Flags, flags);
     }
 
-    static bool IsRaised(Event::Flags value, Event::Flags flags) noexcept
+    /// <summary>
+    /// Returns true if the flags in the specified mask are set.
+    /// </summary>
+    static bool IsRaised(Event::Flags value, Event::Flags mask) noexcept
     {
-        return (value & flags) == flags;
+        return (value & mask) == mask;
     }
 
 private:

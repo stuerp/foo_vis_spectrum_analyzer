@@ -33,6 +33,8 @@ public:
 
     static CWndClassInfo & GetWndClassInfo();
 
+    void OnColorsChanged();
+
     #pragma endregion
 
 protected:
@@ -48,6 +50,8 @@ protected:
 
     virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
+    virtual void GetColors() noexcept = 0;
+
     void UpdateState() noexcept;
 
 private:
@@ -115,7 +119,7 @@ private:
 
     #pragma endregion
 
-    virtual void ToggleFullScreen() noexcept;
+    virtual void ToggleFullScreen() noexcept = 0;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
 

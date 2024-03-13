@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.03.11) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.03.13) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -33,6 +33,8 @@ public:
 
     HRESULT SetBrushColor(double value) noexcept;
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
+
+    static HRESULT CreateAmplitudeMap(const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
@@ -71,6 +73,8 @@ public:
         HorizontalGradient  = 0x08,
         AmplitudeBasedColor = 0x10,
 
-        System              = SupportsOpacity | SupportsThickness | SupportsFont,
+        AmplitudeAware   = 0x20,
+
+        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware,
     };
 };

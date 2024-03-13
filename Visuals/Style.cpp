@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.03.11) P. Stuer **/
+/** $VER: Style.cpp (2024.03.13) P. Stuer **/
 
 #include "Style.h"
 
@@ -154,37 +154,8 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
-            // Create a list of colors based on the gradient colors to map the amplitude to.
-            _AmplitudeMap.clear();
-
-            D2D1_COLOR_F Color1 = _CurrentGradientStops[0].color;
-            FLOAT Position1 = _CurrentGradientStops[0].position;
-
-            for (size_t i = 1; i < _CurrentGradientStops.size(); ++i)
-            {
-                D2D1_COLOR_F Color2 = _CurrentGradientStops[i].color;
-                FLOAT Position2 = _CurrentGradientStops[i].position;
-
-                FLOAT n = ::floor((Position2 * 100.f) - (Position1 * 100.f));
-
-                for (FLOAT j = 0; j < n; ++j)
-                {
-                    D2D1_COLOR_F Color = Color1;
-
-                    Color.r += ((Color2.r - Color1.r) * j) / n;
-                    Color.g += ((Color2.g - Color1.g) * j) / n;
-                    Color.b += ((Color2.b - Color1.b) * j) / n;
-                    Color.a += ((Color2.a - Color1.a) * j) / n;
-
-                    _AmplitudeMap.push_back(Color);
-                }
-
-                Color1 = Color2;
-                Position1 = Position2;
-            }
-
-            // The color in the lowest position should map to the highest amplitude values.
-            std::reverse(_AmplitudeMap.begin(), _AmplitudeMap.end());
+            if (SUCCEEDED(hr))
+                hr = CreateAmplitudeMap(_CurrentGradientStops, _AmplitudeMap);
         }
         else
             hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
@@ -223,20 +194,84 @@ void Style::ReleaseDeviceSpecificResources()
 /// </summary>
 HRESULT Style::SetBrushColor(double value) noexcept
 {
+    if (_AmplitudeMap.size() == 0)
+        return E_FAIL;
+
     ID2D1SolidColorBrush * ColorBrush = nullptr;
 
     HRESULT hr = _Brush->QueryInterface(IID_PPV_ARGS(&ColorBrush));
 
-    if (SUCCEEDED(hr))
-    {
-        size_t Index = Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
+    if (!SUCCEEDED(hr))
+        return hr;
 
-        D2D1_COLOR_F Color = _AmplitudeMap[Index];
+    size_t Index = Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
-        ColorBrush->SetColor(Color);
+    D2D1_COLOR_F Color = _AmplitudeMap[Index];
 
-        ColorBrush->Release();
-    }
+    ColorBrush->SetColor(Color);
+
+    ColorBrush->Release();
 
     return hr;
+}
+
+/// <summary>
+/// Creates a color table to map the amplitudes to.
+/// </summary>
+/// <remarks>Assumes a sane gradient collection with position running from 0.f to 1.f in ascending order.
+HRESULT Style::CreateAmplitudeMap(const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
+{
+    if (gradientStops.size() == 0)
+        return E_FAIL;
+
+    const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0. and 1.
+
+    colors.clear();
+    colors.reserve(((gradientStops.size() - 1) * Steps) + 1);
+
+    D2D1_COLOR_F Color1 = gradientStops[0].color;
+    FLOAT Position1 = gradientStops[0].position;
+
+    // Add the run-in colors.
+    uint32_t n = (uint32_t) (Position1 * (FLOAT) Steps);
+
+    for (uint32_t j = 0; j <= n; ++j)
+        colors.push_back(Color1);
+
+    // Add the gradient colors.
+    for (size_t i = 1; i < gradientStops.size(); ++i)
+    {
+        D2D1_COLOR_F Color2 = gradientStops[i].color;
+        FLOAT Position2 = gradientStops[i].position;
+
+        const D2D1_COLOR_F Delta = { Color2.r - Color1.r, Color2.g - Color1.g, Color2.b - Color1.b, Color2.a - Color1.a };
+
+        n = (uint32_t) (Position2 * (FLOAT) Steps) - (uint32_t) (Position1 * (FLOAT) Steps);
+
+        for (uint32_t j = 1; j < n; ++j)
+        {
+            const FLOAT Factor = (FLOAT) j / (FLOAT) n;
+            const D2D1_COLOR_F Color =
+            {
+                Color1.r + (Delta.r * Factor),
+                Color1.g + (Delta.g * Factor),
+                Color1.b + (Delta.b * Factor),
+                Color1.a + (Delta.a * Factor)
+            };
+
+            colors.push_back(Color);
+        }
+
+        Color1 = Color2;
+        Position1 = Position2;
+    }
+
+    // Add the run-out colors.
+    for (uint32_t j = (uint32_t) (Position1 * (FLOAT) Steps); j <= Steps; ++j)
+        colors.push_back(Color1);
+
+    // The color in the lowest position should map to the highest amplitude values.
+    std::reverse(colors.begin(), colors.end());
+
+    return S_OK;
 }

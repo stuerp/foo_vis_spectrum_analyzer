@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.03.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.12) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -111,7 +111,7 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// <summary>
 /// Updates the current color of each style.
 /// </summary>
-void StyleManager::UpdateCurrentColor()
+void StyleManager::UpdateCurrentColors()
 {
     for (auto & Iter : _Styles)
         Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);

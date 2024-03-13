@@ -94,7 +94,7 @@ private:
 
     void UpdateColorControls();
     void UpdateCurrentColor(Style * style) const noexcept;
-    void UpdateGradientStopPositons(Style * style) const noexcept;
+    void UpdateGradientStopPositons(Style * style, size_t index) const noexcept;
     void GetPresetNames() noexcept;
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;

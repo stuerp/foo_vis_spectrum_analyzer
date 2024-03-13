@@ -184,8 +184,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             }
         }
 
-        x1  = x2;
-        x2 += Bandwidth;
+        x1 = ::round(x2);
+        x2 = x1 + Bandwidth;
     }
 
     if (_State->_LEDMode)
