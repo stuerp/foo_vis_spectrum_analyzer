@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.03.13) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -124,7 +124,7 @@ private:
         {
             VisualElement::BarArea,
             {
-                Style::SupportsOpacity,
+                Style::SupportsOpacity | Style::AmplitudeAware,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
@@ -140,7 +140,7 @@ private:
         {
             VisualElement::BarPeakArea,
             {
-                Style::SupportsOpacity,
+                Style::SupportsOpacity | Style::AmplitudeAware,
                 ColorSource::None, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f,
             }
         },

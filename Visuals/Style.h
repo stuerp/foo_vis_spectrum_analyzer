@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.03.11) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.03.13) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -73,6 +73,8 @@ public:
         HorizontalGradient  = 0x08,
         AmplitudeBasedColor = 0x10,
 
-        System              = SupportsOpacity | SupportsThickness | SupportsFont,
+        AmplitudeAware   = 0x20,
+
+        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware,
     };
 };

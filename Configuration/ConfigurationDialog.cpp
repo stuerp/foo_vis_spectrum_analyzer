@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.11) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.13) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -23,8 +23,6 @@ static const LPCWSTR ChannelNames[] =
     L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
 };
-
-static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept;
 
 /// <summary>
 /// Initializes the dialog.
@@ -2100,7 +2098,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) Index + 1, { 0.f, Color });
             
-            UpdateGradientStopPositons(style);
+            UpdateGradientStopPositons(style, Index + 1);
+
             UpdateColorControls();
             break;
         }
@@ -2120,7 +2119,10 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) Index);
 
-            UpdateGradientStopPositons(style);
+            // Save the current result as custom gradient stops.
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_CurrentGradientStops;
+
             UpdateColorControls();
             break;
         }
@@ -2146,7 +2148,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            UpdateGradientStopPositons(style);
+            UpdateGradientStopPositons(style, ~0U);
+
             UpdateColorControls();
             break;
         }
@@ -3003,14 +3006,14 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
             {
                 for (const auto & x : { L"Text", L"Background", L"Highlight", L"Selection", L"Dark mode" })
                     w.AddString(x);
-
-                style->_CurrentColor = GetDUIColor(style->_ColorIndex);
             }
             else
             {
                 for (const auto & x : { L"Text", L"Selected Text", L"Inactive Selected Text", L"Background", L"Selected Background", L"Inactive Selected Background", L"Active Item" })
                     w.AddString(x);
             }
+
+            style->UpdateCurrentColor(_State->_StyleManager._DominantColor, _State->_StyleManager._UserInterfaceColors);
 
             w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
@@ -3019,22 +3022,10 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
 
     UpdateCurrentColor(style);
 
-    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
-    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-
-    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && (style->_Flags & Style::HorizontalGradient));
-
-    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsThickness));
-
-    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (style->_Flags & Style::SupportsFont));
-
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
-    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, style->_Flags & Style::HorizontalGradient);
-    SendDlgItemMessageW(IDC_AMPLITUDE_BASED, BM_SETCHECK, style->_Flags & Style::AmplitudeBasedColor);
+    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) IsSet(style->_Flags, (uint64_t) Style::HorizontalGradient));
+    SendDlgItemMessageW(IDC_AMPLITUDE_BASED, BM_SETCHECK, (WPARAM) IsSet(style->_Flags, (uint64_t) Style::AmplitudeBasedColor));
 
     SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
@@ -3044,6 +3035,19 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
 
     SetDlgItemTextW(IDC_FONT_NAME, style->_FontName.c_str());
     SetDouble(IDC_FONT_SIZE, style->_FontSize, 0, 1);
+
+    // Enable the contols as necessary.
+    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
+    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
+
+    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && (IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient))));
+
+    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity)));
+    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsThickness)));
+
+    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
 
     UpdateColorControls();
 }
@@ -3129,27 +3133,36 @@ void ConfigurationDialog::UpdateCurrentColor(Style * style) const noexcept
 /// <summary>
 /// Updates the position of the current gradient colors.
 /// </summary>
-void ConfigurationDialog::UpdateGradientStopPositons(Style * style) const noexcept
+void ConfigurationDialog::UpdateGradientStopPositons(Style * style, size_t index) const noexcept
 {
-    if (style->_CurrentGradientStops.size() == 0)
+    auto & gs = style->_CurrentGradientStops;
+
+    if (gs.size() == 0)
         return;
 
-    if (style->_CurrentGradientStops.size() == 1)
-        style->_CurrentGradientStops[0].position = 1.f;
+    if (index == 0)
+        gs[index].position = 0.f;
     else
+    if (index == gs.size() - 1)
+        gs[index].position = 1.f;
+    else
+    if (index != ~0U)
+        gs[index].position = Clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
+    else
+    // Spread the positions of the stops between 0.f and 1.f.
     {
         FLOAT Position = 0.f;
 
-        for (auto & Iter : style->_CurrentGradientStops)
+        for (auto & Iter : gs)
         {
-            Iter.position = Position / (FLOAT) (style->_CurrentGradientStops.size() - 1);
+            Iter.position = Position / (FLOAT) (gs.size() - 1);
             Position++;
         }
     }
 
     // Save the current result as custom gradient stops.
     style->_ColorScheme = ColorScheme::Custom;
-    style->_CustomGradientStops = style->_CurrentGradientStops;
+    style->_CustomGradientStops = gs;
 }
 
 /// <summary>
@@ -3260,24 +3273,4 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
 //  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
-}
-
-/// <summary>
-/// Gets the selected DUI color.
-/// </summary>
-static D2D1_COLOR_F GetDUIColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
 }

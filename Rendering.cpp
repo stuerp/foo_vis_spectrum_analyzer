@@ -166,7 +166,7 @@ void UIElement::Render()
 }
 
 /// <summary>
-/// Updates the spectra of all the graphs using the next audio chunk.
+/// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
