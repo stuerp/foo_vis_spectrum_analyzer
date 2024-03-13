@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.09) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.13) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -51,6 +51,12 @@ public:
     FLOAT GetRight() const { return _Bounds.right; }
 
 private:
+    void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+
+    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
+
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
 
     struct GeometryPoints
@@ -69,11 +75,6 @@ private:
 
     HRESULT CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
     HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
-
-    void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-    void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-
-    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
 
 private:
     const FLOAT PaddingX = 1.f;

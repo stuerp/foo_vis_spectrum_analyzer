@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.10) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.13) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -72,6 +72,10 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
 
             case VisualizationType::Curve:
                 RenderCurve(renderTarget, frequencyBands, sampleRate);
+                break;
+
+            case VisualizationType::Spectogram:
+                RenderSpectogram(renderTarget, frequencyBands, sampleRate);
                 break;
         }
 
@@ -263,6 +267,56 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 }
 
 /// <summary>
+/// Renders the spectrum analysis as a spectogram.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+void Spectrum::RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+{
+    static FLOAT x1 = 0.f;
+    static FLOAT x2 = 4.f;
+
+    const FLOAT Width = _Bounds.right - _Bounds.left;
+    const FLOAT Height = _Bounds.bottom - _Bounds.top;
+    const FLOAT Bandwidth = Max((Height / (FLOAT) frequencyBands.size()), 1.f);
+
+    const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
+    const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
+
+    FLOAT y1 = 0.f;
+    FLOAT y2 = y1 + Bandwidth;
+
+    for (const auto & fb : frequencyBands)
+    {
+        D2D1_RECT_F Rect = { x1, y1, x2, y2 };
+
+        double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
+
+        if (Amplitude > 0.0)
+        {
+            if (_BarArea->_ColorSource != ColorSource::None)
+            {
+                if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
+                    _BarArea->SetBrushColor(Amplitude);
+
+                renderTarget->FillRectangle(Rect, _BarArea->_Brush);
+            }
+        }
+
+        y1 = ::round(y2);
+        y2 = y1 + Bandwidth;
+    }
+
+    x1 += 4.f;
+    x2 += 4.f;
+
+    if (x2 > _Bounds.right)
+    {
+        x1 = 0.f;
+        x2 = 4.f;
+    }
+}
+
+/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -388,6 +442,10 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 
         if (_NyquistMarker && (_NyquistMarker->_Brush == nullptr))
             hr = _NyquistMarker->CreateDeviceSpecificResources(renderTarget, Size);
+    }
+
+    if (SUCCEEDED(hr))
+    {
     }
 
     return hr;
