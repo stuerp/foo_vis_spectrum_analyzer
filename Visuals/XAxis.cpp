@@ -163,7 +163,8 @@ void XAxis::Move(const D2D1_RECT_F & rect)
     for (Label & Iter : _Labels)
     {
         const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, Width - BandWidth);
-        const FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
+
+        FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
 
         // Don't generate any labels outside the bounds.
         if (!InRange(x, _Bounds.left, _Bounds.right))
@@ -187,6 +188,8 @@ void XAxis::Move(const D2D1_RECT_F & rect)
                 Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
             }
         }
+
+        x = ::round(x);
     }
 }
 

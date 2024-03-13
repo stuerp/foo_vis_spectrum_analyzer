@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.12) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.13) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -292,7 +292,21 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             Resize();
         }
     }
+/*
+    // Get the artwork data from the album art.
+    if (SUCCEEDED(hr) && _RenderState._ArtworkFilePath.empty())
+    {
+        auto nm = now_playing_album_art_notify_manager::get();
 
+        if (nm != nullptr)
+        {
+            album_art_data_ptr aad = nm->current();
+
+            if (aad.is_valid())
+                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        }
+    }
+*/
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {

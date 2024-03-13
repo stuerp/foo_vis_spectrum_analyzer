@@ -88,7 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.4.0, 2024-03-xx
+v0.7.4.0, 2024-03-13
 
 * New: Amplitude-based color selection.
   * The colors of the spectrum bars can be set based on the amplitude of the frequency when using a horizontal gradient.

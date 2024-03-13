@@ -396,6 +396,8 @@ void UIElement::OnColorsChanged()
 
     _RenderState._StyleManager._UserInterfaceColors = _State._StyleManager._UserInterfaceColors;
 
+    ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
+
     // Notify the render thread.
     _Event.Raise(Event::UserInterfaceColorsChanged);
 

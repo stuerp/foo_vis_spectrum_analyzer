@@ -1126,6 +1126,8 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
             UpdateColorControls();
 
             _Theme.Initialize(_DarkMode);
+
+            ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
             break;
         }
     }
