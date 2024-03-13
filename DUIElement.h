@@ -43,7 +43,7 @@ public:
     #pragma endregion
 
 private:
-    void GetColors() noexcept;
+    void GetColors() noexcept override;
 
 protected:
     ui_element_instance_callback::ptr m_callback;

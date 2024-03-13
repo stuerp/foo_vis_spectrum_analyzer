@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.cpp (2024.03.12) P. Stuer **/
+/** $VER: CUIElement.cpp (2024.03.13) P. Stuer **/
 
 #include "CUIElement.h"
 #include "Color.h"
@@ -10,17 +10,23 @@
 
 namespace uie
 {
+static cui::colours::client::factory<CUIColorClient> _CUIColorClientFactory;
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
 CUIElement::CUIElement()
 {
-    _State._IsDUI = false;
-
-    GetColors();
-
     _IsVisible = true; // CUI does send notifications.
+
+    _State._IsDUI = false;
+}
+
+/// <summary>
+/// Destroys this instance.
+/// </summary>
+CUIElement::~CUIElement()
+{
 }
 
 /// <summary>
@@ -28,6 +34,8 @@ CUIElement::CUIElement()
 /// </summary>
 HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
 {
+    GetColors();
+
     if (*this == nullptr)
     {
         _Host = newHost;
@@ -51,6 +59,8 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
         SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
+    CUIColorClient::Register(this);
+
     return *this;
 }
 
@@ -59,6 +69,8 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
 /// </summary>
 void CUIElement::destroy_window()
 {
+    CUIColorClient::Unregister(this);
+
     ::DestroyWindow(*this);
 
     _Host.release();
@@ -157,17 +169,27 @@ void CUIElement::GetColors() noexcept
 
     _State._StyleManager._UserInterfaceColors.clear();
 
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_selection_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _State._StyleManager._UserInterfaceColors.push_back(D2D1::ColorF(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
-static window_factory<CUIElement> _WindowFactory;
+static uie::window_factory<CUIElement> _WindowFactory;
+
+void CUIColorClient::on_colour_changed(uint32_t changed_items_mask) const
+{
+    for (auto Iter : _Elements)
+        Iter->OnColorsChanged();
+}
+
+void CUIColorClient::on_bool_changed(uint32_t changed_items_mask) const
+{
+}
 
 }

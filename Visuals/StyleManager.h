@@ -42,7 +42,7 @@ public:
 
     void SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor);
 
-    void UpdateCurrentColor();
+    void UpdateCurrentColors();
 
     void ResetGradients()
     {

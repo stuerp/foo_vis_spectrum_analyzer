@@ -384,6 +384,29 @@ void UIElement::OnMouseLeave()
 }
 
 /// <summary>
+/// Handles a change of the user interface colors.
+/// </summary>
+void UIElement::OnColorsChanged()
+{
+    GetColors();
+
+    _State._StyleManager.UpdateCurrentColors();
+
+    _CriticalSection.Enter();
+
+    _RenderState._StyleManager._UserInterfaceColors = _State._StyleManager._UserInterfaceColors;
+
+    // Notify the render thread.
+    _Event.Raise(Event::UserInterfaceColorsChanged);
+
+    _CriticalSection.Leave();
+
+    // Notify the configuration dialog.
+    if (_ConfigurationDialog.IsWindow())
+        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS);
+}
+
+/// <summary>
 /// Handles the UM_CONFIGURATION_CHANGED message.
 /// </summary>
 LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -391,13 +414,6 @@ LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lPara
     UpdateState();
 
     return 0;
-}
-
-/// <summary>
-/// Toggles full screen mode.
-/// </summary>
-void UIElement::ToggleFullScreen() noexcept
-{
 }
 
 /// <summary>

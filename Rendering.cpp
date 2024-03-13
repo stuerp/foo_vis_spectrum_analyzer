@@ -127,9 +127,8 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::UserInterfaceColorsChanged))
     {
-        _RenderState._StyleManager.UpdateCurrentColor();
-
-        ReleaseDeviceSpecificResources();
+        _RenderState._StyleManager.UpdateCurrentColors();
+        _RenderState._StyleManager.ReleaseDeviceSpecificResources();
     }
 }
 

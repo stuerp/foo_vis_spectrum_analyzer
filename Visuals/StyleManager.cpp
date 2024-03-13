@@ -111,7 +111,7 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// <summary>
 /// Updates the current color of each style.
 /// </summary>
-void StyleManager::UpdateCurrentColor()
+void StyleManager::UpdateCurrentColors()
 {
     for (auto & Iter : _Styles)
         Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);

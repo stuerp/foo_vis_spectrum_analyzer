@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2024.03.12) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2024.03.13) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -11,6 +11,8 @@
 
 namespace uie
 {
+class CUIColorClient;
+
 /// <summary>
 /// Implements a Columns UI element.
 /// </summary>
@@ -24,8 +26,7 @@ public:
     CUIElement(CUIElement &&) = delete;
     CUIElement & operator=(CUIElement &&) = delete;
 
-    LRESULT OnEraseBackground(CDCHandle hDC);
-    void ToggleFullScreen() noexcept override final;
+    virtual ~CUIElement();
 
     #pragma region uie::window interface
 
@@ -112,11 +113,88 @@ public:
 
     #pragma endregion
 
-private:
-    void GetColors() noexcept;
+    LRESULT OnEraseBackground(CDCHandle hDC);
+    void ToggleFullScreen() noexcept override final;
+    void GetColors() noexcept override;
 
 private:
     window_host_ptr _Host;
     HWND _hParent;
 };
+
+static std::vector<CUIElement *> _Elements; // Very ugly but necessary because of the weird CUI notification mechanism.
+
+/// <summary>
+/// Receives notifications from CUI when the colors change.
+/// </summary>
+class CUIColorClient : public cui::colours::client
+{
+public:
+    CUIColorClient() { }
+
+    CUIColorClient(const CUIColorClient &) = delete;
+    CUIColorClient & operator=(const CUIColorClient &) = delete;
+    CUIColorClient(CUIColorClient &&) = delete;
+    CUIColorClient & operator=(CUIColorClient &&) = delete;
+
+    virtual ~CUIColorClient() { }
+
+    #pragma region cui::colours::client
+
+    virtual const GUID & get_client_guid() const
+    {
+        static const GUID guid = GUID_UI_ELEMENT;
+
+        return guid;
+   }
+
+    virtual void get_name(pfc::string_base & out) const
+    {
+        out = STR_COMPONENT_NAME;
+    }
+
+    /// <summary>
+    /// Return a combination of bool_flag_t to indicate which boolean flags are supported. 
+    /// </summary>
+    virtual uint32_t get_supported_bools() const override
+    {
+        return cui::colours::bool_dark_mode_enabled;
+    }
+
+    /// <summary>
+    /// Indicates whether the Theme API is supported.
+    /// </summary>
+    virtual bool get_themes_supported() const override
+    {
+        return false;
+    }
+
+    virtual void on_colour_changed(uint32_t changed_items_mask) const override;
+
+    /// <summary>
+    /// Called whenever a supported boolean flag changes. Support for a flag is determined using the get_supported_bools() method.
+    /// </summary>
+    virtual void on_bool_changed(uint32_t changed_items_mask) const override;
+
+    #pragma endregion
+
+    static void Register(CUIElement * element)
+    {
+        if (element == nullptr)
+            return;
+
+        _Elements.push_back(element);
+    }
+
+    static void Unregister(CUIElement * element)
+    {
+        auto Element = std::find(_Elements.begin(), _Elements.end(), element);
+
+        if (Element != _Elements.end())
+            _Elements.erase(Element);
+    }
+
+    #pragma endregion
+};
+
 }
