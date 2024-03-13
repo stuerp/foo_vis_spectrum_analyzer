@@ -34,9 +34,10 @@ public:
     HRESULT SetBrushColor(double value) noexcept;
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
 
+    static HRESULT CreateAmplitudeMap(const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
+
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
-    static HRESULT CreateAmplitudeMap(const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 public:
     uint64_t _Flags;
