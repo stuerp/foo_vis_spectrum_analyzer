@@ -146,9 +146,12 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// </summary>
 void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
 {
-    _XAxis.Render(renderTarget);
+    if (_State->_VisualizationType != VisualizationType::Spectogram)
+    {
+        _XAxis.Render(renderTarget);
 
-    _YAxis.Render(renderTarget);
+        _YAxis.Render(renderTarget);
+    }
 
     _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
 

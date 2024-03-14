@@ -88,6 +88,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.4.1, 2024-03-14
+
+* Fixed: CUI configurations with styles that use color source "User Interface" caused a hard crash.
+
 v0.7.4.0, 2024-03-13
 
 * New: Amplitude-based color selection.

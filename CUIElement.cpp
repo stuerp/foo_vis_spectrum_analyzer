@@ -20,6 +20,8 @@ CUIElement::CUIElement()
     _IsVisible = true; // CUI does send notifications.
 
     _State._IsDUI = false;
+
+    GetColors();
 }
 
 /// <summary>
@@ -34,8 +36,6 @@ CUIElement::~CUIElement()
 /// </summary>
 HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
 {
-    GetColors();
-
     if (*this == nullptr)
     {
         _Host = newHost;
