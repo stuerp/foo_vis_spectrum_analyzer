@@ -949,7 +949,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram" })
+        for (const auto & x : { L"Bars", L"Curve" })//, L"Heat Map" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);

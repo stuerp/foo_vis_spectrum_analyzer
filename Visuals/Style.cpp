@@ -112,7 +112,8 @@ void Style::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::ve
 
         case ColorSource::UserInterface:
         {
-            _CurrentColor = userInterfaceColors[Clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size())];
+            if (userInterfaceColors.size() > 0)
+                _CurrentColor = userInterfaceColors[Clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
             break;
         }
     }
