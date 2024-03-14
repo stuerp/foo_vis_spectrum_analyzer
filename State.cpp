@@ -468,7 +468,7 @@ State & State::operator=(const State & other)
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
+void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
     Reset();
 
@@ -762,9 +762,12 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 20)
         {
-            pfc::string Path;
+            if (!isPreset)
+            {
+                pfc::string Path;
 
-            reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
+                reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
+            }
         }
     }
     catch (exception & ex)
@@ -778,7 +781,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void State::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
+void State::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
 {
     try
     {
@@ -1014,7 +1017,10 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler) const n
 
         // Version 20
         {
-            pfc::string Path = pfc::utf8FromWide(_PresetsDirectoryPath.c_str());
+            pfc::string Path;
+
+            if (!isPreset)
+                Path = pfc::utf8FromWide(_PresetsDirectoryPath.c_str());
 
             writer->write_string(Path, abortHandler);
         }

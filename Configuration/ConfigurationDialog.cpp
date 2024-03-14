@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.14) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -1140,12 +1140,12 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 /// <summary>
 /// Handles an update of the selected item of a combo box.
 /// </summary>
-void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
+void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 {
     if (_State == nullptr)
         return;
 
-    CComboBox cb = (CComboBox) w;
+    auto cb = (CComboBox) w;
 
     int SelectedIndex = cb.GetCurSel();
 
@@ -1424,12 +1424,13 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             SelectedIndex = lb.GetCurSel();
 
-            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size()))
+            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
                 return;
 
             SetDlgItemTextW(IDC_PRESET_NAME, _PresetNames[(size_t) SelectedIndex].c_str());
 
             UpdatePresetsPage();
+
             return;
         }
 
@@ -1437,6 +1438,42 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     }
 
     ConfigurationChanged();
+}
+
+/// <summary>
+/// Handles a double click on a list box item.
+/// </summary>
+void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
+{
+    if (_State == nullptr)
+        return;
+
+    if ((id == IDC_PRESET_NAMES) && (code == LBN_DBLCLK))
+    {
+        auto lb = (CListBox) GetDlgItem(id);
+
+        int SelectedIndex = lb.GetCurSel();
+
+        if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
+            return;
+
+        std::wstring PresetName = _PresetNames[(size_t) SelectedIndex];
+
+        SetDlgItemTextW(IDC_PRESET_NAME, PresetName.c_str());
+
+        UpdatePresetsPage();
+
+        {
+            State NewState;
+
+            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
+
+            *_State = NewState;
+            Initialize();
+        }
+
+        GetPresetNames();
+    }
 }
 
 /// <summary>
@@ -1676,17 +1713,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             int Position = Clamp(::_wtoi(Text), 0, 100);
 
-            if ((int) (style->_CurrentGradientStops[Index].position * 100.f) == Position)
+            if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
                 break;
 
-            style->_CurrentGradientStops[Index].position = (FLOAT) Position / 100.f;
+            style->_CurrentGradientStops[SelectedIndex].position = (FLOAT) Position / 100.f;
 
             style->_ColorScheme = ColorScheme::Custom;
             style->_CustomGradientStops = style->_CurrentGradientStops;

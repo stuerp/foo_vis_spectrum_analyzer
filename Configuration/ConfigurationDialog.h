@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.03.11) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.03.14) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -72,6 +72,7 @@ private:
     void Terminate();
 
     void OnSelectionChanged(UINT, int, CWindow);
+    void OnDoubleClick(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept;
     void OnButtonClick(UINT, int, CWindow);
@@ -111,6 +112,7 @@ private:
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
+        COMMAND_CODE_HANDLER_EX(LBN_DBLCLK, OnDoubleClick)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
         COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)

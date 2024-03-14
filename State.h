@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.09) P. Stuer **/
+/** $VER: State.h (2024.03.14) P. Stuer **/
 
 #pragma once
 
@@ -32,8 +32,8 @@ public:
 
     void Reset() noexcept;
 
-    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
-    void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
+    void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) noexcept;
+    void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) const noexcept;
 
     /// <summary>
     /// Gets the duration (in ms) of the window that will be rendered.
