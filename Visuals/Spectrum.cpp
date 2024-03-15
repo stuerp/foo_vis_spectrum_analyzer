@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.13) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.15) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -75,7 +75,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
                 break;
 
             case VisualizationType::Spectogram:
-                RenderSpectogram(renderTarget, frequencyBands, sampleRate);
+                RenderHeatMap(renderTarget, frequencyBands, sampleRate);
                 break;
         }
 
@@ -270,7 +270,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 /// Renders the spectrum analysis as a spectogram.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Spectrum::RenderHeatMap(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
     static FLOAT x1 = 0.f;
     static FLOAT x2 = 4.f;
@@ -340,8 +340,11 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 {
     HRESULT hr = S_OK;
 
-    if ((_OpacityMask == nullptr) && SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
         hr = CreateOpacityMask(renderTarget);
+
+    if (SUCCEEDED(hr) && (_HeatmapBitmap == nullptr))
+        hr = CreateHeatmapBitmap(renderTarget);
 
     const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
 
@@ -613,5 +616,6 @@ void Spectrum::ReleaseDeviceSpecificResources()
     })
         _State->_StyleManager.GetStyle(Iter)->ReleaseDeviceSpecificResources();
 
+    _HeatmapRenderTarget.Release();
     _OpacityMask.Release();
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.13) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.15) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -53,7 +53,7 @@ public:
 private:
     void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-    void RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void RenderHeatMap(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
 
