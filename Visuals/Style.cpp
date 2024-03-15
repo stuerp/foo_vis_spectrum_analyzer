@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.03.13) P. Stuer **/
+/** $VER: Style.cpp (2024.03.15) P. Stuer **/
 
 #include "Style.h"
 
@@ -151,7 +151,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if ((_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
+        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 

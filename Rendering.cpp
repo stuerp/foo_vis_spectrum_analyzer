@@ -115,6 +115,9 @@ void UIElement::ProcessEvents()
 
             _IsConfigurationChanged = true;
         }
+
+        for (auto & Iter : _Grid)
+            Iter._Graph->Reset();
     }
 
     if (Event::IsRaised(Flags, Event::PlaybackStopped))
@@ -122,7 +125,7 @@ void UIElement::ProcessEvents()
         _Artwork.Release();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Clear();
+            Iter._Graph->Reset();
     }
 
     if (Event::IsRaised(Flags, Event::UserInterfaceColorsChanged))
@@ -148,7 +151,7 @@ void UIElement::Render()
         _RenderTarget->BeginDraw();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Render(_RenderTarget, (double) _SampleRate, _Artwork);
+            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, (double) _SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);

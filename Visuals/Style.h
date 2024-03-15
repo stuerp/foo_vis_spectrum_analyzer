@@ -73,7 +73,7 @@ public:
         HorizontalGradient  = 0x08,
         AmplitudeBasedColor = 0x10,
 
-        AmplitudeAware   = 0x20,
+        AmplitudeAware      = 0x20,
 
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware,
     };

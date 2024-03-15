@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -39,6 +39,8 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _XAxis.Initialize(state, settings, _Analysis._FrequencyBands);
     
     _YAxis.Initialize(state, settings);
+
+    _HeatMap.Initialize(state, settings);
 }
 
 /// <summary>
@@ -71,29 +73,35 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 
         _YAxis.Move(Rect);
     }
+
+    {
+        _HeatMap.Move(_Bounds);
+    }
 }
 
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, double time, double sampleRate, Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
     {
         RenderBackground(renderTarget, artwork);
-        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate);
+        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate, time);
     }
 }
 
 /// <summary>
-/// Clears the analysis of this instance.
+/// Resets this instance.
 /// </summary>
-void Graph::Clear()
+void Graph::Reset()
 {
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
+
+    _HeatMap.Reset();
 }
 
 /// <summary>
@@ -144,16 +152,18 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time) noexcept
 {
-    if (_State->_VisualizationType != VisualizationType::Spectogram)
+    if (_State->_VisualizationType != VisualizationType::HeatMap)
     {
         _XAxis.Render(renderTarget);
 
         _YAxis.Render(renderTarget);
-    }
 
-    _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+        _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+    }
+    else
+        _HeatMap.Render(renderTarget, frequencyBands, sampleRate, time);
 
     RenderDescription(renderTarget);
 }

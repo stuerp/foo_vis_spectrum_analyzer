@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.03.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.03.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -18,9 +18,12 @@
 #include "GraphSettings.h"
 
 #include "Element.h"
+
 #include "Spectrum.h"
 #include "XAxis.h"
 #include "YAxis.h"
+
+#include "HeatMap.h"
 
 #include "Log.h"
 
@@ -34,10 +37,9 @@ public:
     virtual ~Graph();
 
     void Initialize(State * state, const GraphSettings * settings) noexcept;
-
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;
-    void Clear();
+    void Render(ID2D1RenderTarget * renderTarget, double time, double sampleRate, Artwork & artwork) noexcept;
+    void Reset();
 
     void Process(const audio_chunk & chunk) noexcept
     {
@@ -82,7 +84,7 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
+    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time) noexcept;
     void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
 
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
@@ -97,6 +99,8 @@ private:
     Spectrum _Spectrum;
     XAxis _XAxis;
     YAxis _YAxis;
+
+    HeatMap _HeatMap;
 
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;
