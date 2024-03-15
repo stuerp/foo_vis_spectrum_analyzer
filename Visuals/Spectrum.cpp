@@ -267,7 +267,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 }
 
 /// <summary>
-/// Renders the spectrum analysis as a spectogram.
+/// Renders the spectrum analysis as a heat map.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
 void Spectrum::RenderHeatMap(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
@@ -342,9 +342,6 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 
     if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
         hr = CreateOpacityMask(renderTarget);
-
-    if (SUCCEEDED(hr) && (_HeatmapBitmap == nullptr))
-        hr = CreateHeatmapBitmap(renderTarget);
 
     const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
 

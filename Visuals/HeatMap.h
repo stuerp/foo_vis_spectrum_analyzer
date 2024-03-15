@@ -15,12 +15,30 @@
 
 #include <atlbase.h>
 
-class HeatMap
+#include "Element.h"
+#include "FrequencyBand.h"
+
+class HeatMap : public Element
 {
+public:
+    HeatMap();
+
+    HeatMap(const HeatMap &) = delete;
+    HeatMap & operator=(const HeatMap &) = delete;
+    HeatMap(HeatMap &&) = delete;
+    HeatMap & operator=(HeatMap &&) = delete;
+
+    void Initialize(State * state, const GraphSettings * settings);
+    void Move(const D2D1_RECT_F & rect);
+    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
 private:
-    CComPtr<ID2D1BitmapRenderTarget> _HeatmapRenderTarget;
+    D2D1_SIZE_F _Size;
+    double _X;
+
+    CComPtr<ID2D1BitmapRenderTarget> _RenderTarget;
 };

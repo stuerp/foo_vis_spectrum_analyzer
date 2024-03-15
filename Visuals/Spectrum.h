@@ -38,9 +38,7 @@ public:
     Spectrum & operator=(Spectrum &&) = delete;
 
     void Initialize(State * state, const GraphSettings * settings);
-
     void Move(const D2D1_RECT_F & rect);
-
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
