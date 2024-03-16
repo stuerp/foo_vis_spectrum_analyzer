@@ -18,6 +18,8 @@
 #include "Element.h"
 #include "FrequencyBand.h"
 
+#include <deque>
+
 class HeatMap : public Element
 {
 public:
@@ -48,8 +50,22 @@ private:
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 
-    FLOAT _TextWidth;       // Width of a label
-    FLOAT _TextHeight;      // Height of the X axis area (Font size-dependent).
+    FLOAT _TextWidth;   // Width of a label
+    FLOAT _TextHeight;  // Height of the X axis area (Font size-dependent).
+
+    struct Label
+    {
+        Label(const WCHAR * text, FLOAT x)
+        {
+            _Text = text;
+            _X = x;
+        }
+
+        std::wstring _Text;
+        FLOAT _X;
+    };
+
+    std::deque<Label> _Labels;
 
     CComPtr<IDWriteTextFormat> _TextFormat;
     CComPtr<ID2D1SolidColorBrush> _Brush;

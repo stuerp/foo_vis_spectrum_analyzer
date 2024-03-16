@@ -386,6 +386,8 @@ enum class ColorScheme : uint32_t
 
     Fire = 8,
     Rainbow = 9,
+
+    SoX = 10,
 };
 
 // Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.

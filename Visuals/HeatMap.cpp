@@ -51,6 +51,8 @@ void HeatMap::Reset()
     _ClearBackground = true;
     _OldTime = -1;
 
+    _Labels.clear();
+
     _Bitmap = nullptr;
     _RenderTarget = nullptr;
 }
@@ -66,6 +68,8 @@ void HeatMap::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & fr
     {
         const double dx = 1.;
 
+        FLOAT BitmapHeight = _Size.height - _TextHeight;
+
         _RenderTarget->BeginDraw();
 
         if (_ClearBackground)
@@ -76,9 +80,9 @@ void HeatMap::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & fr
         }
 
         {
-            const FLOAT Bandwidth = Max(((_Size.height - _TextHeight) / (FLOAT) frequencyBands.size()), 1.f);
+            const FLOAT Bandwidth = Max((BitmapHeight / (FLOAT) frequencyBands.size()), 1.f);
 
-            FLOAT y1 = _Size.height - _TextHeight;
+            FLOAT y1 = BitmapHeight;
             FLOAT y2 = y1 - Bandwidth;
 
             for (const auto & fb : frequencyBands)
@@ -97,6 +101,8 @@ void HeatMap::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & fr
             }
         }
 
+        _RenderTarget->EndDraw();
+
         if ((int) time != _OldTime)
         {
             _OldTime = (int) time;
@@ -105,33 +111,54 @@ void HeatMap::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & fr
 
             ::StringCchPrintfW(Text, _countof(Text), L"%02d:%02d", _OldTime / 60, _OldTime % 60);
 
-            const D2D1_RECT_F Rect = { (FLOAT) _X + 2.f, _Size.height - _TextHeight, (FLOAT) _X + _TextWidth + 2.f, _Size.height };
-
-            _Brush->SetColor(D2D1::ColorF(.1f, .1f, .1f, 1.f));
-            _RenderTarget->FillRectangle(Rect, _Brush);
-            _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-            _RenderTarget->DrawTextW(Text, ::wcslen(Text), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            _RenderTarget->DrawLine( { (FLOAT) _X, _Size.height - _TextHeight }, { (FLOAT) _X, _Size.height - _TextHeight / 2.f }, _Brush, 1.f);
+            _Labels.push_front({ Text, _Size.width });
         }
 
-        _RenderTarget->EndDraw();
+        // Draw the bitmap.
+        {
+            const bool Static = false;
 
-        D2D1_RECT_F Src = D2D1_RECT_F((FLOAT) (_X + 1.), 0.f, _Size.width,              _Size.height);
-        D2D1_RECT_F Dst = D2D1_RECT_F(              0.f, 0.f, _Size.width - (FLOAT) _X, _Size.height);
+            if (Static)
+            {
+                D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _Size.width, BitmapHeight);
 
-        renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+                renderTarget->DrawBitmap(_Bitmap, &Rect);
+            }
+            else
+            {
+                D2D1_RECT_F Src = D2D1_RECT_F((FLOAT) (_X + 1.), 0.f, _Size.width,              BitmapHeight);
+                D2D1_RECT_F Dst = D2D1_RECT_F(              0.f, 0.f, _Size.width - (FLOAT) _X, BitmapHeight);
 
-        Src.left  = 0.f;
-        Src.right = (FLOAT) (_X + 1.);
+                renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
-        Dst.left  = _Size.width - (FLOAT) _X;
-        Dst.right = _Size.width;
+                Src.left  = 0.f;
+                Src.right = (FLOAT) (_X + 1.);
 
-        renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+                Dst.left  = _Size.width - (FLOAT) _X;
+                Dst.right = _Size.width;
 
-//      renderTarget->DrawBitmap(_Bitmap, &_Bounds);
+                renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            }
+        }
+
+        // Draw the X-axis.
+        {
+            const FLOAT Offset = 4.f;
+
+            for (auto & Label : _Labels)
+            {
+                renderTarget->DrawLine( { Label._X, BitmapHeight }, { Label._X, BitmapHeight + (_TextHeight / 2.f) }, _Brush, 1.f); // Tick
+
+                const D2D1_RECT_F Rect = { Label._X + Offset, BitmapHeight, Label._X + Offset + _TextWidth, _Size.height };
+
+                renderTarget->DrawTextW(Label._Text.c_str(), Label._Text.size(), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                Label._X--; // Scroll left.
+            }
+
+            if (_Labels.back()._X + Offset + _TextWidth < 0.f)
+                _Labels.pop_back();
+        }
 
         _X += dx;
 
