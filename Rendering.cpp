@@ -74,7 +74,7 @@ void UIElement::OnTimer()
 
     _CriticalSection.Leave();
 
-    // Notify the configuration dialog about the changed gradient colors.
+    // Notify the configuration dialog about the changed artwork colors.
     if (_IsConfigurationChanged)
     {
         _CriticalSection.Enter();
@@ -146,12 +146,12 @@ void UIElement::Render()
     {
         _FrameCounter.NewFrame();
 
-        UpdateSpectrum();
+        bool GotChunk = UpdateSpectrum();
 
         _RenderTarget->BeginDraw();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, (double) _SampleRate, _Artwork);
+            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, GotChunk, (double) _SampleRate, _Artwork);
 
         if (_State._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -170,8 +170,10 @@ void UIElement::Render()
 /// <summary>
 /// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
-void UIElement::UpdateSpectrum()
+bool UIElement::UpdateSpectrum()
 {
+    bool GotChunk = false;
+
     if (_State._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
@@ -181,6 +183,8 @@ void UIElement::UpdateSpectrum()
             for (auto & Iter : _Grid)
                 Iter._Graph->Process(Chunk);
         }
+
+        GotChunk = true;
     }
     else
     {
@@ -199,6 +203,8 @@ void UIElement::UpdateSpectrum()
             {
                 for (auto & Iter : _Grid)
                     Iter._Graph->Process(Chunk);
+
+                GotChunk = true;
             }
 
             _OldPlaybackTime = PlaybackTime;
@@ -211,6 +217,8 @@ void UIElement::UpdateSpectrum()
         for (auto & Iter : _Grid)
             Iter._Graph->GetAnalysis().UpdatePeakIndicators();
     }
+
+    return GotChunk;
 }
 
 /// <summary>

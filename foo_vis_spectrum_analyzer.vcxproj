@@ -198,7 +198,7 @@
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\ConfigurationDialog.h" />
-    <ClInclude Include="Visuals\HeatMap.h" />
+    <ClInclude Include="Visuals\Spectogram.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
@@ -276,7 +276,7 @@
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Visuals\Element.cpp" />
     <ClCompile Include="Configuration\PresetManager.cpp" />
-    <ClCompile Include="Visuals\HeatMap.cpp" />
+    <ClCompile Include="Visuals\Spectogram.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Windows\Color.cpp" />

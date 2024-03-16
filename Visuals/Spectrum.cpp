@@ -74,7 +74,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
                 RenderCurve(renderTarget, frequencyBands, sampleRate);
                 break;
 
-            case VisualizationType::HeatMap:
+            case VisualizationType::Spectogram:
                 break;
         }
 

@@ -1,5 +1,5 @@
 
-/** $VER: HeatMap.h (2024.03.15) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.03.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -20,15 +20,15 @@
 
 #include <deque>
 
-class HeatMap : public Element
+class Spectogram : public Element
 {
 public:
-    HeatMap();
+    Spectogram();
 
-    HeatMap(const HeatMap &) = delete;
-    HeatMap & operator=(const HeatMap &) = delete;
-    HeatMap(HeatMap &&) = delete;
-    HeatMap & operator=(HeatMap &&) = delete;
+    Spectogram(const Spectogram &) = delete;
+    Spectogram & operator=(const Spectogram &) = delete;
+    Spectogram(Spectogram &&) = delete;
+    Spectogram & operator=(Spectogram &&) = delete;
 
     void Initialize(State * state, const GraphSettings * settings);
     void Move(const D2D1_RECT_F & rect);
@@ -43,9 +43,9 @@ private:
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;
 
-    double _X;
-    int _OldTime;
-    bool _ClearBackground;
+    uint32_t _X;
+    uint64_t _Time;
+    bool _RequestErase;
 
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
@@ -68,11 +68,12 @@ private:
     std::deque<Label> _Labels;
 
     CComPtr<IDWriteTextFormat> _TextFormat;
-    CComPtr<ID2D1SolidColorBrush> _Brush;
 
-    CComPtr<ID2D1BitmapRenderTarget> _RenderTarget;
+    CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
     Style * _ForegroundStyle;
-    Style * _BackgroundStyle;
+
+    Style * _XAxisLineStyle;
+    Style * _XAxisTextStyle;
 };

@@ -202,18 +202,10 @@ private:
         },
 
         {
-            VisualElement::HeatMapForeground,
+            VisualElement::Spectogram,
             {
                 Style::SupportsOpacity | Style::AmplitudeAware | Style::AmplitudeBasedColor,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
-            }
-        },
-
-        {
-            VisualElement::HeatMapBackground,
-            {
-                Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(0, 0.f), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 

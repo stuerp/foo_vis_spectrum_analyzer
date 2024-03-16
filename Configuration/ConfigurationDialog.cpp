@@ -949,7 +949,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Heat Map" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -993,7 +993,7 @@ void ConfigurationDialog::Initialize()
             L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
             L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
-            L"Heat Map Foreground", L"Heat Map Background",
+            L"Spectogram",
             L"Nyquist Frequency",
         })
             w.AddString(x);

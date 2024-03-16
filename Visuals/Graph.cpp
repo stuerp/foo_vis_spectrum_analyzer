@@ -40,7 +40,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     
     _YAxis.Initialize(state, settings);
 
-    _HeatMap.Initialize(state, settings);
+    _Spectogram.Initialize(state, settings);
 }
 
 /// <summary>
@@ -75,21 +75,21 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     }
 
     {
-        _HeatMap.Move(_Bounds);
+        _Spectogram.Move(_Bounds);
     }
 }
 
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, double time, double sampleRate, Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, double time, bool gotChunk, double sampleRate, Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
     {
         RenderBackground(renderTarget, artwork);
-        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate, time);
+        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate, time, gotChunk);
     }
 }
 
@@ -101,7 +101,7 @@ void Graph::Reset()
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
-    _HeatMap.Reset();
+    _Spectogram.Reset();
 }
 
 /// <summary>
@@ -152,9 +152,9 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time) noexcept
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time, bool gotChunk) noexcept
 {
-    if (_State->_VisualizationType != VisualizationType::HeatMap)
+    if (_State->_VisualizationType != VisualizationType::Spectogram)
     {
         _XAxis.Render(renderTarget);
 
@@ -163,7 +163,8 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
         _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
     }
     else
-        _HeatMap.Render(renderTarget, frequencyBands, sampleRate, time);
+        if (gotChunk)
+            _Spectogram.Render(renderTarget, frequencyBands, sampleRate, time);
 
     RenderDescription(renderTarget);
 }

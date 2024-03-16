@@ -252,7 +252,7 @@ enum class VisualizationType
 {
     Bars = 0,
     Curve = 1,
-    HeatMap = 2,
+    Spectogram = 2,
 };
 
 enum class PeakMode
@@ -320,8 +320,7 @@ enum class VisualElement : uint32_t
     CurvePeakLine               = 12,
     CurvePeakArea               = 13,
 
-    HeatMapForeground           = 18,
-    HeatMapBackground           = 19,
+    Spectogram                  = 18,
 
     NyquistMarker               = 15,
 

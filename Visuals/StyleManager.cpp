@@ -79,8 +79,7 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::CurvePeakLine,
         VisualElement::CurvePeakArea,
 
-        VisualElement::HeatMapForeground,
-        VisualElement::HeatMapBackground,
+        VisualElement::Spectogram,
 
         VisualElement::NyquistMarker,
     };
