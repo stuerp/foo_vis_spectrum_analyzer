@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.15) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.17) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -916,7 +916,7 @@ void ConfigurationDialog::Initialize()
                 w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
 
                 SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
-                w.SetPos32((int) (gs._AmplitudeStep* 10.));
+                w.SetPos32((int) (gs._AmplitudeStep * 10.));
             }
         }
 
@@ -2952,8 +2952,13 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
     SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gs._AmplitudeLo * 10.));
+
     SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gs._AmplitudeHi * 10.));
+
     SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
 
     for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
         GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
@@ -3285,6 +3290,8 @@ void ConfigurationDialog::SetInteger(int id, int64_t value) noexcept
 void ConfigurationDialog::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
     SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
+
+
 }
 
 /// <summary>
