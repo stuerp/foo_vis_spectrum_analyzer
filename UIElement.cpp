@@ -187,7 +187,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Toggle Full-Screen Mode");
-        Menu.AppendMenu((UINT) MF_STRING | (_State._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
+        Menu.AppendMenu((UINT) MF_STRING | (_MainState._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {
             RefreshRateLimitMenu.CreatePopupMenu();
@@ -195,7 +195,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_State._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
+                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_MainState._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
                     pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
@@ -224,27 +224,27 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             break;
 
         case IDM_REFRESH_RATE_LIMIT_20:
-            _State._RefreshRateLimit = 20;
+            _MainState._RefreshRateLimit = 20;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_30:
-            _State._RefreshRateLimit = 30;
+            _MainState._RefreshRateLimit = 30;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
-            _State._RefreshRateLimit = 60;
+            _MainState._RefreshRateLimit = 60;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
-            _State._RefreshRateLimit = 100;
+            _MainState._RefreshRateLimit = 100;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
-            _State._RefreshRateLimit = 200;
+            _MainState._RefreshRateLimit = 200;
             StartTimer();
             break;
 
@@ -390,11 +390,11 @@ void UIElement::OnColorsChanged()
 {
     GetColors();
 
-    _State._StyleManager.UpdateCurrentColors();
+    _MainState._StyleManager.UpdateCurrentColors();
 
     _CriticalSection.Enter();
 
-    _RenderState._StyleManager._UserInterfaceColors = _State._StyleManager._UserInterfaceColors;
+    _ThreadState._StyleManager._UserInterfaceColors = _MainState._StyleManager._UserInterfaceColors;
 
     ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
@@ -423,7 +423,7 @@ LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lPara
 /// </summary>
 void UIElement::ToggleFrameCounter() noexcept
 {
-    _State._ShowFrameCounter = !_State._ShowFrameCounter;
+    _MainState._ShowFrameCounter = !_MainState._ShowFrameCounter;
 }
 
 /// <summary>
@@ -431,7 +431,7 @@ void UIElement::ToggleFrameCounter() noexcept
 /// </summary>
 void UIElement::ToggleHardwareRendering() noexcept
 {
-    _State._UseHardwareRendering = !_State._UseHardwareRendering;
+    _MainState._UseHardwareRendering = !_MainState._UseHardwareRendering;
 
     ReleaseDeviceSpecificResources();
 }
@@ -443,7 +443,7 @@ void UIElement::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        DialogParameters dp = { m_hWnd, &_State };
+        DialogParameters dp = { m_hWnd, &_MainState };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
@@ -462,27 +462,27 @@ void UIElement::UpdateState() noexcept
     _CriticalSection.Enter();
 
     #pragma warning (disable: 4061)
-    switch (_State._FFTMode)
+    switch (_MainState._FFTMode)
     {
         default:
-            _State._BinCount = (size_t) (64. * ::exp2((long) _State._FFTMode));
+            _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _State._BinCount = (_State._FFTCustom > 0) ? (size_t) _State._FFTCustom : 64;
+            _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _State._BinCount = (_State._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _State._FFTDuration) / 1000.) : 64;
+            _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
             break;
     }
     #pragma warning (default: 4061)
 
-    _ToneGenerator.Initialize(440., 1., 0., _State._BinCount);
+    _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
 
-    _RenderState = _State;
+    _ThreadState = _MainState;
 
-    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
+    _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
 
     // Create the graphs.
     {
@@ -491,13 +491,13 @@ void UIElement::UpdateState() noexcept
 
         _Grid.clear();
 
-        _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
+        _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
 
-        for (const auto & Iter : _State._GraphSettings)
+        for (const auto & Iter : _MainState._GraphSettings)
         {
             auto * g = new Graph();
 
-            g->Initialize(&_RenderState, &Iter);
+            g->Initialize(&_ThreadState, &Iter);
 
             _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
         }
@@ -507,7 +507,7 @@ void UIElement::UpdateState() noexcept
 
     _Artwork.RequestColorUpdate();
 
-    _ToolTipControl.Activate(_RenderState._ShowToolTips);
+    _ToolTipControl.Activate(_ThreadState._ShowToolTips);
 
     Resize();
 }
@@ -547,11 +547,11 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         _SampleRate = 44100;
 
     // Use the script from the configuration to load the album art.
-    if (track.is_valid() && !_State._ArtworkFilePath.empty())
+    if (track.is_valid() && !_MainState._ArtworkFilePath.empty())
     {
         titleformat_object::ptr Script;
 
-        bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_State._ArtworkFilePath.c_str()));
+        bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
 
         pfc::string Result;
 
@@ -584,7 +584,7 @@ void UIElement::on_playback_pause(bool)
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
     // The script in the configuration takes precedence over the album art supplied by the track.
-    if (!_State._ArtworkFilePath.empty())
+    if (!_MainState._ArtworkFilePath.empty())
         return;
 
     _Artwork.Initialize((uint8_t *) aad->data(), aad->size());

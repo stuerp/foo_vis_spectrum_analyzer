@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.03.09) P. Stuer **/
+/** $VER: Analysis.h (2024.03.17) P. Stuer **/
 
 #pragma once
 
@@ -49,15 +49,16 @@ private:
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
 
-    void ApplyAverageSmoothing(double factor) noexcept;
-    void ApplyPeakSmoothing(double factor) noexcept;
+    void Normalize() noexcept;
+    void NormalizeWithAverageSmoothing(double factor) noexcept;
+    void NormalizeWithPeakSmoothing(double factor) noexcept;
 
     void GenerateLinearFrequencyBands(const State * state);
     void GenerateOctaveFrequencyBands(const State * state);
     void GenerateAveePlayerFrequencyBands(const State * state);
 
 public:
-    const State * _State;
+    const State * _ThreadState;
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.15) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.17) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -108,6 +108,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 
     for (const auto & fb : frequencyBands)
     {
+        assert(InRange(fb.CurValue, 0.0, 1.0));
+        assert(InRange(fb.Peak, 0.0, 1.0));
+
         D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, Height - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
@@ -129,7 +132,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             if ((_State->_PeakMode != PeakMode::None) && (fb.Peak > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = Clamp((FLOAT)(Height * fb.Peak), 0.f, Height);
+                Rect.bottom = (FLOAT) (Height * fb.Peak);
 
                 // Draw the peak indicator area.
                 if (_PeakArea->_ColorSource != ColorSource::None)
@@ -157,18 +160,15 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 }
             }
 
-            double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
-
-            if (Amplitude >= 0.0)
             {
                 Rect.top    = 0.f;
-                Rect.bottom = Clamp((FLOAT)(Height * Amplitude), 0.f, Height);
+                Rect.bottom = (FLOAT) (Height * fb.CurValue);
 
                 // Draw the area of the bar.
                 if (_BarArea->_ColorSource != ColorSource::None)
                 {
                     if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
-                        _BarArea->SetBrushColor(Amplitude);
+                        _BarArea->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _BarArea->_Brush);
@@ -459,7 +459,8 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
         if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-        double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
+//      double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
+        double Value = !usePeak ? fb.CurValue : fb.Peak;
 
         y = Clamp((FLOAT)(Value * Height), 0.f, Height);
 

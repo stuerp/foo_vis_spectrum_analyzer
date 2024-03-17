@@ -29,7 +29,7 @@ void UIElement::StartTimer() noexcept
 
     FILETIME DueTime = { };
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _State._RefreshRateLimit, 0);
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _MainState._RefreshRateLimit, 0);
 }
 
 /// <summary>
@@ -79,7 +79,7 @@ void UIElement::OnTimer()
     {
         _CriticalSection.Enter();
 
-        _State._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+        _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
 
         _CriticalSection.Leave();
 
@@ -108,10 +108,10 @@ void UIElement::ProcessEvents()
         if (_Artwork.Bitmap() == nullptr)
         {
             // Set the default dominant color and gradient for the artwork color scheme.
-            _RenderState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
-            _RenderState._StyleManager._DominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _ThreadState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
+            _ThreadState._StyleManager._DominantColor = _ThreadState._ArtworkGradientStops[0].color;
 
-            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager._DominantColor);
+            _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
 
             _IsConfigurationChanged = true;
         }
@@ -130,8 +130,8 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::UserInterfaceColorsChanged))
     {
-        _RenderState._StyleManager.UpdateCurrentColors();
-        _RenderState._StyleManager.ReleaseDeviceSpecificResources();
+        _ThreadState._StyleManager.UpdateCurrentColors();
+        _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
     }
 }
 
@@ -153,7 +153,7 @@ void UIElement::Render()
         for (auto & Iter : _Grid)
             Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, GotChunk, (double) _SampleRate, _Artwork);
 
-        if (_State._ShowFrameCounter)
+        if (_MainState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
 
         hr = _RenderTarget->EndDraw();
@@ -174,7 +174,7 @@ bool UIElement::UpdateSpectrum()
 {
     bool GotChunk = false;
 
-    if (_State._UseToneGenerator)
+    if (_MainState._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
 
@@ -195,9 +195,9 @@ bool UIElement::UpdateSpectrum()
         {
             audio_chunk_impl Chunk;
 
-            const bool IsSlidingWindow = _RenderState._Transform == Transform::SWIFT;
-            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _State._BinCount / (double) _SampleRate;
-            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+            const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
+            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
+            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
 
             if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
             {
@@ -212,7 +212,7 @@ bool UIElement::UpdateSpectrum()
     }
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    if (_State._PeakMode != PeakMode::None)
+    if (_MainState._PeakMode != PeakMode::None)
     {
         for (auto & Iter : _Grid)
             Iter._Graph->GetAnalysis().UpdatePeakIndicators();
@@ -243,7 +243,7 @@ void UIElement::Resize()
     for (auto & Iter : _Grid)
         _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
 
-    _RenderState._StyleManager.ResetGradients();
+    _ThreadState._StyleManager.ResetGradients();
 }
 
 #pragma region DirectX
@@ -288,7 +288,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
-            _State._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            _MainState._UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
         );
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(m_hWnd, Size);
 
@@ -305,7 +305,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     }
 /*
     // Get the artwork data from the album art.
-    if (SUCCEEDED(hr) && _RenderState._ArtworkFilePath.empty())
+    if (SUCCEEDED(hr) && _ThreadState._ArtworkFilePath.empty())
     {
         auto nm = now_playing_album_art_notify_manager::get();
 
@@ -344,41 +344,41 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 HRESULT UIElement::CreateArtworkDependentResources()
 {
     // Get the colors from the artwork.
-    HRESULT hr = _Artwork.GetColors(_RenderState._ArtworkColors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(_ThreadState._ArtworkColors, _ThreadState._NumArtworkColors, _ThreadState._LightnessThreshold, _ThreadState._TransparencyThreshold);
 
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderState._StyleManager._DominantColor = _RenderState._ArtworkColors[0];
+        _ThreadState._StyleManager._DominantColor = _ThreadState._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_RenderState._ColorOrder)
+        switch (_ThreadState._ColorOrder)
         {
             case ColorOrder::None:
                 break;
 
             case ColorOrder::HueAscending:
-                Color::SortColorsByHue(_RenderState._ArtworkColors, true);
+                Color::SortColorsByHue(_ThreadState._ArtworkColors, true);
                 break;
 
             case ColorOrder::HueDescending:
-                Color::SortColorsByHue(_RenderState._ArtworkColors, false);
+                Color::SortColorsByHue(_ThreadState._ArtworkColors, false);
                 break;
 
             case ColorOrder::SaturationAscending:
-                Color::SortColorsBySaturation(_RenderState._ArtworkColors, true);
+                Color::SortColorsBySaturation(_ThreadState._ArtworkColors, true);
                 break;
 
             case ColorOrder::SaturationDescending:
-                Color::SortColorsBySaturation(_RenderState._ArtworkColors, false);
+                Color::SortColorsBySaturation(_ThreadState._ArtworkColors, false);
                 break;
 
             case ColorOrder::LightnessAscending:
-                Color::SortColorsByLightness(_RenderState._ArtworkColors, true);
+                Color::SortColorsByLightness(_ThreadState._ArtworkColors, true);
                 break;
 
             case ColorOrder::LightnessDescending:
-                Color::SortColorsByLightness(_RenderState._ArtworkColors, false);
+                Color::SortColorsByLightness(_ThreadState._ArtworkColors, false);
                 break;
         }
         #pragma warning(default: 4061)
@@ -386,10 +386,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
 
     // Create the gradient stops.
     if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(_RenderState._ArtworkColors, _RenderState._ArtworkGradientStops);
+        hr = _Direct2D.CreateGradientStops(_ThreadState._ArtworkColors, _ThreadState._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
-        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager._DominantColor);
+        _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
 
     _IsConfigurationChanged = true;
 
@@ -403,7 +403,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
-    _RenderState._StyleManager.ReleaseDeviceSpecificResources();
+    _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
 
     for (auto & Iter : _Grid)
         Iter._Graph->ReleaseDeviceSpecificResources();

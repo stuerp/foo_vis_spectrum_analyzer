@@ -100,7 +100,7 @@ public:
     /// </summary>
     void set_config(stream_reader * reader, size_t size, abort_callback & abortHandler) final
     {
-        _State.Read(reader, size, abortHandler);
+        _MainState.Read(reader, size, abortHandler);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public:
     /// </summary>
     void get_config(stream_writer * writer, abort_callback & abortHandler) const final
     {
-        _State.Write(writer, abortHandler);
+        _MainState.Write(writer, abortHandler);
     }
 
     #pragma endregion

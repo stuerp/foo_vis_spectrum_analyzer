@@ -153,8 +153,8 @@ private:
     #pragma endregion
 
 protected:
-    State _State;
-    State _RenderState;
+    State _MainState;
+    State _ThreadState;
 
     CriticalSection _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;

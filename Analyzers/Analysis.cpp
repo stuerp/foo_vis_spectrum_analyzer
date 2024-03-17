@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.02) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.17) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -14,25 +14,25 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Analysis::Initialize(const State * state, const GraphSettings * settings) noexcept
+void Analysis::Initialize(const State * threadState, const GraphSettings * settings) noexcept
 {
-    _State = state;
+    _ThreadState = threadState;
     _GraphSettings = settings;
 
-    switch (state->_FrequencyDistribution)
+    switch (threadState->_FrequencyDistribution)
     {
         default:
 
         case FrequencyDistribution::Linear:
-            GenerateLinearFrequencyBands(state);
+            GenerateLinearFrequencyBands(threadState);
             break;
 
         case FrequencyDistribution::Octaves:
-            GenerateOctaveFrequencyBands(state);
+            GenerateOctaveFrequencyBands(threadState);
             break;
 
         case FrequencyDistribution::AveePlayer:
-            GenerateAveePlayerFrequencyBands(state);
+            GenerateAveePlayerFrequencyBands(threadState);
             break;
     }
 }
@@ -53,7 +53,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
 
     GetAnalyzer(chunk);
 
-    switch (_State->_Transform)
+    switch (_ThreadState->_Transform)
     {
         case Transform::FFT:
         {
@@ -81,32 +81,34 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     }
 
     // Filter the spectrum.
-    if (_State->_WeightingType != WeightingType::None)
+    if (_ThreadState->_WeightingType != WeightingType::None)
         ApplyAcousticWeighting();
 
     // Smooth the spectrum.
-    switch (_State->_SmoothingMethod)
+    switch (_ThreadState->_SmoothingMethod)
     {
         default:
 
         case SmoothingMethod::None:
         {
-            ApplyAverageSmoothing(0.);
+            Normalize();
             break;
         }
 
         case SmoothingMethod::Average:
         {
-            ApplyAverageSmoothing(_State->_SmoothingFactor);
+            NormalizeWithAverageSmoothing(_ThreadState->_SmoothingFactor);
             break;
         }
 
         case SmoothingMethod::Peak:
         {
-            ApplyPeakSmoothing(_State->_SmoothingFactor);
+            NormalizeWithPeakSmoothing(_ThreadState->_SmoothingFactor);
             break;
         }
     }
+
+    // From here one CurValue is guaranteed in the range 0.0 .. 1.0
 }
 
 /// <summary>
@@ -150,6 +152,8 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 }
+
+#pragma region Frequencies
 
 /// <summary>
 /// Generates frequency bands using a linear distribution.
@@ -248,40 +252,42 @@ void Analysis::GenerateAveePlayerFrequencyBands(const State * state)
     }
 }
 
+#pragma endregion
+
 /// <summary>
 /// Gets an analyzer and its supporting objects, if any.
 /// </summary>
 void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
     if (_WindowFunction == nullptr)
-        _WindowFunction = WindowFunction::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
+        _WindowFunction = WindowFunction::Create(_ThreadState->_WindowFunction, _ThreadState->_WindowParameter, _ThreadState->_WindowSkew, _ThreadState->_Truncate);
 
     if (_BrownPucketteKernel == nullptr)
-        _BrownPucketteKernel = WindowFunction::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+        _BrownPucketteKernel = WindowFunction::Create(_ThreadState->_KernelShape, _ThreadState->_KernelShapeParameter, _ThreadState->_KernelAsymmetry, _ThreadState->_Truncate);
 
     uint32_t ChannelCount = chunk.get_channel_count();
     uint32_t ChannelSetup = chunk.get_channel_config();
 
-    if ((_FFTAnalyzer == nullptr) && (_State->_Transform == Transform::FFT))
+    if ((_FFTAnalyzer == nullptr) && (_ThreadState->_Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+        _FFTAnalyzer = new FFTAnalyzer(_ThreadState, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction, *_BrownPucketteKernel, _ThreadState->_BinCount);
     }
 
-    if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))
+    if ((_CQTAnalyzer == nullptr) && (_ThreadState->_Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+        _CQTAnalyzer = new CQTAnalyzer(_ThreadState, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
     }
 
-    if ((_SWIFTAnalyzer == nullptr) && (_State->_Transform == Transform::SWIFT))
+    if ((_SWIFTAnalyzer == nullptr) && (_ThreadState->_Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup);
+        _SWIFTAnalyzer = new SWIFTAnalyzer(_ThreadState, _SampleRate, ChannelCount, ChannelSetup);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }
 
-    if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
+    if ((_AnalogStyleAnalyzer == nullptr) && (_ThreadState->_Transform == Transform::AnalogStyle))
     {
-        _AnalogStyleAnalyzer = new AnalogStyleAnalyzer(_State, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
+        _AnalogStyleAnalyzer = new AnalogStyleAnalyzer(_ThreadState, _SampleRate, ChannelCount, ChannelSetup, *_WindowFunction);
 
         _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
     }
@@ -294,7 +300,7 @@ void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
 /// </summary>
 void Analysis::ApplyAcousticWeighting()
 {
-    const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
+    const double Offset = ((_ThreadState->_SlopeFunctionOffset * (double) _SampleRate) / (double) _ThreadState->_BinCount);
 
     for (FrequencyBand & fb : _FrequencyBands)
         fb.NewValue *= GetWeight(fb.Ctr + Offset);
@@ -305,9 +311,9 @@ void Analysis::ApplyAcousticWeighting()
 /// </summary>
 double Analysis::GetWeight(double x) const noexcept
 {
-    const double a = GetFrequencyTilt(x, _State->_Slope, _State->_SlopeOffset);
-    const double b = Equalize(x, _State->_EqualizeAmount, _State->_EqualizeDepth, _State->_EqualizeOffset);
-    const double c = GetAcousticWeight(x, _State->_WeightingType, _State->_WeightingAmount);
+    const double a = GetFrequencyTilt(x, _ThreadState->_Slope, _ThreadState->_SlopeOffset);
+    const double b = Equalize(x, _ThreadState->_EqualizeAmount, _ThreadState->_EqualizeDepth, _ThreadState->_EqualizeOffset);
+    const double c = GetAcousticWeight(x, _ThreadState->_WeightingType, _ThreadState->_WeightingAmount);
 
     return a * b * c;
 }
@@ -369,32 +375,36 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 
 #pragma endregion
 
-/// <summary>
-/// Smooths the spectrum using averages.
-/// </summary>
-void Analysis::ApplyAverageSmoothing(double factor) noexcept
-{
-    if (factor != 0.0)
-    {
-        for (FrequencyBand & fb : _FrequencyBands)
-            fb.CurValue = (::isfinite(fb.CurValue) ? fb.CurValue * factor : 0.0) + (::isfinite(fb.NewValue) ? fb.NewValue * (1.0 - factor) : 0.0);
-
-    }
-    else
-    {
-        for (FrequencyBand & fb : _FrequencyBands)
-            fb.CurValue = fb.NewValue;
-    }
-}
+#pragma region Normalization
 
 /// <summary>
-/// Smooths the spectrum using peak decay.
+/// Normalizes the amplitude.
 /// </summary>
-void Analysis::ApplyPeakSmoothing(double factor) noexcept
+void Analysis::Normalize() noexcept
 {
     for (FrequencyBand & fb : _FrequencyBands)
-        fb.CurValue = Max(::isfinite(fb.CurValue) ? fb.CurValue * factor : 0.0, ::isfinite(fb.NewValue) ? fb.NewValue : 0.0);
+        fb.CurValue = Clamp(_GraphSettings->ScaleA(fb.NewValue), 0.0, 1.0);
 }
+
+/// <summary>
+/// Normalizes the amplitude and applies average smoothing.
+/// </summary>
+void Analysis::NormalizeWithAverageSmoothing(double factor) noexcept
+{
+    for (FrequencyBand & fb : _FrequencyBands)
+        fb.CurValue = Clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
+}
+
+/// <summary>
+/// Normalizes the amplitude and applies peak smoothing.
+/// </summary>
+void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
+{
+    for (FrequencyBand & fb : _FrequencyBands)
+        fb.CurValue = Clamp(Max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) : 0.0), 0.0, 1.0);
+}
+
+#pragma endregion
 
 /// <summary>
 /// Updates the value of the peak indicators.
@@ -403,16 +413,14 @@ void Analysis::UpdatePeakIndicators() noexcept
 {
     for (FrequencyBand & fb : _FrequencyBands)
     {
-        const double Amplitude = Clamp(_GraphSettings->ScaleA(fb.CurValue), 0., 1.);
-
-        if (Amplitude >= fb.Peak)
+        if (fb.CurValue >= fb.Peak)
         {
-            if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (Amplitude - fb.Peak) * _State->_HoldTime;
+            if ((_ThreadState->_PeakMode == PeakMode::AIMP) || (_ThreadState->_PeakMode == PeakMode::FadingAIMP))
+                fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (fb.CurValue - fb.Peak) * _ThreadState->_HoldTime;
             else
-                fb.HoldTime = _State->_HoldTime;
+                fb.HoldTime = _ThreadState->_HoldTime;
 
-            fb.Peak = Amplitude;
+            fb.Peak = fb.CurValue;
             fb.DecaySpeed = 0.;
             fb.Opacity = 1.;
         }
@@ -420,17 +428,17 @@ void Analysis::UpdatePeakIndicators() noexcept
         {
             if (fb.HoldTime >= 0.)
             {
-                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                    fb.Peak += (fb.HoldTime - Max(fb.HoldTime - 1., 0.)) / _State->_HoldTime;
+                if ((_ThreadState->_PeakMode == PeakMode::AIMP) || (_ThreadState->_PeakMode == PeakMode::FadingAIMP))
+                    fb.Peak += (fb.HoldTime - Max(fb.HoldTime - 1., 0.)) / _ThreadState->_HoldTime;
 
                 fb.HoldTime -= 1.;
 
-                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                    fb.HoldTime = Min(fb.HoldTime, _State->_HoldTime);
+                if ((_ThreadState->_PeakMode == PeakMode::AIMP) || (_ThreadState->_PeakMode == PeakMode::FadingAIMP))
+                    fb.HoldTime = Min(fb.HoldTime, _ThreadState->_HoldTime);
             }
             else
             {
-                switch (_State->_PeakMode)
+                switch (_ThreadState->_PeakMode)
                 {
                     default:
 
@@ -438,35 +446,35 @@ void Analysis::UpdatePeakIndicators() noexcept
                         break;
 
                     case PeakMode::Classic:
-                        fb.DecaySpeed = _State->_Acceleration / 256.;
+                        fb.DecaySpeed = _ThreadState->_Acceleration / 256.;
                         fb.Peak -= fb.DecaySpeed;
                         break;
 
                     case PeakMode::Gravity:
-                        fb.DecaySpeed += _State->_Acceleration / 256.;
+                        fb.DecaySpeed += _ThreadState->_Acceleration / 256.;
                         fb.Peak -= fb.DecaySpeed;
                         break;
 
                     case PeakMode::AIMP:
-                        fb.DecaySpeed = (_State->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
+                        fb.DecaySpeed = (_ThreadState->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
                         fb.Peak -= fb.DecaySpeed;
                         break;
 
                     case PeakMode::FadeOut:
-                        fb.DecaySpeed += _State->_Acceleration / 256.;
+                        fb.DecaySpeed += _ThreadState->_Acceleration / 256.;
                         fb.Opacity -= fb.DecaySpeed;
 
                         if (fb.Opacity <= 0.)
-                            fb.Peak = Amplitude;
+                            fb.Peak = fb.CurValue;
                         break;
 
                     case PeakMode::FadingAIMP:
-                        fb.DecaySpeed = (_State->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
+                        fb.DecaySpeed = (_ThreadState->_Acceleration / 256.) * (1. + (int) (fb.Peak < 0.5));
                         fb.Peak -= fb.DecaySpeed;
                         fb.Opacity -= fb.DecaySpeed;
 
                         if (fb.Opacity <= 0.)
-                            fb.Peak = Amplitude;
+                            fb.Peak = fb.CurValue;
                         break;
                 }
             }

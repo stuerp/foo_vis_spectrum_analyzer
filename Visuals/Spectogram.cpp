@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.17) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -86,16 +86,9 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
             for (const auto & fb : frequencyBands)
             {
-                double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
+                _ForegroundStyle->SetBrushColor(fb.CurValue);
 
-                if (!::isfinite(Amplitude))
-                    Amplitude = 0.;
-
-                {
-                    _ForegroundStyle->SetBrushColor(Clamp(Amplitude, 0., 1.));
-
-                    _BitmapRenderTarget->DrawLine({ (FLOAT) _X, y1 }, { (FLOAT) _X, y2 }, _ForegroundStyle->_Brush);
-                }
+                _BitmapRenderTarget->DrawLine({ (FLOAT) _X, y1 }, { (FLOAT) _X, y2 }, _ForegroundStyle->_Brush);
 
                 y1  = y2;
                 y2 -= Bandwidth;
