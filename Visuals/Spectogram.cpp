@@ -218,8 +218,8 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime)
 
     _BitmapRenderTarget->EndDraw();
 
-    if ((uint64_t) _TrackTime != (uint64_t) trackTime)
-        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _Size.width - (FLOAT) (trackTime - _TrackTime) });
+    if (_TrackTime != trackTime)
+        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _Size.width });
 }
 
 /// <summary>
