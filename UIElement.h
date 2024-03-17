@@ -60,7 +60,7 @@ private:
     void OnTimer();
 
     void ProcessEvents();
-    bool UpdateSpectrum();
+    void UpdateSpectrum();
     void Render();
 
     #pragma region Timer

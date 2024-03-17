@@ -7,6 +7,8 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
+#define NOMINMAX
+
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
 #include <Windows.h>
@@ -44,7 +46,7 @@ private:
     D2D1_SIZE_F _Size;
 
     uint32_t _X;
-    uint64_t _Time;
+    double _Time;
     bool _RequestErase;
 
     std::wstring _FontFamilyName;

@@ -48,7 +48,7 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 void Spectogram::Reset()
 {
     _X = 0;
-    _Time = ~0U;
+    _Time = std::numeric_limits<double>::max();
     _RequestErase = true;
 
     _Labels.clear();
@@ -68,40 +68,41 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
     {
         const FLOAT BitmapHeight = _Size.height - _TextHeight;
 
-        _BitmapRenderTarget->BeginDraw();
-
-        if (_RequestErase)
+        if (time != _Time)
         {
-            _BitmapRenderTarget->Clear(D2D1::ColorF(0, 0.f)); // Make the bitmap completely transparent.
+            _BitmapRenderTarget->BeginDraw();
 
-            _RequestErase = false;
-        }
-
-        // Draw the next spectogram line.
-        {
-            const FLOAT Bandwidth = Max((BitmapHeight / (FLOAT) frequencyBands.size()), 1.f);
-
-            FLOAT y1 = BitmapHeight;
-            FLOAT y2 = y1 - Bandwidth;
-
-            for (const auto & fb : frequencyBands)
+            if (_RequestErase)
             {
-                _ForegroundStyle->SetBrushColor(fb.CurValue);
+                _BitmapRenderTarget->Clear(D2D1::ColorF(0, 0.f)); // Make the bitmap completely transparent.
 
-                _BitmapRenderTarget->DrawLine({ (FLOAT) _X, y1 }, { (FLOAT) _X, y2 }, _ForegroundStyle->_Brush);
-
-                y1  = y2;
-                y2 -= Bandwidth;
+                _RequestErase = false;
             }
-        }
 
-        _BitmapRenderTarget->EndDraw();
+            // Draw the next spectogram line.
+            {
+                const FLOAT Bandwidth = Max((BitmapHeight / (FLOAT) frequencyBands.size()), 1.f);
 
-        if (_Time != (uint32_t) time)
-        {
-            _Time = (uint32_t) time;
+                FLOAT y1 = BitmapHeight;
+                FLOAT y2 = y1 - Bandwidth;
 
-            _Labels.push_front({ pfc::wideFromUTF8(pfc::format_time(_Time)), _Size.width - ((FLOAT) time - (FLOAT) _Time) });
+                for (const auto & fb : frequencyBands)
+                {
+                    assert(InRange(fb.CurValue, 0.0, 1.0));
+
+                    _ForegroundStyle->SetBrushColor(fb.CurValue);
+
+                    _BitmapRenderTarget->DrawLine({ (FLOAT) _X, y1 }, { (FLOAT) _X, y2 }, _ForegroundStyle->_Brush);
+
+                    y1  = y2;
+                    y2 -= Bandwidth;
+                }
+            }
+
+            _BitmapRenderTarget->EndDraw();
+
+            if ((uint64_t) _Time != (uint64_t) time)
+                _Labels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) time)), _Size.width - (FLOAT) (time - _Time) });
         }
 
         // Draw the bitmap.
@@ -134,7 +135,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
         // Draw the X-axis.
         if (!_Labels.empty())
         {
-            const FLOAT Offset = 4.f;
+            const FLOAT Offset = 4.f; // Distance between the tick and the text.
 
             for (auto & Label : _Labels)
             {
@@ -144,17 +145,23 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
                 renderTarget->DrawTextW(Label._Text.c_str(), Label._Text.size(), _TextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                Label._X--; // Scroll left.
+                if (time != _Time)
+                    Label._X--; // Scroll left.
             }
 
             if (_Labels.back()._X + Offset + _TextWidth < 0.f)
                 _Labels.pop_back();
         }
 
-        _X++;
+        if (time != _Time)
+        {
+            _X++;
 
-        if (_X > (uint32_t) _Size.width)
-            _X = 0;
+            if (_X > (uint32_t) _Size.width)
+                _X = 0;
+        }
+
+        _Time = time;
     }
 }
 

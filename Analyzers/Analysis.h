@@ -44,6 +44,10 @@ public:
     void Reset();
 
 private:
+    void GenerateLinearFrequencyBands();
+    void GenerateOctaveFrequencyBands();
+    void GenerateAveePlayerFrequencyBands();
+
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
@@ -52,10 +56,6 @@ private:
     void Normalize() noexcept;
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
-
-    void GenerateLinearFrequencyBands(const State * state);
-    void GenerateOctaveFrequencyBands(const State * state);
-    void GenerateAveePlayerFrequencyBands(const State * state);
 
 public:
     const State * _ThreadState;

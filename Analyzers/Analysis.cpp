@@ -24,15 +24,15 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
         default:
 
         case FrequencyDistribution::Linear:
-            GenerateLinearFrequencyBands(threadState);
+            GenerateLinearFrequencyBands();
             break;
 
         case FrequencyDistribution::Octaves:
-            GenerateOctaveFrequencyBands(threadState);
+            GenerateOctaveFrequencyBands();
             break;
 
         case FrequencyDistribution::AveePlayer:
-            GenerateAveePlayerFrequencyBands(threadState);
+            GenerateAveePlayerFrequencyBands();
             break;
     }
 }
@@ -158,22 +158,22 @@ void Analysis::Reset()
 /// <summary>
 /// Generates frequency bands using a linear distribution.
 /// </summary>
-void Analysis::GenerateLinearFrequencyBands(const State * state)
+void Analysis::GenerateLinearFrequencyBands()
 {
-    const double MinScale = ScaleF(state->_LoFrequency, state->_ScalingFunction, state->_SkewFactor);
-    const double MaxScale = ScaleF(state->_HiFrequency, state->_ScalingFunction, state->_SkewFactor);
+    const double MinScale = ScaleF(_ThreadState->_LoFrequency, _ThreadState->_ScalingFunction, _ThreadState->_SkewFactor);
+    const double MaxScale = ScaleF(_ThreadState->_HiFrequency, _ThreadState->_ScalingFunction, _ThreadState->_SkewFactor);
 
-    const double Bandwidth = (((state->_Transform == Transform::FFT) && (state->_MappingMethod == Mapping::TriangularFilterBank)) || (state->_Transform == Transform::CQT)) ? state->_Bandwidth : 0.5;
+    const double Bandwidth = (((_ThreadState->_Transform == Transform::FFT) && (_ThreadState->_MappingMethod == Mapping::TriangularFilterBank)) || (_ThreadState->_Transform == Transform::CQT)) ? _ThreadState->_Bandwidth : 0.5;
 
-    _FrequencyBands.resize(state->_BandCount);
+    _FrequencyBands.resize(_ThreadState->_BandCount);
 
     double i = 0.;
 
     for (FrequencyBand & fb: _FrequencyBands)
     {
-        fb.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
-        fb.Ctr = DeScaleF(Map(i,             0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
-        fb.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(state->_BandCount - 1), MinScale, MaxScale), state->_ScalingFunction, state->_SkewFactor);
+        fb.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(_ThreadState->_BandCount - 1), MinScale, MaxScale), _ThreadState->_ScalingFunction, _ThreadState->_SkewFactor);
+        fb.Ctr = DeScaleF(Map(i,             0., (double)(_ThreadState->_BandCount - 1), MinScale, MaxScale), _ThreadState->_ScalingFunction, _ThreadState->_SkewFactor);
+        fb.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(_ThreadState->_BandCount - 1), MinScale, MaxScale), _ThreadState->_ScalingFunction, _ThreadState->_SkewFactor);
 
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
@@ -186,19 +186,19 @@ void Analysis::GenerateLinearFrequencyBands(const State * state)
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void Analysis::GenerateOctaveFrequencyBands(const State * state)
+void Analysis::GenerateOctaveFrequencyBands()
 {
     const double Root24 = ::exp2(1. / 24.);
 
-    const double Pitch = (state->_Pitch > 0.) ? ::round((::log2(state->_Pitch) - 4.) * 12.) * 2. : 0.;
-    const double C0 = state->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double Pitch = (_ThreadState->_Pitch > 0.) ? ::round((::log2(_ThreadState->_Pitch) - 4.) * 12.) * 2. : 0.;
+    const double C0 = _ThreadState->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
 
-    const double NoteGroup = 24. / state->_BandsPerOctave;
+    const double NoteGroup = 24. / _ThreadState->_BandsPerOctave;
 
-    const double LoNote = ::round(state->_MinNote * 2. / NoteGroup);
-    const double HiNote = ::round(state->_MaxNote * 2. / NoteGroup);
+    const double LoNote = ::round(_ThreadState->_MinNote * 2. / NoteGroup);
+    const double HiNote = ::round(_ThreadState->_MaxNote * 2. / NoteGroup);
 
-    const double Bandwidth = (((state->_Transform == Transform::FFT) && (state->_MappingMethod == Mapping::TriangularFilterBank)) || (state->_Transform == Transform::CQT)) ? state->_Bandwidth : 0.5;
+    const double Bandwidth = (((_ThreadState->_Transform == Transform::FFT) && (_ThreadState->_MappingMethod == Mapping::TriangularFilterBank)) || (_ThreadState->_Transform == Transform::CQT)) ? _ThreadState->_Bandwidth : 0.5;
 
     _FrequencyBands.clear();
 
@@ -208,9 +208,9 @@ void Analysis::GenerateOctaveFrequencyBands(const State * state)
     {
         FrequencyBand fb = 
         {
-            C0 * ::pow(Root24, (i - Bandwidth) * NoteGroup + state->_Transpose),
-            C0 * ::pow(Root24,  i              * NoteGroup + state->_Transpose),
-            C0 * ::pow(Root24, (i + Bandwidth) * NoteGroup + state->_Transpose),
+            C0 * ::pow(Root24, (i - Bandwidth) * NoteGroup + _ThreadState->_Transpose),
+            C0 * ::pow(Root24,  i              * NoteGroup + _ThreadState->_Transpose),
+            C0 * ::pow(Root24, (i + Bandwidth) * NoteGroup + _ThreadState->_Transpose),
         };
 
         // Pre-calculate the tooltip text and the band background color.
@@ -231,19 +231,19 @@ void Analysis::GenerateOctaveFrequencyBands(const State * state)
 /// <summary>
 /// Generates frequency bands like AveePlayer.
 /// </summary>
-void Analysis::GenerateAveePlayerFrequencyBands(const State * state)
+void Analysis::GenerateAveePlayerFrequencyBands()
 {
-    const double Bandwidth = (((state->_Transform == Transform::FFT) && (state->_MappingMethod == Mapping::TriangularFilterBank)) || (state->_Transform == Transform::CQT)) ? state->_Bandwidth : 0.5;
+    const double Bandwidth = (((_ThreadState->_Transform == Transform::FFT) && (_ThreadState->_MappingMethod == Mapping::TriangularFilterBank)) || (_ThreadState->_Transform == Transform::CQT)) ? _ThreadState->_Bandwidth : 0.5;
 
-    _FrequencyBands.resize(state->_BandCount);
+    _FrequencyBands.resize(_ThreadState->_BandCount);
 
     double i = 0.;
 
     for (FrequencyBand & fb : _FrequencyBands)
     {
-        fb.Lo  = LogSpace(state->_LoFrequency, state->_HiFrequency, i - Bandwidth, state->_BandCount - 1, state->_SkewFactor);
-        fb.Ctr = LogSpace(state->_LoFrequency, state->_HiFrequency, i,             state->_BandCount - 1, state->_SkewFactor);
-        fb.Hi  = LogSpace(state->_LoFrequency, state->_HiFrequency, i + Bandwidth, state->_BandCount - 1, state->_SkewFactor);
+        fb.Lo  = LogSpace(_ThreadState->_LoFrequency, _ThreadState->_HiFrequency, i - Bandwidth, _ThreadState->_BandCount - 1, _ThreadState->_SkewFactor);
+        fb.Ctr = LogSpace(_ThreadState->_LoFrequency, _ThreadState->_HiFrequency, i,             _ThreadState->_BandCount - 1, _ThreadState->_SkewFactor);
+        fb.Hi  = LogSpace(_ThreadState->_LoFrequency, _ThreadState->_HiFrequency, i + Bandwidth, _ThreadState->_BandCount - 1, _ThreadState->_SkewFactor);
 
         fb.HasDarkBackground = true;
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);

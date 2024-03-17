@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -82,14 +82,14 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, double time, bool gotChunk, double sampleRate, Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, double time, double sampleRate, Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
     {
         RenderBackground(renderTarget, artwork);
-        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate, time, gotChunk);
+        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate, time);
     }
 }
 
@@ -152,7 +152,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time, bool gotChunk) noexcept
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time) noexcept
 {
     if (_State->_VisualizationType != VisualizationType::Spectogram)
     {
@@ -163,8 +163,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
         _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
     }
     else
-        if (gotChunk)
-            _Spectogram.Render(renderTarget, frequencyBands, sampleRate, time);
+        _Spectogram.Render(renderTarget, frequencyBands, sampleRate, time);
 
     RenderDescription(renderTarget);
 }

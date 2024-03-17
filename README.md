@@ -95,6 +95,7 @@ v0.7.5.0, 2024-03-xx
 * New: Built-in SoX color scheme and non-linear amplitude color map suited for the spectogram visualization.
 * Fixed: Security issue
   * The preset path will no longer be saved as part of a preset file.
+* Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
 
 v0.7.4.1, 2024-03-14
 

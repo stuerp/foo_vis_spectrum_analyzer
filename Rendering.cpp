@@ -146,12 +146,12 @@ void UIElement::Render()
     {
         _FrameCounter.NewFrame();
 
-        bool GotChunk = UpdateSpectrum();
+        UpdateSpectrum();
 
         _RenderTarget->BeginDraw();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, GotChunk, (double) _SampleRate, _Artwork);
+            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, (double) _SampleRate, _Artwork);
 
         if (_MainState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -170,10 +170,8 @@ void UIElement::Render()
 /// <summary>
 /// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
-bool UIElement::UpdateSpectrum()
+void UIElement::UpdateSpectrum()
 {
-    bool GotChunk = false;
-
     if (_MainState._UseToneGenerator)
     {
         audio_chunk_impl Chunk;
@@ -183,8 +181,6 @@ bool UIElement::UpdateSpectrum()
             for (auto & Iter : _Grid)
                 Iter._Graph->Process(Chunk);
         }
-
-        GotChunk = true;
     }
     else
     {
@@ -193,21 +189,22 @@ bool UIElement::UpdateSpectrum()
         // Update the graph.
         if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
         {
-            audio_chunk_impl Chunk;
-
-            const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
-            const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
-            const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
-
-            if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+            if (PlaybackTime != _OldPlaybackTime) // PLaybayTime will not change when the playback is paused.
             {
-                for (auto & Iter : _Grid)
-                    Iter._Graph->Process(Chunk);
+                audio_chunk_impl Chunk;
 
-                GotChunk = true;
+                const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
+                const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
+                const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
+
+                if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+                {
+                    for (auto & Iter : _Grid)
+                        Iter._Graph->Process(Chunk);
+                }
+
+                _OldPlaybackTime = PlaybackTime;
             }
-
-            _OldPlaybackTime = PlaybackTime;
         }
     }
 
@@ -217,8 +214,6 @@ bool UIElement::UpdateSpectrum()
         for (auto & Iter : _Grid)
             Iter._Graph->GetAnalysis().UpdatePeakIndicators();
     }
-
-    return GotChunk;
 }
 
 /// <summary>
