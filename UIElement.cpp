@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.11) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.17) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -575,6 +575,11 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 /// </summary>
 void UIElement::on_playback_pause(bool)
 {
+}
+
+void UIElement::on_playback_time(double time)
+{
+    _ThreadState._TrackTime = time;
 }
 
 #pragma endregion

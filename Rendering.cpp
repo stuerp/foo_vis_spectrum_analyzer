@@ -103,7 +103,8 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
-        _OldPlaybackTime = 0.;
+        _ThreadState._PlaybackTime = 0.;
+        _ThreadState._TrackTime = 0.;
 
         if (_Artwork.Bitmap() == nullptr)
         {
@@ -122,6 +123,9 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::PlaybackStopped))
     {
+        _ThreadState._PlaybackTime = 0.;
+        _ThreadState._TrackTime = 0.;
+
         _Artwork.Release();
 
         for (auto & Iter : _Grid)
@@ -151,7 +155,7 @@ void UIElement::Render()
         _RenderTarget->BeginDraw();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Render(_RenderTarget, _OldPlaybackTime, (double) _SampleRate, _Artwork);
+            Iter._Graph->Render(_RenderTarget, (double) _SampleRate, _Artwork);
 
         if (_MainState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
@@ -189,13 +193,13 @@ void UIElement::UpdateSpectrum()
         // Update the graph.
         if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
         {
-            if (PlaybackTime != _OldPlaybackTime) // PLaybayTime will not change when the playback is paused.
+            if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will 0 when the playback is paused.
             {
                 audio_chunk_impl Chunk;
 
                 const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
-                const double WindowSize = IsSlidingWindow ? PlaybackTime - _OldPlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
-                const double Offset = IsSlidingWindow ? _OldPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
+                const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
+                const double Offset = IsSlidingWindow ? _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
 
                 if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
                 {
@@ -203,7 +207,7 @@ void UIElement::UpdateSpectrum()
                         Iter._Graph->Process(Chunk);
                 }
 
-                _OldPlaybackTime = PlaybackTime;
+                _ThreadState._PlaybackTime = PlaybackTime;
             }
         }
     }

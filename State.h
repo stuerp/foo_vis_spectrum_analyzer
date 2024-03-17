@@ -235,6 +235,9 @@ public:
     size_t _SelectedGraph;
     int _SelectedStyle;
 
+    double _PlaybackTime;
+    double _TrackTime;
+
     #pragma endregion
 
 private:

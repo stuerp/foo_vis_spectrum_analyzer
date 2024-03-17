@@ -38,7 +38,7 @@ public:
 
     void Initialize(State * state, const GraphSettings * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, double time, double sampleRate, Artwork & artwork) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;
     void Reset();
 
     void Process(const audio_chunk & chunk) noexcept
@@ -84,7 +84,7 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate, double time) noexcept;
+    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
     void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
 
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;

@@ -36,27 +36,29 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-    if (_GraphSettings->_FlipHorizontally)
     {
-        const FLOAT Width = _Bounds.right - _Bounds.left;
+        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
-        Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
+        if (_GraphSettings->_FlipHorizontally)
+        {
+            const FLOAT Width = _Bounds.right - _Bounds.left;
+
+            Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
+        }
+
+        if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
+        {
+            const FLOAT Height = _Bounds.bottom - _Bounds.top;
+
+            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
+
+            Transform = Transform * FlipV;
+        }
+
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
+
+        renderTarget->SetTransform(Transform * Translate);
     }
-
-    if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-    {
-        const FLOAT Height = _Bounds.bottom - _Bounds.top;
-
-        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
-
-        Transform = Transform * FlipV;
-    }
-
-    D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
-
-    renderTarget->SetTransform(Transform * Translate);
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -82,7 +84,9 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
             RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
     }
 
-    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    {
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 }
 
 /// <summary>
