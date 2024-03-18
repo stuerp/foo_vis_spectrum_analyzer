@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.17) P. Stuer **/
+/** $VER: Rendering.cpp (2024.03.18) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -64,30 +64,33 @@ void UIElement::OnTimer()
     if (_IsFrozen || !_IsVisible || ::IsIconic(core_api::get_main_window()))
         return;
 
-    if (!_CriticalSection.TryEnter())
-        return;
-
     ProcessEvents();
 
     if (IsWindowVisible())
-        Render();
+    {
+        if (_CriticalSection.TryEnter())
+        {
+            Render();
 
-    _CriticalSection.Leave();
+            _CriticalSection.Leave();
+        }
+    }
 
     // Notify the configuration dialog about the changed artwork colors.
     if (_IsConfigurationChanged)
     {
-        _CriticalSection.Enter();
+        if (_CriticalSection.TryEnter())
+        {
+            _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
 
-        _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
+            _CriticalSection.Leave();
 
-        _CriticalSection.Leave();
+            // Notify the configuration dialog.
+            if (_ConfigurationDialog.IsWindow())
+                _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-        // Notify the configuration dialog.
-        if (_ConfigurationDialog.IsWindow())
-            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-        _IsConfigurationChanged = false;
+            _IsConfigurationChanged = false;
+        }
     }
 }
 
@@ -220,31 +223,6 @@ void UIElement::UpdateSpectrum()
     }
 }
 
-/// <summary>
-/// Resizes all visual elements.
-/// </summary>
-void UIElement::Resize()
-{
-    if (_RenderTarget == nullptr)
-        return;
-
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
-
-    // Reposition the frame counter.
-    _FrameCounter.Resize(Size.width, Size.height);
-
-    // Resize the grid.
-    for (auto & Iter : _Grid)
-        _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
-
-    _Grid.Resize(Size.width, Size.height);
-
-    for (auto & Iter : _Grid)
-        _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
-
-    _ThreadState._StyleManager.ResetGradients();
-}
-
 #pragma region DirectX
 
 /// <summary>
@@ -299,7 +277,15 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             // Resize some elements based on the size of the render target.
-            Resize();
+            {
+                // Reposition the frame counter.
+                _FrameCounter.Resize((FLOAT) Size.width, (FLOAT) Size.height);
+
+                // Resize the grid.
+                _Grid.Resize((FLOAT) Size.width, (FLOAT) Size.height);
+
+                _ThreadState._StyleManager.ResetGradients();
+            }
         }
     }
 /*

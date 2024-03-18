@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.17) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.18) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -381,6 +381,31 @@ void UIElement::OnMouseLeave()
     _TrackingToolInfo = nullptr;
 
     _TrackingGraph = nullptr;
+}
+
+/// <summary>
+/// Resizes all visual elements.
+/// </summary>
+void UIElement::Resize()
+{
+    if (_RenderTarget == nullptr)
+        return;
+
+    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+
+    // Reposition the frame counter.
+    _FrameCounter.Resize(Size.width, Size.height);
+
+    // Resize the grid.
+    for (auto & Iter : _Grid)
+        _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
+
+    _Grid.Resize(Size.width, Size.height);
+
+    for (auto & Iter : _Grid)
+        _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
+
+    _ThreadState._StyleManager.ResetGradients();
 }
 
 /// <summary>

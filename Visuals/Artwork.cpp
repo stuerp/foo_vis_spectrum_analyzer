@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.03.17) P. Stuer **/
+/** $VER: Artwork.cpp (2024.03.18) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -102,10 +102,11 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
     if (!_Raster.empty() || !_FilePath.empty())
     {
         // Load the frame from the raster data.
-        hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
+        if (_Frame == nullptr)
+            hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
 
         // Create a format coverter to 32bppPBGRA.
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
         {
             hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
 
@@ -114,7 +115,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
         }
 
         // Create a Direct2D bitmap from the WIC bitmap source.
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
         {
             hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.17) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.18) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -141,7 +141,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
             const D2D1_RECT_F Rect = { Label.X + Offset, _BitmapSize.height, Label.X + Offset + _XTextWidth, _Size.height };
 
-            renderTarget->DrawTextW(Label.Text.c_str(), Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_State->_PlaybackTime != _PlaybackTime)
                 Label.X--; // Scroll left.
@@ -166,7 +166,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
             Rect.top    = _BitmapSize.height - _YTextHeight - y;
             Rect.bottom = Rect.top +_YTextHeight;
 
-            renderTarget->DrawTextW(Label.Text.c_str(), Label.Text.size(), _YTextFormat, Rect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextFormat, Rect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 
