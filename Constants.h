@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.03.13) P. Stuer **/
+/** $VER: Constans.h (2024.03.15) P. Stuer **/
 
 #pragma once
 
@@ -320,6 +320,8 @@ enum class VisualElement : uint32_t
     CurvePeakLine               = 12,
     CurvePeakArea               = 13,
 
+    Spectogram                  = 18,
+
     NyquistMarker               = 15,
 
 };
@@ -383,6 +385,8 @@ enum class ColorScheme : uint32_t
 
     Fire = 8,
     Rainbow = 9,
+
+    SoX = 10,
 };
 
 // Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.

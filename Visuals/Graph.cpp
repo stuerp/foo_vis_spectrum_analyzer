@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -39,6 +39,8 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _XAxis.Initialize(state, settings, _Analysis._FrequencyBands);
     
     _YAxis.Initialize(state, settings);
+
+    _Spectogram.Initialize(state, settings, _Analysis._FrequencyBands);
 }
 
 /// <summary>
@@ -71,6 +73,10 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 
         _YAxis.Move(Rect);
     }
+
+    {
+        _Spectogram.Move(_Bounds);
+    }
 }
 
 /// <summary>
@@ -88,12 +94,14 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork 
 }
 
 /// <summary>
-/// Clears the analysis of this instance.
+/// Resets this instance.
 /// </summary>
-void Graph::Clear()
+void Graph::Reset()
 {
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
+
+    _Spectogram.Reset();
 }
 
 /// <summary>
@@ -151,9 +159,11 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
         _XAxis.Render(renderTarget);
 
         _YAxis.Render(renderTarget);
-    }
 
-    _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+        _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+    }
+    else
+        _Spectogram.Render(renderTarget, frequencyBands, sampleRate);
 
     RenderDescription(renderTarget);
 }

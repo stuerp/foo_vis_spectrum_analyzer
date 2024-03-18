@@ -53,10 +53,10 @@ public:
         SetIdle();
     }
 
-    bool IsInitialized() const noexcept { return _State == Initialized; }
-    bool IsRealized() const noexcept { return _State == Realized; }
-    void SetIdle() noexcept { _State = Idle; }
-    void RequestColorUpdate() noexcept { _State = Realized; } // Request an update of the color list because the parameters have changed.
+    bool IsInitialized() const noexcept { return _Status == Initialized; }
+    bool IsRealized() const noexcept { return _Status == Realized; }
+    void SetIdle() noexcept { _Status = Idle; }
+    void RequestColorUpdate() noexcept { _Status = Realized; } // Request an update of the color list because the parameters have changed.
 
 private:
     CriticalSection _CriticalSection;
@@ -76,5 +76,5 @@ private:
         Realized,       // A new bitmap has been generated or the configuration parameters have changed.
     };
 
-    ArtworkState _State;
+    ArtworkState _Status;
 };

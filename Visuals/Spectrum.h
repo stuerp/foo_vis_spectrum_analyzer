@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.13) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.15) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -38,9 +38,7 @@ public:
     Spectrum & operator=(Spectrum &&) = delete;
 
     void Initialize(State * state, const GraphSettings * settings);
-
     void Move(const D2D1_RECT_F & rect);
-
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
@@ -53,7 +51,6 @@ public:
 private:
     void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-    void RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
 

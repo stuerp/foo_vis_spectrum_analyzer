@@ -1,5 +1,5 @@
 
-/** $VER: PresetManager.cpp (2024.03.09) P. Stuer **/
+/** $VER: PresetManager.cpp (2024.03.14) P. Stuer **/
 
 #include "PresetManager.h"
 
@@ -47,7 +47,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
 
         State NewState;
 
-        NewState.Read(Reader, Size, fb2k::noAbort);
+        NewState.Read(Reader, Size, fb2k::noAbort, true);
 
         *state = NewState;
 
@@ -82,7 +82,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
         Writer->write_object_t(PresetManager::Magic, fb2k::noAbort);
         Writer->write_object_t(PresetManager::Version, fb2k::noAbort);
 
-        state->Write(Writer, fb2k::noAbort);
+        state->Write(Writer, fb2k::noAbort, true);
 
         return true;
     }

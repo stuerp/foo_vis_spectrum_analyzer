@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.11) P. Stuer **/
+/** $VER: UIElement.h (2024.03.17) P. Stuer **/
 
 #pragma once
 
@@ -114,7 +114,7 @@ private:
     void on_playback_edited(metadb_handle_ptr p_track) { }
     void on_playback_dynamic_info(const file_info& p_info) { }
     void on_playback_dynamic_info_track(const file_info& p_info) { }
-    void on_playback_time(double p_time) { }
+    void on_playback_time(double time);
     void on_volume_change(float p_new_val) { }
 
     #pragma endregion
@@ -153,8 +153,8 @@ private:
     #pragma endregion
 
 protected:
-    State _State;
-    State _RenderState;
+    State _MainState;
+    State _ThreadState;
 
     CriticalSection _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
@@ -179,7 +179,6 @@ private:
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
     visualisation_stream_v2::ptr _VisualisationStream;
-    double _OldPlaybackTime;
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
 
     FrameCounter _FrameCounter;

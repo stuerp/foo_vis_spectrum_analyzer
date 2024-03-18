@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.13) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.03.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -198,6 +198,14 @@ private:
             {
                 Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::Spectogram,
+            {
+                Style::SupportsOpacity | Style::AmplitudeAware | Style::AmplitudeBasedColor,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 

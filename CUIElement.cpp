@@ -19,7 +19,7 @@ CUIElement::CUIElement()
 {
     _IsVisible = true; // CUI does send notifications.
 
-    _State._IsDUI = false;
+    _MainState._IsDUI = false;
 
     GetColors();
 }
@@ -90,7 +90,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = Color::CreateBrush(_State._StyleManager._UserInterfaceColors[3]);
+    HBRUSH hBrush = Color::CreateBrush(_MainState._StyleManager._UserInterfaceColors[3]);
 
     ::FillRect(hDC, &cr, hBrush);
 
@@ -167,17 +167,17 @@ void CUIElement::GetColors() noexcept
 {
     cui::colours::helper Helper(pfc::guid_null);
 
-    _State._StyleManager._UserInterfaceColors.clear();
+    _MainState._StyleManager._UserInterfaceColors.clear();
 
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _State._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
 static uie::window_factory<CUIElement> _WindowFactory;

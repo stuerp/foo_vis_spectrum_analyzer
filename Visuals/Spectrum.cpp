@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.13) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.17) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -36,27 +36,29 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-    if (_GraphSettings->_FlipHorizontally)
     {
-        const FLOAT Width = _Bounds.right - _Bounds.left;
+        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
-        Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
+        if (_GraphSettings->_FlipHorizontally)
+        {
+            const FLOAT Width = _Bounds.right - _Bounds.left;
+
+            Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
+        }
+
+        if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
+        {
+            const FLOAT Height = _Bounds.bottom - _Bounds.top;
+
+            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
+
+            Transform = Transform * FlipV;
+        }
+
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
+
+        renderTarget->SetTransform(Transform * Translate);
     }
-
-    if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-    {
-        const FLOAT Height = _Bounds.bottom - _Bounds.top;
-
-        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
-
-        Transform = Transform * FlipV;
-    }
-
-    D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
-
-    renderTarget->SetTransform(Transform * Translate);
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -75,7 +77,6 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
                 break;
 
             case VisualizationType::Spectogram:
-                RenderSpectogram(renderTarget, frequencyBands, sampleRate);
                 break;
         }
 
@@ -83,7 +84,9 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
             RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
     }
 
-    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    {
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 }
 
 /// <summary>
@@ -109,6 +112,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 
     for (const auto & fb : frequencyBands)
     {
+        assert(InRange(fb.CurValue, 0.0, 1.0));
+        assert(InRange(fb.Peak, 0.0, 1.0));
+
         D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, Height - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
@@ -130,7 +136,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             if ((_State->_PeakMode != PeakMode::None) && (fb.Peak > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = Clamp((FLOAT)(Height * fb.Peak), 0.f, Height);
+                Rect.bottom = (FLOAT) (Height * fb.Peak);
 
                 // Draw the peak indicator area.
                 if (_PeakArea->_ColorSource != ColorSource::None)
@@ -158,18 +164,15 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 }
             }
 
-            double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
-
-            if (Amplitude > 0.0)
             {
                 Rect.top    = 0.f;
-                Rect.bottom = Clamp((FLOAT)(Height * Amplitude), 0.f, Height);
+                Rect.bottom = (FLOAT) (Height * fb.CurValue);
 
                 // Draw the area of the bar.
                 if (_BarArea->_ColorSource != ColorSource::None)
                 {
                     if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
-                        _BarArea->SetBrushColor(Amplitude);
+                        _BarArea->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _BarArea->_Brush);
@@ -267,56 +270,6 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 }
 
 /// <summary>
-/// Renders the spectrum analysis as a spectogram.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-void Spectrum::RenderSpectogram(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
-{
-    static FLOAT x1 = 0.f;
-    static FLOAT x2 = 4.f;
-
-    const FLOAT Width = _Bounds.right - _Bounds.left;
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT Bandwidth = Max((Height / (FLOAT) frequencyBands.size()), 1.f);
-
-    const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
-    const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
-
-    FLOAT y1 = 0.f;
-    FLOAT y2 = y1 + Bandwidth;
-
-    for (const auto & fb : frequencyBands)
-    {
-        D2D1_RECT_F Rect = { x1, y1, x2, y2 };
-
-        double Amplitude = _GraphSettings->ScaleA(fb.CurValue);
-
-        if (Amplitude > 0.0)
-        {
-            if (_BarArea->_ColorSource != ColorSource::None)
-            {
-                if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
-                    _BarArea->SetBrushColor(Amplitude);
-
-                renderTarget->FillRectangle(Rect, _BarArea->_Brush);
-            }
-        }
-
-        y1 = ::round(y2);
-        y2 = y1 + Bandwidth;
-    }
-
-    x1 += 4.f;
-    x2 += 4.f;
-
-    if (x2 > _Bounds.right)
-    {
-        x1 = 0.f;
-        x2 = 4.f;
-    }
-}
-
-/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -340,7 +293,7 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 {
     HRESULT hr = S_OK;
 
-    if ((_OpacityMask == nullptr) && SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
         hr = CreateOpacityMask(renderTarget);
 
     const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
@@ -510,7 +463,8 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
         if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-        double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
+//      double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
+        double Value = !usePeak ? fb.CurValue : fb.Peak;
 
         y = Clamp((FLOAT)(Value * Height), 0.f, Height);
 

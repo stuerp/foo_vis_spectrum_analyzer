@@ -246,7 +246,7 @@ HRESULT XAxis::CreateDeviceIndependentResources()
 {
     HRESULT hr = S_OK;
 
-    if (_TextFormat == 0)
+    if (_TextFormat == nullptr)
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
 

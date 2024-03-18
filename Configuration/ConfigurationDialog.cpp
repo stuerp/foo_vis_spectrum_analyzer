@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.17) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -916,7 +916,7 @@ void ConfigurationDialog::Initialize()
                 w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
 
                 SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
-                w.SetPos32((int) (gs._AmplitudeStep* 10.));
+                w.SetPos32((int) (gs._AmplitudeStep * 10.));
             }
         }
 
@@ -949,7 +949,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve" })//, L"Heat Map" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -993,6 +993,7 @@ void ConfigurationDialog::Initialize()
             L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
             L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
+            L"Spectogram",
             L"Nyquist Frequency",
         })
             w.AddString(x);
@@ -1018,7 +1019,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow" })
+        for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow", L"SoX" })
             w.AddString(x);
     }
 
@@ -1140,12 +1141,12 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 /// <summary>
 /// Handles an update of the selected item of a combo box.
 /// </summary>
-void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
+void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 {
     if (_State == nullptr)
         return;
 
-    CComboBox cb = (CComboBox) w;
+    auto cb = (CComboBox) w;
 
     int SelectedIndex = cb.GetCurSel();
 
@@ -1424,12 +1425,13 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
 
             SelectedIndex = lb.GetCurSel();
 
-            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size()))
+            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
                 return;
 
             SetDlgItemTextW(IDC_PRESET_NAME, _PresetNames[(size_t) SelectedIndex].c_str());
 
             UpdatePresetsPage();
+
             return;
         }
 
@@ -1437,6 +1439,42 @@ void ConfigurationDialog::OnSelectionChanged(UINT, int id, CWindow w)
     }
 
     ConfigurationChanged();
+}
+
+/// <summary>
+/// Handles a double click on a list box item.
+/// </summary>
+void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
+{
+    if (_State == nullptr)
+        return;
+
+    if ((id == IDC_PRESET_NAMES) && (code == LBN_DBLCLK))
+    {
+        auto lb = (CListBox) GetDlgItem(id);
+
+        int SelectedIndex = lb.GetCurSel();
+
+        if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
+            return;
+
+        std::wstring PresetName = _PresetNames[(size_t) SelectedIndex];
+
+        SetDlgItemTextW(IDC_PRESET_NAME, PresetName.c_str());
+
+        UpdatePresetsPage();
+
+        {
+            State NewState;
+
+            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
+
+            *_State = NewState;
+            Initialize();
+        }
+
+        GetPresetNames();
+    }
 }
 
 /// <summary>
@@ -1676,17 +1714,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             int Position = Clamp(::_wtoi(Text), 0, 100);
 
-            if ((int) (style->_CurrentGradientStops[Index].position * 100.f) == Position)
+            if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
                 break;
 
-            style->_CurrentGradientStops[Index].position = (FLOAT) Position / 100.f;
+            style->_CurrentGradientStops[SelectedIndex].position = (FLOAT) Position / 100.f;
 
             style->_ColorScheme = ColorScheme::Custom;
             style->_CustomGradientStops = style->_CurrentGradientStops;
@@ -2914,8 +2952,13 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
     SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gs._AmplitudeLo * 10.));
+
     SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gs._AmplitudeHi * 10.));
+
     SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
 
     for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
         GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
@@ -3247,6 +3290,8 @@ void ConfigurationDialog::SetInteger(int id, int64_t value) noexcept
 void ConfigurationDialog::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
     SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
+
+
 }
 
 /// <summary>
