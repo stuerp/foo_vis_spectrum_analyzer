@@ -68,7 +68,7 @@ void UIElement::OnTimer()
 
     if (BarrierState != 1)
     {
-        InterlockedDecrement64(&_ThreadState._Barrier);
+        ::InterlockedDecrement64(&_ThreadState._Barrier);
 
         return;
     }
@@ -102,7 +102,7 @@ void UIElement::OnTimer()
         }
     }
 
-    InterlockedDecrement64(&_ThreadState._Barrier);
+    ::InterlockedDecrement64(&_ThreadState._Barrier);
 }
 
 /// <summary>

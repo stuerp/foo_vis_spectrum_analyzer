@@ -53,6 +53,25 @@ public:
         }
     }
 
+    // Helper
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, Style ** style) noexcept
+    {
+        if (*style != nullptr)
+        {
+            if ((*style)->_Brush != nullptr)
+                return S_OK;
+            else
+                return (*style)->CreateDeviceSpecificResources(renderTarget, size);
+        }
+
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+
+        return (*style)->CreateDeviceSpecificResources(renderTarget, size);
+    }
+
     void ReleaseDeviceSpecificResources();
 
 public:
