@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.03.09) P. Stuer **/
+/** $VER: State.cpp (2024.03.19) P. Stuer **/
 
 #include "State.h"
 
@@ -224,6 +224,8 @@ void State::Reset() noexcept
         _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
     else
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
+
+    _Barrier = 0;
 }
 
 /// <summary>

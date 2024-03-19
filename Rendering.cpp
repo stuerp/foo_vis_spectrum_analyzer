@@ -64,6 +64,15 @@ void UIElement::OnTimer()
     if (_IsFrozen || !_IsVisible || ::IsIconic(core_api::get_main_window()))
         return;
 
+    LONG64 BarrierState = ::InterlockedIncrement64(&_ThreadState._Barrier);
+
+    if (BarrierState != 1)
+    {
+        InterlockedDecrement64(&_ThreadState._Barrier);
+
+        return;
+    }
+
     ProcessEvents();
 
     if (IsWindowVisible())
@@ -92,6 +101,8 @@ void UIElement::OnTimer()
             _IsConfigurationChanged = false;
         }
     }
+
+    InterlockedDecrement64(&_ThreadState._Barrier);
 }
 
 /// <summary>

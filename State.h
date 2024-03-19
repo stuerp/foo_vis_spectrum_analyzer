@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.14) P. Stuer **/
+/** $VER: State.h (2024.03.19) P. Stuer **/
 
 #pragma once
 
@@ -237,6 +237,8 @@ public:
 
     double _PlaybackTime;
     double _TrackTime;
+
+    LONG64 _Barrier;
 
     #pragma endregion
 
