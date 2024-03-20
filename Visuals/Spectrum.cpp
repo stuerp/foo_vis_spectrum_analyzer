@@ -382,7 +382,6 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
         if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-//      double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
         double Value = !usePeak ? fb.CurValue : fb.Peak;
 
         y = Clamp((FLOAT)(Value * _Size.height), 0.f, _Size.height);
