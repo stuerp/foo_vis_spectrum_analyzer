@@ -27,8 +27,8 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
 
     _BandCount = frequencyBands.size();
 
-    _LoFrequency = frequencyBands[0].Ctr;
-    _HiFrequency = frequencyBands[_BandCount - 1].Ctr;
+    _LoFrequency = frequencyBands.front().Ctr;
+    _HiFrequency = frequencyBands.back().Ctr;
 
     // Precalculate the labels.
     {
