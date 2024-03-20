@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.17) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.19) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -3088,13 +3088,13 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
 
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && (IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient))));
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity)));
-    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsThickness)));
+    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
 
     UpdateColorControls();
 }

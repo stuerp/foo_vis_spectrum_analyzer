@@ -73,16 +73,14 @@ void UIElement::OnTimer()
         return;
     }
 
-    ProcessEvents();
-
-    if (IsWindowVisible())
+    if (_CriticalSection.TryEnter())
     {
-        if (_CriticalSection.TryEnter())
-        {
+        ProcessEvents();
+
+        if (IsWindowVisible())
             Render();
 
-            _CriticalSection.Leave();
-        }
+        _CriticalSection.Leave();
     }
 
     // Notify the configuration dialog about the changed artwork colors.

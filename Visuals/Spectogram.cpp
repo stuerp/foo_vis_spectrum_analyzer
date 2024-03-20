@@ -40,8 +40,8 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    _Bitmap = nullptr;
-    _BitmapRenderTarget = nullptr;
+    _Bitmap.Release();
+    _BitmapRenderTarget.Release();
 
 }
 
@@ -57,8 +57,8 @@ void Spectogram::Reset()
 
     _XLabels.clear();
 
-    _Bitmap = nullptr;
-    _BitmapRenderTarget = nullptr;
+    _Bitmap.Release();
+    _BitmapRenderTarget.Release();
 }
 
 /// <summary>

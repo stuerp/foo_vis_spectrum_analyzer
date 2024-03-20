@@ -47,7 +47,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 {
     _GradientStops = gradientStops;
 
-    _Brush = nullptr;
+    _Brush.Release();
 
     Invalidate();
     UpdateWindow();
@@ -69,7 +69,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
     _Color = color;
     _GradientStops.clear();
 
-    _Brush = nullptr;
+    _Brush.Release();
 
     Invalidate();
     UpdateWindow();
@@ -242,8 +242,8 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void CColorButton::ReleaseDeviceSpecificResources()
 {
-    _PatternBrush = nullptr;
-    _Brush = nullptr;
+    _PatternBrush.Release();
+    _Brush.Release();
 
     __super::ReleaseDeviceSpecificResources();
 }

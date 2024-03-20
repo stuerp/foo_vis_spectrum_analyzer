@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.15) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.19) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -78,6 +78,7 @@ private:
     const FLOAT PaddingY = 1.f;
 
     D2D1_RECT_F _Bounds;
+    D2D1_SIZE_F _Size;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;

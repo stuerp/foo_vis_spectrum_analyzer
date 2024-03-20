@@ -49,7 +49,7 @@ public:
         for (auto & Iter : _Styles)
         {
             if (Iter.second._ColorSource == ColorSource::Gradient)
-                Iter.second._Brush = nullptr;
+                Iter.second._Brush.Release();
         }
     }
 

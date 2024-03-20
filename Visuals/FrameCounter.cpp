@@ -133,5 +133,5 @@ HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTa
 /// </summary>
 void FrameCounter::ReleaseDeviceSpecificResources() noexcept
 {
-    _Brush = nullptr;
+    _Brush.Release();
 }
