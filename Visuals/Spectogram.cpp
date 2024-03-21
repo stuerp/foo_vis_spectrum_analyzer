@@ -227,6 +227,9 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
 
         for (const auto & fb : frequencyBands)
         {
+            if ((fb.Ctr >= (sampleRate / 2.)) && _State->_SuppressMirrorImage)
+                break;
+
             assert(InRange(fb.CurValue, 0.0, 1.0));
 
             _SpectogramStyle->SetBrushColor(fb.CurValue);
