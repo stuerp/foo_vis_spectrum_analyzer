@@ -49,6 +49,7 @@ private:
 private:
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;
+    bool _Static;
 
     uint32_t _X;
     double _PlaybackTime;

@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.19) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.21) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -11,7 +11,9 @@
 
 Spectogram::Spectogram()
 {
+    _Bounds = { };
     _Size = { };
+    _Static = true;
 
     _FontFamilyName = L"Segoe UI";
     _FontSize = 6.f;
@@ -94,22 +96,22 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
         renderTarget->SetTransform(Transform * Translate);
     }
 
+    const bool Static = true;
+
     // Draw the bitmap.
     {
-        const bool Static = false;
-
         if (Static)
         {
             D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-            renderTarget->DrawBitmap(_Bitmap, &Rect);
+            renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
         }
         else
         {
             D2D1_RECT_F Src = D2D1_RECT_F((FLOAT) (_X + 1), 0.f, _BitmapSize.width,              _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(             0.f, 0.f, _BitmapSize.width - (FLOAT) _X, _BitmapSize.height);
 
-            renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
             Src.right = Src.left;
             Src.left  = 0.f;
@@ -117,7 +119,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
             Dst.left  = Dst.right;
             Dst.right = _Size.width;
 
-            renderTarget->DrawBitmap(_Bitmap, &Dst, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
         }
     }
 
@@ -143,7 +145,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
                 renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                if (_State->_PlaybackTime != _PlaybackTime)
+                if ((_State->_PlaybackTime != _PlaybackTime) && !Static)
                     Label.X--; // Scroll to the left.
             }
             else
@@ -153,13 +155,21 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
                 renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                if (_State->_PlaybackTime != _PlaybackTime)
+                if ((_State->_PlaybackTime != _PlaybackTime) && !Static)
                     Label.X++; // Scroll to the right.
             }
         }
 
-        if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
-            _XLabels.pop_back();
+        if (!_Static)
+        {
+            if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
+                _XLabels.pop_back();
+        }
+        else
+        {
+            if (_X + Offset + _XTextWidth > _Size.width)
+                _XLabels.pop_back();
+        }
     }
 
     // Draw the Y-axis (Frequency).
@@ -247,7 +257,7 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
     _BitmapRenderTarget->EndDraw();
 
     if (_TrackTime != trackTime)
-        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
+        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? (_Static ? _Size.width - _X : 0.f) : (_Static ? _X : _Size.width) });
 }
 
 /// <summary>
