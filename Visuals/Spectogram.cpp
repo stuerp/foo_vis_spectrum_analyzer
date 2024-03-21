@@ -167,7 +167,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
         }
         else
         {
-            if (_X + Offset + _XTextWidth > _Size.width)
+            if ((FLOAT) _X + Offset + _XTextWidth > _Size.width)
                 _XLabels.pop_back();
         }
     }
@@ -257,7 +257,7 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
     _BitmapRenderTarget->EndDraw();
 
     if (_TrackTime != trackTime)
-        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? (_Static ? _Size.width - _X : 0.f) : (_Static ? _X : _Size.width) });
+        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? (_Static ? _Size.width - (FLOAT) _X : 0.f) : (_Static ? (FLOAT) _X : _Size.width) });
 }
 
 /// <summary>
