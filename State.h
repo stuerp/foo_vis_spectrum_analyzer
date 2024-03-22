@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.19) P. Stuer **/
+/** $VER: State.h (2024.03.22) P. Stuer **/
 
 #pragma once
 
@@ -198,6 +198,12 @@ public:
             #pragma region Bars
 
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
+
+            #pragma endregion
+
+            #pragma region Spectogram
+
+                bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
 
             #pragma endregion
 

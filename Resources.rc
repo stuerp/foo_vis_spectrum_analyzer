@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.14) P. Stuer **/
+/** $VER: Resources.rc (2024.03.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -310,7 +310,11 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-            control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+            control         "LED mode",             IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+
+        groupbox "Spectogram", IDC_SPECTOGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+            control         "Scrolling",            IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.18) P. Stuer **/
+/** $VER: Resources.h (2024.03.22) P. Stuer **/
 
 #pragma once
 
@@ -369,6 +369,12 @@
 #define IDC_BARS                        7120
 
 #define IDC_LED_MODE                    7122
+
+// Spectogram
+
+#define IDC_SPECTOGRAM                  7130
+
+#define IDC_SCROLLING_SPECTOGRAM        7132
 
 #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.21) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -13,7 +13,6 @@ Spectogram::Spectogram()
 {
     _Bounds = { };
     _Size = { };
-    _Static = true;
 
     _FontFamilyName = L"Segoe UI";
     _FontSize = 6.f;
@@ -96,17 +95,9 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
         renderTarget->SetTransform(Transform * Translate);
     }
 
-    const bool Static = true;
-
     // Draw the bitmap.
     {
-        if (Static)
-        {
-            D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
-
-            renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
-        }
-        else
+        if (_State->_ScrollingSpectogram)
         {
             D2D1_RECT_F Src = D2D1_RECT_F((FLOAT) (_X + 1), 0.f, _BitmapSize.width,              _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(             0.f, 0.f, _BitmapSize.width - (FLOAT) _X, _BitmapSize.height);
@@ -121,6 +112,12 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
             renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
         }
+        else
+        {
+            D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+
+            renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
+        }
     }
 
     // Reset the transform.
@@ -129,38 +126,13 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
     // Draw the X-axis (Time).
     if (!_XLabels.empty())
     {
-        const FLOAT Offset = 4.f; // Distance between the tick and the text.
+        if (_GraphSettings->_XAxisTop)
+            RenderXAxis(renderTarget, true);
 
-        D2D1_RECT_F Rect = { 0.f, _BitmapSize.height, 0.f, _Size.height };
+        if (_GraphSettings->_XAxisBottom)
+            RenderXAxis(renderTarget, false);
 
-        for (auto & Label : _XLabels)
-        {
-            // Draw the tick.
-            renderTarget->DrawLine( { Label.X, _BitmapSize.height }, { Label.X, _BitmapSize.height + (_XTextHeight / 2.f) }, _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness);
-
-            if (!_GraphSettings->_FlipHorizontally)
-            {
-                Rect.left  = Label.X + Offset;
-                Rect.right = Rect.left + _XTextWidth;
-
-                renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                if ((_State->_PlaybackTime != _PlaybackTime) && !Static)
-                    Label.X--; // Scroll to the left.
-            }
-            else
-            {
-                Rect.left  = Label.X - Offset;
-                Rect.right = Rect.left - _XTextWidth;
-
-                renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                if ((_State->_PlaybackTime != _PlaybackTime) && !Static)
-                    Label.X++; // Scroll to the right.
-            }
-        }
-
-        if (!_Static)
+        if (_State->_ScrollingSpectogram)
         {
             if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
                 _XLabels.pop_back();
@@ -215,6 +187,44 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 }
 
 /// <summary>
+/// Renders an X-axis (Time)
+/// </summary>
+void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) noexcept
+{
+    D2D1_RECT_F Rect = { 0.f, top ? 0.f : _BitmapSize.height, 0.f, top ? _XTextHeight : _Size.height };
+
+    const FLOAT y1 = top ? _XTextHeight / 2.f : _BitmapSize.height;
+    const FLOAT y2 = top ? _XTextHeight       : _BitmapSize.height + (_XTextHeight / 2.f);
+
+    for (auto & Label : _XLabels)
+    {
+        // Draw the tick.
+        renderTarget->DrawLine( { Label.X, y1 }, { Label.X, y2 }, _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness);
+
+        if (!_GraphSettings->_FlipHorizontally)
+        {
+            Rect.left  = Label.X + Offset;
+            Rect.right = Rect.left + _XTextWidth;
+
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            if ((_State->_PlaybackTime != _PlaybackTime) && _State->_ScrollingSpectogram)
+                Label.X--; // Scroll to the left.
+        }
+        else
+        {
+            Rect.left  = Label.X - Offset;
+            Rect.right = Rect.left - _XTextWidth;
+
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            if ((_State->_PlaybackTime != _PlaybackTime) && _State->_ScrollingSpectogram)
+                Label.X++; // Scroll to the right.
+        }
+    }
+}
+
+/// <summary>
 /// Updates this instance.
 /// </summary>
 void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime, double sampleRate) noexcept
@@ -257,7 +267,9 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
     _BitmapRenderTarget->EndDraw();
 
     if (_TrackTime != trackTime)
-        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? (_Static ? _Size.width - (FLOAT) _X : 0.f) : (_Static ? (FLOAT) _X : _Size.width) });
+        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)),
+             _GraphSettings->_FlipHorizontally ? (_State->_ScrollingSpectogram ? 0.f : _Size.width - (FLOAT) _X) :
+                                                 (_State->_ScrollingSpectogram ? _Size.width : (FLOAT) _X) });
 }
 
 /// <summary>
@@ -483,7 +495,7 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, &_NyquistMarker);
 
     _BitmapSize.width  = _Size.width;
-    _BitmapSize.height = _Size.height - _XTextHeight;
+    _BitmapSize.height = _Size.height - (_GraphSettings->_XAxisBottom ? _XTextHeight : 0.f) - (_GraphSettings->_XAxisTop ? _XTextHeight : 0.f);
 
     if (SUCCEEDED(hr) && (_BitmapRenderTarget == nullptr))
         hr = renderTarget->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);

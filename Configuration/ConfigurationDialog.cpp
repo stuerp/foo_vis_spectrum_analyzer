@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.19) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.22) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -191,6 +191,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
 
             { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
+
+            { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram" },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -975,6 +977,14 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _State->_LEDMode);
+    }
+
+    #pragma endregion
+
+    #pragma region Spectogram
+
+    {
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
     }
 
     #pragma endregion
@@ -2114,6 +2124,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_SCROLLING_SPECTOGRAM:
+        {
+            _State->_ScrollingSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2727,6 +2743,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_BARS,
             IDC_LED_MODE,
+
+        IDC_SPECTOGRAM,
+            IDC_SCROLLING_SPECTOGRAM,
     };
 
     static const int Page7[] =
@@ -2996,11 +3015,8 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
         for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
             GetDlgItem(Iter).EnableWindow(ShowPeaks);
  
-    // Bars
-    const bool IsBars = _State->_VisualizationType == VisualizationType::Bars;
-
-        for (const auto & Iter : { IDC_LED_MODE })
-            GetDlgItem(Iter).EnableWindow(IsBars);
+    GetDlgItem(IDC_LED_MODE).EnableWindow(_State->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
 }
 
 /// <summary>
