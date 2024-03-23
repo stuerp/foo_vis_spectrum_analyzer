@@ -41,6 +41,8 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
+    _RealBounds = rect;
+
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
 
@@ -536,6 +538,14 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 
     if (SUCCEEDED(hr) && (_Bitmap == nullptr))
         hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+
+    _RealBounds = _Bounds;
+
+    if (_GraphSettings->_XAxisTop)
+        _RealBounds.top = _Bounds.top + _XTextHeight;
+
+    if (_GraphSettings->_XAxisBottom)
+        _RealBounds.bottom = _Bounds.bottom - _XTextHeight;
 
     return hr;
 }

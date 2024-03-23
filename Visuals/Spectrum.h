@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.19) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.23) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -44,7 +44,6 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
     FLOAT GetLeft() const { return _Bounds.left; }
     FLOAT GetRight() const { return _Bounds.right; }
 
@@ -76,9 +75,6 @@ private:
 private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
-
-    D2D1_RECT_F _Bounds;
-    D2D1_SIZE_F _Size;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;

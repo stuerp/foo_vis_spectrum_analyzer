@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.03.09) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.03.23) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@
 class YAxis : public Element
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Width(30.f), _Height() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
@@ -68,7 +68,6 @@ private:
     FLOAT _FontSize;    // In points.
 
     // Device-independent resources
-    D2D1_RECT_F _Bounds;
     FLOAT _Width;  // Width of the Y axis area (Font size-dependent).
     FLOAT _Height; // Height of a label
 
@@ -76,5 +75,4 @@ private:
 
     Style * _LineStyle;
     Style * _TextStyle;
-
 };

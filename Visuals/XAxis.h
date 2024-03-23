@@ -25,7 +25,7 @@
 class XAxis : public Element
 {
 public:
-    XAxis() : _Bounds(), _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Height(30.f) { }
+    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Height(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
@@ -48,8 +48,6 @@ private:
     void ReleaseDeviceIndependentResources();
 
 private:
-    D2D1_RECT_F _Bounds;
-
     size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;

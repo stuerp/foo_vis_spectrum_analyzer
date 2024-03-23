@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.03.09) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.03.23) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -17,7 +17,14 @@ class Element
 public:
     Element() : _State(), _GraphSettings() {}
 
+    virtual ~Element() {}
+
+    virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
+
 protected:
     State * _State;
     const GraphSettings * _GraphSettings;
+
+    D2D1_RECT_F _Bounds;
+    D2D1_SIZE_F _Size;
 };

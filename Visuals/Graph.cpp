@@ -120,17 +120,32 @@ CToolInfo * Graph::GetToolInfo(HWND hParent) noexcept
 /// <summary>
 /// Gets the tooltip at the specified x position.
 /// </summary>
-bool Graph::GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const noexcept
+bool Graph::GetToolTip(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
 {
-    const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+    if (_State->_VisualizationType != VisualizationType::Spectogram)
+    {
+        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
 
-    if (!InRange(x, Bounds.left, Bounds.right))
-        return false;
+        if (!InRange(x, Bounds.left, Bounds.right))
+            return false;
 
-    if (_GraphSettings->_FlipHorizontally)
-        x = (Bounds.right + Bounds.left) - x;
+        if (_GraphSettings->_FlipHorizontally)
+            x = (Bounds.right + Bounds.left) - x;
 
-    index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+    }
+    else
+    {
+        const D2D1_RECT_F & Bounds = _Spectogram.GetBounds();
+
+        if (!InRange(y, Bounds.top, Bounds.bottom))
+            return false;
+
+        if (!_GraphSettings->_FlipVertically)
+            y = (Bounds.bottom + Bounds.top) - y;
+
+        index = Clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+    }
 
     toolTip = _Analysis._FrequencyBands[index].Label;
 

@@ -37,6 +37,8 @@ public:
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void Reset();
 
+    virtual const D2D1_RECT_F & GetBounds() const noexcept override { return _RealBounds; }
+
 private:
     void Update(const FrequencyBands & frequencyBands, double time, double sampleRate) noexcept;
 
@@ -50,9 +52,7 @@ private:
     void ReleaseDeviceSpecificResources();
 
 private:
-    D2D1_RECT_F _Bounds;
-    D2D1_SIZE_F _Size;
-
+    D2D1_RECT_F _RealBounds;
     FLOAT _X;
     double _PlaybackTime;
     double _TrackTime;

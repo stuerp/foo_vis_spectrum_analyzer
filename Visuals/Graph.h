@@ -78,7 +78,7 @@ public:
         return true;
     }
 
-    bool GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const noexcept;
+    bool GetToolTip(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;

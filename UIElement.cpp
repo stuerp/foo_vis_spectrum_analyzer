@@ -281,7 +281,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
             {
                 State NewState;
 
-                size_t Index = CommandId - IDM_PRESET_NAME;
+                size_t Index = (size_t) CommandId - IDM_PRESET_NAME;
 
                 if (InRange(Index, 0U, PresetNames.size() - 1))
                 {
@@ -363,11 +363,12 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
             _LastMousePos = pt;
 
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+            FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
             std::wstring ToolTip;
             size_t Index;
 
-            if (_TrackingGraph->GetToolTip(ScaledX, ToolTip, Index))
+            if (_TrackingGraph->GetToolTip(ScaledX, ScaledY, ToolTip, Index))
             {
                 if (Index != _LastIndex)
                 {
