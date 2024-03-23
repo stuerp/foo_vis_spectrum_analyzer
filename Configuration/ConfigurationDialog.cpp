@@ -1402,16 +1402,16 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             // Show the position of the selected color of the gradient.
-            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
+            size_t Index = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-                t_int64 Position = (t_int64) (style->_CurrentGradientStops[SelectedIndex].position * 100.f);
+                t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
                 SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
-            bool HasSelection = (SelectedIndex != LB_ERR);
+            bool HasSelection = (Index != LB_ERR);
             bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
             bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
@@ -3163,7 +3163,7 @@ void ConfigurationDialog::UpdateColorControls()
 
             _IgnoreNotifications = true;
 
-            t_int64 Position = (t_int64) (gs[SelectedIndex].position * 100.f);
+            t_int64 Position = (t_int64) (gs[(size_t) SelectedIndex].position * 100.f);
             SetInteger(IDC_POSITION, Position);
 
             _IgnoreNotifications = false;

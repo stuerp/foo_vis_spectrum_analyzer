@@ -167,26 +167,11 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 
     const D2D1_SIZE_F Size = renderTarget->GetSize();
 
-    {
-        if (SUCCEEDED(hr))
-        {
-            if (_LineStyle == nullptr)
-                _LineStyle = _State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, &_LineStyle);
 
-            if (_LineStyle && (_LineStyle->_Brush == nullptr))
-                hr = _LineStyle->CreateDeviceSpecificResources(renderTarget, Size);
-        }
-    }
-    {
-        if (SUCCEEDED(hr))
-        {
-            if (_TextStyle == nullptr)
-                _TextStyle = _State->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-            if (_TextStyle && (_TextStyle->_Brush == nullptr))
-                hr = _TextStyle->CreateDeviceSpecificResources(renderTarget, Size);
-        }
-    }
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, Size, &_TextStyle);
 
     if (SUCCEEDED(hr))
         renderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance

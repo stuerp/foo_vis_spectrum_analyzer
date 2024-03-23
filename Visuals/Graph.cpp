@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.23) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Graph::Graph() : _Bounds()
+Graph::Graph() : _Bounds(), _Size()
 {
 }
 
@@ -49,6 +49,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
     _Bounds = rect;
+    _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
     const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
     const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
@@ -178,7 +179,7 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 
     CComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle->_TextFormat, _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top, &TextLayout);
+    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
 
     DWRITE_TEXT_METRICS TextMetrics = { };
 
@@ -215,31 +216,13 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
     const D2D1_SIZE_F Size = renderTarget->GetSize();
 
     if (SUCCEEDED(hr))
-    {
-        if (_BackgroundStyle == nullptr)
-            _BackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphBackground);
-
-        if (_BackgroundStyle && (_BackgroundStyle->_Brush == nullptr))
-            hr = _BackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, Size, &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-    {
-        if (_DescriptionTextStyle == nullptr)
-            _DescriptionTextStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionText);
-
-        if (_DescriptionTextStyle && (_DescriptionTextStyle->_Brush == nullptr))
-            hr = _DescriptionTextStyle->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, Size, &_DescriptionTextStyle);
 
     if (SUCCEEDED(hr))
-    {
-        if (_DescriptionBackgroundStyle == nullptr)
-            _DescriptionBackgroundStyle = _State->_StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
-
-        if (_DescriptionBackgroundStyle && (_DescriptionBackgroundStyle->_Brush == nullptr))
-            hr = _DescriptionBackgroundStyle->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, Size, &_DescriptionBackgroundStyle);
 
     return hr;
 }

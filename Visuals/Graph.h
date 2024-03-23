@@ -93,6 +93,7 @@ private:
     std::wstring _Description;
 
     D2D1_RECT_F _Bounds;
+    D2D1_SIZE_F _Size;
 
     Analysis _Analysis;
 

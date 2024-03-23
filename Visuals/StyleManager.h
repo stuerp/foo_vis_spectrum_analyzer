@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.03.23) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -68,6 +68,9 @@ public:
 
         if (*style == nullptr)
             return E_FAIL;
+
+        if ((*style)->_Brush != nullptr)
+            return S_OK;
 
         return (*style)->CreateDeviceSpecificResources(renderTarget, size);
     }
