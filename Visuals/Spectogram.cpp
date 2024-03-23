@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.23) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -51,7 +51,7 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectogram::Reset()
 {
-    _X = 0;
+    _X = 0.f;
     _PlaybackTime = 0.;
     _TrackTime = 0.;
     _RequestErase = true;
@@ -74,33 +74,35 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
     // Update the spectogram bitmap.
     if (_State->_PlaybackTime != _PlaybackTime)
-        Update(frequencyBands, _State->_TrackTime, sampleRate);
-
-    // Determine and set the transform.
-    {
-        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-        if (_GraphSettings->_FlipHorizontally)
-            Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, _BitmapSize.width, 0.f);
-
-        if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-        {
-            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _BitmapSize.height);
-
-            Transform = Transform * FlipV;
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
-
-        renderTarget->SetTransform(Transform * Translate);
-    }
+        Update(frequencyBands, _State->_TrackTime, sampleRate / 2.f);
 
     // Draw the bitmap.
     {
+        // Determine and set the transform.
+        {
+            D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
+
+            if (_GraphSettings->_FlipHorizontally)
+                Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, _BitmapSize.width, 0.f);
+
+            if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
+            {
+                const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _BitmapSize.height);
+
+                Transform = Transform * FlipV;
+            }
+
+            const FLOAT y = _GraphSettings->_XAxisTop ? _XTextHeight : 0.f;
+
+            D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, y);
+
+            renderTarget->SetTransform(Transform * Translate);
+        }
+
         if (_State->_ScrollingSpectogram)
         {
-            D2D1_RECT_F Src = D2D1_RECT_F((FLOAT) (_X + 1), 0.f, _BitmapSize.width,              _BitmapSize.height);
-            D2D1_RECT_F Dst = D2D1_RECT_F(             0.f, 0.f, _BitmapSize.width - (FLOAT) _X, _BitmapSize.height);
+            D2D1_RECT_F Src = D2D1_RECT_F(_X + 1.f, 0.f, _BitmapSize.width,      _BitmapSize.height);
+            D2D1_RECT_F Dst = D2D1_RECT_F(     0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
             renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
@@ -118,10 +120,10 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
             renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
         }
-    }
 
-    // Reset the transform.
-    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        // Reset the transform.
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 
     // Draw the X-axis (Time).
     if (!_XLabels.empty())
@@ -131,55 +133,29 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
         if (_GraphSettings->_XAxisBottom)
             RenderXAxis(renderTarget, false);
-
-        if (_State->_ScrollingSpectogram)
-        {
-            if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
-                _XLabels.pop_back();
-        }
-        else
-        {
-            if ((FLOAT) _X + Offset + _XTextWidth > _Size.width)
-                _XLabels.pop_back();
-        }
     }
 
     // Draw the Y-axis (Frequency).
     if (!_YLabels.empty())
     {
-        const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-        const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+        if (_GraphSettings->_YAxisLeft)
+            RenderYAxis(renderTarget, true);
 
-        D2D1_RECT_F Rect = { 0.f, 0.f, _YTextWidth, 0.f };
-
-        for (auto & Label : _YLabels)
-        {
-            const FLOAT y = Map(ScaleF(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
-
-            if (!_GraphSettings->_FlipVertically)
-            {
-                Rect.top    = _BitmapSize.height - (y + _YTextHeight);
-                Rect.bottom = Rect.top +_YTextHeight;
-            }
-            else
-            {
-                Rect.top    = y;
-                Rect.bottom = Rect.top +_YTextHeight;
-            }
-
-            if ((Rect.top < 0.f) || (Rect.bottom > _BitmapSize.height))
-                break;
-
-            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextFormat, Rect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
+        if (_GraphSettings->_YAxisRight)
+            RenderYAxis(renderTarget, false);
     }
 
     if (_State->_PlaybackTime != _PlaybackTime)
     {
         _X++;
 
-        if (_X > (uint32_t) _Size.width)
-            _X = 0;
+        if (_X > _Size.width)
+        {
+            _X = 0.f;
+
+            if (!_State->_ScrollingSpectogram)
+                _XLabels.clear();
+        }
     }
 
     _PlaybackTime = _State->_PlaybackTime;
@@ -189,14 +165,14 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
-void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) noexcept
+void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept
 {
-    D2D1_RECT_F Rect = { 0.f, top ? 0.f : _BitmapSize.height, 0.f, top ? _XTextHeight : _Size.height };
+    const FLOAT y1 = top ? _XTextHeight / 2.f : _Size.height - _XTextHeight;
+    const FLOAT y2 = top ? _XTextHeight       : y1 + (_XTextHeight / 2.f);
 
-    const FLOAT y1 = top ? _XTextHeight / 2.f : _BitmapSize.height;
-    const FLOAT y2 = top ? _XTextHeight       : _BitmapSize.height + (_XTextHeight / 2.f);
+    D2D1_RECT_F Rect = { 0.f, top ? 0.f : y1, 0.f, top ? y2 : _Size.height };
 
-    for (auto & Label : _XLabels)
+    for (const auto & Label : _XLabels)
     {
         // Draw the tick.
         renderTarget->DrawLine( { Label.X, y1 }, { Label.X, y2 }, _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness);
@@ -207,9 +183,6 @@ void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) noexcep
             Rect.right = Rect.left + _XTextWidth;
 
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            if ((_State->_PlaybackTime != _PlaybackTime) && _State->_ScrollingSpectogram)
-                Label.X--; // Scroll to the left.
         }
         else
         {
@@ -217,17 +190,59 @@ void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) noexcep
             Rect.right = Rect.left - _XTextWidth;
 
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            if ((_State->_PlaybackTime != _PlaybackTime) && _State->_ScrollingSpectogram)
-                Label.X++; // Scroll to the right.
         }
+    }
+}
+
+/// <summary>
+/// Renders a Y-axis (Frequency)
+/// </summary>
+void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
+{
+    const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+
+    D2D1_RECT_F Rect =
+    {
+        left ? 0.f : _Size.width - _YTextWidth,
+        0.f,
+        left ? _YTextWidth : _Size.width,
+        0.f
+    };
+
+    const FLOAT dy = _YTextHeight / 2.f;
+
+    const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextHeight : 0.f;
+
+    for (const auto & Label : _YLabels)
+    {
+        const FLOAT y = Map(ScaleF(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+
+        if (!_GraphSettings->_FlipVertically)
+        {
+            Rect.top    = y1 + _BitmapSize.height - y - dy;
+            Rect.bottom = Rect.top + _YTextHeight;
+
+            if (Rect.bottom < (y1 - dy))
+                break;
+        }
+        else
+        {
+            Rect.top    = y1 + y - dy;
+            Rect.bottom = Rect.top + _YTextHeight;
+
+            if (Rect.bottom > (y1 + _BitmapSize.height + dy))
+                break;
+        }
+
+        renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextFormat, Rect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
     }
 }
 
 /// <summary>
 /// Updates this instance.
 /// </summary>
-void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime, double sampleRate) noexcept
+void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime, double nyquistFrequency) noexcept
 {
     _BitmapRenderTarget->BeginDraw();
 
@@ -247,45 +262,64 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
 
         for (const auto & fb : frequencyBands)
         {
-            if ((fb.Ctr >= (sampleRate / 2.)) && _State->_SuppressMirrorImage)
+            if ((fb.Ctr >= nyquistFrequency) && _State->_SuppressMirrorImage)
                 break;
 
             assert(InRange(fb.CurValue, 0.0, 1.0));
 
             _SpectogramStyle->SetBrushColor(fb.CurValue);
 
-            _BitmapRenderTarget->DrawLine({ (FLOAT) _X, y1 }, { (FLOAT) _X, y2 }, _SpectogramStyle->_Brush);
+            _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectogramStyle->_Brush);
 
             y1  = y2;
             y2 += Bandwidth;
         }
     }
 
+    // Draw the Nyquist marker.
     if (_NyquistMarker->_ColorSource != ColorSource::None)
-        RenderNyquistFrequencyMarker(_BitmapRenderTarget, frequencyBands, sampleRate);
+        RenderNyquistFrequencyMarker(_BitmapRenderTarget, frequencyBands, nyquistFrequency);
 
     _BitmapRenderTarget->EndDraw();
 
-    if (_TrackTime != trackTime)
-        _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)),
-             _GraphSettings->_FlipHorizontally ? (_State->_ScrollingSpectogram ? 0.f : _Size.width - (FLOAT) _X) :
-                                                 (_State->_ScrollingSpectogram ? _Size.width : (FLOAT) _X) });
+    // Update the X-axis.
+    if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+    {
+        for (auto & Label : _XLabels)
+            if (!_GraphSettings->_FlipHorizontally)
+                Label.X--; // Scroll to the left.
+            else
+                Label.X++; // Scroll to the right.
+    }
+
+    if (_TrackTime != trackTime) // in seconds
+    {
+        if (_State->_ScrollingSpectogram)
+        {
+            _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
+
+            if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
+                _XLabels.pop_back();
+        }
+        else
+            _XLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? _Size.width - _X : _X });
+    }
 }
 
 /// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept
+void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double nyquistFrequency) const noexcept
 {
     const double MinScale = ScaleF(frequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(frequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double NyquistScale = Clamp(ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
+    const double NyquistScale = Clamp(ScaleF(nyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
     FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
-    renderTarget->DrawLine(D2D1_POINT_2F((FLOAT) _X, y), D2D1_POINT_2F((FLOAT) _X + 1, y), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
+    renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X + 1, y), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.03.14) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2024.03.23) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -144,6 +144,7 @@ private:
     State * _State;
     State _OldState;
     bool _IsInitializing;
+    bool _IgnoreNotifications;
 
     CMenuListBox _MenuList;
 

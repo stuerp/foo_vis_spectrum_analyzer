@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.23) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -1402,22 +1402,23 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             // Show the position of the selected color of the gradient.
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-                t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
+                t_int64 Position = (t_int64) (style->_CurrentGradientStops[SelectedIndex].position * 100.f);
                 SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
-            bool HasSelection = (Index != LB_ERR);
-            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
+            bool HasSelection = (SelectedIndex != LB_ERR);
             bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
+            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
                 GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
                 GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+
+                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
                 GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
                 GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
@@ -1485,6 +1486,8 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 
         GetPresetNames();
     }
+    else
+        SetMsgHandled(FALSE);
 }
 
 /// <summary>
@@ -1492,7 +1495,7 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if ((_State == nullptr) || (code != EN_CHANGE))
+    if ((_State == nullptr) || (code != EN_CHANGE) || _IgnoreNotifications)
         return;
 
     WCHAR Text[MAX_PATH];
@@ -1810,7 +1813,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 /// </summary>
 void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 {
-    if (_State == nullptr)
+    if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
     switch (id)
@@ -2142,21 +2145,21 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            D2D1_COLOR_F Color = style->_CurrentGradientStops[Index].color;
+            D2D1_COLOR_F Color = style->_CurrentGradientStops[SelectedIndex].color;
 
             CColorDialogEx cd;
 
             if (!cd.SelectColor(m_hWnd, Color))
                 return;
 
-            style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) Index + 1, { 0.f, Color });
+            style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) SelectedIndex + 1, { 0.f, Color });
             
-            UpdateGradientStopPositons(style, Index + 1);
+            UpdateGradientStopPositons(style, SelectedIndex + 1);
 
             UpdateColorControls();
             break;
@@ -2170,12 +2173,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) Index);
+            style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) SelectedIndex);
 
             // Save the current result as custom gradient stops.
             style->_ColorScheme = ColorScheme::Custom;
@@ -2876,14 +2879,14 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
 void ConfigurationDialog::UpdateFrequenciesPage() noexcept
 {
     const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
-    const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+//  const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
     GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
     GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
     GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
 
-    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
-    GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
+//  GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
+//  GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
     for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
         GetDlgItem(Iter).EnableWindow(IsOctaves);
@@ -3139,26 +3142,27 @@ void ConfigurationDialog::UpdateColorControls()
     // Update the Color button.
     _Color.SetColor(style->_CurrentColor);
 
-    // Update the Color Scheme combo box.
-    ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
-
-    // Get the gradient stops.
+    // Update the Gradient box with the selected gradient.
     GradientStops gs;
 
-    if (style->_ColorScheme == ColorScheme::Custom)
-        gs = style->_CustomGradientStops;
-    else
-    if (style->_ColorScheme == ColorScheme::Artwork)
-        gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
-    else
-        gs = GetGradientStops(style->_ColorScheme);
+    {
+        ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
-    // Update the gradient control.
-    _Gradient.SetGradientStops(gs);
+        if (style->_ColorScheme == ColorScheme::Custom)
+            gs = style->_CustomGradientStops;
+        else
+        if (style->_ColorScheme == ColorScheme::Artwork)
+            gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+        else
+            gs = GetGradientStops(style->_ColorScheme);
+
+        // Update the gradient control.
+        _Gradient.SetGradientStops(gs);
+    }
 
     // Update the list of colors.
     {
-        int Index = _Colors.GetCurSel();
+        int SelectedIndex = _Colors.GetCurSel();
 
         std::vector<D2D1_COLOR_F> Colors;
 
@@ -3167,22 +3171,31 @@ void ConfigurationDialog::UpdateColorControls()
 
         _Colors.SetColors(Colors);
 
-        _Colors.SetCurSel(Index);
+        if (SelectedIndex != LB_ERR)
+        {
+            _Colors.SetCurSel(SelectedIndex);
+
+            _IgnoreNotifications = true;
+
+            t_int64 Position = (t_int64) (gs[SelectedIndex].position * 100.f);
+            SetInteger(IDC_POSITION, Position);
+
+            _IgnoreNotifications = false;
+        }
     }
 
-    auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
-
-    bool HasSelection = (lb.GetCurSel() != LB_ERR);                     // Add and Remove are only enabled when a color is selected.
+    // Update the state of the buttons.
+    bool HasSelection = (_Colors.GetCurSel() != LB_ERR);                // Add and Remove are only enabled when a color is selected.
     bool HasMoreThanOneColor = (gs.size() > 1);                         // Remove and Reverse are only enabled when there is more than 1 color.
     bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
 
-    GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-    GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-    GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
-    GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
-    GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 }
 
 /// <summary>
@@ -3306,8 +3319,6 @@ void ConfigurationDialog::SetInteger(int id, int64_t value) noexcept
 void ConfigurationDialog::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
     SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
-
-
 }
 
 /// <summary>

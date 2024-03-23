@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.03.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.03.23) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -39,8 +39,10 @@ public:
 
 private:
     void Update(const FrequencyBands & frequencyBands, double time, double sampleRate) noexcept;
+
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
-    void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) noexcept;
+    void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
+    void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
     void InitYAxis(const FrequencyBands & frequencyBands) noexcept;
 
@@ -51,7 +53,7 @@ private:
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;
 
-    uint32_t _X;
+    FLOAT _X;
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
