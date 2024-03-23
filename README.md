@@ -88,11 +88,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-alpha2, 2024-03-xx
+v0.7.5.0-alpha3, 2024-03-xx
 
 * New: Spectogram visualization.
   * Static or scrolling
 * New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
+* New: The context menu can be used to load a preset.
 * Improved: Double-clicking a preset activates it.
 * Fixed: Security issue
   * The preset path will no longer be saved as part of a preset file.

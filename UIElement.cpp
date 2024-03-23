@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.18) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.23) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -180,6 +180,9 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 {
     CMenu Menu;
     CMenu RefreshRateLimitMenu;
+    CMenu PresetMenu;
+
+    std::vector<std::wstring> PresetNames;
 
     {
         Menu.CreatePopupMenu();
@@ -199,6 +202,22 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
                     pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
+        }
+
+        {
+            PresetMenu.CreatePopupMenu();
+
+            PresetManager::GetPresetNames(_MainState._PresetsDirectoryPath, PresetNames);
+
+            UINT_PTR i = 0;
+
+            for (auto & PresetName : PresetNames)
+            {
+                PresetMenu.AppendMenu((UINT) MF_STRING, IDM_PRESET_NAME + i, PresetName.c_str());
+                i++;
+            }
+
+            Menu.AppendMenu((UINT) MF_STRING, PresetMenu, L"Presets");
         }
 
         Menu.AppendMenu((UINT) MF_SEPARATOR);
@@ -255,6 +274,30 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         case IDM_FREEZE:
             _IsFrozen = !_IsFrozen;
             break;
+
+        default:
+        {
+            if (CommandId >= IDM_PRESET_NAME)
+            {
+                State NewState;
+
+                size_t Index = CommandId - IDM_PRESET_NAME;
+
+                if (InRange(Index, 0U, PresetNames.size() - 1))
+                {
+                    PresetManager::Load(_MainState._PresetsDirectoryPath, PresetNames[Index], &NewState);
+
+                    NewState._StyleManager._DominantColor       = _MainState._StyleManager._DominantColor;
+                    NewState._StyleManager._UserInterfaceColors = _MainState._StyleManager._UserInterfaceColors;
+
+                    NewState._StyleManager.UpdateCurrentColors();
+
+                    _MainState = NewState;
+
+                    UpdateState();
+                }
+            }
+        }
     }
 
     Invalidate();

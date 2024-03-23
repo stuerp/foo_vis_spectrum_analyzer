@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.17) P. Stuer **/
+/** $VER: UIElement.h (2024.03.23) P. Stuer **/
 
 #pragma once
 
@@ -202,6 +202,8 @@ private:
 
         IDM_CONFIGURE,
         IDM_FREEZE,
+
+        IDM_PRESET_NAME,
     };
 
     PTP_TIMER _ThreadPoolTimer;
