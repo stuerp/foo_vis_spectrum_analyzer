@@ -88,14 +88,18 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-alpha1, 2024-03-18
+v0.7.5.0-alpha2, 2024-03-xx
 
 * New: Spectogram visualization.
   * Static or scrolling
-* New: Built-in SoX color scheme and non-linear amplitude color map suited for the spectogram visualization.
+* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
+* Improved: Double-clicking a preset activates it.
 * Fixed: Security issue
   * The preset path will no longer be saved as part of a preset file.
 * Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
+* Fixed: Inconsistent state of the color buttons and values when switching between styles in the configuration dialog.
+* Fixed: User interface colors were not activated after loading a preset.
+* Fixed: The custom Solid color was not always saved correctly.
 * Fixed: Deadlock condition specific to CUI at startup.
 
 v0.7.4.1, 2024-03-14

@@ -239,7 +239,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
 
                 writer->write_object_t(style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
-                writer->write_object(&style._CurrentColor, sizeof(style._CurrentColor), abortHandler);
+                writer->write_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
                 writer->write_object_t(style._ColorIndex, abortHandler);
                 writer->write_object(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
 

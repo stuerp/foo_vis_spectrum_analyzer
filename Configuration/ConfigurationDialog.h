@@ -97,6 +97,7 @@ private:
     void UpdateCurrentColor(Style * style) const noexcept;
     void UpdateGradientStopPositons(Style * style, size_t index) const noexcept;
     void GetPresetNames() noexcept;
+    void GetPreset(const std::wstring & presetName) noexcept;
 
     static int ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept;
     static double ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double maxValue, double scale) noexcept;

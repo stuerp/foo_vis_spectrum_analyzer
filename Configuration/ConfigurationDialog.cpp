@@ -1475,14 +1475,7 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 
         UpdatePresetsPage();
 
-        {
-            State NewState;
-
-            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
-
-            *_State = NewState;
-            Initialize();
-        }
+        GetPreset(PresetName);
 
         GetPresetNames();
     }
@@ -2296,14 +2289,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-            State NewState;
-
-            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
+            GetPreset(PresetName);
 
             GetPresetNames();
-
-            *_State = NewState;
-            Initialize();
             break;
         }
 
@@ -3079,8 +3067,6 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
                     w.AddString(x);
             }
 
-            style->UpdateCurrentColor(_State->_StyleManager._DominantColor, _State->_StyleManager._UserInterfaceColors);
-
             w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
@@ -3263,6 +3249,24 @@ void ConfigurationDialog::GetPresetNames() noexcept
             w.AddString(PresetName.c_str());
         }
     }
+}
+
+/// <summary>
+/// Loads and activates a preset.
+/// </summary>
+void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
+{
+    State NewState;
+
+    PresetManager::Load(_State->_PresetsDirectoryPath, presetName, &NewState);
+
+    NewState._StyleManager._DominantColor       = _State->_StyleManager._DominantColor;
+    NewState._StyleManager._UserInterfaceColors = _State->_StyleManager._UserInterfaceColors;
+
+    NewState._StyleManager.UpdateCurrentColors();
+
+    *_State = NewState;
+    Initialize();
 }
 
 /// <summary>
