@@ -441,6 +441,8 @@ void UIElement::Resize()
     _FrameCounter.Resize(Size.width, Size.height);
 
     // Resize the grid.
+    OnMouseLeave();
+
     for (auto & Iter : _Grid)
         _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
 
@@ -605,7 +607,16 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _Event.Raise(Event::PlaybackStartedNewTrack);
+/*
+    // Load the album art of the current playing track.
+    {
+        static_api_ptr_t<playback_control> PlaybackControl;
+        metadb_handle_ptr Track;
 
+        if (PlaybackControl->get_now_playing(Track))
+            LoadAlbumArt(Track, fb2k::noAbort);
+    }
+*/
     UpdateState();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
@@ -646,6 +657,9 @@ void UIElement::on_playback_pause(bool)
 {
 }
 
+/// <summary>
+/// Called every second, for time display.
+/// </summary>
 void UIElement::on_playback_time(double time)
 {
     _ThreadState._TrackTime = time;
@@ -665,3 +679,34 @@ void UIElement::on_album_art(album_art_data::ptr aad)
 }
 
 #pragma endregion
+
+/// <summary>
+/// 
+/// </summary>
+void UIElement::LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort)
+{
+    static_api_ptr_t<album_art_manager_v2> aam;
+
+    auto Extractor = aam->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+
+    try
+    {
+        auto AlbumArt = Extractor->query(album_art_ids::cover_front, abort);
+
+        _Artwork.Initialize((uint8_t *) AlbumArt->get_ptr(), AlbumArt->get_size());
+
+        return;
+    }
+    catch (const exception_album_art_not_found &)
+    {
+        return;
+    }
+    catch (const exception_aborted &)
+    {
+        throw;
+    }
+    catch (...)
+    {
+        return;
+    }
+}

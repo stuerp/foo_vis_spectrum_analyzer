@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.23) P. Stuer **/
+/** $VER: UIElement.h (2024.03.25) P. Stuer **/
 
 #pragma once
 
@@ -118,6 +118,8 @@ private:
     void on_volume_change(float p_new_val) { }
 
     #pragma endregion
+
+    void LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort);
 
     virtual void ToggleFullScreen() noexcept = 0;
     void ToggleFrameCounter() noexcept;
