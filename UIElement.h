@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.25) P. Stuer **/
+/** $VER: UIElement.h (2024.03.26) P. Stuer **/
 
 #pragma once
 
@@ -128,6 +128,9 @@ private:
     void Configure() noexcept;
     void Resize();
 
+    // Tool Tips
+    void CreateToolTipControl() noexcept;
+    void DeleteTrackingToolTip() noexcept;
     Graph * GetGraph(const CPoint & pt) noexcept;
 
     void on_album_art(album_art_data::ptr data);
@@ -213,7 +216,7 @@ private:
     CToolTipCtrl _ToolTipControl;
 
     Graph * _TrackingGraph;
-    CToolInfo * _TrackingToolInfo;
+    TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
     size_t _LastIndex;
 

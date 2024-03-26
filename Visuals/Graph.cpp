@@ -106,21 +106,19 @@ void Graph::Reset()
 }
 
 /// <summary>
-/// Gets the tool area of this graph.
+/// Initializes a structure with the tool area of this graph.
 /// </summary>
-CToolInfo * Graph::GetToolInfo(HWND hParent) noexcept
+void Graph::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 {
-    CToolInfo * ToolInfo = new CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hParent, (UINT_PTR) hParent, nullptr, nullptr);
+    ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
 
-    ::SetRect(&ToolInfo->rect, (int) _Bounds.left, (int) _Bounds.top, (int) _Bounds.right, (int) _Bounds.bottom);
-
-    return ToolInfo;
+    ::SetRect(&ti.rect, (int) _Bounds.left, (int) _Bounds.top, (int) _Bounds.right, (int) _Bounds.bottom);
 }
 
 /// <summary>
-/// Gets the tooltip at the specified x position.
+/// Gets the tooltip at the specified x or y position.
 /// </summary>
-bool Graph::GetToolTip(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
+bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
 {
     if (_State->_VisualizationType != VisualizationType::Spectogram)
     {

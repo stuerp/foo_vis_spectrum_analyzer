@@ -102,6 +102,7 @@ v0.7.5.0-alpha3, 2024-03-xx
 * Fixed: User interface colors were not activated after loading a preset.
 * Fixed: The custom Solid color was not always saved correctly.
 * Fixed: Deadlock condition specific to CUI at startup.
+* Fixed: Memory leak in tool tips when resizing the component.
 
 v0.7.4.1, 2024-03-14
 

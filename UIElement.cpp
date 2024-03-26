@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.23) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.26) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -94,13 +94,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
 
     // Create the tooltip control.
-    {
-        _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
-
-        _ToolTipControl.SetMaxTipWidth(100);
-
-        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
-    }
+    CreateToolTipControl();
 
     // Apply the initial configuration.
     UpdateState();
@@ -324,110 +318,6 @@ LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 }
 
 /// <summary>
-/// Handles mouse move messages.
-/// </summary>
-void UIElement::OnMouseMove(UINT, CPoint pt)
-{
-    if (!_ToolTipControl.IsWindow())
-        return;
-
-    if (_TrackingGraph == nullptr)
-    {
-        _TrackingGraph = GetGraph(pt);
-
-        if (_TrackingGraph == nullptr)
-            return;
-
-        // Tell Windows we want to know when the mouse leaves this window.
-        {
-            TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
-
-            tme.dwFlags   = TME_LEAVE;
-            tme.hwndTrack = m_hWnd;
-        
-            ::TrackMouseEvent(&tme);
-        }
-
-        _LastMousePos = POINT(-1, -1);
-        _LastIndex = ~0U;
-
-        _TrackingToolInfo = _TrackingGraph->GetToolInfo(m_hWnd);
-
-        if (_TrackingToolInfo != nullptr)
-            _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
-    }
-    else
-    {
-        if (_TrackingGraph && (pt != _LastMousePos))
-        {
-            _LastMousePos = pt;
-
-            FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-            FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-
-            std::wstring ToolTip;
-            size_t Index;
-
-            if (_TrackingGraph->GetToolTip(ScaledX, ScaledY, ToolTip, Index))
-            {
-                if (Index != _LastIndex)
-                {
-                    _TrackingToolInfo->lpszText = (LPWSTR) ToolTip.c_str();
-
-                    _ToolTipControl.UpdateTipText(_TrackingToolInfo);
-
-                    _LastIndex = Index;
-                }
-
-                // Reposition the tooltip.
-                ::ClientToScreen(m_hWnd, &pt);
-
-                RECT tr;
-
-                _ToolTipControl.GetClientRect(&tr);
-
-                int x = pt.x + 4;
-                int y = pt.y - 4 - tr.bottom;
-
-                RECT wr;
-
-                GetWindowRect(&wr);
-
-                if (x + tr.right >=  wr.right)
-                    x = pt.x - 4 - tr.right;
-
-                if (y <=  wr.top)
-                    y = pt.y + 4;
-
-                _ToolTipControl.TrackPosition(x, y);
-            }
-            else
-            {
-                _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-
-                delete _TrackingToolInfo;
-                _TrackingToolInfo = nullptr;
-
-                _TrackingGraph = nullptr;
-            }
-        }
-    }
-}
-
-/// <summary>
-/// Turns off the tracking tooltip when the mouse leaves the window.
-/// </summary>
-void UIElement::OnMouseLeave()
-{
-    _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-
-    delete _TrackingToolInfo;
-    _TrackingToolInfo = nullptr;
-
-    _TrackingGraph = nullptr;
-}
-
-/// <summary>
 /// Resizes all visual elements.
 /// </summary>
 void UIElement::Resize()
@@ -435,21 +325,31 @@ void UIElement::Resize()
     if (_RenderTarget == nullptr)
         return;
 
+    DeleteTrackingToolTip();
+
     D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
     // Reposition the frame counter.
     _FrameCounter.Resize(Size.width, Size.height);
 
     // Resize the grid.
-    OnMouseLeave();
-
     for (auto & Iter : _Grid)
-        _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
+    {
+        TTTOOLINFOW ti;
+
+        Iter._Graph->InitToolInfo(m_hWnd, ti);
+        _ToolTipControl.DelTool(&ti);
+    }
 
     _Grid.Resize(Size.width, Size.height);
 
     for (auto & Iter : _Grid)
-        _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
+    {
+        TTTOOLINFOW ti;
+
+        Iter._Graph->InitToolInfo(m_hWnd, ti);
+        _ToolTipControl.AddTool(&ti);
+    }
 
     _ThreadState._StyleManager.ResetGradients();
 }

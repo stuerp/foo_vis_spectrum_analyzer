@@ -266,6 +266,7 @@
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
+    <ClCompile Include="ToolTips.cpp" />
     <ClCompile Include="Visuals\Gradients.cpp" />
     <ClCompile Include="Visuals\GraphSettings.cpp" />
     <ClCompile Include="State.cpp" />

@@ -54,7 +54,7 @@ public:
     Analysis & GetAnalysis() noexcept { return _Analysis; }
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
-    CToolInfo * GetToolInfo(HWND hParent) noexcept;
+    void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
     /// <summary>
     /// Returns true if the specified points lies with our bounds.
@@ -78,7 +78,7 @@ public:
         return true;
     }
 
-    bool GetToolTip(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
+    bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
