@@ -119,7 +119,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed" },
 
             { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum." },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum" },
             { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
 
             { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
@@ -142,14 +142,16 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background" },
+            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background." },
+
+            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
 
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
-            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork" },
+            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
             { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
-            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background." },
+            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
             // Graphs
             { IDC_GRAPH_SETTINGS, L"Shows the list of graphs." },
@@ -777,7 +779,16 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_ARTWORK_BACKGROUND, BM_SETCHECK, _State->_ShowArtworkOnBackground);
     }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_FIT_MODE);
 
+        w.ResetContent();
+
+        for (const auto & x : { L"Free", L"Fit big", L"Fit width", L"Fit height", L"Fill" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_FitMode);
+    }
     {
         UDACCEL Accel[] =
         {
@@ -1264,6 +1275,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         {
             _State->_ColorOrder = (ColorOrder) SelectedIndex;
             _State->_NewArtworkParameters = true;
+            break;
+        }
+
+        case IDC_FIT_MODE:
+        {
+            _State->_FitMode = (FitMode) SelectedIndex;
+
+            UpdateCommonPage();
             break;
         }
 
@@ -2693,6 +2712,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
+            IDC_FIT_MODE_LBL, IDC_FIT_MODE,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
@@ -2900,6 +2920,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
 
     // Artwork
+    GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 }

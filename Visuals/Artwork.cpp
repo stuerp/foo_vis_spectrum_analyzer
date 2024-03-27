@@ -68,13 +68,25 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
         FLOAT WScalar = 1.f;
         FLOAT HScalar = 1.f;
 
-        if ((state->_FitMode == FitMode::FitWidth) || (state->_FitMode == FitMode::FitBig))
-            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+        FLOAT Scalar = 1.f;
 
-        if ((state->_FitMode == FitMode::FitHeight) || (state->_FitMode == FitMode::FitBig))
-            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+        if (state->_FitMode != FitMode::Fill)
+        {
+            if ((state->_FitMode == FitMode::FitWidth) || (state->_FitMode == FitMode::FitBig))
+                WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
 
-        const FLOAT Scalar = Min(WScalar, HScalar);
+            if ((state->_FitMode == FitMode::FitHeight) || (state->_FitMode == FitMode::FitBig))
+                HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+
+            Scalar = Min(WScalar, HScalar);
+        }
+        else
+        {
+            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : (FLOAT) Size.width  / (FLOAT) MaxWidth;
+            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : (FLOAT) Size.height / (FLOAT) MaxHeight;
+
+            Scalar = Max(WScalar, HScalar);
+        }
 
         Size.width  *= Scalar;
         Size.height *= Scalar;

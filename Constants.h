@@ -295,6 +295,8 @@ enum class FitMode
     FitBig,
     FitWidth,
     FitHeight,
+
+    Fill,
 };
 
 enum class VisualElement : uint32_t

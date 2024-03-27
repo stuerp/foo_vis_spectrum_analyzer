@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.03.22) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.03.27) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -795,6 +795,7 @@
     #pragma endregion
 
     #pragma region Color Order
+
     // Label
     #define W_G11    66
     #define H_G11    H_LBL
@@ -806,6 +807,7 @@
     #define H_G12    H_CBX
     #define X_G12    X_G11 + W_G11 + IX
     #define Y_G12    Y_G11
+
     #pragma endregion
 
     // Checkbox: Show artwork on background
@@ -814,12 +816,28 @@
     #define X_G02    X_B06 + 5
     #define Y_G02    Y_G12 + H_G12 + IY
 
+    #pragma region Fit mode
+
+    // Label: Fit mode
+    #define W_G30    66
+    #define H_G30    H_LBL
+    #define X_G30    X_G02
+    #define Y_G30    Y_G02 + H_G02 + IY
+
+    // Combobox: Fit mode
+    #define W_G31    86
+    #define H_G31    H_CBX
+    #define X_G31    X_G30 + W_G30 + IX
+    #define Y_G31    Y_G30
+
+    #pragma endregion
+
     #pragma region Artwork Opacity
     // Label
     #define W_G03    66
     #define H_G03    H_LBL
-    #define X_G03    X_G02
-    #define Y_G03    Y_G02 + H_G02 + IY
+    #define X_G03    X_G30
+    #define Y_G03    Y_G31 + H_G31 + IY
 
     // Textbox
     #define W_G04    30
@@ -849,7 +867,7 @@
     #pragma endregion
 
 #define W_B06  184
-#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
+#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
 
 #pragma region Graphs

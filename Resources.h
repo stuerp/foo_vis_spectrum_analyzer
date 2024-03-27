@@ -263,6 +263,9 @@
 
 #define IDC_ARTWORK_BACKGROUND          6082
 
+#define IDC_FIT_MODE_LBL                6084
+#define IDC_FIT_MODE                    6086
+
 #define IDC_ARTWORK_OPACITY_LBL         6090
 #define IDC_ARTWORK_OPACITY             6092
 #define IDC_ARTWORK_OPACITY_SPIN        6094

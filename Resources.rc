@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.22) P. Stuer **/
+/** $VER: Resources.rc (2024.03.27) P. Stuer **/
 
 #include "Resources.h"
 
@@ -234,6 +234,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         combobox                                    IDC_COLOR_ORDER,                X_G12, Y_G12,     W_G12, H_G12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Show artwork on background" IDC_ARTWORK_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G02, Y_G02, W_G02, H_G02
+
+        rtext           "Fit mode:",                IDC_FIT_MODE_LBL,               X_G30, Y_G30 + 2, W_G30, H_G30
+        combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,        X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
