@@ -291,7 +291,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
                 size_t Index = (size_t) CommandId - IDM_PRESET_NAME;
 
-                if (InRange(Index, 0U, PresetNames.size() - 1))
+                if (InRange(Index, (size_t) 0, PresetNames.size() - (size_t) 1))
                 {
                     PresetManager::Load(_MainState._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
