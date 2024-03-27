@@ -17,7 +17,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100)
+UIElement::UIElement(): _IsVisible(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100), _IsStartingUp(true)
 {
 }
 
@@ -156,7 +156,6 @@ void UIElement::OnDestroy()
 void UIElement::OnPaint(CDCHandle hDC)
 {
 //  Log::Write(Log::Level::Trace, "%08X: OnPaint", GetTickCount64());
-
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.23) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.27) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -41,6 +41,8 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _YAxis.Initialize(state, settings);
 
     _Spectogram.Initialize(state, settings, _Analysis._FrequencyBands);
+
+    _PeakMeter.Initialize(state, settings);
 }
 
 /// <summary>
@@ -77,6 +79,12 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 
     {
         _Spectogram.Move(_Bounds);
+    }
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left + yl + 20.f, _Bounds.top + xt, _Bounds.left + yl + 40.f, _Bounds.bottom - xb);
+
+        _PeakMeter.Move(Rect);
     }
 }
 
@@ -178,6 +186,10 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
     }
     else
         _Spectogram.Render(renderTarget, frequencyBands, sampleRate);
+
+#ifdef _DEBUG
+    _PeakMeter.Render(renderTarget, _Analysis);
+#endif
 
     RenderDescription(renderTarget);
 }

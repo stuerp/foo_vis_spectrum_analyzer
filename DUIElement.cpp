@@ -133,9 +133,7 @@ static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Fact
 /// </summary>
 LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 {
-    static bool IsStartup = true;
-
-    if (!IsStartup)
+    if (!_IsStartingUp)
         return 0;
 
     RECT cr;
@@ -148,7 +146,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     ::DeleteObject((HGDIOBJ) hBrush);
 
-    IsStartup = false;
+    _IsStartingUp = false;
 
     return 1;
 }

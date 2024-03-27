@@ -96,7 +96,7 @@ v0.7.5.0-beta1, 2024-03-27
 * New: The context menu can be used to load a preset.
 * New: Artwork Fit mode. Defaults to "Fit Big".
 * Improved: Double-clicking a preset activates it.
-* Fixed: Privacy issue: The preset path will no longer be saved as to a preset file.
+* Fixed: Privacy issue: The preset path will no longer be saved to a preset file.
 * Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
 * Fixed: Inconsistent state of the color buttons and values when switching between styles in the configuration dialog.
 * Fixed: User interface colors were not activated after loading a preset.

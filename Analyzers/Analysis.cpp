@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.17) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.27) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -35,6 +35,8 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             GenerateAveePlayerFrequencyBands();
             break;
     }
+
+    _MeterValues.clear();
 }
 
 /// <summary>
@@ -50,6 +52,10 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     const size_t SampleCount = chunk.get_sample_count();
 
     _SampleRate = chunk.get_sample_rate();
+
+#if _DEBUG
+    GetMeterValues(chunk);
+#endif
 
     GetAnalyzer(chunk);
 
@@ -482,4 +488,55 @@ void Analysis::UpdatePeakIndicators() noexcept
             fb.Peak = Clamp(fb.Peak, 0., 1.);
         }
     }
+}
+
+/// <summary>
+/// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
+/// </summary>
+bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
+{
+    const audio_sample * Samples = chunk.get_data();
+    const size_t SampleCount = chunk.get_sample_count();
+
+    if ((Samples == nullptr) || (SampleCount == 0))
+        return false;
+
+    if (_MeterValues.size() != chunk.get_channel_count())
+    {
+        _MeterValues.clear();
+
+        for (uint32_t i = 0; i < chunk.get_channel_count(); ++i)
+            _MeterValues.push_back({ 0.0, 0.0 });
+    }
+    else
+    {
+        for (auto & x : _MeterValues)
+        {
+            x.Peak = 0.0;
+            x.RMS  = 0.0;
+        }
+    }
+
+    const audio_sample * EndOfChunk = Samples + SampleCount;
+
+    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )
+    {
+        for (auto & x : _MeterValues)
+        {
+            if (*Sample > x.Peak)
+                x.Peak = std::abs(*Sample);
+
+            x.RMS += *Sample * *Sample;
+
+            ++Sample;
+        }
+    }
+
+    for (auto & x : _MeterValues)
+    {
+        x.Peak = (audio_sample) ToDecibel(x.Peak);
+        x.RMS  = (audio_sample) ToDecibel(std::sqrt(x.RMS / (audio_sample) SampleCount));
+    }
+
+    return true;
 }

@@ -169,6 +169,7 @@ protected:
     bool _IsVisible;                // True if the component is visible.
 
     Event _Event;
+    bool _IsStartingUp;
 
 private:
     #pragma region Shared
