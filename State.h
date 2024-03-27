@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.23) P. Stuer **/
+/** $VER: State.h (2024.03.27) P. Stuer **/
 
 #pragma once
 
@@ -176,8 +176,8 @@ public:
             bool _ShowArtworkOnBackground;
 
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-            std::wstring _ArtworkFilePath;                               // Script that generates a valid file path to load artwork from.
-            FitMode _FitMode;
+            std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
+            FitMode _FitMode;                                           // Determines how over- or undersized artwork is rendered.
 
         #pragma endregion
 

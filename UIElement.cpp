@@ -93,6 +93,20 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
             AlbumArtNotificationManager->add(this);
     }
 
+    // Get the artwork data from the album art.
+    if (_MainState._ArtworkFilePath.empty())
+    {
+        auto aanm = now_playing_album_art_notify_manager::get();
+
+        if (aanm != nullptr)
+        {
+            album_art_data_ptr aad = aanm->current();
+
+            if (aad.is_valid())
+                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        }
+    }
+
     // Create the tooltip control.
     CreateToolTipControl();
 
@@ -575,7 +589,8 @@ void UIElement::on_album_art(album_art_data::ptr aad)
     if (!_MainState._ArtworkFilePath.empty())
         return;
 
-    _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+    if (aad.is_valid())
+        _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
 }
 
 #pragma endregion
@@ -591,11 +606,10 @@ void UIElement::LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & a
 
     try
     {
-        auto AlbumArt = Extractor->query(album_art_ids::cover_front, abort);
+        auto aad = Extractor->query(album_art_ids::cover_front, abort);
 
-        _Artwork.Initialize((uint8_t *) AlbumArt->get_ptr(), AlbumArt->get_size());
-
-        return;
+        if (aad.is_valid())
+            _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
     }
     catch (const exception_album_art_not_found &)
     {

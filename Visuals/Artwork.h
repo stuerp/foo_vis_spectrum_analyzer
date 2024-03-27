@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.03.11) P. Stuer  **/
+/** $VER: Artwork.h (2024.03.27) P. Stuer  **/
 
 #pragma once
 
@@ -55,8 +55,17 @@ public:
 
     bool IsInitialized() const noexcept { return _Status == Initialized; }
     bool IsRealized() const noexcept { return _Status == Realized; }
-    void SetIdle() noexcept { _Status = Idle; }
-    void RequestColorUpdate() noexcept { _Status = Realized; } // Request an update of the color list because the parameters have changed.
+
+    void SetIdle() noexcept
+    {
+        _Status = Idle;
+    }
+
+    void RequestColorUpdate() noexcept
+    {
+        if (_Status == Idle)
+            _Status = Realized; // Request an update of the color list because the parameters have changed.
+    }
 
 private:
     CriticalSection _CriticalSection;

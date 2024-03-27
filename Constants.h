@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.03.15) P. Stuer **/
+/** $VER: Constans.h (2024.03.27) P. Stuer **/
 
 #pragma once
 
@@ -323,7 +323,6 @@ enum class VisualElement : uint32_t
     Spectogram                  = 18,
 
     NyquistMarker               = 15,
-
 };
 
 enum class ColorSource : uint32_t
