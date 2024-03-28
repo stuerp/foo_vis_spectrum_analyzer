@@ -232,6 +232,30 @@ private:
         },
 
         {
+            VisualElement::PeakMeterBackground,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Gray), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterPeakLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterRMSLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
             VisualElement::NyquistMarker,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,

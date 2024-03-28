@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.03.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.28) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -80,6 +80,10 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::CurvePeakArea,
 
         VisualElement::Spectogram,
+
+        VisualElement::PeakMeterBackground,
+        VisualElement::PeakMeterPeakLevel,
+        VisualElement::PeakMeterRMSLevel,
 
         VisualElement::NyquistMarker,
     };

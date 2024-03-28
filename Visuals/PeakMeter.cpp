@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.03.27) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.03.28) P. Stuer - Represents a peak meter. **/
 
 #include "PeakMeter.h"
 
@@ -57,20 +57,20 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget, const Analysis & analys
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT BarWidth = 20.f;
+    const FLOAT BarWidth = _Size.width / 2.f;
 
-    D2D1_RECT_F Rect = { _Bounds.left, _Bounds.bottom, _Bounds.left + BarWidth - 1.f, 0.f };
+    D2D1_RECT_F Rect = { _Bounds.left, 0.f, _Bounds.left + BarWidth - 1.f, _Bounds.bottom };
 
     for (const auto & mv : analysis._MeterValues)
     {
 
         {
-            Rect.bottom = _Bounds.bottom - Map(Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _Bounds.top, _Bounds.bottom);
+            Rect.top= Rect.bottom - Map(Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, Rect.bottom);
             renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
         }
 
         {
-            Rect.bottom = _Bounds.bottom - Map(Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _Bounds.top, _Bounds.bottom);
+            Rect.top = Rect.bottom - Map(Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, Rect.bottom);
             renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
         }
 
@@ -101,10 +101,10 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
     }
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _Size, &_PeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterPeakLevel, renderTarget, _Size, &_PeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _Size, &_RMSStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterRMSLevel, renderTarget, _Size, &_RMSStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, _Size, &_TextStyle);

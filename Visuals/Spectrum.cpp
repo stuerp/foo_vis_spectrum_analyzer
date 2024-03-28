@@ -72,6 +72,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
                 break;
 
             case VisualizationType::Spectogram:
+            case VisualizationType::PeakMeter:
                 break;
         }
 

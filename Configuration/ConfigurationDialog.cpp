@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.23) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.28) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -962,7 +962,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -1015,6 +1015,7 @@ void ConfigurationDialog::Initialize()
             L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
             L"Spectogram",
+            L"Peak Meter Background", L"Peak Meter Peak Level", L"Peak Meter RMS Level",
             L"Nyquist Frequency",
         })
             w.AddString(x);

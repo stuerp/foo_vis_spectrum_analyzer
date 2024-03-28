@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.03.27) P. Stuer **/
+/** $VER: Constans.h (2024.03.28) P. Stuer **/
 
 #pragma once
 
@@ -253,6 +253,7 @@ enum class VisualizationType
     Bars = 0,
     Curve = 1,
     Spectogram = 2,
+    PeakMeter = 3,
 };
 
 enum class PeakMode
@@ -323,6 +324,10 @@ enum class VisualElement : uint32_t
     CurvePeakArea               = 13,
 
     Spectogram                  = 18,
+
+    PeakMeterBackground         = 19,
+    PeakMeterPeakLevel          = 20,
+    PeakMeterRMSLevel           = 21,
 
     NyquistMarker               = 15,
 };

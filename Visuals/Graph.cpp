@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.27) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.28) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -82,9 +82,7 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     }
 
     {
-        D2D1_RECT_F Rect(_Bounds.left + yl + 20.f, _Bounds.top + xt, _Bounds.left + yl + 40.f, _Bounds.bottom - xb);
-
-        _PeakMeter.Move(Rect);
+        _PeakMeter.Move(_Bounds);
     }
 }
 
@@ -167,7 +165,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground)
+    if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter))
         artwork.Render(renderTarget, _Spectrum.GetBounds(), _State);
 }
 
@@ -176,22 +174,33 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// </summary>
 void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
 {
-    if (_State->_VisualizationType != VisualizationType::Spectogram)
+    switch (_State->_VisualizationType)
     {
-        _XAxis.Render(renderTarget);
+        case VisualizationType::Bars:
+        case VisualizationType::Curve:
+        {
+            _XAxis.Render(renderTarget);
 
-        _YAxis.Render(renderTarget);
+            _YAxis.Render(renderTarget);
 
-        _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+            _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+            RenderDescription(renderTarget);
+            break;
+        }
+
+        case VisualizationType::Spectogram:
+        {
+            _Spectogram.Render(renderTarget, frequencyBands, sampleRate);
+            RenderDescription(renderTarget);
+            break;
+        }
+
+        case VisualizationType::PeakMeter:
+        {
+            _PeakMeter.Render(renderTarget, _Analysis);
+            break;
+        }
     }
-    else
-        _Spectogram.Render(renderTarget, frequencyBands, sampleRate);
-
-#ifdef _DEBUG
-    _PeakMeter.Render(renderTarget, _Analysis);
-#endif
-
-    RenderDescription(renderTarget);
 }
 
 /// <summary>
