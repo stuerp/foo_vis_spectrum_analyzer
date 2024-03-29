@@ -56,7 +56,7 @@ public:
 
         SetIdle();
 
-        _CriticalSection.Enter();
+        _CriticalSection.Leave();
     }
 
     bool IsInitialized() const noexcept { return _Status == Initialized; }
