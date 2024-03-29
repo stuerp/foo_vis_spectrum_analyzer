@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.03.28) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.03.29) P. Stuer - Represents a peak meter. **/
 
 #include "PeakMeter.h"
 
@@ -57,26 +57,32 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget, const Analysis & analys
     if (!SUCCEEDED(hr))
         return;
 
+    SetTransform(renderTarget);
+
     const FLOAT BarWidth = _Size.width / 2.f;
 
-    D2D1_RECT_F Rect = { _Bounds.left, 0.f, _Bounds.left + BarWidth - 1.f, _Bounds.bottom };
+    D2D1_RECT_F Rect = { _Bounds.left, 0.f, _Bounds.left + BarWidth - 1.f, 0.f };
 
     for (const auto & mv : analysis._MeterValues)
     {
 
         {
-            Rect.top= Rect.bottom - Map(Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, Rect.bottom);
+            double Value = Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _Bounds.top, _Bounds.bottom);
             renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
         }
 
         {
-            Rect.top = Rect.bottom - Map(Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi), _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, Rect.bottom);
-            renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+            double Value = Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _Bounds.top, _Bounds.bottom);
+            renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
         }
 
         Rect.left  += BarWidth;
         Rect.right += BarWidth;
     }
+
+    ResetTransform(renderTarget);
 }
 
 /// <summary>

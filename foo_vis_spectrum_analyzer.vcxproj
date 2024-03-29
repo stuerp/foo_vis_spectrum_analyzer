@@ -200,7 +200,9 @@
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\ConfigurationDialog.h" />
     <ClInclude Include="Visuals\PeakMeter.h" />
-    <ClInclude Include="Visuals\Spectogram.h" />
+    <ClInclude Include="Visuals\Spectogram\Spectogram.h" />
+    <ClInclude Include="Visuals\Spectogram\XAxis.h" />
+    <ClInclude Include="Visuals\Spectogram\YAxis.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
@@ -281,7 +283,7 @@
     <ClCompile Include="Visuals\Element.cpp" />
     <ClCompile Include="Configuration\PresetManager.cpp" />
     <ClCompile Include="Visuals\PeakMeter.cpp" />
-    <ClCompile Include="Visuals\Spectogram.cpp" />
+    <ClCompile Include="Visuals\Spectogram\Spectogram.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Windows\Color.cpp" />

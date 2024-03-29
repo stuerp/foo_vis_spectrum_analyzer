@@ -23,7 +23,7 @@
 #include "XAxis.h"
 #include "YAxis.h"
 
-#include "Spectogram.h"
+#include "Spectogram/Spectogram.h"
 #include "PeakMeter.h"
 
 #include "Log.h"

@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.23) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.29) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -41,11 +41,8 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    _RealBounds = rect;
-
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
-
 }
 
 /// <summary>
@@ -74,32 +71,13 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
     if (!SUCCEEDED(hr))
         return;
 
-    // Update the spectogram bitmap.
-    if (_State->_PlaybackTime != _PlaybackTime)
+    // Update the offscreen bitmap.
+    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
         Update(frequencyBands, _State->_TrackTime, sampleRate / 2.f);
 
-    // Draw the bitmap.
+    // Draw the offscreen bitmap.
     {
-        // Determine and set the transform.
-        {
-            D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-            if (_GraphSettings->_FlipHorizontally)
-                Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, _BitmapSize.width, 0.f);
-
-            if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-            {
-                const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _BitmapSize.height);
-
-                Transform = Transform * FlipV;
-            }
-
-            const FLOAT y = _GraphSettings->_XAxisTop ? _XTextHeight : 0.f;
-
-            D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, y);
-
-            renderTarget->SetTransform(Transform * Translate);
-        }
+        SetTransform(renderTarget);
 
         if (_State->_ScrollingSpectogram)
         {
@@ -123,8 +101,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
             renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
         }
 
-        // Reset the transform.
-        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        ResetTransform(renderTarget);
     }
 
     // Draw the X-axis (Time).
@@ -147,7 +124,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
             RenderYAxis(renderTarget, false);
     }
 
-    if (_State->_PlaybackTime != _PlaybackTime)
+    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
     {
         _X++;
 
@@ -538,14 +515,6 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 
     if (SUCCEEDED(hr) && (_Bitmap == nullptr))
         hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
-
-    _RealBounds = _Bounds;
-
-    if (_GraphSettings->_XAxisTop)
-        _RealBounds.top = _Bounds.top + _XTextHeight;
-
-    if (_GraphSettings->_XAxisBottom)
-        _RealBounds.bottom = _Bounds.bottom - _XTextHeight;
 
     return hr;
 }

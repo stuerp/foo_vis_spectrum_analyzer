@@ -37,52 +37,23 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    {
-        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-        if (_GraphSettings->_FlipHorizontally)
-            Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, _Size.width, 0.f);
-
-        if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-        {
-            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
-
-            Transform = Transform * FlipV;
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
-
-        renderTarget->SetTransform(Transform * Translate);
-    }
-
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    if (SUCCEEDED(hr))
-    {
-        switch (_State->_VisualizationType)
-        {
-            default:
+    if (!SUCCEEDED(hr))
+        return;
 
-            case VisualizationType::Bars:
-                RenderBars(renderTarget, frequencyBands, sampleRate);
-                break;
+    SetTransform(renderTarget);
 
-            case VisualizationType::Curve:
-                RenderCurve(renderTarget, frequencyBands, sampleRate);
-                break;
+    if (_State->_VisualizationType == VisualizationType::Bars)
+        RenderBars(renderTarget, frequencyBands, sampleRate);
+    else
+    if (_State->_VisualizationType == VisualizationType::Curve)
+        RenderCurve(renderTarget, frequencyBands, sampleRate);
 
-            case VisualizationType::Spectogram:
-            case VisualizationType::PeakMeter:
-                break;
-        }
+    if (_NyquistMarker->_ColorSource != ColorSource::None)
+        RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
 
-        if (_NyquistMarker->_ColorSource != ColorSource::None)
-            RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
-    }
-
-    {
-        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-    }
+    ResetTransform(renderTarget);
 }
 
 /// <summary>

@@ -22,6 +22,9 @@
 
 #include <deque>
 
+#include "XAxis.h"
+#include "YAxis.h"
+
 class Spectogram : public Element
 {
 public:
@@ -118,6 +121,9 @@ private:
     Style * _NyquistMarker;
 
     D2D1_SIZE_F _BitmapSize;
+
+    SpectogramXAxis _XAxis;
+    SpectogramYAxis _YAxis;
 
     const FLOAT Offset = 4.f; // Distance between the tick and the text.
 };
