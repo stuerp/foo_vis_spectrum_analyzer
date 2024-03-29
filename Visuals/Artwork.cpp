@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.03.18) P. Stuer **/
+/** $VER: Artwork.cpp (2024.03.29) P. Stuer **/
 
 #include "Artwork.h"
 
@@ -14,9 +14,9 @@
 /// </summary>
 HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 {
-    _CriticalSection.Enter();
-
     Release();
+
+    _CriticalSection.Enter();
 
     if ((data != nullptr) && (size != 0))
     {
@@ -36,9 +36,9 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// </summary>
 HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 {
-    _CriticalSection.Enter();
-
     Release();
+
+    _CriticalSection.Enter();
 
     _FilePath = filePath;
     _Raster.clear();

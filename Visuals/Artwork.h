@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.03.27) P. Stuer  **/
+/** $VER: Artwork.h (2024.03.29) P. Stuer  **/
 
 #pragma once
 
@@ -42,15 +42,21 @@ public:
 
     void Release() noexcept
     {
+        _CriticalSection.Enter();
+
         _Bitmap.Release();
         _FormatConverter.Release();
         _Frame.Release();
+
+        _FilePath.clear();
 
         std::vector<uint8_t> Empty;
 
         _Raster.swap(Empty);
 
         SetIdle();
+
+        _CriticalSection.Enter();
     }
 
     bool IsInitialized() const noexcept { return _Status == Initialized; }
