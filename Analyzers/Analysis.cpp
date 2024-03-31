@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.27) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.30) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -53,9 +53,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
 
     _SampleRate = chunk.get_sample_rate();
 
-#if _DEBUG
     GetMeterValues(chunk);
-#endif
 
     GetAnalyzer(chunk);
 
@@ -503,10 +501,30 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 
     if (_MeterValues.size() != chunk.get_channel_count())
     {
+        static const WCHAR * ChannelNames[] =
+        {
+            L"FL", L"FR", L"FC",
+            L"LFE",
+            L"BL", L"BR", 
+            L"FCL", L"FCR",
+            L"BC", L"SL", L"SR", L"TC",
+            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
+        };
+
         _MeterValues.clear();
 
-        for (uint32_t i = 0; i < chunk.get_channel_count(); ++i)
-            _MeterValues.push_back({ 0.0, 0.0 });
+        if (chunk.get_channel_count() != 1)
+        {
+            size_t i = 0;
+
+            for (unsigned ChannelConfig = chunk.get_channel_config() & _GraphSettings->_Channels; (ChannelConfig != 0) && (i < _countof(ChannelNames)); ChannelConfig >>= 1, ++i)
+            {
+                if (ChannelConfig & 1)
+                    _MeterValues.push_back({ 0.0, 0.0, ChannelNames[i] });
+            }
+        }
+        else
+            _MeterValues.push_back({ 0.0, 0.0, ChannelNames[2] }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
     }
     else
     {

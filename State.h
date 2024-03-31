@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.27) P. Stuer **/
+/** $VER: State.h (2024.03.31) P. Stuer **/
 
 #pragma once
 
@@ -207,6 +207,12 @@ public:
 
             #pragma endregion
 
+            #pragma region Peak Meter
+
+                bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
+
+            #pragma endregion
+
         #pragma endregion
 
     #pragma endregion
@@ -311,5 +317,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 21;
+    const size_t _CurrentVersion = 22;
 };

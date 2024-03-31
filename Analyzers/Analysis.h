@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.03.27) P. Stuer **/
+/** $VER: Analysis.h (2024.03.30) P. Stuer **/
 
 #pragma once
 
@@ -29,6 +29,7 @@ struct MeterValue
 {
     audio_sample Peak;
     audio_sample RMS;
+    std::wstring Name;
 };
 
 /// <summary>

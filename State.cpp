@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.03.22) P. Stuer **/
+/** $VER: State.cpp (2024.03.30) P. Stuer **/
 
 #include "State.h"
 
@@ -202,7 +202,6 @@ void State::Reset() noexcept
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
-    _ScrollingSpectogram = true;
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
@@ -216,6 +215,12 @@ void State::Reset() noexcept
     _PeakLineColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _UseCustomPeakLineColor_Deprecated = false;
     _AreaOpacity_Deprecated = 0.5f;
+
+    // Spectogram
+    _ScrollingSpectogram = true;
+
+    // Peak Meter
+    _HorizontalPeakMeter = false;
 
     _StyleManager.Reset();
 
@@ -431,7 +436,6 @@ State & State::operator=(const State & other)
     _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
     _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
     _LEDMode = other._LEDMode;
-    _ScrollingSpectogram = other._ScrollingSpectogram;
     _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
@@ -445,6 +449,12 @@ State & State::operator=(const State & other)
     _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
     _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
     _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
+
+    // Spectogram
+    _ScrollingSpectogram = other._ScrollingSpectogram;
+
+    // Peak Meter
+    _HorizontalPeakMeter = other._HorizontalPeakMeter;
 
     #pragma endregion
 
@@ -778,6 +788,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         {
             reader->read_object_t(_ScrollingSpectogram, abortHandler);
         }
+
+        if (Version >= 22)
+        {
+            reader->read_object_t(_HorizontalPeakMeter, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1036,6 +1051,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
         // Version 21, v0.7.5.0
         writer->write_object_t(_ScrollingSpectogram, abortHandler);
+
+        // Version 22, v0.7.5.0
+        writer->write_object_t(_HorizontalPeakMeter, abortHandler);
     }
     catch (exception & ex)
     {

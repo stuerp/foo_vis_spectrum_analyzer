@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.27) P. Stuer **/
+/** $VER: Resources.h (2024.03.31) P. Stuer **/
 
 #pragma once
 
@@ -378,6 +378,12 @@
 #define IDC_SPECTOGRAM                  7130
 
 #define IDC_SCROLLING_SPECTOGRAM        7132
+
+// Peak Meter
+
+#define IDC_PEAK_METER                  7140
+
+#define IDC_HORIZONTAL_PEAK_METER       7142
 
 #pragma endregion
 

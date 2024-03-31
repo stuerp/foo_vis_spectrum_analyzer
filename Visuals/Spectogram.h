@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.03.23) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.03.30) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -22,8 +22,8 @@
 
 #include <deque>
 
-#include "XAxis.h"
-#include "YAxis.h"
+#include "SpectogramXAxis.h"
+#include "SpectogramYAxis.h"
 
 class Spectogram : public Element
 {
@@ -42,6 +42,8 @@ public:
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept override { return _RealBounds; }
 
+    void ReleaseDeviceSpecificResources();
+
 private:
     void Update(const FrequencyBands & frequencyBands, double time, double sampleRate) noexcept;
 
@@ -52,7 +54,6 @@ private:
     void InitYAxis(const FrequencyBands & frequencyBands) noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
 
 private:
     D2D1_RECT_F _RealBounds;

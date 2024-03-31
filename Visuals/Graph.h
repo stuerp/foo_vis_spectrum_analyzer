@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.03.27) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.03.30) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -23,7 +23,7 @@
 #include "XAxis.h"
 #include "YAxis.h"
 
-#include "Spectogram/Spectogram.h"
+#include "Spectogram.h"
 #include "PeakMeter.h"
 
 #include "Log.h"

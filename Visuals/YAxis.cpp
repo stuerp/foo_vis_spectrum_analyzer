@@ -25,7 +25,7 @@ void YAxis::Initialize(State * state, const GraphSettings * settings) noexcept
     if (_GraphSettings->_YAxisMode == YAxisMode::None)
         return;
 
-    // Precalculate the labels and their position.
+    // Create the labels.
     {
         for (double Amplitude = _GraphSettings->_AmplitudeLo; Amplitude <= _GraphSettings->_AmplitudeHi; Amplitude -= _GraphSettings->_AmplitudeStep)
         {

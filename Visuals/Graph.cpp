@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.28) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.03.30) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -266,6 +266,10 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 /// </summary>
 void Graph::ReleaseDeviceSpecificResources() noexcept
 {
+    _PeakMeter.ReleaseDeviceSpecificResources();
+
+    _Spectogram.ReleaseDeviceSpecificResources();
+
     _Spectrum.ReleaseDeviceSpecificResources();
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();

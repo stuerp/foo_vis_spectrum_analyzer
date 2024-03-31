@@ -14,9 +14,9 @@
 /// </summary>
 HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 {
-    Release();
-
     _CriticalSection.Enter();
+
+    Release();
 
     if ((data != nullptr) && (size != 0))
     {
@@ -36,9 +36,9 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// </summary>
 HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 {
-    Release();
-
     _CriticalSection.Enter();
+
+    Release();
 
     _FilePath = filePath;
     _Raster.clear();
@@ -146,31 +146,33 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 /// </summary>
 HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
-    if (_FormatConverter == nullptr)
-        return E_FAIL;
+    HRESULT hr = E_FAIL;
 
     _CriticalSection.Enter();
 
-    UINT Width = 0, Height = 0;
-
-    HRESULT hr = _FormatConverter->GetSize(&Width, &Height);
-
-    std::vector<ColorThief::color_t> Palette;
-
-    if (SUCCEEDED(hr))
+    if (_FormatConverter != nullptr)
     {
-        uint32_t Quality = Clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+        UINT Width = 0, Height = 0;
 
-        hr = ColorThief::GetPalette(_FormatConverter, Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
-    }
+        hr = _FormatConverter->GetSize(&Width, &Height);
 
-    // Convert to Direct2D colors.
-    if (SUCCEEDED(hr))
-    {
-        colors.clear();
+        std::vector<ColorThief::color_t> Palette;
 
-        for (const auto & p : Palette)
-            colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+        if (SUCCEEDED(hr))
+        {
+            uint32_t Quality = Clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+
+            hr = ColorThief::GetPalette(_FormatConverter, Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
+        }
+
+        // Convert to Direct2D colors.
+        if (SUCCEEDED(hr))
+        {
+            colors.clear();
+
+            for (const auto & p : Palette)
+                colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+        }
     }
 
     _CriticalSection.Leave();

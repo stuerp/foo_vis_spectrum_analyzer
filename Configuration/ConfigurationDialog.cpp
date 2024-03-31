@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.28) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.03.31) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -194,7 +194,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
 
-            { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram" },
+            { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
+
+            { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -996,6 +998,14 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
+    }
+
+    #pragma endregion
+
+    #pragma region Peak Meter
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
     }
 
     #pragma endregion
@@ -2146,6 +2156,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_HORIZONTAL_PEAK_METER:
+        {
+            _State->_HorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2758,6 +2774,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_SPECTOGRAM,
             IDC_SCROLLING_SPECTOGRAM,
+
+        IDC_PEAK_METER,
+            IDC_HORIZONTAL_PEAK_METER,
     };
 
     static const int Page7[] =
@@ -3030,6 +3049,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
  
     GetDlgItem(IDC_LED_MODE).EnableWindow(_State->_VisualizationType == VisualizationType::Bars);
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
+    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
 }
 
 /// <summary>

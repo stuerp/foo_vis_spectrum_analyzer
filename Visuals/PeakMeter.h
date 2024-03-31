@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.03.27) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.03.30) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -37,20 +37,51 @@ public:
     void Render(ID2D1RenderTarget * renderTarget, const Analysis & analysis);
     void Reset();
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources() noexcept;
+    void ReleaseDeviceIndependentResources() noexcept;
 
 private:
+    HRESULT CreateDeviceIndependentResources() noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+
+    void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & analysis) const noexcept;
+
+private:
+    struct Label
+    {
+        double Amplitude;
+        std::wstring Text;
+
+        D2D1_POINT_2F PointL;
+        D2D1_POINT_2F PointR;
+
+        D2D1_RECT_F RectL;
+        D2D1_RECT_F RectR;
+    };
+
+    std::vector<Label> _Labels;
+
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 
-    FLOAT _TextWidth;
-    FLOAT _TextHeight;
+    FLOAT _XTextWidth;
+    FLOAT _XTextHeight;
+    FLOAT _XMin;
+    FLOAT _XMax;
 
-    CComPtr<IDWriteTextFormat> _TextFormat;
+    FLOAT _YTextWidth;
+    FLOAT _YTextHeight;
+    FLOAT _YMin;
+    FLOAT _YMax;
+
+    CComPtr<IDWriteTextFormat> _XTextFormat;
+    CComPtr<IDWriteTextFormat> _YTextFormat;
 
     Style * _PeakStyle;
     Style * _RMSStyle;
 
-    Style * _TextStyle;
+    Style * _XTextStyle;
+    Style * _YTextStyle;
+    Style * _YLineStyle;
 };
