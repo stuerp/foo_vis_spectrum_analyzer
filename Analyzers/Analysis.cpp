@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.30) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.31) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -528,10 +528,12 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     }
     else
     {
-        for (auto & x : _MeterValues)
+        for (auto & mv : _MeterValues)
         {
-            x.Peak = 0.0;
-            x.RMS  = 0.0;
+            mv.NewPeak = 0.0;
+            mv.NewRMS = 0.0;
+            mv.ScaledPeak = -999.0;
+            mv.ScaledRMS = -999.0;
         }
     }
 
@@ -539,21 +541,33 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 
     for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )
     {
-        for (auto & x : _MeterValues)
+        for (auto & mv : _MeterValues)
         {
-            if (*Sample > x.Peak)
-                x.Peak = std::abs(*Sample);
+            audio_sample Value = std::abs(*Sample);
 
-            x.RMS += *Sample * *Sample;
+            if (Value > mv.NewPeak)
+                mv.NewPeak = Value;
+
+            mv.NewRMS += Value * Value;
 
             ++Sample;
         }
     }
 
-    for (auto & x : _MeterValues)
+    // Calculate the scaled values. Keep the new value only when it's larger than the current value to reduce the 'jumpiness' of the meter.
+    for (auto & mv : _MeterValues)
     {
-        x.Peak = (audio_sample) ToDecibel(x.Peak);
-        x.RMS  = (audio_sample) ToDecibel(std::sqrt(x.RMS / (audio_sample) SampleCount));
+        double ScaledPeak = ToDecibel(mv.NewPeak);
+
+        if (ScaledPeak > mv.ScaledPeak)
+            mv.ScaledPeak = ScaledPeak;
+
+        mv.NewRMS = (audio_sample) std::sqrt(mv.NewRMS / (audio_sample) SampleCount);
+
+        double ScaledRMS = ToDecibel(mv.NewRMS);
+
+        if (ScaledRMS > mv.ScaledRMS)
+            mv.ScaledRMS = ScaledRMS;
     }
 
     return true;

@@ -129,7 +129,7 @@ void PeakMeter::Reset()
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void PeakMeter::Render(ID2D1RenderTarget * renderTarget, const Analysis & analysis)
+void PeakMeter::Render(ID2D1RenderTarget * renderTarget, Analysis & analysis)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -199,7 +199,7 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
 /// <summary>
 /// Draws the meters.
 /// </summary>
-void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & analysis) const noexcept
+void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept
 {
     if (analysis._MeterValues.size() == 0)
         return;
@@ -212,11 +212,11 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & an
 
         D2D1_RECT_F Rect = { 0.f, _YMax, 0.f, _YMax - (BarHeight - 1.f) };
 
-        for (const auto & mv : analysis._MeterValues)
+        for (auto & mv : analysis._MeterValues)
         {
             if (_PeakStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
                 Rect.left  = _XMin;
                 Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _XMin, _XMax);
@@ -226,13 +226,17 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & an
 
             if (_RMSStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
                 Rect.left  = _XMin;
                 Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _XMin, _XMax);
 
                 renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
             }
+
+            // Animated the scaled peak and RMS values.
+            mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
             Rect.top    -= BarHeight;
             Rect.bottom -= BarHeight;
@@ -279,11 +283,11 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & an
 
         D2D1_RECT_F Rect = { _XMin, 0.f, _XMin + (BarWidth - 1.f), 0.f };
 
-        for (const auto & mv : analysis._MeterValues)
+        for (auto & mv : analysis._MeterValues)
         {
             if (_PeakStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp((double) mv.Peak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
                 Rect.top    = _YMin;
                 Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _YMin, _YMax);
@@ -293,13 +297,17 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & an
 
             if (_RMSStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp((double) mv.RMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
                 Rect.top    = _YMin;
                 Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _YMin, _YMax);
 
                 renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
             }
+
+            // Animated the scaled peak and RMS values.
+            mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
             Rect.left  += BarWidth;
             Rect.right += BarWidth;
@@ -361,7 +369,9 @@ HRESULT PeakMeter::CreateDeviceIndependentResources() noexcept
 
     if (SUCCEEDED(hr))
     {
-        hr = _DirectWrite.CreateTextFormat(_FontFamilyName, FontSize, !_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _YTextFormat);
+        const DWRITE_TEXT_ALIGNMENT ta = _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER : (!_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+
+        hr = _DirectWrite.CreateTextFormat(_FontFamilyName, FontSize, ta, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _YTextFormat);
 
         if (SUCCEEDED(hr))
         {

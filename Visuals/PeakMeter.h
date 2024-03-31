@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.03.30) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.03.31) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -34,7 +34,7 @@ public:
 
     void Initialize(State * state, const GraphSettings * settings);
     void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget, const Analysis & analysis);
+    void Render(ID2D1RenderTarget * renderTarget, Analysis & analysis);
     void Reset();
 
     void ReleaseDeviceSpecificResources() noexcept;
@@ -45,7 +45,7 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
 
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawMeters(ID2D1RenderTarget * renderTarget, const Analysis & analysis) const noexcept;
+    void DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept;
 
 private:
     struct Label
