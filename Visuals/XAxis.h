@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.03.15) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.03.31) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@
 class XAxis : public Element
 {
 public:
-    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Height(30.f) { }
+    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency(), _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _TextHeight(30.f) { }
 
     XAxis(const XAxis &) = delete;
     XAxis & operator=(const XAxis &) = delete;
@@ -41,10 +41,10 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    FLOAT GetHeight() const { return _Height; }
+    FLOAT GetHeight() const { return _TextHeight; }
 
 private:
-    HRESULT CreateDeviceIndependentResources();
+    HRESULT CreateDeviceIndependentResources() noexcept;
     void ReleaseDeviceIndependentResources();
 
 private:
@@ -55,8 +55,8 @@ private:
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.
 
-    FLOAT _Width;       // Width of a label
-    FLOAT _Height;      // Height of the X axis area (Font size-dependent).
+    FLOAT _TextWidth;       // Width of a label
+    FLOAT _TextHeight;      // Height of the X axis area (Font size-dependent).
 
     struct Label
     {

@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.03.29) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.03.31) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
 
-    virtual void SetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
+    virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
 
 protected:

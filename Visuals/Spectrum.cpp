@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.19) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.03.31) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -29,7 +29,7 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings)
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
-    _Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
+    _Size = { rect.right - rect.left, rect.bottom - rect.top };
 }
 
 /// <summary>
@@ -42,7 +42,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
     if (!SUCCEEDED(hr))
         return;
 
-    SetTransform(renderTarget);
+    SetTransform(renderTarget, _Bounds);
 
     if (_State->_VisualizationType == VisualizationType::Bars)
         RenderBars(renderTarget, frequencyBands, sampleRate);
@@ -62,12 +62,14 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
 /// </summary>
 void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    const FLOAT Bandwidth = Max((_Size.width / (FLOAT) frequencyBands.size()), 1.f);
+    const FLOAT Bandwidth = Max(::floor(_Size.width / (FLOAT) frequencyBands.size()), 2.f);
+
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) frequencyBands.size();
 
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
     const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
 
-    FLOAT x1 = 0.f;
+    FLOAT x1 = (_Size.width - SpectrumWidth) / 2.f;
     FLOAT x2 = x1 + Bandwidth;
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
@@ -79,6 +81,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     {
         assert(InRange(fb.CurValue, 0.0, 1.0));
         assert(InRange(fb.Peak, 0.0, 1.0));
+
+        x1 = Clamp(x1, 0.f, _Size.width);
+        x2 = Clamp(x2, 0.f, _Size.width);
 
         D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, _Size.height - PaddingY };
 
@@ -156,7 +161,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             }
         }
 
-        x1 = ::round(x2);
+        x1 = x2;
         x2 = x1 + Bandwidth;
     }
 
@@ -245,7 +250,15 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, co
 
     const double NyquistScale = Clamp(ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _Size.width);
+    const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) frequencyBands.size()), 2.f); // In pixels
+
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * frequencyBands.size() : _Size.width;
+
+    const FLOAT xl = ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
+
+    const FLOAT dx = Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+
+    const FLOAT x = xl + dx;
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _Size.height), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }

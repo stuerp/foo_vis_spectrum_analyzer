@@ -206,7 +206,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
     if (_State->_HorizontalPeakMeter)
     {
-        SetTransform(renderTarget);
+        SetTransform(renderTarget, _Bounds);
 
         const FLOAT BarHeight = ::floor((_YMax - _YMin) / (FLOAT) analysis._MeterValues.size());
 
@@ -277,7 +277,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
     }
     else
     {
-        SetTransform(renderTarget);
+        SetTransform(renderTarget, _Bounds);
 
         const FLOAT BarWidth = ::floor((_XMax - _XMin) / (FLOAT) analysis._MeterValues.size());
 

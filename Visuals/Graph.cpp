@@ -130,13 +130,20 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
     {
         const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
 
-        if (!InRange(x, Bounds.left, Bounds.right))
+        const FLOAT Bandwidth = Max(::floor((Bounds.right - Bounds.left) / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.right - Bounds.left;
+
+        const FLOAT x1 = Bounds.left + ((Bounds.right - Bounds.left) - SpectrumWidth) / 2.f;
+        const FLOAT x2 = x1 + SpectrumWidth;
+
+        if (!InRange(x, x1, x2))
             return false;
 
         if (_GraphSettings->_FlipHorizontally)
-            x = (Bounds.right + Bounds.left) - x;
+            x = (x2 + x1) - x;
 
-        index = Clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = Clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
     {

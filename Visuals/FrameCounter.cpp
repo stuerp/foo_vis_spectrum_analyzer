@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2024.03.09) P. Stuer **/
+/** $VER: FrameCounter.cpp (2024.03.31) P. Stuer **/
 
 #include "FrameCounter.h"
 
@@ -43,6 +43,8 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
+    const FLOAT Inset = 4.f;
+
     static WCHAR Text[512] = { };
 
     if (SUCCEEDED(hr))
@@ -50,13 +52,11 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
 
     if (SUCCEEDED(hr) && (_Brush != nullptr))
     {
-        const D2D1_RECT_F Rect = { _ClientWidth - 2.f - _TextWidth, 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
+        const D2D1_RECT_F Rect = { _ClientWidth - 2.f - (Inset + _TextWidth + Inset), 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
 
         // Draw the background.
         {
             _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
-
-            const FLOAT Inset = 4.f;
 
             renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
         }
@@ -73,18 +73,22 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
 }
 
 /// <summary>
-/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// Creates resources which are not bound to any D3D device.
 /// </summary>
 HRESULT FrameCounter::CreateDeviceIndependentResources() noexcept
 {
+    if (_TextFormat != nullptr)
+        return S_OK;
+
     const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
     HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
 
     if (SUCCEEDED(hr))
     {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
         const WCHAR Text[] = L"999.99 fps";
 

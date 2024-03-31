@@ -88,7 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-beta1, 2024-03-27
+v0.7.5.0-beta2, 2024-04-xx
 
 * New: Spectogram visualization.
   * Static or scrolling
@@ -96,6 +96,7 @@ v0.7.5.0-beta1, 2024-03-27
 * New: The context menu can be used to load a preset.
 * New: Artwork Fit mode. Defaults to "Fit Big".
 * Improved: Double-clicking a preset activates it.
+* Improved: Edge cases for the scaling and position of the spectrum bars and curve vs. the X-axis.
 * Fixed: Privacy issue: The preset path will no longer be saved to a preset file.
 * Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
 * Fixed: Inconsistent state of the color buttons and values when switching between styles in the configuration dialog.

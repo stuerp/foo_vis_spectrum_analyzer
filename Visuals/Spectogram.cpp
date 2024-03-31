@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.29) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.03.31) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -77,7 +77,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
     // Draw the offscreen bitmap.
     {
-        SetTransform(renderTarget);
+        SetTransform(renderTarget, _BitmapBounds);
 
         if (_State->_ScrollingSpectogram)
         {
@@ -507,14 +507,24 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, &_NyquistMarker);
 
-    _BitmapSize.width  = _Size.width;
-    _BitmapSize.height = _Size.height - (_GraphSettings->_XAxisBottom ? _XTextHeight : 0.f) - (_GraphSettings->_XAxisTop ? _XTextHeight : 0.f);
+    // Create the offscreen bitmap resources.
+    {
+        _BitmapBounds = _Bounds;
 
-    if (SUCCEEDED(hr) && (_BitmapRenderTarget == nullptr))
-        hr = renderTarget->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
+        if (_GraphSettings->_XAxisTop)
+            _BitmapBounds.top += _XTextHeight;
 
-    if (SUCCEEDED(hr) && (_Bitmap == nullptr))
-        hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+        if (_GraphSettings->_XAxisBottom)
+            _BitmapBounds.bottom -= _XTextHeight;
+
+        _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+
+        if (SUCCEEDED(hr) && (_BitmapRenderTarget == nullptr))
+            hr = renderTarget->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
+
+        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
+            hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+    }
 
     return hr;
 }
@@ -524,6 +534,15 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// </summary>
 void Spectogram::ReleaseDeviceSpecificResources()
 {
+    _Bitmap.Release();
+    _BitmapRenderTarget.Release();
+
+    if (_NyquistMarker)
+    {
+        _NyquistMarker->ReleaseDeviceSpecificResources();
+        _NyquistMarker = nullptr;
+    }
+
     if (_YAxisTextStyle)
     {
         _YAxisTextStyle->ReleaseDeviceSpecificResources();
@@ -554,14 +573,6 @@ void Spectogram::ReleaseDeviceSpecificResources()
         _SpectogramStyle = nullptr;
     }
 
-    if (_NyquistMarker)
-    {
-        _NyquistMarker->ReleaseDeviceSpecificResources();
-        _NyquistMarker = nullptr;
-    }
-
     _YTextFormat.Release();
     _XTextFormat.Release();
-    _Bitmap.Release();
-    _BitmapRenderTarget.Release();
 }

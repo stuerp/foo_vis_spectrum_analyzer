@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.02.25) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.03.31) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -48,9 +48,9 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
                     double Frequency = frequencyBands[i].Ctr;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
                     Label lb = { Frequency, Text };
 
@@ -70,9 +70,9 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
                     Frequency = j * i;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fHz", Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fkHz", Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
                     Label lb = { Frequency, Text };
 
@@ -146,25 +146,26 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
 void XAxis::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
+    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+
+    // Calculate the position of the labels.
+    const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In pixels
+
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * _BandCount : _Size.width;
+
+    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f) - (BandWidth / 2.f);
+
+    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextHeight : 0.f); // Top axis
+    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextHeight : 0.f); // Bottom axis
 
     const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-    // Calculate the position of the labels based on the width.
-    const FLOAT Width = _Bounds.right - _Bounds.left;
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT BandWidth = Max((Width / (FLOAT) _BandCount), 1.f); // In pixels
-
-    const FLOAT StartX = !_GraphSettings->_FlipHorizontally ? _Bounds.left + (BandWidth / 2.f) : _Bounds.right - (BandWidth / 2.f);
-
-    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _Height : 0.f);  // Top axis
-    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _Height : 0.f);  // Bottom axis
-
     for (Label & Iter : _Labels)
     {
-        const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, Width - BandWidth);
+        const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
-        FLOAT x = !_GraphSettings->_FlipHorizontally ? StartX + dx : StartX - dx;
+        const FLOAT x = !_GraphSettings->_FlipHorizontally ? xl + dx : xl - dx;
 
         // Don't generate any labels outside the bounds.
         if (!InRange(x, _Bounds.left, _Bounds.right))
@@ -176,7 +177,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Width, Height, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, _Size.width, _Size.height, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -188,8 +189,6 @@ void XAxis::Move(const D2D1_RECT_F & rect)
                 Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
             }
         }
-
-        x = ::round(x);
     }
 }
 
@@ -242,36 +241,35 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates resources which are not bound to any D3D device.
 /// </summary>
-HRESULT XAxis::CreateDeviceIndependentResources()
+HRESULT XAxis::CreateDeviceIndependentResources() noexcept
 {
-    HRESULT hr = S_OK;
+    if (_TextFormat != nullptr)
+        return S_OK;
 
-    if (_TextFormat == nullptr)
+    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+
+    if (SUCCEEDED(hr))
     {
-        const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+        const WCHAR Text[] = L"999.9k";
+
+        CComPtr<IDWriteTextLayout> TextLayout;
+
+        hr = _DirectWrite.Factory->CreateTextLayout(Text, _countof(Text), _TextFormat, _Size.width, _Size.height, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            DWRITE_TEXT_METRICS TextMetrics = { };
 
-            CComPtr<IDWriteTextLayout> TextLayout;
+            TextLayout->GetMetrics(&TextMetrics);
 
-            hr = _DirectWrite.Factory->CreateTextLayout(L"9999.9Hz", 6, _TextFormat, 100.f, 100.f, &TextLayout);
-
-            if (SUCCEEDED(hr))
-            {
-                DWRITE_TEXT_METRICS TextMetrics = { };
-
-                TextLayout->GetMetrics(&TextMetrics);
-
-                // Calculate the height.
-                _Width  = TextMetrics.width;
-                _Height = 2.f + TextMetrics.height + 2.f;
-            }
+            _TextWidth  = TextMetrics.width;
+            _TextHeight = 2.f + TextMetrics.height + 2.f;
         }
     }
 
