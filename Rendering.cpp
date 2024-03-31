@@ -309,11 +309,13 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         }
 
         hr = _Artwork.Realize(_RenderTarget);
-    }
 
-    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && _Artwork.IsRealized())
-        hr = CreateArtworkDependentResources();
+        // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
+        if (SUCCEEDED(hr) && _Artwork.IsRealized())
+            hr = CreateArtworkDependentResources();
+
+        hr = S_OK; // Ignore errors from the artwork.
+    }
 
     return hr;
 }
