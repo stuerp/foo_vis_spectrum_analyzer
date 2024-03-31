@@ -92,6 +92,7 @@ v0.7.5.0-beta2, 2024-04-xx
 
 * New: Spectogram visualization.
   * Static or scrolling
+* New: Peak Meter visualization.
 * New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
 * New: The context menu can be used to load a preset.
 * New: Artwork Fit mode. Defaults to "Fit Big".

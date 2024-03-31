@@ -126,7 +126,7 @@ void Graph::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 /// </summary>
 bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
 {
-    if (_State->_VisualizationType != VisualizationType::Spectogram)
+    if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
         const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
 
@@ -146,6 +146,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         index = Clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
+    if (_State->_VisualizationType == VisualizationType::Spectogram)
     {
         const D2D1_RECT_F & Bounds = _Spectogram.GetBounds();
 
@@ -157,6 +158,8 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 
         index = Clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
+    else
+        return false;
 
     toolTip = _Analysis._FrequencyBands[index].Label;
 
