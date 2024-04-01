@@ -30,9 +30,9 @@ void PeakMeter::Initialize(State * state, const GraphSettings * settings)
 
     ReleaseDeviceSpecificResources();
 
-    _Labels.clear();
-
     CreateDeviceIndependentResources();
+
+    _Labels.clear();
 
     if (_GraphSettings->_YAxisMode == YAxisMode::None)
         return;
@@ -77,10 +77,10 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
         _YMax = _Bounds.bottom - (_GraphSettings->_FlipVertically ? (_GraphSettings->_XAxisTop    ? _XTextHeight : 0.f) : (_GraphSettings->_XAxisBottom ? _XTextHeight : 0.f));
     }
 
-    // Calculate the position of the labels based on the height.
-    for (Label & Iter : _Labels)
+    if (_State->_HorizontalPeakMeter)
     {
-        if (_State->_HorizontalPeakMeter)
+        // Calculate the position of the labels based on the width.
+        for (Label & Iter : _Labels)
         {
             FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipHorizontally ? _XMin : _XMax, !_GraphSettings->_FlipHorizontally ? _XMax : _XMin);
 
@@ -91,14 +91,18 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
             Iter.PointL = D2D1_POINT_2F(x, _YMin);
             Iter.PointR = D2D1_POINT_2F(x, _YMax);
 
-            x -= _YTextWidth / 2.f;
+            x -= _YTextWidth / 2.f; // Center the label horizontally on the tick.
 
             x = Clamp(x, _XMin - (_YTextWidth / 2.f), _XMax + (_YTextWidth / 2.f));
 
             Iter.RectL = { x, _Bounds.top, x + _YTextWidth, _YMin };
             Iter.RectR = { x, _YMax,       x + _YTextWidth, _Bounds.bottom };
         }
-        else
+    }
+    else
+    {
+        // Calculate the position of the labels based on the height.
+        for (Label & Iter : _Labels)
         {
             FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipVertically ? _YMax : _YMin, !_GraphSettings->_FlipVertically ? _YMin : _YMax);
 
@@ -109,7 +113,7 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
             Iter.PointL = D2D1_POINT_2F(_XMin, y);
             Iter.PointR = D2D1_POINT_2F(_XMax, y);
 
-            y -= (_YTextHeight / 2.f);
+            y -= (_YTextHeight / 2.f); // Center the label vertically on the tick.
 
             y = Clamp(y, _YMin - (_YTextHeight / 2.f), _YMax + (_YTextHeight / 2.f));
 
@@ -164,7 +168,7 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
                 // Draw the labels.
                 if (_GraphSettings->_YAxisLeft)
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _YTextFormat, Iter.RectL, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
+                    
                 if (_GraphSettings->_YAxisRight)
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _YTextFormat, Iter.RectR, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
@@ -209,16 +213,22 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
+    const FLOAT TickSize = 2.f;
+    const FLOAT GapCount = (FLOAT) analysis._MeterValues.size() - 1.f;
+
     if (_State->_HorizontalPeakMeter)
     {
         SetTransform(renderTarget, _Bounds);
 
-        const FLOAT BarHeight = ::floor((_YMax - _YMin) / (FLOAT) analysis._MeterValues.size());
+        const FLOAT BarHeight = ::floor((_YMax - _YMin - GapCount - (2.f * TickSize)) / (FLOAT) analysis._MeterValues.size());
+        const FLOAT TotalHeight = (BarHeight * (FLOAT) analysis._MeterValues.size()) + GapCount;
 
-        D2D1_RECT_F Rect = { _XMin, _YMax, 0.f, _YMax - (BarHeight - 1.f) };
+        D2D1_RECT_F Rect = { _XMin, _YMax - ((_YMax - _YMin - TotalHeight) / 2.f), _XMax, 0.f };
 
         for (auto & mv : analysis._MeterValues)
         {
+            Rect.bottom = Rect.top - BarHeight;
+
             // Draw the background.
             if (_BackgroundStyle->_ColorSource != ColorSource::None)
             {
@@ -259,8 +269,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
             mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
             mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-            Rect.top    -= BarHeight;
-            Rect.bottom -= BarHeight;
+            Rect.top -= (BarHeight + 1.f);
         }
 
         ResetTransform(renderTarget);
@@ -268,13 +277,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
         // Draw the name of the values.
         if ((_XTextStyle->_ColorSource != ColorSource::None) && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
-            Rect.top    = _GraphSettings->_FlipVertically ? _YMax - BarHeight : _YMin;
-            Rect.bottom = Rect.top + BarHeight;
+            Rect.top = _GraphSettings->_FlipVertically ? _YMax - ((_YMax - _YMin - TotalHeight) / 2.f): _YMin + ((_YMax - _YMin - TotalHeight) / 2.f);
 
-            const FLOAT dy = _GraphSettings->_FlipVertically ? -BarHeight : BarHeight;
+            const FLOAT dy = (BarHeight + 1.f) * (_GraphSettings->_FlipVertically ? -1.f : 1.f);
 
             for (const auto & mv : analysis._MeterValues)
             {
+                Rect.bottom = Rect.top + BarHeight;
+
                 if (_GraphSettings->_XAxisTop)
                 {
                     Rect.left  = _GraphSettings->_FlipHorizontally ? _XMax         : 0.f;
@@ -291,8 +301,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
 
-                Rect.top    += dy;
-                Rect.bottom += dy;
+                Rect.top += dy;
             }
         }
     }
@@ -300,12 +309,15 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
     {
         SetTransform(renderTarget, _Bounds);
 
-        const FLOAT BarWidth = ::floor((_XMax - _XMin) / (FLOAT) analysis._MeterValues.size());
+        const FLOAT BarWidth = ::floor((_XMax - _XMin - GapCount - (2.f * TickSize)) / (FLOAT) analysis._MeterValues.size());
+        const FLOAT TotalWidth = (BarWidth * (FLOAT) analysis._MeterValues.size()) + GapCount;
 
-        D2D1_RECT_F Rect = { _XMin, _YMin, _XMin + (BarWidth - 1.f), 0.f };
+        D2D1_RECT_F Rect = { _XMin + ((_XMax - _XMin - TotalWidth) / 2.f), _YMin, 0.f, 0.f };
 
         for (auto & mv : analysis._MeterValues)
         {
+            Rect.right = Rect.left + BarWidth;
+
             // Draw the background.
             if (_BackgroundStyle->_ColorSource != ColorSource::None)
             {
@@ -346,8 +358,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
             mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
             mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-            Rect.left  += BarWidth;
-            Rect.right += BarWidth;
+            Rect.left  += (BarWidth + 1.f);
         }
 
         ResetTransform(renderTarget);
@@ -355,13 +366,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
         // Draw the name of the values.
         if ((_XTextStyle->_ColorSource != ColorSource::None) && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
-            Rect.left = _GraphSettings->_FlipHorizontally ? _XMax - BarWidth : _XMin;
-            Rect.right = Rect.left + BarWidth;
+            Rect.left = _GraphSettings->_FlipHorizontally ? _XMax - ((_XMax - _XMin - TotalWidth) / 2.f) : _XMin + ((_XMax - _XMin - TotalWidth) / 2.f);
 
             const FLOAT dx = _GraphSettings->_FlipHorizontally ? -BarWidth : BarWidth;
 
             for (const auto & mv : analysis._MeterValues)
             {
+                Rect.right = Rect.left + BarWidth;
+
                 if (_GraphSettings->_XAxisTop)
                 {
                     Rect.top    = _GraphSettings->_FlipVertically ? _YMax          : 0.f;
@@ -378,8 +390,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
 
-                Rect.left  += dx;
-                Rect.right += dx;
+                Rect.left += dx;
             }
         }
     }
@@ -396,7 +407,7 @@ HRESULT PeakMeter::CreateDeviceIndependentResources() noexcept
     if ((_XTextFormat != nullptr) && (_YTextFormat != nullptr))
         return S_OK;
 
-    const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
+    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
     HRESULT hr = _DirectWrite.CreateTextFormat(_FontFamilyName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _XTextFormat);
 
