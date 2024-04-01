@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.03.30) P. Stuer **/
+/** $VER: State.cpp (2024.04.01) P. Stuer **/
 
 #include "State.h"
 
@@ -202,6 +202,8 @@ void State::Reset() noexcept
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
+    _LEDSize = 2.f;
+    _LEDGap = 2.f;
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
@@ -436,6 +438,8 @@ State & State::operator=(const State & other)
     _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
     _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
     _LEDMode = other._LEDMode;
+    _LEDSize = other._LEDSize;
+    _LEDGap = other._LEDGap;
     _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
@@ -793,6 +797,12 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         {
             reader->read_object_t(_HorizontalPeakMeter, abortHandler);
         }
+
+        if (Version >= 23)
+        {
+            reader->read_object_t(_LEDSize, abortHandler);
+            reader->read_object_t(_LEDGap, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1049,11 +1059,15 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
             writer->write_string(Path, abortHandler);
         }
 
-        // Version 21, v0.7.5.0
+        // Version 21, v0.7.5.0-beta1
         writer->write_object_t(_ScrollingSpectogram, abortHandler);
 
-        // Version 22, v0.7.5.0
+        // Version 22, v0.7.5.0-beta2
         writer->write_object_t(_HorizontalPeakMeter, abortHandler);
+
+        // Version 23, v0.7.5.0-beta3
+        writer->write_object_t(_LEDSize, abortHandler);
+        writer->write_object_t(_LEDGap, abortHandler);
     }
     catch (exception & ex)
     {

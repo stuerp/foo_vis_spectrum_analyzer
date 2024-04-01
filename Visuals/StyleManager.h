@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.23) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.01) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -235,7 +235,7 @@ private:
             VisualElement::PeakMeterBackground,
             {
                 Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Gray), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 

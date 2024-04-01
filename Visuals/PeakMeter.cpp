@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.03.31) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.01) P. Stuer - Represents a peak meter. **/
 
 #include "PeakMeter.h"
 
@@ -204,37 +204,58 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
     if (analysis._MeterValues.size() == 0)
         return;
 
+    auto OldAntialiasMode = renderTarget->GetAntialiasMode();
+
+    if (_State->_LEDMode)
+        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+
     if (_State->_HorizontalPeakMeter)
     {
         SetTransform(renderTarget, _Bounds);
 
         const FLOAT BarHeight = ::floor((_YMax - _YMin) / (FLOAT) analysis._MeterValues.size());
 
-        D2D1_RECT_F Rect = { 0.f, _YMax, 0.f, _YMax - (BarHeight - 1.f) };
+        D2D1_RECT_F Rect = { _XMin, _YMax, 0.f, _YMax - (BarHeight - 1.f) };
 
         for (auto & mv : analysis._MeterValues)
         {
+            // Draw the background.
+            if (_BackgroundStyle->_ColorSource != ColorSource::None)
+            {
+                Rect.right = _XMax;
+
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+
+            // Draw the foreground.
             if (_PeakStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-                Rect.left  = _XMin;
                 Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _XMin, _XMax);
 
-                renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
             if (_RMSStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-                Rect.left  = _XMin;
                 Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _XMin, _XMax);
 
-                renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
-            // Animated the scaled peak and RMS values.
+            // Animate the scaled peak and RMS values.
             mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
             mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -281,31 +302,47 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
         const FLOAT BarWidth = ::floor((_XMax - _XMin) / (FLOAT) analysis._MeterValues.size());
 
-        D2D1_RECT_F Rect = { _XMin, 0.f, _XMin + (BarWidth - 1.f), 0.f };
+        D2D1_RECT_F Rect = { _XMin, _YMin, _XMin + (BarWidth - 1.f), 0.f };
 
         for (auto & mv : analysis._MeterValues)
         {
+            // Draw the background.
+            if (_BackgroundStyle->_ColorSource != ColorSource::None)
+            {
+                Rect.bottom = _YMax;
+
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+
+            // Draw the foreground.
             if (_PeakStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-                Rect.top    = _YMin;
                 Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _YMin, _YMax);
 
-                renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
             if (_RMSStyle->_ColorSource != ColorSource::None)
             {
-                double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
-                Rect.top    = _YMin;
                 Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _YMin, _YMax);
 
-                renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
-            // Animated the scaled peak and RMS values.
+            // Animate the scaled peak and RMS values.
             mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
             mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -346,6 +383,9 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
             }
         }
     }
+
+    if (_State->_LEDMode)
+        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 
 /// <summary>
@@ -400,6 +440,12 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 {
     HRESULT hr = S_OK;
 
+    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
+        hr = CreateOpacityMask(renderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterBackground, renderTarget, _Size, &_BackgroundStyle);
+
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterPeakLevel, renderTarget, _Size, &_PeakStyle);
 
@@ -414,6 +460,46 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, &_YLineStyle);
+
+    return hr;
+}
+
+/// <summary>
+/// Creates an opacity mask to render the LEDs.
+/// </summary>
+HRESULT PeakMeter::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
+{
+    CComPtr<ID2D1BitmapRenderTarget> rt;
+
+    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(_State->_HorizontalPeakMeter ? D2D1::SizeF(_Size.width, 1.f) : D2D1::SizeF(1.f, _Size.height), &rt);
+
+    if (SUCCEEDED(hr))
+    {
+        CComPtr<ID2D1SolidColorBrush> Brush;
+
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 1.f)), &Brush);
+
+        if (SUCCEEDED(hr))
+        {
+            rt->BeginDraw();
+
+            if (_State->_HorizontalPeakMeter)
+            {
+                for (FLOAT x = _State->_LEDGap; x < _Size.width; x += (_State->_LEDSize + _State->_LEDGap))
+                    rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, 1.f), Brush);
+            }
+            else
+            {
+                for (FLOAT y = _State->_LEDGap; y < _Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+            }
+
+            hr = rt->EndDraw();
+        }
+
+        if (SUCCEEDED(hr))
+            hr = rt->GetBitmap(&_OpacityMask);
+    }
 
     return hr;
 }
@@ -452,4 +538,12 @@ void PeakMeter::ReleaseDeviceSpecificResources() noexcept
         _PeakStyle->ReleaseDeviceSpecificResources();
         _PeakStyle = nullptr;
     }
+
+    if (_BackgroundStyle)
+    {
+        _BackgroundStyle->ReleaseDeviceSpecificResources();
+        _BackgroundStyle = nullptr;
+    }
+
+    _OpacityMask.Release();
 }

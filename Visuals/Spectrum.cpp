@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.31) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.04.01) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -321,15 +321,13 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 }
 
 /// <summary>
-/// Creates an opacity mask to render the LED's.
+/// Creates an opacity mask to render the LEDs.
 /// </summary>
 HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 {
-    D2D1_SIZE_F Size = renderTarget->GetSize();
-
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, Size.height), &rt);
+    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _Size.height), &rt);
 
     if (SUCCEEDED(hr))
     {
@@ -341,8 +339,8 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
         {
             rt->BeginDraw();
 
-            for (FLOAT y = 2.f; y < Size.height; y += 4)
-                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + 2.f), Brush);
+            for (FLOAT y = _State->_LEDGap; y < _Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
 
             hr = rt->EndDraw();
         }

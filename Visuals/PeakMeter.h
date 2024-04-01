@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.03.31) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.01) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -44,6 +44,8 @@ private:
     HRESULT CreateDeviceIndependentResources() noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
 
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
+
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
     void DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept;
 
@@ -75,8 +77,12 @@ private:
     FLOAT _YMin;
     FLOAT _YMax;
 
+    CComPtr<ID2D1Bitmap> _OpacityMask;
+
     CComPtr<IDWriteTextFormat> _XTextFormat;
     CComPtr<IDWriteTextFormat> _YTextFormat;
+
+    Style * _BackgroundStyle;
 
     Style * _PeakStyle;
     Style * _RMSStyle;

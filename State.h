@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.03.31) P. Stuer **/
+/** $VER: State.h (2024.04.01) P. Stuer **/
 
 #pragma once
 
@@ -198,6 +198,8 @@ public:
             #pragma region Bars
 
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
+                FLOAT _LEDSize;                                         // Size of the LED.
+                FLOAT _LEDGap;                                          // Gap between the LEDs.
 
             #pragma endregion
 
