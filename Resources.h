@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.31) P. Stuer **/
+/** $VER: Resources.h (2024.04.01) P. Stuer **/
 
 #pragma once
 
@@ -367,23 +367,31 @@
 #define IDC_ACCELERATION_LBL            7116
 #define IDC_ACCELERATION                7118
 
-// Bars
+// LEDs
 
-#define IDC_BARS                        7120
+#define IDC_LEDS                        7120
 
 #define IDC_LED_MODE                    7122
+#define IDC_LED_SIZE_LBL                7124
+#define IDC_LED_SIZE                    7126
+#define IDC_LED_GAP_LBL                 7128
+#define IDC_LED_GAP                     7130
+
+// Bars
+
+#define IDC_BARS                        7140
 
 // Spectogram
 
-#define IDC_SPECTOGRAM                  7130
+#define IDC_SPECTOGRAM                  7150
 
-#define IDC_SCROLLING_SPECTOGRAM        7132
+#define IDC_SCROLLING_SPECTOGRAM        7152
 
 // Peak Meter
 
-#define IDC_PEAK_METER                  7140
+#define IDC_PEAK_METER                  7160
 
-#define IDC_HORIZONTAL_PEAK_METER       7142
+#define IDC_HORIZONTAL_PEAK_METER       7162
 
 #pragma endregion
 

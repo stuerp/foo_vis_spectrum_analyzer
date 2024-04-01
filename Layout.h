@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.03.31) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.01) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1132,21 +1132,49 @@
 #define Y_A54    Y_A53
 #pragma endregion
 
-#pragma region Bars
+#pragma region LEDs
 // Groupbox
 #define X_B07   X_E01
 #define Y_B07   Y_A54 + H_A54 + IY
 
     #pragma region LED mode
     // Checkbox
-    #define W_C12    80
+    #define W_C12    42
     #define H_C12    H_CHB
     #define X_C12    X_B07 + 5
     #define Y_C12    Y_B07 + 11
     #pragma endregion
 
-#define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B07   11 + H_C12 + 7
+    #pragma region LED size
+    // Label
+    #define W_C17    42
+    #define H_C17    H_LBL
+    #define X_C17    X_C12
+    #define Y_C17    Y_C12 + H_C12
+
+    // Textbox
+    #define W_C18    30
+    #define H_C18    H_TBX
+    #define X_C18    X_C17 + W_C17 + IX
+    #define Y_C18    Y_C17
+    #pragma endregion
+
+    #pragma region LED gap
+    // Label
+    #define W_C19    42
+    #define H_C19    H_LBL
+    #define X_C19    X_C17
+    #define Y_C19    Y_C18 + H_C18 + IY
+
+    // Textbox
+    #define W_C20    30
+    #define H_C20    H_TBX
+    #define X_C20    X_C19 + W_C19 + IX
+    #define Y_C20    Y_C19
+    #pragma endregion
+
+#define W_B07  100
+#define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + 7
 #pragma endregion
 
 #pragma region Spectogram

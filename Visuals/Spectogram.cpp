@@ -227,7 +227,7 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
 
     if (_RequestErase)
     {
-        _BitmapRenderTarget->Clear(D2D1::ColorF(0, 0.f)); // Make the bitmap completely transparent.
+        _BitmapRenderTarget->Clear(); // Make the bitmap completely transparent.
 
         _RequestErase = false;
     }

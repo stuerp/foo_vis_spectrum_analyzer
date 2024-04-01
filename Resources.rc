@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.31) P. Stuer **/
+/** $VER: Resources.rc (2024.04.01) P. Stuer **/
 
 #include "Resources.h"
 
@@ -311,9 +311,15 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Acceleration:"             IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
         edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
+        groupbox "LEDs", IDC_LEDS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-            control     "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+            control     "Enabled",                  IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+
+            rtext       "LED size:"                 IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
+            edittext                                IDC_LED_SIZE,                   X_C18, Y_C18, W_C18, H_C18, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+            rtext       "LED gap:"                  IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
+            edittext                                IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         groupbox "Spectogram", IDC_SPECTOGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
 

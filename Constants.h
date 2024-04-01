@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.03.28) P. Stuer **/
+/** $VER: Constans.h (2024.04.01) P. Stuer **/
 
 #pragma once
 
@@ -114,6 +114,13 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
+
+inline const FLOAT MinLEDSize =  0.f;
+inline const FLOAT MaxLEDSize = 32.f;
+
+inline const FLOAT MinLEDGap =  0.f;
+inline const FLOAT MaxLEDGap = 32.f;
+
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
 

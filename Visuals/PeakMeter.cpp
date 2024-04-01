@@ -121,6 +121,8 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
             Iter.RectR = { _XMax + 2.f,  y, _Bounds.right, y + _YTextHeight };
         }
     }
+
+    _OpacityMask.Release();
 }
 
 /// <summary>
@@ -488,11 +490,13 @@ HRESULT PeakMeter::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
     {
         CComPtr<ID2D1SolidColorBrush> Brush;
 
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 1.f)), &Brush);
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), &Brush);
 
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
+
+            rt->Clear();
 
             if (_State->_HorizontalPeakMeter)
             {

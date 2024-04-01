@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.31) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -192,7 +192,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_HOLD_TIME, L"Determines how long the peak coefficients are held before they decay" },
             { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
 
-            { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
+            { IDC_LED_MODE, L"Display the spectrum bars and peak meters as LEDs." },
+            { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
+            { IDC_LED_GAP, L"Specifies the gap between the LEDs in pixels." },
 
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
 
@@ -986,10 +988,13 @@ void ConfigurationDialog::Initialize()
         SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
     }
 
-    #pragma region Bars
+    #pragma region LEDs
 
     {
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _State->_LEDMode);
+
+        SetDouble(IDC_LED_SIZE, _State->_LEDSize, 0, 0);
+        SetDouble(IDC_LED_GAP, _State->_LEDGap, 0, 0);
     }
 
     #pragma endregion
@@ -1722,6 +1727,22 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region LEDs
+
+        case IDC_LED_SIZE:
+        {
+            _State->_LEDSize = Clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            break;
+        }
+
+        case IDC_LED_GAP:
+        {
+            _State->_LEDGap = Clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            break;
+        }
+
+        #pragma endregion
+
         #pragma endregion
 
         #pragma region Styles
@@ -1945,6 +1966,19 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ACCELERATION:
         {
             SetDouble(id, _State->_Acceleration, 0, 1);
+            break;
+        }
+
+        // LEDs
+        case IDC_LED_SIZE:
+        {
+            SetDouble(id, _State->_LEDSize, 0, 0);
+            break;
+        }
+
+        case IDC_LED_GAP:
+        {
+            SetDouble(id, _State->_LEDGap, 0, 0);
             break;
         }
 
@@ -2769,8 +2803,10 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
         IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
-        IDC_BARS,
+        IDC_LEDS,
             IDC_LED_MODE,
+            IDC_LED_SIZE_LBL, IDC_LED_SIZE,
+            IDC_LED_GAP_LBL, IDC_LED_GAP,
 
         IDC_SPECTOGRAM,
             IDC_SCROLLING_SPECTOGRAM,
@@ -3046,8 +3082,13 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
         for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
             GetDlgItem(Iter).EnableWindow(ShowPeaks);
+
+    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::PeakMeter);
  
-    GetDlgItem(IDC_LED_MODE).EnableWindow(_State->_VisualizationType == VisualizationType::Bars);
+    GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
+
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
 }

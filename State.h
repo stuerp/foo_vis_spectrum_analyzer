@@ -275,12 +275,12 @@ private:
     bool _YAxisLeft_Deprecated;
     bool _YAxisRight_Deprecated;
 
-    double _AmplitudeLo_Deprecated;                             // Lower amplitude, -120.0 .. 0.0
-    double _AmplitudeHi_Deprecated;                             // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeLo_Deprecated;                                     // Lower amplitude, -120.0 .. 0.0
+    double _AmplitudeHi_Deprecated;                                     // Upper amplitude, -120.0 .. 0.0
     double _AmplitudeStep_Deprecated;
 
-    bool _UseAbsolute_Deprecated;                               // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-    double _Gamma_Deprecated;                                   // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
+    bool _UseAbsolute_Deprecated;                                       // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+    double _Gamma_Deprecated;                                           // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
     ColorScheme _ColorScheme_Deprecated;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops_Deprecated;
@@ -308,16 +308,16 @@ private:
     bool _UseCustomLineColor_Deprecated;
     D2D1::ColorF _PeakLineColor_Deprecated = _DefPeakLineColor_Deprecated;
     bool _UseCustomPeakLineColor_Deprecated;
-    FLOAT _AreaOpacity_Deprecated;                          // 0.0 .. 1.0
+    FLOAT _AreaOpacity_Deprecated;                                      // 0.0 .. 1.0
 
-    const D2D1::ColorF _DefLineColor_Deprecated = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
-    const D2D1::ColorF _DefPeakLineColor_Deprecated = D2D1::ColorF(0.f, 0.f, 0.f, 0.f);
+    const D2D1::ColorF _DefLineColor_Deprecated = D2D1::ColorF(0);
+    const D2D1::ColorF _DefPeakLineColor_Deprecated = D2D1::ColorF(0);
 
-    bool _DrawBandBackground_Deprecated;                    // True if the background for each band should be drawn.
-    bool _HorizontalGradient_Deprecated;                    // True if the gradient will be used to paint horizontally.
+    bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
+    bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
 
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 22;
+    const size_t _CurrentVersion = 23;
 };

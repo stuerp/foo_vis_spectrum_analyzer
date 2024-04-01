@@ -30,6 +30,8 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
+
+    _OpacityMask.Release();
 }
 
 /// <summary>
@@ -333,11 +335,13 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
     {
         CComPtr<ID2D1SolidColorBrush> Brush;
 
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 1.f)), &Brush);
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), &Brush);
 
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
+
+            rt->Clear();
 
             for (FLOAT y = _State->_LEDGap; y < _Size.height; y += (_State->_LEDSize + _State->_LEDGap))
                 rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
