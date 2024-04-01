@@ -47,11 +47,6 @@ public:
         _Analysis.Process(chunk);
     }
 
-    const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
-
-    FLOAT GetLeft() const noexcept { return _Bounds.left; }
-    FLOAT GetRight() const noexcept { return _Bounds.right; }
-
     Analysis & GetAnalysis() noexcept { return _Analysis; }
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
 
@@ -92,9 +87,6 @@ private:
 
 private:
     std::wstring _Description;
-
-    D2D1_RECT_F _Bounds;
-    D2D1_SIZE_F _Size;
 
     Analysis _Analysis;
 

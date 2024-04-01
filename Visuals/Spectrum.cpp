@@ -91,12 +91,22 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         if (fb.HasDarkBackground)
         {
             if (_DarkBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
+            {
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _DarkBackground->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
         }
         else
         {
             if (_LightBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
+            {
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _LightBackground->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
         }
 
         const bool GreaterThanNyquist = fb.Ctr >= (sampleRate / 2.);
@@ -247,7 +257,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, co
 {
     const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) frequencyBands.size()), 2.f); // In pixels
 
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * frequencyBands.size() : _Size.width;
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) frequencyBands.size() : _Size.width;
 
     const FLOAT xl = ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
 

@@ -43,7 +43,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
 
             case XAxisMode::Bands:
             {
-                for (size_t i = 0; i < frequencyBands.size(); i += 10)
+                for (size_t i = 0; i < _BandCount; i += 10)
                 {
                     double Frequency = frequencyBands[i].Ctr;
 
@@ -151,7 +151,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
     // Calculate the position of the labels.
     const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In pixels
 
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * _BandCount : _Size.width;
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) _BandCount : _Size.width;
 
     const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f) - (BandWidth / 2.f);
 

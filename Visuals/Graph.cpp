@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Graph::Graph() : _Bounds(), _Size()
+Graph::Graph()
 {
 }
 

@@ -88,7 +88,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-beta2, 2024-04-xx
+v0.7.5.0-beta3, 2024-04-xx
+
+* Improved: LED Mode is also applied to the bar background.
+
+v0.7.5.0-beta2, 2024-03-31
 
 * New: Spectogram visualization.
   * Static or scrolling

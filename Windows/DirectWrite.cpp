@@ -1,5 +1,5 @@
 
-/** $VER: DirectWrite.cpp (2024.03.27) P. Stuer **/
+/** $VER: DirectWrite.cpp (2024.03.31) P. Stuer **/
 
 #include "DirectWrite.h"
 
@@ -54,7 +54,7 @@ HRESULT DirectWrite::GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, con
 {
     CComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(text.c_str(), text.length(), textFormat, 100.f, 100.f, &TextLayout);
+    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(text.c_str(), (UINT32) text.length(), textFormat, 100.f, 100.f, &TextLayout);
 
     if (SUCCEEDED(hr))
     {

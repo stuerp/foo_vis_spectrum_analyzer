@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.23) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.03.31) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -43,9 +43,6 @@ public:
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
-
-    FLOAT GetLeft() const { return _Bounds.left; }
-    FLOAT GetRight() const { return _Bounds.right; }
 
 private:
     void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
