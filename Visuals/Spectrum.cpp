@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.04.01) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.04.02) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -15,12 +15,15 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state, const GraphSettings * settings)
+void Spectrum::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands)
 {
     _State = state;
     _GraphSettings = settings;
 
     ReleaseDeviceSpecificResources();
+
+    _XAxis.Initialize(state, settings, frequencyBands);
+    _YAxis.Initialize(state, settings);
 }
 
 /// <summary>
@@ -32,6 +35,44 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
     _OpacityMask.Release();
+
+    _IsResized = true;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void Spectrum::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
+
+    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom);
+
+        _XAxis.Move(Rect);
+    }
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb);
+
+        _YAxis.Move(Rect);
+    }
+
+    {
+        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
+
+        _Bounds = Rect;
+        _Size = { Rect.right - Rect.left, Rect.bottom - Rect.top };
+    }
+
+    _IsResized = false;
 }
 
 /// <summary>
@@ -44,18 +85,24 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
     if (!SUCCEEDED(hr))
         return;
 
-    SetTransform(renderTarget, _Bounds);
+    {
+        SetTransform(renderTarget, _Bounds);
 
-    if (_State->_VisualizationType == VisualizationType::Bars)
-        RenderBars(renderTarget, frequencyBands, sampleRate);
-    else
-    if (_State->_VisualizationType == VisualizationType::Curve)
-        RenderCurve(renderTarget, frequencyBands, sampleRate);
+        if (_State->_VisualizationType == VisualizationType::Bars)
+            RenderBars(renderTarget, frequencyBands, sampleRate);
+        else
+        if (_State->_VisualizationType == VisualizationType::Curve)
+            RenderCurve(renderTarget, frequencyBands, sampleRate);
 
-    if (_NyquistMarker->_ColorSource != ColorSource::None)
-        RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
+        if (_NyquistMarker->_ColorSource != ColorSource::None)
+            RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
 
-    ResetTransform(renderTarget);
+        ResetTransform(renderTarget);
+    }
+
+    _XAxis.Render(renderTarget);
+
+    _YAxis.Render(renderTarget);
 }
 
 /// <summary>
@@ -319,6 +366,15 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, L"", &_NyquistMarker);
 
+    if (SUCCEEDED(hr))
+        hr = _XAxis.CreateDeviceSpecificResources(renderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _YAxis.CreateDeviceSpecificResources(renderTarget);
+
+    if (SUCCEEDED(hr))
+        Resize();
+
     return hr;
 }
 
@@ -460,27 +516,22 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
-    _CurveLine = nullptr;
-    _CurveArea = nullptr;
-    _CurvePeakLine = nullptr;
-    _CurvePeakArea = nullptr;
+    _YAxis.ReleaseDeviceSpecificResources();
+    _XAxis.ReleaseDeviceSpecificResources();
 
-    _BarArea = nullptr;
-    _BarTop = nullptr;
-    _PeakArea = nullptr;
-    _PeakTop = nullptr;
-    _DarkBackground = nullptr;
-    _LightBackground = nullptr;
+    SafeRelease(&_CurveLine);
+    SafeRelease(&_CurveArea);
+    SafeRelease(&_CurvePeakLine);
+    SafeRelease(&_CurvePeakArea);
 
-    _NyquistMarker = nullptr;
+    SafeRelease(&_BarArea);
+    SafeRelease(&_BarTop);
+    SafeRelease(&_PeakArea);
+    SafeRelease(&_PeakTop);
+    SafeRelease(&_DarkBackground);
+    SafeRelease(&_LightBackground);
 
-    for (const auto & Iter :
-    {
-        VisualElement::BarArea, VisualElement::BarTop, VisualElement::BarPeakArea, VisualElement::BarPeakTop, VisualElement::BarDarkBackground, VisualElement::BarLightBackground,
-        VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea,
-        VisualElement::NyquistMarker
-    })
-        _State->_StyleManager.GetStyle(Iter)->ReleaseDeviceSpecificResources();
+    SafeRelease(&_NyquistMarker);
 
     _OpacityMask.Release();
 }

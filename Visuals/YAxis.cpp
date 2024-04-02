@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.02.24) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.04.02) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "YAxis.h"
 
@@ -17,8 +17,6 @@ void YAxis::Initialize(State * state, const GraphSettings * settings) noexcept
     _GraphSettings = settings;
 
     _FlipVertically = settings->_FlipVertically;
-
-    CreateDeviceIndependentResources();
 
     _Labels.clear();
 
@@ -46,9 +44,21 @@ void YAxis::Initialize(State * state, const GraphSettings * settings) noexcept
 void YAxis::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
+    _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    const FLOAT xl = _Bounds.left  + (_GraphSettings->_YAxisLeft  ? _Width : 0.f); // Left axis
-    const FLOAT xr = _Bounds.right - (_GraphSettings->_YAxisRight ? _Width : 0.f); // Right axis
+    _IsResized = true;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void YAxis::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    const FLOAT xl = _Bounds.left  + (_GraphSettings->_YAxisLeft  ? _TextStyle->_TextWidth : 0.f); // Left axis
+    const FLOAT xr = _Bounds.right - (_GraphSettings->_YAxisRight ? _TextStyle->_TextWidth : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     for (Label & Iter : _Labels)
@@ -62,17 +72,19 @@ void YAxis::Move(const D2D1_RECT_F & rect)
         Iter.PointL = D2D1_POINT_2F(xl, y);
         Iter.PointR = D2D1_POINT_2F(xr, y);
 
-        y -= (_Height / 2.f);
+        y -= (_TextStyle->_TextHeight / 2.f);
 
         if ((!_GraphSettings->_XAxisTop) && (y <_Bounds.top))
             y = _Bounds.top;
 
-        if ((!_GraphSettings->_XAxisBottom) && (y + _Height > _Bounds.bottom))
-            y = _Bounds.bottom - _Height;
+        if ((!_GraphSettings->_XAxisBottom) && (y + _TextStyle->_TextHeight > _Bounds.bottom))
+            y = _Bounds.bottom - _TextStyle->_TextHeight;
 
-        Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _Height };
-        Iter.RectR = { xr + 2.f,     y, _Bounds.right, y + _Height };
+        Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _TextStyle->_TextHeight };
+        Iter.RectR = { xr + 2.f,     y, _Bounds.right, y + _TextStyle->_TextHeight };
     }
+
+    _IsResized = false;
 }
 
 /// <summary>
@@ -84,6 +96,8 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 
     if (!SUCCEEDED(hr))
         return;
+
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally
 
     D2D1_RECT_F OldRect = {  };
 
@@ -101,10 +115,10 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         {
             // Draw the labels.
             if (_GraphSettings->_YAxisLeft)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphSettings->_YAxisRight)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             OldRect = Iter.RectL;
         }
@@ -114,67 +128,18 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 #pragma region DirectX
 
 /// <summary>
-/// Creates resources which are not bound to any D3D device.
-/// </summary>
-HRESULT YAxis::CreateDeviceIndependentResources()
-{
-    HRESULT hr = S_OK;
-
-    if (_TextFormat == 0)
-    {
-        const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
-
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-align horizontally
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-
-            CComPtr<IDWriteTextLayout> TextLayout;
-
-            hr = _DirectWrite.Factory->CreateTextLayout(L"AaGg09", 6, _TextFormat, 100.f, 100.f, &TextLayout);
-
-            if (SUCCEEDED(hr))
-            {
-                DWRITE_TEXT_METRICS TextMetrics = { };
-
-                TextLayout->GetMetrics(&TextMetrics);
-
-                _Height = TextMetrics.height;
-            }
-        }
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device independent resources.
-/// </summary>
-void YAxis::ReleaseDeviceIndependentResources()
-{
-    _TextFormat.Release();
-}
-
-/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
-    HRESULT hr = S_OK;
-
-    const D2D1_SIZE_F Size = renderTarget->GetSize();
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, L"", &_LineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"AaGg09", &_TextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, Size, L"", &_TextStyle);
-
-    if (SUCCEEDED(hr))
-        renderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+        Resize();
 
     return hr;
 }
@@ -184,15 +149,8 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void YAxis::ReleaseDeviceSpecificResources()
 {
-    _TextStyle = nullptr;
-    _LineStyle = nullptr;
-
-    for (const auto & Iter : { VisualElement::HorizontalGridLine, VisualElement::YAxisText })
-    {
-        Style * style = _State->_StyleManager.GetStyle(Iter);
-
-        style->ReleaseDeviceSpecificResources();
-    }
+    SafeRelease(&_TextStyle);
+    SafeRelease(&_LineStyle);
 }
 
 #pragma endregion

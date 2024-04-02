@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.03.31) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.04.02) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -21,6 +21,9 @@
 #include "Element.h"
 #include "FrequencyBand.h"
 
+#include "XAxis.h"
+#include "YAxis.h"
+
 #include <vector>
 #include <string>
 
@@ -37,7 +40,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings);
+    void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
@@ -45,6 +48,8 @@ public:
     void ReleaseDeviceSpecificResources();
 
 private:
+    void Resize() noexcept;
+
     void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
 
@@ -72,6 +77,9 @@ private:
 private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
+
+    XAxis _XAxis;
+    YAxis _YAxis;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;

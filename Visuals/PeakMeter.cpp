@@ -69,6 +69,97 @@ void PeakMeter::Reset()
 }
 
 /// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void PeakMeter::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+
+    if (_State->_HorizontalPeakMeter)
+    {
+        _XMin = _Bounds.left   + (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextWidth : 0);
+        _XMax = _Bounds.right  - (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextWidth : 0);
+
+        if (_GraphSettings->_FlipVertically)
+        {
+            _YMin = _Bounds.top    + (_GraphSettings->_YAxisRight ? _YTextStyle->_TextHeight : 0.f);
+            _YMax = _Bounds.bottom - (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextHeight : 0.f);
+        }
+        else
+        {
+            _YMin = _Bounds.top    + (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextHeight : 0.f);
+            _YMax = _Bounds.bottom - (_GraphSettings->_YAxisRight ? _YTextStyle->_TextHeight : 0.f);
+        }
+    }
+    else
+    {
+        _XMin = _Bounds.left   + (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextWidth : 0);
+        _XMax = _Bounds.right  - (_GraphSettings->_YAxisRight ? _YTextStyle->_TextWidth : 0);
+
+        if (_GraphSettings->_FlipVertically)
+        {
+            _YMin = _Bounds.top    + (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextHeight : 0.f);
+            _YMax = _Bounds.bottom - (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextHeight : 0.f);
+        }
+        else
+        {
+            _YMin = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextHeight : 0.f);
+            _YMax = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextHeight : 0.f);
+        }
+    }
+
+    if (_State->_HorizontalPeakMeter)
+    {
+        // Calculate the position of the labels based on the width.
+        for (Label & Iter : _Labels)
+        {
+            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipHorizontally ? _XMin : _XMax, !_GraphSettings->_FlipHorizontally ? _XMax : _XMin);
+
+            // Don't generate any labels outside the bounds.
+            if (!InRange(x, _XMin, _XMax))
+                continue;
+
+            Iter.PointL = D2D1_POINT_2F(x, _YMin);
+            Iter.PointR = D2D1_POINT_2F(x, _YMax);
+
+            x -= _YTextStyle->_TextWidth / 2.f; // Center the label horizontally on the tick.
+
+            x = Clamp(x, _XMin - (_YTextStyle->_TextWidth / 2.f), _XMax + (_YTextStyle->_TextWidth / 2.f));
+
+            Iter.RectL = { x, _Bounds.top, x + _YTextStyle->_TextWidth, _YMin };
+            Iter.RectR = { x, _YMax,       x + _YTextStyle->_TextWidth, _Bounds.bottom };
+        }
+    }
+    else
+    {
+        // Calculate the position of the labels based on the height.
+        for (Label & Iter : _Labels)
+        {
+            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipVertically ? _YMax : _YMin, !_GraphSettings->_FlipVertically ? _YMin : _YMax);
+
+            // Don't generate any labels outside the bounds.
+            if (!InRange(y, _YMin, _YMax))
+                continue;
+
+            Iter.PointL = D2D1_POINT_2F(_XMin, y);
+            Iter.PointR = D2D1_POINT_2F(_XMax, y);
+
+            y -= (_YTextStyle->_TextHeight / 2.f); // Center the label vertically on the tick.
+
+            y = Clamp(y, _YMin - (_YTextStyle->_TextHeight / 2.f), _YMax + (_YTextStyle->_TextHeight / 2.f));
+
+            Iter.RectL = { _Bounds.left + 2.f, y, _XMin         - 2.f, y + _YTextStyle->_TextHeight };
+            Iter.RectR = { _XMax        + 2.f, y, _Bounds.right - 2.f, y + _YTextStyle->_TextHeight };
+        }
+    }
+
+    _IsResized = false;
+}
+
+/// <summary>
 /// Renders this instance.
 /// </summary>
 void PeakMeter::Render(ID2D1RenderTarget * renderTarget, Analysis & analysis)
@@ -470,95 +561,4 @@ void PeakMeter::ReleaseDeviceSpecificResources() noexcept
     }
 
     _OpacityMask.Release();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void PeakMeter::Resize() noexcept
-{
-    if (!_IsResized)
-        return;
-
-    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-
-    if (_State->_HorizontalPeakMeter)
-    {
-        _XMin = _Bounds.left   + (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextWidth : 0);
-        _XMax = _Bounds.right  - (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextWidth : 0);
-
-        if (_GraphSettings->_FlipVertically)
-        {
-            _YMin = _Bounds.top    + (_GraphSettings->_YAxisRight ? _YTextStyle->_TextHeight : 0.f);
-            _YMax = _Bounds.bottom - (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextHeight : 0.f);
-        }
-        else
-        {
-            _YMin = _Bounds.top    + (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextHeight : 0.f);
-            _YMax = _Bounds.bottom - (_GraphSettings->_YAxisRight ? _YTextStyle->_TextHeight : 0.f);
-        }
-    }
-    else
-    {
-        _XMin = _Bounds.left   + (_GraphSettings->_YAxisLeft  ? _YTextStyle->_TextWidth : 0);
-        _XMax = _Bounds.right  - (_GraphSettings->_YAxisRight ? _YTextStyle->_TextWidth : 0);
-
-        if (_GraphSettings->_FlipVertically)
-        {
-            _YMin = _Bounds.top    + (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextHeight : 0.f);
-            _YMax = _Bounds.bottom - (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextHeight : 0.f);
-        }
-        else
-        {
-            _YMin = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _XTextStyle->_TextHeight : 0.f);
-            _YMax = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _XTextStyle->_TextHeight : 0.f);
-        }
-    }
-
-    if (_State->_HorizontalPeakMeter)
-    {
-        // Calculate the position of the labels based on the width.
-        for (Label & Iter : _Labels)
-        {
-            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipHorizontally ? _XMin : _XMax, !_GraphSettings->_FlipHorizontally ? _XMax : _XMin);
-
-            // Don't generate any labels outside the bounds.
-            if (!InRange(x, _XMin, _XMax))
-                continue;
-
-            Iter.PointL = D2D1_POINT_2F(x, _YMin);
-            Iter.PointR = D2D1_POINT_2F(x, _YMax);
-
-            x -= _YTextStyle->_TextWidth / 2.f; // Center the label horizontally on the tick.
-
-            x = Clamp(x, _XMin - (_YTextStyle->_TextWidth / 2.f), _XMax + (_YTextStyle->_TextWidth / 2.f));
-
-            Iter.RectL = { x, _Bounds.top, x + _YTextStyle->_TextWidth, _YMin };
-            Iter.RectR = { x, _YMax,       x + _YTextStyle->_TextWidth, _Bounds.bottom };
-        }
-    }
-    else
-    {
-        // Calculate the position of the labels based on the height.
-        for (Label & Iter : _Labels)
-        {
-            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipVertically ? _YMax : _YMin, !_GraphSettings->_FlipVertically ? _YMin : _YMax);
-
-            // Don't generate any labels outside the bounds.
-            if (!InRange(y, _YMin, _YMax))
-                continue;
-
-            Iter.PointL = D2D1_POINT_2F(_XMin, y);
-            Iter.PointR = D2D1_POINT_2F(_XMax, y);
-
-            y -= (_YTextStyle->_TextHeight / 2.f); // Center the label vertically on the tick.
-
-            y = Clamp(y, _YMin - (_YTextStyle->_TextHeight / 2.f), _YMax + (_YTextStyle->_TextHeight / 2.f));
-
-            Iter.RectL = { _Bounds.left + 2.f, y, _XMin         - 2.f, y + _YTextStyle->_TextHeight };
-            Iter.RectR = { _XMax        + 2.f, y, _Bounds.right - 2.f, y + _YTextStyle->_TextHeight };
-        }
-    }
-
-    _IsResized = false;
 }

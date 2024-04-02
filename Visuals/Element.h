@@ -14,6 +14,8 @@
 
 #include "Direct2D.h"
 
+#include "Style.h"
+
 class Element
 {
 public:
@@ -28,6 +30,16 @@ public:
 
     virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
+
+protected:
+    void SafeRelease(Style ** style)
+    {
+        if (*style != nullptr)
+        {
+            (*style)->ReleaseDeviceSpecificResources();
+            *style = nullptr;
+        }
+    }
 
 protected:
     State * _State;

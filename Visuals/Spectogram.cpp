@@ -63,6 +63,30 @@ void Spectogram::Reset()
 }
 
 /// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void Spectogram::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+
+    _BitmapBounds = _Bounds;
+
+    if (_GraphSettings->_XAxisTop)
+        _BitmapBounds.top += _XTextStyle->_TextHeight;
+
+    if (_GraphSettings->_XAxisBottom)
+        _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
+
+    _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+
+    _IsResized = false;
+}
+
+/// <summary>
 /// Renders the spectrum analysis as a spectogram.
 /// </summary>
 void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
@@ -510,28 +534,4 @@ void Spectogram::ReleaseDeviceSpecificResources()
         _SpectogramStyle->ReleaseDeviceSpecificResources();
         _SpectogramStyle = nullptr;
     }
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void Spectogram::Resize() noexcept
-{
-    if (!_IsResized)
-        return;
-
-    _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
-    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-
-    _BitmapBounds = _Bounds;
-
-    if (_GraphSettings->_XAxisTop)
-        _BitmapBounds.top += _XTextStyle->_TextHeight;
-
-    if (_GraphSettings->_XAxisBottom)
-        _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
-
-    _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
-
-    _IsResized = false;
 }

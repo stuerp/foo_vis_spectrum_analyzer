@@ -44,14 +44,6 @@ void StyleManager::Reset() noexcept
 }
 
 /// <summary>
-/// Gets the style of the specified visual element.
-/// </summary>
-Style * StyleManager::GetStyle(VisualElement visualElement)
-{
-    return &_Styles[visualElement];
-}
-
-/// <summary>
 /// Gets the style of the visual element specified by an index.
 /// </summary>
 Style * StyleManager::GetStyleByIndex(int index)
@@ -203,11 +195,13 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             // Sets the default font settings.
             if (style._Flags & Style::SupportsFont)
             {
+                auto DefaultStyle = _DefaultStyles[(VisualElement) Id];
+;
                 if (style._FontName.empty())
-                    style._FontName = L"Segoe UI";
+                    style._FontName = DefaultStyle._FontName;
 
                 if (style._FontSize == 0.f)
-                    style._FontSize = 8.f;        
+                    style._FontSize = DefaultStyle._FontSize;
             }
 
             // 'Activate' the values we just read.

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.03.31) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.02) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "Graph.h"
 #include "StyleManager.h"
@@ -34,14 +34,8 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 
     _Analysis.Initialize(state, settings);
 
-    _Spectrum.Initialize(state, settings);
-
-    _XAxis.Initialize(state, settings, _Analysis._FrequencyBands);
-    
-    _YAxis.Initialize(state, settings);
-
+    _Spectrum.Initialize(state, settings, _Analysis._FrequencyBands);
     _Spectogram.Initialize(state, settings, _Analysis._FrequencyBands);
-
     _PeakMeter.Initialize(state, settings);
 }
 
@@ -53,37 +47,9 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
-    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
-
-    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb);
-
-        _Spectrum.Move(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom);
-
-        _XAxis.Move(Rect);
-    }
-
-    {
-        D2D1_RECT_F Rect(_Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb);
-
-        _YAxis.Move(Rect);
-    }
-
-    {
-        _Spectogram.Move(_Bounds);
-    }
-
-    {
-        _PeakMeter.Move(_Bounds);
-    }
+    _Spectrum.Move(rect);
+    _Spectogram.Move(rect);
+    _PeakMeter.Move(rect);
 }
 
 /// <summary>
@@ -189,10 +155,6 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBa
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         {
-            _XAxis.Render(renderTarget);
-
-            _YAxis.Render(renderTarget);
-
             _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
             RenderDescription(renderTarget);
             break;
@@ -257,16 +219,14 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 {
     HRESULT hr = S_OK;
 
-    const D2D1_SIZE_F Size = renderTarget->GetSize();
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, _Size, L"", &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, Size, L"", &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, _Size, L"", &_DescriptionTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, Size, L"", &_DescriptionTextStyle);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, Size, L"", &_DescriptionBackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, _Size, L"", &_DescriptionBackgroundStyle);
 
     return hr;
 }
@@ -281,17 +241,8 @@ void Graph::ReleaseDeviceSpecificResources() noexcept
     _Spectogram.ReleaseDeviceSpecificResources();
 
     _Spectrum.ReleaseDeviceSpecificResources();
-    _YAxis.ReleaseDeviceSpecificResources();
-    _XAxis.ReleaseDeviceSpecificResources();
 
-    _DescriptionBackgroundStyle = nullptr;
-    _DescriptionTextStyle = nullptr;
-    _BackgroundStyle = nullptr;
-
-    for (const auto & Iter : { VisualElement::GraphBackground, VisualElement::GraphDescriptionText, VisualElement::GraphDescriptionBackground })
-    {
-        Style * style = _State->_StyleManager.GetStyle(Iter);
-
-        style->ReleaseDeviceSpecificResources();
-    }
+    SafeRelease(&_DescriptionBackgroundStyle);
+    SafeRelease(&_DescriptionTextStyle);
+    SafeRelease(&_BackgroundStyle);
 }

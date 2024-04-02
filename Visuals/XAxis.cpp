@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.03.31) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.04.02) P. Stuer - Implements the X axis of a graph. **/
 
 #include "XAxis.h"
 
@@ -17,8 +17,6 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
 {
     _State = state;
     _GraphSettings = settings;
-
-    CreateDeviceIndependentResources();
 
     _Labels.clear();
 
@@ -148,6 +146,17 @@ void XAxis::Move(const D2D1_RECT_F & rect)
     _Bounds = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
+    _IsResized = true;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void XAxis::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
     // Calculate the position of the labels.
     const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In pixels
 
@@ -155,8 +164,8 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 
     const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f) - (BandWidth / 2.f);
 
-    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextHeight : 0.f); // Top axis
-    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextHeight : 0.f); // Bottom axis
+    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_TextHeight : 0.f); // Top axis
+    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_TextHeight : 0.f); // Bottom axis
 
     const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
@@ -177,7 +186,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, _Size.width, _Size.height, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -190,6 +199,8 @@ void XAxis::Move(const D2D1_RECT_F & rect)
             }
         }
     }
+
+    _IsResized = false;
 }
 
 /// <summary>
@@ -223,10 +234,10 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
             {
                 // Draw the labels.
                 if (_GraphSettings->_XAxisTop)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 if (_GraphSettings->_XAxisBottom)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 OldRect = Iter.RectB;
             }
@@ -239,69 +250,18 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 #pragma region DirectX
 
 /// <summary>
-/// Creates resources which are not bound to any D3D device.
-/// </summary>
-HRESULT XAxis::CreateDeviceIndependentResources() noexcept
-{
-    if (_TextFormat != nullptr)
-        return S_OK;
-
-    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
-
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
-
-    if (SUCCEEDED(hr))
-    {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-        const WCHAR Text[] = L"999.9k";
-
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-        hr = _DirectWrite.Factory->CreateTextLayout(Text, _countof(Text), _TextFormat, _Size.width, _Size.height, &TextLayout);
-
-        if (SUCCEEDED(hr))
-        {
-            DWRITE_TEXT_METRICS TextMetrics = { };
-
-            TextLayout->GetMetrics(&TextMetrics);
-
-            _TextWidth  = TextMetrics.width;
-            _TextHeight = 2.f + TextMetrics.height + 2.f;
-        }
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device independent resources.
-/// </summary>
-void XAxis::ReleaseDeviceIndependentResources()
-{
-    _TextFormat.Release();
-}
-
-/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
-    HRESULT hr = S_OK;
-
-    const D2D1_SIZE_F Size = renderTarget->GetSize();
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, Size, L"", &_LineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, L"999.9k", &_TextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, Size, L"", &_TextStyle);
-
-    if (SUCCEEDED(hr))
-        renderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+        Resize();
 
     return hr;
 }
@@ -311,15 +271,8 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void XAxis::ReleaseDeviceSpecificResources()
 {
-    _TextStyle = nullptr;
-    _LineStyle = nullptr;
-
-    for (const auto & Iter : { VisualElement::VerticalGridLine, VisualElement::XAxisText })
-    {
-        Style * style = _State->_StyleManager.GetStyle(Iter);
-
-        style->ReleaseDeviceSpecificResources();
-    }
+    SafeRelease(&_TextStyle);
+    SafeRelease(&_LineStyle);
 }
 
 #pragma endregion

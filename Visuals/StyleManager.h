@@ -37,7 +37,22 @@ public:
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
-    Style * GetStyle(VisualElement visualElement);
+    /// <summary>
+    /// Gets the style of the specified visual element.
+    /// </summary>
+    Style * GetStyle(VisualElement visualElement)
+    {
+        return &_Styles[visualElement];
+    }
+
+    /// <summary>
+    /// Gets the default style of the specified visual element.
+    /// </summary>
+    Style * GetDefaultStyle(VisualElement visualElement)
+    {
+        return &_Styles[visualElement];
+    }
+
     Style * GetStyleByIndex(int index);
 
     void SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor);
@@ -85,7 +100,7 @@ private:
     std::map<VisualElement, Style> _Styles;
 
     #pragma warning(disable: 4868)
-    const std::map<VisualElement, Style> _DefaultStyles
+    std::map<VisualElement, Style> _DefaultStyles
     {
         {
             VisualElement::GraphBackground,

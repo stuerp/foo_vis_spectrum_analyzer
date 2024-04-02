@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.03.28) P. Stuer **/
+/** $VER: Rendering.cpp (2024.04.02) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -284,6 +284,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         {
             _RenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
             _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
             // Resize some elements based on the size of the render target.
             {
