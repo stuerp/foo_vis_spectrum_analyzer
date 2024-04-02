@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.03.30) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.04.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -55,6 +55,8 @@ private:
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
 
+    void Resize() noexcept;
+
 private:
     D2D1_RECT_F _BitmapBounds;
     FLOAT _X;
@@ -65,15 +67,6 @@ private:
     size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
-
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    FLOAT _XTextWidth;  // Width of a label
-    FLOAT _XTextHeight; // Height of the X axis area (Font size-dependent).
-
-    FLOAT _YTextWidth;  // Width of a label
-    FLOAT _YTextHeight; // Height of the Y axis area (Font size-dependent).
 
     struct XLabel
     {
@@ -105,19 +98,16 @@ private:
 
     std::vector<YLabel> _YLabels;
 
-    CComPtr<IDWriteTextFormat> _XTextFormat;
-    CComPtr<IDWriteTextFormat> _YTextFormat;
-
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
     Style * _SpectogramStyle;
 
-    Style * _XAxisLineStyle;
-    Style * _XAxisTextStyle;
+    Style * _XLineStyle;
+    Style * _XTextStyle;
 
-    Style * _YAxisLineStyle;
-    Style * _YAxisTextStyle;
+    Style * _YLineStyle;
+    Style * _YTextStyle;
 
     Style * _NyquistMarker;
 

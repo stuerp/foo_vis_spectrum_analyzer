@@ -260,13 +260,13 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
     const D2D1_SIZE_F Size = renderTarget->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, Size, &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, Size, L"", &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, Size, &_DescriptionTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, Size, L"", &_DescriptionTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, Size, &_DescriptionBackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, Size, L"", &_DescriptionBackgroundStyle);
 
     return hr;
 }

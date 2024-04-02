@@ -200,6 +200,16 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
                 style._FontSize = FontSize;
             }
 
+            // Sets the default font settings.
+            if (style._Flags & Style::SupportsFont)
+            {
+                if (style._FontName.empty())
+                    style._FontName = L"Segoe UI";
+
+                if (style._FontSize == 0.f)
+                    style._FontSize = 8.f;        
+            }
+
             // 'Activate' the values we just read.
             if (style._ColorScheme == ColorScheme::Custom)
                 style._CurrentGradientStops = style._CustomGradientStops;

@@ -287,37 +287,37 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
         hr = CreateOpacityMask(renderTarget);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _Size, &_BarArea);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _Size, L"", &_BarArea);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _Size, &_BarTop);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _Size, L"", &_BarTop);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _Size, &_PeakArea);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _Size, L"", &_PeakArea);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _Size, &_PeakTop);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _Size, L"", &_PeakTop);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _Size, &_DarkBackground);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _Size, L"", &_DarkBackground);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _Size, &_LightBackground);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _Size, L"", &_LightBackground);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _Size, &_CurveLine);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _Size, L"", &_CurveLine);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _Size, &_CurveArea);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _Size, L"", &_CurveArea);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _Size, &_CurvePeakLine);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _Size, L"", &_CurvePeakLine);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _Size, &_CurvePeakArea);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _Size, L"", &_CurvePeakArea);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, &_NyquistMarker);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, L"", &_NyquistMarker);
 
     return hr;
 }

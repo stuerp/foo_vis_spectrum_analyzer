@@ -38,16 +38,16 @@ public:
     void Reset();
 
     void ReleaseDeviceSpecificResources() noexcept;
-    void ReleaseDeviceIndependentResources() noexcept;
 
 private:
-    HRESULT CreateDeviceIndependentResources() noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
     void DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept;
+
+    void Resize() noexcept;
 
 private:
     struct Label
@@ -64,23 +64,13 @@ private:
 
     std::vector<Label> _Labels;
 
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    FLOAT _XTextWidth;
-    FLOAT _XTextHeight;
     FLOAT _XMin;
     FLOAT _XMax;
 
-    FLOAT _YTextWidth;
-    FLOAT _YTextHeight;
     FLOAT _YMin;
     FLOAT _YMax;
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
-
-    CComPtr<IDWriteTextFormat> _XTextFormat;
-    CComPtr<IDWriteTextFormat> _YTextFormat;
 
     Style * _BackgroundStyle;
 

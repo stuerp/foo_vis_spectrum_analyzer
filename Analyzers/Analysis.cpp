@@ -522,6 +522,8 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
                 if (ChannelConfig & 1)
                     _MeterValues.push_back({ 0.0, 0.0, ChannelNames[i] });
             }
+
+// _MeterValues.push_back({ 0.0, 0.0, ChannelNames[2] });
         }
         else
             _MeterValues.push_back({ 0.0, 0.0, ChannelNames[2] }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.

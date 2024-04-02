@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.01) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.02) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -54,14 +54,14 @@ public:
     }
 
     // Helper
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, Style ** style) noexcept
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text, Style ** style) noexcept
     {
         if (*style != nullptr)
         {
             if ((*style)->_Brush != nullptr)
                 return S_OK;
             else
-                return (*style)->CreateDeviceSpecificResources(renderTarget, size);
+                return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
         }
 
         *style = GetStyle(visualElement);
@@ -72,7 +72,7 @@ public:
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(renderTarget, size);
+        return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
     }
 
     void ReleaseDeviceSpecificResources();
@@ -122,8 +122,8 @@ private:
         {
             VisualElement::XAxisText,
             {
-                Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 
@@ -138,8 +138,8 @@ private:
         {
             VisualElement::YAxisText,
             {
-                Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 

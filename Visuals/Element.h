@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.03.31) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.04.02) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 class Element
 {
 public:
-    Element() : _State(), _GraphSettings() {}
+    Element() : _State(), _GraphSettings(), _IsResized(true) {}
 
     virtual ~Element() {}
 
@@ -35,4 +35,6 @@ protected:
 
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;
+
+    bool _IsResized;
 };

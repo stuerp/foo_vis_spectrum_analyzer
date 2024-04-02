@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.03.31) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.04.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "Spectogram.h"
 
@@ -13,9 +13,6 @@ Spectogram::Spectogram()
 {
     _Bounds = { };
     _Size = { };
-
-    _FontFamilyName = L"Segoe UI";
-    _FontSize = 6.f;
 
     Reset();
 }
@@ -43,6 +40,8 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
+
+    _IsResized = true;
 }
 
 /// <summary>
@@ -59,6 +58,8 @@ void Spectogram::Reset()
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
+
+    _IsResized = true;
 }
 
 /// <summary>
@@ -146,29 +147,29 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 /// </summary>
 void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept
 {
-    const FLOAT y1 = top ? _XTextHeight / 2.f : _Size.height - _XTextHeight;
-    const FLOAT y2 = top ? _XTextHeight       : y1 + (_XTextHeight / 2.f);
+    const FLOAT y1 = top ? _XTextStyle->_TextHeight / 2.f : _Size.height - _XTextStyle->_TextHeight;
+    const FLOAT y2 = top ? _XTextStyle->_TextHeight       : y1 + (_XTextStyle->_TextHeight / 2.f);
 
     D2D1_RECT_F Rect = { 0.f, top ? 0.f : y1, 0.f, top ? y2 : _Size.height };
 
     for (const auto & Label : _XLabels)
     {
         // Draw the tick.
-        renderTarget->DrawLine( { Label.X, y1 }, { Label.X, y2 }, _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness);
+        renderTarget->DrawLine( { Label.X, y1 }, { Label.X, y2 }, _XLineStyle->_Brush, _XLineStyle->_Thickness);
 
         if (!_GraphSettings->_FlipHorizontally)
         {
             Rect.left  = Label.X + Offset;
-            Rect.right = Rect.left + _XTextWidth;
+            Rect.right = Rect.left + _XTextStyle->_TextWidth;
 
-            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
         else
         {
             Rect.left  = Label.X - Offset;
-            Rect.right = Rect.left - _XTextWidth;
+            Rect.right = Rect.left - _XTextStyle->_TextWidth;
 
-            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextFormat, Rect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -183,15 +184,15 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
 
     D2D1_RECT_F Rect =
     {
-        left ? 0.f : _Size.width - _YTextWidth,
+        left ? 0.f : _Size.width - _YTextStyle->_TextWidth,
         0.f,
-        left ? _YTextWidth : _Size.width,
+        left ? _YTextStyle->_TextWidth : _Size.width,
         0.f
     };
 
-    const FLOAT dy = _YTextHeight / 2.f;
+    const FLOAT dy = _YTextStyle->_TextHeight / 2.f;
 
-    const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextHeight : 0.f;
+    const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_TextHeight : 0.f;
 
     for (const auto & Label : _YLabels)
     {
@@ -200,7 +201,7 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
         if (!_GraphSettings->_FlipVertically)
         {
             Rect.top    = y1 + _BitmapSize.height - y - dy;
-            Rect.bottom = Rect.top + _YTextHeight;
+            Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
 
             if (Rect.bottom < (y1 - dy))
                 break;
@@ -208,13 +209,13 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
         else
         {
             Rect.top    = y1 + y - dy;
-            Rect.bottom = Rect.top + _YTextHeight;
+            Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
 
             if (Rect.bottom > (y1 + _BitmapSize.height + dy))
                 break;
         }
 
-        renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextFormat, Rect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextStyle->_TextFormat, Rect, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
     }
 }
 
@@ -277,7 +278,7 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
         {
             _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
 
-            if (_XLabels.back().X + Offset + _XTextWidth < 0.f)
+            if (_XLabels.back().X + Offset + _XTextStyle->_TextWidth < 0.f)
                 _XLabels.pop_back();
         }
         else
@@ -433,92 +434,29 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 {
     HRESULT hr = S_OK;
 
-    const FLOAT FontSize = ToDIPs(_FontSize); // In DIP
-
-    if (SUCCEEDED(hr) && (_XTextFormat == nullptr))
-    {
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_XTextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _XTextFormat->SetTextAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
-            _XTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-            _XTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-            CComPtr<IDWriteTextLayout> TextLayout;
-
-            hr = _DirectWrite.Factory->CreateTextLayout(L"00:00", 5, _XTextFormat, 100.f, 100.f, &TextLayout);
-
-            if (SUCCEEDED(hr))
-            {
-                DWRITE_TEXT_METRICS TextMetrics = { };
-
-                TextLayout->GetMetrics(&TextMetrics);
-
-                // Calculate the metric.
-                _XTextWidth  = TextMetrics.width;
-                _XTextHeight = 2.f + TextMetrics.height + 2.f;
-            }
-        }
-    }
-
-    if (SUCCEEDED(hr) && (_YTextFormat == nullptr))
-    {
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_YTextFormat);
-
-        if (SUCCEEDED(hr))
-        {
-            _YTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);          // Right-aligned
-            _YTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
-            _YTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-
-            CComPtr<IDWriteTextLayout> TextLayout;
-
-            hr = _DirectWrite.Factory->CreateTextLayout(L"99.9fk", 6, _YTextFormat, 100.f, 100.f, &TextLayout);
-
-            if (SUCCEEDED(hr))
-            {
-                DWRITE_TEXT_METRICS TextMetrics = { };
-
-                TextLayout->GetMetrics(&TextMetrics);
-
-                // Calculate the metric.
-                _YTextWidth  = TextMetrics.width;
-                _YTextHeight = 2.f + TextMetrics.height + 2.f;
-            }
-        }
-    }
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, renderTarget, _Size, L"", &_SpectogramStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, renderTarget, _Size, &_SpectogramStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_XLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, &_XAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, L"00:00", &_XTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, &_XAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_YLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, &_YAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"99.9fk", &_YTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, &_YAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, L"", &_NyquistMarker);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, &_NyquistMarker);
+        Resize();
 
     // Create the offscreen bitmap resources.
     {
-        _BitmapBounds = _Bounds;
-
-        if (_GraphSettings->_XAxisTop)
-            _BitmapBounds.top += _XTextHeight;
-
-        if (_GraphSettings->_XAxisBottom)
-            _BitmapBounds.bottom -= _XTextHeight;
-
-        _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
-
         if (SUCCEEDED(hr) && (_BitmapRenderTarget == nullptr))
             hr = renderTarget->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
 
@@ -543,28 +481,28 @@ void Spectogram::ReleaseDeviceSpecificResources()
         _NyquistMarker = nullptr;
     }
 
-    if (_YAxisTextStyle)
+    if (_YTextStyle)
     {
-        _YAxisTextStyle->ReleaseDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
+        _YTextStyle->ReleaseDeviceSpecificResources();
+        _YTextStyle = nullptr;
     }
 
-    if (_YAxisLineStyle)
+    if (_YLineStyle)
     {
-        _YAxisLineStyle->ReleaseDeviceSpecificResources();
-        _YAxisLineStyle = nullptr;
+        _YLineStyle->ReleaseDeviceSpecificResources();
+        _YLineStyle = nullptr;
     }
 
-    if (_XAxisTextStyle)
+    if (_XTextStyle)
     {
-        _XAxisTextStyle->ReleaseDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
+        _XTextStyle->ReleaseDeviceSpecificResources();
+        _XTextStyle = nullptr;
     }
 
-    if (_XAxisLineStyle)
+    if (_XLineStyle)
     {
-        _XAxisLineStyle->ReleaseDeviceSpecificResources();
-        _XAxisLineStyle = nullptr;
+        _XLineStyle->ReleaseDeviceSpecificResources();
+        _XLineStyle = nullptr;
     }
 
     if (_SpectogramStyle)
@@ -572,7 +510,28 @@ void Spectogram::ReleaseDeviceSpecificResources()
         _SpectogramStyle->ReleaseDeviceSpecificResources();
         _SpectogramStyle = nullptr;
     }
+}
 
-    _YTextFormat.Release();
-    _XTextFormat.Release();
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void Spectogram::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+
+    _BitmapBounds = _Bounds;
+
+    if (_GraphSettings->_XAxisTop)
+        _BitmapBounds.top += _XTextStyle->_TextHeight;
+
+    if (_GraphSettings->_XAxisBottom)
+        _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
+
+    _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+
+    _IsResized = false;
 }

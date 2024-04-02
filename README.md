@@ -92,6 +92,7 @@ v0.7.5.0-beta3, 2024-04-xx
 
 * Improved: LED Mode is also applied to the bar background.
 * Improved: The LED size and gap can be configured.
+* Improved: The font of the X and Y-axis can be configured in all visualizations.
 
 v0.7.5.0-beta2, 2024-03-31
 
