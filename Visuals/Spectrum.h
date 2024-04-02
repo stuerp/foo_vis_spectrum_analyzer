@@ -43,6 +43,7 @@ public:
     void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void Reset() { }
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();

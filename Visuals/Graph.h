@@ -46,6 +46,8 @@ public:
 
     Analysis & GetAnalysis() noexcept { return _Analysis; }
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
+    Spectogram & GetSpectogram() noexcept { return _Spectogram; }
+    PeakMeter & GetPeakMeter() noexcept { return _PeakMeter; }
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 

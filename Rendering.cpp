@@ -262,8 +262,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
     GetClientRect(cr);
 
-    UINT32 Width  = (UINT32) (cr.right  - cr.left);
-    UINT32 Height = (UINT32) (cr.bottom - cr.top);
+    const UINT32 Width  = (UINT32) (cr.right  - cr.left);
+    const UINT32 Height = (UINT32) (cr.bottom - cr.top);
 
     HRESULT hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
 
@@ -303,11 +303,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {
         for (auto & Iter : _Grid)
-        {
-            Spectrum & s = Iter._Graph->GetSpectrum();
-
-            s.ReleaseDeviceSpecificResources();
-        }
+            Iter._Graph->ReleaseDeviceSpecificResources();
 
         hr = _Artwork.Realize(_RenderTarget);
 
@@ -391,9 +387,9 @@ void UIElement::ReleaseDeviceSpecificResources()
     for (auto & Iter : _Grid)
         Iter._Graph->ReleaseDeviceSpecificResources();
 
-    _FrameCounter.ReleaseDeviceSpecificResources();
-
     _Artwork.Release();
+
+    _FrameCounter.ReleaseDeviceSpecificResources();
 
     _RenderTarget.Release();
 }

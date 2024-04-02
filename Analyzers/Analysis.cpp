@@ -539,6 +539,9 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         }
     }
 
+    if (_MeterValues.size() == 0)
+        return false;
+
     const audio_sample * EndOfChunk = Samples + SampleCount;
 
     for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )

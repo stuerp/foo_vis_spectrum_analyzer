@@ -780,12 +780,12 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 20)
         {
-            if (!isPreset)
-            {
-                pfc::string Path;
+            pfc::string Path;
 
-                reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
-            }
+            reader->read_string(Path, abortHandler); 
+
+            if (!isPreset)
+                _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
         }
 
         if (Version >= 21)

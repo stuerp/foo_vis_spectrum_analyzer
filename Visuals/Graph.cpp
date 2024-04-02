@@ -74,7 +74,9 @@ void Graph::Reset()
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
+    _Spectrum.Reset();
     _Spectogram.Reset();
+    _PeakMeter.Reset();
 }
 
 /// <summary>

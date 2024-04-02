@@ -98,6 +98,7 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
             {
                 Iter.second._CurrentGradientStops = gs;
                 Iter.second.ReleaseDeviceSpecificResources();
+Log::Write(Log::Level::Trace, "%2d %2d", (int) Iter.second._ColorSource, (int) gs.size());
             }
         }
         else

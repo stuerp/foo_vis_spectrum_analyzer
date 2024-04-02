@@ -354,7 +354,13 @@ void UIElement::Resize()
         _ToolTipControl.DelTool(&ti);
     }
 
+    _CriticalSection.Enter();
+
     _Grid.Resize(Size.width, Size.height);
+
+    _ThreadState._StyleManager.ResetGradients();
+
+    _CriticalSection.Leave();
 
     for (auto & Iter : _Grid)
     {
@@ -363,8 +369,6 @@ void UIElement::Resize()
         Iter._Graph->InitToolInfo(m_hWnd, ti);
         _ToolTipControl.AddTool(&ti);
     }
-
-    _ThreadState._StyleManager.ResetGradients();
 }
 
 /// <summary>
@@ -477,7 +481,7 @@ void UIElement::UpdateState() noexcept
 
         _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
 
-        for (const auto & Iter : _MainState._GraphSettings)
+        for (const auto & Iter : _ThreadState._GraphSettings)
         {
             auto * g = new Graph();
 
