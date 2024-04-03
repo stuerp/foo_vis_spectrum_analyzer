@@ -184,6 +184,10 @@ private:
 
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
 
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+
     visualisation_stream_v2::ptr _VisualisationStream;
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
 

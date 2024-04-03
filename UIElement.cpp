@@ -340,10 +340,10 @@ void UIElement::Resize()
 
     DeleteTrackingToolTip();
 
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+    D2D1_SIZE_F SizeF = _RenderTarget->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
-    _FrameCounter.Resize(Size.width, Size.height);
+    _FrameCounter.Resize(SizeF.width, SizeF.height);
 
     // Resize the grid.
     {
@@ -358,7 +358,7 @@ void UIElement::Resize()
         _CriticalSection.Enter();
 
         {
-            _Grid.Resize(Size.width, Size.height);
+            _Grid.Resize(SizeF.width, SizeF.height);
 
             _ThreadState._StyleManager.ReleaseGradientBrushes();
         }

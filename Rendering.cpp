@@ -171,7 +171,13 @@ void UIElement::Render()
 
         if (_MainState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
+#ifdef _DEBUG
+        {
+            D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
+            _RenderTarget->DrawLine(D2D1::Point2F(0.f,0.f), D2D1::Point2F(Size.width, Size.height), _DebugBrush);
+        }
+#endif
         hr = _RenderTarget->EndDraw();
 
         if (hr == D2DERR_RECREATE_TARGET)
@@ -262,15 +268,15 @@ HRESULT UIElement::CreateDeviceSpecificResources()
 
     GetClientRect(cr);
 
-    const UINT32 Width  = (UINT32) (cr.right  - cr.left);
-    const UINT32 Height = (UINT32) (cr.bottom - cr.top);
+    const UINT32 Width  = (UINT32) (FLOAT) (cr.right  - cr.left);
+    const UINT32 Height = (UINT32) (FLOAT) (cr.bottom - cr.top);
 
     HRESULT hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
 
     // Create the render target.
     if (SUCCEEDED(hr) && (_RenderTarget == nullptr))
     {
-        D2D1_SIZE_U Size = D2D1::SizeU(Width, Height);
+        D2D1_SIZE_U Size = D2D1::SizeU(Width, Height); // Set the size in pixels.
 
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties
         (
@@ -286,7 +292,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            _Grid.Resize(Size.width, Size.height);
+            const D2D1_SIZE_F SizeF = _RenderTarget->GetSize(); // Gets the size in DPIs.
+
+            _Grid.Resize(SizeF.width, SizeF.height);
 
             _ThreadState._StyleManager.ReleaseGradientBrushes();
         }
@@ -304,6 +312,11 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
     if (SUCCEEDED(hr) && _Artwork.IsRealized())
         CreateArtworkDependentResources();
+
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
 
     return hr;
 }
@@ -376,6 +389,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
 /// </summary>
 void UIElement::ReleaseDeviceSpecificResources()
 {
+#ifdef _DEBUG
+    if (_DebugBrush)
+        _DebugBrush.Release();
+#endif
     _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
 
     for (auto & Iter : _Grid)

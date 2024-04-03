@@ -88,13 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-beta3, 2024-04-xx
-
-* Improved: LED Mode is also applied to the bar background.
-* Improved: The LED size and gap can be configured.
-* Improved: The font of the X and Y-axis can be configured in all visualizations.
-
-v0.7.5.0-beta2, 2024-03-31
+v0.7.5.0, 2024-04-03
 
 * New: Spectogram visualization.
   * Static or scrolling
@@ -104,6 +98,9 @@ v0.7.5.0-beta2, 2024-03-31
 * New: Artwork Fit mode. Defaults to "Fit Big".
 * Improved: Double-clicking a preset activates it.
 * Improved: Edge cases for the scaling and position of the spectrum bars and curve vs. the X-axis.
+* Improved: LED Mode is also applied to the bar background.
+* Improved: The LED size and gap can be configured.
+* Improved: The font of the X and Y-axis can be configured in all visualizations.
 * Fixed: Privacy issue: The preset path will no longer be saved to a preset file.
 * Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
 * Fixed: Inconsistent state of the color buttons and values when switching between styles in the configuration dialog.
