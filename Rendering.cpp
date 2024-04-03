@@ -286,16 +286,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            // Resize some elements based on the size of the render target.
-            {
-                // Reposition the frame counter.
-                _FrameCounter.Resize((FLOAT) Size.width, (FLOAT) Size.height);
-
-                // Resize the grid.
-                _Grid.Resize((FLOAT) Size.width, (FLOAT) Size.height);
-
-                _ThreadState._StyleManager.ResetGradients();
-            }
+            Resize();
         }
     }
 
@@ -305,14 +296,12 @@ HRESULT UIElement::CreateDeviceSpecificResources()
         for (auto & Iter : _Grid)
             Iter._Graph->ReleaseDeviceSpecificResources();
 
-        hr = _Artwork.Realize(_RenderTarget);
-
-        // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-        if (SUCCEEDED(hr) && _Artwork.IsRealized())
-            hr = CreateArtworkDependentResources();
-
-        hr = S_OK; // Ignore errors from the artwork.
+        _Artwork.Realize(_RenderTarget);
     }
+
+    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
+    if (SUCCEEDED(hr) && _Artwork.IsRealized())
+        CreateArtworkDependentResources();
 
     return hr;
 }
@@ -368,7 +357,10 @@ HRESULT UIElement::CreateArtworkDependentResources()
         hr = _Direct2D.CreateGradientStops(_ThreadState._ArtworkColors, _ThreadState._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
+    {
         _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
+        _ThreadState._StyleManager.ReleaseGradientBrushes();
+    }
 
     _IsConfigurationChanged = true;
 

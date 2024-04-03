@@ -98,7 +98,6 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
             {
                 Iter.second._CurrentGradientStops = gs;
                 Iter.second.ReleaseDeviceSpecificResources();
-Log::Write(Log::Level::Trace, "%2d %2d", (int) Iter.second._ColorSource, (int) gs.size());
             }
         }
         else
@@ -201,7 +200,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
                 if (style._FontName.empty())
                     style._FontName = DefaultStyle._FontName;
 
-                if (style._FontSize == 0.f)
+                if (style._FontSize < 2.f)
                     style._FontSize = DefaultStyle._FontSize;
             }
 

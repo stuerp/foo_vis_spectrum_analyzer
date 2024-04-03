@@ -59,7 +59,7 @@ public:
 
     void UpdateCurrentColors();
 
-    void ResetGradients()
+    void ReleaseGradientBrushes()
     {
         for (auto & Iter : _Styles)
         {

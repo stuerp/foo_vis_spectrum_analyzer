@@ -346,28 +346,32 @@ void UIElement::Resize()
     _FrameCounter.Resize(Size.width, Size.height);
 
     // Resize the grid.
-    for (auto & Iter : _Grid)
     {
-        TTTOOLINFOW ti;
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
 
-        Iter._Graph->InitToolInfo(m_hWnd, ti);
-        _ToolTipControl.DelTool(&ti);
-    }
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.DelTool(&ti);
+        }
 
-    _CriticalSection.Enter();
+        _CriticalSection.Enter();
 
-    _Grid.Resize(Size.width, Size.height);
+        {
+            _Grid.Resize(Size.width, Size.height);
 
-    _ThreadState._StyleManager.ResetGradients();
+            _ThreadState._StyleManager.ReleaseGradientBrushes();
+        }
 
-    _CriticalSection.Leave();
+        _CriticalSection.Leave();
 
-    for (auto & Iter : _Grid)
-    {
-        TTTOOLINFOW ti;
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
 
-        Iter._Graph->InitToolInfo(m_hWnd, ti);
-        _ToolTipControl.AddTool(&ti);
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.AddTool(&ti);
+        }
     }
 }
 
@@ -447,55 +451,79 @@ void UIElement::UpdateState() noexcept
 {
 //  Log::Write(Log::Level::Trace, "%08X: UpdateState", GetTickCount64());
 
+    {
+        DeleteTrackingToolTip();
+
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
+
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.DelTool(&ti);
+        }
+    }
+
     _CriticalSection.Enter();
 
-    #pragma warning (disable: 4061)
-    switch (_MainState._FFTMode)
     {
-        default:
-            _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
-            break;
-
-        case FFTMode::FFTCustom:
-            _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
-            break;
-
-        case FFTMode::FFTDuration:
-            _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
-            break;
-    }
-    #pragma warning (default: 4061)
-
-    _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
-
-    _ThreadState = _MainState;
-
-    _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
-
-    // Create the graphs.
-    {
-        for (auto & Iter : _Grid)
-            delete Iter._Graph;
-
-        _Grid.clear();
-
-        _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
-
-        for (const auto & Iter : _ThreadState._GraphSettings)
+        #pragma warning (disable: 4061)
+        switch (_MainState._FFTMode)
         {
-            auto * g = new Graph();
+            default:
+                _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
+                break;
 
-            g->Initialize(&_ThreadState, &Iter);
+            case FFTMode::FFTCustom:
+                _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
+                break;
 
-            _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+            case FFTMode::FFTDuration:
+                _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
+                break;
+        }
+        #pragma warning (default: 4061)
+
+        _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
+
+        _ThreadState = _MainState;
+
+        _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
+
+        // Create the graphs.
+        {
+            for (auto & Iter : _Grid)
+                delete Iter._Graph;
+
+            _Grid.clear();
+
+            _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
+
+            for (const auto & Iter : _ThreadState._GraphSettings)
+            {
+                auto * g = new Graph();
+
+                g->Initialize(&_ThreadState, &Iter);
+
+                _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+            }
         }
     }
 
     _CriticalSection.Leave();
 
-    _Artwork.RequestColorUpdate();
+    {
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
 
-    _ToolTipControl.Activate(_ThreadState._ShowToolTips);
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.AddTool(&ti);
+        }
+
+        _ToolTipControl.Activate(_ThreadState._ShowToolTips);
+    }
+
+    _Artwork.RequestColorUpdate();
 
     Resize();
 }

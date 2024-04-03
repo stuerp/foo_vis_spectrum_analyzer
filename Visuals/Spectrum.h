@@ -48,6 +48,8 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
+    const D2D1_RECT_F & GetClientBounds() const noexcept { return _ClientBounds; }
+
 private:
     void Resize() noexcept;
 
@@ -78,6 +80,9 @@ private:
 private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
+
+    D2D1_RECT_F _ClientBounds;
+    D2D1_SIZE_F _ClientSize;
 
     XAxis _XAxis;
     YAxis _YAxis;

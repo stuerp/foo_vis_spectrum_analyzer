@@ -96,7 +96,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+        const D2D1_RECT_F & Bounds = _Spectrum.GetClientBounds();
 
         const FLOAT Bandwidth = Max(::floor((Bounds.right - Bounds.left) / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
 
@@ -116,7 +116,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
     {
-        const D2D1_RECT_F & Bounds = _Spectogram.GetBounds();
+        const D2D1_RECT_F & Bounds = _Spectogram.GetClientBounds();
 
         if (!InRange(y, Bounds.top, Bounds.bottom))
             return false;
@@ -144,7 +144,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 
     // Render the bitmap if there is one.
     if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter))
-        artwork.Render(renderTarget, _Spectrum.GetBounds(), _State);
+        artwork.Render(renderTarget, _Spectrum.GetClientBounds(), _State);
 }
 
 /// <summary>
@@ -200,8 +200,8 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 
         D2D1_RECT_F Rect = { };
 
-        Rect.left   = _Spectrum.GetBounds().left + 10.f;
-        Rect.top    = _Spectrum.GetBounds().top  + 10.f;
+        Rect.left   = _Spectrum.GetClientBounds().left + 10.f;
+        Rect.top    = _Spectrum.GetClientBounds().top  + 10.f;
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
         Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 

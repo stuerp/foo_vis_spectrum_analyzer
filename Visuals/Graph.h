@@ -56,7 +56,7 @@ public:
     /// </summary>
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
+        const D2D1_RECT_F & Bounds = _Spectrum.GetClientBounds();
 
         if ((FLOAT) pt.x < Bounds.left)
             return false;

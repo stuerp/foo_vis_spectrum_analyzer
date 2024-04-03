@@ -40,7 +40,7 @@ public:
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void Reset();
 
-    virtual const D2D1_RECT_F & GetBounds() const noexcept override { return _BitmapBounds; }
+    const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
 
     void ReleaseDeviceSpecificResources();
 

@@ -806,7 +806,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write DUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read DUI configuration: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
