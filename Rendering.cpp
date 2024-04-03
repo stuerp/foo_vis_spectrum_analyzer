@@ -286,7 +286,9 @@ HRESULT UIElement::CreateDeviceSpecificResources()
             _RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _RenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            Resize();
+            _Grid.Resize(Size.width, Size.height);
+
+            _ThreadState._StyleManager.ReleaseGradientBrushes();
         }
     }
 
