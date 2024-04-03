@@ -48,7 +48,7 @@ HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** fr
     CComPtr<IWICBitmapDecoder> Decoder;
 
     if (SUCCEEDED(hr))
-        hr = Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnLoad, &Decoder);
+        hr = Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnDemand, &Decoder);
 
     if (SUCCEEDED(hr))
         hr = Decoder->GetFrame(0, frame);

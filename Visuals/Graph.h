@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.04.02) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.04.03) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -52,22 +52,20 @@ public:
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
     /// <summary>
-    /// Returns true if the specified points lies with our bounds.
+    /// Returns true if the specified point lies within our bounds.
     /// </summary>
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetClientBounds();
-
-        if ((FLOAT) pt.x < Bounds.left)
+        if ((FLOAT) pt.x < _Bounds.left)
             return false;
 
-        if ((FLOAT) pt.x > Bounds.right)
+        if ((FLOAT) pt.x > _Bounds.right)
             return false;
 
-        if ((FLOAT) pt.y < Bounds.top)
+        if ((FLOAT) pt.y < _Bounds.top)
             return false;
 
-        if ((FLOAT) pt.y > Bounds.bottom)
+        if ((FLOAT) pt.y > _Bounds.bottom)
             return false;
 
         return true;
