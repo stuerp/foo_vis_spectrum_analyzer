@@ -175,7 +175,7 @@ void UIElement::Render()
         {
             D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
-            _RenderTarget->DrawLine(D2D1::Point2F(0.f,0.f), D2D1::Point2F(Size.width, Size.height), _DebugBrush);
+//          _RenderTarget->DrawLine(D2D1::Point2F(0.f,0.f), D2D1::Point2F(Size.width, Size.height), _DebugBrush);
         }
 #endif
         hr = _RenderTarget->EndDraw();
