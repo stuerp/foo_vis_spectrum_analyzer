@@ -88,7 +88,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0, 2024-04-03
+v0.7.5.0, 2024-04-04
 
 * New: Spectogram visualization.
   * Static or scrolling
