@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.03.16) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.04.02) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -12,6 +12,8 @@
 #include <atlbase.h>
 
 #include "Gradients.h"
+
+#include "DirectWrite.h"
 
 #include <string>
 
@@ -28,13 +30,27 @@ public:
 
     Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
 
     HRESULT SetBrushColor(double value) noexcept;
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
+
+    HRESULT MeasureText(const std::wstring & text) noexcept;
+
+    void SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT ta) const noexcept
+    {
+        if (_TextFormat)
+            _TextFormat->SetTextAlignment(ta);
+    }
+
+    void SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT pa) const noexcept
+    {
+        if (_TextFormat)
+            _TextFormat->SetParagraphAlignment(pa);
+    }
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
@@ -59,6 +75,9 @@ public:
     D2D1_COLOR_F _CurrentColor;
     GradientStops _CurrentGradientStops;
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
+
+    FLOAT _TextWidth;
+    FLOAT _TextHeight;
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;

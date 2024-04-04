@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.17) P. Stuer **/
+/** $VER: UIElement.h (2024.03.26) P. Stuer **/
 
 #pragma once
 
@@ -119,6 +119,8 @@ private:
 
     #pragma endregion
 
+    void LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort);
+
     virtual void ToggleFullScreen() noexcept = 0;
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
@@ -126,6 +128,9 @@ private:
     void Configure() noexcept;
     void Resize();
 
+    // Tool Tips
+    void CreateToolTipControl() noexcept;
+    void DeleteTrackingToolTip() noexcept;
     Graph * GetGraph(const CPoint & pt) noexcept;
 
     void on_album_art(album_art_data::ptr data);
@@ -164,6 +169,7 @@ protected:
     bool _IsVisible;                // True if the component is visible.
 
     Event _Event;
+    bool _IsStartingUp;
 
 private:
     #pragma region Shared
@@ -177,6 +183,10 @@ private:
     UINT _DPI;
 
     CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 
     visualisation_stream_v2::ptr _VisualisationStream;
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
@@ -202,6 +212,8 @@ private:
 
         IDM_CONFIGURE,
         IDM_FREEZE,
+
+        IDM_PRESET_NAME,
     };
 
     PTP_TIMER _ThreadPoolTimer;
@@ -209,7 +221,7 @@ private:
     CToolTipCtrl _ToolTipControl;
 
     Graph * _TrackingGraph;
-    CToolInfo * _TrackingToolInfo;
+    TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
     size_t _LastIndex;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.03.18) P. Stuer **/
+/** $VER: Resources.h (2024.04.03) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-alpha1"
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -40,7 +40,7 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-alpha1"
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
@@ -263,6 +263,9 @@
 
 #define IDC_ARTWORK_BACKGROUND          6082
 
+#define IDC_FIT_MODE_LBL                6084
+#define IDC_FIT_MODE                    6086
+
 #define IDC_ARTWORK_OPACITY_LBL         6090
 #define IDC_ARTWORK_OPACITY             6092
 #define IDC_ARTWORK_OPACITY_SPIN        6094
@@ -364,11 +367,31 @@
 #define IDC_ACCELERATION_LBL            7116
 #define IDC_ACCELERATION                7118
 
-// Bars
+// LEDs
 
-#define IDC_BARS                        7120
+#define IDC_LEDS                        7120
 
 #define IDC_LED_MODE                    7122
+#define IDC_LED_SIZE_LBL                7124
+#define IDC_LED_SIZE                    7126
+#define IDC_LED_GAP_LBL                 7128
+#define IDC_LED_GAP                     7130
+
+// Bars
+
+#define IDC_BARS                        7140
+
+// Spectogram
+
+#define IDC_SPECTOGRAM                  7150
+
+#define IDC_SCROLLING_SPECTOGRAM        7152
+
+// Peak Meter
+
+#define IDC_PEAK_METER                  7160
+
+#define IDC_HORIZONTAL_PEAK_METER       7162
 
 #pragma endregion
 

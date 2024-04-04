@@ -1,10 +1,9 @@
 
-/** $VER: Style.cpp (2024.03.16) P. Stuer **/
+/** $VER: Style.cpp (2024.04.02) P. Stuer **/
 
 #include "Style.h"
 
 #include "Direct2D.h"
-#include "DirectWrite.h"
 #include "Gradients.h"
 
 #include "Support.h"
@@ -46,6 +45,10 @@ Style & Style::operator=(const Style & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
+    _TextFormat = other._TextFormat;
+    _TextWidth = other._TextWidth;
+    _TextHeight = other._TextHeight;
+
     return *this;
 }
 
@@ -71,6 +74,9 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
 
     _CurrentColor         = customColor;
     _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
+
+    _TextWidth  = 0.f;
+    _TextHeight = 0.f;
 }
 
 /// <summary>
@@ -143,7 +149,7 @@ D2D1_COLOR_F Style::GetWindowsColor(uint32_t index) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size) noexcept
+HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -165,7 +171,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
 
-    if ((_Flags & SupportsFont) && (_TextFormat == nullptr))
+    if ((_Flags & SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
@@ -173,8 +179,12 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
 
         if (SUCCEEDED(hr))
         {
-            _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            MeasureText(text);
+
+            SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
         }
     }
 
@@ -191,7 +201,7 @@ void Style::ReleaseDeviceSpecificResources()
 }
 
 /// <summary>
-/// Sets the color of a solid color brush from the gradient colors based on a value between 0. and 1..
+/// Selects the color of a solid color brush from the gradient colors based on a value between 0. and 1..
 /// </summary>
 HRESULT Style::SetBrushColor(double value) noexcept
 {
@@ -309,4 +319,15 @@ HRESULT Style::CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops &
     }
 
     return S_OK;
+}
+
+/// <summary>
+/// Updates the text width and height.
+/// </summary>
+HRESULT Style::MeasureText(const std::wstring & text) noexcept
+{
+    if (_TextFormat == nullptr)
+        return E_FAIL;
+
+    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _TextWidth, _TextHeight);
 }

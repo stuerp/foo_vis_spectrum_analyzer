@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.03.17) P. Stuer **/
+/** $VER: Analysis.h (2024.03.31) P. Stuer **/
 
 #pragma once
 
@@ -21,6 +21,25 @@
 #include "AnalogStyleAnalyzer.h"
 
 #include "FrequencyBand.h"
+
+/// <summary>
+/// Represents a meter value of a channel.
+/// </summary>
+struct MeterValue
+{
+    MeterValue(audio_sample peak = 0.0, audio_sample rms = 0.0, const WCHAR * name = L"", audio_sample newPeak = 0.0, audio_sample newRMS = 0.0, double scaledPeak = -999.0, double scaledRMS = -999.0) :
+        Peak(peak), RMS(rms), Name(name), NewPeak(newPeak), NewRMS(newRMS), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
+
+    audio_sample Peak;
+    audio_sample RMS;
+    std::wstring Name;
+
+    audio_sample NewPeak;
+    audio_sample NewRMS;
+
+    double ScaledPeak;
+    double ScaledRMS;
+};
 
 /// <summary>
 /// Represents the analysis of the sample data.
@@ -48,6 +67,8 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
 
+    bool GetMeterValues(const audio_chunk & chunk) noexcept;
+
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
@@ -62,6 +83,7 @@ public:
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;
+    std::vector<MeterValue> _MeterValues;
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;

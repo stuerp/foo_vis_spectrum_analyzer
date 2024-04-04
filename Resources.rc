@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.03.14) P. Stuer **/
+/** $VER: Resources.rc (2024.04.01) P. Stuer **/
 
 #include "Resources.h"
 
@@ -235,6 +235,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control         "Show artwork on background" IDC_ARTWORK_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G02, Y_G02, W_G02, H_G02
 
+        rtext           "Fit mode:",                IDC_FIT_MODE_LBL,               X_G30, Y_G30 + 2, W_G30, H_G30
+        combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
         rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,        X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_ARTWORK_OPACITY_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
@@ -308,9 +311,23 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Acceleration:"             IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
         edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        groupbox "Bars", IDC_BARS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
+        groupbox "LEDs", IDC_LEDS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-            control         "LED mode",                 IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+            control     "Enabled",                  IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+
+            rtext       "LED size:"                 IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
+            edittext                                IDC_LED_SIZE,                   X_C18, Y_C18, W_C18, H_C18, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+            rtext       "LED gap:"                  IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
+            edittext                                IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        groupbox "Spectogram", IDC_SPECTOGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+            control     "Scrolling",                IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
+
+        groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+            control     "Horizontal",               IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

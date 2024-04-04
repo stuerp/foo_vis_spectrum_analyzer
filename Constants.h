@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.03.15) P. Stuer **/
+/** $VER: Constans.h (2024.04.01) P. Stuer **/
 
 #pragma once
 
@@ -114,6 +114,13 @@ inline const double MaxHoldTime = 120.;
 
 inline const double MinAcceleration = 0.;
 inline const double MaxAcceleration = 2.;
+
+inline const FLOAT MinLEDSize =  0.f;
+inline const FLOAT MaxLEDSize = 32.f;
+
+inline const FLOAT MinLEDGap =  0.f;
+inline const FLOAT MaxLEDGap = 32.f;
+
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
 
@@ -253,6 +260,7 @@ enum class VisualizationType
     Bars = 0,
     Curve = 1,
     Spectogram = 2,
+    PeakMeter = 3,
 };
 
 enum class PeakMode
@@ -295,6 +303,8 @@ enum class FitMode
     FitBig,
     FitWidth,
     FitHeight,
+
+    Fill,
 };
 
 enum class VisualElement : uint32_t
@@ -322,8 +332,11 @@ enum class VisualElement : uint32_t
 
     Spectogram                  = 18,
 
-    NyquistMarker               = 15,
+    PeakMeterBackground         = 19,
+    PeakMeterPeakLevel          = 20,
+    PeakMeterRMSLevel           = 21,
 
+    NyquistMarker               = 15,
 };
 
 enum class ColorSource : uint32_t

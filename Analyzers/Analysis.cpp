@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.17) P. Stuer **/
+/** $VER: Analysis.cpp (2024.03.31) P. Stuer **/
 
 #include "Analysis.h"
 
@@ -35,6 +35,8 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             GenerateAveePlayerFrequencyBands();
             break;
     }
+
+    _MeterValues.clear();
 }
 
 /// <summary>
@@ -50,6 +52,8 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     const size_t SampleCount = chunk.get_sample_count();
 
     _SampleRate = chunk.get_sample_rate();
+
+    GetMeterValues(chunk);
 
     GetAnalyzer(chunk);
 
@@ -482,4 +486,94 @@ void Analysis::UpdatePeakIndicators() noexcept
             fb.Peak = Clamp(fb.Peak, 0., 1.);
         }
     }
+}
+
+/// <summary>
+/// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
+/// </summary>
+bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
+{
+    const audio_sample * Samples = chunk.get_data();
+    const size_t SampleCount = chunk.get_sample_count();
+
+    if ((Samples == nullptr) || (SampleCount == 0))
+        return false;
+
+    if (_MeterValues.size() != chunk.get_channel_count())
+    {
+        static const WCHAR * ChannelNames[] =
+        {
+            L"FL", L"FR", L"FC",
+            L"LFE",
+            L"BL", L"BR", 
+            L"FCL", L"FCR",
+            L"BC", L"SL", L"SR", L"TC",
+            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
+        };
+
+        _MeterValues.clear();
+
+        if (chunk.get_channel_count() != 1)
+        {
+            size_t i = 0;
+
+            for (unsigned ChannelConfig = chunk.get_channel_config() & _GraphSettings->_Channels; (ChannelConfig != 0) && (i < _countof(ChannelNames)); ChannelConfig >>= 1, ++i)
+            {
+                if (ChannelConfig & 1)
+                    _MeterValues.push_back({ 0.0, 0.0, ChannelNames[i] });
+            }
+
+// _MeterValues.push_back({ 0.0, 0.0, ChannelNames[2] });
+        }
+        else
+            _MeterValues.push_back({ 0.0, 0.0, ChannelNames[2] }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
+    }
+    else
+    {
+        for (auto & mv : _MeterValues)
+        {
+            mv.NewPeak = 0.0;
+            mv.NewRMS = 0.0;
+            mv.ScaledPeak = -999.0;
+            mv.ScaledRMS = -999.0;
+        }
+    }
+
+    if (_MeterValues.size() == 0)
+        return false;
+
+    const audio_sample * EndOfChunk = Samples + SampleCount;
+
+    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )
+    {
+        for (auto & mv : _MeterValues)
+        {
+            audio_sample Value = std::abs(*Sample);
+
+            if (Value > mv.NewPeak)
+                mv.NewPeak = Value;
+
+            mv.NewRMS += Value * Value;
+
+            ++Sample;
+        }
+    }
+
+    // Calculate the scaled values. Keep the new value only when it's larger than the current value to reduce the 'jumpiness' of the meter.
+    for (auto & mv : _MeterValues)
+    {
+        double ScaledPeak = ToDecibel(mv.NewPeak);
+
+        if (ScaledPeak > mv.ScaledPeak)
+            mv.ScaledPeak = ScaledPeak;
+
+        mv.NewRMS = (audio_sample) std::sqrt(mv.NewRMS / (audio_sample) SampleCount);
+
+        double ScaledRMS = ToDecibel(mv.NewRMS);
+
+        if (ScaledRMS > mv.ScaledRMS)
+            mv.ScaledRMS = ScaledRMS;
+    }
+
+    return true;
 }

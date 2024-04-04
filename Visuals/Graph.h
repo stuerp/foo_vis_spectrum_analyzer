@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.03.17) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.04.03) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -20,10 +20,8 @@
 #include "Element.h"
 
 #include "Spectrum.h"
-#include "XAxis.h"
-#include "YAxis.h"
-
 #include "Spectogram.h"
+#include "PeakMeter.h"
 
 #include "Log.h"
 
@@ -46,39 +44,34 @@ public:
         _Analysis.Process(chunk);
     }
 
-    const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
-
-    FLOAT GetLeft() const noexcept { return _Bounds.left; }
-    FLOAT GetRight() const noexcept { return _Bounds.right; }
-
     Analysis & GetAnalysis() noexcept { return _Analysis; }
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
+    Spectogram & GetSpectogram() noexcept { return _Spectogram; }
+    PeakMeter & GetPeakMeter() noexcept { return _PeakMeter; }
 
-    CToolInfo * GetToolInfo(HWND hParent) noexcept;
+    void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
     /// <summary>
-    /// Returns true if the specified points lies with our bounds.
+    /// Returns true if the specified point lies within our bounds.
     /// </summary>
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetBounds();
-
-        if ((FLOAT) pt.x < Bounds.left)
+        if ((FLOAT) pt.x < _Bounds.left)
             return false;
 
-        if ((FLOAT) pt.x > Bounds.right)
+        if ((FLOAT) pt.x > _Bounds.right)
             return false;
 
-        if ((FLOAT) pt.y < Bounds.top)
+        if ((FLOAT) pt.y < _Bounds.top)
             return false;
 
-        if ((FLOAT) pt.y > Bounds.bottom)
+        if ((FLOAT) pt.y > _Bounds.bottom)
             return false;
 
         return true;
     }
 
-    bool GetToolTip(FLOAT x, std::wstring & toolTip, size_t & index) const noexcept;
+    bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
@@ -92,15 +85,11 @@ private:
 private:
     std::wstring _Description;
 
-    D2D1_RECT_F _Bounds;
-
     Analysis _Analysis;
 
     Spectrum _Spectrum;
-    XAxis _XAxis;
-    YAxis _YAxis;
-
     Spectogram _Spectogram;
+    PeakMeter _PeakMeter;
 
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;

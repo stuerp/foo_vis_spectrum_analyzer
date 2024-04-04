@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.03.17) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
 
 #include "ConfigurationDialog.h"
 
@@ -119,7 +119,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed" },
 
             { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum." },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum" },
             { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
 
             { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
@@ -142,14 +142,16 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background" },
+            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background." },
+
+            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
 
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
-            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork" },
+            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
             { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
-            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background." },
+            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
             // Graphs
             { IDC_GRAPH_SETTINGS, L"Shows the list of graphs." },
@@ -190,7 +192,13 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_HOLD_TIME, L"Determines how long the peak coefficients are held before they decay" },
             { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
 
-            { IDC_LED_MODE, L"Display the spectrum bars as LEDs" },
+            { IDC_LED_MODE, L"Display the spectrum bars and peak meters as LEDs." },
+            { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
+            { IDC_LED_GAP, L"Specifies the gap between the LEDs in pixels." },
+
+            { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
+
+            { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -775,7 +783,16 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_ARTWORK_BACKGROUND, BM_SETCHECK, _State->_ShowArtworkOnBackground);
     }
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_FIT_MODE);
 
+        w.ResetContent();
+
+        for (const auto & x : { L"Free", L"Fit big", L"Fit width", L"Fit height", L"Fill" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_FitMode);
+    }
     {
         UDACCEL Accel[] =
         {
@@ -949,7 +966,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -971,10 +988,29 @@ void ConfigurationDialog::Initialize()
         SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
     }
 
-    #pragma region Bars
+    #pragma region LEDs
 
     {
         SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _State->_LEDMode);
+
+        SetDouble(IDC_LED_SIZE, _State->_LEDSize, 0, 0);
+        SetDouble(IDC_LED_GAP, _State->_LEDGap, 0, 0);
+    }
+
+    #pragma endregion
+
+    #pragma region Spectogram
+
+    {
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
+    }
+
+    #pragma endregion
+
+    #pragma region Peak Meter
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
     }
 
     #pragma endregion
@@ -994,6 +1030,7 @@ void ConfigurationDialog::Initialize()
             L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
             L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
             L"Spectogram",
+            L"Peak Meter Background", L"Peak Meter Peak Level", L"Peak Meter RMS Level",
             L"Nyquist Frequency",
         })
             w.AddString(x);
@@ -1257,6 +1294,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             break;
         }
 
+        case IDC_FIT_MODE:
+        {
+            _State->_FitMode = (FitMode) SelectedIndex;
+
+            UpdateCommonPage();
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Graphs
@@ -1402,12 +1447,13 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
             // Update the state of the buttons.
             bool HasSelection = (Index != LB_ERR);
-            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
             bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
+            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
                 GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
                 GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+
+                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
                 GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
                 GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
@@ -1464,17 +1510,12 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 
         UpdatePresetsPage();
 
-        {
-            State NewState;
-
-            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
-
-            *_State = NewState;
-            Initialize();
-        }
+        GetPreset(PresetName);
 
         GetPresetNames();
     }
+    else
+        SetMsgHandled(FALSE);
 }
 
 /// <summary>
@@ -1482,7 +1523,7 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 /// </summary>
 void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if ((_State == nullptr) || (code != EN_CHANGE))
+    if ((_State == nullptr) || (code != EN_CHANGE) || _IgnoreNotifications)
         return;
 
     WCHAR Text[MAX_PATH];
@@ -1686,6 +1727,22 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region LEDs
+
+        case IDC_LED_SIZE:
+        {
+            _State->_LEDSize = Clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            break;
+        }
+
+        case IDC_LED_GAP:
+        {
+            _State->_LEDGap = Clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            break;
+        }
+
+        #pragma endregion
+
         #pragma endregion
 
         #pragma region Styles
@@ -1800,7 +1857,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 /// </summary>
 void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 {
-    if (_State == nullptr)
+    if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
     switch (id)
@@ -1909,6 +1966,19 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ACCELERATION:
         {
             SetDouble(id, _State->_Acceleration, 0, 1);
+            break;
+        }
+
+        // LEDs
+        case IDC_LED_SIZE:
+        {
+            SetDouble(id, _State->_LEDSize, 0, 0);
+            break;
+        }
+
+        case IDC_LED_GAP:
+        {
+            SetDouble(id, _State->_LEDGap, 0, 0);
             break;
         }
 
@@ -2114,6 +2184,18 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_SCROLLING_SPECTOGRAM:
+        {
+            _State->_ScrollingSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_HORIZONTAL_PEAK_METER:
+        {
+            _State->_HorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2126,21 +2208,21 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            D2D1_COLOR_F Color = style->_CurrentGradientStops[Index].color;
+            D2D1_COLOR_F Color = style->_CurrentGradientStops[SelectedIndex].color;
 
             CColorDialogEx cd;
 
             if (!cd.SelectColor(m_hWnd, Color))
                 return;
 
-            style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) Index + 1, { 0.f, Color });
+            style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) SelectedIndex + 1, { 0.f, Color });
             
-            UpdateGradientStopPositons(style, Index + 1);
+            UpdateGradientStopPositons(style, SelectedIndex + 1);
 
             UpdateColorControls();
             break;
@@ -2154,12 +2236,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            size_t Index = (size_t) _Colors.GetCurSel();
+            size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) Index);
+            style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) SelectedIndex);
 
             // Save the current result as custom gradient stops.
             style->_ColorScheme = ColorScheme::Custom;
@@ -2277,14 +2359,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-            State NewState;
-
-            PresetManager::Load(_State->_PresetsDirectoryPath, PresetName, &NewState);
+            GetPreset(PresetName);
 
             GetPresetNames();
-
-            *_State = NewState;
-            Initialize();
             break;
         }
 
@@ -2686,6 +2763,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
+            IDC_FIT_MODE_LBL, IDC_FIT_MODE,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
@@ -2725,8 +2803,16 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
         IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
-        IDC_BARS,
+        IDC_LEDS,
             IDC_LED_MODE,
+            IDC_LED_SIZE_LBL, IDC_LED_SIZE,
+            IDC_LED_GAP_LBL, IDC_LED_GAP,
+
+        IDC_SPECTOGRAM,
+            IDC_SCROLLING_SPECTOGRAM,
+
+        IDC_PEAK_METER,
+            IDC_HORIZONTAL_PEAK_METER,
     };
 
     static const int Page7[] =
@@ -2857,14 +2943,14 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
 void ConfigurationDialog::UpdateFrequenciesPage() noexcept
 {
     const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
-    const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+//  const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
     GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
     GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
     GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
 
-    GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
-    GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
+//  GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
+//  GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
 
     for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
         GetDlgItem(Iter).EnableWindow(IsOctaves);
@@ -2890,6 +2976,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
 
     // Artwork
+    GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 }
@@ -2995,12 +3082,15 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
         for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
             GetDlgItem(Iter).EnableWindow(ShowPeaks);
- 
-    // Bars
-    const bool IsBars = _State->_VisualizationType == VisualizationType::Bars;
 
-        for (const auto & Iter : { IDC_LED_MODE })
-            GetDlgItem(Iter).EnableWindow(IsBars);
+    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::PeakMeter);
+ 
+    GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
+
+    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
+    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
 }
 
 /// <summary>
@@ -3060,8 +3150,6 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
                     w.AddString(x);
             }
 
-            style->UpdateCurrentColor(_State->_StyleManager._DominantColor, _State->_StyleManager._UserInterfaceColors);
-
             w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
@@ -3088,13 +3176,13 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
 
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && (IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient))));
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity)));
-    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsThickness)));
+    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && (IsSet(style->_Flags, (uint64_t) Style::SupportsFont)));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
 
     UpdateColorControls();
 }
@@ -3123,26 +3211,27 @@ void ConfigurationDialog::UpdateColorControls()
     // Update the Color button.
     _Color.SetColor(style->_CurrentColor);
 
-    // Update the Color Scheme combo box.
-    ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
-
-    // Get the gradient stops.
+    // Update the Gradient box with the selected gradient.
     GradientStops gs;
 
-    if (style->_ColorScheme == ColorScheme::Custom)
-        gs = style->_CustomGradientStops;
-    else
-    if (style->_ColorScheme == ColorScheme::Artwork)
-        gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
-    else
-        gs = GetGradientStops(style->_ColorScheme);
+    {
+        ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
-    // Update the gradient control.
-    _Gradient.SetGradientStops(gs);
+        if (style->_ColorScheme == ColorScheme::Custom)
+            gs = style->_CustomGradientStops;
+        else
+        if (style->_ColorScheme == ColorScheme::Artwork)
+            gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+        else
+            gs = GetGradientStops(style->_ColorScheme);
+
+        // Update the gradient control.
+        _Gradient.SetGradientStops(gs);
+    }
 
     // Update the list of colors.
     {
-        int Index = _Colors.GetCurSel();
+        int SelectedIndex = _Colors.GetCurSel();
 
         std::vector<D2D1_COLOR_F> Colors;
 
@@ -3151,22 +3240,31 @@ void ConfigurationDialog::UpdateColorControls()
 
         _Colors.SetColors(Colors);
 
-        _Colors.SetCurSel(Index);
+        if (SelectedIndex != LB_ERR)
+        {
+            _Colors.SetCurSel(SelectedIndex);
+
+            _IgnoreNotifications = true;
+
+            t_int64 Position = (t_int64) (gs[(size_t) SelectedIndex].position * 100.f);
+            SetInteger(IDC_POSITION, Position);
+
+            _IgnoreNotifications = false;
+        }
     }
 
-    auto lb = (CListBox) GetDlgItem(IDC_COLOR_LIST);
-
-    bool HasSelection = (lb.GetCurSel() != LB_ERR);                     // Add and Remove are only enabled when a color is selected.
+    // Update the state of the buttons.
+    bool HasSelection = (_Colors.GetCurSel() != LB_ERR);                // Add and Remove are only enabled when a color is selected.
     bool HasMoreThanOneColor = (gs.size() > 1);                         // Remove and Reverse are only enabled when there is more than 1 color.
     bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
 
-    GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-    GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-    GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
-    GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && !UseArtwork);
-    GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && !UseArtwork);
+        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 }
 
 /// <summary>
@@ -3237,6 +3335,24 @@ void ConfigurationDialog::GetPresetNames() noexcept
 }
 
 /// <summary>
+/// Loads and activates a preset.
+/// </summary>
+void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
+{
+    State NewState;
+
+    PresetManager::Load(_State->_PresetsDirectoryPath, presetName, &NewState);
+
+    NewState._StyleManager._DominantColor       = _State->_StyleManager._DominantColor;
+    NewState._StyleManager._UserInterfaceColors = _State->_StyleManager._UserInterfaceColors;
+
+    NewState._StyleManager.UpdateCurrentColors();
+
+    *_State = NewState;
+    Initialize();
+}
+
+/// <summary>
 /// Validates and updates the notification from the up-down control.
 /// </summary>
 int ConfigurationDialog::ClampNewSpinPosition(LPNMUPDOWN nmud, int minValue, int maxValue) noexcept
@@ -3290,8 +3406,6 @@ void ConfigurationDialog::SetInteger(int id, int64_t value) noexcept
 void ConfigurationDialog::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
     SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
-
-
 }
 
 /// <summary>

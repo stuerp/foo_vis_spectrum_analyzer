@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.03.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.02) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -37,20 +37,57 @@ public:
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
 
-    Style * GetStyle(VisualElement visualElement);
+    /// <summary>
+    /// Gets the style of the specified visual element.
+    /// </summary>
+    Style * GetStyle(VisualElement visualElement)
+    {
+        return &_Styles[visualElement];
+    }
+
+    /// <summary>
+    /// Gets the default style of the specified visual element.
+    /// </summary>
+    Style * GetDefaultStyle(VisualElement visualElement)
+    {
+        return &_Styles[visualElement];
+    }
+
     Style * GetStyleByIndex(int index);
 
     void SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor);
 
     void UpdateCurrentColors();
 
-    void ResetGradients()
+    void ReleaseGradientBrushes()
     {
         for (auto & Iter : _Styles)
         {
             if (Iter.second._ColorSource == ColorSource::Gradient)
-                Iter.second._Brush = nullptr;
+                Iter.second._Brush.Release();
         }
+    }
+
+    // Helper
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text, Style ** style) noexcept
+    {
+        if (*style != nullptr)
+        {
+            if ((*style)->_Brush != nullptr)
+                return S_OK;
+            else
+                return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
+        }
+
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+
+        if ((*style)->_Brush != nullptr)
+            return S_OK;
+
+        return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
     }
 
     void ReleaseDeviceSpecificResources();
@@ -63,7 +100,7 @@ private:
     std::map<VisualElement, Style> _Styles;
 
     #pragma warning(disable: 4868)
-    const std::map<VisualElement, Style> _DefaultStyles
+    std::map<VisualElement, Style> _DefaultStyles
     {
         {
             VisualElement::GraphBackground,
@@ -100,8 +137,8 @@ private:
         {
             VisualElement::XAxisText,
             {
-                Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 
@@ -116,8 +153,8 @@ private:
         {
             VisualElement::YAxisText,
             {
-                Style::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 
@@ -206,6 +243,30 @@ private:
             {
                 Style::SupportsOpacity | Style::AmplitudeAware | Style::AmplitudeBasedColor,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterBackground,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterPeakLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterRMSLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 

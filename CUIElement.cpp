@@ -81,9 +81,7 @@ void CUIElement::destroy_window()
 /// </summary>
 LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 {
-    static bool IsStartup = true;
-
-    if (!IsStartup)
+    if (!_IsStartingUp)
         return 0;
 
     RECT cr;
@@ -96,7 +94,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     ::DeleteObject((HGDIOBJ) hBrush);
 
-    IsStartup = false;
+    _IsStartingUp = false;
 
     return 1;
 }

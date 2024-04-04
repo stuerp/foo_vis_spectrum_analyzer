@@ -88,15 +88,27 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.0-alpha1, 2024-03-18
+v0.7.5.0, 2024-04-04
 
 * New: Spectogram visualization.
   * Static or scrolling
-* New: Built-in SoX color scheme and non-linear amplitude color map suited for the spectogram visualization.
-* Fixed: Security issue
-  * The preset path will no longer be saved as part of a preset file.
+* New: Peak Meter visualization.
+* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
+* New: The context menu can be used to load a preset.
+* New: Artwork Fit mode. Defaults to "Fit Big".
+* Improved: Double-clicking a preset activates it.
+* Improved: Edge cases for the scaling and position of the spectrum bars and curve vs. the X-axis.
+* Improved: LED Mode is also applied to the bar background.
+* Improved: The LED size and gap can be configured.
+* Improved: The font of the X and Y-axis can be configured in all visualizations.
+* Fixed: Privacy issue: The preset path will no longer be saved to a preset file.
 * Fixed: The spin buttons were not updated when switching between multiple graphs in the configuration dialog.
-* Fixed: Deadlock condition specific to CUI at startup.
+* Fixed: Inconsistent state of the color buttons and values when switching between styles in the configuration dialog.
+* Fixed: User interface colors were not activated after loading a preset.
+* Fixed: The custom Solid color was not always saved correctly.
+* Fixed: Deadlock condition specific to CUI when playback was set to resume at startup.
+* Fixed: Memory leak in tool tips when resizing the component.
+* Fixed: Artwork should now consistently be rendered when requested.
 
 v0.7.4.1, 2024-03-14
 

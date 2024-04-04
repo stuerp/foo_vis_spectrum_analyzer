@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.03.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.03.28) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "StyleManager.h"
 
@@ -44,14 +44,6 @@ void StyleManager::Reset() noexcept
 }
 
 /// <summary>
-/// Gets the style of the specified visual element.
-/// </summary>
-Style * StyleManager::GetStyle(VisualElement visualElement)
-{
-    return &_Styles[visualElement];
-}
-
-/// <summary>
 /// Gets the style of the visual element specified by an index.
 /// </summary>
 Style * StyleManager::GetStyleByIndex(int index)
@@ -80,6 +72,10 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::CurvePeakArea,
 
         VisualElement::Spectogram,
+
+        VisualElement::PeakMeterBackground,
+        VisualElement::PeakMeterPeakLevel,
+        VisualElement::PeakMeterRMSLevel,
 
         VisualElement::NyquistMarker,
     };
@@ -196,6 +192,18 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
                 style._FontSize = FontSize;
             }
 
+            // Sets the default font settings.
+            if (style._Flags & Style::SupportsFont)
+            {
+                auto DefaultStyle = _DefaultStyles[(VisualElement) Id];
+;
+                if (style._FontName.empty())
+                    style._FontName = DefaultStyle._FontName;
+
+                if (style._FontSize < 2.f)
+                    style._FontSize = DefaultStyle._FontSize;
+            }
+
             // 'Activate' the values we just read.
             if (style._ColorScheme == ColorScheme::Custom)
                 style._CurrentGradientStops = style._CustomGradientStops;
@@ -239,7 +247,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
 
                 writer->write_object_t(style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
-                writer->write_object(&style._CurrentColor, sizeof(style._CurrentColor), abortHandler);
+                writer->write_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
                 writer->write_object_t(style._ColorIndex, abortHandler);
                 writer->write_object(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
 

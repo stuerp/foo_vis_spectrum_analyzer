@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.03.18) P. Stuer **/
+/** $VER: UIElement.cpp (2024.03.26) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -17,7 +17,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100)
+UIElement::UIElement(): _IsVisible(true), _IsStartingUp(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100)
 {
 }
 
@@ -93,14 +93,22 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
             AlbumArtNotificationManager->add(this);
     }
 
-    // Create the tooltip control.
+    // Get the artwork data from the album art.
+    if (_MainState._ArtworkFilePath.empty())
     {
-        _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
+        auto aanm = now_playing_album_art_notify_manager::get();
 
-        _ToolTipControl.SetMaxTipWidth(100);
+        if (aanm != nullptr)
+        {
+            album_art_data_ptr aad = aanm->current();
 
-        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
+            if (aad.is_valid())
+                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        }
     }
+
+    // Create the tooltip control.
+    CreateToolTipControl();
 
     // Apply the initial configuration.
     UpdateState();
@@ -148,7 +156,6 @@ void UIElement::OnDestroy()
 void UIElement::OnPaint(CDCHandle hDC)
 {
 //  Log::Write(Log::Level::Trace, "%08X: OnPaint", GetTickCount64());
-
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
@@ -180,6 +187,9 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 {
     CMenu Menu;
     CMenu RefreshRateLimitMenu;
+    CMenu PresetMenu;
+
+    std::vector<std::wstring> PresetNames;
 
     {
         Menu.CreatePopupMenu();
@@ -199,6 +209,22 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
                     pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
+        }
+
+        {
+            PresetMenu.CreatePopupMenu();
+
+            PresetManager::GetPresetNames(_MainState._PresetsDirectoryPath, PresetNames);
+
+            UINT_PTR i = 0;
+
+            for (auto & PresetName : PresetNames)
+            {
+                PresetMenu.AppendMenu((UINT) MF_STRING, IDM_PRESET_NAME + i, PresetName.c_str());
+                i++;
+            }
+
+            Menu.AppendMenu((UINT) MF_STRING, PresetMenu, L"Presets");
         }
 
         Menu.AppendMenu((UINT) MF_SEPARATOR);
@@ -255,6 +281,30 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         case IDM_FREEZE:
             _IsFrozen = !_IsFrozen;
             break;
+
+        default:
+        {
+            if (CommandId >= IDM_PRESET_NAME)
+            {
+                State NewState;
+
+                size_t Index = (size_t) CommandId - IDM_PRESET_NAME;
+
+                if (InRange(Index, (size_t) 0, PresetNames.size() - (size_t) 1))
+                {
+                    PresetManager::Load(_MainState._PresetsDirectoryPath, PresetNames[Index], &NewState);
+
+                    NewState._StyleManager._DominantColor       = _MainState._StyleManager._DominantColor;
+                    NewState._StyleManager._UserInterfaceColors = _MainState._StyleManager._UserInterfaceColors;
+
+                    NewState._StyleManager.UpdateCurrentColors();
+
+                    _MainState = NewState;
+
+                    UpdateState();
+                }
+            }
+        }
     }
 
     Invalidate();
@@ -281,109 +331,6 @@ LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 }
 
 /// <summary>
-/// Handles mouse move messages.
-/// </summary>
-void UIElement::OnMouseMove(UINT, CPoint pt)
-{
-    if (!_ToolTipControl.IsWindow())
-        return;
-
-    if (_TrackingGraph == nullptr)
-    {
-        _TrackingGraph = GetGraph(pt);
-
-        if (_TrackingGraph == nullptr)
-            return;
-
-        // Tell Windows we want to know when the mouse leaves this window.
-        {
-            TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
-
-            tme.dwFlags   = TME_LEAVE;
-            tme.hwndTrack = m_hWnd;
-        
-            ::TrackMouseEvent(&tme);
-        }
-
-        _LastMousePos = POINT(-1, -1);
-        _LastIndex = ~0U;
-
-        _TrackingToolInfo = _TrackingGraph->GetToolInfo(m_hWnd);
-
-        if (_TrackingToolInfo != nullptr)
-            _ToolTipControl.TrackActivate(_TrackingToolInfo, TRUE);
-    }
-    else
-    {
-        if (_TrackingGraph && (pt != _LastMousePos))
-        {
-            _LastMousePos = pt;
-
-            FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-
-            std::wstring ToolTip;
-            size_t Index;
-
-            if (_TrackingGraph->GetToolTip(ScaledX, ToolTip, Index))
-            {
-                if (Index != _LastIndex)
-                {
-                    _TrackingToolInfo->lpszText = (LPWSTR) ToolTip.c_str();
-
-                    _ToolTipControl.UpdateTipText(_TrackingToolInfo);
-
-                    _LastIndex = Index;
-                }
-
-                // Reposition the tooltip.
-                ::ClientToScreen(m_hWnd, &pt);
-
-                RECT tr;
-
-                _ToolTipControl.GetClientRect(&tr);
-
-                int x = pt.x + 4;
-                int y = pt.y - 4 - tr.bottom;
-
-                RECT wr;
-
-                GetWindowRect(&wr);
-
-                if (x + tr.right >=  wr.right)
-                    x = pt.x - 4 - tr.right;
-
-                if (y <=  wr.top)
-                    y = pt.y + 4;
-
-                _ToolTipControl.TrackPosition(x, y);
-            }
-            else
-            {
-                _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-
-                delete _TrackingToolInfo;
-                _TrackingToolInfo = nullptr;
-
-                _TrackingGraph = nullptr;
-            }
-        }
-    }
-}
-
-/// <summary>
-/// Turns off the tracking tooltip when the mouse leaves the window.
-/// </summary>
-void UIElement::OnMouseLeave()
-{
-    _ToolTipControl.TrackActivate(_TrackingToolInfo, FALSE);
-
-    delete _TrackingToolInfo;
-    _TrackingToolInfo = nullptr;
-
-    _TrackingGraph = nullptr;
-}
-
-/// <summary>
 /// Resizes all visual elements.
 /// </summary>
 void UIElement::Resize()
@@ -391,21 +338,41 @@ void UIElement::Resize()
     if (_RenderTarget == nullptr)
         return;
 
-    D2D1_SIZE_F Size = _RenderTarget->GetSize();
+    DeleteTrackingToolTip();
+
+    D2D1_SIZE_F SizeF = _RenderTarget->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
-    _FrameCounter.Resize(Size.width, Size.height);
+    _FrameCounter.Resize(SizeF.width, SizeF.height);
 
     // Resize the grid.
-    for (auto & Iter : _Grid)
-        _ToolTipControl.DelTool(Iter._Graph->GetToolInfo(m_hWnd));
+    {
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
 
-    _Grid.Resize(Size.width, Size.height);
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.DelTool(&ti);
+        }
 
-    for (auto & Iter : _Grid)
-        _ToolTipControl.AddTool(Iter._Graph->GetToolInfo(m_hWnd));
+        _CriticalSection.Enter();
 
-    _ThreadState._StyleManager.ResetGradients();
+        {
+            _Grid.Resize(SizeF.width, SizeF.height);
+
+            _ThreadState._StyleManager.ReleaseGradientBrushes();
+        }
+
+        _CriticalSection.Leave();
+
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
+
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.AddTool(&ti);
+        }
+    }
 }
 
 /// <summary>
@@ -484,55 +451,79 @@ void UIElement::UpdateState() noexcept
 {
 //  Log::Write(Log::Level::Trace, "%08X: UpdateState", GetTickCount64());
 
+    {
+        DeleteTrackingToolTip();
+
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
+
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.DelTool(&ti);
+        }
+    }
+
     _CriticalSection.Enter();
 
-    #pragma warning (disable: 4061)
-    switch (_MainState._FFTMode)
     {
-        default:
-            _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
-            break;
-
-        case FFTMode::FFTCustom:
-            _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
-            break;
-
-        case FFTMode::FFTDuration:
-            _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
-            break;
-    }
-    #pragma warning (default: 4061)
-
-    _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
-
-    _ThreadState = _MainState;
-
-    _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
-
-    // Create the graphs.
-    {
-        for (auto & Iter : _Grid)
-            delete Iter._Graph;
-
-        _Grid.clear();
-
-        _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
-
-        for (const auto & Iter : _MainState._GraphSettings)
+        #pragma warning (disable: 4061)
+        switch (_MainState._FFTMode)
         {
-            auto * g = new Graph();
+            default:
+                _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
+                break;
 
-            g->Initialize(&_ThreadState, &Iter);
+            case FFTMode::FFTCustom:
+                _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
+                break;
 
-            _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+            case FFTMode::FFTDuration:
+                _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
+                break;
+        }
+        #pragma warning (default: 4061)
+
+        _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
+
+        _ThreadState = _MainState;
+
+        _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
+
+        // Create the graphs.
+        {
+            for (auto & Iter : _Grid)
+                delete Iter._Graph;
+
+            _Grid.clear();
+
+            _Grid.Initialize(_ThreadState._GridRowCount, _ThreadState._GridColumnCount);
+
+            for (const auto & Iter : _ThreadState._GraphSettings)
+            {
+                auto * g = new Graph();
+
+                g->Initialize(&_ThreadState, &Iter);
+
+                _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+            }
         }
     }
 
     _CriticalSection.Leave();
 
-    _Artwork.RequestColorUpdate();
+    {
+        for (auto & Iter : _Grid)
+        {
+            TTTOOLINFOW ti;
 
-    _ToolTipControl.Activate(_ThreadState._ShowToolTips);
+            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            _ToolTipControl.AddTool(&ti);
+        }
+
+        _ToolTipControl.Activate(_ThreadState._ShowToolTips);
+    }
+
+    _Artwork.RequestColorUpdate();
 
     Resize();
 }
@@ -561,7 +552,16 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _Event.Raise(Event::PlaybackStartedNewTrack);
+/*
+    // Load the album art of the current playing track.
+    {
+        static_api_ptr_t<playback_control> PlaybackControl;
+        metadb_handle_ptr Track;
 
+        if (PlaybackControl->get_now_playing(Track))
+            LoadAlbumArt(Track, fb2k::noAbort);
+    }
+*/
     UpdateState();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
@@ -602,6 +602,9 @@ void UIElement::on_playback_pause(bool)
 {
 }
 
+/// <summary>
+/// Called every second, for time display.
+/// </summary>
 void UIElement::on_playback_time(double time)
 {
     _ThreadState._TrackTime = time;
@@ -617,7 +620,38 @@ void UIElement::on_album_art(album_art_data::ptr aad)
     if (!_MainState._ArtworkFilePath.empty())
         return;
 
-    _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+    if (aad.is_valid())
+        _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
 }
 
 #pragma endregion
+
+/// <summary>
+/// 
+/// </summary>
+void UIElement::LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort)
+{
+    static_api_ptr_t<album_art_manager_v2> aam;
+
+    auto Extractor = aam->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+
+    try
+    {
+        auto aad = Extractor->query(album_art_ids::cover_front, abort);
+
+        if (aad.is_valid())
+            _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+    }
+    catch (const exception_album_art_not_found &)
+    {
+        return;
+    }
+    catch (const exception_aborted &)
+    {
+        throw;
+    }
+    catch (...)
+    {
+        return;
+    }
+}

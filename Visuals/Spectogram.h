@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.03.17) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.04.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -22,6 +22,9 @@
 
 #include <deque>
 
+#include "SpectogramXAxis.h"
+#include "SpectogramYAxis.h"
+
 class Spectogram : public Element
 {
 public:
@@ -37,19 +40,26 @@ public:
     void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
     void Reset();
 
+    const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
+
+    void ReleaseDeviceSpecificResources();
+
 private:
-    void Update(const FrequencyBands & frequencyBands, double time) noexcept;
+    void Update(const FrequencyBands & frequencyBands, double time, double sampleRate) noexcept;
+
+    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
+    void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
+    void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
     void InitYAxis(const FrequencyBands & frequencyBands) noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
+
+    void Resize() noexcept;
 
 private:
-    D2D1_RECT_F _Bounds;
-    D2D1_SIZE_F _Size;
-
-    uint32_t _X;
+    D2D1_RECT_F _BitmapBounds;
+    FLOAT _X;
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
@@ -57,15 +67,6 @@ private:
     size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
-
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    FLOAT _XTextWidth;  // Width of a label
-    FLOAT _XTextHeight; // Height of the X axis area (Font size-dependent).
-
-    FLOAT _YTextWidth;  // Width of a label
-    FLOAT _YTextHeight; // Height of the Y axis area (Font size-dependent).
 
     struct XLabel
     {
@@ -97,19 +98,23 @@ private:
 
     std::vector<YLabel> _YLabels;
 
-    CComPtr<IDWriteTextFormat> _XTextFormat;
-    CComPtr<IDWriteTextFormat> _YTextFormat;
-
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
-    Style * _ForegroundStyle;
+    Style * _SpectogramStyle;
 
-    Style * _XAxisLineStyle;
-    Style * _XAxisTextStyle;
+    Style * _XLineStyle;
+    Style * _XTextStyle;
 
-    Style * _YAxisLineStyle;
-    Style * _YAxisTextStyle;
+    Style * _YLineStyle;
+    Style * _YTextStyle;
+
+    Style * _NyquistMarker;
 
     D2D1_SIZE_F _BitmapSize;
+
+    SpectogramXAxis _XAxis;
+    SpectogramYAxis _YAxis;
+
+    const FLOAT Offset = 4.f; // Distance between the tick and the text.
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.03.17) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.04.02) P. Stuer **/
 
 #include "Spectrum.h"
 
@@ -15,12 +15,15 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state, const GraphSettings * settings)
+void Spectrum::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands)
 {
     _State = state;
     _GraphSettings = settings;
 
     ReleaseDeviceSpecificResources();
+
+    _XAxis.Initialize(state, settings, frequencyBands);
+    _YAxis.Initialize(state, settings);
 }
 
 /// <summary>
@@ -29,6 +32,34 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings)
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
     _Bounds = rect;
+    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+
+    _OpacityMask.Release();
+
+    _IsResized = true;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void Spectrum::Resize() noexcept
+{
+    if (!_IsResized)
+        return;
+
+    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
+
+    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
+
+    _XAxis.Move({ _Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom });
+    _YAxis.Move({ _Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb });
+
+    _ClientBounds = { _Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb };
+    _ClientSize = { _ClientBounds.right - _ClientBounds.left, _ClientBounds.bottom - _ClientBounds.top };
+
+    _IsResized = false;
 }
 
 /// <summary>
@@ -36,57 +67,29 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    {
-        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
-
-        if (_GraphSettings->_FlipHorizontally)
-        {
-            const FLOAT Width = _Bounds.right - _Bounds.left;
-
-            Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, Width, 0.f);
-        }
-
-        if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
-        {
-            const FLOAT Height = _Bounds.bottom - _Bounds.top;
-
-            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, Height);
-
-            Transform = Transform * FlipV;
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Bounds.left, _Bounds.top);
-
-        renderTarget->SetTransform(Transform * Translate);
-    }
-
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
-    if (SUCCEEDED(hr))
+    if (!SUCCEEDED(hr))
+        return;
+
     {
-        switch (_State->_VisualizationType)
-        {
-            default:
+        SetTransform(renderTarget, _ClientBounds);
 
-            case VisualizationType::Bars:
-                RenderBars(renderTarget, frequencyBands, sampleRate);
-                break;
-
-            case VisualizationType::Curve:
-                RenderCurve(renderTarget, frequencyBands, sampleRate);
-                break;
-
-            case VisualizationType::Spectogram:
-                break;
-        }
+        if (_State->_VisualizationType == VisualizationType::Bars)
+            RenderBars(renderTarget, frequencyBands, sampleRate);
+        else
+        if (_State->_VisualizationType == VisualizationType::Curve)
+            RenderCurve(renderTarget, frequencyBands, sampleRate);
 
         if (_NyquistMarker->_ColorSource != ColorSource::None)
             RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
+
+        ResetTransform(renderTarget);
     }
 
-    {
-        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-    }
+    _XAxis.Render(renderTarget);
+
+    _YAxis.Render(renderTarget);
 }
 
 /// <summary>
@@ -95,14 +98,14 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
 /// </summary>
 void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
 {
-    const FLOAT Width = _Bounds.right - _Bounds.left;
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT Bandwidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
+    const FLOAT Bandwidth = Max(::floor(_ClientSize.width / (FLOAT) frequencyBands.size()), 2.f);
+
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) frequencyBands.size();
 
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
     const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
 
-    FLOAT x1 = 0.f;
+    FLOAT x1 = (_ClientSize.width - SpectrumWidth) / 2.f;
     FLOAT x2 = x1 + Bandwidth;
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
@@ -115,18 +118,31 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
         assert(InRange(fb.CurValue, 0.0, 1.0));
         assert(InRange(fb.Peak, 0.0, 1.0));
 
-        D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, Height - PaddingY };
+        x1 = Clamp(x1, 0.f, _ClientSize.width);
+        x2 = Clamp(x2, 0.f, _ClientSize.width);
+
+        D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, _ClientSize.height - PaddingY };
 
         // Draw the bar background, even above the Nyquist frequency.
         if (fb.HasDarkBackground)
         {
             if (_DarkBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
+            {
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _DarkBackground->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
         }
         else
         {
             if (_LightBackground->_ColorSource != ColorSource::None)
-                renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
+            {
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _LightBackground->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
         }
 
         const bool GreaterThanNyquist = fb.Ctr >= (sampleRate / 2.);
@@ -136,12 +152,12 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             if ((_State->_PeakMode != PeakMode::None) && (fb.Peak > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (Height * fb.Peak);
+                Rect.bottom = (FLOAT) (_ClientSize.height * fb.Peak);
 
                 // Draw the peak indicator area.
                 if (_PeakArea->_ColorSource != ColorSource::None)
                 {
-                    if ((_PeakArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
+                    if ((_PeakArea->_ColorSource == ColorSource::Gradient) && IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _PeakArea->SetBrushColor(fb.Peak);
 
                     if (!_State->_LEDMode)
@@ -153,8 +169,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 // Draw the peak indicator top.
                 if (_PeakTop->_ColorSource != ColorSource::None)
                 {
-                    Rect.top    = ::ceil(Clamp(Rect.bottom - PeakThickness, 0.f, Height));
-                    Rect.bottom = ::ceil(Clamp(Rect.top    + PeakThickness, 0.f, Height));
+                    Rect.top    = ::ceil(Clamp(Rect.bottom - PeakThickness, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(Clamp(Rect.top    + PeakThickness, 0.f, _ClientSize.height));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _PeakTop->_Opacity;
 
@@ -166,12 +182,12 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (Height * fb.CurValue);
+                Rect.bottom = (FLOAT) (_ClientSize.height * fb.CurValue);
 
                 // Draw the area of the bar.
                 if (_BarArea->_ColorSource != ColorSource::None)
                 {
-                    if ((_BarArea->_Flags & (Style::HorizontalGradient | Style::AmplitudeBasedColor)) == (Style::HorizontalGradient | Style::AmplitudeBasedColor))
+                    if ((_BarArea->_ColorSource == ColorSource::Gradient) && IsSet(_BarArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _BarArea->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)
@@ -183,15 +199,15 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
                 // Draw the top of the bar.
                 if (_BarTop->_ColorSource != ColorSource::None)
                 {
-                    Rect.top    = Clamp(Rect.bottom - BarThickness, 0.f, Height);
-                    Rect.bottom = Clamp(Rect.top    + BarThickness, 0.f, Height);
+                    Rect.top    = Clamp(Rect.bottom - BarThickness, 0.f, _ClientSize.height);
+                    Rect.bottom = Clamp(Rect.top    + BarThickness, 0.f, _ClientSize.height);
 
                     renderTarget->FillRectangle(Rect, _BarTop->_Brush);
                 }
             }
         }
 
-        x1 = ::round(x2);
+        x1 = x2;
         x2 = x1 + Bandwidth;
     }
 
@@ -275,14 +291,22 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 /// </summary>
 void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept
 {
+    const FLOAT BandWidth = Max(::floor(_ClientSize.width / (FLOAT) frequencyBands.size()), 2.f); // In pixels
+
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) frequencyBands.size() : _ClientSize.width;
+
+    const FLOAT xl = ((_ClientSize.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
+
     const double MinScale = ScaleF(frequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(frequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
     const double NyquistScale = Clamp(ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _Bounds.right - _Bounds.left);
+    const FLOAT dx = Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
-    renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _Bounds.bottom - _Bounds.top), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
+    const FLOAT x = xl + dx;
+
+    renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
 
 /// <summary>
@@ -293,140 +317,77 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 {
     HRESULT hr = S_OK;
 
+    if (SUCCEEDED(hr))
+        hr = _XAxis.CreateDeviceSpecificResources(renderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _YAxis.CreateDeviceSpecificResources(renderTarget);
+
+    if (SUCCEEDED(hr))
+        Resize();
+
     if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
         hr = CreateOpacityMask(renderTarget);
 
-    const D2D1_SIZE_F Size = { _Bounds.right - _Bounds.left, _Bounds.bottom - _Bounds.top };
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
 
     if (SUCCEEDED(hr))
-    {
-        if (_BarArea == nullptr)
-            _BarArea = _State->_StyleManager.GetStyle(VisualElement::BarArea);
-
-        if (_BarArea && (_BarArea->_Brush == nullptr))
-            hr = _BarArea->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);
 
     if (SUCCEEDED(hr))
-    {
-        if (_BarTop == nullptr)
-            _BarTop = _State->_StyleManager.GetStyle(VisualElement::BarTop);
-
-        if (_BarTop && (_BarTop->_Brush == nullptr))
-            hr = _BarTop->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_PeakArea);
 
     if (SUCCEEDED(hr))
-    {
-        if (_PeakArea == nullptr)
-            _PeakArea = _State->_StyleManager.GetStyle(VisualElement::BarPeakArea);
-
-        if (_PeakArea && (_PeakArea->_Brush == nullptr))
-            hr = _PeakArea->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_PeakTop);
 
     if (SUCCEEDED(hr))
-    {
-        if (_PeakTop == nullptr)
-            _PeakTop = _State->_StyleManager.GetStyle(VisualElement::BarPeakTop);
-
-        if (_PeakTop && (_PeakTop->_Brush == nullptr))
-            hr = _PeakTop->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackground);
 
     if (SUCCEEDED(hr))
-    {
-        if (_DarkBackground == nullptr)
-            _DarkBackground = _State->_StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-        if (_DarkBackground && (_DarkBackground->_Brush == nullptr))
-            hr = _DarkBackground->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackground);
 
     if (SUCCEEDED(hr))
-    {
-        if (_LightBackground == nullptr)
-            _LightBackground = _State->_StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-        if (_LightBackground && (_LightBackground->_Brush == nullptr))
-            hr = _LightBackground->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLine);
 
     if (SUCCEEDED(hr))
-    {
-        if (_CurveLine == nullptr)
-            _CurveLine = _State->_StyleManager.GetStyle(VisualElement::CurveLine);
-
-        if (_CurveLine && (_CurveLine->_Brush == nullptr))
-            hr = _CurveLine->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveArea);
 
     if (SUCCEEDED(hr))
-    {
-        if (_CurveArea == nullptr)
-            _CurveArea = _State->_StyleManager.GetStyle(VisualElement::CurveArea);
-
-        if (_CurveArea && (_CurveArea->_Brush == nullptr))
-            hr = _CurveArea->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLine);
 
     if (SUCCEEDED(hr))
-    {
-        if (_CurvePeakLine == nullptr)
-            _CurvePeakLine = _State->_StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-        if (_CurvePeakLine && (_CurvePeakLine->_Brush == nullptr))
-            hr = _CurvePeakLine->CreateDeviceSpecificResources(renderTarget, Size);
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakArea);
 
     if (SUCCEEDED(hr))
-    {
-        if (_CurvePeakArea == nullptr)
-            _CurvePeakArea = _State->_StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-        if (_CurvePeakArea && (_CurvePeakArea->_Brush == nullptr))
-            hr = _CurvePeakArea->CreateDeviceSpecificResources(renderTarget, Size);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        if (_NyquistMarker == nullptr)
-            _NyquistMarker = _State->_StyleManager.GetStyle(VisualElement::NyquistMarker);
-
-        if (_NyquistMarker && (_NyquistMarker->_Brush == nullptr))
-            hr = _NyquistMarker->CreateDeviceSpecificResources(renderTarget, Size);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-    }
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _ClientSize, L"", &_NyquistMarker);
 
     return hr;
 }
 
 /// <summary>
-/// Creates an opacity mask to render the LED's.
+/// Creates an opacity mask to render the LEDs.
 /// </summary>
 HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 {
-    D2D1_SIZE_F Size = renderTarget->GetSize();
-
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, Size.height), &rt);
+    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), &rt);
 
     if (SUCCEEDED(hr))
     {
         CComPtr<ID2D1SolidColorBrush> Brush;
 
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 1.f)), &Brush);
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), &Brush);
 
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
 
-            for (FLOAT y = 2.f; y < Size.height; y += 4)
-                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + 2.f), Brush);
+            rt->Clear();
+
+            for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
+                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
 
             hr = rt->EndDraw();
         }
@@ -449,9 +410,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
 
     bool IsFlatLine = true;
 
-    const FLOAT Width = _Bounds.right - _Bounds.left;
-    const FLOAT Height = _Bounds.bottom - _Bounds.top;
-    const FLOAT BandWidth = Max((Width / (FLOAT) frequencyBands.size()), 1.f);
+    const FLOAT BandWidth = Max((_ClientSize.width / (FLOAT) frequencyBands.size()), 1.f);
 
     FLOAT x = BandWidth / 2.f; // Make sure the knots are nicely centered in the band rectangle.
     FLOAT y = 0.f;
@@ -463,10 +422,9 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
         if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
             break;
 
-//      double Value = !usePeak ? _GraphSettings->ScaleA(fb.CurValue) : fb.Peak;
         double Value = !usePeak ? fb.CurValue : fb.Peak;
 
-        y = Clamp((FLOAT)(Value * Height), 0.f, Height);
+        y = Clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
 
         points.p0.push_back(D2D1::Point2F(x, y));
 
@@ -489,8 +447,8 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequ
 
         for (size_t i = 0; i < (n - 1); ++i)
         {
-            points.p1[i].y = Clamp(points.p1[i].y, 0.f, Height);
-            points.p2[i].y = Clamp(points.p2[i].y, 0.f, Height);
+            points.p1[i].y = Clamp(points.p1[i].y, 0.f, _ClientSize.height);
+            points.p2[i].y = Clamp(points.p2[i].y, 0.f, _ClientSize.height);
         }
     }
 
@@ -545,27 +503,22 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// </summary>
 void Spectrum::ReleaseDeviceSpecificResources()
 {
-    _CurveLine = nullptr;
-    _CurveArea = nullptr;
-    _CurvePeakLine = nullptr;
-    _CurvePeakArea = nullptr;
+    _YAxis.ReleaseDeviceSpecificResources();
+    _XAxis.ReleaseDeviceSpecificResources();
 
-    _BarArea = nullptr;
-    _BarTop = nullptr;
-    _PeakArea = nullptr;
-    _PeakTop = nullptr;
-    _DarkBackground = nullptr;
-    _LightBackground = nullptr;
+    SafeRelease(&_CurveLine);
+    SafeRelease(&_CurveArea);
+    SafeRelease(&_CurvePeakLine);
+    SafeRelease(&_CurvePeakArea);
 
-    _NyquistMarker = nullptr;
+    SafeRelease(&_BarArea);
+    SafeRelease(&_BarTop);
+    SafeRelease(&_PeakArea);
+    SafeRelease(&_PeakTop);
+    SafeRelease(&_DarkBackground);
+    SafeRelease(&_LightBackground);
 
-    for (const auto & Iter :
-    {
-        VisualElement::BarArea, VisualElement::BarTop, VisualElement::BarPeakArea, VisualElement::BarPeakTop, VisualElement::BarDarkBackground, VisualElement::BarLightBackground,
-        VisualElement::CurveLine, VisualElement::CurveArea, VisualElement::CurvePeakLine, VisualElement::CurvePeakArea,
-        VisualElement::NyquistMarker
-    })
-        _State->_StyleManager.GetStyle(Iter)->ReleaseDeviceSpecificResources();
+    SafeRelease(&_NyquistMarker);
 
     _OpacityMask.Release();
 }

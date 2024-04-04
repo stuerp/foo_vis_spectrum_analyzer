@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.03.09) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.04.02) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@
 class YAxis : public Element
 {
 public:
-    YAxis() : _FontFamilyName(L"Segoe UI"), _FontSize(6.f), _Bounds(), _Width(30.f), _Height() { }
+    YAxis() { }
 
     YAxis(const YAxis &) = delete;
     YAxis & operator=(const YAxis &) = delete;
@@ -41,11 +41,13 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    FLOAT GetWidth() const { return _Width; }
+    FLOAT GetWidth() const
+    {
+        return _TextStyle->_TextWidth;
+    }
 
 private:
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
+    void Resize() noexcept;
 
 private:
     bool _FlipVertically;
@@ -64,17 +66,6 @@ private:
 
     std::vector<Label> _Labels;
 
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
-
-    // Device-independent resources
-    D2D1_RECT_F _Bounds;
-    FLOAT _Width;  // Width of the Y axis area (Font size-dependent).
-    FLOAT _Height; // Height of a label
-
-    CComPtr<IDWriteTextFormat> _TextFormat;
-
     Style * _LineStyle;
     Style * _TextStyle;
-
 };

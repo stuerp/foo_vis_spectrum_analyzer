@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.03.10) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.01) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -795,6 +795,7 @@
     #pragma endregion
 
     #pragma region Color Order
+
     // Label
     #define W_G11    66
     #define H_G11    H_LBL
@@ -806,6 +807,7 @@
     #define H_G12    H_CBX
     #define X_G12    X_G11 + W_G11 + IX
     #define Y_G12    Y_G11
+
     #pragma endregion
 
     // Checkbox: Show artwork on background
@@ -814,12 +816,28 @@
     #define X_G02    X_B06 + 5
     #define Y_G02    Y_G12 + H_G12 + IY
 
+    #pragma region Fit mode
+
+    // Label: Fit mode
+    #define W_G30    66
+    #define H_G30    H_LBL
+    #define X_G30    X_G02
+    #define Y_G30    Y_G02 + H_G02 + IY
+
+    // Combobox: Fit mode
+    #define W_G31    86
+    #define H_G31    H_CBX
+    #define X_G31    X_G30 + W_G30 + IX
+    #define Y_G31    Y_G30
+
+    #pragma endregion
+
     #pragma region Artwork Opacity
     // Label
     #define W_G03    66
     #define H_G03    H_LBL
-    #define X_G03    X_G02
-    #define Y_G03    Y_G02 + H_G02 + IY
+    #define X_G03    X_G30
+    #define Y_G03    Y_G31 + H_G31 + IY
 
     // Textbox
     #define W_G04    30
@@ -849,7 +867,7 @@
     #pragma endregion
 
 #define W_B06  184
-#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G04 + IY + H_G14 + 7
+#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
 
 #pragma region Graphs
@@ -1114,21 +1132,83 @@
 #define Y_A54    Y_A53
 #pragma endregion
 
-#pragma region Bars
+#pragma region LEDs
 // Groupbox
 #define X_B07   X_E01
 #define Y_B07   Y_A54 + H_A54 + IY
 
     #pragma region LED mode
     // Checkbox
-    #define W_C12    80
+    #define W_C12    42
     #define H_C12    H_CHB
     #define X_C12    X_B07 + 5
     #define Y_C12    Y_B07 + 11
     #pragma endregion
 
-#define W_B07  176 // 5 + W_A09 + IX + W_A10  + 5
-#define H_B07   11 + H_C12 + 7
+    #pragma region LED size
+    // Label
+    #define W_C17    42
+    #define H_C17    H_LBL
+    #define X_C17    X_C12
+    #define Y_C17    Y_C12 + H_C12
+
+    // Textbox
+    #define W_C18    30
+    #define H_C18    H_TBX
+    #define X_C18    X_C17 + W_C17 + IX
+    #define Y_C18    Y_C17
+    #pragma endregion
+
+    #pragma region LED gap
+    // Label
+    #define W_C19    42
+    #define H_C19    H_LBL
+    #define X_C19    X_C17
+    #define Y_C19    Y_C18 + H_C18 + IY
+
+    // Textbox
+    #define W_C20    30
+    #define H_C20    H_TBX
+    #define X_C20    X_C19 + W_C19 + IX
+    #define Y_C20    Y_C19
+    #pragma endregion
+
+#define W_B07  100
+#define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + 7
+#pragma endregion
+
+#pragma region Spectogram
+// Groupbox
+#define X_B08   X_E01
+#define Y_B08   Y_B07 + H_B07 + IY
+
+    #pragma region Scrolling
+    // Checkbox
+    #define W_C15    80
+    #define H_C15    H_CHB
+    #define X_C15    X_B08 + 5
+    #define Y_C15    Y_B08 + 11
+    #pragma endregion
+
+#define W_B08  W_B07
+#define H_B08   11 + H_C15 + 7
+#pragma endregion
+
+#pragma region Peak Meter
+// Groupbox
+#define X_B12   X_B08
+#define Y_B12   Y_B08 + H_B08 + IY
+
+    #pragma region Horizontal
+    // Checkbox
+    #define W_C16    80
+    #define H_C16    H_CHB
+    #define X_C16    X_B12 + 5
+    #define Y_C16    Y_B12 + 11
+    #pragma endregion
+
+#define W_B12  W_B08
+#define H_B12  11 + H_C16 + 7
 #pragma endregion
 
 #pragma endregion

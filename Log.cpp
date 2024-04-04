@@ -45,7 +45,6 @@ void Write(Level logLevel, const char * format, ...) noexcept
 
     ::vsprintf_s(Text, _countof(Text), format, va);
     ::OutputDebugStringA(Text); ::OutputDebugStringA("\n");
-
 #endif
 
     va_end(va);

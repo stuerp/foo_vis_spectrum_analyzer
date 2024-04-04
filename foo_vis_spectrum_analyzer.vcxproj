@@ -145,8 +145,8 @@
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PrecompiledHeaderFile>
-      </PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>framework.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -196,9 +196,13 @@
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
+    <ClInclude Include="Analyzers\AnimatedVariable.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\ConfigurationDialog.h" />
+    <ClInclude Include="Visuals\PeakMeter.h" />
     <ClInclude Include="Visuals\Spectogram.h" />
+    <ClInclude Include="Visuals\SpectogramXAxis.h" />
+    <ClInclude Include="Visuals\SpectogramYAxis.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
@@ -257,15 +261,22 @@
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\AnalogStyleAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Analysis.cpp" />
+    <ClCompile Include="Analyzers\AnimatedVariable.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
+    <ClCompile Include="framework.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">framework.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="ToneGenerator.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
+    <ClCompile Include="ToolTips.cpp" />
     <ClCompile Include="Visuals\Gradients.cpp" />
     <ClCompile Include="Visuals\GraphSettings.cpp" />
     <ClCompile Include="State.cpp" />
@@ -276,6 +287,7 @@
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Visuals\Element.cpp" />
     <ClCompile Include="Configuration\PresetManager.cpp" />
+    <ClCompile Include="Visuals\PeakMeter.cpp" />
     <ClCompile Include="Visuals\Spectogram.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />

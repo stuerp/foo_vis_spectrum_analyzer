@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.03.09) P. Stuer **/
+/** $VER: State.cpp (2024.04.01) P. Stuer **/
 
 #include "State.h"
 
@@ -202,6 +202,8 @@ void State::Reset() noexcept
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _LEDMode = false;
+    _LEDSize = 2.f;
+    _LEDGap = 2.f;
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
@@ -216,6 +218,12 @@ void State::Reset() noexcept
     _UseCustomPeakLineColor_Deprecated = false;
     _AreaOpacity_Deprecated = 0.5f;
 
+    // Spectogram
+    _ScrollingSpectogram = true;
+
+    // Peak Meter
+    _HorizontalPeakMeter = false;
+
     _StyleManager.Reset();
 
     pfc::string Path = core_api::get_profile_path();
@@ -224,6 +232,8 @@ void State::Reset() noexcept
         _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
     else
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
+
+    _Barrier = 0;
 }
 
 /// <summary>
@@ -428,6 +438,8 @@ State & State::operator=(const State & other)
     _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
     _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
     _LEDMode = other._LEDMode;
+    _LEDSize = other._LEDSize;
+    _LEDGap = other._LEDGap;
     _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
@@ -441,6 +453,12 @@ State & State::operator=(const State & other)
     _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
     _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
     _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
+
+    // Spectogram
+    _ScrollingSpectogram = other._ScrollingSpectogram;
+
+    // Peak Meter
+    _HorizontalPeakMeter = other._HorizontalPeakMeter;
 
     #pragma endregion
 
@@ -762,17 +780,33 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 20)
         {
-            if (!isPreset)
-            {
-                pfc::string Path;
+            pfc::string Path;
 
-                reader->read_string(Path, abortHandler); _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
-            }
+            reader->read_string(Path, abortHandler); 
+
+            if (!isPreset)
+                _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
+        }
+
+        if (Version >= 21)
+        {
+            reader->read_object_t(_ScrollingSpectogram, abortHandler);
+        }
+
+        if (Version >= 22)
+        {
+            reader->read_object_t(_HorizontalPeakMeter, abortHandler);
+        }
+
+        if (Version >= 23)
+        {
+            reader->read_object_t(_LEDSize, abortHandler);
+            reader->read_object_t(_LEDGap, abortHandler);
         }
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write DUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%s: Failed to read DUI configuration: %s", core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -1024,6 +1058,16 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
             writer->write_string(Path, abortHandler);
         }
+
+        // Version 21, v0.7.5.0-beta1
+        writer->write_object_t(_ScrollingSpectogram, abortHandler);
+
+        // Version 22, v0.7.5.0-beta2
+        writer->write_object_t(_HorizontalPeakMeter, abortHandler);
+
+        // Version 23, v0.7.5.0-beta3
+        writer->write_object_t(_LEDSize, abortHandler);
+        writer->write_object_t(_LEDGap, abortHandler);
     }
     catch (exception & ex)
     {
