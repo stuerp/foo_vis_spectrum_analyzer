@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.01) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.05) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -50,6 +50,9 @@ private:
     void Resize() noexcept;
 
 private:
+    D2D1_RECT_F _ClientRect;
+    D2D1_SIZE_F _ClientSize;
+
     struct Label
     {
         double Amplitude;
@@ -71,6 +74,10 @@ private:
     FLOAT _YMax;
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 
     Style * _BackgroundStyle;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.04.02) P. Stuer **/
+/** $VER: Rendering.cpp (2024.04.05) P. Stuer **/
 
 #include "UIElement.h"
 
@@ -390,8 +390,7 @@ HRESULT UIElement::CreateArtworkDependentResources()
 void UIElement::ReleaseDeviceSpecificResources()
 {
 #ifdef _DEBUG
-    if (_DebugBrush)
-        _DebugBrush.Release();
+    _DebugBrush.Release();
 #endif
     _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
 
