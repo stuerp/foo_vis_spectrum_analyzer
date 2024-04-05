@@ -9,7 +9,7 @@
 
 #pragma hdrstop
 
-#define _DEBUG_RENDER
+//#define _DEBUG_RENDER
 
 PeakMeter::PeakMeter()
 {
@@ -83,10 +83,16 @@ void PeakMeter::Resize() noexcept
     if (_State->_HorizontalPeakMeter)
     {
         if (_GraphSettings->_XAxisBottom)
-            _ClientRect.left  += _XTextStyle->_TextWidth;
+            if (_GraphSettings->_FlipHorizontally)
+                _ClientRect.right -= _XTextStyle->_TextWidth;
+            else
+                _ClientRect.left  += _XTextStyle->_TextWidth;
 
         if (_GraphSettings->_XAxisTop)
-            _ClientRect.right -= _XTextStyle->_TextWidth;
+            if (_GraphSettings->_FlipHorizontally)
+                _ClientRect.left  += _XTextStyle->_TextWidth;
+            else
+                _ClientRect.right -= _XTextStyle->_TextWidth;
 
         if (_GraphSettings->_FlipVertically)
         {
@@ -147,10 +153,20 @@ void PeakMeter::Resize() noexcept
             Iter.PointL = D2D1_POINT_2F(x, _ClientRect.top);
             Iter.PointR = D2D1_POINT_2F(x, _ClientRect.bottom);
 
-            x = Clamp(x - cx, _ClientRect.left - cx, _ClientRect.right + cx); // Center the label horizontally on the tick.
+            if (_GraphSettings->_FlipHorizontally)
+                x = Clamp(x - cx, _GraphSettings->_XAxisTop    ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
+            else
+                x = Clamp(x - cx, _GraphSettings->_XAxisBottom ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
 
-            Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
-            Iter.RectR = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
+            if (_GraphSettings->_FlipVertically)
+                Iter.RectL = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
+            else
+                Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
+
+            if (_GraphSettings->_FlipVertically)
+                Iter.RectR = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
+            else
+                Iter.RectR = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
         }
     }
     else
@@ -169,7 +185,10 @@ void PeakMeter::Resize() noexcept
             Iter.PointL = D2D1_POINT_2F(_ClientRect.left,  y);
             Iter.PointR = D2D1_POINT_2F(_ClientRect.right, y);
 
-            y = Clamp(y - cy, _ClientRect.top - cy, _ClientRect.bottom + cy); // Center the label vertically on the tick.
+            if (_GraphSettings->_FlipVertically)
+                y = Clamp(y - cy, _GraphSettings->_XAxisBottom ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+            else
+                y = Clamp(y - cy, _GraphSettings->_XAxisTop    ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
 
             Iter.RectL = { _Bounds.left,      y, _ClientRect.left, y + _YTextStyle->_TextHeight };
             Iter.RectR = { _ClientRect.right, y, _Bounds.right   , y + _YTextStyle->_TextHeight };
@@ -405,8 +424,8 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
                 if (_GraphSettings->_XAxisTop)
                 {
-                    Rect.left  = _GraphSettings->_FlipHorizontally ? _ClientRect.right + 1.f: _Bounds.left;
-                    Rect.right = _GraphSettings->_FlipHorizontally ? _Bounds.right : _ClientRect.left - 1.f;
+                    Rect.left  = _GraphSettings->_FlipHorizontally ? _Bounds.left : _ClientRect.right + 1.f;
+                    Rect.right = _GraphSettings->_FlipHorizontally ? _ClientRect.left - 1.f : _Bounds.right;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -421,8 +440,8 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
                 if (_GraphSettings->_XAxisBottom)
                 {
-                    Rect.left  = _GraphSettings->_FlipHorizontally ? _Bounds.left : _ClientRect.right + 1.f;
-                    Rect.right = _GraphSettings->_FlipHorizontally ? _ClientRect.left - 1.f : _Bounds.right;
+                    Rect.left  = _GraphSettings->_FlipHorizontally ? _ClientRect.right + 1.f : _Bounds.left;
+                    Rect.right = _GraphSettings->_FlipHorizontally ? _Bounds.right : _ClientRect.left - 1.f;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
