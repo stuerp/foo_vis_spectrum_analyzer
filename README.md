@@ -90,7 +90,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.5.1, 2024-04-xx
 
-* Fixed: Peak Meter axis now behave as intended.
+* Fixed: Peak Meter axes now behave as intended.
 * Fixed: Sample rate initialization and Nyquist frequency marker display when the component is used in a popup window.
 
 v0.7.5.0, 2024-04-04

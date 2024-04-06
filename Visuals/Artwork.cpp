@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.03.29) P. Stuer **/
+/** $VER: Artwork.cpp (2024.04.06) P. Stuer **/
 
 #include "framework.h"
 #include "Artwork.h"
@@ -25,7 +25,7 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
         _FilePath.clear();
     }
 
-    _Status = Initialized;
+    SetStatus(Initialized);
 
     _CriticalSection.Leave();
 
@@ -44,7 +44,7 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
     _FilePath = filePath;
     _Raster.clear();
 
-    _Status = Initialized;
+    SetStatus(Initialized);
 
     _CriticalSection.Leave();
 
@@ -108,12 +108,14 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
 /// </summary>
 HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
-    HRESULT hr = S_OK;
-
     _CriticalSection.Enter();
+
+    HRESULT hr = S_OK;
 
     if (!_Raster.empty() || !_FilePath.empty())
     {
+Log::Write(Log::Level::Trace, "%08X Realizing artwork", (uint32_t) ::GetTickCount64());
+
         // Load the frame from the raster data.
         if (_Frame == nullptr)
             hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
@@ -133,7 +135,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
             hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
             if (SUCCEEDED(hr))
-                _Status = Realized;
+                SetStatus(Realized);
         }
     }
 
@@ -175,6 +177,8 @@ HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCou
                 colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
         }
     }
+
+    SetStatus(GotColors);
 
     _CriticalSection.Leave();
 

@@ -74,6 +74,8 @@ void UIElement::OnTimer()
         return;
     }
 
+    bool HaveColorsChanged = false;
+
     if (_CriticalSection.TryEnter())
     {
         ProcessEvents();
@@ -81,24 +83,26 @@ void UIElement::OnTimer()
         if (IsWindowVisible())
             Render();
 
+        if (_IsConfigurationChanged)
+        {
+            Log::Write(Log::Level::Trace, "%08X: Sending colors changed message.", (int) ::GetTickCount64());
+
+            _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
+
+            _IsConfigurationChanged = false;
+
+            HaveColorsChanged = true;
+        }
+
         _CriticalSection.Leave();
     }
 
     // Notify the configuration dialog about the changed artwork colors.
-    if (_IsConfigurationChanged)
+    if (HaveColorsChanged && _ConfigurationDialog.IsWindow())
     {
-        if (_CriticalSection.TryEnter())
-        {
-            _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
+        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-            _CriticalSection.Leave();
-
-            // Notify the configuration dialog.
-            if (_ConfigurationDialog.IsWindow())
-                _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-            _IsConfigurationChanged = false;
-        }
+        HaveColorsChanged = false;
     }
 
     ::InterlockedDecrement64(&_ThreadState._Barrier);
@@ -114,8 +118,21 @@ void UIElement::ProcessEvents()
     if (Flags == 0)
         return;
 
+    if (Event::IsRaised(Flags, Event::PlaybackStopped))
+    {
+Log::Write(Log::Level::Trace, "%08X Playback stopped", (uint32_t) ::GetTickCount64());
+
+        _ThreadState._PlaybackTime = 0.;
+        _ThreadState._TrackTime = 0.;
+
+        for (auto & Iter : _Grid)
+            Iter._Graph->Reset();
+    }
+
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
+Log::Write(Log::Level::Trace, "%08X Started new track", (uint32_t) ::GetTickCount64());
+
         _ThreadState._PlaybackTime = 0.;
         _ThreadState._TrackTime = 0.;
 
@@ -129,17 +146,6 @@ void UIElement::ProcessEvents()
 
             _IsConfigurationChanged = true;
         }
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
-    }
-
-    if (Event::IsRaised(Flags, Event::PlaybackStopped))
-    {
-        _ThreadState._PlaybackTime = 0.;
-        _ThreadState._TrackTime = 0.;
-
-        _Artwork.Release();
 
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
@@ -298,6 +304,8 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {
+Log::Write(Log::Level::Trace, "%08X Realizing artwork", (uint32_t) ::GetTickCount64());
+
         for (auto & Iter : _Grid)
             Iter._Graph->ReleaseDeviceSpecificResources();
 
@@ -370,11 +378,9 @@ HRESULT UIElement::CreateArtworkDependentResources()
     {
         _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
         _ThreadState._StyleManager.ReleaseGradientBrushes();
+
+        _IsConfigurationChanged = true;
     }
-
-    _IsConfigurationChanged = true;
-
-    _Artwork.SetIdle();
 
     return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
 }

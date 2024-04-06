@@ -326,7 +326,7 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
 /// </summary>
 void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    if (_Analysis->_MeterValues.size() == 0)
+    if ((_Analysis->_MeterValues.size() == 0) || (_ClientSize.width <= 0.f) || (_ClientSize.height <= 0.f))
         return;
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
@@ -352,6 +352,10 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         for (auto & mv : _Analysis->_MeterValues)
         {
+            // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
+            if ((int) Rect.top & 1)
+                Rect.top--;
+
             Rect.bottom = Clamp(Rect.top + BarHeight, 0.f, _ClientSize.height - 1.f);
 
             // Draw the background.
@@ -367,7 +371,6 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #else
             #endif
             }
-
             // Draw the foreground.
             if (_PeakStyle->_ColorSource != ColorSource::None)
             {
@@ -404,7 +407,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
-            Rect.top -= BarGap + BarHeight + 1.f;
+            Rect.top -= BarGap + BarHeight;
         }
 
         ResetTransform(renderTarget);

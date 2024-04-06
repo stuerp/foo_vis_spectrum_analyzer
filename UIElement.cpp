@@ -450,7 +450,7 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::UpdateState() noexcept
 {
-//  Log::Write(Log::Level::Trace, "%08X: UpdateState", GetTickCount64());
+    Log::Write(Log::Level::Trace, "%08X: UpdateState", (int) GetTickCount64());
 
     {
         DeleteTrackingToolTip();
@@ -524,8 +524,6 @@ void UIElement::UpdateState() noexcept
         _ToolTipControl.Activate(_ThreadState._ShowToolTips);
     }
 
-    _Artwork.RequestColorUpdate();
-
     Resize();
 }
 
@@ -573,17 +571,22 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         _SampleRate = 44100;
 
     // Use the script from the configuration to load the album art.
-    if (track.is_valid() && !_MainState._ArtworkFilePath.empty())
+    if (!_MainState._ArtworkFilePath.empty())
     {
-        titleformat_object::ptr Script;
+        if (track.is_valid())
+        {
+            titleformat_object::ptr Script;
 
-        bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
+            bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
 
-        pfc::string Result;
+            pfc::string Result;
 
-        if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
-            _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
+            if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
+                _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
+        }
     }
+    else
+        _Artwork.Release();
 }
 
 /// <summary>
