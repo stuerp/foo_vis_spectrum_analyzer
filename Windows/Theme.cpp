@@ -1,6 +1,7 @@
 
 /** $VER: Theme.cpp (2024.03.09) P. Stuer **/
 
+#include "framework.h"
 #include "Theme.h"
 
 /// <summary>

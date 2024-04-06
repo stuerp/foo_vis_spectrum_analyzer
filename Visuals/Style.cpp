@@ -1,6 +1,7 @@
 
 /** $VER: Style.cpp (2024.04.02) P. Stuer **/
 
+#include "framework.h"
 #include "Style.h"
 
 #include "Direct2D.h"

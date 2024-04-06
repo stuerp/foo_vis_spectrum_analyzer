@@ -1,6 +1,7 @@
 
-/** $VER: PeakMeter.cpp (2024.04.05) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.06) P. Stuer - Represents a peak meter. **/
 
+#include "framework.h"
 #include "PeakMeter.h"
 
 #include "Support.h"
@@ -22,10 +23,11 @@ PeakMeter::PeakMeter()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void PeakMeter::Initialize(State * state, const GraphSettings * settings)
+void PeakMeter::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
+    _Analysis = analysis;
 
     ReleaseDeviceSpecificResources();
 
@@ -203,7 +205,7 @@ void PeakMeter::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void PeakMeter::Render(ID2D1RenderTarget * renderTarget, Analysis & analysis)
+void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -218,7 +220,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget, Analysis & analysis)
 #endif
 
     DrawScale(renderTarget);
-    DrawMeters(renderTarget, analysis);
+    DrawMeters(renderTarget);
 }
 
 /// <summary>
@@ -322,9 +324,9 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
 /// <summary>
 /// Draws the meters.
 /// </summary>
-void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept
+void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    if (analysis._MeterValues.size() == 0)
+    if (_Analysis->_MeterValues.size() == 0)
         return;
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
@@ -332,7 +334,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-    const FLOAT n = (FLOAT) analysis._MeterValues.size();
+    const FLOAT n = (FLOAT) _Analysis->_MeterValues.size();
     const FLOAT BarGap = 1.f;
     const FLOAT TotalBarGap = BarGap * (n - 1);
     const FLOAT TickSize = 2.f;
@@ -348,7 +350,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
         D2D1_RECT_F Rect = { 0.f, (_ClientSize.height - 1.f) - Offset - BarHeight, 0.f, 0.f };
 
-        for (auto & mv : analysis._MeterValues)
+        for (auto & mv : _Analysis->_MeterValues)
         {
             Rect.bottom = Clamp(Rect.top + BarHeight, 0.f, _ClientSize.height - 1.f);
 
@@ -402,10 +404,6 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
             #endif
             }
 
-            // Animate the scaled peak and RMS values.
-            mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-            mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
             Rect.top -= BarGap + BarHeight + 1.f;
         }
 
@@ -418,7 +416,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
             const FLOAT dy = _GraphSettings->_FlipVertically ? -(_ClientSize.height / n) : (_ClientSize.height / n);
 
-            for (const auto & mv : analysis._MeterValues)
+            for (const auto & mv : _Analysis->_MeterValues)
             {
                 Rect.bottom = Clamp(Rect.top + dy, 0.f, _ClientRect.bottom);
 
@@ -468,7 +466,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
         D2D1_RECT_F Rect = { Offset, 0.f, 0.f, 0.f };
 
-        for (auto & mv : analysis._MeterValues)
+        for (auto & mv : _Analysis->_MeterValues)
         {
             Rect.right = Clamp(Rect.left + BarWidth, 0.f, _ClientSize.width - 1.f);
 
@@ -522,10 +520,6 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
             #endif
             }
 
-            // Animate the scaled peak and RMS values.
-            mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-            mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
             Rect.left = Rect.right + 1.f + BarGap;
         }
 
@@ -546,7 +540,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis
 
             const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(_ClientSize.width / n) : (_ClientSize.width / n);
 
-            for (const auto & mv : analysis._MeterValues)
+            for (const auto & mv : _Analysis->_MeterValues)
             {
                 Rect.right = Clamp(Rect.left + dx, 0.f, _ClientRect.right);
 

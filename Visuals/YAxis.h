@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.04.02) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.04.06) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -32,11 +32,10 @@ public:
     YAxis(YAxis &&) = delete;
     YAxis & operator=(YAxis &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings) noexcept;
-
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect);
-
     void Render(ID2D1RenderTarget * renderTarget);
+    void Reset() { }
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();

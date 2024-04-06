@@ -1,6 +1,7 @@
 
-/** $VER: Spectogram.cpp (2024.04.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.04.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
+#include "framework.h"
 #include "Spectogram.h"
 
 #include "Support.h"
@@ -20,14 +21,15 @@ Spectogram::Spectogram()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectogram::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands)
+void Spectogram::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
+    _Analysis = analysis;
 
     ReleaseDeviceSpecificResources();
 
-    InitYAxis(frequencyBands);
+    InitYAxis();
 }
 
 /// <summary>
@@ -89,7 +91,7 @@ void Spectogram::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectogram.
 /// </summary>
-void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Spectogram::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -98,7 +100,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands &
 
     // Update the offscreen bitmap.
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
-        Update(frequencyBands, _State->_TrackTime, sampleRate / 2.f);
+        Update();
 
     // Draw the offscreen bitmap.
     {
@@ -246,7 +248,7 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
 /// <summary>
 /// Updates this instance.
 /// </summary>
-void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime, double nyquistFrequency) noexcept
+void Spectogram::Update() noexcept
 {
     _BitmapRenderTarget->BeginDraw();
 
@@ -264,9 +266,9 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
         FLOAT y1 = 0.f;
         FLOAT y2 = Bandwidth;
 
-        for (const auto & fb : frequencyBands)
+        for (const auto & fb : _Analysis->_FrequencyBands)
         {
-            if ((fb.Ctr >= nyquistFrequency) && _State->_SuppressMirrorImage)
+            if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                 break;
 
             assert(InRange(fb.CurValue, 0.0, 1.0));
@@ -282,7 +284,7 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
 
     // Draw the Nyquist marker.
     if (_NyquistMarker->_ColorSource != ColorSource::None)
-        RenderNyquistFrequencyMarker(_BitmapRenderTarget, frequencyBands, nyquistFrequency);
+        RenderNyquistFrequencyMarker(_BitmapRenderTarget);
 
     _BitmapRenderTarget->EndDraw();
 
@@ -296,17 +298,17 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
                 Label.X++; // Scroll to the right.
     }
 
-    if (_TrackTime != trackTime) // in seconds
+    if (_TrackTime != _State->_TrackTime) // in seconds
     {
         if (_State->_ScrollingSpectogram)
         {
-            _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
+            _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
 
             if (_XLabels.back().X + Offset + _XTextStyle->_TextWidth < 0.f)
                 _XLabels.pop_back();
         }
         else
-            _XLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) trackTime)), _GraphSettings->_FlipHorizontally ? _Size.width - _X : _X });
+            _XLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? _Size.width - _X : _X });
     }
 }
 
@@ -314,14 +316,14 @@ void Spectogram::Update(const FrequencyBands & frequencyBands, double trackTime,
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double nyquistFrequency) const noexcept
+void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    const double MinScale = ScaleF(frequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleF(frequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double NyquistScale = Clamp(ScaleF(nyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
+    const double NyquistScale = Clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+    const FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
     renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X + 1, y), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
@@ -329,17 +331,19 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, 
 /// <summary>
 /// Initializes the Y-axis.
 /// </summary>
-void Spectogram::InitYAxis(const FrequencyBands & frequencyBands) noexcept
+void Spectogram::InitYAxis() noexcept
 {
     _YLabels.clear();
 
-    if (frequencyBands.size() == 0)
+    const FrequencyBands & fb = _Analysis->_FrequencyBands;
+
+    if (fb.size() == 0)
         return;
 
-    _BandCount = frequencyBands.size();
+    _BandCount = fb.size();
 
-    _LoFrequency = frequencyBands.front().Ctr;
-    _HiFrequency = frequencyBands.back().Ctr;
+    _LoFrequency = fb.front().Ctr;
+    _HiFrequency = fb.back().Ctr;
 
     // Precalculate the labels.
     {
@@ -354,9 +358,9 @@ void Spectogram::InitYAxis(const FrequencyBands & frequencyBands) noexcept
 
             case XAxisMode::Bands:
             {
-                for (size_t i = 0; i < frequencyBands.size(); i += 10)
+                for (size_t i = 0; i < fb.size(); i += 10)
                 {
-                    double Frequency = frequencyBands[i].Ctr;
+                    double Frequency = fb[i].Ctr;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.f", Frequency);
@@ -376,7 +380,7 @@ void Spectogram::InitYAxis(const FrequencyBands & frequencyBands) noexcept
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < fb.back().Lo)
                 {
                     Frequency = j * i;
 
@@ -403,7 +407,7 @@ void Spectogram::InitYAxis(const FrequencyBands & frequencyBands) noexcept
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
-                for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
+                for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
@@ -427,7 +431,7 @@ void Spectogram::InitYAxis(const FrequencyBands & frequencyBands) noexcept
 
                 int j = 0;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < fb.back().Lo)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 

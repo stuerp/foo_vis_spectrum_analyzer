@@ -1,6 +1,7 @@
 ﻿
 /** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
 
+#include "framework.h"
 #include "ConfigurationDialog.h"
 
 #include "Gradients.h"

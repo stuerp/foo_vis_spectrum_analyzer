@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.04.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.04.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -18,7 +18,6 @@
 #include <atlbase.h>
 
 #include "Element.h"
-#include "FrequencyBand.h"
 
 #include <deque>
 
@@ -35,9 +34,9 @@ public:
     Spectogram(Spectogram &&) = delete;
     Spectogram & operator=(Spectogram &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands);
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void Render(ID2D1RenderTarget * renderTarget);
     void Reset();
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
@@ -45,13 +44,13 @@ public:
     void ReleaseDeviceSpecificResources();
 
 private:
-    void Update(const FrequencyBands & frequencyBands, double time, double sampleRate) noexcept;
+    void Update() noexcept;
 
-    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
     void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
     void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
-    void InitYAxis(const FrequencyBands & frequencyBands) noexcept;
+    void InitYAxis() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
 

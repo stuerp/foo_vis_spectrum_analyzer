@@ -1,6 +1,7 @@
 
 /** $VER: CUIElement.cpp (2024.03.13) P. Stuer **/
 
+#include "framework.h"
 #include "CUIElement.h"
 #include "Color.h"
 

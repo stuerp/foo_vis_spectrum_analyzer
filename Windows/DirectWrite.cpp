@@ -1,6 +1,7 @@
 
 /** $VER: DirectWrite.cpp (2024.03.31) P. Stuer **/
 
+#include "framework.h"
 #include "DirectWrite.h"
 
 #include "COMException.h"

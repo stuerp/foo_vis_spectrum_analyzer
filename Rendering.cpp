@@ -1,6 +1,7 @@
 
 /** $VER: Rendering.cpp (2024.04.05) P. Stuer **/
 
+#include "framework.h"
 #include "UIElement.h"
 
 #include "Direct2D.h"
@@ -167,17 +168,11 @@ void UIElement::Render()
         _RenderTarget->BeginDraw();
 
         for (auto & Iter : _Grid)
-            Iter._Graph->Render(_RenderTarget, (double) _SampleRate, _Artwork);
+            Iter._Graph->Render(_RenderTarget, _Artwork);
 
         if (_MainState._ShowFrameCounter)
             _FrameCounter.Render(_RenderTarget);
-#ifdef _DEBUG
-        {
-            D2D1_SIZE_F Size = _RenderTarget->GetSize();
 
-//          _RenderTarget->DrawLine(D2D1::Point2F(0.f,0.f), D2D1::Point2F(Size.width, Size.height), _DebugBrush);
-        }
-#endif
         hr = _RenderTarget->EndDraw();
 
         if (hr == D2DERR_RECREATE_TARGET)

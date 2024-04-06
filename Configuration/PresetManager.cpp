@@ -1,6 +1,7 @@
 
 /** $VER: PresetManager.cpp (2024.03.14) P. Stuer **/
 
+#include "framework.h"
 #include "PresetManager.h"
 
 #include <Path.h>

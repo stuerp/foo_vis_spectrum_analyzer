@@ -1,6 +1,7 @@
 
-/** $VER: YAXis.cpp (2024.04.02) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2024.04.06) P. Stuer - Implements the Y axis of a graph. **/
 
+#include "framework.h"
 #include "YAxis.h"
 
 #include "StyleManager.h"
@@ -11,10 +12,11 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(State * state, const GraphSettings * settings) noexcept
+void YAxis::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
+    _Analysis = analysis;
 
     _FlipVertically = settings->_FlipVertically;
 

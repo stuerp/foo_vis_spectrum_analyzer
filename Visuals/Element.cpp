@@ -1,6 +1,7 @@
 
 /** $VER: Element.cpp (2024.03.31) P. Stuer - Base class for all visual elements **/
 
+#include "framework.h"
 #include "Element.h"
 
 #include "Log.h"

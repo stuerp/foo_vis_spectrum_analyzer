@@ -1,6 +1,7 @@
 
 /** $VER: CMenuListBox.cpp (2024.01.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
+#include "framework.h"
 #include "CMenuListBox.h"
 
 #include "Theme.h"

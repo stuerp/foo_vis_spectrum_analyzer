@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.03.31) P. Stuer **/
+/** $VER: Analysis.h (2024.04.06) P. Stuer **/
 
 #pragma once
 
@@ -83,6 +83,7 @@ public:
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;
+    double _NyquistFrequency;
     std::vector<MeterValue> _MeterValues;
 
     const WindowFunction * _WindowFunction;

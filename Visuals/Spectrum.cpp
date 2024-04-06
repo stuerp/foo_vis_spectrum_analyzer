@@ -1,6 +1,7 @@
 
-/** $VER: Spectrum.cpp (2024.04.02) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.04.06) P. Stuer **/
 
+#include "framework.h"
 #include "Spectrum.h"
 
 #include "Direct2D.h"
@@ -15,15 +16,16 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands)
+void Spectrum::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
+    _Analysis = analysis;
 
     ReleaseDeviceSpecificResources();
 
-    _XAxis.Initialize(state, settings, frequencyBands);
-    _YAxis.Initialize(state, settings);
+    _XAxis.Initialize(state, settings, analysis);
+    _YAxis.Initialize(state, settings, analysis);
 }
 
 /// <summary>
@@ -65,7 +67,7 @@ void Spectrum::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -76,13 +78,13 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
         SetTransform(renderTarget, _ClientBounds);
 
         if (_State->_VisualizationType == VisualizationType::Bars)
-            RenderBars(renderTarget, frequencyBands, sampleRate);
+            RenderBars(renderTarget);
         else
         if (_State->_VisualizationType == VisualizationType::Curve)
-            RenderCurve(renderTarget, frequencyBands, sampleRate);
+            RenderCurve(renderTarget);
 
         if (_NyquistMarker->_ColorSource != ColorSource::None)
-            RenderNyquistFrequencyMarker(renderTarget, frequencyBands, sampleRate);
+            RenderNyquistFrequencyMarker(renderTarget);
 
         ResetTransform(renderTarget);
     }
@@ -96,11 +98,11 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & f
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 {
-    const FLOAT Bandwidth = Max(::floor(_ClientSize.width / (FLOAT) frequencyBands.size()), 2.f);
+    const FLOAT Bandwidth = Max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f);
 
-    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) frequencyBands.size();
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
     const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
@@ -113,7 +115,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-    for (const auto & fb : frequencyBands)
+    for (const auto & fb : _Analysis->_FrequencyBands)
     {
         assert(InRange(fb.CurValue, 0.0, 1.0));
         assert(InRange(fb.Peak, 0.0, 1.0));
@@ -145,7 +147,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
             }
         }
 
-        const bool GreaterThanNyquist = fb.Ctr >= (sampleRate / 2.);
+        const bool GreaterThanNyquist = fb.Ctr >= _Analysis->_NyquistFrequency;
 
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
@@ -219,7 +221,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands
 /// Renders the spectrum analysis as a curve.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate)
+void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -230,7 +232,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
     {
         Points.Clear();
 
-        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, true, Points);
+        hr = CreateGeometryPointsFromAmplitude(Points, true);
 
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && (_CurvePeakArea->_ColorSource != ColorSource::None))
@@ -259,7 +261,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
     {
         Points.Clear();
 
-        hr = CreateGeometryPointsFromAmplitude(frequencyBands, sampleRate, false, Points);
+        hr = CreateGeometryPointsFromAmplitude(Points, false);
 
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && (_CurveArea->_ColorSource != ColorSource::None))
@@ -289,22 +291,18 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBand
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept
+void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    const FLOAT BandWidth = Max(::floor(_ClientSize.width / (FLOAT) frequencyBands.size()), 2.f); // In pixels
+    const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) frequencyBands.size() : _ClientSize.width;
+    const double NyquistScale = Clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
+    const FLOAT BandWidth = Max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In pixels
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
     const FLOAT xl = ((_ClientSize.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
 
-    const double MinScale = ScaleF(frequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleF(frequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-
-    const double NyquistScale = Clamp(ScaleF(sampleRate / 2., _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
-
-    const FLOAT dx = Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
-
-    const FLOAT x = xl + dx;
+    const FLOAT x = xl + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
@@ -403,23 +401,23 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-HRESULT Spectrum::CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & points)
+HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, bool usePeak) const
 {
-    if (frequencyBands.size() < 2)
+    if (_Analysis->_FrequencyBands.size() < 2)
         return E_FAIL;
 
     bool IsFlatLine = true;
 
-    const FLOAT BandWidth = Max((_ClientSize.width / (FLOAT) frequencyBands.size()), 1.f);
+    const FLOAT BandWidth = Max((_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 1.f);
 
     FLOAT x = BandWidth / 2.f; // Make sure the knots are nicely centered in the band rectangle.
     FLOAT y = 0.f;
 
     // Create all the knots.
-    for (const auto & fb: frequencyBands)
+    for (const auto & fb: _Analysis->_FrequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if ((fb.Ctr > (sampleRate / 2.)) && _State->_SuppressMirrorImage)
+        if ((fb.Ctr > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
             break;
 
         double Value = !usePeak ? fb.CurValue : fb.Peak;

@@ -1,6 +1,7 @@
 
 /** $VER: Direct2D.cpp (2024.03.12) P. Stuer **/
 
+#include "framework.h"
 #include "Direct2D.h"
 
 #include "COMException.h"

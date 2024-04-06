@@ -1,6 +1,7 @@
 
 /** $VER: Support.cpp (2024.03.09) P. Stuer **/
 
+#include "framework.h"
 #include "Support.h"
 
 #include "Direct2D.h"

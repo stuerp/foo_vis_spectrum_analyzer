@@ -1,6 +1,7 @@
 
 /** $VER: Color.cpp (2024.01.21) P. Stuer - Color support **/
 
+#include "framework.h"
 #include "Color.h"
 
 #include <algorithm>

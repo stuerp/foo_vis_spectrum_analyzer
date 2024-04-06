@@ -1,6 +1,7 @@
 
 /** $VER: UIElement.cpp (2024.03.26) P. Stuer **/
 
+#include "framework.h"
 #include "UIElement.h"
 
 #include "DirectX.h"

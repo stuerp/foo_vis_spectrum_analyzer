@@ -1,6 +1,8 @@
 
 /** $VER: Analysis.cpp (2024.03.31) P. Stuer **/
 
+#include "framework.h"
+
 #include "Analysis.h"
 
 #include "Support.h"
@@ -52,6 +54,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     const size_t SampleCount = chunk.get_sample_count();
 
     _SampleRate = chunk.get_sample_rate();
+    _NyquistFrequency = (double) _SampleRate / 2.;
 
     GetMeterValues(chunk);
 
@@ -411,7 +414,7 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 #pragma endregion
 
 /// <summary>
-/// Updates the value of the peak indicators.
+/// Updates the value of the peak indicators and the meter values.
 /// </summary>
 void Analysis::UpdatePeakIndicators() noexcept
 {
@@ -485,6 +488,13 @@ void Analysis::UpdatePeakIndicators() noexcept
 
             fb.Peak = Clamp(fb.Peak, 0., 1.);
         }
+    }
+
+    // Animate the scaled peak and RMS values.
+    for (auto & mv : _MeterValues)
+    {
+        mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+        mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
     }
 }
 
