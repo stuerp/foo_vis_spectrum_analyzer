@@ -1,6 +1,7 @@
 
 /** $VER: Style.cpp (2024.04.02) P. Stuer **/
 
+#include "framework.h"
 #include "Style.h"
 
 #include "Direct2D.h"
@@ -175,17 +176,10 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-        hr = _DirectWrite.Factory->CreateTextFormat(_FontName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+        hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat);
 
         if (SUCCEEDED(hr))
-        {
             MeasureText(text);
-
-            SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-            _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-        }
     }
 
     return hr;

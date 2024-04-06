@@ -1,6 +1,7 @@
 
 /** $VER: FrameCounter.cpp (2024.03.31) P. Stuer **/
 
+#include "framework.h"
 #include "FrameCounter.h"
 
 #pragma hdrstop

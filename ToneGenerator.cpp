@@ -1,6 +1,7 @@
 
 /** $VER: ToneGenerator.cpp (2024.02.13) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
 
+#include "framework.h"
 #include "ToneGenerator.h"
 
 #pragma hdrstop

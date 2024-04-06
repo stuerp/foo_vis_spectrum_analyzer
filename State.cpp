@@ -1,6 +1,7 @@
 
 /** $VER: State.cpp (2024.04.01) P. Stuer **/
 
+#include "framework.h"
 #include "State.h"
 
 #include "Gradients.h"

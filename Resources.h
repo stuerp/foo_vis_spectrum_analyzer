@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.03) P. Stuer **/
+/** $VER: Resources.h (2024.04.06) P. Stuer **/
 
 #pragma once
 
@@ -9,12 +9,12 @@
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
 #define NUM_FILE_PATCH          5
-#define NUM_FILE_PRERELEASE     0
+#define NUM_FILE_PRERELEASE     1
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
 #define NUM_PRODUCT_PATCH       5
-#define NUM_PRODUCT_PRERELEASE  0
+#define NUM_PRODUCT_PRERELEASE  1
 
 /** Component specific **/
 
@@ -57,7 +57,8 @@
 
 #define UM_CONFIGURATION_CHANGED        WM_USER + 1
 
-#define CC_COLORS                       1       // The colors have changed, either by the render thread or by the user in the main foobar2000 preference dialog.
+#define CC_PRESET_LOADED                1       // The user has loaded a preset from the context menu.
+#define CC_COLORS                       2       // The colors have changed, either by the render thread or by the user in the main foobar2000 preference dialog.
 
 /** State **/
 

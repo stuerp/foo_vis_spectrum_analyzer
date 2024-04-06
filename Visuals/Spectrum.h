@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.04.02) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.04.06) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -13,13 +13,8 @@
 
 #include "Support.h"
 
-#include "State.h"
-#include "GraphSettings.h"
-
-#include "Gradients.h"
-
 #include "Element.h"
-#include "FrequencyBand.h"
+#include "Gradients.h"
 
 #include "XAxis.h"
 #include "YAxis.h"
@@ -40,9 +35,9 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands);
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
+    void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
@@ -53,10 +48,9 @@ public:
 private:
     void Resize() noexcept;
 
-    void RenderBars(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-    void RenderCurve(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate);
-
-    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) const noexcept;
+    void RenderBars(ID2D1RenderTarget * renderTarget);
+    void RenderCurve(ID2D1RenderTarget * renderTarget);
+    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
 
@@ -74,7 +68,7 @@ private:
         }
     };
 
-    HRESULT CreateGeometryPointsFromAmplitude(const FrequencyBands & frequencyBands, double sampleRate, bool usePeak, GeometryPoints & gp);
+    HRESULT CreateGeometryPointsFromAmplitude(GeometryPoints & gp, bool usePeak) const;
     HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:

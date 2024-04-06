@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.04.02) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.04.06) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -11,6 +11,7 @@
 
 #include "State.h"
 #include "GraphSettings.h"
+#include "Analysis.h"
 
 #include "Direct2D.h"
 
@@ -44,6 +45,7 @@ protected:
 protected:
     State * _State;
     const GraphSettings * _GraphSettings;
+    const Analysis * _Analysis;
 
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;

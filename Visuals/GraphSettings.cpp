@@ -1,6 +1,7 @@
 
 /** $VER: GraphSettings.cpp (2024.03.09) P. Stuer **/
 
+#include "framework.h"
 #include "GraphSettings.h"
 
 #include "Support.h"

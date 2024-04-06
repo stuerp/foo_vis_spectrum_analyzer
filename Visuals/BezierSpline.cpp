@@ -1,6 +1,7 @@
 
 /** $VER: BezierSpline.cpp (2023.12.30) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit **/
 
+#include "framework.h"
 #include "BezierSpline.h"
 
 #pragma hdrstop

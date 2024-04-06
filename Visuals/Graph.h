@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.04.03) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.04.06) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -12,10 +12,7 @@
 #include <Windows.h>
 
 #include "Support.h"
-#include "State.h"
 #include "Artwork.h"
-#include "Analysis.h"
-#include "GraphSettings.h"
 
 #include "Element.h"
 
@@ -36,7 +33,7 @@ public:
 
     void Initialize(State * state, const GraphSettings * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
     void Reset();
 
     void Process(const audio_chunk & chunk) noexcept
@@ -77,9 +74,8 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept;
     void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
-
+    void RenderForeground(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
 
 private:

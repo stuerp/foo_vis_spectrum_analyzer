@@ -1,6 +1,7 @@
 
 /** $VER: WIC.cpp (2024.01.29) P. Stuer **/
 
+#include "framework.h"
 #include "WIC.h"
 
 #include "COMException.h"

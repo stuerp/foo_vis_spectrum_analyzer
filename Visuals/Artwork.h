@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.03.29) P. Stuer  **/
+/** $VER: Artwork.h (2024.04.06) P. Stuer  **/
 
 #pragma once
 
@@ -15,12 +15,14 @@
 #include "State.h"
 #include "CriticalSection.h"
 
+#include "Log.h"
+
 class Artwork
 {
 public:
     Artwork()
     {
-        SetIdle();
+        SetStatus(Idle);
     }
 
     virtual ~Artwork()
@@ -42,6 +44,8 @@ public:
 
     void Release() noexcept
     {
+Log::Write(Log::Level::Trace, "%08X Releasing artwork", (uint32_t) ::GetTickCount64());
+
         _CriticalSection.Enter();
 
         _Bitmap.Release();
@@ -54,23 +58,33 @@ public:
 
         _Raster.swap(Empty);
 
-        SetIdle();
+        SetStatus(Idle);
 
         _CriticalSection.Leave();
     }
 
+    bool IsIdle() const noexcept { return _Status == Idle; }
     bool IsInitialized() const noexcept { return _Status == Initialized; }
     bool IsRealized() const noexcept { return _Status == Realized; }
 
-    void SetIdle() noexcept
+private:
+    enum Status
     {
-        _Status = Idle;
-    }
+        Idle = 0,
 
-    void RequestColorUpdate() noexcept
+        Initialized,    // A new artwork source has been set.
+        Realized,       // A new bitmap has been generated or the configuration parameters have changed.
+        GotColors,      // We've gotten the colors from the artwork.
+    };
+
+    void SetStatus(Status status) noexcept
     {
-        if (_Status == Idle)
-            _Status = Realized; // Request an update of the color list because the parameters have changed.
+        _CriticalSection.Enter();
+
+Log::Write(Log::Level::Trace, "%08X Setting artwork status to %d", (uint32_t) ::GetTickCount64(), status);
+        _Status = status;
+
+        _CriticalSection.Leave();
     }
 
 private:
@@ -83,13 +97,5 @@ private:
     CComPtr<IWICFormatConverter> _FormatConverter;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
-    enum ArtworkState
-    {
-        Idle = 0,
-
-        Initialized,    // A new artwork source has been set.
-        Realized,       // A new bitmap has been generated or the configuration parameters have changed.
-    };
-
-    ArtworkState _Status;
+    Status _Status;
 };

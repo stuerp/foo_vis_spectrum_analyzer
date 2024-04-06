@@ -1,6 +1,7 @@
 
-/** $VER: XAXis.cpp (2024.04.02) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.04.06) P. Stuer - Implements the X axis of a graph. **/
 
+#include "framework.h"
 #include "XAxis.h"
 
 #include "StyleManager.h"
@@ -13,20 +14,23 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * state, const GraphSettings * settings, const FrequencyBands & frequencyBands) noexcept
+void XAxis::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
+    _Analysis = analysis;
 
     _Labels.clear();
 
-    if (frequencyBands.size() == 0)
+    const FrequencyBands & fb = _Analysis->_FrequencyBands;
+
+    if (fb.size() == 0)
         return;
 
-    _BandCount = frequencyBands.size();
+    _BandCount = fb.size();
 
-    _LoFrequency = frequencyBands.front().Ctr;
-    _HiFrequency = frequencyBands.back().Ctr;
+    _LoFrequency = fb.front().Ctr;
+    _HiFrequency = fb.back().Ctr;
 
     // Precalculate the labels.
     {
@@ -43,7 +47,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
             {
                 for (size_t i = 0; i < _BandCount; i += 10)
                 {
-                    double Frequency = frequencyBands[i].Ctr;
+                    double Frequency = fb[i].Ctr;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1f", Frequency);
@@ -63,7 +67,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < fb.back().Lo)
                 {
                     Frequency = j * i;
 
@@ -90,7 +94,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
 
-                for (int i = 0; Frequency < frequencyBands.back().Lo; ++i)
+                for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
@@ -114,7 +118,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Freq
 
                 int j = 0;
 
-                while (Frequency < frequencyBands.back().Lo)
+                while (Frequency < fb.back().Lo)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 

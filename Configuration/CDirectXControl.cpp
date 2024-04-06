@@ -1,6 +1,7 @@
 
 /** $VER: CDirectXControl.cpp (2023.12.31) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
+#include "framework.h"
 #include "CDirectXControl.h"
 
 #include "Support.h"

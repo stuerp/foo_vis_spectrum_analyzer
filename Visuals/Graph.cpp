@@ -1,7 +1,9 @@
 
-/** $VER: Graph.cpp (2024.04.02) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.06) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
+#include "framework.h"
 #include "Graph.h"
+
 #include "StyleManager.h"
 
 #include "DirectWrite.h"
@@ -34,9 +36,9 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 
     _Analysis.Initialize(state, settings);
 
-    _Spectrum.Initialize(state, settings, _Analysis._FrequencyBands);
-    _Spectogram.Initialize(state, settings, _Analysis._FrequencyBands);
-    _PeakMeter.Initialize(state, settings);
+    _Spectrum.Initialize(state, settings, &_Analysis);
+    _Spectogram.Initialize(state, settings, &_Analysis);
+    _PeakMeter.Initialize(state, settings, &_Analysis);
 }
 
 /// <summary>
@@ -55,14 +57,14 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, double sampleRate, Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
     {
         RenderBackground(renderTarget, artwork);
-        RenderForeground(renderTarget, _Analysis._FrequencyBands, sampleRate);
+        RenderForeground(renderTarget);
     }
 }
 
@@ -150,28 +152,28 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget, const FrequencyBands & frequencyBands, double sampleRate) noexcept
+void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 {
     switch (_State->_VisualizationType)
     {
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         {
-            _Spectrum.Render(renderTarget, frequencyBands, sampleRate);
+            _Spectrum.Render(renderTarget);
             RenderDescription(renderTarget);
             break;
         }
 
         case VisualizationType::Spectogram:
         {
-            _Spectogram.Render(renderTarget, frequencyBands, sampleRate);
+            _Spectogram.Render(renderTarget);
             RenderDescription(renderTarget);
             break;
         }
 
         case VisualizationType::PeakMeter:
         {
-            _PeakMeter.Render(renderTarget, _Analysis);
+            _PeakMeter.Render(renderTarget);
             break;
         }
     }

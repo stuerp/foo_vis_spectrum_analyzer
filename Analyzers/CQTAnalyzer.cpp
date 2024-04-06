@@ -1,6 +1,7 @@
 
 /** $VER: CQTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
+#include "framework.h"
 #include "CQTAnalyzer.h"
 
 #include "Support.h"

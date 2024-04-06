@@ -1,6 +1,7 @@
 
 /** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
+#include "framework.h"
 #include "FFTAnalyzer.h"
 
 #include "Log.h"

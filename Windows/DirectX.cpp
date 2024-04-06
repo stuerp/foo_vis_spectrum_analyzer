@@ -1,10 +1,7 @@
 
 /** $VER: DirectX.cpp (2024.01.30) P. Stuer **/
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
+#include "framework.h"
 #include "DirectX.h"
 
 #include "Direct2D.h"

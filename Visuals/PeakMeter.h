@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.01) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.06) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -18,7 +18,6 @@
 #include <atlbase.h>
 
 #include "Element.h"
-#include "Analysis.h"
 
 class PeakMeter : public Element
 {
@@ -32,9 +31,9 @@ public:
 
     virtual ~PeakMeter() { }
 
-    void Initialize(State * state, const GraphSettings * settings);
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget, Analysis & analysis);
+    void Render(ID2D1RenderTarget * renderTarget);
     void Reset();
 
     void ReleaseDeviceSpecificResources() noexcept;
@@ -45,11 +44,14 @@ private:
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawMeters(ID2D1RenderTarget * renderTarget, Analysis & analysis) const noexcept;
+    void DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept;
 
     void Resize() noexcept;
 
 private:
+    D2D1_RECT_F _ClientRect;
+    D2D1_SIZE_F _ClientSize;
+
     struct Label
     {
         double Amplitude;
@@ -71,6 +73,10 @@ private:
     FLOAT _YMax;
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 
     Style * _BackgroundStyle;
 

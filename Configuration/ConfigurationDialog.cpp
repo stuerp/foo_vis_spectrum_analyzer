@@ -1,6 +1,7 @@
 ﻿
 /** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
 
+#include "framework.h"
 #include "ConfigurationDialog.h"
 
 #include "Gradients.h"
@@ -1156,8 +1157,16 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 {
     switch (wParam)
     {
+        case CC_PRESET_LOADED:
+        {
+            Initialize();
+            break;
+        }
+
         case CC_COLORS:
         {
+            Log::Write(Log::Level::Trace, "%08X: Colors changed.", (int) ::GetTickCount64());
+
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             UpdateCurrentColor(style);
@@ -3206,6 +3215,8 @@ void ConfigurationDialog::UpdatePresetsPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateColorControls()
 {
+    Log::Write(Log::Level::Trace, "%08X: Updating color controls.", (int) ::GetTickCount64());
+
     Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
     // Update the Color button.
@@ -3242,6 +3253,8 @@ void ConfigurationDialog::UpdateColorControls()
 
         if (SelectedIndex != LB_ERR)
         {
+            SelectedIndex = Clamp(SelectedIndex, 0, (int) gs.size() - 1);
+
             _Colors.SetCurSel(SelectedIndex);
 
             _IgnoreNotifications = true;
@@ -3435,5 +3448,5 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
 
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
-//  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", (int) ::GetTickCount64());
 }

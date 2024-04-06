@@ -1,6 +1,7 @@
 
 /** $VER: StyleManager.cpp (2024.03.28) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
+#include "framework.h"
 #include "StyleManager.h"
 
 #include "Support.h"

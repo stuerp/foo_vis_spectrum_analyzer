@@ -1,6 +1,7 @@
 
 /** $VER: DirectWrite.cpp (2024.03.31) P. Stuer **/
 
+#include "framework.h"
 #include "DirectWrite.h"
 
 #include "COMException.h"
@@ -63,8 +64,8 @@ HRESULT DirectWrite::GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, con
         TextLayout->GetMetrics(&TextMetrics);
 
         // Calculate the metric.
-        width  = TextMetrics.width;
-        height = 2.f + TextMetrics.height + 2.f;
+        width  = ::ceil(TextMetrics.width)  + 2.f; // Left and right 1 pixel padding
+        height = ::ceil(TextMetrics.height) + 2.f; // Top and bottom 1 pixel padding
     }
 
     return hr;
