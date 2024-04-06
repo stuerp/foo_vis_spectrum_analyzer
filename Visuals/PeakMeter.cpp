@@ -471,6 +471,10 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         for (auto & mv : _Analysis->_MeterValues)
         {
+            // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
+            if ((int) Rect.left & 1)
+                Rect.left++;
+
             Rect.right = Clamp(Rect.left + BarWidth, 0.f, _ClientSize.width - 1.f);
 
             // Draw the background.
@@ -523,7 +527,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
-            Rect.left = Rect.right + 1.f + BarGap;
+            Rect.left = Rect.right + BarGap;
         }
 
     #ifdef _DEBUG_RENDER

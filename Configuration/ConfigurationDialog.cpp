@@ -1157,6 +1157,12 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 {
     switch (wParam)
     {
+        case CC_PRESET_LOADED:
+        {
+            Initialize();
+            break;
+        }
+
         case CC_COLORS:
         {
             Log::Write(Log::Level::Trace, "%08X: Colors changed.", (int) ::GetTickCount64());

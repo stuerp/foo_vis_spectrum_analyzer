@@ -303,6 +303,9 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
                     _MainState = NewState;
 
                     UpdateState();
+
+                    if (_ConfigurationDialog.IsWindow())
+                        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
                 }
             }
         }
