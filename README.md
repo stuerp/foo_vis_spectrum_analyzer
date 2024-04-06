@@ -88,6 +88,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.5.2, 2024-04-xx
+
+* Improved: Calibrated the peak meter according to the IEC 61606:1997 / AES17-1998 standard (RMS+3).
+
 v0.7.5.1, 2024-04-06
 
 * Fixed: Peak Meter axes now behave as intended.

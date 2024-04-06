@@ -5,6 +5,7 @@
 #include "PeakMeter.h"
 
 #include "Support.h"
+#include "Log.h"
 
 #include "DirectWrite.h"
 

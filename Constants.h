@@ -72,7 +72,7 @@ inline const double MinBandwidth =  0.;
 inline const double MaxBandwidth = 64.;
 
 inline const double MinAmplitude = -120.; // dB
-inline const double MaxAmplitude =    0.; // dB
+inline const double MaxAmplitude =    6.; // dB
 
 inline const double MinAmplitudeStep = -10.; // dB
 inline const double MaxAmplitudeStep =  -1.; // dB
