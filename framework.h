@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.01.31) P. Stuer **/
+/** $VER: framework.h (2024.04.07) P. Stuer **/
 
 #pragma once
 
@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <strsafe.h>
+#include <assert.h>
 
 #include <cmath>
 

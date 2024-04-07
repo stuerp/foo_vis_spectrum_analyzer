@@ -338,6 +338,8 @@ enum class VisualElement : uint32_t
     PeakMeterRMSLevelText       = 22,
 
     NyquistMarker               = 15,
+
+    Count                       = 23
 };
 
 enum class ColorSource : uint32_t

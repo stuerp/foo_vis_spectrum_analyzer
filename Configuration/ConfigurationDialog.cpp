@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.07) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -16,13 +16,46 @@
 #include "Log.h"
 
 // Display names for the audio_chunk channel bits.
-static const LPCWSTR ChannelNames[] =
+static const WCHAR * const ChannelNames[] =
 {
     L"Front Left", L"Front Right", L"Front Center",
     L"Low Frequency", L"Back Left", L"Back Right",
     L"Front Left of Center", L"Front Right of Center",
     L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
+};
+
+static const WCHAR * const VisualElementNames[] =
+{
+    L"Graph Background",
+    L"Graph Description Text",
+    L"Graph Description Background",
+
+    L"X-axis Text",
+    L"Y-axis Text",
+    L"Horizontal Grid Line",
+    L"Vertical Grid Line",
+
+    L"Bar Area",
+    L"Bar Top",
+    L"Bar Peak Area",
+    L"Bar Peak Top",
+    L"Bar Dark Background",
+    L"Bar Light Background",
+
+    L"Curve Line",
+    L"Curve Area",
+    L"Curve Peak Line",
+    L"Curve Peak Area",
+
+    L"Spectogram",
+
+    L"Peak Meter Background",
+    L"Peak Meter Peak Level",
+    L"Peak Meter RMS Level",
+    L"Peak Meter RMS Level Text",
+
+    L"Nyquist Frequency",
 };
 
 /// <summary>
@@ -1024,16 +1057,9 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x :
-        {
-            L"Graph Background", L"Graph Description Text", L"Graph Description Background",
-            L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
-            L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
-            L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
-            L"Spectogram",
-            L"Peak Meter Background", L"Peak Meter Peak Level", L"Peak Meter RMS Level",
-            L"Nyquist Frequency",
-        })
+        assert((size_t) VisualElement::Count == _countof(VisualElementNames));
+
+        for (const auto & x : VisualElementNames)
             w.AddString(x);
 
         _State->_SelectedStyle = (int) VisualElement::GraphBackground;
