@@ -487,7 +487,7 @@ void UIElement::UpdateState() noexcept
         }
         #pragma warning (default: 4061)
 
-        _ToneGenerator.Initialize(440., 1., 0., _MainState._BinCount);
+        _ToneGenerator.Initialize(997., 1., 0., _MainState._BinCount);
 
         _ThreadState = _MainState;
 

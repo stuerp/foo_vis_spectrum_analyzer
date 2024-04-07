@@ -31,7 +31,7 @@ void YAxis::Initialize(State * state, const GraphSettings * settings, const Anal
         {
             WCHAR Text[16] = { };
 
-            ::StringCchPrintfW(Text, _countof(Text), L"%ddB", (int) Amplitude);
+            ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
             Label lb = { Amplitude, Text };
 
@@ -138,7 +138,7 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
     HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"AaGg09", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();

@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.06) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.07) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -82,6 +82,7 @@ private:
 
     Style * _PeakStyle;
     Style * _RMSStyle;
+    Style * _RMSTextStyle;
 
     Style * _XTextStyle;
     Style * _YTextStyle;

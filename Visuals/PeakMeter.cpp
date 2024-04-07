@@ -43,7 +43,7 @@ void PeakMeter::Initialize(State * state, const GraphSettings * settings, const 
         {
             WCHAR Text[16] = { };
 
-            ::StringCchPrintfW(Text, _countof(Text), L"%d", (int) Amplitude);
+            ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
             Label lb = { Amplitude, Text };
 
@@ -85,63 +85,39 @@ void PeakMeter::Resize() noexcept
 
     if (_State->_HorizontalPeakMeter)
     {
-        if (_GraphSettings->_XAxisBottom)
-            if (_GraphSettings->_FlipHorizontally)
-                _ClientRect.right -= _XTextStyle->_TextWidth;
-            else
-                _ClientRect.left  += _XTextStyle->_TextWidth;
-
-        if (_GraphSettings->_XAxisTop)
-            if (_GraphSettings->_FlipHorizontally)
-                _ClientRect.left  += _XTextStyle->_TextWidth;
-            else
-                _ClientRect.right -= _XTextStyle->_TextWidth;
-
-        if (_GraphSettings->_FlipVertically)
-        {
-            if (_GraphSettings->_YAxisRight)
-                _ClientRect.top += _YTextStyle->_TextHeight;
-
-            if (_GraphSettings->_YAxisLeft)
-                _ClientRect.bottom -= _YTextStyle->_TextHeight;
-        }
-        else
-        {
-            if (_GraphSettings->_YAxisLeft)
-                _ClientRect.top += _YTextStyle->_TextHeight;
-
-            if (_GraphSettings->_YAxisRight)
-                _ClientRect.bottom -= _YTextStyle->_TextHeight;
-        }
-    }
-    else
-    {
-        if (_GraphSettings->_YAxisLeft)
-            _ClientRect.left  += _YTextStyle->_TextWidth;
-
-        if (_GraphSettings->_YAxisRight)
-            _ClientRect.right -= _YTextStyle->_TextWidth;
-
-        if (_GraphSettings->_FlipVertically)
         {
             if (_GraphSettings->_XAxisBottom)
-                _ClientRect.top += _XTextStyle->_TextHeight;
+                if (_GraphSettings->_FlipHorizontally)
+                    _ClientRect.right -= _XTextStyle->_TextWidth;
+                else
+                    _ClientRect.left  += _XTextStyle->_TextWidth;
 
             if (_GraphSettings->_XAxisTop)
-                _ClientRect.bottom -= _XTextStyle->_TextHeight;
-        }
-        else
-        {
-            if (_GraphSettings->_XAxisTop)
-                _ClientRect.top += _XTextStyle->_TextHeight;
+                if (_GraphSettings->_FlipHorizontally)
+                    _ClientRect.left  += _XTextStyle->_TextWidth;
+                else
+                    _ClientRect.right -= _XTextStyle->_TextWidth;
 
-            if (_GraphSettings->_XAxisBottom)
-                _ClientRect.bottom -= _XTextStyle->_TextHeight;
-        }
-    }
+            if (_GraphSettings->_FlipVertically)
+            {
+                if (_GraphSettings->_YAxisRight)
+                    _ClientRect.top += _YTextStyle->_TextHeight;
 
-    if (_State->_HorizontalPeakMeter)
-    {
+                if (_GraphSettings->_YAxisLeft)
+                    _ClientRect.bottom -= _YTextStyle->_TextHeight;
+            }
+            else
+            {
+                if (_GraphSettings->_YAxisLeft)
+                    _ClientRect.top += _YTextStyle->_TextHeight;
+
+                if (_GraphSettings->_YAxisRight)
+                    _ClientRect.bottom -= _YTextStyle->_TextHeight;
+            }
+
+            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        }
+
         const FLOAT cx = (_YTextStyle->_TextWidth / 2.f);
 
         // Calculate the position of the labels based on the width.
@@ -174,6 +150,33 @@ void PeakMeter::Resize() noexcept
     }
     else
     {
+        {
+            if (_GraphSettings->_YAxisLeft)
+                _ClientRect.left  += _YTextStyle->_TextWidth;
+
+            if (_GraphSettings->_YAxisRight)
+                _ClientRect.right -= _YTextStyle->_TextWidth;
+
+            if (_GraphSettings->_FlipVertically)
+            {
+                if (_GraphSettings->_XAxisBottom)
+                    _ClientRect.top += _XTextStyle->_TextHeight;
+
+                if (_GraphSettings->_XAxisTop)
+                    _ClientRect.bottom -= _XTextStyle->_TextHeight;
+            }
+            else
+            {
+                if (_GraphSettings->_XAxisTop)
+                    _ClientRect.top += _XTextStyle->_TextHeight;
+
+                if (_GraphSettings->_XAxisBottom)
+                    _ClientRect.bottom -= _XTextStyle->_TextHeight;
+            }
+
+            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        }
+
         const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
 
         // Calculate the position of the labels based on the height.
@@ -454,6 +457,19 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
                 }
                 #endif
+
+                    // Draw the RMS text display.
+                    {
+                        D2D1_RECT_F TextRect = Rect;
+
+                        TextRect.left  = (_ClientRect.left + 1.f) + 2.f;
+                        TextRect.right = TextRect.left + _RMSTextStyle->_TextWidth + 2.f;
+
+                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
+
+                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+//                      renderTarget->DrawRectangle(TextRect, _RMSTextStyle->_Brush);
+                    }
                 }
 
                 Rect.top = Rect.bottom + 1.f;
@@ -582,6 +598,19 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
                 }
                 #endif
+
+                    // Draw the RMS text display.
+                    {
+                        D2D1_RECT_F TextRect = Rect;
+
+                        TextRect.bottom = _ClientRect.bottom + 1.f;
+                        TextRect.top    = TextRect.bottom - (_RMSTextStyle->_TextHeight + 2.f);
+
+                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
+
+                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+//                      renderTarget->DrawRectangle(TextRect, _RMSTextStyle->_Brush);
+                    }
                 }
 
                 Rect.left = Rect.right + 1.f;
@@ -611,6 +640,9 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterRMSLevel, renderTarget, _Size, L"", &_RMSStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterRMSLevelText, renderTarget, _Size, L"-999.9", &_RMSTextStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, L"WWW", &_XTextStyle);
@@ -653,15 +685,18 @@ HRESULT PeakMeter::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 
             rt->Clear();
 
-            if (_State->_HorizontalPeakMeter)
+            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
             {
-                for (FLOAT x = _State->_LEDGap; x < _Size.width; x += (_State->_LEDSize + _State->_LEDGap))
-                    rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, 1.f), Brush);
-            }
-            else
-            {
-                for (FLOAT y = _State->_LEDGap; y < _Size.height; y += (_State->_LEDSize + _State->_LEDGap))
-                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+                if (_State->_HorizontalPeakMeter)
+                {
+                    for (FLOAT x = _State->_LEDGap; x < _Size.width; x += (_State->_LEDSize + _State->_LEDGap))
+                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, 1.f), Brush);
+                }
+                else
+                {
+                    for (FLOAT y = _State->_LEDGap; y < _Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                        rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+                }
             }
 
             hr = rt->EndDraw();

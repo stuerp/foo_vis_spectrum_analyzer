@@ -384,8 +384,11 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 
             rt->Clear();
 
-            for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
-                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            {
+                for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+            }
 
             hr = rt->EndDraw();
         }

@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.04.05) P. Stuer **/
+/** $VER: Rendering.cpp (2024.04.07) P. Stuer **/
 
 #include "framework.h"
 #include "UIElement.h"
@@ -85,7 +85,7 @@ void UIElement::OnTimer()
 
         if (_IsConfigurationChanged)
         {
-            Log::Write(Log::Level::Trace, "%08X: Sending colors changed message.", (int) ::GetTickCount64());
+        //  Log::Write(Log::Level::Trace, "%8d: Sending colors changed message.", (int) ::GetTickCount64());
 
             _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
 
@@ -120,7 +120,7 @@ void UIElement::ProcessEvents()
 
     if (Event::IsRaised(Flags, Event::PlaybackStopped))
     {
-Log::Write(Log::Level::Trace, "%08X Playback stopped", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Playback stopped.", (uint32_t) ::GetTickCount64());
 
         _ThreadState._PlaybackTime = 0.;
         _ThreadState._TrackTime = 0.;
@@ -131,7 +131,7 @@ Log::Write(Log::Level::Trace, "%08X Playback stopped", (uint32_t) ::GetTickCount
 
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
     {
-Log::Write(Log::Level::Trace, "%08X Started new track", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Started new track.", (uint32_t) ::GetTickCount64());
 
         _ThreadState._PlaybackTime = 0.;
         _ThreadState._TrackTime = 0.;
@@ -187,6 +187,8 @@ void UIElement::Render()
 
             hr = S_OK;
         }
+
+        UpdatePeakIndicators();
     }
 }
 
@@ -195,27 +197,24 @@ void UIElement::Render()
 /// </summary>
 void UIElement::UpdateSpectrum()
 {
-    if (_MainState._UseToneGenerator)
-    {
-        audio_chunk_impl Chunk;
+    double PlaybackTime; // in seconds
 
-        if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
-        {
-            for (auto & Iter : _Grid)
-                Iter._Graph->Process(Chunk);
-        }
-    }
-    else
+    if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
     {
-        double PlaybackTime; // in seconds
-
-        // Update the graph.
-        if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+        if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will 0 when the playback is paused.
         {
-            if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will 0 when the playback is paused.
+            audio_chunk_impl Chunk;
+
+            if (_MainState._UseToneGenerator)
             {
-                audio_chunk_impl Chunk;
-
+                if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
+                {
+                    for (auto & Iter : _Grid)
+                        Iter._Graph->Process(Chunk);
+                }
+            }
+            else
+            {
                 const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
                 const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
                 const double Offset = IsSlidingWindow ? _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
@@ -230,7 +229,13 @@ void UIElement::UpdateSpectrum()
             }
         }
     }
+}
 
+/// <summary>
+/// Updates the peak indicators.
+/// </summary>
+void UIElement::UpdatePeakIndicators()
+{
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     if (_MainState._PeakMode != PeakMode::None)
     {
@@ -304,7 +309,7 @@ HRESULT UIElement::CreateDeviceSpecificResources()
     // Create the background bitmap from the artwork.
     if (SUCCEEDED(hr) && _Artwork.IsInitialized())
     {
-Log::Write(Log::Level::Trace, "%08X Realizing artwork", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Realizing artwork", (uint32_t) ::GetTickCount64());
 
         for (auto & Iter : _Grid)
             Iter._Graph->ReleaseDeviceSpecificResources();

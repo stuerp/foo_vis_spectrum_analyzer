@@ -16,21 +16,22 @@
 #include <helpers/helpers.h>
 #undef NOMINMAX
 
+#include <vector>
+
 class ToneGenerator
 {
 public:
-    ToneGenerator() : _Data(), _Size() { };
+    ToneGenerator() { };
 
     void Initialize(double frequency, double amplitude, double noiseAmplitude, size_t bufferSize)
     {
         _Frequency = frequency;
         _Amplitude = amplitude;
         _NoiseAmplitude = noiseAmplitude;
-        _Size = bufferSize;
 
         Reset();
 
-        _Data = new audio_sample[_Size];
+        _Data.resize(bufferSize);
     }
 
     virtual ~ToneGenerator()
@@ -44,11 +45,7 @@ public:
     {
         _Clock = 0.;
 
-        if (_Data)
-        {
-            delete[] _Data;
-            _Data = nullptr;
-        }
+        _Data.clear();
     }
 
 private:
@@ -60,8 +57,7 @@ private:
 
     const uint32_t _ChannelCount = 1;
 
-    audio_sample * _Data;
-    size_t _Size;
+    std::vector<audio_sample> _Data;
 };
 
 extern ToneGenerator _ToneGenerator;

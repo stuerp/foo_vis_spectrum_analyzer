@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.03.31) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.07) P. Stuer **/
 
 #include "framework.h"
 
@@ -158,6 +158,15 @@ void Analysis::Reset()
     {
         delete _WindowFunction;
         _WindowFunction = nullptr;
+    }
+
+    for (auto & mv : _MeterValues)
+    {
+        mv.Peak       =    0.;
+        mv.RMS        =    0.;
+        mv.ScaledPeak = -999.0;
+        mv.ScaledRMS  = -999.0;
+        mv.HoldTime   =    0.;
     }
 }
 
@@ -494,8 +503,13 @@ void Analysis::UpdatePeakIndicators() noexcept
     // Animate the scaled peak and RMS values.
     for (auto & mv : _MeterValues)
     {
-        mv.ScaledPeak = Clamp(mv.ScaledPeak - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-        mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1.0, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+        if (mv.HoldTime > 0.)
+            mv.HoldTime--;
+        else
+        {
+            mv.ScaledPeak = Clamp(mv.ScaledPeak - 1., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            mv.ScaledRMS  = Clamp(mv.ScaledRMS  - 1., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+        }
     }
 }
 
@@ -543,10 +557,8 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     {
         for (auto & mv : _MeterValues)
         {
-            mv.NewPeak = 0.0;
-            mv.NewRMS = 0.0;
-            mv.ScaledPeak = -999.0;
-            mv.ScaledRMS = -999.0;
+            mv.Peak = 0.0;
+            mv.RMS  = 0.0;
         }
     }
 
@@ -562,11 +574,11 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             audio_sample Value = std::abs(*Sample);
 
             {
-                if (Value > mv.NewPeak)
-                    mv.NewPeak = Value;
+                if (Value > mv.Peak)
+                    mv.Peak = Value;
             }
             {
-                mv.NewRMS += Value * Value;
+                mv.RMS += Value * Value;
             }
 
             ++Sample;
@@ -576,18 +588,25 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     // Calculate the scaled values. Keep the new value only when it's larger than the current value to reduce the 'jumpiness' of the meter.
     for (auto & mv : _MeterValues)
     {
-        const double Amax = 0.28117;
+        const double Amax  = 0.707310557; // RMS value measured using tone generator at 997 Hz.
+        const double dBRef = 3.01;
 
         {
-            double ScaledPeak = ToDecibel(mv.NewPeak / Amax) + 3.01;
+            double ScaledPeak = ToDecibel(mv.Peak / Amax) + dBRef;
 
             if (ScaledPeak > mv.ScaledPeak)
                 mv.ScaledPeak = ScaledPeak;
         }
         {
-            mv.NewRMS = (audio_sample) std::sqrt(mv.NewRMS / (audio_sample) SampleCount);
+            mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) SampleCount);
 
-            mv.ScaledRMS = ToDecibel(mv.NewRMS / Amax) + 3.01;;
+            double ScaledRMS = ToDecibel(mv.RMS / Amax) + dBRef;
+
+            if (ScaledRMS > mv.ScaledRMS)
+            {
+                mv.ScaledRMS = ScaledRMS;
+                mv.HoldTime = 5.;
+            }
         }
     }
 
