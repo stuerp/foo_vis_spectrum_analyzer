@@ -27,12 +27,12 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(const WCHAR * name = L"", audio_sample peak = 0., audio_sample rms = 0., double holdTime = 5., double decaySpeed = 0., double scaledPeak = -999., double scaledRMS = -999.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
+    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5., double decaySpeed = 0., double scaledPeak = -999., double scaledRMS = -999.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
 
     std::wstring Name;
 
-    audio_sample Peak;
-    audio_sample RMS;
+    double Peak;
+    double RMS;
 
     double HoldTime;
     double DecaySpeed;
@@ -95,4 +95,8 @@ public:
     AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
 
     FrequencyBands _FrequencyBands;
+
+private:
+    const double Amax  = M_SQRT1_2;
+    const double dBCorrection = -20. * ::log10(Amax); // 3.01;
 };

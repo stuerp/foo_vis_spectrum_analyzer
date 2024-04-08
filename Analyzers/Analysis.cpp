@@ -494,13 +494,10 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     }
 
     // Calculate the scaled values. Keep the new value only when it's larger than the current value to reduce the jitter of the meter.
-    const double Amax  = M_SQRT1_2;
-    const double dBRef = -20. * ::log10(Amax); // 3.01;
-
     for (auto & mv : _MeterValues)
     {
         {
-            double ScaledPeak = ToDecibel(mv.Peak / Amax) + dBRef; // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+            double ScaledPeak = ToDecibel(mv.Peak / Amax) + dBCorrection; // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
 
             if (ScaledPeak > mv.ScaledPeak)
                 mv.ScaledPeak = ScaledPeak;
@@ -508,7 +505,7 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         {
             mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) SampleCount);
 
-            double ScaledRMS = ToDecibel(mv.RMS / Amax) + dBRef;
+            double ScaledRMS = ToDecibel(mv.RMS / Amax) + dBCorrection;
 
             if (ScaledRMS > mv.ScaledRMS)
             {

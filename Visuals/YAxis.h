@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.04.06) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2024.04.08) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -53,8 +53,9 @@ private:
 
     struct Label
     {
-        double Amplitude;
         std::wstring Text;
+        double Amplitude;
+        bool IsHidden;
 
         D2D1_POINT_2F PointL;
         D2D1_POINT_2F PointR;
