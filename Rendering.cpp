@@ -127,6 +127,8 @@ void UIElement::ProcessEvents()
 
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
+
+        _Artwork.Release();
     }
 
     if (Event::IsRaised(Flags, Event::PlaybackStartedNewTrack))
