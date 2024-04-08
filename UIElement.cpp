@@ -61,7 +61,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     if (FAILED(hr))
     {
-        Log::Write(Log::Level::Critical, "%s: Unable to create DirectX device independent resources: 0x%08X", core_api::get_my_file_name(), hr);
+        Log::Write(Log::Level::Critical, "%8d: %s: Unable to create DirectX device independent resources: 0x%08X", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), hr);
 
         return -1;
     }
@@ -81,7 +81,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Critical, "%s: Unable to create visualisation stream: %s.", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Critical, "%8d: %s: Unable to create visualisation stream: %s.", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
 
         return -1;
     }
@@ -156,7 +156,7 @@ void UIElement::OnDestroy()
 /// </summary>
 void UIElement::OnPaint(CDCHandle hDC)
 {
-//  Log::Write(Log::Level::Trace, "%08X: OnPaint", GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: OnPaint", (uint32_t) ::GetTickCount64());
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
@@ -453,7 +453,7 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::UpdateState() noexcept
 {
-    Log::Write(Log::Level::Trace, "%08X: UpdateState", (int) GetTickCount64());
+    Log::Write(Log::Level::Trace, "%8d: UpdateState", (uint32_t) ::GetTickCount64());
 
     {
         DeleteTrackingToolTip();

@@ -78,7 +78,7 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
 /// </summary>
 void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
 {
-//  Log::Write(Log::Level::Trace, "%5d, %5d, %5d", _Size, _Curr, sampleCount / 2);
+//  Log::Write(Log::Level::Trace, "%8d: %5d, %5d, %5d", (int) ::GetTickCount64() _Size, _Curr, sampleCount / 2);
 
     if (samples == nullptr)
         return;

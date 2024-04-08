@@ -114,7 +114,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 
     if (!_Raster.empty() || !_FilePath.empty())
     {
-Log::Write(Log::Level::Trace, "%08X Realizing artwork", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Realizing artwork.", (uint32_t) ::GetTickCount64());
 
         // Load the frame from the raster data.
         if (_Frame == nullptr)

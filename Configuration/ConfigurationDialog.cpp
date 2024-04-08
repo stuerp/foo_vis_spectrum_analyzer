@@ -1191,7 +1191,7 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 
         case CC_COLORS:
         {
-            Log::Write(Log::Level::Trace, "%08X: Colors changed.", (int) ::GetTickCount64());
+        //  Log::Write(Log::Level::Trace, "%8d: Colors changed.", (int) ::GetTickCount64());
 
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
@@ -3241,7 +3241,7 @@ void ConfigurationDialog::UpdatePresetsPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateColorControls()
 {
-    Log::Write(Log::Level::Trace, "%08X: Updating color controls.", (int) ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: Updating color controls.", (int) ::GetTickCount64());
 
     Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
@@ -3474,5 +3474,5 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
 
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
-//  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", (int) ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: Configuration changed.", (int) ::GetTickCount64());
 }

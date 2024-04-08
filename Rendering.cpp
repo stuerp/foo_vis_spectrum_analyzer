@@ -85,7 +85,7 @@ void UIElement::OnTimer()
 
         if (_IsConfigurationChanged)
         {
-        //  Log::Write(Log::Level::Trace, "%8d: Sending colors changed message.", (int) ::GetTickCount64());
+        //  Log::Write(Log::Level::Trace, "%8d: Sending colors changed message.", (uint32_t) ::GetTickCount64());
 
             _MainState._ArtworkGradientStops = _ThreadState._ArtworkGradientStops;
 

@@ -807,7 +807,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to read DUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to read DUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -1072,7 +1072,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write CUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to write CUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
     }
 }
 
