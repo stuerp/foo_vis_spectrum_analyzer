@@ -3213,11 +3213,11 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
+    GetDlgItem(IDC_OPACITY).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
 
     UpdateColorControls();
 }

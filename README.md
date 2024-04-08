@@ -91,7 +91,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.5.2, 2024-04-xx
 
 * Improved: Peak Meter
-  * Calibrated the peak meter according to the IEC 61606:1997 / AES17-1998 standard (RMS+3).
+  * Calibrated the peak meter according to the IEC 61606:1997 / AES17-1998 standard (RMS +3).
   * Added style to display the RMS value as text.
   * Reduced jitter.
 * Improved: Increased the maximum amplitude to +6dB.

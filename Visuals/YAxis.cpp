@@ -106,14 +106,14 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
     for (const Label & Iter : _Labels)
     {
         // Draw the horizontal grid line.
-        if (_LineStyle->_ColorSource != ColorSource::None)
+        if (_LineStyle->IsEnabled())
             renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
             continue;
 
         // Prevent overdraw of the labels.
-        if (!InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom) && (_TextStyle->_ColorSource != ColorSource::None))
+        if (_TextStyle->IsEnabled() && !InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
         {
             // Draw the labels.
             if (_GraphSettings->_YAxisLeft)

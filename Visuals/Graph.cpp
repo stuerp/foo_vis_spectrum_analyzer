@@ -141,7 +141,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
-//  if (_BackgroundStyle->_ColorSource != ColorSource::None)
+//  if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
@@ -207,10 +207,10 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
         Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
-        if (_DescriptionBackgroundStyle->_ColorSource != ColorSource::None)
+        if (_DescriptionBackgroundStyle->IsEnabled())
             renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
 
-        if (_DescriptionTextStyle->_ColorSource != ColorSource::None)
+        if (_DescriptionTextStyle->IsEnabled())
             renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 }

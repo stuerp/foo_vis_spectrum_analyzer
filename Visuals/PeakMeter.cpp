@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.06) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.08) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -10,8 +10,6 @@
 #include "DirectWrite.h"
 
 #pragma hdrstop
-
-//#define _DEBUG_RENDER
 
 PeakMeter::PeakMeter()
 {
@@ -115,7 +113,8 @@ void PeakMeter::Resize() noexcept
                     _ClientRect.bottom -= _YTextStyle->_TextHeight;
             }
 
-            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            _RMSTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+            _RMSTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         }
 
         const FLOAT cx = (_YTextStyle->_TextWidth / 2.f);
@@ -138,14 +137,15 @@ void PeakMeter::Resize() noexcept
                 x = Clamp(x - cx, _GraphSettings->_XAxisBottom ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
 
             if (_GraphSettings->_FlipVertically)
+            {
                 Iter.RectL = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
-            else
-                Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
-
-            if (_GraphSettings->_FlipVertically)
                 Iter.RectR = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
+            }
             else
+            {
+                Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
                 Iter.RectR = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
+            }
         }
     }
     else
@@ -175,6 +175,7 @@ void PeakMeter::Resize() noexcept
             }
 
             _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
         }
 
         const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
@@ -219,8 +220,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
 #ifdef _DEBUG_RENDER
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    D2D1_RECT_F DebugRect = { _Bounds.left + 1, _Bounds.top + 1, _Bounds.right, _Bounds.bottom };
-    _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
+    DrawDebugRectangle(renderTarget, { _Bounds.left + 1, _Bounds.top + 1, _Bounds.right, _Bounds.bottom }, D2D1::ColorF(D2D1::ColorF::Green));
 #endif
 
     DrawScale(renderTarget);
@@ -245,11 +245,11 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
         for (const Label & Iter : _Labels)
         {
             // Draw the horizontal grid line.
-            if (_YLineStyle->_ColorSource != ColorSource::None)
+            if (_YLineStyle->IsEnabled())
                 renderTarget->DrawLine(Iter.PointL, Iter.PointR, _YLineStyle->_Brush, _YLineStyle->_Thickness, nullptr);
 
             // Prevent overdraw of the labels.
-            if ((_YTextStyle->_ColorSource != ColorSource::None) && !InRange(Iter.RectL.left, OldRect.left, OldRect.right) && !InRange(Iter.RectL.left, OldRect.left, OldRect.right))
+            if (_YTextStyle->IsEnabled() && !InRange(Iter.RectL.left, OldRect.left, OldRect.right) && !InRange(Iter.RectL.left, OldRect.left, OldRect.right))
             {
                 // Draw the labels.
                 if (_GraphSettings->_YAxisLeft)
@@ -267,17 +267,10 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
         }
     #else
         if (_GraphSettings->_YAxisLeft)
-        {
-            D2D1_RECT_F DebugRect = { _Bounds.left + 1.f, _Bounds.top + 1.f, _ClientRect.left - 1.f, _Bounds.bottom };
-        
-            _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-        }
+            DrawDebugRectangle(renderTarget, { _Bounds.left + 1.f,      _Bounds.top + 1.f, _ClientRect.left - 1.f, _Bounds.bottom }, D2D1::ColorF(D2D1::ColorF::Orange));
+
         if (_GraphSettings->_YAxisRight)
-        {
-            D2D1_RECT_F DebugRect = { _ClientRect.right + 1.f, _Bounds.top + 1.f, _Bounds.right, _Bounds.bottom };
-        
-            _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-        }
+            DrawDebugRectangle(renderTarget, { _ClientRect.right + 1.f, _Bounds.top + 1.f, _Bounds.right,          _Bounds.bottom }, D2D1::ColorF(D2D1::ColorF::Orange));
     #endif
     }
     else
@@ -286,11 +279,11 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
         for (const Label & Iter : _Labels)
         {
             // Draw the horizontal grid line.
-            if (_YLineStyle->_ColorSource != ColorSource::None)
+            if (_YLineStyle->IsEnabled())
                 renderTarget->DrawLine(Iter.PointL, Iter.PointR, _YLineStyle->_Brush, _YLineStyle->_Thickness, nullptr);
 
             // Prevent overdraw of the labels.
-            if ((_YTextStyle->_ColorSource != ColorSource::None) && !InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
+            if (_YTextStyle->IsEnabled() && !InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
             {
                 // Draw the labels.
                 if (_GraphSettings->_YAxisLeft)
@@ -310,17 +303,10 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
         }
     #else
         if (_GraphSettings->_YAxisLeft)
-        {
-            D2D1_RECT_F DebugRect = { _Bounds.left + 1.f, _Bounds.top + 1.f, _ClientRect.left - 1.f, _Bounds.bottom };
-        
-            _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-        }
+            DrawDebugRectangle(renderTarget, { _Bounds.left + 1.f,      _Bounds.top + 1.f, _ClientRect.left - 1.f, _Bounds.bottom }, D2D1::ColorF(D2D1::ColorF::Orange));
+
         if (_GraphSettings->_YAxisRight)
-        {
-            D2D1_RECT_F DebugRect = { _ClientRect.right + 1.f, _Bounds.top + 1.f, _Bounds.right, _Bounds.bottom };
-        
-            _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-        }
+            DrawDebugRectangle(renderTarget, { _ClientRect.right + 1.f, _Bounds.top + 1.f, _Bounds.right,          _Bounds.bottom }, D2D1::ColorF(D2D1::ColorF::Orange));
     #endif
     }
 }
@@ -363,7 +349,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             Rect.bottom = Clamp(Rect.top + BarHeight, 0.f, _ClientSize.height - 1.f);
 
             // Draw the background.
-            if (_BackgroundStyle->_ColorSource != ColorSource::None)
+            if (_BackgroundStyle->IsEnabled())
             {
                 Rect.right = _ClientSize.width;
 
@@ -376,7 +362,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
             // Draw the foreground.
-            if (_PeakStyle->_ColorSource != ColorSource::None)
+            if (_PeakStyle->IsEnabled())
             {
                 const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -391,7 +377,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
-            if (_RMSStyle->_ColorSource != ColorSource::None)
+            if (_RMSStyle->IsEnabled())
             {
                 const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -403,11 +389,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             #else
-            {
-                D2D1_RECT_F DebugRect = { 0.f, Rect.top, _ClientSize.width, Rect.bottom };
-
-                _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-            }
+                DrawDebugRectangle(renderTarget, { 0.f, Rect.top, _ClientSize.width, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Red));
             #endif
             }
 
@@ -417,7 +399,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         ResetTransform(renderTarget);
 
         // Draw the channel names.
-        if ((_XTextStyle->_ColorSource != ColorSource::None) && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
+        if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
             Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top;
 
@@ -435,11 +417,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                {
-                    D2D1_RECT_F DebugRect = { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom };
-
-                    _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
-                }
+                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
                 }
 
@@ -451,24 +429,24 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                {
-                    D2D1_RECT_F DebugRect = { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom };
-
-                    _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
-                }
+                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
 
                     // Draw the RMS text display.
+                    if (_RMSTextStyle->IsEnabled())
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.left  = (_ClientRect.left + 1.f) + 2.f;
-                        TextRect.right = TextRect.left + _RMSTextStyle->_TextWidth + 2.f;
+                        TextRect.left  = _ClientRect.left  + 2.f;
+                        TextRect.right = _ClientRect.right - 2.f;
 
+                    #ifndef _DEBUG_RENDER
                         WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
 
                         renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-//                      renderTarget->DrawRectangle(TextRect, _RMSTextStyle->_Brush);
+                    #else
+                        DrawDebugRectangle(renderTarget, TextRect, D2D1::ColorF(D2D1::ColorF::Purple));
+                    #endif
                     }
                 }
 
@@ -495,7 +473,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             Rect.right = Clamp(Rect.left + BarWidth, 0.f, _ClientSize.width - 1.f);
 
             // Draw the background.
-            if (_BackgroundStyle->_ColorSource != ColorSource::None)
+            if (_BackgroundStyle->IsEnabled())
             {
                 Rect.bottom = _ClientSize.height;
 
@@ -509,7 +487,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             }
 
             // Draw the foreground.
-            if (_PeakStyle->_ColorSource != ColorSource::None)
+            if (_PeakStyle->IsEnabled())
             {
                 const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -524,7 +502,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
-            if (_RMSStyle->_ColorSource != ColorSource::None)
+            if (_RMSStyle->IsEnabled())
             {
                 const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
 
@@ -536,11 +514,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             #else
-            {
-                D2D1_RECT_F DebugRect = { Rect.left, 0.f, Rect.right, _ClientSize.height };
-
-                _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-            }
+                DrawDebugRectangle(renderTarget, { Rect.left, 0.f, Rect.right, _ClientSize.height }, D2D1::ColorF(D2D1::ColorF::Red));
             #endif
             }
 
@@ -548,17 +522,13 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         }
 
     #ifdef _DEBUG_RENDER
-        {
-            D2D1_RECT_F DebugRect = D2D1::RectF(0.f, 0.f, _ClientSize.width, _ClientSize.height);
-
-            _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Pink)); renderTarget->DrawRectangle(DebugRect, _DebugBrush);
-        }
+        DrawDebugRectangle(renderTarget, { 0.f, 0.f, _ClientSize.width, _ClientSize.height }, D2D1::ColorF(D2D1::ColorF::Pink));
     #endif
 
         ResetTransform(renderTarget);
 
         // Draw the channel names.
-        if ((_XTextStyle->_ColorSource != ColorSource::None) && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
+        if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
             Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left;
 
@@ -576,11 +546,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                {
-                    D2D1_RECT_F DebugRect = { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom };
-
-                    _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
-                }
+                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
                 }
 
@@ -592,24 +558,24 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                {
-                    D2D1_RECT_F DebugRect = { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom };
-
-                    _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue)); renderTarget->DrawRectangle(Rect, _DebugBrush);
-                }
+                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
 
                     // Draw the RMS text display.
+                    if (_RMSTextStyle->IsEnabled())
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.bottom = _ClientRect.bottom + 1.f;
-                        TextRect.top    = TextRect.bottom - (_RMSTextStyle->_TextHeight + 2.f);
+                        TextRect.top    = _ClientRect.top    + 1.f;
+                        TextRect.bottom = _ClientRect.bottom - 1.f;
 
+                    #ifndef _DEBUG_RENDER
                         WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
 
                         renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-//                      renderTarget->DrawRectangle(TextRect, _RMSTextStyle->_Brush);
+                    #else
+                        DrawDebugRectangle(renderTarget, TextRect, D2D1::ColorF(D2D1::ColorF::Purple));
+                    #endif
                     }
                 }
 

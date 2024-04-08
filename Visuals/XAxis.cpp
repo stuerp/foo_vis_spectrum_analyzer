@@ -223,13 +223,13 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     for (const Label & Iter : _Labels)
     {
         // Draw the vertical grid line.
-        if (_LineStyle->_ColorSource != ColorSource::None)
+        if (_LineStyle->IsEnabled())
             renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
             continue;
 
-        if (_TextStyle->_ColorSource != ColorSource::None)
+        if (_TextStyle->IsEnabled())
         {
             _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
