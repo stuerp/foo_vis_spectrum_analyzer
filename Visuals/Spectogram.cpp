@@ -69,7 +69,7 @@ void Spectogram::Reset()
 /// </summary>
 void Spectogram::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -217,12 +217,13 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
     };
 
     const FLOAT dy = _YTextStyle->_TextHeight / 2.f;
-
     const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_TextHeight : 0.f;
 
-    for (const auto & Label : _YLabels)
+    D2D1_RECT_F OldRect = {  };
+
+    for (const auto & Iter : _YLabels)
     {
-        const FLOAT y = Map(ScaleF(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+        const FLOAT y = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
 
         if (!_GraphSettings->_FlipVertically)
         {
@@ -241,7 +242,14 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
                 break;
         }
 
-        renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextStyle->_TextFormat, Rect, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        if ((Rect.top <_BitmapBounds.top) || (Rect.bottom > _BitmapBounds.bottom))
+            continue;
+
+        if ((Iter.Frequency != _YLabels.front().Frequency) && (Iter.Frequency != _YLabels.back().Frequency) && Iter.IsDimmed && IsOverlappingVertically(Rect, OldRect))
+            continue;
+
+        renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _YTextStyle->_TextFormat, Rect, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        OldRect = Rect;
     }
 }
 

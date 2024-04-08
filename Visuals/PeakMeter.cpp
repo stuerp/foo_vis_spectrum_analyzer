@@ -43,7 +43,7 @@ void PeakMeter::Initialize(State * state, const GraphSettings * settings, const 
 
             ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
-            Label lb = { Amplitude, Text };
+            Label lb = { Text, Amplitude };
 
             _Labels.push_back(lb);
         }
@@ -76,7 +76,7 @@ void PeakMeter::Reset()
 /// </summary>
 void PeakMeter::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     _ClientRect = _Bounds;
@@ -120,13 +120,18 @@ void PeakMeter::Resize() noexcept
         const FLOAT cx = (_YTextStyle->_TextWidth / 2.f);
 
         // Calculate the position of the labels based on the width.
+        D2D1_RECT_F OldRect = {  };
+
         for (Label & Iter : _Labels)
         {
             FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipHorizontally ? _ClientRect.left : _ClientRect.right, !_GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left);
 
             // Don't generate any labels outside the bounds.
             if (!InRange(x, _ClientRect.left, _ClientRect.right))
+            {
+                Iter.IsHidden = true;
                 continue;
+            }
 
             Iter.PointL = D2D1_POINT_2F(x, _ClientRect.top);
             Iter.PointR = D2D1_POINT_2F(x, _ClientRect.bottom);
@@ -146,6 +151,12 @@ void PeakMeter::Resize() noexcept
                 Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _ClientRect.top };
                 Iter.RectR = { x, _ClientRect.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
             }
+
+            // Hide overlapping labels except for the first and the last one.
+            Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.RectL, OldRect);
+
+            if (!Iter.IsHidden)
+                OldRect = Iter.RectL;
         }
     }
     else
@@ -181,13 +192,18 @@ void PeakMeter::Resize() noexcept
         const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
 
         // Calculate the position of the labels based on the height.
+        D2D1_RECT_F OldRect = {  };
+
         for (Label & Iter : _Labels)
         {
             FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top, !_GraphSettings->_FlipVertically ? _ClientRect.top : _ClientRect.bottom);
 
             // Don't generate any labels outside the bounds.
             if (!InRange(y, _ClientRect.top, _ClientRect.bottom))
+            {
+                Iter.IsHidden = true;
                 continue;
+            }
 
             Iter.PointL = D2D1_POINT_2F(_ClientRect.left,  y);
             Iter.PointR = D2D1_POINT_2F(_ClientRect.right, y);
@@ -199,6 +215,12 @@ void PeakMeter::Resize() noexcept
 
             Iter.RectL = { _Bounds.left,      y, _ClientRect.left, y + _YTextStyle->_TextHeight };
             Iter.RectR = { _ClientRect.right, y, _Bounds.right   , y + _YTextStyle->_TextHeight };
+
+            // Hide overlapping labels except for the first and the last one.
+            Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
+
+            if (!Iter.IsHidden)
+                OldRect = Iter.RectL;
         }
     }
 
@@ -235,8 +257,6 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
     if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
         return;
 
-    D2D1_RECT_F OldRect = {  };
-
     if (_State->_HorizontalPeakMeter)
     {
     #ifndef _DEBUG_RENDER
@@ -248,21 +268,14 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
             if (_YLineStyle->IsEnabled())
                 renderTarget->DrawLine(Iter.PointL, Iter.PointR, _YLineStyle->_Brush, _YLineStyle->_Thickness, nullptr);
 
-            // Prevent overdraw of the labels.
-            if (_YTextStyle->IsEnabled() && !InRange(Iter.RectL.left, OldRect.left, OldRect.right) && !InRange(Iter.RectL.left, OldRect.left, OldRect.right))
+            // Draw the text.
+            if (!Iter.IsHidden && _YTextStyle->IsEnabled())
             {
-                // Draw the labels.
                 if (_GraphSettings->_YAxisLeft)
-                {
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _YTextStyle->_TextFormat, Iter.RectL, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
                     
                 if (_GraphSettings->_YAxisRight)
-                {
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _YTextStyle->_TextFormat, Iter.RectR, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
-
-                OldRect = Iter.RectL;
             }
         }
     #else
@@ -282,8 +295,8 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
             if (_YLineStyle->IsEnabled())
                 renderTarget->DrawLine(Iter.PointL, Iter.PointR, _YLineStyle->_Brush, _YLineStyle->_Thickness, nullptr);
 
-            // Prevent overdraw of the labels.
-            if (_YTextStyle->IsEnabled() && !InRange(Iter.RectL.top, OldRect.top, OldRect.bottom) && !InRange(Iter.RectL.bottom, OldRect.top, OldRect.bottom))
+            // Draw the text.
+            if (!Iter.IsHidden && _YTextStyle->IsEnabled())
             {
                 // Draw the labels.
                 if (_GraphSettings->_YAxisLeft)
@@ -297,8 +310,6 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
                     _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _YTextStyle->_TextFormat, Iter.RectR, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
-
-                OldRect = Iter.RectL;
             }
         }
     #else

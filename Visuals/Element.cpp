@@ -1,5 +1,5 @@
 
-/** $VER: Element.cpp (2024.03.31) P. Stuer - Base class for all visual elements **/
+/** $VER: Element.cpp (2024.04.08) P. Stuer - Base class for all visual elements **/
 
 #include "framework.h"
 #include "Element.h"
@@ -36,4 +36,20 @@ void Element::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F &
 void Element::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
 {
     renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+}
+
+/// <summary>
+/// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
+/// </summary>
+bool Element::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
+{
+    return InRange(a.left, b.left, b.right) || InRange(a.right, b.left, b.right);
+}
+
+/// <summary>
+/// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
+/// </summary>
+bool Element::IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
+{
+    return InRange(a.top, b.top, b.bottom) || InRange(a.bottom, b.top, b.bottom);
 }

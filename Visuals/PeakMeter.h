@@ -63,8 +63,9 @@ private:
 
     struct Label
     {
-        double Amplitude;
         std::wstring Text;
+        double Amplitude;
+        bool IsHidden;
 
         D2D1_POINT_2F PointL;
         D2D1_POINT_2F PointR;

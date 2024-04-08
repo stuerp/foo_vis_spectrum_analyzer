@@ -52,14 +52,6 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 }
 
 /// <summary>
-/// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
-/// </summary>
-static bool IsOverlapping(const D2D1_RECT_F & a, const D2D1_RECT_F & b)
-{
-    return InRange(a.top, b.top, b.bottom) || InRange(a.bottom, b.top, b.bottom);
-}
-
-/// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
 void YAxis::Resize() noexcept
@@ -98,20 +90,10 @@ void YAxis::Resize() noexcept
         Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _TextStyle->_TextHeight };
         Iter.RectR = { xr + 2.f,     y, _Bounds.right, y + _TextStyle->_TextHeight };
 
-        Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlapping(Iter.RectL, OldRect);
+        Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
 
         if (!Iter.IsHidden)
             OldRect = Iter.RectL;
-    }
-
-    // Make sure  the first and last label are always drawn.
-    if (_Labels.size() > 2)
-    {
-        if (InRange(_Labels[0].RectL.top, _Labels[1].RectL.top, _Labels[1].RectL.bottom))
-            _Labels[1].IsHidden = true;
-
-        if (InRange(_Labels.back().RectL.bottom, _Labels[_Labels.size() - 2].RectL.top, _Labels[_Labels.size() - 2].RectL.bottom))
-            _Labels[_Labels.size() - 2].IsHidden = true;
     }
 
     _IsResized = false;
@@ -135,7 +117,7 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
         if (_LineStyle->IsEnabled())
             renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
-        // Draw the labels.
+        // Draw the text.
         if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_YAxisMode != YAxisMode::None))
         {
             if (_GraphSettings->_YAxisLeft)
