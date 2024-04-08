@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.07) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -172,11 +172,11 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
             { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
 
-            { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
-            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
+            { IDC_SHOW_TOOLTIPS, L"Displays a tooltip with information about the frequency band." },
+            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background." },
+            { IDC_ARTWORK_BACKGROUND, L"Displays album or custom artwork in the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
 
@@ -201,30 +201,30 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FLIP_VERTICALLY, L"Renders the spectrum upside down." },
 
             // X-axis
-            { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
-            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the spectrum" },
-            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the spectrum" },
+            { IDC_X_AXIS_MODE, L"Determines the type of X-axis." },
+            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the visualization." },
+            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the visualization." },
 
             // Y-axis
-            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
-            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the spectrum" },
-            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the spectrum" },
+            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis." },
+            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the visualization." },
+            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the visualization." },
 
-            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis" },
-            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis" },
-            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment" },
+            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment." },
 
-            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
-            { IDC_GAMMA, L"Index n of the n-th root calculation" },
+            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
+            { IDC_GAMMA, L"Sets index n of the n-th root calculation" },
 
-            { IDC_CHANNELS, L"Determines which channels are used to calculate the spectrum." },
+            { IDC_CHANNELS, L"Determines which channels are used by the visualization." },
 
             // Visualization
-            { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
+            { IDC_VISUALIZATION, L"Selects the type of visualization." },
 
-            { IDC_PEAK_MODE, L"Determines how to display the peak coefficients" },
-            { IDC_HOLD_TIME, L"Determines how long the peak coefficients are held before they decay" },
-            { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
+            { IDC_PEAK_MODE, L"Determines how to display the peak values." },
+            { IDC_HOLD_TIME, L"Determines how long the peak values are held before they decay." },
+            { IDC_ACCELERATION, L"Determines the accelaration of the peak value decay." },
 
             { IDC_LED_MODE, L"Display the spectrum bars and peak meters as LEDs." },
             { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
@@ -3113,10 +3113,12 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
-    const bool ShowPeaks = (_State->_PeakMode != PeakMode::None);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_State->_VisualizationType != VisualizationType::Spectogram);
 
-        for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
-            GetDlgItem(Iter).EnableWindow(ShowPeaks);
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && (_State->_VisualizationType != VisualizationType::Spectogram);
+
+    GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
+    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
 
     const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::PeakMeter);
  
@@ -3125,6 +3127,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
 
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
+
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
 }
 

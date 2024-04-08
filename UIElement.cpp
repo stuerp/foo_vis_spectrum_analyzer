@@ -453,7 +453,7 @@ void UIElement::Configure() noexcept
 /// </summary>
 void UIElement::UpdateState() noexcept
 {
-    Log::Write(Log::Level::Trace, "%8d: UpdateState", (uint32_t) ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: UpdateState", (uint32_t) ::GetTickCount64());
 
     {
         DeleteTrackingToolTip();

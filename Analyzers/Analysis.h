@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.07) P. Stuer **/
+/** $VER: Analysis.h (2024.04.08) P. Stuer **/
 
 #pragma once
 
@@ -27,17 +27,18 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(audio_sample peak = 0., audio_sample rms = 0., const WCHAR * name = L"", double scaledPeak = -999., double scaledRMS = -999.) : Name(name), Peak(peak), RMS(rms), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS), HoldTime() { }
+    MeterValue(const WCHAR * name = L"", audio_sample peak = 0., audio_sample rms = 0., double holdTime = 5., double decaySpeed = 0., double scaledPeak = -999., double scaledRMS = -999.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
 
     std::wstring Name;
 
     audio_sample Peak;
     audio_sample RMS;
 
+    double HoldTime;
+    double DecaySpeed;
+
     double ScaledPeak;
     double ScaledRMS;
-
-    double HoldTime;
 };
 
 /// <summary>
@@ -57,7 +58,7 @@ public:
 
     void Initialize(const State * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void UpdatePeakIndicators() noexcept;
+    void UpdatePeakValues() noexcept;
 
     void Reset();
 
@@ -78,7 +79,7 @@ private:
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
 public:
-    const State * _ThreadState;
+    const State * _State;
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;

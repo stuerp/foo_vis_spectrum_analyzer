@@ -242,7 +242,7 @@ void UIElement::UpdatePeakIndicators()
     if (_MainState._PeakMode != PeakMode::None)
     {
         for (auto & Iter : _Grid)
-            Iter._Graph->GetAnalysis().UpdatePeakIndicators();
+            Iter._Graph->GetAnalysis().UpdatePeakValues();
     }
 }
 
