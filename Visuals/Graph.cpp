@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.06) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -74,6 +74,9 @@ void Graph::Reset()
 {
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
+
+    for (MeterValue & mv : _Analysis._MeterValues)
+        mv.Peak = mv.RMS = -999.;
 
     _Spectrum.Reset();
     _Spectogram.Reset();

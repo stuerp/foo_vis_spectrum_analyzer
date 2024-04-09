@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.08) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.09) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -110,7 +110,7 @@ void PeakMeter::Resize() noexcept
                     _ClientRect.bottom -= _YTextStyle->_TextHeight;
             }
 
-            _RMSTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             _RMSTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         }
 
@@ -182,7 +182,7 @@ void PeakMeter::Resize() noexcept
                     _ClientRect.bottom -= _XTextStyle->_TextHeight;
             }
 
-            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
         }
 
@@ -372,9 +372,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             // Draw the foreground.
             if (_PeakStyle->IsEnabled())
             {
-                const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
-                Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, _ClientSize.width);
+                Rect.right = (FLOAT) (mv.SmoothedPeak * _ClientSize.width);
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -387,9 +385,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
             if (_RMSStyle->IsEnabled())
             {
-                const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
-                Rect.right = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, _ClientSize.width);
+                Rect.right = (FLOAT) (mv.SmoothedRMS * _ClientSize.width);
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -441,15 +437,15 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
 
                     // Draw the RMS text display.
-                    if (_RMSTextStyle->IsEnabled())
+                    if (_RMSTextStyle->IsEnabled() && (mv.RMS != -999.))
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.left  = _ClientRect.left  + 2.f;
-                        TextRect.right = _ClientRect.right - 2.f;
+                        TextRect.left  = _GraphSettings->_FlipHorizontally ? _ClientRect.right - 2.f - _RMSTextStyle->_TextWidth : _ClientRect.left + 2.f;
+                        TextRect.right = TextRect.left + _RMSTextStyle->_TextWidth;
 
                     #ifndef _DEBUG_RENDER
-                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
+                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.RMS);
 
                         renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
                     #else
@@ -497,9 +493,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             // Draw the foreground.
             if (_PeakStyle->IsEnabled())
             {
-                const double Value = Clamp(mv.ScaledPeak, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
-                Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, _ClientSize.height);
+                Rect.bottom = (FLOAT) (mv.SmoothedPeak * _ClientSize.height);
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -512,9 +506,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
             if (_RMSStyle->IsEnabled())
             {
-                const double Value = Clamp(mv.ScaledRMS, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-
-                Rect.bottom = Map(Value, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0.f, _ClientSize.height);
+                Rect.bottom = (FLOAT) (mv.SmoothedRMS * _ClientSize.height);
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -570,15 +562,17 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
 
                     // Draw the RMS text display.
-                    if (_RMSTextStyle->IsEnabled())
+                    if (_RMSTextStyle->IsEnabled() && (mv.RMS != -999.))
                     {
                         D2D1_RECT_F TextRect = Rect;
 
+                        TextRect.left   = Rect.left + ((Rect.right - Rect.left) - _RMSTextStyle->_TextWidth) / 2.f;
+                        TextRect.right  = TextRect.left + _RMSTextStyle->_TextWidth;
                         TextRect.top    = _ClientRect.top    + 1.f;
                         TextRect.bottom = _ClientRect.bottom - 1.f;
 
                     #ifndef _DEBUG_RENDER
-                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.ScaledRMS);
+                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.RMS);
 
                         renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
                     #else

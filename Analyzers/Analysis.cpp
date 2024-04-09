@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.08) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.09) P. Stuer **/
 
 #include "framework.h"
 
@@ -162,11 +162,9 @@ void Analysis::Reset()
 
     for (auto & mv : _MeterValues)
     {
-        mv.Peak       =    0.;
-        mv.RMS        =    0.;
-        mv.ScaledPeak = -999.0;
-        mv.ScaledRMS  = -999.0;
-        mv.HoldTime   = _State->_HoldTime / 6.; // Scale the value for it to make sense for a peak meter.
+        mv.Peak     = 0.;
+        mv.RMS      = 0.;
+        mv.HoldTime = _State->_HoldTime; // Scale the value for it to make sense for a peak meter.
     }
 }
 
@@ -481,37 +479,60 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         {
             audio_sample Value = std::abs(*Sample);
 
-            {
-                if (Value > mv.Peak)
-                    mv.Peak = Value;
-            }
-            {
-                mv.RMS += Value * Value;
-            }
+            if (Value > mv.Peak)
+                mv.Peak = Value;
+
+            mv.RMS += Value * Value;
 
             ++Sample;
         }
     }
 
-    // Calculate the scaled values. Keep the new value only when it's larger than the current value to reduce the jitter of the meter.
+    // Normalize the values.
     for (auto & mv : _MeterValues)
     {
+        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+        mv.Peak = ToDecibel(mv.Peak / Amax) + dBCorrection;
+        mv.NormalizedPeak = NormalizeMeterValue(mv.Peak);
+
+        mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) (SampleCount / chunk.get_channel_count()));
+        mv.RMS = ToDecibel(mv.RMS / Amax) + dBCorrection;
+        mv.NormalizedRMS = NormalizeMeterValue(mv.RMS);
+    }
+
+    // Smooth the values.
+    switch (_State->_SmoothingMethod)
+    {
+        default:
+
+        case SmoothingMethod::None:
         {
-            double ScaledPeak = ToDecibel(mv.Peak / Amax) + dBCorrection; // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-
-            if (ScaledPeak > mv.ScaledPeak)
-                mv.ScaledPeak = ScaledPeak;
-        }
-        {
-            mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) SampleCount);
-
-            double ScaledRMS = ToDecibel(mv.RMS / Amax) + dBCorrection;
-
-            if (ScaledRMS > mv.ScaledRMS)
+            for (auto & mv : _MeterValues)
             {
-                mv.ScaledRMS = ScaledRMS;
-                mv.HoldTime = _State->_HoldTime / 6.; // Scale the value for it to make sense for a peak meter.
+                mv.SmoothedPeak = mv.NormalizedPeak;
+                mv.SmoothedRMS  = mv.NormalizedRMS;
             }
+            break;
+        }
+
+        case SmoothingMethod::Average:
+        {
+            for (auto & mv : _MeterValues)
+            {
+                mv.SmoothedPeak = Clamp((mv.SmoothedPeak * _State->_SmoothingFactor) + (mv.NormalizedPeak * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
+                mv.SmoothedRMS  = Clamp((mv.SmoothedRMS  * _State->_SmoothingFactor) + (mv.NormalizedRMS  * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
+            }
+            break;
+        }
+
+        case SmoothingMethod::Peak:
+        {
+            for (auto & mv : _MeterValues)
+            {
+                mv.SmoothedPeak = Clamp(Max(mv.SmoothedPeak * _State->_SmoothingFactor, mv.NormalizedPeak), 0.0, 1.0);
+                mv.SmoothedRMS  = Clamp(Max(mv.SmoothedRMS  * _State->_SmoothingFactor, mv.NormalizedRMS),  0.0, 1.0);
+            }
+            break;
         }
     }
 
@@ -610,8 +631,8 @@ void Analysis::UpdatePeakValues() noexcept
             {
                 if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
                 {
-                    mv.ScaledPeak += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
-                    mv.ScaledRMS  += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
+                    mv.SmoothedPeak += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
+                    mv.SmoothedRMS  += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
                 }
 
                 mv.HoldTime--;
@@ -632,23 +653,23 @@ void Analysis::UpdatePeakValues() noexcept
                     case PeakMode::FadeOut:
                         mv.DecaySpeed = Acceleration;
 
-                        mv.ScaledPeak = Clamp(mv.ScaledPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.ScaledRMS  = Clamp(mv.ScaledRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
                         break;
 
                     case PeakMode::Gravity:
                         mv.DecaySpeed += Acceleration;
 
-                        mv.ScaledPeak = Clamp(mv.ScaledPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.ScaledRMS  = Clamp(mv.ScaledRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
                         break;
 
                     case PeakMode::AIMP:
                     case PeakMode::FadingAIMP:
-                        mv.DecaySpeed = Acceleration * (1. + (int) (mv.ScaledPeak < 0.5));
+                        mv.DecaySpeed = Acceleration * (1. + (int) (mv.SmoothedPeak < 0.5));
 
-                        mv.ScaledPeak = Clamp(mv.ScaledPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.ScaledRMS  = Clamp(mv.ScaledRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
                         break;
                 }
             }

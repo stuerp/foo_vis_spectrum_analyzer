@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.08) P. Stuer **/
+/** $VER: Analysis.h (2024.04.09) P. Stuer **/
 
 #pragma once
 
@@ -27,18 +27,20 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5., double decaySpeed = 0., double scaledPeak = -999., double scaledRMS = -999.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
+    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5., double decaySpeed = 0.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed) { }
 
     std::wstring Name;
 
-    double Peak;
-    double RMS;
+    double Peak;            // dB
+    double NormalizedPeak;  // 0.0 .. 1.0
+    double SmoothedPeak;    // 0.0 .. 1.0
+
+    double RMS;             // dB
+    double NormalizedRMS;   // 0.0 .. 1.0
+    double SmoothedRMS;     // 0.0 .. 1.0
 
     double HoldTime;
     double DecaySpeed;
-
-    double ScaledPeak;
-    double ScaledRMS;
 };
 
 /// <summary>
@@ -77,6 +79,11 @@ private:
     void Normalize() noexcept;
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
+
+    double NormalizeMeterValue(double amplitude) const noexcept
+    {
+        return Clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+    }
 
 public:
     const State * _State;
