@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.04.06) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.04.09) P. Stuer - Implements the X axis of a graph. **/
 
 #include "framework.h"
 #include "XAxis.h"
@@ -147,10 +147,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
 /// </summary>
 void XAxis::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
-
-    _IsResized = true;
+    SetBounds(rect);
 }
 
 /// <summary>

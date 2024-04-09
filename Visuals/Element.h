@@ -25,6 +25,12 @@ public:
     virtual ~Element() {}
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
+    virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
+    {
+        _Bounds = bounds;
+        _Size = { bounds.right - bounds.left, bounds.bottom - bounds.top };
+        _IsResized = true;
+    }
 
     virtual FLOAT GetLeft() const noexcept { return _Bounds.left; }
     virtual FLOAT GetRight() const noexcept { return _Bounds.right; }

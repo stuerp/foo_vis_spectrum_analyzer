@@ -33,12 +33,9 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings, const A
 /// </summary>
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _OpacityMask.Release();
-
-    _IsResized = true;
 }
 
 /// <summary>
@@ -46,7 +43,7 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;

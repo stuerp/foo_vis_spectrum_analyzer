@@ -55,12 +55,9 @@ void PeakMeter::Initialize(State * state, const GraphSettings * settings, const 
 /// </summary>
 void PeakMeter::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _OpacityMask.Release();
-
-    _IsResized = true;
 }
 
 /// <summary>

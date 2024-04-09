@@ -45,10 +45,7 @@ void YAxis::Initialize(State * state, const GraphSettings * settings, const Anal
 /// </summary>
 void YAxis::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
-
-    _IsResized = true;
+    SetBounds(rect);
 }
 
 /// <summary>

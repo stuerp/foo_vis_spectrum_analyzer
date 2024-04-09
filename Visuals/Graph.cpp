@@ -46,8 +46,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 /// </summary>
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _Spectrum.Move(rect);
     _Spectogram.Move(rect);
