@@ -169,8 +169,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_WT_AMT, L"Weighting amount" },
 
             // Common
-            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
-            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
+            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients and the peak meter values are smoothed." },
+            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing." },
 
             { IDC_SHOW_TOOLTIPS, L"Displays a tooltip with information about the frequency band." },
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
@@ -179,6 +179,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_ARTWORK_BACKGROUND, L"Displays album or custom artwork in the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
+            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
 
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
@@ -826,6 +827,9 @@ void ConfigurationDialog::Initialize()
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FitMode);
+    }
+    {
+        SendDlgItemMessageW(IDC_FIT_WINDOW, BM_SETCHECK, _State->_FitWindow);
     }
     {
         UDACCEL Accel[] =
@@ -2239,6 +2243,14 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_FIT_WINDOW:
+        {
+            _State->_FitWindow = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateCommonPage();
+            break;
+        }
+
         case IDC_ADD:
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
@@ -2798,7 +2810,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
-            IDC_FIT_MODE_LBL, IDC_FIT_MODE,
+            IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
@@ -3012,6 +3024,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
 
     // Artwork
     GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
+    GetDlgItem(IDC_FIT_WINDOW).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 }

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.04.01) P. Stuer **/
+/** $VER: Resources.rc (2024.04.10) P. Stuer **/
 
 #include "Resources.h"
 
@@ -210,7 +210,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
     groupbox "Common", IDC_COMMON, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Spectrum smoothing:",      IDC_SMOOTHING_METHOD_LBL,       X_A17, Y_A17 + 2, W_A17, H_A17
+        rtext           "Smoothing method:",        IDC_SMOOTHING_METHOD_LBL,       X_A17, Y_A17 + 2, W_A17, H_A17
         combobox                                    IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Smoothing factor:"         IDC_SMOOTHING_FACTOR_LBL,       X_A37, Y_A37 + 2, W_A37, H_A37
@@ -237,6 +237,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         rtext           "Fit mode:",                IDC_FIT_MODE_LBL,               X_G30, Y_G30 + 2, W_G30, H_G30
         combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        control         "Fit window",               IDC_FIT_WINDOW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
 
         rtext           "Artwork opacity:"          IDC_ARTWORK_OPACITY_LBL,        X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

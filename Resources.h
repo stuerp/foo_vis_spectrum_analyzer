@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.08) P. Stuer **/
+/** $VER: Resources.h (2024.04.10) P. Stuer **/
 
 #pragma once
 
@@ -266,6 +266,7 @@
 
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086
+#define IDC_FIT_WINDOW                  6088
 
 #define IDC_ARTWORK_OPACITY_LBL         6090
 #define IDC_ARTWORK_OPACITY             6092

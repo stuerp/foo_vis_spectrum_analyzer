@@ -147,8 +147,8 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter))
-        artwork.Render(renderTarget, _Spectrum.GetClientBounds(), _State);
+    if (_State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter) && (artwork.Bitmap() != nullptr))
+        artwork.Render(renderTarget, _State->_FitWindow ? _Spectrum.GetBounds() : _Spectrum.GetClientBounds(), _State);
 }
 
 /// <summary>
