@@ -76,7 +76,7 @@ void Graph::Reset()
         fb.CurValue = 0.;
 
     for (MeterValue & mv : _Analysis._MeterValues)
-        mv.Peak = mv.RMS = -999.;
+        mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
 
     _Spectrum.Reset();
     _Spectogram.Reset();

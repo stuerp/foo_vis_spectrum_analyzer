@@ -165,8 +165,8 @@ void Analysis::Reset()
 
     for (auto & mv : _MeterValues)
     {
-        mv.Peak     = -INFINITY;
-        mv.RMS      = -INFINITY;
+        mv.Peak     = -std::numeric_limits<double>::infinity();
+        mv.RMS      = -std::numeric_limits<double>::infinity();
         mv.HoldTime = _State->_HoldTime; // Scale the value for it to make sense for a peak meter.
     }
 }
@@ -458,17 +458,17 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             for (unsigned ChannelConfig = chunk.get_channel_config() & _GraphSettings->_Channels; (ChannelConfig != 0) && (i < _countof(ChannelNames)); ChannelConfig >>= 1, ++i)
             {
                 if (ChannelConfig & 1)
-                    _MeterValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime / 6. }); // Scale the value for it to make sense for a peak meter.
+                    _MeterValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime }); // Scale the value for it to make sense for a peak meter.
             }
         }
         else
-            _MeterValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime / 6. }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
+            _MeterValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
     }
     else
     {
         for (auto & mv : _MeterValues)
         {
-            mv.Peak = -INFINITY;
+            mv.Peak = -std::numeric_limits<double>::infinity();
             mv.RMS = 0.;
         }
     }
