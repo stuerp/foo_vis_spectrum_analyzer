@@ -37,13 +37,10 @@ void Spectogram::Initialize(State * state, const GraphSettings * settings, const
 /// </summary>
 void Spectogram::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
-
-    _IsResized = true;
 }
 
 /// <summary>
@@ -69,21 +66,81 @@ void Spectogram::Reset()
 /// </summary>
 void Spectogram::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
-    _YTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    {
+        _XTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+        _YTextStyle->SetHorizontalAlignment(((_GraphSettings->_XAxisMode == XAxisMode::Notes) || (_GraphSettings->_XAxisMode == XAxisMode::Octaves)) ? DWRITE_TEXT_ALIGNMENT_LEADING : DWRITE_TEXT_ALIGNMENT_TRAILING);
+    }
 
-    _BitmapBounds = _Bounds;
+    {
+        _BitmapBounds = _Bounds;
 
-    if (_GraphSettings->_XAxisTop)
-        _BitmapBounds.top += _XTextStyle->_TextHeight;
+        if (_GraphSettings->_XAxisTop)
+            _BitmapBounds.top += _XTextStyle->_TextHeight;
 
-    if (_GraphSettings->_XAxisBottom)
-        _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
+        if (_GraphSettings->_XAxisBottom)
+            _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
 
-    _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+        _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+    }
+
+    {
+        const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+        const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+
+        D2D1_RECT_F Rect = { };
+
+        const FLOAT dy = _YTextStyle->_TextHeight / 2.f;
+        const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_TextHeight : 0.f;
+
+        _VisibleYLabels.clear();
+
+        for (auto & Iter : _YLabels)
+        {
+            const FLOAT y = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+
+            if (!_GraphSettings->_FlipVertically)
+            {
+                Rect.top    = y1 + _BitmapSize.height - y - dy;
+                Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
+
+                if (Rect.bottom < (y1 - dy))
+                    break;
+            }
+            else
+            {
+                Rect.top    = y1 + y - dy;
+                Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
+
+                if (Rect.bottom > (y1 + _BitmapSize.height + dy))
+                    break;
+            }
+
+            Iter.RectL = Rect;
+            Iter.RectR = Rect;
+
+            Iter.RectL.left  = 0.f;
+            Iter.RectL.right = _YTextStyle->_TextWidth;
+            Iter.RectR.left  = _Size.width - _YTextStyle->_TextWidth;
+            Iter.RectR.right = _Size.width;
+
+            if ((Rect.top <_BitmapBounds.top) || (Rect.bottom > _BitmapBounds.bottom))
+                continue;
+
+            if ((Iter.Frequency != _YLabels.front().Frequency) && (Iter.Frequency != _YLabels.back().Frequency) && (_VisibleYLabels.size() > 0) && IsOverlappingVertically(Rect, _VisibleYLabels.back().RectL))
+            {
+                if (Iter.IsDimmed)
+                    continue;
+
+                if (_VisibleYLabels.back().IsDimmed)
+                    _VisibleYLabels.pop_back();
+            }
+
+            _VisibleYLabels.push_back(Iter);
+        }
+    }
 
     _IsResized = false;
 }
@@ -205,44 +262,29 @@ void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const n
 /// </summary>
 void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
 {
-    const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    if (_VisibleYLabels.size() == 0)
+        return;
 
-    D2D1_RECT_F Rect =
+    D2D1_RECT_F OldRect = { };
+
+    FLOAT Opacity = _YTextStyle->_Brush->GetOpacity();
+
+    for (const auto & Iter : _VisibleYLabels)
     {
-        left ? 0.f : _Size.width - _YTextStyle->_TextWidth,
-        0.f,
-        left ? _YTextStyle->_TextWidth : _Size.width,
-        0.f
-    };
+        if (IsOverlappingVertically(Iter.RectL, OldRect))
+            continue;
 
-    const FLOAT dy = _YTextStyle->_TextHeight / 2.f;
+        _YTextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
-    const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_TextHeight : 0.f;
-
-    for (const auto & Label : _YLabels)
-    {
-        const FLOAT y = Map(ScaleF(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
-
-        if (!_GraphSettings->_FlipVertically)
-        {
-            Rect.top    = y1 + _BitmapSize.height - y - dy;
-            Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
-
-            if (Rect.bottom < (y1 - dy))
-                break;
-        }
+        if (left)
+            renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _YTextStyle->_TextFormat, Iter.RectL, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         else
-        {
-            Rect.top    = y1 + y - dy;
-            Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
+            renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _YTextStyle->_TextFormat, Iter.RectR, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (Rect.bottom > (y1 + _BitmapSize.height + dy))
-                break;
-        }
-
-        renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _YTextStyle->_TextFormat, Rect, _YTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        OldRect = Iter.RectL;
     }
+
+    _YTextStyle->_Brush->SetOpacity(Opacity);
 }
 
 /// <summary>

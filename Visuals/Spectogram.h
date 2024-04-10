@@ -93,9 +93,14 @@ private:
         std::wstring Text;
         double Frequency;
         bool IsDimmed;
+        bool IsHidden;
+
+        D2D1_RECT_F RectL;
+        D2D1_RECT_F RectR;
     };
 
     std::vector<YLabel> _YLabels;
+    std::vector<YLabel> _VisibleYLabels;
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;

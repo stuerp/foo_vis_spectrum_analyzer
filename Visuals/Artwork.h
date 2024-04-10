@@ -44,7 +44,7 @@ public:
 
     void Release() noexcept
     {
-Log::Write(Log::Level::Trace, "%08X Releasing artwork", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Releasing artwork.", (uint32_t) ::GetTickCount64());
 
         _CriticalSection.Enter();
 
@@ -81,7 +81,7 @@ private:
     {
         _CriticalSection.Enter();
 
-Log::Write(Log::Level::Trace, "%08X Setting artwork status to %d", (uint32_t) ::GetTickCount64(), status);
+    //  Log::Write(Log::Level::Trace, "%8d: Setting artwork status to %d.", (uint32_t) ::GetTickCount64(), status);
         _Status = status;
 
         _CriticalSection.Leave();

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.06) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -46,8 +46,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 /// </summary>
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _Spectrum.Move(rect);
     _Spectogram.Move(rect);
@@ -75,6 +74,9 @@ void Graph::Reset()
 {
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
+
+    for (MeterValue & mv : _Analysis._MeterValues)
+        mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
 
     _Spectrum.Reset();
     _Spectogram.Reset();
@@ -141,12 +143,12 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 /// </summary>
 void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 {
-//  if (_BackgroundStyle->_ColorSource != ColorSource::None)
+//  if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     // Render the bitmap if there is one.
-    if ((artwork.Bitmap() != nullptr) && _State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter))
-        artwork.Render(renderTarget, _Spectrum.GetClientBounds(), _State);
+    if (_State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter) && (artwork.Bitmap() != nullptr))
+        artwork.Render(renderTarget, _State->_FitWindow ? _Spectrum.GetBounds() : _Spectrum.GetClientBounds(), _State);
 }
 
 /// <summary>
@@ -207,10 +209,10 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
         Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
-        if (_DescriptionBackgroundStyle->_ColorSource != ColorSource::None)
+        if (_DescriptionBackgroundStyle->IsEnabled())
             renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
 
-        if (_DescriptionTextStyle->_ColorSource != ColorSource::None)
+        if (_DescriptionTextStyle->IsEnabled())
             renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 }

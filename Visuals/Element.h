@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.04.06) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.04.08) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -25,12 +25,21 @@ public:
     virtual ~Element() {}
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
+    virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
+    {
+        _Bounds = bounds;
+        _Size = { bounds.right - bounds.left, bounds.bottom - bounds.top };
+        _IsResized = true;
+    }
 
     virtual FLOAT GetLeft() const noexcept { return _Bounds.left; }
     virtual FLOAT GetRight() const noexcept { return _Bounds.right; }
 
     virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
+
+    static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
+    static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
 
 protected:
     void SafeRelease(Style ** style)

@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2024.04.06) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2024.04.08) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -55,9 +55,10 @@ private:
 
     struct Label
     {
-        double Frequency;
         std::wstring Text;
+        double Frequency;
         bool IsDimmed;
+        bool IsHidden;
 
         D2D1_POINT_2F PointT;
         D2D1_POINT_2F PointB;

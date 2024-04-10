@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.04.06) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.04.09) P. Stuer - Implements the X axis of a graph. **/
 
 #include "framework.h"
 #include "XAxis.h"
@@ -54,7 +54,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Frequency, Text };
+                    Label lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
                 }
@@ -76,7 +76,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Frequency, Text };
+                    Label lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
 
@@ -98,7 +98,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    Label lb = { Frequency, Text };
+                    Label lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
 
@@ -127,7 +127,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
 
-                    Label lb = { Frequency, Text, j != 0 };
+                    Label lb = { Text, Frequency, j != 0 };
 
                     _Labels.push_back(lb);
 
@@ -147,10 +147,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
 /// </summary>
 void XAxis::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
-
-    _IsResized = true;
+    SetBounds(rect);
 }
 
 /// <summary>
@@ -158,7 +155,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void XAxis::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     // Calculate the position of the labels.
@@ -174,6 +171,8 @@ void XAxis::Resize() noexcept
     const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
+    D2D1_RECT_F OldRect = {  };
+
     for (Label & Iter : _Labels)
     {
         const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
@@ -182,7 +181,10 @@ void XAxis::Resize() noexcept
 
         // Don't generate any labels outside the bounds.
         if (!InRange(x, _Bounds.left, _Bounds.right))
+        {
+            Iter.IsHidden = true;
             continue;
+        }
 
         Iter.PointT = D2D1_POINT_2F(x, yt);
         Iter.PointB = D2D1_POINT_2F(x, yb);
@@ -200,6 +202,12 @@ void XAxis::Resize() noexcept
 
                 Iter.RectT = { x - (TextMetrics.width / 2.f), _Bounds.top, x + (TextMetrics.width / 2.f), yt };
                 Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
+
+                // Note: Tries to preserve the undimmed labels.
+                Iter.IsHidden = (Iter.Frequency != _Labels.front().Frequency) && (Iter.Frequency != _Labels.back().Frequency) && Iter.IsDimmed && IsOverlappingHorizontally(Iter.RectT, OldRect);
+
+                if (!Iter.IsHidden)
+                    OldRect = Iter.RectT;
             }
         }
     }
@@ -217,34 +225,24 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    D2D1_RECT_F OldRect = {  };
     FLOAT Opacity = _TextStyle->_Brush->GetOpacity();
 
     for (const Label & Iter : _Labels)
     {
         // Draw the vertical grid line.
-        if (_LineStyle->_ColorSource != ColorSource::None)
+        if (_LineStyle->IsEnabled())
             renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
-        if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
-            continue;
-
-        if (_TextStyle->_ColorSource != ColorSource::None)
+        // Draw the text.
+        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_XAxisMode != XAxisMode::None))
         {
             _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
 
-            // Prevent overdraw of the labels.
-            if (!InRange(Iter.RectB.left, OldRect.left, OldRect.right) && !InRange(Iter.RectB.right, OldRect.left, OldRect.right))
-            {
-                // Draw the labels.
-                if (_GraphSettings->_XAxisTop)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (_GraphSettings->_XAxisTop)
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                if (_GraphSettings->_XAxisBottom)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                OldRect = Iter.RectB;
-            }
+            if (_GraphSettings->_XAxisBottom)
+                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 

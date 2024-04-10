@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.06) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.08) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -48,14 +48,24 @@ private:
 
     void Resize() noexcept;
 
+//#define _DEBUG_RENDER
+
+#ifdef _DEBUG_RENDER
+    void DrawDebugRectangle(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & rect, const D2D1_COLOR_F & color) const noexcept
+    {
+        _DebugBrush->SetColor(color); renderTarget->DrawRectangle(rect, _DebugBrush);
+    }
+#endif
+
 private:
     D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
 
     struct Label
     {
-        double Amplitude;
         std::wstring Text;
+        double Amplitude;
+        bool IsHidden;
 
         D2D1_POINT_2F PointL;
         D2D1_POINT_2F PointR;
@@ -82,6 +92,7 @@ private:
 
     Style * _PeakStyle;
     Style * _RMSStyle;
+    Style * _RMSTextStyle;
 
     Style * _XTextStyle;
     Style * _YTextStyle;

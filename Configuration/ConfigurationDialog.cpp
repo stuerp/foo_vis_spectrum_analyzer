@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.01) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -16,13 +16,46 @@
 #include "Log.h"
 
 // Display names for the audio_chunk channel bits.
-static const LPCWSTR ChannelNames[] =
+static const WCHAR * const ChannelNames[] =
 {
     L"Front Left", L"Front Right", L"Front Center",
     L"Low Frequency", L"Back Left", L"Back Right",
     L"Front Left of Center", L"Front Right of Center",
     L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
+};
+
+static const WCHAR * const VisualElementNames[] =
+{
+    L"Graph Background",
+    L"Graph Description Text",
+    L"Graph Description Background",
+
+    L"X-axis Text",
+    L"Y-axis Text",
+    L"Horizontal Grid Line",
+    L"Vertical Grid Line",
+
+    L"Bar Area",
+    L"Bar Top",
+    L"Bar Peak Area",
+    L"Bar Peak Top",
+    L"Bar Dark Background",
+    L"Bar Light Background",
+
+    L"Curve Line",
+    L"Curve Area",
+    L"Curve Peak Line",
+    L"Curve Peak Area",
+
+    L"Spectogram",
+
+    L"Peak Meter Background",
+    L"Peak Meter Peak Level",
+    L"Peak Meter RMS Level",
+    L"Peak Meter RMS Level Text",
+
+    L"Nyquist Frequency",
 };
 
 /// <summary>
@@ -136,16 +169,17 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_WT_AMT, L"Weighting amount" },
 
             // Common
-            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients are smoothed" },
-            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing" },
+            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients and the peak meter values are smoothed." },
+            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing." },
 
-            { IDC_SHOW_TOOLTIPS, L"Display a tooltip with information about the frequency band" },
-            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered" },
+            { IDC_SHOW_TOOLTIPS, L"Displays a tooltip with information about the frequency band." },
+            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Enable to show album or custom artwork in the graph background." },
+            { IDC_ARTWORK_BACKGROUND, L"Displays album or custom artwork in the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
+            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
 
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
@@ -168,30 +202,30 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FLIP_VERTICALLY, L"Renders the spectrum upside down." },
 
             // X-axis
-            { IDC_X_AXIS_MODE, L"Determines the type of X-axis" },
-            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the spectrum" },
-            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the spectrum" },
+            { IDC_X_AXIS_MODE, L"Determines the type of X-axis." },
+            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the visualization." },
+            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the visualization." },
 
             // Y-axis
-            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis" },
-            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the spectrum" },
-            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the spectrum" },
+            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis." },
+            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the visualization." },
+            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the visualization." },
 
-            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis" },
-            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis" },
-            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment" },
+            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment." },
 
-            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled" },
-            { IDC_GAMMA, L"Index n of the n-th root calculation" },
+            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
+            { IDC_GAMMA, L"Sets index n of the n-th root calculation" },
 
-            { IDC_CHANNELS, L"Determines which channels are used to calculate the spectrum." },
+            { IDC_CHANNELS, L"Determines which channels are used by the visualization." },
 
             // Visualization
-            { IDC_VISUALIZATION, L"Selects the type of spectrum visualization" },
+            { IDC_VISUALIZATION, L"Selects the type of visualization." },
 
-            { IDC_PEAK_MODE, L"Determines how to display the peak coefficients" },
-            { IDC_HOLD_TIME, L"Determines how long the peak coefficients are held before they decay" },
-            { IDC_ACCELERATION, L"Determines the accelaration of the peak coefficient decay" },
+            { IDC_PEAK_MODE, L"Determines how to display the peak values." },
+            { IDC_HOLD_TIME, L"Determines how long the peak values are held before they decay." },
+            { IDC_ACCELERATION, L"Determines the accelaration of the peak value decay." },
 
             { IDC_LED_MODE, L"Display the spectrum bars and peak meters as LEDs." },
             { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
@@ -795,6 +829,9 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _State->_FitMode);
     }
     {
+        SendDlgItemMessageW(IDC_FIT_WINDOW, BM_SETCHECK, _State->_FitWindow);
+    }
+    {
         UDACCEL Accel[] =
         {
             { 1,  1 },
@@ -1024,16 +1061,9 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x :
-        {
-            L"Graph Background", L"Graph Description Text", L"Graph Description Background",
-            L"X-axis Text", L"Y-axis Text", L"Horizontal Grid Line", L"Vertical Grid Line",
-            L"Bar Area", L"Bar Top", L"Bar Peak Area", L"Bar Peak Top", L"Bar Dark Background", L"Bar Light Background",
-            L"Curve Line", L"Curve Area", L"Curve Peak Line", L"Curve Peak Area",
-            L"Spectogram",
-            L"Peak Meter Background", L"Peak Meter Peak Level", L"Peak Meter RMS Level",
-            L"Nyquist Frequency",
-        })
+        assert((size_t) VisualElement::Count == _countof(VisualElementNames));
+
+        for (const auto & x : VisualElementNames)
             w.AddString(x);
 
         _State->_SelectedStyle = (int) VisualElement::GraphBackground;
@@ -1165,7 +1195,7 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 
         case CC_COLORS:
         {
-            Log::Write(Log::Level::Trace, "%08X: Colors changed.", (int) ::GetTickCount64());
+        //  Log::Write(Log::Level::Trace, "%8d: Colors changed.", (int) ::GetTickCount64());
 
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
@@ -2213,6 +2243,14 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_FIT_WINDOW:
+        {
+            _State->_FitWindow = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateCommonPage();
+            break;
+        }
+
         case IDC_ADD:
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
@@ -2772,7 +2810,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
-            IDC_FIT_MODE_LBL, IDC_FIT_MODE,
+            IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
@@ -2986,6 +3024,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
 
     // Artwork
     GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
+    GetDlgItem(IDC_FIT_WINDOW).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 }
@@ -3087,10 +3126,12 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
-    const bool ShowPeaks = (_State->_PeakMode != PeakMode::None);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_State->_VisualizationType != VisualizationType::Spectogram);
 
-        for (const auto & Iter : { IDC_HOLD_TIME, IDC_ACCELERATION })
-            GetDlgItem(Iter).EnableWindow(ShowPeaks);
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && (_State->_VisualizationType != VisualizationType::Spectogram);
+
+    GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
+    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
 
     const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::PeakMeter);
  
@@ -3099,6 +3140,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
 
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
+
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
 }
 
@@ -3187,11 +3229,11 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
     GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
+    GetDlgItem(IDC_OPACITY).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow((style->_ColorSource != ColorSource::None) && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
 
     UpdateColorControls();
 }
@@ -3215,7 +3257,7 @@ void ConfigurationDialog::UpdatePresetsPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateColorControls()
 {
-    Log::Write(Log::Level::Trace, "%08X: Updating color controls.", (int) ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: Updating color controls.", (int) ::GetTickCount64());
 
     Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
@@ -3448,5 +3490,5 @@ void ConfigurationDialog::ConfigurationChanged() const noexcept
 
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
 
-//  Log::Write(Log::Level::Trace, "%08X: Configuration changed.", (int) ::GetTickCount64());
+//  Log::Write(Log::Level::Trace, "%8d: Configuration changed.", (int) ::GetTickCount64());
 }

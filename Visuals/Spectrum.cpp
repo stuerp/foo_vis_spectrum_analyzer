@@ -33,12 +33,9 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings, const A
 /// </summary>
 void Spectrum::Move(const D2D1_RECT_F & rect)
 {
-    _Bounds = rect;
-    _Size = { rect.right - rect.left, rect.bottom - rect.top };
+    SetBounds(rect);
 
     _OpacityMask.Release();
-
-    _IsResized = true;
 }
 
 /// <summary>
@@ -46,7 +43,7 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// </summary>
 void Spectrum::Resize() noexcept
 {
-    if (!_IsResized)
+    if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
@@ -83,7 +80,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
         if (_State->_VisualizationType == VisualizationType::Curve)
             RenderCurve(renderTarget);
 
-        if (_NyquistMarker->_ColorSource != ColorSource::None)
+        if (_NyquistMarker->IsEnabled())
             RenderNyquistFrequencyMarker(renderTarget);
 
         ResetTransform(renderTarget);
@@ -128,7 +125,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
         // Draw the bar background, even above the Nyquist frequency.
         if (fb.HasDarkBackground)
         {
-            if (_DarkBackground->_ColorSource != ColorSource::None)
+            if (_DarkBackground->IsEnabled())
             {
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _DarkBackground->_Brush);
@@ -138,7 +135,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
         }
         else
         {
-            if (_LightBackground->_ColorSource != ColorSource::None)
+            if (_LightBackground->IsEnabled())
             {
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _LightBackground->_Brush);
@@ -157,7 +154,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 Rect.bottom = (FLOAT) (_ClientSize.height * fb.Peak);
 
                 // Draw the peak indicator area.
-                if (_PeakArea->_ColorSource != ColorSource::None)
+                if (_PeakArea->IsEnabled())
                 {
                     if ((_PeakArea->_ColorSource == ColorSource::Gradient) && IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _PeakArea->SetBrushColor(fb.Peak);
@@ -169,7 +166,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 }
 
                 // Draw the peak indicator top.
-                if (_PeakTop->_ColorSource != ColorSource::None)
+                if (_PeakTop->IsEnabled())
                 {
                     Rect.top    = ::ceil(Clamp(Rect.bottom - PeakThickness, 0.f, _ClientSize.height));
                     Rect.bottom = ::ceil(Clamp(Rect.top    + PeakThickness, 0.f, _ClientSize.height));
@@ -187,7 +184,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 Rect.bottom = (FLOAT) (_ClientSize.height * fb.CurValue);
 
                 // Draw the area of the bar.
-                if (_BarArea->_ColorSource != ColorSource::None)
+                if (_BarArea->IsEnabled())
                 {
                     if ((_BarArea->_ColorSource == ColorSource::Gradient) && IsSet(_BarArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _BarArea->SetBrushColor(fb.CurValue);
@@ -199,7 +196,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 }
 
                 // Draw the top of the bar.
-                if (_BarTop->_ColorSource != ColorSource::None)
+                if (_BarTop->IsEnabled())
                 {
                     Rect.top    = Clamp(Rect.bottom - BarThickness, 0.f, _ClientSize.height);
                     Rect.bottom = Clamp(Rect.top    + BarThickness, 0.f, _ClientSize.height);
@@ -228,14 +225,14 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
     GeometryPoints Points;
     CComPtr<ID2D1PathGeometry> Curve;
 
-    if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakArea->_ColorSource != ColorSource::None || _CurvePeakLine->_ColorSource != ColorSource::None))
+    if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakArea->IsEnabled() || _CurvePeakLine->IsEnabled()))
     {
         Points.Clear();
 
         hr = CreateGeometryPointsFromAmplitude(Points, true);
 
         // Draw the area with the peak values.
-        if (SUCCEEDED(hr) && (_CurvePeakArea->_ColorSource != ColorSource::None))
+        if (SUCCEEDED(hr) && _CurvePeakArea->IsEnabled())
         {
             hr = CreateCurve(Points, true, &Curve);
 
@@ -246,7 +243,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
         }
 
         // Draw the line with the peak values.
-        if (SUCCEEDED(hr) && (_CurvePeakLine->_ColorSource != ColorSource::None))
+        if (SUCCEEDED(hr) && _CurvePeakLine->IsEnabled())
         {
             hr = CreateCurve(Points, false, &Curve);
 
@@ -257,14 +254,14 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
         }
     }
 
-    if ((_CurveArea->_ColorSource != ColorSource::None || _CurveLine->_ColorSource != ColorSource::None))
+    if (_CurveArea->IsEnabled() || _CurveLine->IsEnabled())
     {
         Points.Clear();
 
         hr = CreateGeometryPointsFromAmplitude(Points, false);
 
         // Draw the area with the current values.
-        if (SUCCEEDED(hr) && (_CurveArea->_ColorSource != ColorSource::None))
+        if (SUCCEEDED(hr) && _CurveArea->IsEnabled())
         {
             hr = CreateCurve(Points, true, &Curve);
 
@@ -275,7 +272,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
         }
 
         // Draw the line with the current values.
-        if (SUCCEEDED(hr) && (_CurveLine->_ColorSource != ColorSource::None))
+        if (SUCCEEDED(hr) && _CurveLine->IsEnabled())
         {
             hr = CreateCurve(Points, false, &Curve);
 
@@ -384,8 +381,11 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 
             rt->Clear();
 
-            for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
-                rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            {
+                for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+            }
 
             hr = rt->EndDraw();
         }

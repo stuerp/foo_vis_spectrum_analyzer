@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.01) P. Stuer **/
+/** $VER: State.h (2024.04.10) P. Stuer **/
 
 #pragma once
 
@@ -178,6 +178,7 @@ public:
             FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
             std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
             FitMode _FitMode;                                           // Determines how over- or undersized artwork is rendered.
+            bool _FitWindow;                                            // True when the component window instead of the client area of the graph is used to fit artwork.
 
         #pragma endregion
 
@@ -319,5 +320,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 23;
+    const size_t _CurrentVersion = 24;
 };

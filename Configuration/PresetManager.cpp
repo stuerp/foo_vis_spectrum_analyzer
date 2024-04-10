@@ -56,7 +56,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to read preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to read preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
@@ -89,7 +89,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to write preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
@@ -111,7 +111,7 @@ bool PresetManager::Delete(const Path & rootPath, const std::wstring & presetNam
     {
         Error LastError(::GetLastError());
 
-        Log::Write(Log::Level::Error, "%s: Failed to delete preset \"%s\": %s", core_api::get_my_file_name(), presetName.c_str(), LastError.Message().c_str());
+        Log::Write(Log::Level::Error, "%8d: %s failed to delete preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), LastError.Message().c_str());
 
         return false;
     }

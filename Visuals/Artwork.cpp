@@ -83,8 +83,8 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
         }
         else
         {
-            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : (FLOAT) Size.width  / (FLOAT) MaxWidth;
-            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : (FLOAT) Size.height / (FLOAT) MaxHeight;
+            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
+            HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
 
             Scalar = Max(WScalar, HScalar);
         }
@@ -114,7 +114,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 
     if (!_Raster.empty() || !_FilePath.empty())
     {
-Log::Write(Log::Level::Trace, "%08X Realizing artwork", (uint32_t) ::GetTickCount64());
+    //  Log::Write(Log::Level::Trace, "%8d: Realizing artwork.", (uint32_t) ::GetTickCount64());
 
         // Load the frame from the raster data.
         if (_Frame == nullptr)

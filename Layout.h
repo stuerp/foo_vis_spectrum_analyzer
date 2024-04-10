@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.04.01) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.10) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -830,6 +830,12 @@
     #define X_G31    X_G30 + W_G30 + IX
     #define Y_G31    Y_G30
 
+    // Checkbox: Fit window
+    #define W_G32    60
+    #define H_G32    H_CHB
+    #define X_G32    X_G31
+    #define Y_G32    Y_G31 + H_G31 + IY
+
     #pragma endregion
 
     #pragma region Artwork Opacity
@@ -837,7 +843,7 @@
     #define W_G03    66
     #define H_G03    H_LBL
     #define X_G03    X_G30
-    #define Y_G03    Y_G31 + H_G31 + IY
+    #define Y_G03    Y_G32 + H_G32 + IY
 
     // Textbox
     #define W_G04    30
@@ -867,7 +873,7 @@
     #pragma endregion
 
 #define W_B06  184
-#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G04 + IY + H_G14 + 7
+#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
 #pragma endregion
 
 #pragma region Graphs

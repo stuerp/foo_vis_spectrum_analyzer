@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.06) P. Stuer **/
+/** $VER: Analysis.h (2024.04.09) P. Stuer **/
 
 #pragma once
 
@@ -27,18 +27,20 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(audio_sample peak = 0.0, audio_sample rms = 0.0, const WCHAR * name = L"", audio_sample newPeak = 0.0, audio_sample newRMS = 0.0, double scaledPeak = -999.0, double scaledRMS = -999.0) :
-        Peak(peak), RMS(rms), Name(name), NewPeak(newPeak), NewRMS(newRMS), ScaledPeak(scaledPeak), ScaledRMS(scaledRMS) { }
+    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5., double decaySpeed = 0.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed) { }
 
-    audio_sample Peak;
-    audio_sample RMS;
     std::wstring Name;
 
-    audio_sample NewPeak;
-    audio_sample NewRMS;
+    double Peak;            // dB
+    double NormalizedPeak;  // 0.0 .. 1.0
+    double SmoothedPeak;    // 0.0 .. 1.0
 
-    double ScaledPeak;
-    double ScaledRMS;
+    double RMS;             // dB
+    double NormalizedRMS;   // 0.0 .. 1.0
+    double SmoothedRMS;     // 0.0 .. 1.0
+
+    double HoldTime;
+    double DecaySpeed;
 };
 
 /// <summary>
@@ -58,7 +60,7 @@ public:
 
     void Initialize(const State * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void UpdatePeakIndicators() noexcept;
+    void UpdatePeakValues() noexcept;
 
     void Reset();
 
@@ -78,8 +80,13 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
+    double NormalizeMeterValue(double amplitude) const noexcept
+    {
+        return Clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+    }
+
 public:
-    const State * _ThreadState;
+    const State * _State;
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;
@@ -95,4 +102,8 @@ public:
     AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
 
     FrequencyBands _FrequencyBands;
+
+private:
+    const double Amax  = M_SQRT1_2;
+    const double dBCorrection = -20. * ::log10(Amax); // 3.01;
 };

@@ -182,6 +182,7 @@ void State::Reset() noexcept
     _ArtworkOpacity = 1.f;
     _ArtworkFilePath.clear();
     _FitMode = FitMode::FitBig;
+    _FitWindow = false;
 
     /** Graphs **/
 
@@ -416,6 +417,7 @@ State & State::operator=(const State & other)
         _ArtworkOpacity = other._ArtworkOpacity;
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
+        _FitWindow = other._FitWindow;
 
     #pragma endregion
 
@@ -804,10 +806,15 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_LEDSize, abortHandler);
             reader->read_object_t(_LEDGap, abortHandler);
         }
+
+        if (Version >= 24)
+        {
+            reader->read_object_t(_FitWindow, abortHandler);
+        }
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to read DUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to read DUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -1069,10 +1076,13 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         // Version 23, v0.7.5.0-beta3
         writer->write_object_t(_LEDSize, abortHandler);
         writer->write_object_t(_LEDGap, abortHandler);
+
+        // Version 24, v0.7.5.2
+        writer->write_object_t(_FitWindow, abortHandler);
     }
     catch (exception & ex)
     {
-        Log::Write(Log::Level::Error, "%s: Failed to write CUI configuration: %s", core_api::get_my_file_name(), ex.what());
+        Log::Write(Log::Level::Error, "%8d: %s failed to write CUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
     }
 }
 

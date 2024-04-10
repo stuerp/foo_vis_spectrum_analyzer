@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.04.02) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.04.08) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -30,15 +30,15 @@ public:
 
     Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
 
+    bool IsEnabled() const noexcept { return (_ColorSource != ColorSource::None); }
+
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept;
     void ReleaseDeviceSpecificResources();
 
+    HRESULT MeasureText(const std::wstring & text) noexcept;
+
     HRESULT SetBrushColor(double value) noexcept;
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
-
-    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
-
-    HRESULT MeasureText(const std::wstring & text) noexcept;
 
     void SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT ta) const noexcept
     {
@@ -51,6 +51,8 @@ public:
         if (_TextFormat)
             _TextFormat->SetParagraphAlignment(pa);
     }
+
+    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;

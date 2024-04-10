@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.06) P. Stuer **/
+/** $VER: Resources.h (2024.04.10) P. Stuer **/
 
 #pragma once
 
@@ -9,12 +9,12 @@
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
 #define NUM_FILE_PATCH          5
-#define NUM_FILE_PRERELEASE     1
+#define NUM_FILE_PRERELEASE     2
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
 #define NUM_PRODUCT_PATCH       5
-#define NUM_PRODUCT_PRERELEASE  1
+#define NUM_PRODUCT_PRERELEASE  2
 
 /** Component specific **/
 
@@ -266,6 +266,7 @@
 
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086
+#define IDC_FIT_WINDOW                  6088
 
 #define IDC_ARTWORK_OPACITY_LBL         6090
 #define IDC_ARTWORK_OPACITY             6092
