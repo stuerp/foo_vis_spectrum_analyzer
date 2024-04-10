@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.09) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.10) P. Stuer **/
 
 #include "framework.h"
 
@@ -47,76 +47,79 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
 /// </summary>
 void Analysis::Process(const audio_chunk & chunk) noexcept
 {
-    const audio_sample * Samples = chunk.get_data();
-
-    if (Samples == nullptr)
-        return;
-
-    const size_t SampleCount = chunk.get_sample_count();
-
-    _SampleRate = chunk.get_sample_rate();
-    _NyquistFrequency = (double) _SampleRate / 2.;
-
-    GetMeterValues(chunk);
-
-    GetAnalyzer(chunk);
-
-    switch (_State->_Transform)
+    if (_State->_VisualizationType != VisualizationType::PeakMeter)
     {
-        case Transform::FFT:
+        const audio_sample * Samples = chunk.get_data();
+
+        if (Samples == nullptr)
+            return;
+
+        const size_t SampleCount = chunk.get_sample_count();
+
+        _SampleRate = chunk.get_sample_rate();
+        _NyquistFrequency = (double) _SampleRate / 2.;
+
+        GetAnalyzer(chunk);
+
+        switch (_State->_Transform)
         {
-            _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-            break;
+            case Transform::FFT:
+            {
+                _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
+                break;
+            }
+
+            case Transform::CQT:
+            {
+                _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
+                break;
+            }
+
+            case Transform::SWIFT:
+            {
+                _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
+                break;
+            }
+
+            case Transform::AnalogStyle:
+            {
+                _AnalogStyleAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
+                break;
+            }
         }
 
-        case Transform::CQT:
+        // Filter the spectrum.
+        if (_State->_WeightingType != WeightingType::None)
+            ApplyAcousticWeighting();
+
+        // Smooth the spectrum.
+        switch (_State->_SmoothingMethod)
         {
-            _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-            break;
+            default:
+
+            case SmoothingMethod::None:
+            {
+                Normalize();
+                break;
+            }
+
+            case SmoothingMethod::Average:
+            {
+                NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
+                break;
+            }
+
+            case SmoothingMethod::Peak:
+            {
+                NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
+                break;
+            }
         }
 
-        case Transform::SWIFT:
-        {
-            _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-            break;
-        }
-
-        case Transform::AnalogStyle:
-        {
-            _AnalogStyleAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-            break;
-        }
+        // From here one CurValue is guaranteed in the range 0.0 .. 1.0
     }
-
-    // Filter the spectrum.
-    if (_State->_WeightingType != WeightingType::None)
-        ApplyAcousticWeighting();
-
-    // Smooth the spectrum.
-    switch (_State->_SmoothingMethod)
-    {
-        default:
-
-        case SmoothingMethod::None:
-        {
-            Normalize();
-            break;
-        }
-
-        case SmoothingMethod::Average:
-        {
-            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-
-        case SmoothingMethod::Peak:
-        {
-            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-    }
-
-    // From here one CurValue is guaranteed in the range 0.0 .. 1.0
+    else
+        GetMeterValues(chunk);
 }
 
 /// <summary>
@@ -421,6 +424,8 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 
 #pragma endregion
 
+#pragma region Peak Meter
+
 /// <summary>
 /// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
 /// </summary>
@@ -539,16 +544,19 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     return true;
 }
 
+#pragma endregion
+
 /// <summary>
 /// Updates the peak values.
 /// </summary>
 void Analysis::UpdatePeakValues() noexcept
 {
-    // Animate the spectrum peak value.
+    if (_State->_VisualizationType != VisualizationType::PeakMeter)
     {
+        // Animate the spectrum peak value.
         const double Acceleration = _State->_Acceleration / 256.;
 
-        for (FrequencyBand & fb : _FrequencyBands)
+        for (auto & fb : _FrequencyBands)
         {
             if (fb.CurValue >= fb.Peak)
             {
@@ -620,9 +628,9 @@ void Analysis::UpdatePeakValues() noexcept
             }
         }
     }
-
-    // Animate the scaled peak and RMS values.
+    else
     {
+        // Animate the scaled peak and RMS values.
         const double Acceleration = ((_GraphSettings->_AmplitudeHi -  _GraphSettings->_AmplitudeLo) * _State->_Acceleration) / (256. * 6.);  // Scale the value for it to make sense for a peak meter.
 
         for (auto & mv : _MeterValues)
