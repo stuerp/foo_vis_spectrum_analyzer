@@ -165,8 +165,8 @@ void Analysis::Reset()
 
     for (auto & mv : _MeterValues)
     {
-        mv.Peak     = 0.;
-        mv.RMS      = 0.;
+        mv.Peak     = -INFINITY;
+        mv.RMS      = -INFINITY;
         mv.HoldTime = _State->_HoldTime; // Scale the value for it to make sense for a peak meter.
     }
 }
@@ -468,8 +468,8 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     {
         for (auto & mv : _MeterValues)
         {
-            mv.Peak = 0.0;
-            mv.RMS  = 0.0;
+            mv.Peak = -INFINITY;
+            mv.RMS = 0.;
         }
     }
 

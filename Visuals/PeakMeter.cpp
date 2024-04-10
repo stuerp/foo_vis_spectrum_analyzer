@@ -437,7 +437,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
 
                     // Draw the RMS text display.
-                    if (_RMSTextStyle->IsEnabled() && (mv.RMS != -999.))
+                    if (_RMSTextStyle->IsEnabled() && ::isfinite(mv.RMS))
                     {
                         D2D1_RECT_F TextRect = Rect;
 
@@ -562,7 +562,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
 
                     // Draw the RMS text display.
-                    if (_RMSTextStyle->IsEnabled() && (mv.RMS != -999.))
+                    if (_RMSTextStyle->IsEnabled() && ::isfinite(mv.RMS))
                     {
                         D2D1_RECT_F TextRect = Rect;
 
