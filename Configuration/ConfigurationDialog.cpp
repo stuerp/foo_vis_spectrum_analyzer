@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.10) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -51,8 +51,13 @@ static const WCHAR * const VisualElementNames[] =
     L"Spectogram",
 
     L"Peak Meter Background",
+
     L"Peak Meter Peak Level",
+    L"Peak Meter Peak Level (> 0dB)",
+    L"Peak Meter Peak Level (Max)",
+
     L"Peak Meter RMS Level",
+    L"Peak Meter RMS Level (> 0dB)",
     L"Peak Meter RMS Level Text",
 
     L"Nyquist Frequency",

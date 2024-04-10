@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.07) P. Stuer **/
+/** $VER: Constans.h (2024.04.10) P. Stuer **/
 
 #pragma once
 
@@ -334,12 +334,16 @@ enum class VisualElement : uint32_t
 
     PeakMeterBackground         = 19,
     PeakMeterPeakLevel          = 20,
+    PeakMeter0dBPeakLevel       = 23,
+    PeakMeterMaxPeakLevel       = 25,
+
     PeakMeterRMSLevel           = 21,
+    PeakMeter0dBRMSLevel        = 24,
     PeakMeterRMSLevelText       = 22,
 
     NyquistMarker               = 15,
 
-    Count                       = 23
+    Count                       = 26
 };
 
 enum class ColorSource : uint32_t

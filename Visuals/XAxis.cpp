@@ -54,7 +54,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Text, Frequency };
+                    Label lb = { Text, Frequency, true };
 
                     _Labels.push_back(lb);
                 }
@@ -76,7 +76,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Text, Frequency };
+                    Label lb = { Text, Frequency, true };
 
                     _Labels.push_back(lb);
 
@@ -98,7 +98,7 @@ void XAxis::Initialize(State * state, const GraphSettings * settings, const Anal
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    Label lb = { Text, Frequency };
+                    Label lb = { Text, Frequency, true };
 
                     _Labels.push_back(lb);
 
@@ -236,7 +236,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_XAxisMode != XAxisMode::None))
         {
-            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
+            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphSettings->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
             if (_GraphSettings->_XAxisTop)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);

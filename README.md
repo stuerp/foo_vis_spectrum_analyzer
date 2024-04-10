@@ -88,6 +88,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.5.3, 2024-04-xx
+
+* Improved: Peak Meter
+  * Added style to display the peak and RMS values larger than 0dB.
+  * Added style to display the top peak value.
+  * Fixed: Overlap of the X-axis labels (Regression)
+
 v0.7.5.2, 2024-04-10
 
 * Improved: Peak Meter

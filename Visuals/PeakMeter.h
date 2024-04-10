@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.08) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.10) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -61,6 +61,8 @@ private:
     D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
 
+    double _ZeroDecibel;
+
     struct Label
     {
         std::wstring Text;
@@ -91,7 +93,11 @@ private:
     Style * _BackgroundStyle;
 
     Style * _PeakStyle;
+    Style * _Peak0dBStyle;
+    Style * _MaxPeakStyle;
+
     Style * _RMSStyle;
+    Style * _RMS0dBStyle;
     Style * _RMSTextStyle;
 
     Style * _XTextStyle;

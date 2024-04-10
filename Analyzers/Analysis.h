@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.09) P. Stuer **/
+/** $VER: Analysis.h (2024.04.10) P. Stuer **/
 
 #pragma once
 
@@ -39,8 +39,10 @@ struct MeterValue
     double NormalizedRMS;   // 0.0 .. 1.0
     double SmoothedRMS;     // 0.0 .. 1.0
 
-    double HoldTime;
-    double DecaySpeed;
+    double MaxSmoothedPeak; // 0.0 .. 1.0, The value of the maximum peak indicator
+    double HoldTime;        // Time to hold the current max value.
+    double DecaySpeed;      // Speed at which the current max value decays.
+    double Opacity;         // 0.0 .. 1.0
 };
 
 /// <summary>

@@ -115,7 +115,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
         assert(InRange(fb.CurValue, 0.0, 1.0));
-        assert(InRange(fb.Peak, 0.0, 1.0));
+        assert(InRange(fb.MaxValue, 0.0, 1.0));
 
         x1 = Clamp(x1, 0.f, _ClientSize.width);
         x2 = Clamp(x2, 0.f, _ClientSize.width);
@@ -148,16 +148,16 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
-            if ((_State->_PeakMode != PeakMode::None) && (fb.Peak > 0.))
+            if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (_ClientSize.height * fb.Peak);
+                Rect.bottom = (FLOAT) (_ClientSize.height * fb.MaxValue);
 
                 // Draw the peak indicator area.
                 if (_PeakArea->IsEnabled())
                 {
                     if ((_PeakArea->_ColorSource == ColorSource::Gradient) && IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
-                        _PeakArea->SetBrushColor(fb.Peak);
+                        _PeakArea->SetBrushColor(fb.MaxValue);
 
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _PeakArea->_Brush);
@@ -420,7 +420,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
         if ((fb.Ctr > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
             break;
 
-        double Value = !usePeak ? fb.CurValue : fb.Peak;
+        double Value = !usePeak ? fb.CurValue : fb.MaxValue;
 
         y = Clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
 
