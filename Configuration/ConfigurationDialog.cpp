@@ -194,7 +194,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_ADD_GRAPH, L"Adds a graph." },
             { IDC_REMOVE_GRAPH, L"Removes the selected graph." },
 
-            { IDC_VERTICAL_LAYOUT, L"Enable to stack the graphs vertically instead of a horizontal line." },
+            { IDC_VERTICAL_LAYOUT, L"Enable to stack the graphs vertically instead of horizontally." },
 
             { IDC_GRAPH_DESCRIPTION, L"Describes the configuration of this graph." },
 
