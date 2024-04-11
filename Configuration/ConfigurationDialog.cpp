@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.10) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.11) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -243,13 +243,13 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
 
-            { IDC_COLOR_SOURCE, L"Determines the source of the color that will be used to render the visual element" },
-            { IDC_COLOR_INDEX, L"Selects the specific Windows, DUI or CUI color to use" },
+            { IDC_COLOR_SOURCE, L"Determines the source of the color that will be used to render the visual element. Select \"None\" to prevent rendering." },
+            { IDC_COLOR_INDEX, L"Selects the specific Windows, DUI or CUI color to use." },
             { IDC_COLOR_BUTTON, L"Shows the color that will be used to render the visual element. Click to modify it." },
             { IDC_COLOR_SCHEME, L"Selects the color scheme used to create a gradient with." },
 
-            { IDC_GRADIENT, L"Shows the gradient created using the current color list" },
-            { IDC_COLOR_LIST, L"Shows the colors in the current color scheme" },
+            { IDC_GRADIENT, L"Shows the gradient created using the current color list." },
+            { IDC_COLOR_LIST, L"Shows the colors in the current color scheme." },
 
             { IDC_ADD, L"Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
             { IDC_REMOVE, L"Removes the selected color from the list. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
