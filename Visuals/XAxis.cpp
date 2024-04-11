@@ -207,15 +207,15 @@ void XAxis::Resize() noexcept
 
         const Label * LastLabel = nullptr;
 
+        // Determine which labels should be hidden.
         for (size_t i = 1; i < _Labels.size() - 1; ++i)
         {
             if (LastLabel && !(LastLabel->IsHidden) && IsOverlappingHorizontally(_Labels[i].RectB, LastLabel->RectB))
                 _Labels[i].IsHidden = !NotesMode || (NotesMode && !_Labels[i + 1].IsDimmed);
             else
             if (!_Labels[i + 1].IsHidden && NotesMode && IsOverlappingHorizontally(_Labels[i].RectB, _Labels[i + 1].RectB))
-                    _Labels[i].IsHidden = !_Labels[i + 1].IsDimmed;
-
-            if (!_Labels[i].IsHidden)
+                _Labels[i].IsHidden = !_Labels[i + 1].IsDimmed;
+            else
                 LastLabel = &_Labels[i];
         }
     }
