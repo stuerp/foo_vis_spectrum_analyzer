@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.10) P. Stuer **/
+/** $VER: Resources.h (2024.04.12) P. Stuer **/
 
 #pragma once
 
@@ -9,12 +9,12 @@
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
 #define NUM_FILE_PATCH          5
-#define NUM_FILE_PRERELEASE     2
+#define NUM_FILE_PRERELEASE     3
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
 #define NUM_PRODUCT_PATCH       5
-#define NUM_PRODUCT_PRERELEASE  2
+#define NUM_PRODUCT_PRERELEASE  3
 
 /** Component specific **/
 
@@ -394,6 +394,11 @@
 #define IDC_PEAK_METER                  7160
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
+
+#define IDC_RMS_WINDOW_LBL              7164
+#define IDC_RMS_WINDOW                  7166
+#define IDC_RMS_WINDOW_SPIN             7168
+#define IDC_RMS_WINDOW_UNIT             7170
 
 #pragma endregion
 

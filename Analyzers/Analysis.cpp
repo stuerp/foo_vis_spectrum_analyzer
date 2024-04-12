@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.10) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.12) P. Stuer **/
 
 #include "framework.h"
 
@@ -39,7 +39,7 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             break;
     }
 
-    _MeterValues.clear();
+    _AmplitudeValues.clear();
 }
 
 /// <summary>
@@ -50,11 +50,10 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     if (_State->_VisualizationType != VisualizationType::PeakMeter)
     {
         const audio_sample * Samples = chunk.get_data();
-
-        if (Samples == nullptr)
-            return;
-
         const size_t SampleCount = chunk.get_sample_count();
+
+        if ((Samples == nullptr) || (SampleCount == 0))
+            return;
 
         _SampleRate = chunk.get_sample_rate();
         _NyquistFrequency = (double) _SampleRate / 2.;
@@ -163,12 +162,15 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 
-    for (auto & mv : _MeterValues)
+    _AmplitudeValues.clear();
+/*
+    for (auto & mv : _AmplitudeValues)
     {
         mv.Peak     = -std::numeric_limits<double>::infinity();
         mv.RMS      = -std::numeric_limits<double>::infinity();
-        mv.HoldTime = _State->_HoldTime; // Scale the value for it to make sense for a peak meter.
+        mv.HoldTime = _State->_HoldTime;
     }
+*/
 }
 
 #pragma region Frequencies
@@ -429,15 +431,17 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 /// <summary>
 /// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
 /// </summary>
-bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
+void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Samples = chunk.get_data();
     const size_t SampleCount = chunk.get_sample_count();
 
     if ((Samples == nullptr) || (SampleCount == 0))
-        return false;
+        return;
 
-    if (_MeterValues.size() != chunk.get_channel_count())
+    const unsigned ActiveChannelMask = (chunk.get_channel_count() > 1) ? chunk.get_channel_config() & _GraphSettings->_Channels : 1;
+
+    if (_AmplitudeValues.size() == 0)
     {
         static const WCHAR * ChannelNames[] =
         {
@@ -449,99 +453,79 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
         };
 
-        _MeterValues.clear();
-
-        if (chunk.get_channel_count() != 1)
+        if (chunk.get_channel_count() > 1)
         {
             size_t i = 0;
 
-            for (unsigned ChannelConfig = chunk.get_channel_config() & _GraphSettings->_Channels; (ChannelConfig != 0) && (i < _countof(ChannelNames)); ChannelConfig >>= 1, ++i)
+            for (unsigned ChannelMask = ActiveChannelMask; (ChannelMask != 0) && (i < _countof(ChannelNames)); ChannelMask >>= 1, ++i)
             {
-                if (ChannelConfig & 1)
-                    _MeterValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime }); // Scale the value for it to make sense for a peak meter.
+                if (ChannelMask & 1)
+                    _AmplitudeValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime });
             }
         }
         else
-            _MeterValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
+        {
+            // Special case for mono tracks. Fake the selection of the FC channel.
+            _AmplitudeValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime });
+        }
     }
     else
     {
-        for (auto & mv : _MeterValues)
-        {
+        for (auto & mv : _AmplitudeValues)
             mv.Peak = -std::numeric_limits<double>::infinity();
-            mv.RMS = 0.;
-        }
     }
 
-    if (_MeterValues.size() == 0)
-        return false;
+    if (_AmplitudeValues.size() == 0)
+        return;
 
     const audio_sample * EndOfChunk = Samples + SampleCount;
 
-    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )
+    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; Sample += chunk.get_channel_count())
     {
-        for (auto & mv : _MeterValues)
+        const audio_sample * s = Sample;
+
+        unsigned ChannelMask = ActiveChannelMask;
+
+        for (auto & mv : _AmplitudeValues)
         {
-            audio_sample Value = std::abs(*Sample);
+            if (ChannelMask & 1)
+            {
+                double Value = std::abs(*s);
 
-            if (Value > mv.Peak)
-                mv.Peak = Value;
+                if (Value > mv.Peak)
+                    mv.Peak = Value;
 
-            mv.RMS += Value * Value;
+                mv.RMSTotal += Value * Value;
+            }
 
-            ++Sample;
+            ChannelMask >>= 1;
+
+            s++;
         }
     }
 
     // Normalize the values.
-    for (auto & mv : _MeterValues)
+    for (auto & mv : _AmplitudeValues)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        mv.Peak = ToDecibel(mv.Peak / Amax) + dBCorrection;
+        mv.Peak = ToDecibel(mv.Peak / Amax);// + dBCorrection;
         mv.NormalizedPeak = NormalizeMeterValue(mv.Peak);
+        mv.SmoothedPeak = SmoothValue(mv.NormalizedPeak, mv.SmoothedPeak);
 
-        mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) (SampleCount / chunk.get_channel_count()));
-        mv.RMS = ToDecibel(mv.RMS / Amax) + dBCorrection;
-        mv.NormalizedRMS = NormalizeMeterValue(mv.RMS);
-    }
+        mv.RMSTime    += (double) SampleCount / chunk.get_sample_rate();
+        mv.RMSSamples += (SampleCount / chunk.get_channel_count()) * _AmplitudeValues.size();
 
-    // Smooth the values.
-    switch (_State->_SmoothingMethod)
-    {
-        default:
-
-        case SmoothingMethod::None:
+        if (mv.RMSTime > _State->_RMSWindow)
         {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = mv.NormalizedPeak;
-                mv.SmoothedRMS  = mv.NormalizedRMS;
-            }
-            break;
-        }
+            mv.RMS = std::sqrt(mv.RMSTotal / (double) (mv.RMSSamples / chunk.get_channel_count()));
+            mv.RMS = ToDecibel(mv.RMS / Amax); // + dBCorrection;
+            mv.NormalizedRMS = NormalizeMeterValue(mv.RMS);
+            mv.SmoothedRMS  = SmoothValue(mv.NormalizedRMS, mv.SmoothedRMS);
 
-        case SmoothingMethod::Average:
-        {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = Clamp((mv.SmoothedPeak * _State->_SmoothingFactor) + (mv.NormalizedPeak * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
-                mv.SmoothedRMS  = Clamp((mv.SmoothedRMS  * _State->_SmoothingFactor) + (mv.NormalizedRMS  * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
-            }
-            break;
-        }
-
-        case SmoothingMethod::Peak:
-        {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = Clamp(Max(mv.SmoothedPeak * _State->_SmoothingFactor, mv.NormalizedPeak), 0.0, 1.0);
-                mv.SmoothedRMS  = Clamp(Max(mv.SmoothedRMS  * _State->_SmoothingFactor, mv.NormalizedRMS),  0.0, 1.0);
-            }
-            break;
+            // Reset the RMS window values.
+            mv.Reset();
         }
     }
-
-    return true;
 }
 
 #pragma endregion
@@ -633,7 +617,7 @@ void Analysis::UpdatePeakValues() noexcept
     else
     {
         // Animate the smoothed peak and RMS values.
-        for (auto & mv : _MeterValues)
+        for (auto & mv : _AmplitudeValues)
         {
             if (mv.SmoothedPeak >= mv.MaxSmoothedPeak)
             {

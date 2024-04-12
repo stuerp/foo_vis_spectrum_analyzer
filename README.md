@@ -93,7 +93,9 @@ v0.7.5.3, 2024-04-xx
 * Improved: Peak Meter
   * Added style to display the peak and RMS values larger than 0dB.
   * Added style to display the top peak value.
-  * Fixed: Overlap of the X-axis labels (Regression)
+  * RMS Window is now configurable. Defaults to 600ms. This makes the RMS ready more stable.
+  * The level values were not calculated correctly when the selected channels did not correspond to the channel configuration of the track.
+* Fixed: Overlap of the X-axis labels (Regression)
 
 v0.7.5.2, 2024-04-10
 

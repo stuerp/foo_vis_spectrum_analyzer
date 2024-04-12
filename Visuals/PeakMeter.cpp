@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.09) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.12) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -326,7 +326,7 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
 /// </summary>
 void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    if ((_Analysis->_MeterValues.size() == 0) || (_ClientSize.width <= 0.f) || (_ClientSize.height <= 0.f))
+    if ((_Analysis->_AmplitudeValues.size() == 0) || (_ClientSize.width <= 0.f) || (_ClientSize.height <= 0.f))
         return;
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
@@ -336,7 +336,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-    const FLOAT n = (FLOAT) _Analysis->_MeterValues.size();
+    const FLOAT n = (FLOAT) _Analysis->_AmplitudeValues.size();
     const FLOAT BarGap = 1.f;
     const FLOAT TotalBarGap = BarGap * (n - 1);
     const FLOAT TickSize = 2.f;
@@ -352,7 +352,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         D2D1_RECT_F Rect = { 0.f, (_ClientSize.height - 1.f) - Offset - BarHeight, 0.f, 0.f };
 
-        for (auto & mv : _Analysis->_MeterValues)
+        for (auto & mv : _Analysis->_AmplitudeValues)
         {
             // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
             if ((int) Rect.top & 1)
@@ -464,7 +464,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
             const FLOAT dy = _GraphSettings->_FlipVertically ? -(_ClientSize.height / n) : (_ClientSize.height / n);
 
-            for (const auto & mv : _Analysis->_MeterValues)
+            for (const auto & mv : _Analysis->_AmplitudeValues)
             {
                 Rect.bottom = Clamp(Rect.top + dy, 0.f, _ClientRect.bottom);
 
@@ -523,7 +523,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         D2D1_RECT_F Rect = { Offset, 0.f, 0.f, 0.f };
 
-        for (auto & mv : _Analysis->_MeterValues)
+        for (auto & mv : _Analysis->_AmplitudeValues)
         {
             // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
             if ((int) Rect.left & 1)
@@ -639,7 +639,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
             const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(_ClientSize.width / n) : (_ClientSize.width / n);
 
-            for (const auto & mv : _Analysis->_MeterValues)
+            for (const auto & mv : _Analysis->_AmplitudeValues)
             {
                 Rect.right = Clamp(Rect.left + dx, 0.f, _ClientRect.right);
 
@@ -671,7 +671,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.top    = _GraphSettings->_FlipVertically ? _ClientRect.top + 1.f : Rect.top  - (_RMSTextStyle->_TextHeight + 1.f);
+                        TextRect.top    = _GraphSettings->_FlipVertically ? _ClientRect.top + 4.f : Rect.top  - (_RMSTextStyle->_TextHeight + 4.f);
                         TextRect.bottom = _GraphSettings->_FlipVertically ? TextRect.top + (_RMSTextStyle->_TextHeight + 1.f) : Rect.top;
 
                     #ifndef _DEBUG_RENDER

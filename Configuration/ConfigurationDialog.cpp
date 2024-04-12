@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.11) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.12) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -203,8 +203,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_GRAPH_DESCRIPTION, L"Describes the configuration of this graph." },
 
-            { IDC_FLIP_HORIZONTALLY, L"Renders the spectrum from right to left." },
-            { IDC_FLIP_VERTICALLY, L"Renders the spectrum upside down." },
+            { IDC_FLIP_HORIZONTALLY, L"Renders the visualization from right to left." },
+            { IDC_FLIP_VERTICALLY, L"Renders the visualization upside down." },
 
             // X-axis
             { IDC_X_AXIS_MODE, L"Determines the type of X-axis." },
@@ -239,6 +239,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
 
             { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
+            { IDC_RMS_WINDOW, L"Specifies the window duration of each RMS measurement." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -1055,6 +1056,22 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
     }
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  100 }, // 100ms
+            { 2,  500 }, // 500ms
+            { 3, 1000 }, // 1s
+        };
+
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
+
+        w.SetRange32((int) (MinRMSWindow * 1000.f), (int) (MaxRMSWindow * 1000.f));
+        w.SetPos32(0);
+        w.SetAccel(_countof(Accel), Accel);
+    }
 
     #pragma endregion
 
@@ -1787,6 +1804,16 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region Peak Meter
+
+        case IDC_RMS_WINDOW:
+        {
+            _State->_RMSWindow = Clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            break;
+        }
+
+        #pragma endregion
+
         #pragma endregion
 
         #pragma region Styles
@@ -2023,6 +2050,13 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_LED_GAP:
         {
             SetDouble(id, _State->_LEDGap, 0, 0);
+            break;
+        }
+
+        // RMS Window
+        case IDC_RMS_WINDOW:
+        {
+            SetDouble(id, _State->_RMSWindow, 0, 3);
             break;
         }
 
@@ -2660,6 +2694,13 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
+        case IDC_RMS_WINDOW_SPIN:
+        {
+            _State->_RMSWindow = ClampNewSpinPosition(nmud, MinRMSWindow, MaxRMSWindow, 1000.);
+            SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
+            break;
+        }
+
         case IDC_OPACITY_SPIN:
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
@@ -2865,6 +2906,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_PEAK_METER,
             IDC_HORIZONTAL_PEAK_METER,
+            IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
     };
 
     static const int Page7[] =
@@ -3131,22 +3173,29 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(_State->_VisualizationType != VisualizationType::Spectogram);
+    const bool IsSpectogram = (_State->_VisualizationType == VisualizationType::Spectogram);
+    const bool IsPeakMeter = (_State->_VisualizationType == VisualizationType::PeakMeter);
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && (_State->_VisualizationType != VisualizationType::Spectogram);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
+
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram;
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
 
-    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || IsPeakMeter;
  
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
 
-    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(_State->_VisualizationType == VisualizationType::Spectogram);
+    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
 
-    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(_State->_VisualizationType == VisualizationType::PeakMeter);
+    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
+
+    SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
+    ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
 }
 
 /// <summary>

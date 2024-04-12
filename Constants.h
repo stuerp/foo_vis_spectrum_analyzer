@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.10) P. Stuer **/
+/** $VER: Constans.h (2024.04.12) P. Stuer **/
 
 #pragma once
 
@@ -120,6 +120,9 @@ inline const FLOAT MaxLEDSize = 32.f;
 
 inline const FLOAT MinLEDGap =  0.f;
 inline const FLOAT MaxLEDGap = 32.f;
+
+inline const double MinRMSWindow = 0.; // in seconds
+inline const double MaxRMSWindow = 3.; // in seconds
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
