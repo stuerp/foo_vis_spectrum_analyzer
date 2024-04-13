@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.10) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.13) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -103,7 +103,4 @@ private:
     Style * _XTextStyle;
     Style * _YTextStyle;
     Style * _YLineStyle;
-
-    const double Amax  = M_SQRT1_2;
-    const double dBCorrection = -20. * ::log10(Amax); // 3.01;
 };
