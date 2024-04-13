@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.10) P. Stuer **/
+/** $VER: State.h (2024.04.12) P. Stuer **/
 
 #pragma once
 
@@ -213,6 +213,7 @@ public:
             #pragma region Peak Meter
 
                 bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
+                double _RMSWindow;                                      // Duration of the RMS window, in seconds.
 
             #pragma endregion
 
@@ -320,5 +321,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 24;
+    const size_t _CurrentVersion = 25;
 };

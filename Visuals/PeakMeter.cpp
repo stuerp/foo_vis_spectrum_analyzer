@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.09) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.13) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -119,9 +119,12 @@ void PeakMeter::Resize() noexcept
         // Calculate the position of the labels based on the width.
         D2D1_RECT_F OldRect = {  };
 
+        const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? _ClientRect.left : _ClientRect.right;
+        const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left;
+
         for (Label & Iter : _Labels)
         {
-            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipHorizontally ? _ClientRect.left : _ClientRect.right, !_GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left);
+            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
             // Don't generate any labels outside the bounds.
             if (!InRange(x, _ClientRect.left, _ClientRect.right))
@@ -182,7 +185,7 @@ void PeakMeter::Resize() noexcept
                     _ClientRect.bottom -= _XTextStyle->_TextHeight;
             }
 
-            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
         }
 
@@ -191,9 +194,12 @@ void PeakMeter::Resize() noexcept
         // Calculate the position of the labels based on the height.
         D2D1_RECT_F OldRect = {  };
 
+        const FLOAT yMin = !_GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top;
+        const FLOAT yMax = !_GraphSettings->_FlipVertically ? _ClientRect.top : _ClientRect.bottom;
+
         for (Label & Iter : _Labels)
         {
-            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top, !_GraphSettings->_FlipVertically ? _ClientRect.top : _ClientRect.bottom);
+            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
             // Don't generate any labels outside the bounds.
             if (!InRange(y, _ClientRect.top, _ClientRect.bottom))
@@ -235,6 +241,8 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
 
     if (!SUCCEEDED(hr))
         return;
+
+    _ZeroDecibel = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
 
 #ifdef _DEBUG_RENDER
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -324,15 +332,17 @@ void PeakMeter::DrawScale(ID2D1RenderTarget * renderTarget) const noexcept
 /// </summary>
 void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 {
-    if ((_Analysis->_MeterValues.size() == 0) || (_ClientSize.width <= 0.f) || (_ClientSize.height <= 0.f))
+    if ((_Analysis->_AmplitudeValues.size() == 0) || (_ClientSize.width <= 0.f) || (_ClientSize.height <= 0.f))
         return;
+
+    const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
 
     auto OldAntialiasMode = renderTarget->GetAntialiasMode();
 
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-    const FLOAT n = (FLOAT) _Analysis->_MeterValues.size();
+    const FLOAT n = (FLOAT) _Analysis->_AmplitudeValues.size();
     const FLOAT BarGap = 1.f;
     const FLOAT TotalBarGap = BarGap * (n - 1);
     const FLOAT TickSize = 2.f;
@@ -340,6 +350,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
     if (_State->_HorizontalPeakMeter)
     {
+        // Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
         SetTransform(renderTarget, _ClientRect);
 
         const FLOAT BarHeight = ::floor((_ClientSize.height - TotalBarGap - TotalTickSize) / n);
@@ -348,18 +359,18 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         D2D1_RECT_F Rect = { 0.f, (_ClientSize.height - 1.f) - Offset - BarHeight, 0.f, 0.f };
 
-        for (auto & mv : _Analysis->_MeterValues)
+        for (auto & Value : _Analysis->_AmplitudeValues)
         {
             // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
             if ((int) Rect.top & 1)
-                Rect.top--;
+                Rect.top++;
 
             Rect.bottom = Clamp(Rect.top + BarHeight, 0.f, _ClientSize.height - 1.f);
 
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
             {
-                Rect.right = _ClientSize.width;
+                Rect.right = Rect.left + _ClientSize.width;
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -369,32 +380,102 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #else
             #endif
             }
-            // Draw the foreground.
-            if (_PeakStyle->IsEnabled())
-            {
-                Rect.right = (FLOAT) (mv.SmoothedPeak * _ClientSize.width);
 
-            #ifndef _DEBUG_RENDER
-                if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
-                else
-                    renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-            #else
-            #endif
+            {
+                double SmoothedPeak = _Peak0dBStyle->IsEnabled() ? Min(Value.SmoothedPeak, _ZeroDecibel) : Value.SmoothedPeak;
+
+                // Draw the foreground (Peak).
+                if (_PeakStyle->IsEnabled())
+                {
+                    Rect.right = Rect.left + (FLOAT) (SmoothedPeak * _ClientSize.width);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                #endif
+                }
+
+                // Draw the foreground (Peak, 0dB)
+                if ((Value.SmoothedPeak > _ZeroDecibel) && _Peak0dBStyle->IsEnabled())
+                {
+                    Rect.right = Rect.left + (FLOAT) (Value.SmoothedPeak * _ClientSize.width);
+
+                    FLOAT OldLeft = Rect.left;
+
+                    Rect.left = (FLOAT) (_ZeroDecibel * _ClientSize.width);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                #endif
+
+                    Rect.left = OldLeft;
+                }
+
+                // Draw the foreground (Peak Top).
+                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxSmoothedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+                {
+                    FLOAT OldLeft = Rect.left;
+
+                    Rect.left  =
+                    Rect.right = (FLOAT) ( Value.MaxSmoothedPeak * _ClientSize.width);
+
+                    Rect.left  = ::ceil(Clamp(Rect.left  - PeakThickness, 0.f, _ClientSize.width));
+                    Rect.right = ::ceil(Clamp(Rect.right + PeakThickness, 0.f, _ClientSize.width));
+
+                    FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Value.Opacity : _MaxPeakStyle->_Opacity;
+
+                    _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+
+                    renderTarget->FillRectangle(Rect, _MaxPeakStyle->_Brush);
+
+                    Rect.left = OldLeft;
+                }
             }
 
-            if (_RMSStyle->IsEnabled())
             {
-                Rect.right = (FLOAT) (mv.SmoothedRMS * _ClientSize.width);
+                double SmoothedRMS = _RMS0dBStyle->IsEnabled() ? Min(Value.SmoothedRMS, _ZeroDecibel) : Value.SmoothedRMS;
 
-            #ifndef _DEBUG_RENDER
-                if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
-                else
-                    renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-            #else
-                DrawDebugRectangle(renderTarget, { 0.f, Rect.top, _ClientSize.width, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Red));
-            #endif
+                // Draw the foreground (RMS).
+                if (_RMSStyle->IsEnabled())
+                {
+                    Rect.right = Rect.left + (FLOAT) (SmoothedRMS * _ClientSize.width);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                    DrawDebugRectangle(renderTarget, { 0.f, Rect.top, _ClientSize.width, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Red));
+                #endif
+                }
+
+                // Draw the foreground (RMS, 0dB)
+                if ((Value.SmoothedRMS > _ZeroDecibel) && _RMS0dBStyle->IsEnabled())
+                {
+                    Rect.right = Rect.left + (FLOAT) (Value.SmoothedRMS * _ClientSize.width);
+
+                    FLOAT OldLeft = Rect.left;
+
+                    Rect.left = (FLOAT) (_ZeroDecibel * _ClientSize.width);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                #endif
+
+                    Rect.left = OldLeft;
+                }
             }
 
             Rect.top -= BarGap + BarHeight;
@@ -402,14 +483,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         ResetTransform(renderTarget);
 
-        // Draw the channel names.
+        // Draw the channel names. Note: Rendered in absolute coordinates! No transformation.
         if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
             Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top;
 
             const FLOAT dy = _GraphSettings->_FlipVertically ? -(_ClientSize.height / n) : (_ClientSize.height / n);
 
-            for (const auto & mv : _Analysis->_MeterValues)
+            for (const auto & mv : _Analysis->_AmplitudeValues)
             {
                 Rect.bottom = Clamp(Rect.top + dy, 0.f, _ClientRect.bottom);
 
@@ -447,7 +528,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     #ifndef _DEBUG_RENDER
                         WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.RMS);
 
-                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     #else
                         DrawDebugRectangle(renderTarget, TextRect, D2D1::ColorF(D2D1::ColorF::Purple));
                     #endif
@@ -460,6 +541,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
     }
     else
     {
+        // Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
         SetTransform(renderTarget, _ClientRect);
 
         const FLOAT BarWidth = ::floor((_ClientSize.width - TotalBarGap - TotalTickSize) / n);
@@ -468,7 +550,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         D2D1_RECT_F Rect = { Offset, 0.f, 0.f, 0.f };
 
-        for (auto & mv : _Analysis->_MeterValues)
+        for (auto & Value : _Analysis->_AmplitudeValues)
         {
             // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
             if ((int) Rect.left & 1)
@@ -479,7 +561,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
             {
-                Rect.bottom = _ClientSize.height;
+                Rect.bottom = Rect.top + _ClientSize.height;
 
             #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
@@ -490,32 +572,98 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
-            // Draw the foreground.
-            if (_PeakStyle->IsEnabled())
             {
-                Rect.bottom = (FLOAT) (mv.SmoothedPeak * _ClientSize.height);
+                double SmoothedPeak = _Peak0dBStyle->IsEnabled() ? Min(Value.SmoothedPeak, _ZeroDecibel) : Value.SmoothedPeak;
 
-            #ifndef _DEBUG_RENDER
-                if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
-                else
-                    renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-            #else
-            #endif
+                // Draw the foreground (Peak).
+                if (_PeakStyle->IsEnabled())
+                {
+                    Rect.bottom = Rect.top + (FLOAT) (SmoothedPeak * _ClientSize.height);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                #endif
+                }
+
+                // Draw the foreground (Peak, 0dB)
+                if ((Value.SmoothedPeak > _ZeroDecibel) && _Peak0dBStyle->IsEnabled())
+                {
+                    Rect.bottom = Rect.top + (FLOAT) (Value.SmoothedPeak * _ClientSize.height);
+
+                    FLOAT OldTop = Rect.top;
+
+                    Rect.top = (FLOAT) (_ZeroDecibel * _ClientSize.height);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                #endif
+
+                    Rect.top = OldTop;
+                }
+
+                // Draw the foreground (Peak Top).
+                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxSmoothedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+                {
+                    FLOAT OldTop = Rect.top;
+
+                    Rect.top    =
+                    Rect.bottom = (FLOAT) ( Value.MaxSmoothedPeak * _ClientSize.height);
+
+                    Rect.top    = ::ceil(Clamp(Rect.top    - PeakThickness, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(Clamp(Rect.bottom + PeakThickness, 0.f, _ClientSize.height));
+
+                    FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Value.Opacity : _MaxPeakStyle->_Opacity;
+
+                    _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+
+                    renderTarget->FillRectangle(Rect, _MaxPeakStyle->_Brush);
+
+                    Rect.top = OldTop;
+                }
             }
 
-            if (_RMSStyle->IsEnabled())
             {
-                Rect.bottom = (FLOAT) (mv.SmoothedRMS * _ClientSize.height);
+                double SmoothedRMS = _RMS0dBStyle->IsEnabled() ? Min(Value.SmoothedRMS, _ZeroDecibel) : Value.SmoothedRMS;
 
-            #ifndef _DEBUG_RENDER
-                if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
-                else
-                    renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-            #else
-                DrawDebugRectangle(renderTarget, { Rect.left, 0.f, Rect.right, _ClientSize.height }, D2D1::ColorF(D2D1::ColorF::Red));
-            #endif
+                // Draw the foreground (RMS).
+                if (_RMSStyle->IsEnabled())
+                {
+                    Rect.bottom = Rect.top + (FLOAT) (SmoothedRMS * _ClientSize.height);
+
+                #ifndef _DEBUG_RENDER
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                #else
+                    DrawDebugRectangle(renderTarget, { Rect.left, 0.f, Rect.right, _ClientSize.height }, D2D1::ColorF(D2D1::ColorF::Red));
+                #endif
+                }
+
+                // Draw the foreground (RMS, 0dB)
+                if ((Value.SmoothedRMS > _ZeroDecibel) && _RMS0dBStyle->IsEnabled())
+                {
+                    Rect.bottom = Rect.top + (FLOAT) (Value.SmoothedRMS * _ClientSize.height);
+
+                    FLOAT OldTop = Rect.top;
+
+                    Rect.top = (FLOAT) (_ZeroDecibel * _ClientSize.height);
+
+                    if (!_State->_LEDMode)
+                        renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
+                    else
+                        renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+
+                    Rect.top = OldTop;
+                }
             }
 
             Rect.left = Rect.right + BarGap;
@@ -527,14 +675,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         ResetTransform(renderTarget);
 
-        // Draw the channel names.
+        // Draw the channel names. Note: Rendered in absolute coordinates! No transformation.
         if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
             Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left;
 
             const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(_ClientSize.width / n) : (_ClientSize.width / n);
 
-            for (const auto & mv : _Analysis->_MeterValues)
+            for (const auto & mv : _Analysis->_AmplitudeValues)
             {
                 Rect.right = Clamp(Rect.left + dx, 0.f, _ClientRect.right);
 
@@ -566,15 +714,13 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.left   = Rect.left + ((Rect.right - Rect.left) - _RMSTextStyle->_TextWidth) / 2.f;
-                        TextRect.right  = TextRect.left + _RMSTextStyle->_TextWidth;
-                        TextRect.top    = _ClientRect.top    + 1.f;
-                        TextRect.bottom = _ClientRect.bottom - 1.f;
+                        TextRect.top    = _GraphSettings->_FlipVertically ? _ClientRect.top + 4.f : Rect.top  - (_RMSTextStyle->_TextHeight + 4.f);
+                        TextRect.bottom = _GraphSettings->_FlipVertically ? TextRect.top + (_RMSTextStyle->_TextHeight + 1.f) : Rect.top;
 
                     #ifndef _DEBUG_RENDER
                         WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.RMS);
 
-                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                        renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     #else
                         DrawDebugRectangle(renderTarget, TextRect, D2D1::ColorF(D2D1::ColorF::Purple));
                     #endif
@@ -607,7 +753,16 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterPeakLevel, renderTarget, _Size, L"", &_PeakStyle);
 
     if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeter0dBPeakLevel, renderTarget, _Size, L"", &_Peak0dBStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterMaxPeakLevel, renderTarget, _Size, L"", &_MaxPeakStyle);
+
+    if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterRMSLevel, renderTarget, _Size, L"", &_RMSStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeter0dBRMSLevel, renderTarget, _Size, L"", &_RMS0dBStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::PeakMeterRMSLevelText, renderTarget, _Size, L"-999.9", &_RMSTextStyle);
@@ -703,10 +858,28 @@ void PeakMeter::ReleaseDeviceSpecificResources() noexcept
         _XTextStyle = nullptr;
     }
 
+    if (_RMSTextStyle)
+    {
+        _RMSTextStyle->ReleaseDeviceSpecificResources();
+        _RMSTextStyle = nullptr;
+    }
+
     if (_RMSStyle)
     {
         _RMSStyle->ReleaseDeviceSpecificResources();
         _RMSStyle = nullptr;
+    }
+
+    if (_MaxPeakStyle)
+    {
+        _MaxPeakStyle->ReleaseDeviceSpecificResources();
+        _MaxPeakStyle = nullptr;
+    }
+
+    if (_Peak0dBStyle)
+    {
+        _Peak0dBStyle->ReleaseDeviceSpecificResources();
+        _Peak0dBStyle = nullptr;
     }
 
     if (_PeakStyle)

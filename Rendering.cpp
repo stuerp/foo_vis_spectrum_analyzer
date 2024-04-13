@@ -203,7 +203,7 @@ void UIElement::UpdateSpectrum()
 
     if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
     {
-        if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will 0 when the playback is paused.
+        if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will be 0 when the playback is paused.
         {
             audio_chunk_impl Chunk;
 
@@ -218,8 +218,9 @@ void UIElement::UpdateSpectrum()
             else
             {
                 const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
+
                 const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
-                const double Offset = IsSlidingWindow ? _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
+                const double Offset     = IsSlidingWindow ?                _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
 
                 if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
                 {

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.09) P. Stuer **/
+/** $VER: Analysis.h (2024.04.13) P. Stuer **/
 
 #pragma once
 
@@ -27,7 +27,17 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5., double decaySpeed = 0.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime), DecaySpeed(decaySpeed) { }
+    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime)
+    {
+        Reset();
+    }
+
+    void Reset() noexcept
+    {
+        RMSTime = 0.;
+        RMSSamples = 0;
+        RMSTotal = 0.;
+    }
 
     std::wstring Name;
 
@@ -39,8 +49,14 @@ struct MeterValue
     double NormalizedRMS;   // 0.0 .. 1.0
     double SmoothedRMS;     // 0.0 .. 1.0
 
-    double HoldTime;
-    double DecaySpeed;
+    double RMSTime;         // Time elapsed in the current RMS window.
+    size_t RMSSamples;      // Number of samples used in the current RMS window.
+    double RMSTotal;        // RMS value for the current RMS window.
+
+    double MaxSmoothedPeak; // 0.0 .. 1.0, The value of the maximum peak indicator
+    double HoldTime;        // Time to hold the current max value.
+    double DecaySpeed;      // Speed at which the current max value decays.
+    double Opacity;         // 0.0 .. 1.0
 };
 
 /// <summary>
@@ -65,13 +81,13 @@ public:
     void Reset();
 
 private:
+    // Spectrum
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
 
-    bool GetMeterValues(const audio_chunk & chunk) noexcept;
-
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
+    void GetMeterValues(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -80,9 +96,27 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
-    double NormalizeMeterValue(double amplitude) const noexcept
+    // Peak Meter
+    double NormalizeValue(double amplitude) const noexcept
     {
         return Clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+    }
+
+    double SmoothValue(double value, double smoothedValue) const noexcept
+    {
+        switch (_State->_SmoothingMethod)
+        {
+            default:
+
+            case SmoothingMethod::None:
+                return value;
+
+            case SmoothingMethod::Average:
+                return Clamp((smoothedValue * _State->_SmoothingFactor) + (value * (1. - _State->_SmoothingFactor)), 0., 1.);
+
+            case SmoothingMethod::Peak:
+                return Clamp(Max(smoothedValue * _State->_SmoothingFactor, value), 0., 1.);
+        }
     }
 
 public:
@@ -91,7 +125,7 @@ public:
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
-    std::vector<MeterValue> _MeterValues;
+    std::vector<MeterValue> _AmplitudeValues;
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.04.10) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.12) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -851,7 +851,7 @@
     #define X_G04    X_G03 + W_G03 + IX
     #define Y_G04    Y_G03
 
-    // Label
+    // Label: Unit
     #define W_G05    10
     #define H_G05    H_LBL
     #define X_G05    X_G04 + W_G04 + IX
@@ -1213,8 +1213,28 @@
     #define Y_C16    Y_B12 + 11
     #pragma endregion
 
+    #pragma region RMS Window
+    // Label: RMS Window
+    #define W_C21   46
+    #define H_C21   H_LBL
+    #define X_C21   X_C16
+    #define Y_C21   Y_C16 + H_C16 + IY
+
+    // Text Box
+    #define W_C22   34
+    #define H_C22   H_TBX
+    #define X_C22   X_C21 + W_C21 + IX
+    #define Y_C22   Y_C21
+
+    // Label: Unit
+    #define W_C23   10
+    #define H_C23   H_LBL
+    #define X_C23   X_C22 + W_C22 + IX
+    #define Y_C23   Y_C22
+    #pragma endregion
+
 #define W_B12  W_B08
-#define H_B12  11 + H_C16 + 7
+#define H_B12  11 + H_C16 + IY + H_C22 + 7
 #pragma endregion
 
 #pragma endregion
@@ -1222,7 +1242,7 @@
 #pragma region Styles
 
 // Listbox
-#define W_I01    100
+#define W_I01    110
 #define H_I01    H_D01
 #define X_I01    X_D01 + W_D01 + IX
 #define Y_I01    Y_D01

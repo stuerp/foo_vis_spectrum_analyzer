@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.01) P. Stuer **/
+/** $VER: State.cpp (2024.04.12) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -225,6 +225,7 @@ void State::Reset() noexcept
 
     // Peak Meter
     _HorizontalPeakMeter = false;
+    _RMSWindow = .300; // seconds
 
     _StyleManager.Reset();
 
@@ -462,6 +463,7 @@ State & State::operator=(const State & other)
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
+    _RMSWindow = other._RMSWindow;
 
     #pragma endregion
 
@@ -811,6 +813,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         {
             reader->read_object_t(_FitWindow, abortHandler);
         }
+
+        if (Version >= 25)
+        {
+            reader->read_object_t(_RMSWindow, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1079,6 +1086,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
         // Version 24, v0.7.5.2
         writer->write_object_t(_FitWindow, abortHandler);
+
+        // Version 25, v0.7.5.3
+        writer->write_object_t(_RMSWindow, abortHandler);
     }
     catch (exception & ex)
     {

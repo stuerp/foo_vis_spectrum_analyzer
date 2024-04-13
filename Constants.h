@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.07) P. Stuer **/
+/** $VER: Constans.h (2024.04.12) P. Stuer **/
 
 #pragma once
 
@@ -120,6 +120,9 @@ inline const FLOAT MaxLEDSize = 32.f;
 
 inline const FLOAT MinLEDGap =  0.f;
 inline const FLOAT MaxLEDGap = 32.f;
+
+inline const double MinRMSWindow = 0.; // in seconds
+inline const double MaxRMSWindow = 3.; // in seconds
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
@@ -334,12 +337,16 @@ enum class VisualElement : uint32_t
 
     PeakMeterBackground         = 19,
     PeakMeterPeakLevel          = 20,
+    PeakMeter0dBPeakLevel       = 23,
+    PeakMeterMaxPeakLevel       = 25,
+
     PeakMeterRMSLevel           = 21,
+    PeakMeter0dBRMSLevel        = 24,
     PeakMeterRMSLevelText       = 22,
 
     NyquistMarker               = 15,
 
-    Count                       = 23
+    Count                       = 26
 };
 
 enum class ColorSource : uint32_t

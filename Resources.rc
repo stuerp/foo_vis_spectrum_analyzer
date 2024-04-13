@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.04.10) P. Stuer **/
+/** $VER: Resources.rc (2024.04.12) P. Stuer **/
 
 #include "Resources.h"
 
@@ -329,6 +329,11 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 
             control     "Horizontal",               IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
+
+            rtext       "RMS Window:"               IDC_RMS_WINDOW_LBL,              X_C21, Y_C21 + 2, W_C21, H_C21
+            edittext                                IDC_RMS_WINDOW,                  X_C22, Y_C22,     W_C22, H_C22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+            control     "",                         IDC_RMS_WINDOW_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+            ltext       "s"                         IDC_RMS_WINDOW_UNIT,             X_C23, Y_C23 + 2, W_C23, H_C23
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

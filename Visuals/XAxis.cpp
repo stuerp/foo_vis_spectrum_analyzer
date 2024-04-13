@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.04.09) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.04.11) P. Stuer - Implements the X axis of a graph. **/
 
 #include "framework.h"
 #include "XAxis.h"
@@ -171,20 +171,12 @@ void XAxis::Resize() noexcept
     const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-    D2D1_RECT_F OldRect = {  };
-
+    // Calculate the rectangles of the labels.
     for (Label & Iter : _Labels)
     {
         const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
         const FLOAT x = !_GraphSettings->_FlipHorizontally ? xl + dx : xl - dx;
-
-        // Don't generate any labels outside the bounds.
-        if (!InRange(x, _Bounds.left, _Bounds.right))
-        {
-            Iter.IsHidden = true;
-            continue;
-        }
 
         Iter.PointT = D2D1_POINT_2F(x, yt);
         Iter.PointB = D2D1_POINT_2F(x, yb);
@@ -202,13 +194,29 @@ void XAxis::Resize() noexcept
 
                 Iter.RectT = { x - (TextMetrics.width / 2.f), _Bounds.top, x + (TextMetrics.width / 2.f), yt };
                 Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
-
-                // Note: Tries to preserve the undimmed labels.
-                Iter.IsHidden = (Iter.Frequency != _Labels.front().Frequency) && (Iter.Frequency != _Labels.back().Frequency) && Iter.IsDimmed && IsOverlappingHorizontally(Iter.RectT, OldRect);
-
-                if (!Iter.IsHidden)
-                    OldRect = Iter.RectT;
             }
+        }
+
+        // Labels outside the bounds are always hidden.
+        Iter.IsHidden = !InRange(x, _Bounds.left, _Bounds.right);
+    }
+
+    if (_Labels.size() > 2)
+    {
+        #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+
+        const Label * LastLabel = nullptr;
+
+        // Determine which labels should be hidden.
+        for (size_t i = 1; i < _Labels.size() - 1; ++i)
+        {
+            if (LastLabel && !(LastLabel->IsHidden) && IsOverlappingHorizontally(_Labels[i].RectB, LastLabel->RectB))
+                _Labels[i].IsHidden = !NotesMode || (NotesMode && !_Labels[i + 1].IsDimmed);
+            else
+            if (!_Labels[i + 1].IsHidden && NotesMode && IsOverlappingHorizontally(_Labels[i].RectB, _Labels[i + 1].RectB))
+                _Labels[i].IsHidden = !_Labels[i + 1].IsDimmed;
+            else
+                LastLabel = &_Labels[i];
         }
     }
 
@@ -236,7 +244,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_XAxisMode != XAxisMode::None))
         {
-            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
+            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphSettings->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
             if (_GraphSettings->_XAxisTop)
                 renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);

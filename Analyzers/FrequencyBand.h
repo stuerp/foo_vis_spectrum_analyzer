@@ -16,8 +16,8 @@
 #pragma warning(disable: 4820)
 struct FrequencyBand
 {
-    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
-    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), Peak(), HoldTime(), DecaySpeed(), Opacity() { }
+    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
     FrequencyBand(const FrequencyBand & other)
     {
@@ -28,7 +28,7 @@ struct FrequencyBand
         Ctr = other.Ctr;
         Hi  = other.Hi;
 
-        Peak       = other.Peak;
+        MaxValue   = other.MaxValue;
         HoldTime   = other.HoldTime;
         DecaySpeed = other.DecaySpeed;
         Opacity    = other.Opacity;
@@ -48,10 +48,10 @@ struct FrequencyBand
     double Ctr;         // Hz
     double Hi;          // Hz
 
-    double Peak;        // The value of the indicator (0.0 .. 1.0)
+    double MaxValue;    // 0.0 .. 1.0, The value of the maximum indicator
     double HoldTime;    // Time to hold the current peak value.
     double DecaySpeed;  // Speed at which the current peak value decays.
-    double Opacity;     // The opacity of the indicator (0.0 .. 1.0)
+    double Opacity;     // 0.0 .. 1.0, The opacity of the maximum indicator
 
     WCHAR Label[16];
     bool HasDarkBackground;

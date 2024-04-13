@@ -88,6 +88,15 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.5.3, 2024-04-13
+
+* Improved: Peak Meter
+  * Added style to display the peak and RMS values larger than 0dB.
+  * Added style to display the top peak value.
+  * RMS Window is now configurable. Defaults to 300ms. This makes the RMS value more stable. The RMS is relative to 0 dBFS + 3.01 dB.
+  * The level values were not calculated correctly when the selected channels did not correspond to the channel configuration of the track.
+* Fixed: Overlap of the X-axis labels (Regression)
+
 v0.7.5.2, 2024-04-10
 
 * Improved: Peak Meter
@@ -95,7 +104,7 @@ v0.7.5.2, 2024-04-10
   * Added style to display the RMS value as text.
   * Reduced jitter.
 * Improved: Increased the maximum amplitude to +6dB.
-* Improved: Optimized rendering the axes a little bit and tries to preserve the more imported labels.
+* Improved: Optimized rendering the axes a little bit and tried to preserve the more imported labels.
 * Improved: Artwork fit mode can use the full component window instead of just the client area of the graph.
 * Fixed: Setting the LED size and LED gap both to zero caused the component to freeze.
 * Fixed: Artwork fit mode "Fill" was implemented backwards.

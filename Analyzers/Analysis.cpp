@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.10) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.13) P. Stuer **/
 
 #include "framework.h"
 
@@ -39,7 +39,7 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             break;
     }
 
-    _MeterValues.clear();
+    _AmplitudeValues.clear();
 }
 
 /// <summary>
@@ -50,11 +50,10 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
     if (_State->_VisualizationType != VisualizationType::PeakMeter)
     {
         const audio_sample * Samples = chunk.get_data();
-
-        if (Samples == nullptr)
-            return;
-
         const size_t SampleCount = chunk.get_sample_count();
+
+        if ((Samples == nullptr) || (SampleCount == 0))
+            return;
 
         _SampleRate = chunk.get_sample_rate();
         _NyquistFrequency = (double) _SampleRate / 2.;
@@ -163,13 +162,190 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 
-    for (auto & mv : _MeterValues)
+    _AmplitudeValues.clear();
+/*
+    for (auto & mv : _AmplitudeValues)
     {
         mv.Peak     = -std::numeric_limits<double>::infinity();
         mv.RMS      = -std::numeric_limits<double>::infinity();
-        mv.HoldTime = _State->_HoldTime; // Scale the value for it to make sense for a peak meter.
+        mv.HoldTime = _State->_HoldTime;
+    }
+*/
+}
+
+/// <summary>
+/// Updates the peak values.
+/// </summary>
+void Analysis::UpdatePeakValues() noexcept
+{
+    const double Acceleration = _State->_Acceleration / 256.;
+
+    if (_State->_VisualizationType != VisualizationType::PeakMeter)
+    {
+        // Animate the spectrum peak value.
+        for (auto & fb : _FrequencyBands)
+        {
+            if (fb.CurValue >= fb.MaxValue)
+            {
+                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (fb.CurValue - fb.MaxValue) * _State->_HoldTime;
+                else
+                    fb.HoldTime = _State->_HoldTime;
+
+                fb.MaxValue = fb.CurValue;
+                fb.DecaySpeed = 0.;
+                fb.Opacity = 1.;
+            }
+            else
+            {
+                if (fb.HoldTime >= 0.)
+                {
+                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        fb.MaxValue += (fb.HoldTime - Max(fb.HoldTime - 1., 0.)) / _State->_HoldTime;
+
+                    fb.HoldTime--;
+
+                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        fb.HoldTime = Min(fb.HoldTime, _State->_HoldTime);
+                }
+                else
+                {
+                    switch (_State->_PeakMode)
+                    {
+                        default:
+
+                        case PeakMode::None:
+                            break;
+
+                        case PeakMode::Classic:
+                            fb.DecaySpeed = Acceleration;
+                            fb.MaxValue   -= fb.DecaySpeed;
+                            break;
+
+                        case PeakMode::Gravity:
+                            fb.DecaySpeed += Acceleration;
+                            fb.MaxValue   -= fb.DecaySpeed;
+                            break;
+
+                        case PeakMode::AIMP:
+                            fb.DecaySpeed = Acceleration * (1. + (int) (fb.MaxValue < 0.5));
+                            fb.MaxValue  -= fb.DecaySpeed;
+                            break;
+
+                        case PeakMode::FadeOut:
+                            fb.DecaySpeed += Acceleration;
+
+                            fb.Opacity -= fb.DecaySpeed;
+
+                            if (fb.Opacity <= 0.)
+                                fb.MaxValue = fb.CurValue;
+                            break;
+
+                        case PeakMode::FadingAIMP:
+                            fb.DecaySpeed = Acceleration * (1. + (int) (fb.MaxValue < 0.5));
+                            fb.MaxValue  -= fb.DecaySpeed;
+
+                            fb.Opacity -= fb.DecaySpeed;
+
+                            if (fb.Opacity <= 0.)
+                                fb.MaxValue = fb.CurValue;
+                            break;
+                    }
+                }
+
+                fb.MaxValue = Clamp(fb.MaxValue, 0., 1.);
+            }
+        }
+    }
+    else
+    {
+        // Animate the smoothed peak and RMS values.
+        for (auto & mv : _AmplitudeValues)
+        {
+            if (mv.SmoothedPeak >= mv.MaxSmoothedPeak)
+            {
+                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    mv.HoldTime = (::isfinite(mv.HoldTime) ? mv.HoldTime : 0.) + (mv.SmoothedPeak - mv.MaxSmoothedPeak) * _State->_HoldTime;
+                else
+                    mv.HoldTime = _State->_HoldTime;
+
+                mv.MaxSmoothedPeak = mv.SmoothedPeak;
+                mv.DecaySpeed = 0.;
+                mv.Opacity = 1.;
+            }
+            else
+            {
+                if (mv.HoldTime > 0.)
+                {
+                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    {
+                        mv.MaxSmoothedPeak += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
+//                      mv.MaxSmoothedRMS  += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
+                    }
+
+                    mv.HoldTime--;
+
+                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        mv.HoldTime = Min(mv.HoldTime, _State->_HoldTime);
+                }
+                else
+                {
+                    switch (_State->_PeakMode)
+                    {
+                        default:
+
+                        case PeakMode::None:
+                            break;
+
+                        case PeakMode::Classic:
+                            mv.DecaySpeed = Acceleration;
+
+                            mv.MaxSmoothedPeak -= mv.DecaySpeed;
+//                          mv.MaxSmoothedRMS  -= mv.DecaySpeed;
+                            break;
+
+                        case PeakMode::Gravity:
+                            mv.DecaySpeed += Acceleration;
+
+                            mv.MaxSmoothedPeak -= mv.DecaySpeed;
+  //                        mv.MaxSmoothedRMS  -= mv.DecaySpeed;
+                            break;
+
+                        case PeakMode::AIMP:
+                            mv.DecaySpeed = Acceleration * (1. + (int) (mv.MaxSmoothedPeak < 0.5));
+
+                            mv.MaxSmoothedPeak -= mv.DecaySpeed;
+//                          mv.MaxSmoothedRMS  -= mv.DecaySpeed;
+                            break;
+
+                        case PeakMode::FadeOut:
+                            mv.DecaySpeed += Acceleration;
+
+                            mv.Opacity -= mv.DecaySpeed;
+
+                            if (mv.Opacity <= 0.)
+                                mv.MaxSmoothedPeak = mv.SmoothedPeak;
+                            break;
+
+                        case PeakMode::FadingAIMP:
+                            mv.DecaySpeed = Acceleration * (1. + (int) (mv.MaxSmoothedPeak < 0.5));
+
+                            mv.MaxSmoothedPeak -= mv.DecaySpeed;
+//                          mv.MaxSmoothedRMS  -= mv.DecaySpeed;
+
+                            mv.Opacity -= mv.DecaySpeed;
+
+                            if (mv.Opacity <= 0.)
+                                mv.MaxSmoothedPeak = mv.SmoothedPeak;
+                            break;
+                    }
+                }
+            }
+        }
     }
 }
+
+#pragma region Spectrum
 
 #pragma region Frequencies
 
@@ -424,20 +600,24 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 
 #pragma endregion
 
+#pragma endregion
+
 #pragma region Peak Meter
 
 /// <summary>
 /// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
 /// </summary>
-bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
+void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Samples = chunk.get_data();
     const size_t SampleCount = chunk.get_sample_count();
 
     if ((Samples == nullptr) || (SampleCount == 0))
-        return false;
+        return;
 
-    if (_MeterValues.size() != chunk.get_channel_count())
+    const unsigned ActiveChannelMask = (chunk.get_channel_count() > 1) ? chunk.get_channel_config() & _GraphSettings->_Channels : 1;
+
+    if (_AmplitudeValues.size() == 0)
     {
         static const WCHAR * ChannelNames[] =
         {
@@ -449,238 +629,81 @@ bool Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
         };
 
-        _MeterValues.clear();
-
-        if (chunk.get_channel_count() != 1)
+        if (chunk.get_channel_count() > 1)
         {
             size_t i = 0;
 
-            for (unsigned ChannelConfig = chunk.get_channel_config() & _GraphSettings->_Channels; (ChannelConfig != 0) && (i < _countof(ChannelNames)); ChannelConfig >>= 1, ++i)
+            for (unsigned ChannelMask = ActiveChannelMask; (ChannelMask != 0) && (i < _countof(ChannelNames)); ChannelMask >>= 1, ++i)
             {
-                if (ChannelConfig & 1)
-                    _MeterValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime }); // Scale the value for it to make sense for a peak meter.
+                if (ChannelMask & 1)
+                    _AmplitudeValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime });
             }
         }
         else
-            _MeterValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime }); // Most likely only FL and FR are enabled by the user. Mono track will cause an infinite loop.
+        {
+            // Special case for mono tracks. Fake the selection of the FC channel.
+            _AmplitudeValues.push_back({ ChannelNames[2], 0., 0., _State->_HoldTime });
+        }
     }
     else
     {
-        for (auto & mv : _MeterValues)
-        {
+        for (auto & mv : _AmplitudeValues)
             mv.Peak = -std::numeric_limits<double>::infinity();
-            mv.RMS = 0.;
-        }
     }
 
-    if (_MeterValues.size() == 0)
-        return false;
+    if (_AmplitudeValues.size() == 0)
+        return;
 
     const audio_sample * EndOfChunk = Samples + SampleCount;
 
-    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; )
+    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; Sample += chunk.get_channel_count())
     {
-        for (auto & mv : _MeterValues)
+        const audio_sample * s = Sample;
+
+        unsigned ChannelMask = ActiveChannelMask;
+
+        for (auto & mv : _AmplitudeValues)
         {
-            audio_sample Value = std::abs(*Sample);
+            if (ChannelMask & 1)
+            {
+                double Value = std::abs((double) *s);
 
-            if (Value > mv.Peak)
-                mv.Peak = Value;
+                if (Value > mv.Peak)
+                    mv.Peak = Value;
 
-            mv.RMS += Value * Value;
+                mv.RMSTotal += Value * Value;
+            }
 
-            ++Sample;
+            ChannelMask >>= 1;
+
+            s++;
         }
     }
 
-    // Normalize the values.
-    for (auto & mv : _MeterValues)
+    // Normalize and smooth the values.
+    for (auto & Value : _AmplitudeValues)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        mv.Peak = ToDecibel(mv.Peak / Amax) + dBCorrection;
-        mv.NormalizedPeak = NormalizeMeterValue(mv.Peak);
+        Value.Peak = ToDecibel(Value.Peak / Amax) + dBCorrection;
+        Value.NormalizedPeak = NormalizeValue(Value.Peak);
+        Value.SmoothedPeak = SmoothValue(Value.NormalizedPeak, Value.SmoothedPeak);
 
-        mv.RMS = (audio_sample) std::sqrt(mv.RMS / (audio_sample) (SampleCount / chunk.get_channel_count()));
-        mv.RMS = ToDecibel(mv.RMS / Amax) + dBCorrection;
-        mv.NormalizedRMS = NormalizeMeterValue(mv.RMS);
-    }
+        Value.RMSTime    += (double) SampleCount / chunk.get_sample_rate();
+        Value.RMSSamples += SampleCount / chunk.get_channel_count();
 
-    // Smooth the values.
-    switch (_State->_SmoothingMethod)
-    {
-        default:
-
-        case SmoothingMethod::None:
+        if (Value.RMSTime > _State->_RMSWindow)
         {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = mv.NormalizedPeak;
-                mv.SmoothedRMS  = mv.NormalizedRMS;
-            }
-            break;
-        }
+            Value.RMS = std::sqrt(Value.RMSTotal / (double) Value.RMSSamples);
+            Value.RMS = ToDecibel(Value.RMS / Amax) + dBCorrection;
+            Value.NormalizedRMS = NormalizeValue(Value.RMS);
+            Value.SmoothedRMS = SmoothValue(Value.NormalizedRMS, Value.SmoothedRMS);
 
-        case SmoothingMethod::Average:
-        {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = Clamp((mv.SmoothedPeak * _State->_SmoothingFactor) + (mv.NormalizedPeak * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
-                mv.SmoothedRMS  = Clamp((mv.SmoothedRMS  * _State->_SmoothingFactor) + (mv.NormalizedRMS  * (1.0 - _State->_SmoothingFactor)), 0.0, 1.0);
-            }
-            break;
-        }
+        //  Log::Write(Log::Level::Trace, "%5.3f %6d %5.3f %+5.3f %5.3f", mv.RMSTime, (int) mv.RMSSamples, mv.RMS, mv.NormalizedRMS, mv.SmoothedRMS);
 
-        case SmoothingMethod::Peak:
-        {
-            for (auto & mv : _MeterValues)
-            {
-                mv.SmoothedPeak = Clamp(Max(mv.SmoothedPeak * _State->_SmoothingFactor, mv.NormalizedPeak), 0.0, 1.0);
-                mv.SmoothedRMS  = Clamp(Max(mv.SmoothedRMS  * _State->_SmoothingFactor, mv.NormalizedRMS),  0.0, 1.0);
-            }
-            break;
+            // Reset the RMS window values.
+            Value.Reset();
         }
     }
-
-    return true;
 }
 
 #pragma endregion
-
-/// <summary>
-/// Updates the peak values.
-/// </summary>
-void Analysis::UpdatePeakValues() noexcept
-{
-    if (_State->_VisualizationType != VisualizationType::PeakMeter)
-    {
-        // Animate the spectrum peak value.
-        const double Acceleration = _State->_Acceleration / 256.;
-
-        for (auto & fb : _FrequencyBands)
-        {
-            if (fb.CurValue >= fb.Peak)
-            {
-                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                    fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (fb.CurValue - fb.Peak) * _State->_HoldTime;
-                else
-                    fb.HoldTime = _State->_HoldTime;
-
-                fb.Peak = fb.CurValue;
-                fb.DecaySpeed = 0.;
-                fb.Opacity = 1.;
-            }
-            else
-            {
-                if (fb.HoldTime >= 0.)
-                {
-                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                        fb.Peak += (fb.HoldTime - Max(fb.HoldTime - 1., 0.)) / _State->_HoldTime;
-
-                    fb.HoldTime--;
-
-                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                        fb.HoldTime = Min(fb.HoldTime, _State->_HoldTime);
-                }
-                else
-                {
-                    switch (_State->_PeakMode)
-                    {
-                        default:
-
-                        case PeakMode::None:
-                            break;
-
-                        case PeakMode::Classic:
-                            fb.DecaySpeed = Acceleration;
-                            fb.Peak      -= fb.DecaySpeed;
-                            break;
-
-                        case PeakMode::Gravity:
-                            fb.DecaySpeed += Acceleration;
-                            fb.Peak       -= fb.DecaySpeed;
-                            break;
-
-                        case PeakMode::AIMP:
-                            fb.DecaySpeed = Acceleration * (1. + (int) (fb.Peak < 0.5));
-                            fb.Peak      -= fb.DecaySpeed;
-                            break;
-
-                        case PeakMode::FadeOut:
-                            fb.DecaySpeed += Acceleration;
-                            fb.Opacity    -= fb.DecaySpeed;
-
-                            if (fb.Opacity <= 0.)
-                                fb.Peak = fb.CurValue;
-                            break;
-
-                        case PeakMode::FadingAIMP:
-                            fb.DecaySpeed = Acceleration * (1. + (int) (fb.Peak < 0.5));
-                            fb.Peak      -= fb.DecaySpeed;
-                            fb.Opacity   -= fb.DecaySpeed;
-
-                            if (fb.Opacity <= 0.)
-                                fb.Peak = fb.CurValue;
-                            break;
-                    }
-                }
-
-                fb.Peak = Clamp(fb.Peak, 0., 1.);
-            }
-        }
-    }
-    else
-    {
-        // Animate the scaled peak and RMS values.
-        const double Acceleration = ((_GraphSettings->_AmplitudeHi -  _GraphSettings->_AmplitudeLo) * _State->_Acceleration) / (256. * 6.);  // Scale the value for it to make sense for a peak meter.
-
-        for (auto & mv : _MeterValues)
-        {
-            if (mv.HoldTime > 0.)
-            {
-                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                {
-                    mv.SmoothedPeak += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
-                    mv.SmoothedRMS  += (mv.HoldTime - Max(mv.HoldTime - 1., 0.)) / _State->_HoldTime;
-                }
-
-                mv.HoldTime--;
-
-                if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                    mv.HoldTime = Min(mv.HoldTime, _State->_HoldTime);
-            }
-            else
-            {
-                switch (_State->_PeakMode)
-                {
-                    default:
-
-                    case PeakMode::None:
-                        break;
-
-                    case PeakMode::Classic:
-                    case PeakMode::FadeOut:
-                        mv.DecaySpeed = Acceleration;
-
-                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        break;
-
-                    case PeakMode::Gravity:
-                        mv.DecaySpeed += Acceleration;
-
-                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        break;
-
-                    case PeakMode::AIMP:
-                    case PeakMode::FadingAIMP:
-                        mv.DecaySpeed = Acceleration * (1. + (int) (mv.SmoothedPeak < 0.5));
-
-                        mv.SmoothedPeak = Clamp(mv.SmoothedPeak - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        mv.SmoothedRMS  = Clamp(mv.SmoothedRMS  - mv.DecaySpeed, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
-                        break;
-                }
-            }
-        }
-    }
-}

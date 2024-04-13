@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.07) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -246,6 +246,7 @@ private:
             }
         },
 
+        // Peak
         {
             VisualElement::PeakMeterBackground,
             {
@@ -263,10 +264,35 @@ private:
         },
 
         {
+            VisualElement::PeakMeter0dBPeakLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeterMaxPeakLevel,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        // RMS
+        {
             VisualElement::PeakMeterRMSLevel,
             {
                 Style::SupportsOpacity,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::PeakMeter0dBRMSLevel,
+            {
+                Style::SupportsOpacity,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
