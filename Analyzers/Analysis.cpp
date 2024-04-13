@@ -615,8 +615,6 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     if ((Samples == nullptr) || (SampleCount == 0))
         return;
 
-    const unsigned ActiveChannelMask = (chunk.get_channel_count() > 1) ? chunk.get_channel_config() & _GraphSettings->_Channels : 1;
-
     if (_AmplitudeValues.size() == 0)
     {
         static const WCHAR * ChannelNames[] =
@@ -633,9 +631,9 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         {
             size_t i = 0;
 
-            for (unsigned ChannelMask = ActiveChannelMask; (ChannelMask != 0) && (i < _countof(ChannelNames)); ChannelMask >>= 1, ++i)
+            for (uint32_t SelectedChannels = chunk.get_channel_config() & _GraphSettings->_Channels; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
             {
-                if (ChannelMask & 1)
+                if (SelectedChannels & 1)
                     _AmplitudeValues.push_back({ ChannelNames[i], 0., 0., _State->_HoldTime });
             }
         }
@@ -660,23 +658,32 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     {
         const audio_sample * s = Sample;
 
-        unsigned ChannelMask = ActiveChannelMask;
+        uint32_t ChunkChannels = chunk.get_channel_config();
+        uint32_t SelectedChannels = _GraphSettings->_Channels;
 
-        for (auto & mv : _AmplitudeValues)
+        size_t i = 0;
+
+        while (ChunkChannels != 0)
         {
-            if (ChannelMask & 1)
+            if (ChunkChannels & 1)
             {
-                double Value = std::abs((double) *s);
+                if (SelectedChannels & 1)
+                {
+                    auto av = &_AmplitudeValues[i++];
 
-                if (Value > mv.Peak)
-                    mv.Peak = Value;
+                    double Value = std::abs((double) *s);
 
-                mv.RMSTotal += Value * Value;
+                    if (Value > av->Peak)
+                        av->Peak = Value;
+
+                    av->RMSTotal += Value * Value;
+                }
+
+                s++;
             }
 
-            ChannelMask >>= 1;
-
-            s++;
+            ChunkChannels >>= 1;
+            SelectedChannels >>= 1;
         }
     }
 
@@ -684,7 +691,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     for (auto & Value : _AmplitudeValues)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        Value.Peak = ToDecibel(Value.Peak / Amax) + dBCorrection;
+        Value.Peak = ToDecibel(Value.Peak / Amax);
         Value.NormalizedPeak = NormalizeValue(Value.Peak);
         Value.SmoothedPeak = SmoothValue(Value.NormalizedPeak, Value.SmoothedPeak);
 
@@ -694,7 +701,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         if (Value.RMSTime > _State->_RMSWindow)
         {
             Value.RMS = std::sqrt(Value.RMSTotal / (double) Value.RMSSamples);
-            Value.RMS = ToDecibel(Value.RMS / Amax) + dBCorrection;
+            Value.RMS = ToDecibel(Value.RMS / Amax);
             Value.NormalizedRMS = NormalizeValue(Value.RMS);
             Value.SmoothedRMS = SmoothValue(Value.NormalizedRMS, Value.SmoothedRMS);
 

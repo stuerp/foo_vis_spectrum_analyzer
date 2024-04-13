@@ -88,6 +88,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.5.4, 2024-04-13
+
+* Peak Meter
+  * Changed: Swiched the unit from dB to dBFS.
+  * Fixed: Some channel configurations (e.g. with side channels) were not displayed correctly.
+
 v0.7.5.3, 2024-04-13
 
 * Improved: Peak Meter
