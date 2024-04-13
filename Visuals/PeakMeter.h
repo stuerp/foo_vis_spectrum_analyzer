@@ -103,4 +103,7 @@ private:
     Style * _XTextStyle;
     Style * _YTextStyle;
     Style * _YLineStyle;
+
+    const double Amax  = M_SQRT1_2;
+    const double dBCorrection = -20. * ::log10(Amax); // 3.01;
 };

@@ -88,12 +88,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.5.3, 2024-04-xx
+v0.7.5.3, 2024-04-13
 
 * Improved: Peak Meter
   * Added style to display the peak and RMS values larger than 0dB.
   * Added style to display the top peak value.
-  * RMS Window is now configurable. Defaults to 600ms. This makes the RMS ready more stable.
+  * RMS Window is now configurable. Defaults to 300ms. This makes the RMS value more stable. The RMS is relative to 0 dBFS + 3.01 dB.
   * The level values were not calculated correctly when the selected channels did not correspond to the channel configuration of the track.
 * Fixed: Overlap of the X-axis labels (Regression)
 

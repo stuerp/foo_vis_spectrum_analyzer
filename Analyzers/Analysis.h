@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.12) P. Stuer **/
+/** $VER: Analysis.h (2024.04.13) P. Stuer **/
 
 #pragma once
 
@@ -81,6 +81,7 @@ public:
     void Reset();
 
 private:
+    // Spectrum
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
@@ -95,7 +96,8 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
-    double NormalizeMeterValue(double amplitude) const noexcept
+    // Peak Meter
+    double NormalizeValue(double amplitude) const noexcept
     {
         return Clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
     }

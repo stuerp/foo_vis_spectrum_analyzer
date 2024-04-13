@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.01) P. Stuer **/
+/** $VER: State.cpp (2024.04.12) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
