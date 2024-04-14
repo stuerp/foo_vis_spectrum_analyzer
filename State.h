@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.12) P. Stuer **/
+/** $VER: State.h (2024.04.14) P. Stuer **/
 
 #pragma once
 
@@ -255,6 +255,7 @@ public:
     double _TrackTime;
 
     LONG64 _Barrier;
+    std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
 
     #pragma endregion
 

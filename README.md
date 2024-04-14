@@ -93,6 +93,7 @@ v0.7.5.5, 2024-04-xx
 * Peak Meter
   * Changed: Removed the 3.01 dB from the peak value in a further attempt to make it comply with IEC 61606:1997 / AES17-1998 standard (RMS +3).
   * Changed: Tweaked the coordinate calculations a bit to produce a more polished result.
+* Improved: The context menu will put a checkmark next to the last selected preset.
 
 v0.7.5.4, 2024-04-13
 

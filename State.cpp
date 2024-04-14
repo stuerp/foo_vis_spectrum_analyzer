@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.12) P. Stuer **/
+/** $VER: State.cpp (2024.04.14) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -237,6 +237,8 @@ void State::Reset() noexcept
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
 
     _Barrier = 0;
+    _ActivePresetName.clear();
+
 }
 
 /// <summary>
@@ -469,7 +471,7 @@ State & State::operator=(const State & other)
 
     #pragma region Styles
 
-        _StyleManager = other._StyleManager;
+    _StyleManager = other._StyleManager;
 
     #pragma endregion
 
@@ -481,7 +483,8 @@ State & State::operator=(const State & other)
 
     #pragma region Not serialized
 
-        _BinCount = other._BinCount;
+    _BinCount = other._BinCount;
+    _ActivePresetName = other._ActivePresetName;
 
     #pragma endregion
 

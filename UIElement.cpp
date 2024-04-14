@@ -221,7 +221,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 
             for (auto & PresetName : PresetNames)
             {
-                PresetMenu.AppendMenu((UINT) MF_STRING, IDM_PRESET_NAME + i, PresetName.c_str());
+                PresetMenu.AppendMenu((UINT) MF_STRING | ((_MainState._ActivePresetName == PresetName) ? MF_CHECKED : 0), IDM_PRESET_NAME + i, PresetName.c_str());
                 i++;
             }
 
@@ -299,6 +299,8 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
                     NewState._StyleManager._UserInterfaceColors = _MainState._StyleManager._UserInterfaceColors;
 
                     NewState._StyleManager.UpdateCurrentColors();
+
+                    NewState._ActivePresetName = PresetNames[Index];
 
                     _MainState = NewState;
 

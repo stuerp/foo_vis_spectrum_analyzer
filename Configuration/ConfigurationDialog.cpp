@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.12) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.14) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -3434,13 +3434,23 @@ void ConfigurationDialog::GetPresetNames() noexcept
 
     w.ResetContent();
 
+    int Count = 0;
+    int SelectedIndex = -1;
+
     if (PresetManager::GetPresetNames(_State->_PresetsDirectoryPath, _PresetNames))
     {
         for (auto & PresetName : _PresetNames)
         {
             w.AddString(PresetName.c_str());
+
+            if (PresetName == _State->_ActivePresetName)
+                SelectedIndex = Count;
+
+            Count++;
         }
     }
+
+    w.SetCurSel(SelectedIndex);
 }
 
 /// <summary>
@@ -3456,6 +3466,8 @@ void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
     NewState._StyleManager._UserInterfaceColors = _State->_StyleManager._UserInterfaceColors;
 
     NewState._StyleManager.UpdateCurrentColors();
+
+    NewState._ActivePresetName = presetName;
 
     *_State = NewState;
     Initialize();
