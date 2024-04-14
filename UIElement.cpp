@@ -554,16 +554,7 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
     _Event.Raise(Event::PlaybackStartedNewTrack);
-/*
-    // Load the album art of the current playing track.
-    {
-        static_api_ptr_t<playback_control> PlaybackControl;
-        metadb_handle_ptr Track;
 
-        if (PlaybackControl->get_now_playing(Track))
-            LoadAlbumArt(Track, fb2k::noAbort);
-    }
-*/
     UpdateState();
 
     // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
@@ -589,7 +580,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
         }
     }
     else
-        _Artwork.Release();
+        LoadAlbumArt(track, fb2k::noAbort);
 }
 
 /// <summary>
@@ -623,12 +614,14 @@ void UIElement::on_playback_time(double time)
 
 void UIElement::on_album_art(album_art_data::ptr aad)
 {
+/*
     // The script in the configuration takes precedence over the album art supplied by the track.
     if (!_MainState._ArtworkFilePath.empty())
         return;
 
     if (aad.is_valid())
         _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+*/
 }
 
 #pragma endregion

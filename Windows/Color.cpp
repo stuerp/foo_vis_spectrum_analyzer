@@ -4,8 +4,6 @@
 #include "framework.h"
 #include "Color.h"
 
-#include <algorithm>
-
 struct ColorHSL
 {
     FLOAT H;

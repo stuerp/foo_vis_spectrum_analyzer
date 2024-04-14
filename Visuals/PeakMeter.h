@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.13) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.14) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -61,7 +61,7 @@ private:
     D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
 
-    double _ZeroDecibel;
+    double _dBFSZero;
 
     struct Label
     {

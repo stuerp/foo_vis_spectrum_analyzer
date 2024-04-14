@@ -6,12 +6,9 @@
 
 #include "Direct2D.h"
 #include "Gradients.h"
-
 #include "Support.h"
-#include "Log.h"
 
-#include <cassert>
-#include <algorithm>
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -120,7 +117,7 @@ void Style::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::ve
         case ColorSource::UserInterface:
         {
             if (userInterfaceColors.size() > 0)
-                _CurrentColor = userInterfaceColors[Clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
+                _CurrentColor = userInterfaceColors[std::clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
             break;
         }
     }
@@ -143,7 +140,7 @@ D2D1_COLOR_F Style::GetWindowsColor(uint32_t index) noexcept
         COLOR_HOTLIGHT,         // Hot Light
     };
 
-    return D2D1::ColorF(::GetSysColor(ColorIndex[Clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
 }
 
 /// <summary>

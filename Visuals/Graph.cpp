@@ -78,7 +78,7 @@ void Graph::Reset()
     for (MeterValue & mv : _Analysis._AmplitudeValues)
     {
         mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
-        mv.SmoothedPeak = mv.SmoothedRMS = 0.;
+        mv.PeakRender = mv.RMSRender = 0.;
     }
 
     _Spectrum.Reset();
@@ -118,7 +118,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         if (_GraphSettings->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        index = Clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = std::clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
@@ -131,7 +131,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         if (!_GraphSettings->_FlipVertically)
             y = (Bounds.bottom + Bounds.top) - y;
 
-        index = Clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
         return false;

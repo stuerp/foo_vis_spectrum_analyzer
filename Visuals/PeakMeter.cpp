@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.13) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.14) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -137,9 +137,9 @@ void PeakMeter::Resize() noexcept
             Iter.PointR = D2D1_POINT_2F(x, _ClientRect.bottom);
 
             if (_GraphSettings->_FlipHorizontally)
-                x = Clamp(x - cx, _GraphSettings->_XAxisTop    ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
+                x = std::clamp(x - cx, _GraphSettings->_XAxisTop    ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
             else
-                x = Clamp(x - cx, _GraphSettings->_XAxisBottom ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
+                x = std::clamp(x - cx, _GraphSettings->_XAxisBottom ? _ClientRect.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.right + cx : _ClientRect.right - _YTextStyle->_TextWidth);
 
             if (_GraphSettings->_FlipVertically)
             {
@@ -212,9 +212,9 @@ void PeakMeter::Resize() noexcept
             Iter.PointR = D2D1_POINT_2F(_ClientRect.right, y);
 
             if (_GraphSettings->_FlipVertically)
-                y = Clamp(y - cy, _GraphSettings->_XAxisBottom ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+                y = std::clamp(y - cy, _GraphSettings->_XAxisBottom ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisTop    ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
             else
-                y = Clamp(y - cy, _GraphSettings->_XAxisTop    ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+                y = std::clamp(y - cy, _GraphSettings->_XAxisTop    ? _ClientRect.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisBottom ? _ClientRect.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
 
             Iter.RectL = { _Bounds.left,      y, _ClientRect.left, y + _YTextStyle->_TextHeight };
             Iter.RectR = { _ClientRect.right, y, _Bounds.right   , y + _YTextStyle->_TextHeight };
@@ -242,7 +242,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    _ZeroDecibel = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
+    _dBFSZero = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
 
 #ifdef _DEBUG_RENDER
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -357,15 +357,11 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         const FLOAT TotalBarHeight = (BarHeight * n) + TotalBarGap;
         const FLOAT Offset = ::floor((_ClientSize.height - TotalBarHeight) / 2.f);
 
-        D2D1_RECT_F Rect = { 0.f, (_ClientSize.height - 1.f) - Offset - BarHeight, 0.f, 0.f };
+        D2D1_RECT_F Rect = { 0.f, 0.f, 0.f, _ClientSize.height - Offset };
 
         for (auto & Value : _Analysis->_AmplitudeValues)
         {
-            // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
-            if ((int) Rect.top & 1)
-                Rect.top++;
-
-            Rect.bottom = Clamp(Rect.top + BarHeight, 0.f, _ClientSize.height - 1.f);
+            Rect.top = std::clamp(Rect.bottom - BarHeight, 0.f, _ClientSize.height);
 
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
@@ -381,13 +377,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
+            // Draw the peak.
             {
-                double SmoothedPeak = _Peak0dBStyle->IsEnabled() ? Min(Value.SmoothedPeak, _ZeroDecibel) : Value.SmoothedPeak;
+                double PeakRender = _Peak0dBStyle->IsEnabled() ? std::min(Value.PeakRender, _dBFSZero) : Value.PeakRender;
 
                 // Draw the foreground (Peak).
                 if (_PeakStyle->IsEnabled())
                 {
-                    Rect.right = Rect.left + (FLOAT) (SmoothedPeak * _ClientSize.width);
+                    Rect.right = Rect.left + (FLOAT) (PeakRender * _ClientSize.width);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -398,14 +395,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
                 }
 
-                // Draw the foreground (Peak, 0dB)
-                if ((Value.SmoothedPeak > _ZeroDecibel) && _Peak0dBStyle->IsEnabled())
+                // Draw the foreground (Peak, 0dBFS)
+                if ((Value.PeakRender > _dBFSZero) && _Peak0dBStyle->IsEnabled())
                 {
-                    Rect.right = Rect.left + (FLOAT) (Value.SmoothedPeak * _ClientSize.width);
+                    Rect.right = Rect.left + (FLOAT) (Value.PeakRender * _ClientSize.width);
 
                     FLOAT OldLeft = Rect.left;
 
-                    Rect.left = (FLOAT) (_ZeroDecibel * _ClientSize.width);
+                    Rect.left = (FLOAT) (_dBFSZero * _ClientSize.width);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -419,15 +416,15 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
 
                 // Draw the foreground (Peak Top).
-                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxSmoothedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxPeakRender > 0.) && _MaxPeakStyle->IsEnabled())
                 {
                     FLOAT OldLeft = Rect.left;
 
                     Rect.left  =
-                    Rect.right = (FLOAT) ( Value.MaxSmoothedPeak * _ClientSize.width);
+                    Rect.right = (FLOAT) ( Value.MaxPeakRender * _ClientSize.width);
 
-                    Rect.left  = ::ceil(Clamp(Rect.left  - PeakThickness, 0.f, _ClientSize.width));
-                    Rect.right = ::ceil(Clamp(Rect.right + PeakThickness, 0.f, _ClientSize.width));
+                    Rect.left  = ::ceil(std::clamp(Rect.left  - PeakThickness, 0.f, _ClientSize.width));
+                    Rect.right = ::ceil(std::clamp(Rect.right + PeakThickness, 0.f, _ClientSize.width));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Value.Opacity : _MaxPeakStyle->_Opacity;
 
@@ -439,13 +436,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
+            // Draw the RMS.
             {
-                double SmoothedRMS = _RMS0dBStyle->IsEnabled() ? Min(Value.SmoothedRMS, _ZeroDecibel) : Value.SmoothedRMS;
+                double RMSRender = _RMS0dBStyle->IsEnabled() ? std::min(Value.RMSRender, _dBFSZero) : Value.RMSRender;
 
                 // Draw the foreground (RMS).
                 if (_RMSStyle->IsEnabled())
                 {
-                    Rect.right = Rect.left + (FLOAT) (SmoothedRMS * _ClientSize.width);
+                    Rect.right = Rect.left + (FLOAT) (RMSRender * _ClientSize.width);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -457,14 +455,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
                 }
 
-                // Draw the foreground (RMS, 0dB)
-                if ((Value.SmoothedRMS > _ZeroDecibel) && _RMS0dBStyle->IsEnabled())
+                // Draw the foreground (RMS, 0dBFS)
+                if ((Value.RMSRender > _dBFSZero) && _RMS0dBStyle->IsEnabled())
                 {
-                    Rect.right = Rect.left + (FLOAT) (Value.SmoothedRMS * _ClientSize.width);
+                    Rect.right = Rect.left + (FLOAT) (Value.RMSRender * _ClientSize.width);
 
                     FLOAT OldLeft = Rect.left;
 
-                    Rect.left = (FLOAT) (_ZeroDecibel * _ClientSize.width);
+                    Rect.left = (FLOAT) (_dBFSZero * _ClientSize.width);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -478,7 +476,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
-            Rect.top -= BarGap + BarHeight;
+            Rect.bottom = Rect.top - BarGap;
         }
 
         ResetTransform(renderTarget);
@@ -486,35 +484,35 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         // Draw the channel names. Note: Rendered in absolute coordinates! No transformation.
         if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
-            Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom : _ClientRect.top;
+            Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom - Offset: _ClientRect.top + Offset;
 
-            const FLOAT dy = _GraphSettings->_FlipVertically ? -(_ClientSize.height / n) : (_ClientSize.height / n);
+            const FLOAT dy = _GraphSettings->_FlipVertically ? -(BarHeight + BarGap) : (BarHeight + BarGap);
 
             for (const auto & mv : _Analysis->_AmplitudeValues)
             {
-                Rect.bottom = Clamp(Rect.top + dy, 0.f, _ClientRect.bottom);
+                Rect.bottom = std::clamp(Rect.top + dy, 0.f, _ClientRect.bottom);
 
                 if (_GraphSettings->_XAxisTop)
                 {
-                    Rect.left  = _GraphSettings->_FlipHorizontally ? _Bounds.left : _ClientRect.right + 1.f;
-                    Rect.right = _GraphSettings->_FlipHorizontally ? _ClientRect.left - 1.f : _Bounds.right;
+                    Rect.left  = _GraphSettings->_FlipHorizontally ? _Bounds.left : _ClientRect.right;
+                    Rect.right = _GraphSettings->_FlipHorizontally ? _ClientRect.left : _Bounds.right;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
+                    DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
                 }
 
                 if (_GraphSettings->_XAxisBottom)
                 {
-                    Rect.left  = _GraphSettings->_FlipHorizontally ? _ClientRect.right + 1.f : _Bounds.left;
-                    Rect.right = _GraphSettings->_FlipHorizontally ? _Bounds.right : _ClientRect.left - 1.f;
+                    Rect.left  = _GraphSettings->_FlipHorizontally ? _ClientRect.right : _Bounds.left;
+                    Rect.right = _GraphSettings->_FlipHorizontally ? _Bounds.right : _ClientRect.left;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
+                    DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
 
                     // Draw the RMS text display.
@@ -535,7 +533,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     }
                 }
 
-                Rect.top = Rect.bottom + 1.f;
+                Rect.top = Rect.bottom;
             }
         }
     }
@@ -552,11 +550,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
 
         for (auto & Value : _Analysis->_AmplitudeValues)
         {
-            // FIXME: Ugly hack. FillOpacityMask() does not render when the top coordinate is odd.
-            if ((int) Rect.left & 1)
-                Rect.left++;
-
-            Rect.right = Clamp(Rect.left + BarWidth, 0.f, _ClientSize.width - 1.f);
+            Rect.right = std::clamp(Rect.left + BarWidth, 0.f, _ClientSize.width);
 
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
@@ -572,13 +566,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
             #endif
             }
 
+            // Draw the peak.
             {
-                double SmoothedPeak = _Peak0dBStyle->IsEnabled() ? Min(Value.SmoothedPeak, _ZeroDecibel) : Value.SmoothedPeak;
+                double PeakRender = _Peak0dBStyle->IsEnabled() ? std::min(Value.PeakRender, _dBFSZero) : Value.PeakRender;
 
                 // Draw the foreground (Peak).
                 if (_PeakStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (SmoothedPeak * _ClientSize.height);
+                    Rect.bottom = Rect.top + (FLOAT) (PeakRender * _ClientSize.height);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -589,14 +584,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
                 }
 
-                // Draw the foreground (Peak, 0dB)
-                if ((Value.SmoothedPeak > _ZeroDecibel) && _Peak0dBStyle->IsEnabled())
+                // Draw the foreground (Peak, 0dBFS)
+                if ((Value.PeakRender > _dBFSZero) && _Peak0dBStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (Value.SmoothedPeak * _ClientSize.height);
+                    Rect.bottom = Rect.top + (FLOAT) (Value.PeakRender * _ClientSize.height);
 
                     FLOAT OldTop = Rect.top;
 
-                    Rect.top = (FLOAT) (_ZeroDecibel * _ClientSize.height);
+                    Rect.top = (FLOAT) (_dBFSZero * _ClientSize.height);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -610,15 +605,15 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
 
                 // Draw the foreground (Peak Top).
-                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxSmoothedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+                if ((_State->_PeakMode != PeakMode::None) && (Value.MaxPeakRender > 0.) && _MaxPeakStyle->IsEnabled())
                 {
                     FLOAT OldTop = Rect.top;
 
                     Rect.top    =
-                    Rect.bottom = (FLOAT) ( Value.MaxSmoothedPeak * _ClientSize.height);
+                    Rect.bottom = (FLOAT) ( Value.MaxPeakRender * _ClientSize.height);
 
-                    Rect.top    = ::ceil(Clamp(Rect.top    - PeakThickness, 0.f, _ClientSize.height));
-                    Rect.bottom = ::ceil(Clamp(Rect.bottom + PeakThickness, 0.f, _ClientSize.height));
+                    Rect.top    = ::ceil(std::clamp(Rect.top    - PeakThickness, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(std::clamp(Rect.bottom + PeakThickness, 0.f, _ClientSize.height));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Value.Opacity : _MaxPeakStyle->_Opacity;
 
@@ -630,13 +625,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
+            // Draw the RMS.
             {
-                double SmoothedRMS = _RMS0dBStyle->IsEnabled() ? Min(Value.SmoothedRMS, _ZeroDecibel) : Value.SmoothedRMS;
+                double RMSRender = _RMS0dBStyle->IsEnabled() ? std::min(Value.RMSRender, _dBFSZero) : Value.RMSRender;
 
                 // Draw the foreground (RMS).
                 if (_RMSStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (SmoothedRMS * _ClientSize.height);
+                    Rect.bottom = Rect.top + (FLOAT) (RMSRender * _ClientSize.height);
 
                 #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
@@ -648,14 +644,14 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 #endif
                 }
 
-                // Draw the foreground (RMS, 0dB)
-                if ((Value.SmoothedRMS > _ZeroDecibel) && _RMS0dBStyle->IsEnabled())
+                // Draw the foreground (RMS, 0dBFS)
+                if ((Value.RMSRender > _dBFSZero) && _RMS0dBStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (Value.SmoothedRMS * _ClientSize.height);
+                    Rect.bottom = Rect.top + (FLOAT) (Value.RMSRender * _ClientSize.height);
 
                     FLOAT OldTop = Rect.top;
 
-                    Rect.top = (FLOAT) (_ZeroDecibel * _ClientSize.height);
+                    Rect.top = (FLOAT) (_dBFSZero * _ClientSize.height);
 
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
@@ -678,35 +674,35 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         // Draw the channel names. Note: Rendered in absolute coordinates! No transformation.
         if (_XTextStyle->IsEnabled() && (_GraphSettings->_XAxisTop || _GraphSettings->_XAxisBottom))
         {
-            Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right : _ClientRect.left;
+            Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right - Offset: _ClientRect.left + Offset;
 
-            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(_ClientSize.width / n) : (_ClientSize.width / n);
+            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(BarWidth + BarGap) : (BarWidth + BarGap);
 
             for (const auto & mv : _Analysis->_AmplitudeValues)
             {
-                Rect.right = Clamp(Rect.left + dx, 0.f, _ClientRect.right);
+                Rect.right = std::clamp(Rect.left + dx, 0.f, _ClientRect.right);
 
                 if (_GraphSettings->_XAxisTop)
                 {
-                    Rect.top    = _GraphSettings->_FlipVertically ? _ClientRect.bottom + 1.f : _Bounds.top;
-                    Rect.bottom = _GraphSettings->_FlipVertically ? _Bounds.bottom : _ClientRect.top - 1.f;
+                    Rect.top    = _GraphSettings->_FlipVertically ? _ClientRect.bottom : _Bounds.top;
+                    Rect.bottom = _GraphSettings->_FlipVertically ? _Bounds.bottom : _ClientRect.top;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
+                    DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
                 }
 
                 if (_GraphSettings->_XAxisBottom)
                 {
-                    Rect.top    = _GraphSettings->_FlipVertically ? _Bounds.top : _ClientRect.bottom + 1.f;
-                    Rect.bottom = _GraphSettings->_FlipVertically ? _ClientRect.top - 1.f: _Bounds.bottom;
+                    Rect.top    = _GraphSettings->_FlipVertically ? _Bounds.top : _ClientRect.bottom;
+                    Rect.bottom = _GraphSettings->_FlipVertically ? _ClientRect.top: _Bounds.bottom;
 
                 #ifndef _DEBUG_RENDER
                     renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
-                    DrawDebugRectangle(renderTarget, { Rect.left + 1.f, Rect.top + 1.f, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
+                    DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
 
                     // Draw the RMS text display.
@@ -727,7 +723,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     }
                 }
 
-                Rect.left = Rect.right + 1.f;
+                Rect.left = Rect.right;
             }
         }
     }

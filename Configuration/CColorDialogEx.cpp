@@ -163,7 +163,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                     if (!Success)
                         break;
 
-                    _Color.r = (FLOAT) Clamp(Value, 0U, 255U) / 255.f;
+                    _Color.r = (FLOAT) std::clamp(Value, 0U, 255U) / 255.f;
 
                     UpdateAlphaSlider();
                     ::InvalidateRect(hDlg, &_SliderRect, FALSE);
@@ -179,7 +179,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                     if (!Success)
                         break;
 
-                    _Color.g = (FLOAT) Clamp(Value, 0U, 255U) / 255.f;
+                    _Color.g = (FLOAT) std::clamp(Value, 0U, 255U) / 255.f;
 
                     UpdateAlphaSlider();
                     ::InvalidateRect(hDlg, &_SliderRect, FALSE);
@@ -195,7 +195,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                     if (!Success)
                         break;
 
-                    _Color.b = (FLOAT) Clamp(Value, 0U, 255U) / 255.f;
+                    _Color.b = (FLOAT) std::clamp(Value, 0U, 255U) / 255.f;
 
                     UpdateAlphaSlider();
                     ::InvalidateRect(hDlg, &_SliderRect, FALSE);
@@ -211,7 +211,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                     if (!Success)
                         break;
 
-                    _Color.a = (FLOAT) Clamp(Value, 0U, 100U) / 100.f;
+                    _Color.a = (FLOAT) std::clamp(Value, 0U, 100U) / 100.f;
 
                     ::InvalidateRect(hDlg, &_SliderRect, FALSE);
 

@@ -117,8 +117,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
         assert(InRange(fb.CurValue, 0.0, 1.0));
         assert(InRange(fb.MaxValue, 0.0, 1.0));
 
-        x1 = Clamp(x1, 0.f, _ClientSize.width);
-        x2 = Clamp(x2, 0.f, _ClientSize.width);
+        x1 = std::clamp(x1, 0.f, _ClientSize.width);
+        x2 = std::clamp(x2, 0.f, _ClientSize.width);
 
         D2D1_RECT_F Rect = { x1, 0.f, x2 - PaddingX, _ClientSize.height - PaddingY };
 
@@ -168,8 +168,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the peak indicator top.
                 if (_PeakTop->IsEnabled())
                 {
-                    Rect.top    = ::ceil(Clamp(Rect.bottom - PeakThickness, 0.f, _ClientSize.height));
-                    Rect.bottom = ::ceil(Clamp(Rect.top    + PeakThickness, 0.f, _ClientSize.height));
+                    Rect.top    = ::ceil(std::clamp(Rect.bottom - PeakThickness, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(std::clamp(Rect.top    + PeakThickness, 0.f, _ClientSize.height));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _PeakTop->_Opacity;
 
@@ -198,8 +198,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the top of the bar.
                 if (_BarTop->IsEnabled())
                 {
-                    Rect.top    = Clamp(Rect.bottom - BarThickness, 0.f, _ClientSize.height);
-                    Rect.bottom = Clamp(Rect.top    + BarThickness, 0.f, _ClientSize.height);
+                    Rect.top    = std::clamp(Rect.bottom - BarThickness, 0.f, _ClientSize.height);
+                    Rect.bottom = std::clamp(Rect.top    + BarThickness, 0.f, _ClientSize.height);
 
                     renderTarget->FillRectangle(Rect, _BarTop->_Brush);
                 }
@@ -293,7 +293,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double NyquistScale = Clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
+    const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
     const FLOAT BandWidth = Max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In pixels
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
@@ -422,7 +422,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
 
         double Value = !usePeak ? fb.CurValue : fb.MaxValue;
 
-        y = Clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
+        y = std::clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
 
         points.p0.push_back(D2D1::Point2F(x, y));
 
@@ -445,8 +445,8 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
 
         for (size_t i = 0; i < (n - 1); ++i)
         {
-            points.p1[i].y = Clamp(points.p1[i].y, 0.f, _ClientSize.height);
-            points.p2[i].y = Clamp(points.p2[i].y, 0.f, _ClientSize.height);
+            points.p1[i].y = std::clamp(points.p1[i].y, 0.f, _ClientSize.height);
+            points.p2[i].y = std::clamp(points.p2[i].y, 0.f, _ClientSize.height);
         }
     }
 

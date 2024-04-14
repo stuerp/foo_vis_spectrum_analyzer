@@ -1603,28 +1603,28 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 default:
                     break;
 
-                case FFTMode::FFTCustom: { _State->_FFTCustom = (size_t) Clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize); break; }
-                case FFTMode::FFTDuration: { _State->_FFTDuration= Clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration); break; }
+                case FFTMode::FFTCustom: { _State->_FFTCustom = (size_t) std::clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize); break; }
+                case FFTMode::FFTDuration: { _State->_FFTDuration= std::clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration); break; }
             }
             #pragma warning (default: 4061)
             break;
         }
 
-        case IDC_KERNEL_SIZE: { _State->_KernelSize = Clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize); break; }
-        case IDC_WINDOW_PARAMETER: { _State->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
-        case IDC_WINDOW_SKEW: { _State->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
+        case IDC_KERNEL_SIZE: { _State->_KernelSize = std::clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize); break; }
+        case IDC_WINDOW_PARAMETER: { _State->_WindowParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
+        case IDC_WINDOW_SKEW: { _State->_WindowSkew = std::clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
 
-        case IDC_REACTION_ALIGNMENT: { _State->_ReactionAlignment = Clamp(::_wtof(Text), MinReactionAlignment, MaxReactionAlignment); break; }
+        case IDC_REACTION_ALIGNMENT: { _State->_ReactionAlignment = std::clamp(::_wtof(Text), MinReactionAlignment, MaxReactionAlignment); break; }
 
         #pragma endregion
 
         #pragma region Brown-Puckette CQT
 
-        case IDC_BW_OFFSET: { _State->_BandwidthOffset = Clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset); break; }
-        case IDC_BW_CAP: { _State->_BandwidthCap = Clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap); break; }
-        case IDC_BW_AMOUNT: { _State->_BandwidthAmount = Clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount); break; }
-        case IDC_KERNEL_SHAPE_PARAMETER: { _State->_KernelShapeParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
-        case IDC_KERNEL_ASYMMETRY: { _State->_KernelAsymmetry = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
+        case IDC_BW_OFFSET: { _State->_BandwidthOffset = std::clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset); break; }
+        case IDC_BW_CAP: { _State->_BandwidthCap = std::clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap); break; }
+        case IDC_BW_AMOUNT: { _State->_BandwidthAmount = std::clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount); break; }
+        case IDC_KERNEL_SHAPE_PARAMETER: { _State->_KernelShapeParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
+        case IDC_KERNEL_ASYMMETRY: { _State->_KernelAsymmetry = std::clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
 
         #pragma endregion
 
@@ -1632,19 +1632,19 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_FBO:
         {
-            _State->_FilterBankOrder = Clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
+            _State->_FilterBankOrder = std::clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
             break;
         }
 
         case IDC_TR:
         {
-            _State->_TimeResolution = Clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution);
+            _State->_TimeResolution = std::clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution);
             break;
         }
 
         case IDC_IIR_BW:
         {
-            _State->_IIRBandwidth = Clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
+            _State->_IIRBandwidth = std::clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
             break;
         }
 
@@ -1654,13 +1654,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_NUM_BANDS:
         {
-            _State->_BandCount = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands);
+            _State->_BandCount = (size_t) std::clamp(::_wtoi(Text), MinBands, MaxBands);
             break;
         }
 
         case IDC_LO_FREQUENCY:
         {
-            _State->_LoFrequency = Min(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
+            _State->_LoFrequency = Min(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_State->_LoFrequency * 100.));
             break;
@@ -1668,7 +1668,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_HI_FREQUENCY:
         {
-            _State->_HiFrequency = Max(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
+            _State->_HiFrequency = Max(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_State->_HiFrequency * 100.));
             break;
@@ -1676,7 +1676,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_PITCH:
         {
-            _State->_Pitch = Clamp(::_wtof(Text), MinPitch, MaxPitch);
+            _State->_Pitch = std::clamp(::_wtof(Text), MinPitch, MaxPitch);
             break;
         }
 
@@ -1684,7 +1684,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Filters
 
-        #define ON_EDIT_CHANGE_DOUBLE(x,y) _State->_##x = Clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_State->_##x * 100.));
+        #define ON_EDIT_CHANGE_DOUBLE(x,y) _State->_##x = std::clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_State->_##x * 100.));
 
         case IDC_SLOPE_FN_OFFS: { ON_EDIT_CHANGE_DOUBLE(SlopeFunctionOffset, IDC_SLOPE_FN_OFFS); break; }
         case IDC_SLOPE:         { ON_EDIT_CHANGE_DOUBLE(Slope, IDC_SLOPE); break; }
@@ -1700,7 +1700,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_ARTWORK_OPACITY:
         {
-            _State->_ArtworkOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
+            _State->_ArtworkOpacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
             break;
         }
 
@@ -1734,7 +1734,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeLo = Clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
+            gs._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
             break;
         }
 
@@ -1742,7 +1742,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeHi = Clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
+            gs._AmplitudeHi = std::clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
             break;
         }
 
@@ -1750,7 +1750,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeStep = Clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
+            gs._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
             break;
         }
 
@@ -1758,7 +1758,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma);
+            gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
 
@@ -1770,19 +1770,19 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_SMOOTHING_FACTOR:
         {
-            _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            _State->_SmoothingFactor = std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
             break;
         }
 
         case IDC_HOLD_TIME:
         {
-            _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            _State->_HoldTime = std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
             break;
         }
 
         case IDC_ACCELERATION:
         {
-            _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            _State->_Acceleration = std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
             break;
         }
 
@@ -1792,13 +1792,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_LED_SIZE:
         {
-            _State->_LEDSize = Clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            _State->_LEDSize = std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
             break;
         }
 
         case IDC_LED_GAP:
         {
-            _State->_LEDGap = Clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            _State->_LEDGap = std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
             break;
         }
 
@@ -1808,7 +1808,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_RMS_WINDOW:
         {
-            _State->_RMSWindow = Clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            _State->_RMSWindow = std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
             break;
         }
 
@@ -1822,14 +1822,14 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_NUM_ARTWORK_COLORS:
         {
-            _State->_NumArtworkColors = Clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
+            _State->_NumArtworkColors = std::clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
             _State->_NewArtworkParameters = true;
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
-            _State->_LightnessThreshold = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
+            _State->_LightnessThreshold = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
             _State->_NewArtworkParameters = true;
             break;
         }
@@ -1847,7 +1847,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            int Position = Clamp(::_wtoi(Text), 0, 100);
+            int Position = std::clamp(::_wtoi(Text), 0, 100);
 
             if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
                 break;
@@ -1868,7 +1868,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_Opacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
+            style->_Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
         }
 
@@ -1876,7 +1876,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_Thickness = (FLOAT) Clamp(::_wtof(Text), MinThickness, MaxThickness);
+            style->_Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
         }
 
@@ -1892,7 +1892,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_FontSize = (FLOAT) Clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
             break;
         }
 
@@ -2198,7 +2198,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph);
 
-            _State->_SelectedGraph = Clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
+            _State->_SelectedGraph = std::clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
 
             UpdateGraphsPage();
             break;
@@ -3234,7 +3234,7 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
 
-            w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
 
@@ -3255,7 +3255,7 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
                     w.AddString(x);
             }
 
-            w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
     }
@@ -3349,7 +3349,7 @@ void ConfigurationDialog::UpdateColorControls()
 
         if (SelectedIndex != LB_ERR)
         {
-            SelectedIndex = Clamp(SelectedIndex, 0, (int) gs.size() - 1);
+            SelectedIndex = std::clamp(SelectedIndex, 0, (int) gs.size() - 1);
 
             _Colors.SetCurSel(SelectedIndex);
 
@@ -3401,7 +3401,7 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style, size_t index
         gs[index].position = 1.f;
     else
     if (index != ~0U)
-        gs[index].position = Clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
+        gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
     else
     // Spread the positions of the stops between 0.f and 1.f.
     {

@@ -509,14 +509,14 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = std::clamp<size_t>(_RefreshRateLimit, 20, 200);
 
         reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
 
         reader->read(&_UseZeroTrigger_Deprecated, sizeof(_UseZeroTrigger_Deprecated), abortHandler);
 
-        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = std::clamp<size_t>(_WindowDuration, 50, 800);
 
         reader->read(&_Transform, sizeof(_Transform), abortHandler);
 
@@ -645,7 +645,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 10)
         {
-            reader->read(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler); _BackgroundMode_Deprecated = Clamp(_BackgroundMode_Deprecated, BackgroundMode::None, BackgroundMode::Artwork);
+            reader->read(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler); _BackgroundMode_Deprecated = std::clamp(_BackgroundMode_Deprecated, BackgroundMode::None, BackgroundMode::Artwork);
 
             _ShowArtworkOnBackground = (_BackgroundMode_Deprecated == BackgroundMode::Artwork);
 
