@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.14) P. Stuer **/
+/** $VER: State.h (2024.04.15) P. Stuer **/
 
 #pragma once
 
@@ -214,6 +214,7 @@ public:
 
                 bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
                 double _RMSWindow;                                      // Duration of the RMS window, in seconds.
+                FLOAT _ChannelGap;                                      // Gap between the channel bars, in pixels.
 
             #pragma endregion
 

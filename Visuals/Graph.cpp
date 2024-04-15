@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -46,11 +46,13 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 /// </summary>
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    const D2D1_RECT_F cr = { rect.left + _GraphSettings->_LPadding, rect.top + _GraphSettings->_TPadding, rect.right - _GraphSettings->_RPadding, rect.bottom - _GraphSettings->_BPadding };
 
-    _Spectrum.Move(rect);
-    _Spectogram.Move(rect);
-    _PeakMeter.Move(rect);
+    SetBounds(cr);
+
+    _Spectrum.Move(cr);
+    _Spectogram.Move(cr);
+    _PeakMeter.Move(cr);
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.12) P. Stuer **/
+/** $VER: Constans.h (2024.04.15) P. Stuer **/
 
 #pragma once
 
@@ -458,3 +458,17 @@ enum class Channel : uint32_t
 };
 
 inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
+
+enum class HorizontalAlignment : uint32_t
+{
+    Left = 0,
+    Center = 1,
+    Right = 2
+};
+
+enum class VerticalAlignment : uint32_t
+{
+    Top = 0,
+    Center = 1,
+    Bottom = 2
+};

@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.14) P. Stuer **/
+/** $VER: State.cpp (2024.04.15) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -226,6 +226,7 @@ void State::Reset() noexcept
     // Peak Meter
     _HorizontalPeakMeter = false;
     _RMSWindow = .300; // seconds
+    _ChannelGap = 1.f; // pixels
 
     _StyleManager.Reset();
 
@@ -466,6 +467,7 @@ State & State::operator=(const State & other)
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
     _RMSWindow = other._RMSWindow;
+    _ChannelGap = other._ChannelGap;
 
     #pragma endregion
 
@@ -774,6 +776,17 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
                 reader->read_object_t(gs._HRatio, abortHandler);
                 reader->read_object_t(gs._VRatio, abortHandler);
 
+                if (GraphSettingsVersion > 1)
+                {
+                    reader->read_object_t(gs._LPadding, abortHandler);
+                    reader->read_object_t(gs._RPadding, abortHandler);
+                    reader->read_object_t(gs._TPadding, abortHandler);
+                    reader->read_object_t(gs._BPadding, abortHandler);
+
+                    reader->read_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
+                    reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                }
+
                 _GraphSettings.push_back(gs);
             }
         }
@@ -820,6 +833,11 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         if (Version >= 25)
         {
             reader->read_object_t(_RMSWindow, abortHandler);
+        }
+
+        if (Version >= 26)
+        {
+            reader->read_object_t(_ChannelGap, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1043,11 +1061,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
 
-            writer->write_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
+            writer->write_object (&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
             writer->write_object_t(gs._XAxisTop, abortHandler);
             writer->write_object_t(gs._XAxisBottom, abortHandler);
 
-            writer->write_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
+            writer->write_object (&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
             writer->write_object_t(gs._YAxisLeft, abortHandler);
             writer->write_object_t(gs._YAxisRight, abortHandler);
 
@@ -1060,6 +1078,15 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
             writer->write_object_t(gs._HRatio, abortHandler);
             writer->write_object_t(gs._VRatio, abortHandler);
+
+            // Version 2, v0.7.x.x
+            writer->write_object_t(gs._LPadding, abortHandler);
+            writer->write_object_t(gs._RPadding, abortHandler);
+            writer->write_object_t(gs._TPadding, abortHandler);
+            writer->write_object_t(gs._BPadding, abortHandler);
+
+            writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
+            writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
         }
 
         // Version 19, v0.7.2.0
@@ -1092,6 +1119,9 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
         // Version 25, v0.7.5.3
         writer->write_object_t(_RMSWindow, abortHandler);
+
+        // Version 26, v0.7.x.x
+        writer->write_object_t(_ChannelGap, abortHandler);
     }
     catch (exception & ex)
     {

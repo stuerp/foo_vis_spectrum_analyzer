@@ -1,5 +1,5 @@
 ﻿
-/** $VER: GraphSettings.h (2024.03.09) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.04.15) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -21,11 +21,23 @@
 struct GraphSettings
 {
 public:
-    GraphSettings() { }
+    GraphSettings()
+    {
+        Initialize();
+    }
 
     GraphSettings(const std::wstring & description)
     {
         _Description = description;
+
+        Initialize();
+    }
+
+    double ScaleA(double value) const;
+
+private:
+    void Initialize()
+    {
         _Channels = (uint32_t) Channel::ConfigStereo;
         _FlipHorizontally = false;
         _FlipVertically = false;
@@ -47,9 +59,15 @@ public:
 
         _HRatio = 1.;
         _VRatio = 1.;
-    }
 
-    double ScaleA(double value) const;
+        _LPadding   = 0.;
+        _RPadding  = 0.;
+        _TPadding    = 0.;
+        _BPadding = 0.;
+
+        _HAlignment = HorizontalAlignment::Center;
+        _VAlignment = VerticalAlignment::Center;
+    }
 
 public:
     std::wstring _Description;
@@ -74,6 +92,14 @@ public:
 
     FLOAT _HRatio;
     FLOAT _VRatio;
+
+    FLOAT _LPadding;
+    FLOAT _RPadding;
+    FLOAT _TPadding;
+    FLOAT _BPadding;
+
+    HorizontalAlignment _HAlignment;
+    VerticalAlignment _VAlignment;
 
     static const uint32_t _CurentVersion = 1;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.14) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.15) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -343,8 +343,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     const FLOAT n = (FLOAT) _Analysis->_AmplitudeValues.size();
-    const FLOAT BarGap = 1.f;
-    const FLOAT TotalBarGap = BarGap * (n - 1);
+    const FLOAT TotalBarGap = _State->_ChannelGap * (n - 1);
     const FLOAT TickSize = 2.f;
     const FLOAT TotalTickSize = (_GraphSettings->_YAxisLeft ? TickSize : 0.f) + (_GraphSettings->_YAxisRight ? TickSize : 0.f);
 
@@ -476,7 +475,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
-            Rect.bottom = Rect.top - BarGap;
+            Rect.bottom = Rect.top - _State->_ChannelGap;
         }
 
         ResetTransform(renderTarget);
@@ -486,7 +485,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         {
             Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom - Offset: _ClientRect.top + Offset;
 
-            const FLOAT dy = _GraphSettings->_FlipVertically ? -(BarHeight + BarGap) : (BarHeight + BarGap);
+            const FLOAT dy = _GraphSettings->_FlipVertically ? -(BarHeight + _State->_ChannelGap) : (BarHeight + _State->_ChannelGap);
 
             for (const auto & mv : _Analysis->_AmplitudeValues)
             {
@@ -662,7 +661,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
-            Rect.left = Rect.right + BarGap;
+            Rect.left = Rect.right + _State->_ChannelGap;
         }
 
     #ifdef _DEBUG_RENDER
@@ -676,7 +675,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         {
             Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right - Offset: _ClientRect.left + Offset;
 
-            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(BarWidth + BarGap) : (BarWidth + BarGap);
+            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(BarWidth + _State->_ChannelGap) : (BarWidth + _State->_ChannelGap);
 
             for (const auto & mv : _Analysis->_AmplitudeValues)
             {
