@@ -1080,13 +1080,16 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
             writer->write_object_t(gs._VRatio, abortHandler);
 
             // Version 2, v0.7.x.x
-            writer->write_object_t(gs._LPadding, abortHandler);
-            writer->write_object_t(gs._RPadding, abortHandler);
-            writer->write_object_t(gs._TPadding, abortHandler);
-            writer->write_object_t(gs._BPadding, abortHandler);
+            if (GraphSettings::_CurentVersion > 1)
+            {
+                writer->write_object_t(gs._LPadding, abortHandler);
+                writer->write_object_t(gs._RPadding, abortHandler);
+                writer->write_object_t(gs._TPadding, abortHandler);
+                writer->write_object_t(gs._BPadding, abortHandler);
 
-            writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
-            writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
+                writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+            }
         }
 
         // Version 19, v0.7.2.0
