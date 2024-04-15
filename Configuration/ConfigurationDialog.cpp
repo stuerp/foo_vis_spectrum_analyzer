@@ -108,7 +108,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
 
             { IDC_REACTION_ALIGNMENT, L"Controls the delay between the actual playback and the visualization.\n"
-                                       "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample)\n"
+                                       "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
                                        "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
                                        "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
 
@@ -119,19 +119,19 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
 
             { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
-            { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes" },
+            { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes." },
 
-            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel used for interpolating the spectrum" },
+            { IDC_KERNEL_SIZE, L"Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
 
             // Brown-Puckette CQT
             { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
             { IDC_BW_CAP, L"Minimum Brown-Puckette CQT kernel size" },
             { IDC_BW_AMOUNT, L"Brown-Puckette CQT kernel size" },
 
-            { IDC_GRANULAR_BW, L"Enable to don't constrain the bandwidth to powers of 2" },
+            { IDC_GRANULAR_BW, L"When disabled constrains the bandwidth to powers of 2." },
 
-            { IDC_KERNEL_SHAPE, L"Shape of the Brown-Puckette CQT kernel" },
-            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter by certain window functions like Gaussian and Kaiser windows." },
+            { IDC_KERNEL_SHAPE, L"Determines the shape of the Brown-Puckette CQT kernel." },
+            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows." },
             { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
 
             // IIR (SWIFT / Analog-style)
@@ -154,18 +154,18 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_BANDS_PER_OCTAVE, L"Number of frequency bands per octave" },
 
-            { IDC_PITCH, L"Tuning frequency" },
-            { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed" },
+            { IDC_PITCH, L"Frequency of the tuning pitch" },
+            { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed." },
 
-            { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum" },
-            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
+            { IDC_SCALING_FUNCTION, L"Determines which function is used to scale the frequencies." },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean a more linear spectrum." },
+            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each frequency band" },
 
-            { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
+            { IDC_ACOUSTIC_FILTER, L"Selects the Weighting filter type that will be applied." },
 
             { IDC_SLOPE_FN_OFFS, L"Slope function offset expressed in sample rate / FFT size in samples" },
-            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
             { IDC_SLOPE, L"Frequency slope offset" },
+            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
 
             { IDC_EQ_AMT, L"Equalization amount" },
             { IDC_EQ_DEPTH, L"Equalization offset" },
@@ -177,20 +177,20 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients and the peak meter values are smoothed." },
             { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing." },
 
-            { IDC_SHOW_TOOLTIPS, L"Displays a tooltip with information about the frequency band." },
+            { IDC_SHOW_TOOLTIPS, L"Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Displays album or custom artwork in the graph background." },
-
-            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
-            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
-
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
             { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
-            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
+            { IDC_ARTWORK_BACKGROUND, L"Displays the artwork on the graph background." },
+
+            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
+            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
+
+            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork when displayed." },
             { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
             // Graphs
@@ -221,7 +221,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment." },
 
             { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
-            { IDC_GAMMA, L"Sets index n of the n-th root calculation" },
+            { IDC_GAMMA, L"Sets index n of the n-th root calculation." },
 
             { IDC_CHANNELS, L"Determines which channels are used by the visualization." },
 
@@ -239,7 +239,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
 
             { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
-            { IDC_RMS_WINDOW, L"Specifies the window duration of each RMS measurement." },
+            { IDC_RMS_WINDOW, L"Specifies the duration of each RMS measurement." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
