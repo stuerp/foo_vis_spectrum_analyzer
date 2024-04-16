@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.09) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -46,11 +46,13 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
 /// </summary>
 void Graph::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    const D2D1_RECT_F cr = { rect.left + _GraphSettings->_LPadding, rect.top + _GraphSettings->_TPadding, rect.right - _GraphSettings->_RPadding, rect.bottom - _GraphSettings->_BPadding };
 
-    _Spectrum.Move(rect);
-    _Spectogram.Move(rect);
-    _PeakMeter.Move(rect);
+    SetBounds(cr);
+
+    _Spectrum.Move(cr);
+    _Spectogram.Move(cr);
+    _PeakMeter.Move(cr);
 }
 
 /// <summary>
@@ -78,7 +80,7 @@ void Graph::Reset()
     for (MeterValue & mv : _Analysis._AmplitudeValues)
     {
         mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
-        mv.SmoothedPeak = mv.SmoothedRMS = 0.;
+        mv.PeakRender = mv.RMSRender = 0.;
     }
 
     _Spectrum.Reset();
@@ -118,7 +120,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         if (_GraphSettings->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        index = Clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = std::clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
@@ -131,7 +133,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         if (!_GraphSettings->_FlipVertically)
             y = (Bounds.bottom + Bounds.top) - y;
 
-        index = Clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
         return false;

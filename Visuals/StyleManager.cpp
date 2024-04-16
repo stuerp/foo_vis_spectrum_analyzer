@@ -88,7 +88,7 @@ Style * StyleManager::GetStyleByIndex(int index)
 
     assert((size_t) VisualElement::Count == _countof(IndexToId));
 
-    index = Clamp(index, 0, (int) (_countof(IndexToId) - 1));
+    index = std::clamp(index, 0, (int) (_countof(IndexToId) - 1));
 
     return GetStyle(IndexToId[(size_t) index]);
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.13) P. Stuer **/
+/** $VER: Analysis.h (2024.04.14) P. Stuer **/
 
 #pragma once
 
@@ -27,7 +27,7 @@
 /// </summary>
 struct MeterValue
 {
-    MeterValue(const WCHAR * name = L"", double peak = 0., double rms = 0., double holdTime = 5.) : Name(name), Peak(peak), RMS(rms), HoldTime(holdTime)
+    MeterValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
     {
         Reset();
     }
@@ -41,19 +41,17 @@ struct MeterValue
 
     std::wstring Name;
 
-    double Peak;            // dB
-    double NormalizedPeak;  // 0.0 .. 1.0
-    double SmoothedPeak;    // 0.0 .. 1.0
+    double Peak;            // in dBFS
+    double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMS;             // dB
-    double NormalizedRMS;   // 0.0 .. 1.0
-    double SmoothedRMS;     // 0.0 .. 1.0
+    double RMS;             // indBFS
+    double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMSTime;         // Time elapsed in the current RMS window.
+    double RMSTime;         // Time elapsed in the current RMS window (in seconds).
     size_t RMSSamples;      // Number of samples used in the current RMS window.
     double RMSTotal;        // RMS value for the current RMS window.
 
-    double MaxSmoothedPeak; // 0.0 .. 1.0, The value of the maximum peak indicator
+    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
     double HoldTime;        // Time to hold the current max value.
     double DecaySpeed;      // Speed at which the current max value decays.
     double Opacity;         // 0.0 .. 1.0
@@ -99,7 +97,7 @@ private:
     // Peak Meter
     double NormalizeValue(double amplitude) const noexcept
     {
-        return Clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     double SmoothValue(double value, double smoothedValue) const noexcept
@@ -112,10 +110,10 @@ private:
                 return value;
 
             case SmoothingMethod::Average:
-                return Clamp((smoothedValue * _State->_SmoothingFactor) + (value * (1. - _State->_SmoothingFactor)), 0., 1.);
+                return std::clamp((smoothedValue * _State->_SmoothingFactor) + (value * (1. - _State->_SmoothingFactor)), 0., 1.);
 
             case SmoothingMethod::Peak:
-                return Clamp(Max(smoothedValue * _State->_SmoothingFactor, value), 0., 1.);
+                return std::clamp(std::max(smoothedValue * _State->_SmoothingFactor, value), 0., 1.);
         }
     }
 
@@ -138,6 +136,6 @@ public:
     FrequencyBands _FrequencyBands;
 
 private:
-    const double Amax  = M_SQRT1_2;
+    const double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * ::log10(Amax); // 3.01;
 };

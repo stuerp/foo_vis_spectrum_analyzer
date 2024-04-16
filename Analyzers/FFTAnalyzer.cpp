@@ -6,8 +6,6 @@
 
 #include "Log.h"
 
-#include <algorithm>
-
 #pragma hdrstop
 
 /// <summary>

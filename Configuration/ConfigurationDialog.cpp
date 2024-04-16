@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.12) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.16) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -108,7 +108,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
 
             { IDC_REACTION_ALIGNMENT, L"Controls the delay between the actual playback and the visualization.\n"
-                                       "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample)\n"
+                                       "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
                                        "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
                                        "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
 
@@ -119,19 +119,19 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
 
             { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
-            { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes" },
+            { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes." },
 
-            { IDC_KERNEL_SIZE, L"Size of the Lanczos kernel used for interpolating the spectrum" },
+            { IDC_KERNEL_SIZE, L"Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
 
             // Brown-Puckette CQT
             { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
             { IDC_BW_CAP, L"Minimum Brown-Puckette CQT kernel size" },
             { IDC_BW_AMOUNT, L"Brown-Puckette CQT kernel size" },
 
-            { IDC_GRANULAR_BW, L"Enable to don't constrain the bandwidth to powers of 2" },
+            { IDC_GRANULAR_BW, L"When disabled constrains the bandwidth to powers of 2." },
 
-            { IDC_KERNEL_SHAPE, L"Shape of the Brown-Puckette CQT kernel" },
-            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter by certain window functions like Gaussian and Kaiser windows." },
+            { IDC_KERNEL_SHAPE, L"Determines the shape of the Brown-Puckette CQT kernel." },
+            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows." },
             { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
 
             // IIR (SWIFT / Analog-style)
@@ -154,18 +154,18 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_BANDS_PER_OCTAVE, L"Number of frequency bands per octave" },
 
-            { IDC_PITCH, L"Tuning frequency" },
-            { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed" },
+            { IDC_PITCH, L"Frequency of the tuning pitch" },
+            { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed." },
 
-            { IDC_SCALING_FUNCTION, L"Function used to scale the frequencies" },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean more linear spectrum" },
-            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each band" },
+            { IDC_SCALING_FUNCTION, L"Determines which function is used to scale the frequencies." },
+            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean a more linear spectrum." },
+            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each frequency band" },
 
-            { IDC_ACOUSTIC_FILTER, L"Weighting filter type" },
+            { IDC_ACOUSTIC_FILTER, L"Selects the Weighting filter type that will be applied." },
 
             { IDC_SLOPE_FN_OFFS, L"Slope function offset expressed in sample rate / FFT size in samples" },
-            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
             { IDC_SLOPE, L"Frequency slope offset" },
+            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
 
             { IDC_EQ_AMT, L"Equalization amount" },
             { IDC_EQ_DEPTH, L"Equalization offset" },
@@ -177,20 +177,20 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients and the peak meter values are smoothed." },
             { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing." },
 
-            { IDC_SHOW_TOOLTIPS, L"Displays a tooltip with information about the frequency band." },
+            { IDC_SHOW_TOOLTIPS, L"Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
             { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
 
             // Artwork
-            { IDC_ARTWORK_BACKGROUND, L"Displays album or custom artwork in the graph background." },
-
-            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
-            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
-
             { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
             { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
-            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork, if displayed." },
+            { IDC_ARTWORK_BACKGROUND, L"Displays the artwork on the graph background." },
+
+            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
+            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
+
+            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork when displayed." },
             { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
             // Graphs
@@ -221,7 +221,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment." },
 
             { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
-            { IDC_GAMMA, L"Sets index n of the n-th root calculation" },
+            { IDC_GAMMA, L"Sets index n of the n-th root calculation." },
 
             { IDC_CHANNELS, L"Determines which channels are used by the visualization." },
 
@@ -239,7 +239,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
 
             { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
-            { IDC_RMS_WINDOW, L"Specifies the window duration of each RMS measurement." },
+            { IDC_RMS_PLUS_3, L"Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
+            { IDC_RMS_WINDOW, L"Specifies the duration of each RMS measurement." },
+            { IDC_GAUGE_GAP, L"Specifies the gap between the peak meter gauges (in pixels)." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -1055,8 +1057,13 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
+        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
     }
     {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
+
         UDACCEL Accel[] =
         {
             { 1,  100 }, // 100ms
@@ -1064,13 +1071,12 @@ void ConfigurationDialog::Initialize()
             { 3, 1000 }, // 1s
         };
 
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
-
-        auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
-
         w.SetRange32((int) (MinRMSWindow * 1000.f), (int) (MaxRMSWindow * 1000.f));
         w.SetPos32(0);
         w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAUGE_GAP)); _NumericEdits.push_back(ne);
     }
 
     #pragma endregion
@@ -1603,28 +1609,28 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 default:
                     break;
 
-                case FFTMode::FFTCustom: { _State->_FFTCustom = (size_t) Clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize); break; }
-                case FFTMode::FFTDuration: { _State->_FFTDuration= Clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration); break; }
+                case FFTMode::FFTCustom: { _State->_FFTCustom = (size_t) std::clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize); break; }
+                case FFTMode::FFTDuration: { _State->_FFTDuration= std::clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration); break; }
             }
             #pragma warning (default: 4061)
             break;
         }
 
-        case IDC_KERNEL_SIZE: { _State->_KernelSize = Clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize); break; }
-        case IDC_WINDOW_PARAMETER: { _State->_WindowParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
-        case IDC_WINDOW_SKEW: { _State->_WindowSkew = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
+        case IDC_KERNEL_SIZE: { _State->_KernelSize = std::clamp(::_wtoi(Text), MinKernelSize, MaxKernelSize); break; }
+        case IDC_WINDOW_PARAMETER: { _State->_WindowParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
+        case IDC_WINDOW_SKEW: { _State->_WindowSkew = std::clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
 
-        case IDC_REACTION_ALIGNMENT: { _State->_ReactionAlignment = Clamp(::_wtof(Text), MinReactionAlignment, MaxReactionAlignment); break; }
+        case IDC_REACTION_ALIGNMENT: { _State->_ReactionAlignment = std::clamp(::_wtof(Text), MinReactionAlignment, MaxReactionAlignment); break; }
 
         #pragma endregion
 
         #pragma region Brown-Puckette CQT
 
-        case IDC_BW_OFFSET: { _State->_BandwidthOffset = Clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset); break; }
-        case IDC_BW_CAP: { _State->_BandwidthCap = Clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap); break; }
-        case IDC_BW_AMOUNT: { _State->_BandwidthAmount = Clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount); break; }
-        case IDC_KERNEL_SHAPE_PARAMETER: { _State->_KernelShapeParameter = Clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
-        case IDC_KERNEL_ASYMMETRY: { _State->_KernelAsymmetry = Clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
+        case IDC_BW_OFFSET: { _State->_BandwidthOffset = std::clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset); break; }
+        case IDC_BW_CAP: { _State->_BandwidthCap = std::clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap); break; }
+        case IDC_BW_AMOUNT: { _State->_BandwidthAmount = std::clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount); break; }
+        case IDC_KERNEL_SHAPE_PARAMETER: { _State->_KernelShapeParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter); break; }
+        case IDC_KERNEL_ASYMMETRY: { _State->_KernelAsymmetry = std::clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew); break; }
 
         #pragma endregion
 
@@ -1632,19 +1638,19 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_FBO:
         {
-            _State->_FilterBankOrder = Clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
+            _State->_FilterBankOrder = std::clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
             break;
         }
 
         case IDC_TR:
         {
-            _State->_TimeResolution = Clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution);
+            _State->_TimeResolution = std::clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution);
             break;
         }
 
         case IDC_IIR_BW:
         {
-            _State->_IIRBandwidth = Clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
+            _State->_IIRBandwidth = std::clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
             break;
         }
 
@@ -1654,13 +1660,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_NUM_BANDS:
         {
-            _State->_BandCount = (size_t) Clamp(::_wtoi(Text), MinBands, MaxBands);
+            _State->_BandCount = (size_t) std::clamp(::_wtoi(Text), MinBands, MaxBands);
             break;
         }
 
         case IDC_LO_FREQUENCY:
         {
-            _State->_LoFrequency = Min(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
+            _State->_LoFrequency = Min(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_State->_LoFrequency * 100.));
             break;
@@ -1668,7 +1674,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_HI_FREQUENCY:
         {
-            _State->_HiFrequency = Max(Clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
+            _State->_HiFrequency = Max(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_State->_HiFrequency * 100.));
             break;
@@ -1676,7 +1682,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_PITCH:
         {
-            _State->_Pitch = Clamp(::_wtof(Text), MinPitch, MaxPitch);
+            _State->_Pitch = std::clamp(::_wtof(Text), MinPitch, MaxPitch);
             break;
         }
 
@@ -1684,7 +1690,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Filters
 
-        #define ON_EDIT_CHANGE_DOUBLE(x,y) _State->_##x = Clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_State->_##x * 100.));
+        #define ON_EDIT_CHANGE_DOUBLE(x,y) _State->_##x = std::clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_State->_##x * 100.));
 
         case IDC_SLOPE_FN_OFFS: { ON_EDIT_CHANGE_DOUBLE(SlopeFunctionOffset, IDC_SLOPE_FN_OFFS); break; }
         case IDC_SLOPE:         { ON_EDIT_CHANGE_DOUBLE(Slope, IDC_SLOPE); break; }
@@ -1700,7 +1706,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_ARTWORK_OPACITY:
         {
-            _State->_ArtworkOpacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
+            _State->_ArtworkOpacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
             break;
         }
 
@@ -1734,7 +1740,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeLo = Clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
+            gs._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
             break;
         }
 
@@ -1742,7 +1748,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeHi = Clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
+            gs._AmplitudeHi = std::clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
             break;
         }
 
@@ -1750,7 +1756,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._AmplitudeStep = Clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
+            gs._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
             break;
         }
 
@@ -1758,7 +1764,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
 
-            gs._Gamma = Clamp(::_wtof(Text), MinGamma, MaxGamma);
+            gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
 
@@ -1770,19 +1776,19 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_SMOOTHING_FACTOR:
         {
-            _State->_SmoothingFactor = Clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            _State->_SmoothingFactor = std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
             break;
         }
 
         case IDC_HOLD_TIME:
         {
-            _State->_HoldTime = Clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            _State->_HoldTime = std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
             break;
         }
 
         case IDC_ACCELERATION:
         {
-            _State->_Acceleration = Clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            _State->_Acceleration = std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
             break;
         }
 
@@ -1792,13 +1798,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_LED_SIZE:
         {
-            _State->_LEDSize = Clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            _State->_LEDSize = std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
             break;
         }
 
         case IDC_LED_GAP:
         {
-            _State->_LEDGap = Clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            _State->_LEDGap = std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
             break;
         }
 
@@ -1808,7 +1814,13 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_RMS_WINDOW:
         {
-            _State->_RMSWindow = Clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            _State->_RMSWindow = std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            break;
+        }
+
+        case IDC_GAUGE_GAP:
+        {
+            _State->_GaugeGap = std::clamp((FLOAT) ::_wtof(Text), MinGaugeGap, MaxGaugeGap);
             break;
         }
 
@@ -1822,14 +1834,14 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_NUM_ARTWORK_COLORS:
         {
-            _State->_NumArtworkColors = Clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
+            _State->_NumArtworkColors = std::clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
             _State->_NewArtworkParameters = true;
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
-            _State->_LightnessThreshold = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
+            _State->_LightnessThreshold = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
             _State->_NewArtworkParameters = true;
             break;
         }
@@ -1847,7 +1859,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            int Position = Clamp(::_wtoi(Text), 0, 100);
+            int Position = std::clamp(::_wtoi(Text), 0, 100);
 
             if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
                 break;
@@ -1868,7 +1880,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_Opacity = (FLOAT) Clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
+            style->_Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
         }
 
@@ -1876,7 +1888,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_Thickness = (FLOAT) Clamp(::_wtof(Text), MinThickness, MaxThickness);
+            style->_Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
         }
 
@@ -1892,7 +1904,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
-            style->_FontSize = (FLOAT) Clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
             break;
         }
 
@@ -2053,10 +2065,16 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // RMS Window
+        // Peak Meter
         case IDC_RMS_WINDOW:
         {
             SetDouble(id, _State->_RMSWindow, 0, 3);
+            break;
+        }
+
+        case IDC_GAUGE_GAP:
+        {
+            SetInteger(id, (int64_t) _State->_GaugeGap);
             break;
         }
 
@@ -2198,7 +2216,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph);
 
-            _State->_SelectedGraph = Clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
+            _State->_SelectedGraph = std::clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
 
             UpdateGraphsPage();
             break;
@@ -2271,6 +2289,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_HORIZONTAL_PEAK_METER:
         {
             _State->_HorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_RMS_PLUS_3:
+        {
+            _State->_RMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2893,8 +2917,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
     {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
-        IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
-        IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+        IDC_PEAK_INDICATORS,
+            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
 
         IDC_LEDS,
             IDC_LED_MODE,
@@ -2905,8 +2930,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_SCROLLING_SPECTOGRAM,
 
         IDC_PEAK_METER,
-            IDC_HORIZONTAL_PEAK_METER,
+            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
             IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
+            IDC_GAUGE_GAP_LBL, IDC_GAUGE_GAP,
     };
 
     static const int Page7[] =
@@ -3192,10 +3218,14 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
 
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_GAUGE_GAP).EnableWindow(IsPeakMeter);
 
     SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
     ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
+
+    SetInteger(IDC_GAUGE_GAP, (int64_t) _State->_GaugeGap);
 }
 
 /// <summary>
@@ -3234,7 +3264,7 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
 
-            w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
 
@@ -3255,7 +3285,7 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
                     w.AddString(x);
             }
 
-            w.SetCurSel((int) Clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
     }
@@ -3349,7 +3379,7 @@ void ConfigurationDialog::UpdateColorControls()
 
         if (SelectedIndex != LB_ERR)
         {
-            SelectedIndex = Clamp(SelectedIndex, 0, (int) gs.size() - 1);
+            SelectedIndex = std::clamp(SelectedIndex, 0, (int) gs.size() - 1);
 
             _Colors.SetCurSel(SelectedIndex);
 
@@ -3401,7 +3431,7 @@ void ConfigurationDialog::UpdateGradientStopPositons(Style * style, size_t index
         gs[index].position = 1.f;
     else
     if (index != ~0U)
-        gs[index].position = Clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
+        gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
     else
     // Spread the positions of the stops between 0.f and 1.f.
     {
@@ -3434,13 +3464,23 @@ void ConfigurationDialog::GetPresetNames() noexcept
 
     w.ResetContent();
 
+    int Count = 0;
+    int SelectedIndex = -1;
+
     if (PresetManager::GetPresetNames(_State->_PresetsDirectoryPath, _PresetNames))
     {
         for (auto & PresetName : _PresetNames)
         {
             w.AddString(PresetName.c_str());
+
+            if (PresetName == _State->_ActivePresetName)
+                SelectedIndex = Count;
+
+            Count++;
         }
     }
+
+    w.SetCurSel(SelectedIndex);
 }
 
 /// <summary>
@@ -3456,6 +3496,8 @@ void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
     NewState._StyleManager._UserInterfaceColors = _State->_StyleManager._UserInterfaceColors;
 
     NewState._StyleManager.UpdateCurrentColors();
+
+    NewState._ActivePresetName = presetName;
 
     *_State = NewState;
     Initialize();

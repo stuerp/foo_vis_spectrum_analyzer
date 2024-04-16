@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.12) P. Stuer **/
+/** $VER: State.cpp (2024.04.16) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -225,7 +225,9 @@ void State::Reset() noexcept
 
     // Peak Meter
     _HorizontalPeakMeter = false;
+    _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
+    _GaugeGap = 1.f; // pixels
 
     _StyleManager.Reset();
 
@@ -237,6 +239,8 @@ void State::Reset() noexcept
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
 
     _Barrier = 0;
+    _ActivePresetName.clear();
+
 }
 
 /// <summary>
@@ -463,13 +467,15 @@ State & State::operator=(const State & other)
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
+    _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
+    _GaugeGap = other._GaugeGap;
 
     #pragma endregion
 
     #pragma region Styles
 
-        _StyleManager = other._StyleManager;
+    _StyleManager = other._StyleManager;
 
     #pragma endregion
 
@@ -481,7 +487,8 @@ State & State::operator=(const State & other)
 
     #pragma region Not serialized
 
-        _BinCount = other._BinCount;
+    _BinCount = other._BinCount;
+    _ActivePresetName = other._ActivePresetName;
 
     #pragma endregion
 
@@ -509,14 +516,14 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = Clamp<size_t>(_RefreshRateLimit, 20, 200);
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = std::clamp<size_t>(_RefreshRateLimit, 20, 200);
 
         reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
 
         reader->read(&_UseZeroTrigger_Deprecated, sizeof(_UseZeroTrigger_Deprecated), abortHandler);
 
-        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = Clamp<size_t>(_WindowDuration, 50, 800);
+        reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = std::clamp<size_t>(_WindowDuration, 50, 800);
 
         reader->read(&_Transform, sizeof(_Transform), abortHandler);
 
@@ -645,7 +652,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 10)
         {
-            reader->read(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler); _BackgroundMode_Deprecated = Clamp(_BackgroundMode_Deprecated, BackgroundMode::None, BackgroundMode::Artwork);
+            reader->read(&_BackgroundMode_Deprecated, sizeof(_BackgroundMode_Deprecated), abortHandler); _BackgroundMode_Deprecated = std::clamp(_BackgroundMode_Deprecated, BackgroundMode::None, BackgroundMode::Artwork);
 
             _ShowArtworkOnBackground = (_BackgroundMode_Deprecated == BackgroundMode::Artwork);
 
@@ -771,6 +778,17 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
                 reader->read_object_t(gs._HRatio, abortHandler);
                 reader->read_object_t(gs._VRatio, abortHandler);
 
+                if (GraphSettingsVersion > 1)
+                {
+                    reader->read_object_t(gs._LPadding, abortHandler);
+                    reader->read_object_t(gs._RPadding, abortHandler);
+                    reader->read_object_t(gs._TPadding, abortHandler);
+                    reader->read_object_t(gs._BPadding, abortHandler);
+
+                    reader->read_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
+                    reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                }
+
                 _GraphSettings.push_back(gs);
             }
         }
@@ -817,6 +835,12 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         if (Version >= 25)
         {
             reader->read_object_t(_RMSWindow, abortHandler);
+        }
+
+        if (Version >= 26)
+        {
+            reader->read_object_t(_GaugeGap, abortHandler);
+            reader->read_object_t(_RMSPlus3, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1040,11 +1064,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
 
-            writer->write_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
+            writer->write_object (&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
             writer->write_object_t(gs._XAxisTop, abortHandler);
             writer->write_object_t(gs._XAxisBottom, abortHandler);
 
-            writer->write_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
+            writer->write_object (&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
             writer->write_object_t(gs._YAxisLeft, abortHandler);
             writer->write_object_t(gs._YAxisRight, abortHandler);
 
@@ -1057,6 +1081,18 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
             writer->write_object_t(gs._HRatio, abortHandler);
             writer->write_object_t(gs._VRatio, abortHandler);
+
+            // Version 2, v0.7.6.0
+            if (GraphSettings::_CurentVersion > 1)
+            {
+                writer->write_object_t(gs._LPadding, abortHandler);
+                writer->write_object_t(gs._RPadding, abortHandler);
+                writer->write_object_t(gs._TPadding, abortHandler);
+                writer->write_object_t(gs._BPadding, abortHandler);
+
+                writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
+                writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+            }
         }
 
         // Version 19, v0.7.2.0
@@ -1089,6 +1125,10 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 
         // Version 25, v0.7.5.3
         writer->write_object_t(_RMSWindow, abortHandler);
+
+        // Version 26, v0.7.6.0
+        writer->write_object_t(_GaugeGap, abortHandler);
+        writer->write_object_t(_RMSPlus3, abortHandler);
     }
     catch (exception & ex)
     {

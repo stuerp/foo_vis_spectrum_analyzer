@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.12) P. Stuer **/
+/** $VER: State.h (2024.04.16) P. Stuer **/
 
 #pragma once
 
@@ -213,7 +213,9 @@ public:
             #pragma region Peak Meter
 
                 bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
+                bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
                 double _RMSWindow;                                      // Duration of the RMS window, in seconds.
+                FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
 
             #pragma endregion
 
@@ -255,6 +257,7 @@ public:
     double _TrackTime;
 
     LONG64 _Barrier;
+    std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
 
     #pragma endregion
 
@@ -321,5 +324,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 25;
+    const size_t _CurrentVersion = 26;
 };

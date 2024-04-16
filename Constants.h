@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.12) P. Stuer **/
+/** $VER: Constans.h (2024.04.16) P. Stuer **/
 
 #pragma once
 
@@ -123,6 +123,9 @@ inline const FLOAT MaxLEDGap = 32.f;
 
 inline const double MinRMSWindow = 0.; // in seconds
 inline const double MaxRMSWindow = 3.; // in seconds
+
+inline const FLOAT MinGaugeGap =   0.; // in pixels
+inline const FLOAT MaxGaugeGap = 100.; // in pixels
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
@@ -458,3 +461,17 @@ enum class Channel : uint32_t
 };
 
 inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
+
+enum class HorizontalAlignment : uint32_t
+{
+    Left = 0,
+    Center = 1,
+    Right = 2
+};
+
+enum class VerticalAlignment : uint32_t
+{
+    Top = 0,
+    Center = 1,
+    Bottom = 2
+};

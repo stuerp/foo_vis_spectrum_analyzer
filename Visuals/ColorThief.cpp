@@ -7,12 +7,10 @@
 #include "Raster.h"
 #include "WIC.h"
 
-#include <cmath>
 #include <optional>
 #include <tuple>
 #include <stdexcept>
 #include <unordered_map>
-#include <algorithm>
 
 #pragma hdrstop
 
