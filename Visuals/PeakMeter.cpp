@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.15) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.16) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 #include "PeakMeter.h"
@@ -110,7 +110,7 @@ void PeakMeter::Resize() noexcept
                     _ClientRect.bottom -= _YTextStyle->_TextHeight;
             }
 
-            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            _RMSTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_LEADING : DWRITE_TEXT_ALIGNMENT_TRAILING);
             _RMSTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         }
 
@@ -186,7 +186,7 @@ void PeakMeter::Resize() noexcept
             }
 
             _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+            _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
         }
 
         const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
@@ -343,7 +343,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     const FLOAT n = (FLOAT) _Analysis->_AmplitudeValues.size();
-    const FLOAT TotalBarGap = _State->_ChannelGap * (n - 1);
+    const FLOAT TotalBarGap = _State->_GaugeGap * (n - 1);
     const FLOAT TickSize = 2.f;
     const FLOAT TotalTickSize = (_GraphSettings->_YAxisLeft ? TickSize : 0.f) + (_GraphSettings->_YAxisRight ? TickSize : 0.f);
 
@@ -475,7 +475,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
-            Rect.bottom = Rect.top - _State->_ChannelGap;
+            Rect.bottom = Rect.top - _State->_GaugeGap;
         }
 
         ResetTransform(renderTarget);
@@ -485,7 +485,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         {
             Rect.top = _GraphSettings->_FlipVertically ? _ClientRect.bottom - Offset: _ClientRect.top + Offset;
 
-            const FLOAT dy = _GraphSettings->_FlipVertically ? -(BarHeight + _State->_ChannelGap) : (BarHeight + _State->_ChannelGap);
+            const FLOAT dy = _GraphSettings->_FlipVertically ? -BarHeight : BarHeight;
 
             for (const auto & mv : _Analysis->_AmplitudeValues)
             {
@@ -532,7 +532,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     }
                 }
 
-                Rect.top = Rect.bottom;
+                Rect.top += _GraphSettings->_FlipVertically ? -BarHeight - _State->_GaugeGap : BarHeight + _State->_GaugeGap;
             }
         }
     }
@@ -661,7 +661,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                 }
             }
 
-            Rect.left = Rect.right + _State->_ChannelGap;
+            Rect.left = Rect.right + _State->_GaugeGap;
         }
 
     #ifdef _DEBUG_RENDER
@@ -675,9 +675,9 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
         {
             Rect.left = _GraphSettings->_FlipHorizontally ? _ClientRect.right - Offset: _ClientRect.left + Offset;
 
-            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -(BarWidth + _State->_ChannelGap) : (BarWidth + _State->_ChannelGap);
+            const FLOAT dx = _GraphSettings->_FlipHorizontally ? -BarWidth : BarWidth;
 
-            for (const auto & mv : _Analysis->_AmplitudeValues)
+            for (const auto & av : _Analysis->_AmplitudeValues)
             {
                 Rect.right = std::clamp(Rect.left + dx, 0.f, _ClientRect.right);
 
@@ -687,7 +687,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     Rect.bottom = _GraphSettings->_FlipVertically ? _Bounds.bottom : _ClientRect.top;
 
                 #ifndef _DEBUG_RENDER
-                    renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    renderTarget->DrawText(av.Name.c_str(), (UINT) av.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
                     DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
@@ -699,21 +699,21 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     Rect.bottom = _GraphSettings->_FlipVertically ? _ClientRect.top: _Bounds.bottom;
 
                 #ifndef _DEBUG_RENDER
-                    renderTarget->DrawText(mv.Name.c_str(), (UINT) mv.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    renderTarget->DrawText(av.Name.c_str(), (UINT) av.Name.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 #else
                     DrawDebugRectangle(renderTarget, { Rect.left, Rect.top, Rect.right, Rect.bottom }, D2D1::ColorF(D2D1::ColorF::Blue));
                 #endif
 
                     // Draw the RMS text display.
-                    if (_RMSTextStyle->IsEnabled() && ::isfinite(mv.RMS))
+                    if (_RMSTextStyle->IsEnabled() && ::isfinite(av.RMS))
                     {
                         D2D1_RECT_F TextRect = Rect;
 
-                        TextRect.top    = _GraphSettings->_FlipVertically ? _ClientRect.top + 4.f : Rect.top  - (_RMSTextStyle->_TextHeight + 4.f);
-                        TextRect.bottom = _GraphSettings->_FlipVertically ? TextRect.top + (_RMSTextStyle->_TextHeight + 1.f) : Rect.top;
+                        TextRect.top    = _GraphSettings->_FlipVertically ? _ClientRect.top                           : Rect.top - _RMSTextStyle->_TextHeight;
+                        TextRect.bottom = _GraphSettings->_FlipVertically ? TextRect.top + _RMSTextStyle->_TextHeight : Rect.top;
 
                     #ifndef _DEBUG_RENDER
-                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", mv.RMS);
+                        WCHAR Text[16]; ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", av.RMS);
 
                         renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, TextRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     #else
@@ -722,7 +722,7 @@ void PeakMeter::DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept
                     }
                 }
 
-                Rect.left = Rect.right;
+                Rect.left += _GraphSettings->_FlipHorizontally ? -BarWidth - _State->_GaugeGap : BarWidth + _State->_GaugeGap;
             }
         }
     }

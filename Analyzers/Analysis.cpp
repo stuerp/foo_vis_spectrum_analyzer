@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.14) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.16) P. Stuer **/
 
 #include "framework.h"
 
@@ -693,7 +693,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     for (auto & av : _AmplitudeValues)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        av.Peak = ToDecibel(av.Peak);
+        av.Peak       = ToDecibel(av.Peak);
         av.PeakRender = SmoothValue(NormalizeValue(av.Peak), av.PeakRender);
 
         av.RMSTime    += (double) SampleCount / chunk.get_sample_rate();
@@ -701,7 +701,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 
         if (av.RMSTime > _State->_RMSWindow)
         {
-            av.RMS = ToDecibel(std::sqrt(av.RMSTotal / (double) av.RMSSamples) / Amax);
+            av.RMS       = ToDecibel(std::sqrt(av.RMSTotal / (double) av.RMSSamples) / Amax) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             av.RMSRender = SmoothValue(NormalizeValue(av.RMS), av.RMSRender);
 
         //  Log::Write(Log::Level::Trace, "%5.3f %6d %5.3f %+5.3f %5.3f", mv.RMSTime, (int) mv.RMSSamples, mv.RMS, mv.RMSRender);

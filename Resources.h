@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.14) P. Stuer **/
+/** $VER: Resources.h (2024.04.16) P. Stuer **/
 
 #pragma once
 
@@ -360,6 +360,9 @@
 #define IDC_VISUALIZATION_LBL           7100
 #define IDC_VISUALIZATION               7102
 
+// Peak Indicators
+#define IDC_PEAK_INDICATORS             7104
+
 #define IDC_PEAK_MODE_LBL               7108
 #define IDC_PEAK_MODE                   7110
 
@@ -394,11 +397,15 @@
 #define IDC_PEAK_METER                  7160
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
+#define IDC_RMS_PLUS_3                  7164
 
-#define IDC_RMS_WINDOW_LBL              7164
-#define IDC_RMS_WINDOW                  7166
-#define IDC_RMS_WINDOW_SPIN             7168
-#define IDC_RMS_WINDOW_UNIT             7170
+#define IDC_RMS_WINDOW_LBL              7166
+#define IDC_RMS_WINDOW                  7168
+#define IDC_RMS_WINDOW_SPIN             7170
+#define IDC_RMS_WINDOW_UNIT             7172
+
+#define IDC_GAUGE_GAP_LBL               7174
+#define IDC_GAUGE_GAP                   7176
 
 #pragma endregion
 

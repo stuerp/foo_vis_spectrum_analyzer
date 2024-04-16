@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.04.12) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.16) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1096,52 +1096,61 @@
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
 
-#pragma region Peak Mode
-// Label
-#define W_A11    42
-#define H_A11    H_LBL
-#define X_A11    X_E01
-#define Y_A11    Y_E02 + H_E02 + IY
+#pragma region Peak Indicators
+// Groupbox
+#define X_B13   X_E01
+#define Y_B13   Y_E02 + H_E02 + IY
 
-// Combobox
-#define W_A12    60
-#define H_A12    H_CBX
-#define X_A12    X_A11 + W_A11 + IX
-#define Y_A12    Y_A11
-#pragma endregion
+    #pragma region Peak Mode
+    // Label
+    #define W_A11    42
+    #define H_A11    H_LBL
+    #define X_A11    X_B13 + 5
+    #define Y_A11    Y_B13 + 11
 
-#pragma region Hold time (ms)
-// Label
-#define W_A51    42
-#define H_A51    H_LBL
-#define X_A51    X_A11
-#define Y_A51    Y_A12 + H_A12 + IY
+    // Combobox
+    #define W_A12    60
+    #define H_A12    H_CBX
+    #define X_A12    X_A11 + W_A11 + IX
+    #define Y_A12    Y_A11
+    #pragma endregion
 
-// Textbox
-#define W_A52    30
-#define H_A52    H_TBX
-#define X_A52    X_A51 + W_A51 + IX
-#define Y_A52    Y_A51
-#pragma endregion
+    #pragma region Hold time (ms)
+    // Label
+    #define W_A51    42
+    #define H_A51    H_LBL
+    #define X_A51    X_A11
+    #define Y_A51    Y_A12 + H_A12 + IY
 
-#pragma region Acceleration (db/s2)
-// Label
-#define W_A53    42
-#define H_A53    H_LBL
-#define X_A53    X_A51
-#define Y_A53    Y_A52 + H_A52 + IY
+    // Textbox
+    #define W_A52    30
+    #define H_A52    H_TBX
+    #define X_A52    X_A51 + W_A51 + IX
+    #define Y_A52    Y_A51
+    #pragma endregion
 
-// Textbox
-#define W_A54    30
-#define H_A54    H_TBX
-#define X_A54    X_A53 + W_A53 + IX
-#define Y_A54    Y_A53
+    #pragma region Acceleration (db/s2)
+    // Label
+    #define W_A53    42
+    #define H_A53    H_LBL
+    #define X_A53    X_A51
+    #define Y_A53    Y_A52 + H_A52 + IY
+
+    // Textbox
+    #define W_A54    30
+    #define H_A54    H_TBX
+    #define X_A54    X_A53 + W_A53 + IX
+    #define Y_A54    Y_A53
+    #pragma endregion
+
+#define W_B13   116
+#define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + 7
 #pragma endregion
 
 #pragma region LEDs
 // Groupbox
-#define X_B07   X_E01
-#define Y_B07   Y_A54 + H_A54 + IY
+#define X_B07   X_B13
+#define Y_B07   Y_B13 + H_B13 + IY
 
     #pragma region LED mode
     // Checkbox
@@ -1156,7 +1165,7 @@
     #define W_C17    42
     #define H_C17    H_LBL
     #define X_C17    X_C12
-    #define Y_C17    Y_C12 + H_C12
+    #define Y_C17    Y_C12 + H_C12 + IY
 
     // Textbox
     #define W_C18    30
@@ -1179,7 +1188,7 @@
     #define Y_C20    Y_C19
     #pragma endregion
 
-#define W_B07  100
+#define W_B07  W_B13
 #define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + 7
 #pragma endregion
 
@@ -1196,7 +1205,7 @@
     #define Y_C15    Y_B08 + 11
     #pragma endregion
 
-#define W_B08  W_B07
+#define W_B08   W_B07
 #define H_B08   11 + H_C15 + 7
 #pragma endregion
 
@@ -1205,20 +1214,24 @@
 #define X_B12   X_B08
 #define Y_B12   Y_B08 + H_B08 + IY
 
-    #pragma region Horizontal
-    // Checkbox
+    // Checkbox: Horizontal
     #define W_C16    80
     #define H_C16    H_CHB
     #define X_C16    X_B12 + 5
     #define Y_C16    Y_B12 + 11
-    #pragma endregion
+ 
+   // Checkbox: RMS +3
+    #define W_C24    80
+    #define H_C24    H_CHB
+    #define X_C24    X_C16
+    #define Y_C24    Y_C16 + 11
 
-    #pragma region RMS Window
-    // Label: RMS Window
+    #pragma region RMS window
+    // Label: RMS window
     #define W_C21   46
     #define H_C21   H_LBL
-    #define X_C21   X_C16
-    #define Y_C21   Y_C16 + H_C16 + IY
+    #define X_C21   X_C24
+    #define Y_C21   Y_C24 + H_C24 + IY
 
     // Text Box
     #define W_C22   34
@@ -1233,8 +1246,20 @@
     #define Y_C23   Y_C22
     #pragma endregion
 
+    // Label: Gauge gap
+    #define W_C25   46
+    #define H_C25   H_LBL
+    #define X_C25   X_C21
+    #define Y_C25   Y_C22 + H_C22 + IY
+
+    // Text Box
+    #define W_C26   34
+    #define H_C26   H_TBX
+    #define X_C26   X_C25 + W_C25 + IX
+    #define Y_C26   Y_C25
+
 #define W_B12  W_B08
-#define H_B12  11 + H_C16 + IY + H_C22 + 7
+#define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
 #pragma endregion
 
 #pragma endregion

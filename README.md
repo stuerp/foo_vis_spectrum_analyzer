@@ -91,10 +91,10 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.5.5, 2024-04-xx
 
 * Peak Meter
-  * Changed: Removed the 3.01 dB from the peak value in a further attempt to make it comply with IEC 61606:1997 / AES17-1998 standard (RMS +3).
+  * Changed: Removed the 3.01 dB from the peak value.
+  * Added: Switch to allow the user to get readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3).
   * Changed: Tweaked the coordinate calculations a bit to produce a more polished result.
 * Improved: The context menu will put a checkmark next to the last selected preset.
-* Improved: Updated the [wiki](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Spectrum_Analyzer_(foo_vis_spectrum_analyzer)).
 
 v0.7.5.4, 2024-04-13
 
@@ -464,7 +464,7 @@ v0.1.0.0, 2023-11-12, *"Scratchin' the itch"*
 * Home page: [https://github.com/stuerp/foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer)
 * Repository: [https://github.com/stuerp/foo_vis_spectrum_analyzer.git](https://github.com/stuerp/foo_vis_spectrum_analyzer.git)
 * Issue tracker: [https://github.com/stuerp/foo_vis_spectrum_analyzer/issues](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues)
-
+* Wiki: [https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Spectrum_Analyzer_(foo_vis_spectrum_analyzer)](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Spectrum_Analyzer_(foo_vis_spectrum_analyzer)).
 ## License
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)

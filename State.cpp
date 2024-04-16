@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.15) P. Stuer **/
+/** $VER: State.cpp (2024.04.16) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -225,8 +225,9 @@ void State::Reset() noexcept
 
     // Peak Meter
     _HorizontalPeakMeter = false;
+    _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
-    _ChannelGap = 1.f; // pixels
+    _GaugeGap = 1.f; // pixels
 
     _StyleManager.Reset();
 
@@ -466,8 +467,9 @@ State & State::operator=(const State & other)
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
+    _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
-    _ChannelGap = other._ChannelGap;
+    _GaugeGap = other._GaugeGap;
 
     #pragma endregion
 
@@ -837,7 +839,8 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
         if (Version >= 26)
         {
-            reader->read_object_t(_ChannelGap, abortHandler);
+            reader->read_object_t(_GaugeGap, abortHandler);
+            reader->read_object_t(_RMSPlus3, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1124,7 +1127,8 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         writer->write_object_t(_RMSWindow, abortHandler);
 
         // Version 26, v0.7.x.x
-        writer->write_object_t(_ChannelGap, abortHandler);
+        writer->write_object_t(_GaugeGap, abortHandler);
+        writer->write_object_t(_RMSPlus3, abortHandler);
     }
     catch (exception & ex)
     {
