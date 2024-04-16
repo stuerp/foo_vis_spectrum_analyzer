@@ -1,5 +1,5 @@
 ﻿
-/** $VER: GraphSettings.h (2024.04.15) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.04.16) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -60,9 +60,9 @@ private:
         _HRatio = 1.;
         _VRatio = 1.;
 
-        _LPadding   = 0.;
-        _RPadding  = 0.;
-        _TPadding    = 0.;
+        _LPadding = 0.;
+        _RPadding = 0.;
+        _TPadding = 0.;
         _BPadding = 0.;
 
         _HAlignment = HorizontalAlignment::Center;
@@ -101,5 +101,5 @@ public:
     HorizontalAlignment _HAlignment;
     VerticalAlignment _VAlignment;
 
-    static const uint32_t _CurentVersion = 1;
+    static const uint32_t _CurentVersion = 2;
 };

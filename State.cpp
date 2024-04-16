@@ -1082,7 +1082,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
             writer->write_object_t(gs._HRatio, abortHandler);
             writer->write_object_t(gs._VRatio, abortHandler);
 
-            // Version 2, v0.7.x.x
+            // Version 2, v0.7.6.0
             if (GraphSettings::_CurentVersion > 1)
             {
                 writer->write_object_t(gs._LPadding, abortHandler);
@@ -1126,7 +1126,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         // Version 25, v0.7.5.3
         writer->write_object_t(_RMSWindow, abortHandler);
 
-        // Version 26, v0.7.x.x
+        // Version 26, v0.7.6.0
         writer->write_object_t(_GaugeGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
     }

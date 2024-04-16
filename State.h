@@ -324,5 +324,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 25;
+    const size_t _CurrentVersion = 26;
 };
