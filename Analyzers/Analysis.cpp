@@ -701,7 +701,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 
         if (gv.RMSTime > _State->_RMSWindow)
         {
-            gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) gv.RMSSamples) / Amax) + (_State->_RMSPlus3 ? dBCorrection : 0.);
+            gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) gv.RMSSamples)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
         //  Log::Write(Log::Level::Trace, "%5.3f %6d %5.3f %+5.3f %5.3f", mv.RMSTime, (int) mv.RMSSamples, mv.RMS, mv.RMSRender);
