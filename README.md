@@ -1,4 +1,4 @@
-
+ll
 # foo_vis_spectrum_analyzer
 
 [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
@@ -88,11 +88,18 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.7.6.1, 2024-04-17
+
+* Peak Meter
+  * Fixed: The RMS text reading did not appear if the corresponding X-axis was disabled.
+  * Fixed: Work-around for disappearing LED bars (Odd behaviour of FillOpacityMask())
+ 
 v0.7.6.0, 2024-04-16
 
 * Peak Meter
-  * Changed: Removed the 3.01 dB from the peak value.
   * Added: Option to allow the user to get readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3).
+  * Added: The gap between the gauges can be configured.
+  * Changed: Removed the 3.01 dB from the peak value.
   * Changed: Tweaked the coordinate calculations a bit to produce a more polished result.
 * Improved: The context menu will put a checkmark next to the last selected preset.
 
