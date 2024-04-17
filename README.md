@@ -1,4 +1,4 @@
-ll
+
 # foo_vis_spectrum_analyzer
 
 [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
@@ -87,6 +87,11 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.7.6.2, 2024-04-17
+
+* Peak Meter
+  * Changed: Removed the 1/sqrt(2) correction from the RMS reading after a long discussion on the forum.
 
 v0.7.6.1, 2024-04-17
 

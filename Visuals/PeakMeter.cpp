@@ -529,7 +529,7 @@ void PeakMeter::DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept
                     WCHAR Text[16];
 
                     if (::isfinite(gv.RMS))
-                        ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS, gv.Peak);
                     else
                         ::wcscpy_s(Text, _countof(Text), L"-∞");
 
