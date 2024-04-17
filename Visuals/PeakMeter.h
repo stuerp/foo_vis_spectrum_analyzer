@@ -44,7 +44,7 @@ private:
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawMeters(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept;
 
     void Resize() noexcept;
 

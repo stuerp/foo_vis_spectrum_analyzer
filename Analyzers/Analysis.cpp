@@ -39,7 +39,7 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             break;
     }
 
-    _AmplitudeValues.clear();
+    _GaugeValues.clear();
 }
 
 /// <summary>
@@ -162,7 +162,7 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 
-    _AmplitudeValues.clear();
+    _GaugeValues.clear();
 /*
     for (auto & mv : _AmplitudeValues)
     {
@@ -260,7 +260,7 @@ void Analysis::UpdatePeakValues() noexcept
     else
     {
         // Animate the smoothed peak and RMS values.
-        for (auto & mv : _AmplitudeValues)
+        for (auto & mv : _GaugeValues)
         {
             if (mv.PeakRender >= mv.MaxPeakRender)
             {
@@ -617,7 +617,7 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     if (ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
 
-    if (_AmplitudeValues.size() == 0)
+    if (_GaugeValues.size() == 0)
     {
         static const WCHAR * ChannelNames[] =
         {
@@ -634,12 +634,12 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         for (uint32_t SelectedChannels = ChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _AmplitudeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+                _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
         }
     }
     else
     {
-        for (auto & mv : _AmplitudeValues)
+        for (auto & mv : _GaugeValues)
             mv.Peak = -std::numeric_limits<double>::infinity();
     }
 
@@ -650,9 +650,9 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     assert(ValueCount == _AmplitudeValues.size());
 #endif
 
-    if (_AmplitudeValues.size() != ValueCount)
+    if (_GaugeValues.size() != ValueCount)
     {
-        _AmplitudeValues.clear();
+        _GaugeValues.clear();
 
         return;
     }
@@ -671,9 +671,9 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
         {
             if (ChunkChannels & 1)
             {
-                if ((SelectedChannels & 1) && (i < _AmplitudeValues.size()))
+                if ((SelectedChannels & 1) && (i < _GaugeValues.size()))
                 {
-                    auto av = &_AmplitudeValues[i++];
+                    auto av = &_GaugeValues[i++];
 
                     const double Value = std::abs((double) *s);
 
@@ -690,24 +690,24 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     }
 
     // Normalize and smooth the values.
-    for (auto & av : _AmplitudeValues)
+    for (auto & gv : _GaugeValues)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        av.Peak       = ToDecibel(av.Peak);
-        av.PeakRender = SmoothValue(NormalizeValue(av.Peak), av.PeakRender);
+        gv.Peak       = ToDecibel(gv.Peak);
+        gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
 
-        av.RMSTime    += (double) SampleCount / chunk.get_sample_rate();
-        av.RMSSamples += SampleCount / chunk.get_channel_count();
+        gv.RMSTime    += (double) SampleCount / chunk.get_sample_rate();
+        gv.RMSSamples += SampleCount / chunk.get_channel_count();
 
-        if (av.RMSTime > _State->_RMSWindow)
+        if (gv.RMSTime > _State->_RMSWindow)
         {
-            av.RMS       = ToDecibel(std::sqrt(av.RMSTotal / (double) av.RMSSamples) / Amax) + (_State->_RMSPlus3 ? dBCorrection : 0.);
-            av.RMSRender = SmoothValue(NormalizeValue(av.RMS), av.RMSRender);
+            gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) gv.RMSSamples) / Amax) + (_State->_RMSPlus3 ? dBCorrection : 0.);
+            gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
         //  Log::Write(Log::Level::Trace, "%5.3f %6d %5.3f %+5.3f %5.3f", mv.RMSTime, (int) mv.RMSSamples, mv.RMS, mv.RMSRender);
 
             // Reset the RMS window values.
-            av.Reset();
+            gv.Reset();
         }
     }
 }

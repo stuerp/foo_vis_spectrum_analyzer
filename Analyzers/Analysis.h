@@ -123,7 +123,7 @@ public:
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
-    std::vector<MeterValue> _AmplitudeValues;
+    std::vector<MeterValue> _GaugeValues;
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
