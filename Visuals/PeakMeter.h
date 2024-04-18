@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.14) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.18) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -46,6 +46,9 @@ private:
     void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
     void DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept;
 
+    void DrawHorizontalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawVerticalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept;
+
     void Resize() noexcept;
 
 //#define _DEBUG_RENDER
@@ -58,10 +61,20 @@ private:
 #endif
 
 private:
-    D2D1_RECT_F _ClientRect;
-    D2D1_SIZE_F _ClientSize;
+    D2D1_RECT_F _GBounds;
+    D2D1_SIZE_F _GSize;
 
     double _dBFSZero;
+
+    FLOAT _TotalBarGap;
+    FLOAT _TickSize;
+    FLOAT _TotalTickSize;
+
+    FLOAT _BarHeight;
+    FLOAT _BarWidth;
+    FLOAT _TotalBarHeight;
+    FLOAT _TotalBarWidth;
+    FLOAT _Offset;
 
     struct Label
     {

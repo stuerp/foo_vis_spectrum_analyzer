@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.14) P. Stuer **/
+/** $VER: Analysis.h (2024.04.18) P. Stuer **/
 
 #pragma once
 
@@ -23,11 +23,11 @@
 #include "FrequencyBand.h"
 
 /// <summary>
-/// Represents a meter value of a channel.
+/// Represents the values of a gauge.
 /// </summary>
-struct MeterValue
+struct GaugeValue
 {
-    MeterValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
+    GaugeValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
     {
         Reset();
     }
@@ -44,12 +44,15 @@ struct MeterValue
     double Peak;            // in dBFS
     double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMS;             // indBFS
+    double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
     double RMSTime;         // Time elapsed in the current RMS window (in seconds).
     size_t RMSSamples;      // Number of samples used in the current RMS window.
     double RMSTotal;        // RMS value for the current RMS window.
+
+    double Mid;             // in dBFS
+    double Side;            // in dBFS
 
     double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
     double HoldTime;        // Time to hold the current max value.
@@ -123,7 +126,7 @@ public:
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
-    std::vector<MeterValue> _GaugeValues;
+    std::vector<GaugeValue> _GaugeValues;
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;

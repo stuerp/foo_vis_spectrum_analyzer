@@ -77,7 +77,7 @@ void Graph::Reset()
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
-    for (MeterValue & mv : _Analysis._GaugeValues)
+    for (GaugeValue & mv : _Analysis._GaugeValues)
     {
         mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
         mv.PeakRender = mv.RMSRender = 0.;
