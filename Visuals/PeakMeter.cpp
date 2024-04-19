@@ -76,158 +76,173 @@ void PeakMeter::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    _GBounds = _Bounds;
-
-    if (_State->_HorizontalPeakMeter)
+    // Gauge metrics
     {
+        _GBounds = _Bounds;
+
+        if (_State->_HorizontalPeakMeter)
         {
-            if (_GraphSettings->_XAxisBottom)
-                if (_GraphSettings->_FlipHorizontally)
-                    _GBounds.right -= _XTextStyle->_TextWidth;
-                else
-                    _GBounds.left  += _XTextStyle->_TextWidth;
-
-            if (_GraphSettings->_XAxisTop)
-                if (_GraphSettings->_FlipHorizontally)
-                    _GBounds.left  += _XTextStyle->_TextWidth;
-                else
-                    _GBounds.right -= _XTextStyle->_TextWidth;
-
-            if (_GraphSettings->_FlipVertically)
-            {
-                if (_GraphSettings->_YAxisRight)
-                    _GBounds.top += _YTextStyle->_TextHeight;
-
-                if (_GraphSettings->_YAxisLeft)
-                    _GBounds.bottom -= _YTextStyle->_TextHeight;
-            }
-            else
-            {
-                if (_GraphSettings->_YAxisLeft)
-                    _GBounds.top += _YTextStyle->_TextHeight;
-
-                if (_GraphSettings->_YAxisRight)
-                    _GBounds.bottom -= _YTextStyle->_TextHeight;
-            }
-
-            _RMSTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_LEADING : DWRITE_TEXT_ALIGNMENT_TRAILING);
-            _RMSTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        }
-
-        const FLOAT cx = (_YTextStyle->_TextWidth / 2.f);
-
-        // Calculate the position of the labels based on the width.
-        D2D1_RECT_F OldRect = {  };
-
-        const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? _GBounds.left : _GBounds.right;
-        const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? _GBounds.right : _GBounds.left;
-
-        for (Label & Iter : _Labels)
-        {
-            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
-
-            // Don't generate any labels outside the bounds.
-            if (!InRange(x, _GBounds.left, _GBounds.right))
-            {
-                Iter.IsHidden = true;
-                continue;
-            }
-
-            Iter.PointL = D2D1_POINT_2F(x, _GBounds.top);
-            Iter.PointR = D2D1_POINT_2F(x, _GBounds.bottom);
-
-            if (_GraphSettings->_FlipHorizontally)
-                x = std::clamp(x - cx, _GraphSettings->_XAxisTop    ? _GBounds.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisBottom ? _GBounds.right + cx : _GBounds.right - _YTextStyle->_TextWidth);
-            else
-                x = std::clamp(x - cx, _GraphSettings->_XAxisBottom ? _GBounds.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _GBounds.right + cx : _GBounds.right - _YTextStyle->_TextWidth);
-
-            if (_GraphSettings->_FlipVertically)
-            {
-                Iter.RectL = { x, _GBounds.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
-                Iter.RectR = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _GBounds.top };
-            }
-            else
-            {
-                Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _GBounds.top };
-                Iter.RectR = { x, _GBounds.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
-            }
-
-            // Hide overlapping labels except for the first and the last one.
-            Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.RectL, OldRect);
-
-            if (!Iter.IsHidden)
-                OldRect = Iter.RectL;
-        }
-    }
-    else
-    {
-        {
-            if (_GraphSettings->_YAxisLeft)
-                _GBounds.left  += _YTextStyle->_TextWidth;
-
-            if (_GraphSettings->_YAxisRight)
-                _GBounds.right -= _YTextStyle->_TextWidth;
-
-            if (_GraphSettings->_FlipVertically)
             {
                 if (_GraphSettings->_XAxisBottom)
-                    _GBounds.top += _XTextStyle->_TextHeight;
+                    if (_GraphSettings->_FlipHorizontally)
+                        _GBounds.right -= _XTextStyle->_TextWidth;
+                    else
+                        _GBounds.left  += _XTextStyle->_TextWidth;
 
                 if (_GraphSettings->_XAxisTop)
-                    _GBounds.bottom -= _XTextStyle->_TextHeight;
+                    if (_GraphSettings->_FlipHorizontally)
+                        _GBounds.left  += _XTextStyle->_TextWidth;
+                    else
+                        _GBounds.right -= _XTextStyle->_TextWidth;
+
+                if (_GraphSettings->_FlipVertically)
+                {
+                    if (_GraphSettings->_YAxisRight)
+                        _GBounds.top += _YTextStyle->_TextHeight;
+
+                    if (_GraphSettings->_YAxisLeft)
+                        _GBounds.bottom -= _YTextStyle->_TextHeight;
+                }
+                else
+                {
+                    if (_GraphSettings->_YAxisLeft)
+                        _GBounds.top += _YTextStyle->_TextHeight;
+
+                    if (_GraphSettings->_YAxisRight)
+                        _GBounds.bottom -= _YTextStyle->_TextHeight;
+                }
+
+                _RMSTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_LEADING : DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _RMSTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
             }
-            else
+
+            const FLOAT cx = (_YTextStyle->_TextWidth / 2.f);
+
+            // Calculate the position of the labels based on the width.
+            D2D1_RECT_F OldRect = {  };
+
+            const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? _GBounds.left : _GBounds.right;
+            const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? _GBounds.right : _GBounds.left;
+
+            for (Label & Iter : _Labels)
             {
-                if (_GraphSettings->_XAxisTop)
-                    _GBounds.top += _XTextStyle->_TextHeight;
+                FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
-                if (_GraphSettings->_XAxisBottom)
-                    _GBounds.bottom -= _XTextStyle->_TextHeight;
+                // Don't generate any labels outside the bounds.
+                if (!InRange(x, _GBounds.left, _GBounds.right))
+                {
+                    Iter.IsHidden = true;
+                    continue;
+                }
+
+                Iter.PointL = D2D1_POINT_2F(x, _GBounds.top);
+                Iter.PointR = D2D1_POINT_2F(x, _GBounds.bottom);
+
+                if (_GraphSettings->_FlipHorizontally)
+                    x = std::clamp(x - cx, _GraphSettings->_XAxisTop    ? _GBounds.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisBottom ? _GBounds.right + cx : _GBounds.right - _YTextStyle->_TextWidth);
+                else
+                    x = std::clamp(x - cx, _GraphSettings->_XAxisBottom ? _GBounds.left - cx : _Bounds.left + 1.f, _GraphSettings->_XAxisTop    ? _GBounds.right + cx : _GBounds.right - _YTextStyle->_TextWidth);
+
+                if (_GraphSettings->_FlipVertically)
+                {
+                    Iter.RectL = { x, _GBounds.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
+                    Iter.RectR = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _GBounds.top };
+                }
+                else
+                {
+                    Iter.RectL = { x, _Bounds.top,        x + _YTextStyle->_TextWidth, _GBounds.top };
+                    Iter.RectR = { x, _GBounds.bottom, x + _YTextStyle->_TextWidth, _Bounds.bottom };
+                }
+
+                // Hide overlapping labels except for the first and the last one.
+                Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.RectL, OldRect);
+
+                if (!Iter.IsHidden)
+                    OldRect = Iter.RectL;
             }
-
-            _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
         }
-
-        const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
-
-        // Calculate the position of the labels based on the height.
-        D2D1_RECT_F OldRect = {  };
-
-        const FLOAT yMin = !_GraphSettings->_FlipVertically ? _GBounds.bottom : _GBounds.top;
-        const FLOAT yMax = !_GraphSettings->_FlipVertically ? _GBounds.top : _GBounds.bottom;
-
-        for (Label & Iter : _Labels)
+        else
         {
-            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
-
-            // Don't generate any labels outside the bounds.
-            if (!InRange(y, _GBounds.top, _GBounds.bottom))
             {
-                Iter.IsHidden = true;
-                continue;
+                if (_GraphSettings->_YAxisLeft)
+                    _GBounds.left  += _YTextStyle->_TextWidth;
+
+                if (_GraphSettings->_YAxisRight)
+                    _GBounds.right -= _YTextStyle->_TextWidth;
+
+                if (_GraphSettings->_FlipVertically)
+                {
+                    if (_GraphSettings->_XAxisBottom)
+                        _GBounds.top += _XTextStyle->_TextHeight;
+
+                    if (_GraphSettings->_XAxisTop)
+                        _GBounds.bottom -= _XTextStyle->_TextHeight;
+                }
+                else
+                {
+                    if (_GraphSettings->_XAxisTop)
+                        _GBounds.top += _XTextStyle->_TextHeight;
+
+                    if (_GraphSettings->_XAxisBottom)
+                        _GBounds.bottom -= _XTextStyle->_TextHeight;
+                }
+
+                _RMSTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                _RMSTextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
             }
 
-            Iter.PointL = D2D1_POINT_2F(_GBounds.left,  y);
-            Iter.PointR = D2D1_POINT_2F(_GBounds.right, y);
+            const FLOAT cy = (_YTextStyle->_TextHeight / 2.f);
 
-            if (_GraphSettings->_FlipVertically)
-                y = std::clamp(y - cy, _GraphSettings->_XAxisBottom ? _GBounds.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisTop    ? _GBounds.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
-            else
-                y = std::clamp(y - cy, _GraphSettings->_XAxisTop    ? _GBounds.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisBottom ? _GBounds.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+            // Calculate the position of the labels based on the height.
+            D2D1_RECT_F OldRect = {  };
 
-            Iter.RectL = { _Bounds.left,      y, _GBounds.left, y + _YTextStyle->_TextHeight };
-            Iter.RectR = { _GBounds.right, y, _Bounds.right   , y + _YTextStyle->_TextHeight };
+            const FLOAT yMin = !_GraphSettings->_FlipVertically ? _GBounds.bottom : _GBounds.top;
+            const FLOAT yMax = !_GraphSettings->_FlipVertically ? _GBounds.top : _GBounds.bottom;
 
-            // Hide overlapping labels except for the first and the last one.
-            Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
+            for (Label & Iter : _Labels)
+            {
+                FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
-            if (!Iter.IsHidden)
-                OldRect = Iter.RectL;
+                // Don't generate any labels outside the bounds.
+                if (!InRange(y, _GBounds.top, _GBounds.bottom))
+                {
+                    Iter.IsHidden = true;
+                    continue;
+                }
+
+                Iter.PointL = D2D1_POINT_2F(_GBounds.left,  y);
+                Iter.PointR = D2D1_POINT_2F(_GBounds.right, y);
+
+                if (_GraphSettings->_FlipVertically)
+                    y = std::clamp(y - cy, _GraphSettings->_XAxisBottom ? _GBounds.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisTop    ? _GBounds.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+                else
+                    y = std::clamp(y - cy, _GraphSettings->_XAxisTop    ? _GBounds.top - cy : _Bounds.top + 1.f, _GraphSettings->_XAxisBottom ? _GBounds.bottom + cy : _Bounds.bottom - _YTextStyle->_TextHeight);
+
+                Iter.RectL = { _Bounds.left,      y, _GBounds.left, y + _YTextStyle->_TextHeight };
+                Iter.RectR = { _GBounds.right, y, _Bounds.right   , y + _YTextStyle->_TextHeight };
+
+                // Hide overlapping labels except for the first and the last one.
+                Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
+
+                if (!Iter.IsHidden)
+                    OldRect = Iter.RectL;
+            }
         }
+
+        _GSize = { _GBounds.right - _GBounds.left, _GBounds.bottom - _GBounds.top };
     }
 
-    _GSize = { _GBounds.right - _GBounds.left, _GBounds.bottom - _GBounds.top };
+    // Scale metrics
+    {
+        _SBounds = _Bounds;
+        _SSize = { _SBounds.right - _SBounds.left, _SBounds.bottom - _SBounds.top };
+    }
+
+    // Names metrics
+    {
+        _NBounds = _Bounds;
+        _NSize = { _NBounds.right - _NBounds.left, _NBounds.bottom - _NBounds.top };
+    }
 
     _IsResized = false;
 }
@@ -268,9 +283,9 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
     DrawGauges(renderTarget);
 
     if (_State->_HorizontalPeakMeter)
-        DrawHorizontalChannelNames(renderTarget);
+        DrawHorizontalNames(renderTarget);
     else
-        DrawVerticalChannelNames(renderTarget);
+        DrawVerticalNames(renderTarget);
 }
 
 /// <summary>
@@ -618,7 +633,7 @@ void PeakMeter::DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept
 /// <summary>
 /// Draws the channel names. Note: Rendered in absolute coordinates! No transformation.
 /// </summary>
-void PeakMeter::DrawHorizontalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept
+void PeakMeter::DrawHorizontalNames(ID2D1RenderTarget * renderTarget) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -686,7 +701,7 @@ void PeakMeter::DrawHorizontalChannelNames(ID2D1RenderTarget * renderTarget) con
 /// <summary>
 /// Draws the channel names. Note: Rendered in absolute coordinates! No transformation.
 /// </summary>
-void PeakMeter::DrawVerticalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept
+void PeakMeter::DrawVerticalNames(ID2D1RenderTarget * renderTarget) const noexcept
 {
     D2D1_RECT_F Rect = { };
 

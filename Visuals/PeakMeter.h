@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.18) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.19) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -43,11 +43,10 @@ private:
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
-    void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
     void DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept;
-
-    void DrawHorizontalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawVerticalChannelNames(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawScale(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawHorizontalNames(ID2D1RenderTarget * renderTarget) const noexcept;
+    void DrawVerticalNames(ID2D1RenderTarget * renderTarget) const noexcept;
 
     void Resize() noexcept;
 
@@ -61,10 +60,10 @@ private:
 #endif
 
 private:
-    D2D1_RECT_F _GBounds;
-    D2D1_SIZE_F _GSize;
+    #pragma region Gauges
 
-    double _dBFSZero;
+    D2D1_RECT_F _GBounds;   // Gauge bounds
+    D2D1_SIZE_F _GSize;     // Gauge size
 
     FLOAT _TotalBarGap;
     FLOAT _TickSize;
@@ -75,6 +74,15 @@ private:
     FLOAT _TotalBarHeight;
     FLOAT _TotalBarWidth;
     FLOAT _Offset;
+
+    double _dBFSZero;       // Relative position of 0 dBFS, 0.0 .. 1.0
+
+    #pragma endregion
+
+    #pragma region Scale
+
+    D2D1_RECT_F _SBounds;   // Scale bounds
+    D2D1_SIZE_F _SSize;     // Scale size
 
     struct Label
     {
@@ -91,11 +99,16 @@ private:
 
     std::vector<Label> _Labels;
 
-    FLOAT _XMin;
-    FLOAT _XMax;
+    #pragma endregion
 
-    FLOAT _YMin;
-    FLOAT _YMax;
+    #pragma region Channel Names
+
+    D2D1_RECT_F _NBounds;   // Names bounds
+    D2D1_SIZE_F _NSize;     // Names size
+
+    #pragma endregion
+
+    #pragma region Styling
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
@@ -116,4 +129,6 @@ private:
     Style * _XTextStyle;
     Style * _YTextStyle;
     Style * _YLineStyle;
+
+    #pragma endregion
 };
