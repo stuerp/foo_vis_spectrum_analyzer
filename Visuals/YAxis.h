@@ -40,9 +40,9 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    FLOAT GetWidth() const
+    FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->_TextWidth;
+        return _TextStyle->_Width;
     }
 
 private:

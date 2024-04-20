@@ -78,10 +78,10 @@ void Spectogram::Resize() noexcept
         _BitmapBounds = _Bounds;
 
         if (_GraphSettings->_XAxisTop)
-            _BitmapBounds.top += _XTextStyle->_TextHeight;
+            _BitmapBounds.top += _XTextStyle->_Height;
 
         if (_GraphSettings->_XAxisBottom)
-            _BitmapBounds.bottom -= _XTextStyle->_TextHeight;
+            _BitmapBounds.bottom -= _XTextStyle->_Height;
 
         _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
     }
@@ -92,8 +92,8 @@ void Spectogram::Resize() noexcept
 
         D2D1_RECT_F Rect = { };
 
-        const FLOAT dy = _YTextStyle->_TextHeight / 2.f;
-        const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_TextHeight : 0.f;
+        const FLOAT dy = _YTextStyle->_Height / 2.f;
+        const FLOAT y1 = _GraphSettings->_XAxisTop ? _XTextStyle->_Height : 0.f;
 
         _VisibleYLabels.clear();
 
@@ -104,7 +104,7 @@ void Spectogram::Resize() noexcept
             if (!_GraphSettings->_FlipVertically)
             {
                 Rect.top    = y1 + _BitmapSize.height - y - dy;
-                Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
+                Rect.bottom = Rect.top + _YTextStyle->_Height;
 
                 if (Rect.bottom < (y1 - dy))
                     break;
@@ -112,7 +112,7 @@ void Spectogram::Resize() noexcept
             else
             {
                 Rect.top    = y1 + y - dy;
-                Rect.bottom = Rect.top + _YTextStyle->_TextHeight;
+                Rect.bottom = Rect.top + _YTextStyle->_Height;
 
                 if (Rect.bottom > (y1 + _BitmapSize.height + dy))
                     break;
@@ -122,8 +122,8 @@ void Spectogram::Resize() noexcept
             Iter.RectR = Rect;
 
             Iter.RectL.left  = 0.f;
-            Iter.RectL.right = _YTextStyle->_TextWidth;
-            Iter.RectR.left  = _Size.width - _YTextStyle->_TextWidth;
+            Iter.RectL.right = _YTextStyle->_Width;
+            Iter.RectR.left  = _Size.width - _YTextStyle->_Width;
             Iter.RectR.right = _Size.width;
 
             if ((Rect.top <_BitmapBounds.top) || (Rect.bottom > _BitmapBounds.bottom))
@@ -230,8 +230,8 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept
 {
-    const FLOAT y1 = top ? _XTextStyle->_TextHeight / 2.f : _Size.height - _XTextStyle->_TextHeight;
-    const FLOAT y2 = top ? _XTextStyle->_TextHeight       : y1 + (_XTextStyle->_TextHeight / 2.f);
+    const FLOAT y1 = top ? _XTextStyle->_Height / 2.f : _Size.height - _XTextStyle->_Height;
+    const FLOAT y2 = top ? _XTextStyle->_Height       : y1 + (_XTextStyle->_Height / 2.f);
 
     D2D1_RECT_F Rect = { 0.f, top ? 0.f : y1, 0.f, top ? y2 : _Size.height };
 
@@ -243,14 +243,14 @@ void Spectogram::RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const n
         if (!_GraphSettings->_FlipHorizontally)
         {
             Rect.left  = Label.X + Offset;
-            Rect.right = Rect.left + _XTextStyle->_TextWidth;
+            Rect.right = Rect.left + _XTextStyle->_Width;
 
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
         else
         {
             Rect.left  = Label.X - Offset;
-            Rect.right = Rect.left - _XTextStyle->_TextWidth;
+            Rect.right = Rect.left - _XTextStyle->_Width;
 
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _XTextStyle->_TextFormat, Rect, _XTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
@@ -346,7 +346,7 @@ void Spectogram::Update() noexcept
         {
             _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
 
-            if (_XLabels.back().X + Offset + _XTextStyle->_TextWidth < 0.f)
+            if (_XLabels.back().X + Offset + _XTextStyle->_Width < 0.f)
                 _XLabels.pop_back();
         }
         else

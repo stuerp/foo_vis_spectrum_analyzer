@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.04.08) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.04.20) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -52,6 +52,9 @@ public:
             _TextFormat->SetParagraphAlignment(pa);
     }
 
+    FLOAT GetWidth() const noexcept { return _Width; }
+    FLOAT GetHeight() const noexcept { return _Height; }
+
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
@@ -78,8 +81,8 @@ public:
     GradientStops _CurrentGradientStops;
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
-    FLOAT _TextWidth;
-    FLOAT _TextHeight;
+    FLOAT _Width;
+    FLOAT _Height;
 
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;

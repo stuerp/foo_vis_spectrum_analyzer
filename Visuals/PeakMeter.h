@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.19) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.20) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -19,7 +19,56 @@
 
 #include "Element.h"
 
-class PeakScale;
+class PeakScale : public Element
+{
+public:
+    PeakScale() { };
+
+    PeakScale(const PeakScale &) = delete;
+    PeakScale & operator=(const PeakScale &) = delete;
+    PeakScale(PeakScale &&) = delete;
+    PeakScale & operator=(PeakScale &&) = delete;
+
+    virtual ~PeakScale() { }
+
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Reset();
+    void Move(const D2D1_RECT_F & rect);
+    void Resize() noexcept;
+    void Render(ID2D1RenderTarget * renderTarget);
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
+    FLOAT GetTextWidth() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+    FLOAT GetTextHeight() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+private:
+    struct Label
+    {
+        std::wstring Text;
+        double Amplitude;
+        bool IsHidden;
+
+        D2D1_POINT_2F Point1;
+        D2D1_POINT_2F Point2;
+
+        D2D1_RECT_F Rect1;
+        D2D1_RECT_F Rect2;
+    };
+
+    std::vector<Label> _Labels;
+
+    Style * _TextStyle;
+    Style * _LineStyle;
+};
 
 class PeakMeter : public Element
 {
@@ -98,6 +147,8 @@ private:
 
     Style * _BackgroundStyle;
 
+    Style * _PeakBackgroundStyle;
+
     Style * _PeakStyle;
     Style * _Peak0dBStyle;
     Style * _MaxPeakStyle;
@@ -109,47 +160,4 @@ private:
     Style * _XTextStyle;
 
     #pragma endregion
-};
-
-class PeakScale : public Element
-{
-public:
-    PeakScale() { };
-
-    PeakScale(const PeakScale &) = delete;
-    PeakScale & operator=(const PeakScale &) = delete;
-    PeakScale(PeakScale &&) = delete;
-    PeakScale & operator=(PeakScale &&) = delete;
-
-    virtual ~PeakScale() { }
-
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
-    void Reset();
-    void Move(const D2D1_RECT_F & rect);
-    void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget);
-
-    void ReleaseDeviceSpecificResources() noexcept;
-
-private:
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
-
-private:
-    struct Label
-    {
-        std::wstring Text;
-        double Amplitude;
-        bool IsHidden;
-
-        D2D1_POINT_2F PointL;
-        D2D1_POINT_2F PointR;
-
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
-    };
-
-    std::vector<Label> _Labels;
-
-    Style * _TextStyle;
-    Style * _LineStyle;
 };

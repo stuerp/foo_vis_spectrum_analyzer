@@ -56,8 +56,8 @@ void YAxis::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xl = _Bounds.left  + (_GraphSettings->_YAxisLeft  ? _TextStyle->_TextWidth : 0.f); // Left axis
-    const FLOAT xr = _Bounds.right - (_GraphSettings->_YAxisRight ? _TextStyle->_TextWidth : 0.f); // Right axis
+    const FLOAT xl = _Bounds.left  + (_GraphSettings->_YAxisLeft  ? _TextStyle->_Width : 0.f); // Left axis
+    const FLOAT xr = _Bounds.right - (_GraphSettings->_YAxisRight ? _TextStyle->_Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
@@ -76,16 +76,16 @@ void YAxis::Resize() noexcept
         Iter.PointL = D2D1_POINT_2F(xl, y);
         Iter.PointR = D2D1_POINT_2F(xr, y);
 
-        y -= (_TextStyle->_TextHeight / 2.f);
+        y -= (_TextStyle->_Height / 2.f);
 
         if ((!_GraphSettings->_XAxisTop) && (y <_Bounds.top))
             y = _Bounds.top;
 
-        if ((!_GraphSettings->_XAxisBottom) && (y + _TextStyle->_TextHeight > _Bounds.bottom))
-            y = _Bounds.bottom - _TextStyle->_TextHeight;
+        if ((!_GraphSettings->_XAxisBottom) && (y + _TextStyle->_Height > _Bounds.bottom))
+            y = _Bounds.bottom - _TextStyle->_Height;
 
-        Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _TextStyle->_TextHeight };
-        Iter.RectR = { xr + 2.f,     y, _Bounds.right, y + _TextStyle->_TextHeight };
+        Iter.RectL = { _Bounds.left, y, xl - 2.f,      y + _TextStyle->_Height };
+        Iter.RectR = { xr + 2.f,     y, _Bounds.right, y + _TextStyle->_Height };
 
         Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
 

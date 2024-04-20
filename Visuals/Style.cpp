@@ -44,8 +44,8 @@ Style & Style::operator=(const Style & other)
     _CurrentGradientStops = other._CurrentGradientStops;
 
     _TextFormat = other._TextFormat;
-    _TextWidth = other._TextWidth;
-    _TextHeight = other._TextHeight;
+    _Width = other._Width;
+    _Height = other._Height;
 
     return *this;
 }
@@ -73,8 +73,8 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
     _CurrentColor         = customColor;
     _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
 
-    _TextWidth  = 0.f;
-    _TextHeight = 0.f;
+    _Width  = 0.f;
+    _Height = 0.f;
 }
 
 /// <summary>
@@ -320,5 +320,5 @@ HRESULT Style::MeasureText(const std::wstring & text) noexcept
     if (_TextFormat == nullptr)
         return E_FAIL;
 
-    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _TextWidth, _TextHeight);
+    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _Width, _Height);
 }
