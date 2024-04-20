@@ -52,8 +52,15 @@ public:
             _TextFormat->SetParagraphAlignment(pa);
     }
 
-    FLOAT GetWidth() const noexcept { return _Width; }
-    FLOAT GetHeight() const noexcept { return _Height; }
+    FLOAT GetWidth() const noexcept
+    {
+        return _Width;
+    }
+
+    FLOAT GetHeight() const noexcept
+    {
+        return _Height;
+    }
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 

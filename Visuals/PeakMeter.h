@@ -19,17 +19,35 @@
 
 #include "Element.h"
 
-class PeakScale : public Element
+/// <summary>
+/// Represents the metrics used to render the gauges.
+/// </summary>
+struct GaugeMetrics
+{
+    FLOAT _TotalBarGap;
+    FLOAT _TickSize;
+    FLOAT _TotalTickSize;
+
+    FLOAT _BarHeight;
+    FLOAT _BarWidth;
+    FLOAT _TotalBarHeight;
+    FLOAT _TotalBarWidth;
+    FLOAT _Offset;
+
+    double _dBFSZero;       // Relative position of 0 dBFS, 0.0 .. 1.0
+};
+
+class GaugeScales : public Element
 {
 public:
-    PeakScale() { };
+    GaugeScales() { };
 
-    PeakScale(const PeakScale &) = delete;
-    PeakScale & operator=(const PeakScale &) = delete;
-    PeakScale(PeakScale &&) = delete;
-    PeakScale & operator=(PeakScale &&) = delete;
+    GaugeScales(const GaugeScales &) = delete;
+    GaugeScales & operator=(const GaugeScales &) = delete;
+    GaugeScales(GaugeScales &&) = delete;
+    GaugeScales & operator=(GaugeScales &&) = delete;
 
-    virtual ~PeakScale() { }
+    virtual ~GaugeScales() { }
 
     void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
     void Reset();
@@ -42,7 +60,7 @@ public:
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->GetHeight();
+        return _TextStyle->GetWidth();
     }
 
     FLOAT GetTextHeight() const noexcept
@@ -70,6 +88,46 @@ private:
     Style * _LineStyle;
 };
 
+class GaugeNames : public Element
+{
+public:
+    GaugeNames() { };
+
+    GaugeNames(const GaugeNames &) = delete;
+    GaugeNames & operator=(const GaugeNames &) = delete;
+    GaugeNames(GaugeNames &&) = delete;
+    GaugeNames & operator=(GaugeNames &&) = delete;
+
+    virtual ~GaugeNames() { }
+
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Reset();
+    void Move(const D2D1_RECT_F & rect);
+    void Resize() noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
+    FLOAT GetTextWidth() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+    FLOAT GetTextHeight() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+private:
+    void DrawHorizontalNames(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void DrawVerticalNames(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+
+private:
+    Style * _TextStyle;
+    Style * _RMSTextStyle;
+};
+
 class PeakMeter : public Element
 {
 public:
@@ -88,16 +146,15 @@ public:
     void Resize() noexcept;
     void Render(ID2D1RenderTarget * renderTarget);
 
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
-
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
-    void DrawGauges(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawHorizontalNames(ID2D1RenderTarget * renderTarget) const noexcept;
-    void DrawVerticalNames(ID2D1RenderTarget * renderTarget) const noexcept;
+    void RenderGauges(ID2D1RenderTarget * renderTarget) const noexcept;
+
+    void GetGaugeMetrics() noexcept;
 
 //#define _DEBUG_RENDER
 
@@ -111,31 +168,15 @@ private:
 private:
     #pragma region Gauges
 
+    GaugeMetrics _GaugeMetrics;
+
     D2D1_RECT_F _GBounds;   // Gauge bounds
     D2D1_SIZE_F _GSize;     // Gauge size
 
-    FLOAT _TotalBarGap;
-    FLOAT _TickSize;
-    FLOAT _TotalTickSize;
-
-    FLOAT _BarHeight;
-    FLOAT _BarWidth;
-    FLOAT _TotalBarHeight;
-    FLOAT _TotalBarWidth;
-    FLOAT _Offset;
-
-    double _dBFSZero;       // Relative position of 0 dBFS, 0.0 .. 1.0
-
     #pragma endregion
 
-    PeakScale _PeakScale;
-
-    #pragma region Channel Names
-
-    D2D1_RECT_F _NBounds;   // Names bounds
-    D2D1_SIZE_F _NSize;     // Names size
-
-    #pragma endregion
+    GaugeScales _GaugeScales;
+    GaugeNames _GaugeNames;
 
     #pragma region Styling
 
@@ -147,17 +188,12 @@ private:
 
     Style * _BackgroundStyle;
 
-    Style * _PeakBackgroundStyle;
-
     Style * _PeakStyle;
     Style * _Peak0dBStyle;
     Style * _MaxPeakStyle;
 
     Style * _RMSStyle;
     Style * _RMS0dBStyle;
-    Style * _RMSTextStyle;
-
-    Style * _XTextStyle;
 
     #pragma endregion
 };

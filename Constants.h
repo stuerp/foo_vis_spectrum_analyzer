@@ -338,14 +338,14 @@ enum class VisualElement : uint32_t
 
     Spectogram                  = 18,
 
-    PeakMeterBackground         = 19,
-    PeakMeterPeakLevel          = 20,
-    PeakMeter0dBPeakLevel       = 23,
-    PeakMeterMaxPeakLevel       = 25,
+    GaugeBackground         = 19,
+    GaugePeakLevel          = 20,
+    Gauge0dBPeakLevel       = 23,
+    GaugeMaxPeakLevel       = 25,
 
-    PeakMeterRMSLevel           = 21,
-    PeakMeter0dBRMSLevel        = 24,
-    PeakMeterRMSLevelText       = 22,
+    GaugeRMSLevel           = 21,
+    Gauge0dBRMSLevel        = 24,
+    GaugeRMSLevelText       = 22,
 
     NyquistMarker               = 15,
 

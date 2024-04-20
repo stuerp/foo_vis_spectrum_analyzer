@@ -74,14 +74,14 @@ Style * StyleManager::GetStyleByIndex(int index)
 
         VisualElement::Spectogram,
 
-        VisualElement::PeakMeterBackground,
-        VisualElement::PeakMeterPeakLevel,
-        VisualElement::PeakMeter0dBPeakLevel,
-        VisualElement::PeakMeterMaxPeakLevel,
+        VisualElement::GaugeBackground,
+        VisualElement::GaugePeakLevel,
+        VisualElement::Gauge0dBPeakLevel,
+        VisualElement::GaugeMaxPeakLevel,
 
-        VisualElement::PeakMeterRMSLevel,
-        VisualElement::PeakMeter0dBRMSLevel,
-        VisualElement::PeakMeterRMSLevelText,
+        VisualElement::GaugeRMSLevel,
+        VisualElement::Gauge0dBRMSLevel,
+        VisualElement::GaugeRMSLevelText,
 
         VisualElement::NyquistMarker,
     };
