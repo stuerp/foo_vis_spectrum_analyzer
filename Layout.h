@@ -1267,7 +1267,7 @@
 #pragma region Styles
 
 // Listbox
-#define W_I01    110
+#define W_I01    112
 #define H_I01    H_D01
 #define X_I01    X_D01 + W_D01 + IX
 #define Y_I01    Y_D01

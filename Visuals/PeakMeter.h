@@ -197,6 +197,51 @@ private:
 #endif
 };
 
+class PeakReadOut : public Element
+{
+public:
+    PeakReadOut() { };
+
+    PeakReadOut(const PeakReadOut &) = delete;
+    PeakReadOut & operator=(const PeakReadOut &) = delete;
+    PeakReadOut(PeakReadOut &&) = delete;
+    PeakReadOut & operator=(PeakReadOut &&) = delete;
+
+    virtual ~PeakReadOut() { }
+
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Reset();
+    void Move(const D2D1_RECT_F & rect);
+    void Resize() noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+
+    bool IsVisible() const noexcept { return _TextStyle->IsEnabled(); }
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
+    FLOAT GetTextWidth() const noexcept
+    {
+        return _TextStyle->GetWidth();
+    }
+
+    FLOAT GetTextHeight() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+private:
+    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+
+private:
+    Style * _TextStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+};
+
 class Gauges : public Element
 {
 public:
@@ -268,4 +313,5 @@ private:
     GaugeScales _GaugeScales;
     GaugeNames  _GaugeNames;
     RMSReadOut  _RMSReadOut;
+    PeakReadOut _PeakReadOut;
 };

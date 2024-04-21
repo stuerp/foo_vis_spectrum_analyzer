@@ -30,6 +30,7 @@ void PeakMeter::Initialize(State * state, const GraphSettings * settings, const 
     _GaugeScales.Initialize(state, settings, analysis);
     _GaugeNames.Initialize(state, settings, analysis);
     _RMSReadOut.Initialize(state, settings, analysis);
+    _PeakReadOut.Initialize(state, settings, analysis);
 
     _State = state;
     _GraphSettings = settings;
@@ -49,6 +50,7 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
     _GaugeNames.SetBounds(rect);
     _GaugeScales.SetBounds(rect);
     _RMSReadOut.SetBounds(rect);
+    _PeakReadOut.SetBounds(rect);
 }
 
 /// <summary>
@@ -62,6 +64,7 @@ void PeakMeter::Reset()
     _GaugeNames.Reset();
     _GaugeScales.Reset();
     _RMSReadOut.Reset();
+    _PeakReadOut.Reset();
 }
 
 /// <summary>
@@ -94,6 +97,15 @@ void PeakMeter::Resize() noexcept
         _RMSReadOut.Resize();
     }
 
+    // Peak Read Out metrics
+    {
+        Rect.left  = 0.f;
+        Rect.right = _PeakReadOut.GetTextWidth();
+
+        _PeakReadOut.SetBounds(Rect);
+        _PeakReadOut.Resize();
+    }
+
     // Gauge Scale metrics
     {
         Rect = _Bounds;
@@ -105,6 +117,9 @@ void PeakMeter::Resize() noexcept
 
             if (_RMSReadOut.IsVisible())
                 Rect.right -= _RMSReadOut.GetTextWidth();
+
+            if (_PeakReadOut.IsVisible())
+                Rect.right -= _PeakReadOut.GetTextWidth();
 
             if (_GraphSettings->_XAxisTop)
                 Rect.right -= _GaugeNames.GetTextWidth();
@@ -126,6 +141,9 @@ void PeakMeter::Resize() noexcept
             if (_RMSReadOut.IsVisible())
                 Rect.right -= _RMSReadOut.GetTextWidth();
 
+            if (_PeakReadOut.IsVisible())
+                Rect.right -= _PeakReadOut.GetTextWidth();
+
             if (_GraphSettings->_XAxisTop)
                 Rect.right -= _GaugeNames.GetTextWidth();
 
@@ -134,6 +152,26 @@ void PeakMeter::Resize() noexcept
 
             if (_GraphSettings->_YAxisLeft)
                 Rect.bottom -= _GaugeScales.GetTextHeight();
+        }
+        else
+        {
+            if (_GraphSettings->_XAxisBottom)
+                Rect.bottom -= _GaugeNames.GetTextHeight();
+
+            if (_RMSReadOut.IsVisible())
+                Rect.bottom -= _RMSReadOut.GetTextHeight();
+
+            if (_PeakReadOut.IsVisible())
+                Rect.bottom -= _PeakReadOut.GetTextHeight();
+
+            if (_GraphSettings->_XAxisTop)
+                Rect.bottom -= _GaugeNames.GetTextHeight();
+
+            if (_GraphSettings->_YAxisRight)
+                Rect.right -= _GaugeScales.GetTextWidth();
+
+            if (_GraphSettings->_YAxisLeft)
+                Rect.right -= _GaugeScales.GetTextWidth();
         }
 
         _Gauges.SetBounds(Rect);
@@ -175,12 +213,29 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
     
                 if (_RMSReadOut.IsVisible())
                     dx += _RMSReadOut.GetTextWidth();
+    
+                if (_PeakReadOut.IsVisible())
+                    dx += _PeakReadOut.GetTextWidth();
             }
         }
         else
         {
-            if (_GraphSettings->_XAxisTop)
-                dy = _GaugeNames.GetTextHeight();
+            if (!_GraphSettings->_FlipHorizontally)
+            {
+                if (_GraphSettings->_XAxisTop)
+                    dy = _GaugeNames.GetTextHeight();
+            }
+            else
+            {
+                if (_GraphSettings->_XAxisBottom)
+                    dy += _GaugeNames.GetTextHeight();
+    
+                if (_RMSReadOut.IsVisible())
+                    dy += _RMSReadOut.GetTextHeight();
+    
+                if (_PeakReadOut.IsVisible())
+                    dy += _PeakReadOut.GetTextHeight();
+            }
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -193,24 +248,50 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
     // Render the gauges.
     {
         // Translate from client coordinates to element coordinates.
-        D2D1::Matrix3x2F Transform = _GraphSettings->_FlipHorizontally ? D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f) : D2D1::Matrix3x2F::Identity();
-
-        if (_GraphSettings->_FlipVertically)
-            Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
+        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
         FLOAT dx = 0.f;
         FLOAT dy = 0.f;
 
         if (_State->_HorizontalPeakMeter)
         {
+            if (_GraphSettings->_FlipHorizontally)
+                Transform =  D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f);
+
+            if (_GraphSettings->_FlipVertically)
+                Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
+
             if (_GraphSettings->_XAxisBottom)
                 dx += (_GraphSettings->_FlipHorizontally) ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
 
             if (_RMSReadOut.IsVisible())
                 dx += (_GraphSettings->_FlipHorizontally) ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
 
+            if (_PeakReadOut.IsVisible())
+                dx += (_GraphSettings->_FlipHorizontally) ? -_PeakReadOut.GetTextWidth() : _PeakReadOut.GetTextWidth();
+
             if (_GraphSettings->_YAxisLeft)
                 dy += (_GraphSettings->_FlipVertically) ? -(_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
+        }
+        else
+        {
+            if (_GraphSettings->_FlipHorizontally)
+                Transform =  D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f);
+
+            if (!_GraphSettings->_FlipVertically)
+                Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
+
+            if (_GraphSettings->_XAxisBottom)
+                dy += (_GraphSettings->_FlipHorizontally) ? -_GaugeNames.GetTextHeight() : _GaugeNames.GetTextHeight();
+
+            if (_RMSReadOut.IsVisible())
+                dy += (_GraphSettings->_FlipHorizontally) ? -_RMSReadOut.GetTextHeight() : _RMSReadOut.GetTextHeight();
+
+            if (_PeakReadOut.IsVisible())
+                dy += (_GraphSettings->_FlipHorizontally) ? -_PeakReadOut.GetTextHeight() : _PeakReadOut.GetTextHeight();
+
+            if (_GraphSettings->_YAxisLeft)
+                dx += (_GraphSettings->_FlipHorizontally) ? -(_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -233,11 +314,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         else
         {
             if (_GraphSettings->_YAxisLeft)
-            {
-                D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_GaugeScales.GetTextWidth() + (_GraphSettings->_FlipHorizontally ? -_GaugeMetrics._Offset : _GaugeMetrics._Offset), 0.f);
-
-                renderTarget->SetTransform(Translate);
-            }
+                dy += (_GraphSettings->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -274,6 +351,36 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         _RMSReadOut.Render(renderTarget, _GaugeMetrics);
     }
 
+    // Render the Peak read out.
+    {
+        FLOAT dx = 0.f;
+        FLOAT dy = 0.f;
+
+        if (_State->_HorizontalPeakMeter)
+        {
+            if (_GraphSettings->_FlipHorizontally)
+                dx = GetWidth() - _PeakReadOut.GetTextWidth();
+
+            if (_GraphSettings->_XAxisBottom)
+                dx += _GraphSettings->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
+
+            if (_RMSReadOut.IsVisible())
+                dx += _GraphSettings->_FlipHorizontally ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
+
+            if (_GraphSettings->_YAxisLeft)
+                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
+        }
+        else
+        {
+        }
+
+        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
+
+        renderTarget->SetTransform(Translate);
+
+        _PeakReadOut.Render(renderTarget, _GaugeMetrics);
+    }
+
     ResetTransform(renderTarget);
 }
 
@@ -286,6 +393,9 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 
     if (SUCCEEDED(hr))
         hr = _RMSReadOut.CreateDeviceSpecificResources(renderTarget);
+
+    if (SUCCEEDED(hr))
+        hr = _PeakReadOut.CreateDeviceSpecificResources(renderTarget);
 
     if (SUCCEEDED(hr))
         hr = _GaugeScales.CreateDeviceSpecificResources(renderTarget);
@@ -307,6 +417,8 @@ void PeakMeter::ReleaseDeviceSpecificResources() noexcept
     _Gauges.ReleaseDeviceSpecificResources();
 
     _GaugeScales.ReleaseDeviceSpecificResources();
+
+    _PeakReadOut.ReleaseDeviceSpecificResources();
 
     _RMSReadOut.ReleaseDeviceSpecificResources();
 
@@ -490,25 +602,21 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
     }
     else
     {
-/*
-        D2D1_RECT_F Rect = { gaugeMetrics._Offset, 0.f, 0.f, 0.f };
+        BOUNDS Rect = {  };
 
         for (auto & Value : _Analysis->_GaugeValues)
         {
-            Rect.right = std::clamp(Rect.left + gaugeMetrics._BarWidth, 0.f, _GSize.width);
+            Rect.x2 = std::clamp(Rect.x1 + gaugeMetrics._BarWidth, 0.f, GetWidth());
 
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
             {
-                Rect.bottom = Rect.top + _GSize.height;
+                Rect.y2 = GetHeight();
 
-            #ifndef _DEBUG_RENDER
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-            #else
-            #endif
             }
 
             // Draw the peak.
@@ -518,47 +626,41 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
                 // Draw the foreground (Peak).
                 if (_PeakStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (PeakRender * _GSize.height);
+                    Rect.y2 = (FLOAT) (PeakRender * GetHeight());
 
-                #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
                     else
                         renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-                #else
-                #endif
                 }
 
                 // Draw the foreground (Peak, 0dBFS)
                 if ((Value.PeakRender > gaugeMetrics._dBFSZero) && _Peak0dBStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (Value.PeakRender * _GSize.height);
+                    Rect.y2 = (FLOAT) (Value.PeakRender * GetHeight());
 
-                    FLOAT OldTop = Rect.top;
+                    FLOAT OldTop = Rect.y1;
 
-                    Rect.top = (FLOAT) (gaugeMetrics._dBFSZero * _GSize.height);
+                    Rect.y1 = (FLOAT) (gaugeMetrics._dBFSZero * GetHeight());
 
-                #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
                     else
                         renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-                #else
-                #endif
 
-                    Rect.top = OldTop;
+                    Rect.y1 = OldTop;
                 }
 
                 // Draw the foreground (Peak Top).
                 if ((_State->_PeakMode != PeakMode::None) && (Value.MaxPeakRender > 0.) && _MaxPeakStyle->IsEnabled())
                 {
-                    FLOAT OldTop = Rect.top;
+                    FLOAT OldTop = Rect.y1;
 
-                    Rect.top    =
-                    Rect.bottom = (FLOAT) ( Value.MaxPeakRender * _GSize.height);
+                    Rect.y1 =
+                    Rect.y2 = (FLOAT) ( Value.MaxPeakRender * GetHeight());
 
-                    Rect.top    = ::ceil(std::clamp(Rect.top    - PeakThickness, 0.f, _GSize.height));
-                    Rect.bottom = ::ceil(std::clamp(Rect.bottom + PeakThickness, 0.f, _GSize.height));
+                    Rect.y1 = ::ceil(std::clamp(Rect.y1 - PeakThickness, 0.f, GetHeight()));
+                    Rect.y2 = ::ceil(std::clamp(Rect.y2 + PeakThickness, 0.f, GetHeight()));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) Value.Opacity : _MaxPeakStyle->_Opacity;
 
@@ -566,7 +668,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
 
                     renderTarget->FillRectangle(Rect, _MaxPeakStyle->_Brush);
 
-                    Rect.top = OldTop;
+                    Rect.y1 = OldTop;
                 }
             }
 
@@ -577,39 +679,34 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
                 // Draw the foreground (RMS).
                 if (_RMSStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (RMSRender * _GSize.height);
+                    Rect.y2 = (FLOAT) (RMSRender * GetHeight());
 
-                #ifndef _DEBUG_RENDER
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
                     else
                         renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
-                #else
-                    DrawDebugRectangle(renderTarget, { Rect.left, 0.f, Rect.right, _ClientSize.height }, D2D1::ColorF(D2D1::ColorF::Red));
-                #endif
                 }
 
                 // Draw the foreground (RMS, 0dBFS)
                 if ((Value.RMSRender > gaugeMetrics._dBFSZero) && _RMS0dBStyle->IsEnabled())
                 {
-                    Rect.bottom = Rect.top + (FLOAT) (Value.RMSRender * _GSize.height);
+                    Rect.y2 = (FLOAT) (Value.RMSRender * GetHeight());
 
-                    FLOAT OldTop = Rect.top;
+                    FLOAT OldTop = Rect.y1;
 
-                    Rect.top = (FLOAT) (gaugeMetrics._dBFSZero * _GSize.height);
+                    Rect.y1 = (FLOAT) (gaugeMetrics._dBFSZero * GetHeight());
 
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
                     else
                         renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
 
-                    Rect.top = OldTop;
+                    Rect.y1 = OldTop;
                 }
             }
 
-            Rect.left = Rect.right + _State->_GaugeGap;
+            Rect.x1 = Rect.x2 + _State->_GaugeGap;
         }
-*/
     }
 
     if (_State->_LEDMode)
@@ -1379,6 +1476,178 @@ HRESULT RMSReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// Releases the device specific resources.
 /// </summary>
 void RMSReadOut::ReleaseDeviceSpecificResources() noexcept
+{
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
+
+    if (_TextStyle)
+    {
+        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle = nullptr;
+    }
+}
+
+#pragma endregion
+
+#pragma region Peak Read Out
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+void PeakReadOut::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+{
+    _State = state;
+    _GraphSettings = settings;
+    _Analysis = analysis;
+
+    ReleaseDeviceSpecificResources();
+}
+
+/// <summary>
+/// Moves this instance.
+/// </summary>
+void PeakReadOut::Move(const D2D1_RECT_F & rect)
+{
+    SetBounds(rect);
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void PeakReadOut::Reset()
+{
+    _IsResized = true;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void PeakReadOut::Resize() noexcept
+{
+    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+        return;
+
+    _IsResized = false;
+}
+
+/// <summary>
+/// Renders this instance.
+/// </summary>
+void PeakReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+{
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+
+    if (!SUCCEEDED(hr) || !IsVisible())
+        return;
+
+    if (_State->_HorizontalPeakMeter)
+        RenderHorizontal(renderTarget, gaugeMetrics);
+    else
+        RenderVertical(renderTarget, gaugeMetrics);
+}
+
+/// <summary>
+/// Render the RMS read out.
+/// </summary>
+void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+{
+    D2D1_RECT_F Rect = { };
+
+    Rect.top = _GraphSettings->_FlipVertically ? _Size.height : 0.f;
+
+    const FLOAT dy = _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
+
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    _TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+    for (const auto & gv : _Analysis->_GaugeValues)
+    {
+        Rect.bottom = std::clamp(Rect.top + dy, 0.f, _Size.height);
+
+        // Draw the RMS text display.
+        if (_TextStyle->IsEnabled())
+        {
+            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f;
+            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->GetWidth();
+
+            WCHAR Text[16];
+
+            if (::isfinite(gv.RMS))
+                ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS);
+            else
+                ::wcscpy_s(Text, _countof(Text), L"-∞");
+
+ //renderTarget->FillRectangle(Rect, _DebugBrush);
+            renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+
+        Rect.top += _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
+    }
+}
+
+/// <summary>
+/// Render the RMS read out.
+/// </summary>
+void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+{
+    D2D1_RECT_F Rect = { };
+
+    Rect.left = _GraphSettings->_FlipHorizontally ? _Size.width: 0.f;
+
+    const FLOAT dx = _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
+
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+    _TextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+    for (const auto & gv : _Analysis->_GaugeValues)
+    {
+        Rect.right = std::clamp(Rect.left + dx, 0.f, _Size.width);
+
+        if (_TextStyle->IsEnabled())
+        {
+
+            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->GetHeight();
+            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->GetHeight() : GetHeight();
+
+            WCHAR Text[16];
+
+            if (::isfinite(gv.Peak))
+                ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.Peak);
+            else
+                ::wcscpy_s(Text, _countof(Text), L"-∞");
+
+            renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+
+        Rect.left += _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
+    }
+}
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// </summary>
+HRESULT PeakReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+{
+    HRESULT hr = S_OK;
+
+    D2D1_SIZE_F Size = renderTarget->GetSize();
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevelText, renderTarget, Size, L"+199.9", &_TextStyle);
+
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void PeakReadOut::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
