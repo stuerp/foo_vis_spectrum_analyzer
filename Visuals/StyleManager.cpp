@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.04.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.04.20) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "framework.h"
 #include "StyleManager.h"
@@ -75,9 +75,11 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::Spectogram,
 
         VisualElement::GaugeBackground,
+
         VisualElement::GaugePeakLevel,
         VisualElement::Gauge0dBPeakLevel,
         VisualElement::GaugeMaxPeakLevel,
+        VisualElement::GaugePeakLevelText,
 
         VisualElement::GaugeRMSLevel,
         VisualElement::Gauge0dBRMSLevel,

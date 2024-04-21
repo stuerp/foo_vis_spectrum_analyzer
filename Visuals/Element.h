@@ -32,11 +32,25 @@ public:
         _IsResized = true;
     }
 
-    virtual FLOAT GetWidth() const noexcept { return _Size.width; }
-    virtual FLOAT GetHeight() const noexcept { return _Size.height; }
+    virtual FLOAT GetWidth() const noexcept
+    {
+        return _Size.width;
+    }
 
-    virtual FLOAT GetLeft() const noexcept { return _Bounds.left; }
-    virtual FLOAT GetRight() const noexcept { return _Bounds.right; }
+    virtual FLOAT GetHeight() const noexcept
+    {
+        return _Size.height;
+    }
+
+    virtual FLOAT GetLeft() const noexcept
+    {
+        return _Bounds.left;
+    }
+
+    virtual FLOAT GetRight() const noexcept
+    {
+        return _Bounds.right;
+    }
 
     virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;

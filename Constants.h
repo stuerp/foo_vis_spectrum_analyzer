@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.16) P. Stuer **/
+/** $VER: Constans.h (2024.04.20) P. Stuer **/
 
 #pragma once
 
@@ -338,18 +338,20 @@ enum class VisualElement : uint32_t
 
     Spectogram                  = 18,
 
-    GaugeBackground         = 19,
-    GaugePeakLevel          = 20,
-    Gauge0dBPeakLevel       = 23,
-    GaugeMaxPeakLevel       = 25,
+    GaugeBackground             = 19,
 
-    GaugeRMSLevel           = 21,
-    Gauge0dBRMSLevel        = 24,
-    GaugeRMSLevelText       = 22,
+    GaugePeakLevel              = 20,
+    Gauge0dBPeakLevel           = 23,
+    GaugeMaxPeakLevel           = 25,
+    GaugePeakLevelText          = 26,
+
+    GaugeRMSLevel               = 21,
+    Gauge0dBRMSLevel            = 24,
+    GaugeRMSLevelText           = 22,
 
     NyquistMarker               = 15,
 
-    Count                       = 26
+    Count                       = 27
 };
 
 enum class ColorSource : uint32_t

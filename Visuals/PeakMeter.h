@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.20) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2024.04.21) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -18,6 +18,18 @@
 #include <atlbase.h>
 
 #include "Element.h"
+
+struct BOUNDS
+{
+    operator D2D1_RECT_F() const noexcept { return *this; }
+
+    D2D1_SIZE_F Size() const noexcept { return { std::abs(x1 - x2), std::abs(y1 - y2) }; }
+
+    FLOAT x1;
+    FLOAT y1;
+    FLOAT x2;
+    FLOAT y2;
+};
 
 /// <summary>
 /// Represents the metrics used to render the gauges.
@@ -111,7 +123,7 @@ public:
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->GetHeight();
+        return _TextStyle->GetWidth();
     }
 
     FLOAT GetTextHeight() const noexcept
@@ -120,12 +132,58 @@ public:
     }
 
 private:
-    void DrawHorizontalNames(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
-    void DrawVerticalNames(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
 
 private:
     Style * _TextStyle;
-    Style * _RMSTextStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+};
+
+class RMSReadOut : public Element
+{
+public:
+    RMSReadOut() { };
+
+    RMSReadOut(const RMSReadOut &) = delete;
+    RMSReadOut & operator=(const RMSReadOut &) = delete;
+    RMSReadOut(RMSReadOut &&) = delete;
+    RMSReadOut & operator=(RMSReadOut &&) = delete;
+
+    virtual ~RMSReadOut() { }
+
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Reset();
+    void Move(const D2D1_RECT_F & rect);
+    void Resize() noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
+    FLOAT GetTextWidth() const noexcept
+    {
+        return _TextStyle->GetWidth();
+    }
+
+    FLOAT GetTextHeight() const noexcept
+    {
+        return _TextStyle->GetHeight();
+    }
+
+private:
+    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+
+private:
+    Style * _TextStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 };
 
 class PeakMeter : public Element
@@ -177,6 +235,7 @@ private:
 
     GaugeScales _GaugeScales;
     GaugeNames _GaugeNames;
+    RMSReadOut _RMSReadOut;
 
     #pragma region Styling
 

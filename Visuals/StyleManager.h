@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.20) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -276,6 +276,14 @@ private:
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugePeakLevelText,
+            {
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
             }
         },
 
