@@ -90,8 +90,11 @@ void PeakMeter::Resize() noexcept
 
     // RMS Read Out metrics
     {
-        Rect.left  = 0.f;
-        Rect.right = _RMSReadOut.GetTextWidth();
+        if (_State->_HorizontalPeakMeter)
+        {
+            Rect.left  = 0.f;
+            Rect.right = _RMSReadOut.GetTextWidth();
+        }
 
         _RMSReadOut.SetBounds(Rect);
         _RMSReadOut.Resize();
@@ -99,14 +102,17 @@ void PeakMeter::Resize() noexcept
 
     // Peak Read Out metrics
     {
-        Rect.left  = 0.f;
-        Rect.right = _PeakReadOut.GetTextWidth();
+        if (_State->_HorizontalPeakMeter)
+        {
+            Rect.left  = 0.f;
+            Rect.right = _PeakReadOut.GetTextWidth();
+        }
 
         _PeakReadOut.SetBounds(Rect);
         _PeakReadOut.Resize();
     }
 
-    // Gauge Scale metrics
+    // Gauge scale metrics
     {
         Rect = _Bounds;
 
@@ -121,8 +127,25 @@ void PeakMeter::Resize() noexcept
             if (_PeakReadOut.IsVisible())
                 Rect.right -= _PeakReadOut.GetTextWidth();
 
+            if (_GraphSettings->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
+                Rect.right -= 4.f;
+
             if (_GraphSettings->_XAxisTop)
                 Rect.right -= _GaugeNames.GetTextWidth();
+        }
+        else
+        {
+            if (_GraphSettings->_XAxisBottom)
+                Rect.bottom -= _GaugeNames.GetTextHeight();
+
+            if (_RMSReadOut.IsVisible())
+                Rect.bottom -= _RMSReadOut.GetTextHeight();
+
+            if (_PeakReadOut.IsVisible())
+                Rect.bottom -= _PeakReadOut.GetTextHeight();
+
+            if (_GraphSettings->_XAxisTop)
+                Rect.bottom -= _GaugeNames.GetTextHeight();
         }
 
         _GaugeScales.SetBounds(Rect);
@@ -143,6 +166,9 @@ void PeakMeter::Resize() noexcept
 
             if (_PeakReadOut.IsVisible())
                 Rect.right -= _PeakReadOut.GetTextWidth();
+
+            if (_GraphSettings->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
+                Rect.right -= 4.f;
 
             if (_GraphSettings->_XAxisTop)
                 Rect.right -= _GaugeNames.GetTextWidth();
@@ -216,25 +242,28 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
     
                 if (_PeakReadOut.IsVisible())
                     dx += _PeakReadOut.GetTextWidth();
+
+                if (_GraphSettings->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
+                    dx += 4.f;
             }
         }
         else
         {
-            if (!_GraphSettings->_FlipHorizontally)
-            {
-                if (_GraphSettings->_XAxisTop)
-                    dy = _GaugeNames.GetTextHeight();
-            }
-            else
+            if (_GraphSettings->_FlipVertically)
             {
                 if (_GraphSettings->_XAxisBottom)
                     dy += _GaugeNames.GetTextHeight();
-    
+
                 if (_RMSReadOut.IsVisible())
                     dy += _RMSReadOut.GetTextHeight();
     
                 if (_PeakReadOut.IsVisible())
                     dy += _PeakReadOut.GetTextHeight();
+            }
+            else
+            {
+                if (_GraphSettings->_XAxisTop)
+                    dy += _GaugeNames.GetTextHeight();
             }
         }
 
@@ -270,6 +299,9 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
             if (_PeakReadOut.IsVisible())
                 dx += (_GraphSettings->_FlipHorizontally) ? -_PeakReadOut.GetTextWidth() : _PeakReadOut.GetTextWidth();
 
+            if (_GraphSettings->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
+                dx += 4.f;
+
             if (_GraphSettings->_YAxisLeft)
                 dy += (_GraphSettings->_FlipVertically) ? -(_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
         }
@@ -282,13 +314,13 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
                 Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
 
             if (_GraphSettings->_XAxisBottom)
-                dy += (_GraphSettings->_FlipHorizontally) ? -_GaugeNames.GetTextHeight() : _GaugeNames.GetTextHeight();
+                dy -= (_GraphSettings->_FlipVertically) ? -_GaugeNames.GetTextHeight() : _GaugeNames.GetTextHeight();
 
             if (_RMSReadOut.IsVisible())
-                dy += (_GraphSettings->_FlipHorizontally) ? -_RMSReadOut.GetTextHeight() : _RMSReadOut.GetTextHeight();
+                dy -= (_GraphSettings->_FlipVertically) ? -_RMSReadOut.GetTextHeight() : _RMSReadOut.GetTextHeight();
 
             if (_PeakReadOut.IsVisible())
-                dy += (_GraphSettings->_FlipHorizontally) ? -_PeakReadOut.GetTextHeight() : _PeakReadOut.GetTextHeight();
+                dy -= (_GraphSettings->_FlipVertically) ? -_PeakReadOut.GetTextHeight() : _PeakReadOut.GetTextHeight();
 
             if (_GraphSettings->_YAxisLeft)
                 dx += (_GraphSettings->_FlipHorizontally) ? -(_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
@@ -314,7 +346,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         else
         {
             if (_GraphSettings->_YAxisLeft)
-                dy += (_GraphSettings->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+                dx += (_GraphSettings->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -342,6 +374,11 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         }
         else
         {
+            if (_GraphSettings->_YAxisLeft)
+                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+
+            if (_GraphSettings->_XAxisBottom)
+                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -372,6 +409,14 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         }
         else
         {
+            if (_GraphSettings->_YAxisLeft)
+                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+
+            if (_GraphSettings->_XAxisBottom)
+                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
+
+            if (_RMSReadOut.IsVisible())
+                dy += _GraphSettings->_FlipVertically ? _RMSReadOut.GetTextHeight() : -_RMSReadOut.GetTextHeight();
         }
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
@@ -549,7 +594,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
                     FLOAT OldLeft = Rect.x1;
 
                     Rect.x1 =
-                    Rect.x2 = (FLOAT) ( Value.MaxPeakRender * GetWidth());
+                    Rect.x2 = (FLOAT) (Value.MaxPeakRender * GetWidth());
 
                     Rect.x1 = ::ceil(std::clamp(Rect.x1 - PeakThickness, 0.f, GetWidth()));
                     Rect.x2 = ::ceil(std::clamp(Rect.x2 + PeakThickness, 0.f, GetWidth()));
@@ -943,20 +988,20 @@ void GaugeScales::Resize() noexcept
 
             x -= cx;
 
-            Iter._TextAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
+            Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
 
             if (!_GraphSettings->_XAxisBottom)
             {
                 if (!_GraphSettings->_FlipHorizontally && (x <= 0.f))
                 {
                     x = 0.f;
-                    Iter._TextAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
+                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
                 if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
                 {
                     x = GetWidth() - _TextStyle->GetWidth();
-                    Iter._TextAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
+                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
 
@@ -965,13 +1010,13 @@ void GaugeScales::Resize() noexcept
                 if (_GraphSettings->_FlipHorizontally && (x <= 0.f))
                 {
                     x = 0.f;
-                    Iter._TextAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
+                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
                 if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
                 {
                     x = GetWidth() - _TextStyle->GetWidth();
-                    Iter._TextAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
+                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
 
@@ -1011,14 +1056,36 @@ void GaugeScales::Resize() noexcept
 
             y -= cy;
 
-            if (!_GraphSettings->_XAxisTop && (y < 0.f))
+            Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_CENTER;
+
+            if (!_GraphSettings->_XAxisBottom)
             {
-                y = 0.f;
+                if (_GraphSettings->_FlipVertically && (y <= 0.f))
+                {
+                    y = 0.f;
+                    Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
+                }
+                else
+                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                {
+                    y = GetHeight() - _TextStyle->GetHeight();
+                    Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
+                }
             }
-            else
-            if (!_GraphSettings->_XAxisBottom && ((y + _TextStyle->GetHeight()) > GetHeight()))
+
+            if (!_GraphSettings->_XAxisTop)
             {
-                y = GetHeight() - _TextStyle->GetHeight();
+                if (!_GraphSettings->_FlipVertically && (y <= 0.f))
+                {
+                    y = 0.f;
+                    Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
+                }
+                else
+                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                {
+                    y = GetHeight() - _TextStyle->GetHeight();
+                    Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
+                }
             }
 
             Iter.Rect1 = { 0.f,                                 y, _TextStyle->GetWidth(), y + _TextStyle->GetHeight() };
@@ -1059,7 +1126,7 @@ void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
             // Draw the text.
             if (!Iter.IsHidden && _TextStyle->IsEnabled())
             {
-                _TextStyle->SetHorizontalAlignment(Iter._TextAlignment);
+                _TextStyle->SetHorizontalAlignment(Iter._HAlignment);
 
                 if (_GraphSettings->_YAxisLeft)
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -1080,17 +1147,13 @@ void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
             // Draw the text.
             if (!Iter.IsHidden && _TextStyle->IsEnabled())
             {
+                _TextStyle->SetVerticalAlignment(Iter._VAlignment);
+
                 if (_GraphSettings->_YAxisLeft)
-                {
-                    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
 
                 if (_GraphSettings->_YAxisRight)
-                {
-                    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
                     renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
             }
         }
     }
@@ -1382,7 +1445,7 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.top = _GraphSettings->_FlipVertically ? _Size.height : 0.f;
+    Rect.top = _GraphSettings->_FlipVertically ? GetHeight() : 0.f;
 
     const FLOAT dy = _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
 
@@ -1391,7 +1454,7 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 
     for (const auto & gv : _Analysis->_GaugeValues)
     {
-        Rect.bottom = std::clamp(Rect.top + dy, 0.f, _Size.height);
+        Rect.bottom = std::clamp(Rect.top + dy, 0.f, GetHeight());
 
         // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
@@ -1406,7 +1469,7 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
-//renderTarget->FillRectangle(Rect, _DebugBrush);
+//          renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
@@ -1421,7 +1484,7 @@ void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.left = _GraphSettings->_FlipHorizontally ? _Size.width: 0.f;
+    Rect.left = _GraphSettings->_FlipHorizontally ? GetWidth() : 0.f;
 
     const FLOAT dx = _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
 
@@ -1430,11 +1493,11 @@ void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
 
     for (const auto & gv : _Analysis->_GaugeValues)
     {
-        Rect.right = std::clamp(Rect.left + dx, 0.f, _Size.width);
+        Rect.right = std::clamp(Rect.left + dx, 0.f, GetWidth());
 
+        // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
         {
-
             Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->GetHeight();
             Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->GetHeight() : GetHeight();
 
@@ -1445,6 +1508,7 @@ void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
+//          renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
@@ -1578,7 +1642,7 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
- //renderTarget->FillRectangle(Rect, _DebugBrush);
+ //         renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
@@ -1617,6 +1681,7 @@ void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMe
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
+ //         renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 

@@ -96,7 +96,8 @@ private:
         D2D1_RECT_F Rect1;
         D2D1_RECT_F Rect2;
 
-        DWRITE_TEXT_ALIGNMENT _TextAlignment;
+        DWRITE_TEXT_ALIGNMENT _HAlignment;
+        DWRITE_PARAGRAPH_ALIGNMENT _VAlignment;
     };
 
     std::vector<Label> _Labels;

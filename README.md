@@ -91,7 +91,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.7.7.x, 2024-04-xx
 
 * Peak Meter
-  * Added: Peak and RMS level read out.
+  * Added: Separate peak and RMS level read outs.
 
 v0.7.6.2, 2024-04-17
 
