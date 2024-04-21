@@ -55,11 +55,11 @@ static const WCHAR * const VisualElementNames[] =
     L"Peak Meter Peak Level",
     L"Peak Meter Peak Level (> 0dB)",
     L"Peak Meter Peak Level (Max)",
-    L"Peak Meter Peak Level Text",
+    L"Peak Meter Peak Level Read Out",
 
     L"Peak Meter RMS Level",
     L"Peak Meter RMS Level (> 0dB)",
-    L"Peak Meter RMS Level Text",
+    L"Peak Meter RMS Level Read Out",
 
     L"Nyquist Frequency",
 };

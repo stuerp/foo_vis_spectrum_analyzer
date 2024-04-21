@@ -21,7 +21,10 @@
 
 struct BOUNDS
 {
-    operator D2D1_RECT_F() const noexcept { return *this; }
+    operator D2D1_RECT_F () const noexcept
+    {
+        return { x1, y1, x2, y2 };
+    }
 
     D2D1_SIZE_F Size() const noexcept { return { std::abs(x1 - x2), std::abs(y1 - y2) }; }
 
@@ -92,12 +95,18 @@ private:
 
         D2D1_RECT_F Rect1;
         D2D1_RECT_F Rect2;
+
+        DWRITE_TEXT_ALIGNMENT _TextAlignment;
     };
 
     std::vector<Label> _Labels;
 
     Style * _TextStyle;
     Style * _LineStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 };
 
 class GaugeNames : public Element
@@ -161,6 +170,8 @@ public:
     void Resize() noexcept;
     void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
 
+    bool IsVisible() const noexcept { return _TextStyle->IsEnabled(); }
+
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
@@ -180,6 +191,49 @@ private:
 
 private:
     Style * _TextStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+};
+
+class Gauges : public Element
+{
+public:
+    Gauges() { };
+
+    Gauges(const Gauges &) = delete;
+    Gauges & operator=(const Gauges &) = delete;
+    Gauges(Gauges &&) = delete;
+    Gauges & operator=(Gauges &&) = delete;
+
+    virtual ~Gauges() { }
+
+    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Reset();
+    void Move(const D2D1_RECT_F & rect);
+    void Resize() noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
+    void GetGaugeMetrics(GaugeMetrics & gaugeMetrics) const noexcept;
+
+private:
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
+
+private:
+    CComPtr<ID2D1Bitmap> _OpacityMask;
+
+    Style * _BackgroundStyle;
+
+    Style * _PeakStyle;
+    Style * _Peak0dBStyle;
+    Style * _MaxPeakStyle;
+
+    Style * _RMSStyle;
+    Style * _RMS0dBStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
@@ -208,51 +262,10 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
-
-    void RenderGauges(ID2D1RenderTarget * renderTarget) const noexcept;
-
-    void GetGaugeMetrics() noexcept;
-
-//#define _DEBUG_RENDER
-
-#ifdef _DEBUG_RENDER
-    void DrawDebugRectangle(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & rect, const D2D1_COLOR_F & color) const noexcept
-    {
-        _DebugBrush->SetColor(color); renderTarget->DrawRectangle(rect, _DebugBrush);
-    }
-#endif
-
-private:
-    #pragma region Gauges
-
     GaugeMetrics _GaugeMetrics;
 
-    D2D1_RECT_F _GBounds;   // Gauge bounds
-    D2D1_SIZE_F _GSize;     // Gauge size
-
-    #pragma endregion
-
+    Gauges      _Gauges;
     GaugeScales _GaugeScales;
-    GaugeNames _GaugeNames;
-    RMSReadOut _RMSReadOut;
-
-    #pragma region Styling
-
-    CComPtr<ID2D1Bitmap> _OpacityMask;
-
-#ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-#endif
-
-    Style * _BackgroundStyle;
-
-    Style * _PeakStyle;
-    Style * _Peak0dBStyle;
-    Style * _MaxPeakStyle;
-
-    Style * _RMSStyle;
-    Style * _RMS0dBStyle;
-
-    #pragma endregion
+    GaugeNames  _GaugeNames;
+    RMSReadOut  _RMSReadOut;
 };

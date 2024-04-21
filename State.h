@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.20) P. Stuer **/
+/** $VER: State.h (2024.04.21) P. Stuer **/
 
 #pragma once
 
@@ -216,8 +216,6 @@ public:
                 bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
                 double _RMSWindow;                                      // Duration of the RMS window, in seconds.
                 FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
-                bool _PeakText;                                         // True if the peak reading should be displayed as text.
-                bool _RMSReadOut;                                          // True if the RMS reading should be displayed as text.
 
             #pragma endregion
 

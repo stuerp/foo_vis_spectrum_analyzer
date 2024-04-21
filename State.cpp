@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.20) P. Stuer **/
+/** $VER: State.cpp (2024.04.21) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -228,8 +228,6 @@ void State::Reset() noexcept
     _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
     _GaugeGap = 1.f; // pixels
-    _PeakText = true;
-    _RMSReadOut = true;
 
     _StyleManager.Reset();
 
@@ -472,8 +470,6 @@ State & State::operator=(const State & other)
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
     _GaugeGap = other._GaugeGap;
-    _PeakText = other._PeakText;
-    _RMSReadOut = other._RMSReadOut;
 
     #pragma endregion
 
