@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.04.14) P. Stuer **/
+/** $VER: framework.h (2024.04.22) P. Stuer **/
 
 #pragma once
 
@@ -48,3 +48,20 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
 #endif
 
+/// <summary>
+/// A more sane way of representing a rectangle
+/// </summary>
+struct BOUNDS
+{
+    operator D2D1_RECT_F () const noexcept
+    {
+        return { x1, y1, x2, y2 };
+    }
+
+    D2D1_SIZE_F Size() const noexcept { return { std::abs(x1 - x2), std::abs(y1 - y2) }; }
+
+    FLOAT x1;
+    FLOAT y1;
+    FLOAT x2;
+    FLOAT y2;
+};
