@@ -1,5 +1,5 @@
 ﻿
-/** $VER: GraphSettings.h (2024.04.16) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.04.22) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -39,6 +39,8 @@ private:
     void Initialize()
     {
         _Channels = (uint32_t) Channel::ConfigStereo;
+        _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
+
         _FlipHorizontally = false;
         _FlipVertically = false;
 
@@ -71,7 +73,10 @@ private:
 
 public:
     std::wstring _Description;
+
     uint32_t _Channels;
+    uint32_t _ChannelPairs;
+
     bool _FlipHorizontally;
     bool _FlipVertically;
 

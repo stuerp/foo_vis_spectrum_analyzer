@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.20) P. Stuer **/
+/** $VER: Constans.h (2024.04.22) P. Stuer **/
 
 #pragma once
 
@@ -267,6 +267,7 @@ enum class VisualizationType
     Curve = 1,
     Spectogram = 2,
     PeakMeter = 3,
+    CorrelationMeter = 4,
 };
 
 enum class PeakMode
@@ -425,20 +426,24 @@ enum class Channel : uint32_t
     FrontCenter = 1 << 2,
 
     LFE = 1 << 3,
+
     BackLeft = 1 << 4,
     BackRight = 1 << 5,
 
     FrontCenterLeft = 1 << 6,
     FrontCenterRight = 1 << 7,
+
     BackCenter = 1 << 8,
 
     SideLeft = 1 << 9,
     SideRight = 1 << 10,
 
     TopCenter = 1 << 11,
+
     TopFrontLeft = 1 << 12,
     TopFrontCenter = 1 << 13,
     TopFrontRight = 1 << 14,
+
     TopBackLeft = 1 << 15,
     TopBackCenter = 1 << 16,
     TopBackRight = 1 << 17,
@@ -463,6 +468,18 @@ enum class Channel : uint32_t
 };
 
 inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
+
+enum class ChannelPair : uint32_t
+{
+    FrontLeftRight,//      = (uint32Channel::FrontLeft       | Channel::FrontRight,
+    BackLeftRight,//        = Channel::BackLeft        | Channel::BackRight,
+
+    FrontCenterLeftRight,// = Channel::FrontCenterLeft | Channel::FrontCenterRight,
+    SideLeftRight,//        = Channel::SideLeft        | Channel::SideRight,
+
+    TopFrontLeftRight,//    = Channel::TopFrontLeft    | Channel::TopFrontRight,
+    TopBackLeftRight,//     = Channel::TopBackLeft     | Channel::TopBackRight,
+};
 
 enum class HorizontalAlignment : uint32_t
 {

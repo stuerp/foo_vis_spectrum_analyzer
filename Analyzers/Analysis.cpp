@@ -118,7 +118,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
         // From here one CurValue is guaranteed in the range 0.0 .. 1.0
     }
     else
-        GetMeterValues(chunk);
+        GetGaugeValues(chunk);
 }
 
 /// <summary>
@@ -602,9 +602,9 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 #pragma region Peak Meter
 
 /// <summary>
-/// Gets the Peak and RMS level (Root Mean Square level) values of each channel.
+/// Gets the Peak and RMS level (Root Mean Square level) values of each selected channel.
 /// </summary>
-void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
+void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Samples = chunk.get_data();
     const size_t SampleCount = chunk.get_sample_count();
@@ -639,8 +639,8 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
     }
     else
     {
-        for (auto & mv : _GaugeValues)
-            mv.Peak = -std::numeric_limits<double>::infinity();
+        for (auto & gv : _GaugeValues)
+            gv.Peak = -std::numeric_limits<double>::infinity();
     }
 
     // Make sure the vector is large enough to hold a value for each selected channel.
@@ -656,6 +656,9 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
 
         return;
     }
+
+    _Mid = 0.;
+    _Side = 0.;
 
     const audio_sample * EndOfChunk = Samples + SampleCount;
 
@@ -673,13 +676,19 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             {
                 if ((SelectedChannels & 1) && (i < _GaugeValues.size()))
                 {
-                    auto av = &_GaugeValues[i++];
+                    auto gv = &_GaugeValues[i++];
 
                     const double Value = std::abs((double) *s);
 
-                    av->Peak = std::max(Value, av->Peak);
-                    av->RMSTotal += Value * Value;
+                    gv->Peak = std::max(Value, gv->Peak);
+                    gv->RMSTotal += Value * Value;
                 }
+
+                if (ChunkChannels & (uint32_t) Channel::FrontLeft)
+                    _Sample1 = *s;
+
+                if (ChunkChannels & (uint32_t) Channel::FrontRight)
+                    _Sample2 = *s;
 
                 s++;
             }
@@ -687,7 +696,18 @@ void Analysis::GetMeterValues(const audio_chunk & chunk) noexcept
             ChunkChannels    >>= 1;
             SelectedChannels >>= 1;
         }
+
+        const double Mid  = (_Sample1 + _Sample2) / 2.;
+        const double Side = (_Sample1 - _Sample2) / 2.;
+
+        _Mid  += Mid  * Mid;
+        _Side += Side * Side;
     }
+
+    const double SamplesPerChannel = (double) chunk.get_sample_count() / (double) chunk.get_channel_count();
+
+    _Mid  = std::sqrt(_Mid  / SamplesPerChannel);
+    _Side = std::sqrt(_Side / SamplesPerChannel);
 
     // Normalize and smooth the values.
     for (auto & gv : _GaugeValues)

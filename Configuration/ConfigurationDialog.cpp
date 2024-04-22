@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.22) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -1013,7 +1013,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter", L"Correlation Meter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);

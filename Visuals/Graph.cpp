@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.04.22) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -39,6 +39,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _Spectrum.Initialize(state, settings, &_Analysis);
     _Spectogram.Initialize(state, settings, &_Analysis);
     _PeakMeter.Initialize(state, settings, &_Analysis);
+    _CorrelationMeter.Initialize(state, settings, &_Analysis);
 }
 
 /// <summary>
@@ -53,6 +54,7 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     _Spectrum.Move(cr);
     _Spectogram.Move(cr);
     _PeakMeter.Move(cr);
+    _CorrelationMeter.Move(cr);
 }
 
 /// <summary>
@@ -86,6 +88,7 @@ void Graph::Reset()
     _Spectrum.Reset();
     _Spectogram.Reset();
     _PeakMeter.Reset();
+    _CorrelationMeter.Reset();
 }
 
 /// <summary>
@@ -183,6 +186,12 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
             _PeakMeter.Render(renderTarget);
             break;
         }
+
+        case VisualizationType::CorrelationMeter:
+        {
+            _CorrelationMeter.Render(renderTarget);
+            break;
+        }
     }
 }
 
@@ -247,6 +256,8 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 /// </summary>
 void Graph::ReleaseDeviceSpecificResources() noexcept
 {
+    _CorrelationMeter.ReleaseDeviceSpecificResources();
+
     _PeakMeter.ReleaseDeviceSpecificResources();
 
     _Spectogram.ReleaseDeviceSpecificResources();

@@ -88,7 +88,7 @@ private:
     void GenerateAveePlayerFrequencyBands();
 
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
-    void GetMeterValues(const audio_chunk & chunk) noexcept;
+    void GetGaugeValues(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -137,6 +137,13 @@ public:
     AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
 
     FrequencyBands _FrequencyBands;
+
+    // Correlation Meter
+    double _Sample1;
+    double _Sample2;
+
+    double _Mid;
+    double _Side;
 
 private:
     const double Amax = M_SQRT1_2;
