@@ -40,7 +40,7 @@ void RMSReadOut::Reset()
 /// </summary>
 void RMSReadOut::Resize() noexcept
 {
-    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
     _IsResized = false;
@@ -63,7 +63,7 @@ void RMSReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & g
 }
 
 /// <summary>
-/// Render the RMS read out.
+/// Render this instance horizontally.
 /// </summary>
 void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
 {
@@ -102,7 +102,7 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 }
 
 /// <summary>
-/// Render the RMS read out.
+/// Render this instance vertically.
 /// </summary>
 void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
 {

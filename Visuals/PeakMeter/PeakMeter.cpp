@@ -45,11 +45,11 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 
-    _Gauges.SetBounds(rect);
-    _GaugeNames.SetBounds(rect);
-    _GaugeScales.SetBounds(rect);
-    _RMSReadOut.SetBounds(rect);
-    _PeakReadOut.SetBounds(rect);
+    _Gauges.Move(rect);
+    _GaugeNames.Move(rect);
+    _GaugeScales.Move(rect);
+    _RMSReadOut.Move(rect);
+    _PeakReadOut.Move(rect);
 }
 
 /// <summary>
@@ -71,23 +71,35 @@ void PeakMeter::Reset()
 /// </summary>
 void PeakMeter::Resize() noexcept
 {
-    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
     D2D1_RECT_F Rect = _Bounds;
 
-    // Gauge Name metrics
+    // Gauge names metrics
     {
         if (_State->_HorizontalPeakMeter)
-            Rect.bottom -= (FLOAT) (_GraphSettings->_YAxisLeft + _GraphSettings->_YAxisRight) * _GaugeScales.GetTextHeight();
+        {
+            if (_GraphSettings->_YAxisLeft)
+                Rect.bottom -= (FLOAT) _GaugeScales.GetTextHeight();
+
+            if (_GraphSettings->_YAxisRight)
+                Rect.bottom -= (FLOAT) _GaugeScales.GetTextHeight();
+        }
         else
-            Rect.right  -= (FLOAT) (_GraphSettings->_YAxisLeft + _GraphSettings->_YAxisRight) * _GaugeScales.GetTextWidth();
+        {
+            if (_GraphSettings->_YAxisLeft)
+                Rect.right  -= (FLOAT) _GaugeScales.GetTextWidth();
+
+            if (_GraphSettings->_YAxisRight)
+                Rect.right  -= (FLOAT) _GaugeScales.GetTextWidth();
+        }
 
         _GaugeNames.SetBounds(Rect);
         _GaugeNames.Resize();
     }
 
-    // RMS Read Out metrics
+    // RMS read out metrics
     {
         if (_State->_HorizontalPeakMeter)
         {
@@ -99,7 +111,7 @@ void PeakMeter::Resize() noexcept
         _RMSReadOut.Resize();
     }
 
-    // Peak Read Out metrics
+    // Peak read out metrics
     {
         if (_State->_HorizontalPeakMeter)
         {
@@ -111,7 +123,7 @@ void PeakMeter::Resize() noexcept
         _PeakReadOut.Resize();
     }
 
-    // Gauge scale metrics
+    // Gauge scales metrics
     {
         Rect = _Bounds;
 
@@ -203,22 +215,92 @@ void PeakMeter::Resize() noexcept
         _Gauges.Resize();
     }
 
-    _IsResized = false;
-}
-
-/// <summary>
-/// Renders this instance.
-/// </summary>
-void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
-{
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
-
-    if (!SUCCEEDED(hr))
+    // Don't continue the resize operation until the gauge metrics have been calculated.
+    if (!_Gauges.GetGaugeMetrics(_GaugeMetrics))
         return;
 
-    _Gauges.GetGaugeMetrics(_GaugeMetrics);
+    // Gauge names transform
+    {
+        FLOAT dx = 0.f;
+        FLOAT dy = 0.f;
 
-    // Render the gauge scales.
+        if (_State->_HorizontalPeakMeter)
+        {
+            if (_GraphSettings->_YAxisLeft)
+                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
+        }
+        else
+        {
+            if (_GraphSettings->_YAxisLeft)
+                dx += (_GraphSettings->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+        }
+
+        _GaugeNamesTransform = D2D1::Matrix3x2F::Translation(dx, dy);
+    }
+
+    // RMS read out transform
+    {
+        FLOAT dx = 0.f;
+        FLOAT dy = 0.f;
+
+        if (_State->_HorizontalPeakMeter)
+        {
+            if (_GraphSettings->_FlipHorizontally)
+                dx = GetWidth() - _RMSReadOut.GetTextWidth();
+
+            if (_GraphSettings->_XAxisBottom)
+                dx += _GraphSettings->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
+
+            if (_GraphSettings->_YAxisLeft)
+                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
+        }
+        else
+        {
+            if (_GraphSettings->_YAxisLeft)
+                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+
+            if (_GraphSettings->_XAxisBottom)
+                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
+        }
+
+        _RMSReadOutTransform = D2D1::Matrix3x2F::Translation(dx, dy);
+    }
+
+    // Peak read out transform
+    {
+        FLOAT dx = 0.f;
+        FLOAT dy = 0.f;
+
+        if (_State->_HorizontalPeakMeter)
+        {
+            if (_GraphSettings->_FlipHorizontally)
+                dx = GetWidth() - _PeakReadOut.GetTextWidth();
+
+            if (_GraphSettings->_XAxisBottom)
+                dx += _GraphSettings->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
+
+            if (_RMSReadOut.IsVisible())
+                dx += _GraphSettings->_FlipHorizontally ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
+
+            if (_GraphSettings->_YAxisLeft)
+                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
+        }
+        else
+        {
+            if (_GraphSettings->_YAxisLeft)
+                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
+
+            if (_GraphSettings->_XAxisBottom)
+                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
+
+            if (_RMSReadOut.IsVisible())
+                dy += _GraphSettings->_FlipVertically ? _RMSReadOut.GetTextHeight() : -_RMSReadOut.GetTextHeight();
+        }
+
+        _PeakReadOutTransform = D2D1::Matrix3x2F::Translation(dx, dy);
+    }
+
+    // Gauge scales transform
     {
         // Translate from client coordinates to element coordinates.
         FLOAT dx = 0.f;
@@ -266,26 +348,19 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
             }
         }
 
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
-
-        renderTarget->SetTransform(Translate);
-
-        _GaugeScales.Render(renderTarget);
+        _GaugeScalesTransform = D2D1::Matrix3x2F::Translation(dx, dy);
     }
 
-    // Render the gauges.
+    // Gauge transform
     {
         // Translate from client coordinates to element coordinates.
-        D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
+        D2D1::Matrix3x2F Transform = (_GraphSettings->_FlipHorizontally) ? D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f) : D2D1::Matrix3x2F::Identity();
 
         FLOAT dx = 0.f;
         FLOAT dy = 0.f;
 
         if (_State->_HorizontalPeakMeter)
         {
-            if (_GraphSettings->_FlipHorizontally)
-                Transform =  D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f);
-
             if (_GraphSettings->_FlipVertically)
                 Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
 
@@ -306,9 +381,6 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
         }
         else
         {
-            if (_GraphSettings->_FlipHorizontally)
-                Transform =  D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f);
-
             if (!_GraphSettings->_FlipVertically)
                 Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
 
@@ -327,100 +399,53 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
 
         D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
 
-        renderTarget->SetTransform(Transform * Translate);
+        _GaugesTransform = Transform * Translate;
+    }
+
+    _IsResized = false;
+}
+
+/// <summary>
+/// Renders this instance.
+/// </summary>
+void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
+{
+    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+
+    if (!SUCCEEDED(hr))
+        return;
+
+    // Render the gauge scales.
+    {
+        renderTarget->SetTransform(_GaugeScalesTransform);
+
+        _GaugeScales.Render(renderTarget);
+    }
+
+    // Render the gauges.
+    {
+        renderTarget->SetTransform(_GaugesTransform);
 
         _Gauges.Render(renderTarget, _GaugeMetrics);
     }
 
     // Render the gauge names.
     {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphSettings->_YAxisLeft)
-                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphSettings->_YAxisLeft)
-                dx += (_GraphSettings->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
-
-        renderTarget->SetTransform(Translate);
+        renderTarget->SetTransform(_GaugeNamesTransform);
 
         _GaugeNames.Render(renderTarget, _GaugeMetrics);
     }
 
     // Render the RMS read out.
     {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphSettings->_FlipHorizontally)
-                dx = GetWidth() - _RMSReadOut.GetTextWidth();
-
-            if (_GraphSettings->_XAxisBottom)
-                dx += _GraphSettings->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
-
-            if (_GraphSettings->_YAxisLeft)
-                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphSettings->_YAxisLeft)
-                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-
-            if (_GraphSettings->_XAxisBottom)
-                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
-
-        renderTarget->SetTransform(Translate);
+        renderTarget->SetTransform(_RMSReadOutTransform);
 
         _RMSReadOut.Render(renderTarget, _GaugeMetrics);
     }
 
-    // Render the Peak read out.
+    // Render the peak read out.
     {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphSettings->_FlipHorizontally)
-                dx = GetWidth() - _PeakReadOut.GetTextWidth();
-
-            if (_GraphSettings->_XAxisBottom)
-                dx += _GraphSettings->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
-
-            if (_RMSReadOut.IsVisible())
-                dx += _GraphSettings->_FlipHorizontally ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
-
-            if (_GraphSettings->_YAxisLeft)
-                dy += (_GraphSettings->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphSettings->_YAxisLeft)
-                dx += _GraphSettings->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-
-            if (_GraphSettings->_XAxisBottom)
-                dy += _GraphSettings->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
-
-            if (_RMSReadOut.IsVisible())
-                dy += _GraphSettings->_FlipVertically ? _RMSReadOut.GetTextHeight() : -_RMSReadOut.GetTextHeight();
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
-
-        renderTarget->SetTransform(Translate);
+        renderTarget->SetTransform(_PeakReadOutTransform);
 
         _PeakReadOut.Render(renderTarget, _GaugeMetrics);
     }

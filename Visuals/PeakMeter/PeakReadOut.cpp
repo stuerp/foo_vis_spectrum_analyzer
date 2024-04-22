@@ -40,7 +40,7 @@ void PeakReadOut::Reset()
 /// </summary>
 void PeakReadOut::Resize() noexcept
 {
-    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
     _IsResized = false;
@@ -63,13 +63,13 @@ void PeakReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & 
 }
 
 /// <summary>
-/// Render the RMS read out.
+/// Render this instance horizontally.
 /// </summary>
 void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.top = _GraphSettings->_FlipVertically ? _Size.height : 0.f;
+    Rect.top = _GraphSettings->_FlipVertically ? GetHeight() : 0.f;
 
     const FLOAT dy = _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
 
@@ -78,7 +78,7 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
 
     for (const auto & gv : _Analysis->_GaugeValues)
     {
-        Rect.bottom = std::clamp(Rect.top + dy, 0.f, _Size.height);
+        Rect.bottom = std::clamp(Rect.top + dy, 0.f, GetHeight());
 
         // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
@@ -102,13 +102,13 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
 }
 
 /// <summary>
-/// Render the RMS read out.
+/// Render this instance vertically.
 /// </summary>
 void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.left = _GraphSettings->_FlipHorizontally ? _Size.width: 0.f;
+    Rect.left = _GraphSettings->_FlipHorizontally ? GetWidth(): 0.f;
 
     const FLOAT dx = _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
 
@@ -117,7 +117,7 @@ void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMe
 
     for (const auto & gv : _Analysis->_GaugeValues)
     {
-        Rect.right = std::clamp(Rect.left + dx, 0.f, _Size.width);
+        Rect.right = std::clamp(Rect.left + dx, 0.f, GetWidth());
 
         if (_TextStyle->IsEnabled())
         {
@@ -132,7 +132,7 @@ void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMe
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
- //         renderTarget->FillRectangle(Rect, _DebugBrush);
+//          renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 

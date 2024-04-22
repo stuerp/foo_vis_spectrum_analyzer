@@ -55,4 +55,10 @@ private:
     GaugeNames  _GaugeNames;
     RMSReadOut  _RMSReadOut;
     PeakReadOut _PeakReadOut;
+
+    D2D1::Matrix3x2F _GaugesTransform;
+    D2D1::Matrix3x2F _GaugeScalesTransform;
+    D2D1::Matrix3x2F _GaugeNamesTransform;
+    D2D1::Matrix3x2F _RMSReadOutTransform;
+    D2D1::Matrix3x2F _PeakReadOutTransform;
 };

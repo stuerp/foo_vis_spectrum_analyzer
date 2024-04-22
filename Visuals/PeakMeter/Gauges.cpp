@@ -417,11 +417,14 @@ HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Gets the metrics used to render the gauges.
 /// </summary>
-void Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
+bool Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
 {
-    gm._dBFSZero = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
-
     const FLOAT n = (FLOAT) _Analysis->_GaugeValues.size();
+
+    if (n == 0)
+        return false;
+
+    gm._dBFSZero = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
 
     gm._TotalBarGap = _State->_GaugeGap * (FLOAT) (n - 1);
     gm._TickSize = 4.f;
@@ -434,4 +437,6 @@ void Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
     gm._TotalBarWidth  = (gm._BarWidth  * n) + gm._TotalBarGap;
 
     gm._Offset = _State->_HorizontalPeakMeter ? ::floor((GetHeight() - gm._TotalBarHeight) / 2.f): ::floor((GetWidth() - gm._TotalBarWidth) / 2.f);
+
+    return true;
 }

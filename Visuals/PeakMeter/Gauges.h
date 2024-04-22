@@ -41,7 +41,7 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
-    void GetGaugeMetrics(GaugeMetrics & gaugeMetrics) const noexcept;
+    bool GetGaugeMetrics(GaugeMetrics & gaugeMetrics) const noexcept;
 
 private:
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
