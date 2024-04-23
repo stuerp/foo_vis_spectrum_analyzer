@@ -704,7 +704,8 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
         _Side += Side * Side;
     }
 
-    const double SamplesPerChannel = (double) chunk.get_sample_count() / (double) chunk.get_channel_count();
+    const size_t SamplesPerChannel = SampleCount / chunk.get_channel_count();
+    const double ChunkDuration = chunk.get_duration();
 
     _Mid  = std::sqrt(_Mid  / SamplesPerChannel);
     _Side = std::sqrt(_Side / SamplesPerChannel);
@@ -716,8 +717,8 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
         gv.Peak       = ToDecibel(gv.Peak);
         gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
 
-        gv.RMSTimeElapsed += (double) SampleCount / chunk.get_sample_rate();
-        gv.RMSSampleCount += SampleCount / chunk.get_channel_count();
+        gv.RMSTimeElapsed += ChunkDuration;
+        gv.RMSSampleCount += SamplesPerChannel;
 
         if (gv.RMSTimeElapsed > _State->_RMSWindow)
         {
