@@ -685,10 +685,10 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
                 }
 
                 if (ChunkChannels & (uint32_t) Channel::FrontLeft)
-                    _Sample1 = *s;
+                    _LeftSample = *s;
 
                 if (ChunkChannels & (uint32_t) Channel::FrontRight)
-                    _Sample2 = *s;
+                    _RightSample = *s;
 
                 s++;
             }
@@ -697,8 +697,8 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
             SelectedChannels >>= 1;
         }
 
-        const double Mid  = (_Sample1 + _Sample2) / 2.;
-        const double Side = (_Sample1 - _Sample2) / 2.;
+        const double Mid  = (_LeftSample + _RightSample) / 2.;
+        const double Side = (_LeftSample - _RightSample) / 2.;
 
         _Mid  += Mid  * Mid;
         _Side += Side * Side;

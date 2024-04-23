@@ -139,8 +139,8 @@ public:
     FrequencyBands _FrequencyBands;
 
     // Correlation Meter
-    double _Sample1;
-    double _Sample2;
+    double _LeftSample;
+    double _RightSample;
 
     double _Mid;
     double _Side;
