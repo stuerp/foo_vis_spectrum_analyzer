@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.18) P. Stuer **/
+/** $VER: Analysis.h (2024.04.23) P. Stuer **/
 
 #pragma once
 
@@ -34,8 +34,8 @@ struct GaugeValue
 
     void Reset() noexcept
     {
-        RMSTime = 0.;
-        RMSSamples = 0;
+        RMSTimeElapsed = 0.;
+        RMSSampleCount = 0;
         RMSTotal = 0.;
     }
 
@@ -47,8 +47,8 @@ struct GaugeValue
     double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMSTime;         // Time elapsed in the current RMS window (in seconds).
-    size_t RMSSamples;      // Number of samples used in the current RMS window.
+    double RMSTimeElapsed;  // Elapsed time in the current RMS window (in seconds).
+    size_t RMSSampleCount;  // Number of samples used in the current RMS window.
     double RMSTotal;        // RMS value for the current RMS window.
 
     double Mid;             // in dBFS
