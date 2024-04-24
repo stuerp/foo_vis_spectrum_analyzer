@@ -87,6 +87,14 @@ void CorrelationMeter::Render(ID2D1RenderTarget * renderTarget)
 //      _Gauges.Render(renderTarget, _GaugeMetrics);
     }
 
+    FLOAT x = (GetWidth() / 2.f) + ((FLOAT) _Analysis->_Balance * GetWidth());
+
+    renderTarget->DrawLine({ x, 0.f }, { x, GetHeight() / 2.f }, _DebugBrush, 4.f);
+
+    x = (GetWidth() / 2.f) + ((FLOAT) _Analysis->_Phase * GetWidth());
+
+    renderTarget->DrawLine({ x, GetHeight() / 2.f }, { x, GetHeight() }, _DebugBrush, 4.f);
+
     ResetTransform(renderTarget);
 }
 
@@ -100,6 +108,11 @@ HRESULT CorrelationMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * rend
 //    if (SUCCEEDED(hr))
 //        hr = _Gauges.CreateDeviceSpecificResources(renderTarget);
 
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
+
     if (SUCCEEDED(hr))
         Resize();
 
@@ -112,4 +125,5 @@ HRESULT CorrelationMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * rend
 void CorrelationMeter::ReleaseDeviceSpecificResources() noexcept
 {
 //    _Gauges.ReleaseDeviceSpecificResources();
+    _DebugBrush.Release();
 }

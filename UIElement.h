@@ -61,7 +61,7 @@ private:
 
     void ProcessEvents();
     void Render();
-    void UpdateSpectrum();
+    void Process();
     void UpdatePeakIndicators();
 
     #pragma region Timer

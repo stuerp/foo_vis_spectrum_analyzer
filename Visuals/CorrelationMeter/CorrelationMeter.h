@@ -43,4 +43,8 @@ public:
 private:
 //  Gauges      _Gauges;
 //  D2D1::Matrix3x2F _GaugesTransform;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 };

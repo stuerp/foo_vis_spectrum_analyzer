@@ -171,7 +171,7 @@ void UIElement::Render()
     {
         _FrameCounter.NewFrame();
 
-        UpdateSpectrum();
+        Process();
 
         _RenderTarget->BeginDraw();
 
@@ -197,7 +197,7 @@ void UIElement::Render()
 /// <summary>
 /// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
-void UIElement::UpdateSpectrum()
+void UIElement::Process()
 {
     double PlaybackTime; // in seconds
 

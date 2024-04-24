@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.23) P. Stuer **/
+/** $VER: Analysis.h (2024.04.24) P. Stuer **/
 
 #pragma once
 
@@ -34,25 +34,18 @@ struct GaugeValue
 
     void Reset() noexcept
     {
-        RMSTimeElapsed = 0.;
-        RMSSampleCount = 0;
         RMSTotal = 0.;
     }
 
     std::wstring Name;
+
+    double RMSTotal;        // RMS value for the current RMS window.
 
     double Peak;            // in dBFS
     double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
     double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-
-    double RMSTimeElapsed;  // Elapsed time in the current RMS window (in seconds).
-    size_t RMSSampleCount;  // Number of samples used in the current RMS window.
-    double RMSTotal;        // RMS value for the current RMS window.
-
-    double Mid;             // in dBFS
-    double Side;            // in dBFS
 
     double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
     double HoldTime;        // Time to hold the current max value.
@@ -138,12 +131,19 @@ public:
 
     FrequencyBands _FrequencyBands;
 
-    // Correlation Meter
-    double _LeftSample;
-    double _RightSample;
+    // Peak Meter
+    double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
+    size_t _RMSSampleCount; // Number of samples used in the current RMS window.
 
-    double _Mid;
-    double _Side;
+    // Balance Meter
+    double _Left;           // in dBFS
+    double _Right;          // in dBFS
+
+    double _Mid;            // in dBFS
+    double _Side;           // in dBFS
+
+    double _Balance;        // -1.0 .. 1.0
+    double _Phase;          // -1.0 .. 1.0
 
 private:
     const double Amax = M_SQRT1_2;
