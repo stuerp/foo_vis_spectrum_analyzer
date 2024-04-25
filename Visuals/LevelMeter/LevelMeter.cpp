@@ -17,6 +17,10 @@ LevelMeter::LevelMeter()
     _Bounds = { };
     _Size = { };
 
+    _LeftRightStyle =
+    _MidSideStyle =
+    _AxisStyle =  nullptr;
+
     Reset();
 }
 

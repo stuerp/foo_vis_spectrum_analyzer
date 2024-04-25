@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.24) P. Stuer **/
+/** $VER: Analysis.h (2024.04.25) P. Stuer **/
 
 #pragma once
 
@@ -59,7 +59,7 @@ struct GaugeValue
 class Analysis
 {
 public:
-    Analysis() { };
+    Analysis() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(), _Phase() { };
 
     Analysis(const Analysis &) = delete;
     Analysis & operator=(const Analysis &) = delete;
