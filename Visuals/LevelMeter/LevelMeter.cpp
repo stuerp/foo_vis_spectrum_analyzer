@@ -139,6 +139,68 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
             renderTarget->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
         }
     }
+    else
+    {
+        // Render the gauges.
+        {
+            FLOAT y = (FLOAT) _Analysis->_Balance * GetHeight();
+
+            if (_LeftRightStyle->IsEnabled())
+            {
+                D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
+
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _LeftRightStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+
+            y = (FLOAT) _Analysis->_Phase * GetHeight();
+
+            if (_MidSideStyle->IsEnabled())
+            {
+                D2D1_RECT_F Rect = { CenterX + 2.f, CenterY, GetWidth() - 2.f, y };
+
+                if (!_State->_LEDMode)
+                    renderTarget->FillRectangle(Rect, _MidSideStyle->_Brush);
+                else
+                    renderTarget->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+        }
+
+        // Render the axis.
+        if (_AxisStyle->IsEnabled())
+        {
+            renderTarget->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+
+            D2D1_RECT_F Rect = { 2.f, 4.f, CenterX - 2.f, GetHeight() - 4.f };
+
+            {
+                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+                renderTarget->DrawText(L"L", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
+                renderTarget->DrawText(L"R", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+
+            {
+                Rect.left  = CenterX    + 2.f;
+                Rect.right = GetWidth() - 2.f;
+
+                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+                renderTarget->DrawText(L"S", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
+                renderTarget->DrawText(L"M", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+
+            renderTarget->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+        }
+    }
 
     if (_State->_LEDMode)
         renderTarget->SetAntialiasMode(OldAntialiasMode);

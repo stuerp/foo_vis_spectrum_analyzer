@@ -80,7 +80,7 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
     {
         Rect.bottom = std::clamp(Rect.top + dy, 0.f, GetHeight());
 
-        // Draw the RMS text display.
+        // Draw the peak text display.
         if (_TextStyle->IsEnabled())
         {
             Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f;
@@ -88,8 +88,8 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
 
             WCHAR Text[16];
 
-            if (::isfinite(gv.RMS))
-                ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS);
+            if (::isfinite(gv.Peak))
+                ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.Peak);
             else
                 ::wcscpy_s(Text, _countof(Text), L"-∞");
 
