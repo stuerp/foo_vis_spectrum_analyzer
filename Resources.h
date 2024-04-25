@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.17) P. Stuer **/
+/** $VER: Resources.h (2024.04.25) P. Stuer **/
 
 #pragma once
 
@@ -8,13 +8,13 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          6
-#define NUM_FILE_PRERELEASE     2
+#define NUM_FILE_PATCH          7
+#define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       6
-#define NUM_PRODUCT_PRERELEASE  2
+#define NUM_PRODUCT_PATCH       7
+#define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
 
@@ -406,6 +406,15 @@
 
 #define IDC_GAUGE_GAP_LBL               7174
 #define IDC_GAUGE_GAP                   7176
+
+// Level Meter
+
+#define IDC_LEVEL_METER                 7200
+
+#define IDC_CHANNEL_PAIRS_LBL           7202
+#define IDC_CHANNEL_PAIRS               7204
+
+#define IDC_HORIZONTAL_LEVEL_METER      7206
 
 #pragma endregion
 

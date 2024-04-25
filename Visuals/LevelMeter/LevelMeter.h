@@ -1,5 +1,5 @@
 
-/** $VER: CorrelationMeter.h (2024.04.22) P. Stuer - Represents a correlation meter. **/
+/** $VER: LevelMeter.h (2024.04.25) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -19,17 +19,17 @@
 
 #include "Element.h"
 
-class CorrelationMeter : public Element
+class LevelMeter : public Element
 {
 public:
-    CorrelationMeter();
+    LevelMeter();
 
-    CorrelationMeter(const CorrelationMeter &) = delete;
-    CorrelationMeter & operator=(const CorrelationMeter &) = delete;
-    CorrelationMeter(CorrelationMeter &&) = delete;
-    CorrelationMeter & operator=(CorrelationMeter &&) = delete;
+    LevelMeter(const LevelMeter &) = delete;
+    LevelMeter & operator=(const LevelMeter &) = delete;
+    LevelMeter(LevelMeter &&) = delete;
+    LevelMeter & operator=(LevelMeter &&) = delete;
 
-    virtual ~CorrelationMeter() { }
+    virtual ~LevelMeter() { }
 
     void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
     void Reset();
@@ -41,8 +41,14 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-//  Gauges      _Gauges;
-//  D2D1::Matrix3x2F _GaugesTransform;
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
+
+private:
+    CComPtr<ID2D1Bitmap> _OpacityMask;
+
+    Style * _LeftRightStyle;
+    Style * _MidSideStyle;
+    Style * _AxisStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

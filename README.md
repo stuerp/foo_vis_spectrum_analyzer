@@ -90,8 +90,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.7.7.x, 2024-04-xx
 
-* Peak Meter
-  * Added: Separate peak and RMS level read outs.
+* New: Left/Right and Mid/Side level meter.
+  * The left/right channel pair is selectable.
+* Added: Separate peak and RMS level read outs to the peak meter.
 
 v0.7.6.2, 2024-04-17
 

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.24) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.25) P. Stuer **/
 
 #include "framework.h"
 
@@ -125,7 +125,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
         }
   
         case VisualizationType::PeakMeter:
-        case VisualizationType::CorrelationMeter:
+        case VisualizationType::LevelMeter:
         {
             GetGaugeValues(chunk);
             break;
@@ -675,6 +675,18 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 
     audio_sample BalanceSamples[2] = { };
 
+    const uint32_t ChannelPairs[] =
+    {
+        (uint32_t) Channel::FrontLeft       | (uint32_t) Channel::FrontRight,
+        (uint32_t) Channel::BackLeft        | (uint32_t) Channel::BackRight,
+
+        (uint32_t) Channel::FrontCenterLeft | (uint32_t) Channel::FrontCenterRight,
+        (uint32_t) Channel::SideLeft        | (uint32_t) Channel::SideRight,
+
+        (uint32_t) Channel::TopFrontLeft    | (uint32_t) Channel::TopFrontRight,
+        (uint32_t) Channel::TopBackLeft     | (uint32_t) Channel::TopBackRight,
+    };
+
     const audio_sample * EndOfChunk = Samples + SampleCount;
 
     for (const audio_sample * Sample = Samples; Sample < EndOfChunk; Sample += chunk.get_channel_count())
@@ -686,7 +698,7 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 
         uint32_t ChunkChannels = chunk.get_channel_config();
         uint32_t SelectedChannels = _GraphSettings->_Channels;
-        uint32_t BalanceChannels = (uint32_t) Channel::FrontLeft | (uint32_t) Channel::FrontRight;
+        uint32_t BalanceChannels = ChannelPairs[(size_t) _State->_ChannelPair];
 
         while (ChunkChannels != 0)
         {
@@ -735,9 +747,14 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
         gv.Peak       = ToDecibel(gv.Peak);
         gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
+    }
 
-        if (_RMSTimeElapsed > _State->_RMSWindow)
+    // Determine the balance values.
+    if (_RMSTimeElapsed > _State->_RMSWindow)
+    {
+        for (auto & gv : _GaugeValues)
         {
+        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSSampleCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
@@ -746,22 +763,23 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
             // Reset the RMS window values.
             gv.Reset();
         }
-    }
 
-    // Balance calculations.
-    if (_RMSTimeElapsed > _State->_RMSWindow)
-    {
         _Left  = std::sqrt(_Left  / (double) _RMSSampleCount);
         _Right = std::sqrt(_Right / (double) _RMSSampleCount);
 
         _Mid   = std::sqrt(_Mid   / (double) _RMSSampleCount);
         _Side  = std::sqrt(_Side  / (double) _RMSSampleCount);
 
-        _Balance = (_Right - _Left) / std::max(_Left, _Right);
-        _Phase   = (_Mid   - _Side) / std::max(_Mid, _Side);
+        if (!std::isfinite(_Balance))
+            _Balance = 0.;
 
-//      Log::Write(Log::Level::Trace, "Balance %5.3f Phase %5.3f", _Balance, _Phase);
+        if (!std::isfinite(_Phase))
+            _Phase = 0.;
 
+        _Balance = SmoothValue(NormalizeLRMS((_Right - _Left) / std::max(_Left, _Right)), _Balance);
+        _Phase   = SmoothValue(NormalizeLRMS((_Mid   - _Side) / std::max(_Mid, _Side)), _Phase);
+
+        // Reset all window-dependent values.
         _RMSTimeElapsed = 0.;
         _RMSSampleCount = 0;
 

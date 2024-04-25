@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.04.20) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.04.25) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "framework.h"
 #include "StyleManager.h"
@@ -86,6 +86,10 @@ Style * StyleManager::GetStyleByIndex(int index)
         VisualElement::GaugeRMSLevelText,
 
         VisualElement::NyquistMarker,
+
+        VisualElement::GaugeLeftRight,
+        VisualElement::GaugeMidSide,
+        VisualElement::LevelMeterAxis,
     };
 
     assert((size_t) VisualElement::Count == _countof(IndexToId));

@@ -96,6 +96,12 @@ private:
         return std::clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
+    // Level Meter
+    double NormalizeLRMS(double level) const noexcept
+    {
+        return Map(level, -1., 1., 0., 1.);
+    }
+
     double SmoothValue(double value, double smoothedValue) const noexcept
     {
         switch (_State->_SmoothingMethod)
@@ -147,5 +153,5 @@ public:
 
 private:
     const double Amax = M_SQRT1_2;
-    const double dBCorrection = -20. * ::log10(Amax); // 3.01;
+    const double dBCorrection = -20. * ::log10(Amax); // 3.01 dB;
 };

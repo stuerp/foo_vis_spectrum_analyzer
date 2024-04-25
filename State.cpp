@@ -229,6 +229,9 @@ void State::Reset() noexcept
     _RMSWindow = .300; // seconds
     _GaugeGap = 1.f; // pixels
 
+    _ChannelPair = ChannelPair::FrontLeftRight;
+    _HorizontalLevelMeter = false;
+
     _StyleManager.Reset();
 
     pfc::string Path = core_api::get_profile_path();
@@ -240,7 +243,6 @@ void State::Reset() noexcept
 
     _Barrier = 0;
     _ActivePresetName.clear();
-
 }
 
 /// <summary>
@@ -470,6 +472,10 @@ State & State::operator=(const State & other)
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
     _GaugeGap = other._GaugeGap;
+
+    // Level Meter
+    _ChannelPair = other._ChannelPair;
+    _HorizontalLevelMeter = other._HorizontalLevelMeter;
 
     #pragma endregion
 
@@ -842,6 +848,12 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_GaugeGap, abortHandler);
             reader->read_object_t(_RMSPlus3, abortHandler);
         }
+
+        if (Version >= 27)
+        {
+            reader->read(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+            reader->read_object_t(_HorizontalLevelMeter, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1129,6 +1141,10 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         // Version 26, v0.7.6.0
         writer->write_object_t(_GaugeGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
+
+        // Version 27, v0.7.7.0
+        writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+        writer->write_object_t(_HorizontalLevelMeter, abortHandler);
     }
     catch (exception & ex)
     {

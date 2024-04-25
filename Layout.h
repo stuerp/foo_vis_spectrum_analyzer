@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.04.16) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.25) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1219,7 +1219,7 @@
     #define H_C16    H_CHB
     #define X_C16    X_B12 + 5
     #define Y_C16    Y_B12 + 11
- 
+
    // Checkbox: RMS +3
     #define W_C24    80
     #define H_C24    H_CHB
@@ -1260,6 +1260,35 @@
 
 #define W_B12  W_B08
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
+#pragma endregion
+
+#pragma region Level Meter
+// Groupbox
+#define X_B14   X_B13 + W_B13 + IX
+#define Y_B14   Y_B13
+
+    #pragma region Channel Pairs
+    // Label
+    #define W_C50    46
+    #define H_C50    H_LBL
+    #define X_C50    X_B14 + 5
+    #define Y_C50    Y_B14 + 11
+
+    // Combobox
+    #define W_C51    76
+    #define H_C51    H_CBX
+    #define X_C51    X_C50 + W_C50 + IX
+    #define Y_C51    Y_C50
+    #pragma endregion
+
+    // Checkbox: Horizontal
+    #define W_C52    60
+    #define H_C52    H_CHB
+    #define X_C52    X_C51
+    #define Y_C52    Y_C51 + H_C51 + IY
+
+#define W_B14  5 + W_C50 + IX + W_C51 + 5
+#define H_B14  11 + H_C51 + IY + H_C52 + 7
 #pragma endregion
 
 #pragma endregion

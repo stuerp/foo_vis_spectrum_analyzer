@@ -19,7 +19,7 @@
 #include "Spectrum.h"
 #include "Spectogram.h"
 #include "PeakMeter.h"
-#include "CorrelationMeter.h"
+#include "LevelMeter.h"
 
 #include "Log.h"
 
@@ -47,7 +47,7 @@ public:
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
     Spectogram & GetSpectogram() noexcept { return _Spectogram; }
     PeakMeter & GetPeakMeter() noexcept { return _PeakMeter; }
-    CorrelationMeter & GetCorrelationMeter() noexcept { return _CorrelationMeter; }
+    LevelMeter & GetCorrelationMeter() noexcept { return _CorrelationMeter; }
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -89,7 +89,7 @@ private:
     Spectrum _Spectrum;
     Spectogram _Spectogram;
     PeakMeter _PeakMeter;
-    CorrelationMeter _CorrelationMeter;
+    LevelMeter _CorrelationMeter;
 
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;

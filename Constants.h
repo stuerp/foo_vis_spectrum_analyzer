@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.22) P. Stuer **/
+/** $VER: Constans.h (2024.04.25) P. Stuer **/
 
 #pragma once
 
@@ -267,7 +267,7 @@ enum class VisualizationType
     Curve = 1,
     Spectogram = 2,
     PeakMeter = 3,
-    CorrelationMeter = 4,
+    LevelMeter = 4,
 };
 
 enum class PeakMode
@@ -352,7 +352,11 @@ enum class VisualElement : uint32_t
 
     NyquistMarker               = 15,
 
-    Count                       = 27
+    GaugeLeftRight              = 27,
+    GaugeMidSide                = 28,
+    LevelMeterAxis              = 29,
+
+    Count                       = 30
 };
 
 enum class ColorSource : uint32_t
@@ -471,14 +475,14 @@ inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
 
 enum class ChannelPair : uint32_t
 {
-    FrontLeftRight,//      = (uint32Channel::FrontLeft       | Channel::FrontRight,
-    BackLeftRight,//        = Channel::BackLeft        | Channel::BackRight,
+    FrontLeftRight = 0,
+    BackLeftRight,
 
-    FrontCenterLeftRight,// = Channel::FrontCenterLeft | Channel::FrontCenterRight,
-    SideLeftRight,//        = Channel::SideLeft        | Channel::SideRight,
+    FrontCenterLeftRight,
+    SideLeftRight,
 
-    TopFrontLeftRight,//    = Channel::TopFrontLeft    | Channel::TopFrontRight,
-    TopBackLeftRight,//     = Channel::TopBackLeft     | Channel::TopBackRight,
+    TopFrontLeftRight,
+    TopBackLeftRight,
 };
 
 enum class HorizontalAlignment : uint32_t

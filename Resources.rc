@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.04.16) P. Stuer **/
+/** $VER: Resources.rc (2024.04.25) P. Stuer **/
 
 #include "Resources.h"
 
@@ -340,6 +340,13 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         rtext       "Gauge gap:"                IDC_GAUGE_GAP_LBL,               X_C25, Y_C25 + 2, W_C25, H_C25
         edittext                                IDC_GAUGE_GAP,                   X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    groupbox "Level Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext       "Channel pairs:",               IDC_CHANNEL_PAIRS_LBL,          X_C50, Y_C50 + 2, W_C50, H_C50
+        combobox                                    IDC_CHANNEL_PAIRS,              X_C51, Y_C51,     W_C51, H_C51, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        control     "Horizontal",                   IDC_HORIZONTAL_LEVEL_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C52, Y_C52, W_C52, H_C52
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.21) P. Stuer **/
+/** $VER: State.h (2024.04.25) P. Stuer **/
 
 #pragma once
 
@@ -219,6 +219,13 @@ public:
 
             #pragma endregion
 
+            #pragma region Level Meter
+
+                ChannelPair _ChannelPair;
+                bool _HorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
+
+            #pragma endregion
+
         #pragma endregion
 
     #pragma endregion
@@ -324,5 +331,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 26;
+    const size_t _CurrentVersion = 27;
 };

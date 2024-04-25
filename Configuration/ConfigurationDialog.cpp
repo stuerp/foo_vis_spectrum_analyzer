@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.25) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -62,6 +62,10 @@ static const WCHAR * const VisualElementNames[] =
     L"Peak Meter RMS Level Read Out",
 
     L"Nyquist Frequency",
+
+    L"Left/Right Level",
+    L"Mid/Side Level",
+    L"Left/Side Axis",
 };
 
 /// <summary>
@@ -244,6 +248,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_RMS_WINDOW, L"Specifies the duration of each RMS measurement." },
             { IDC_GAUGE_GAP, L"Specifies the gap between the peak meter gauges (in pixels)." },
 
+            { IDC_CHANNEL_PAIRS, L"Determines which left and right channel will be displayed." },
+            { IDC_HORIZONTAL_LEVEL_METER, L"Renders the level meter horizontally." },
+
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
 
@@ -310,7 +317,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Visualization", L"Styles", L"Presets" })
+        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Visualization", L"Graphs", L"Styles", L"Presets" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -1013,7 +1020,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter", L"Correlation Meter" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter", L"Left/Right Mid/Side Meter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -1078,6 +1085,25 @@ void ConfigurationDialog::Initialize()
     }
     {
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAUGE_GAP)); _NumericEdits.push_back(ne);
+    }
+
+    #pragma endregion
+
+    #pragma region Level Meter
+
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"Front Left/Right", L"Back Left/Right", L"Front Center Left/Right", L"Side Left/Right", L"Top Front Left/Right", L"Top Back Left/Right" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_ChannelPair);
+    }
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
     }
 
     #pragma endregion
@@ -1452,6 +1478,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         }
 
         #pragma endregion
+
+        case IDC_CHANNEL_PAIRS:
+        {
+            _State->_ChannelPair = (ChannelPair) SelectedIndex;
+
+            UpdateVisualizationPage();
+            break;
+        }
 
         #pragma endregion
 
@@ -2299,6 +2333,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_HORIZONTAL_LEVEL_METER:
+        {
+            _State->_HorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2891,6 +2931,32 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
     static const int Page5[] =
     {
+        IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
+
+        IDC_PEAK_INDICATORS,
+            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
+            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
+
+        IDC_LEDS,
+            IDC_LED_MODE,
+            IDC_LED_SIZE_LBL, IDC_LED_SIZE,
+            IDC_LED_GAP_LBL, IDC_LED_GAP,
+
+        IDC_SPECTOGRAM,
+            IDC_SCROLLING_SPECTOGRAM,
+
+        IDC_PEAK_METER,
+            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
+            IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
+            IDC_GAUGE_GAP_LBL, IDC_GAUGE_GAP,
+
+        IDC_LEVEL_METER,
+            IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
+            IDC_HORIZONTAL_LEVEL_METER,
+    };
+
+    static const int Page6[] =
+    {
         IDC_GRAPH_SETTINGS,
 
             IDC_ADD_GRAPH, IDC_REMOVE_GRAPH, IDC_VERTICAL_LAYOUT,
@@ -2912,28 +2978,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_GAMMA_LBL, IDC_GAMMA,
 
         IDC_CHANNELS,
-    };
-
-    static const int Page6[] =
-    {
-        IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
-
-        IDC_PEAK_INDICATORS,
-            IDC_PEAK_MODE, IDC_PEAK_MODE_LBL,
-            IDC_HOLD_TIME, IDC_HOLD_TIME_LBL, IDC_ACCELERATION, IDC_ACCELERATION_LBL,
-
-        IDC_LEDS,
-            IDC_LED_MODE,
-            IDC_LED_SIZE_LBL, IDC_LED_SIZE,
-            IDC_LED_GAP_LBL, IDC_LED_GAP,
-
-        IDC_SPECTOGRAM,
-            IDC_SCROLLING_SPECTOGRAM,
-
-        IDC_PEAK_METER,
-            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
-            IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
-            IDC_GAUGE_GAP_LBL, IDC_GAUGE_GAP,
     };
 
     static const int Page7[] =
@@ -3202,6 +3246,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
     const bool IsSpectogram = (_State->_VisualizationType == VisualizationType::Spectogram);
     const bool IsPeakMeter = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter = (_State->_VisualizationType == VisualizationType::LevelMeter);
 
     GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
 
@@ -3210,7 +3255,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
 
-    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || IsPeakMeter;
+    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || IsPeakMeter || IsLevelMeter;
  
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
@@ -3227,6 +3272,10 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
 
     SetInteger(IDC_GAUGE_GAP, (int64_t) _State->_GaugeGap);
+
+    GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter);
+    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter);
+    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 }
 
 /// <summary>

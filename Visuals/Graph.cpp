@@ -187,7 +187,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
             break;
         }
 
-        case VisualizationType::CorrelationMeter:
+        case VisualizationType::LevelMeter:
         {
             _CorrelationMeter.Render(renderTarget);
             break;

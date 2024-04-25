@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.20) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.25) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -317,6 +317,31 @@ private:
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        // Level Meter
+        {
+            VisualElement::GaugeLeftRight,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugeMidSide,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::LevelMeterAxis,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f,
             }
         },
     };
