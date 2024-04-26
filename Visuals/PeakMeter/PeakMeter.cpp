@@ -215,6 +215,8 @@ void PeakMeter::Resize() noexcept
         _Gauges.Resize();
     }
 
+Log::Write(Log::Level::Trace, "Resize");
+
     // Don't continue the resize operation until the gauge metrics have been calculated.
     if (!_Gauges.GetGaugeMetrics(_GaugeMetrics))
         return;

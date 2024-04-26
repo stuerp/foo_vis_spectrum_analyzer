@@ -126,6 +126,7 @@ public:
     uint32_t _SampleRate;
     double _NyquistFrequency;
     std::vector<GaugeValue> _GaugeValues;
+    uint32_t _CurrentChannelMask;
 
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;

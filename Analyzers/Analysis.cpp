@@ -39,7 +39,7 @@ void Analysis::Initialize(const State * threadState, const GraphSettings * setti
             break;
     }
 
-    _GaugeValues.clear();
+    Reset();
 }
 
 /// <summary>
@@ -174,19 +174,24 @@ void Analysis::Reset()
         _WindowFunction = nullptr;
     }
 
-    _GaugeValues.clear();
+    {
+        _GaugeValues.clear();
+        _CurrentChannelMask = 0;
+    }
 
-    _RMSTimeElapsed = 0.;
-    _RMSSampleCount = 0;
+    {
+        _RMSTimeElapsed = 0.;
+        _RMSSampleCount = 0;
 
-    _Left  = 0.;
-    _Right = 0.;
+        _Left  = 0.;
+        _Right = 0.;
 
-    _Mid  = 0.;
-    _Side = 0.;
+        _Mid  = 0.;
+        _Side = 0.;
 
-    _Balance = 0.5;
-    _Phase   = 0.5;
+        _Balance = 0.5;
+        _Phase   = 0.5;
+    }
 }
 
 /// <summary>
@@ -659,7 +664,7 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
     if (ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
 
-    if (_GaugeValues.size() == 0)
+    if ((_CurrentChannelMask != ChannelMask) || (chunk.get_channel_count() != _GaugeValues.size()))
     {
         static const WCHAR * ChannelNames[] =
         {
@@ -673,11 +678,15 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 
         size_t i = 0;
 
+        _GaugeValues.clear();
+
         for (uint32_t SelectedChannels = ChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
                 _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
         }
+
+        _CurrentChannelMask = ChannelMask;
     }
     else
     {
@@ -686,17 +695,20 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
     }
 
     // Make sure the vector is large enough to hold a value for each selected channel.
-    const size_t ValueCount = (size_t) std::popcount(ChannelMask);
-
-#ifndef _DEBUG
-    assert(ValueCount == _AmplitudeValues.size());
-#endif
-
-    if (_GaugeValues.size() != ValueCount)
     {
-        _GaugeValues.clear();
+        const size_t ValueCount = (size_t) std::popcount(ChannelMask);
 
-        return;
+        if (_GaugeValues.size() != ValueCount)
+        {
+            _GaugeValues.clear();
+
+            _GaugeValues.push_back({ L"FL", -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+            _GaugeValues.push_back({ L"FR", -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+
+            _CurrentChannelMask = (uint32_t) Channel::ConfigStereo;
+
+            return;
+        }
     }
 
     audio_sample BalanceSamples[2] = { };

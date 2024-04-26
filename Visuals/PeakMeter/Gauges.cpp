@@ -5,6 +5,8 @@
 
 #include "Gauges.h"
 
+#include "Log.h"
+
 #pragma hdrstop
 
 /// <summary>
@@ -437,6 +439,8 @@ bool Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
     gm._TotalBarWidth  = (gm._BarWidth  * n) + gm._TotalBarGap;
 
     gm._Offset = _State->_HorizontalPeakMeter ? ::floor((GetHeight() - gm._TotalBarHeight) / 2.f): ::floor((GetWidth() - gm._TotalBarWidth) / 2.f);
+
+Log::Write(Log::Level::Trace, "Channels: %d, Width: %d", (int) n, (int) gm._BarHeight);
 
     return true;
 }
