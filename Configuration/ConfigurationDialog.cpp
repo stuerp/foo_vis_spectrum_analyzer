@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.25) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.26) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -64,7 +64,9 @@ static const WCHAR * const VisualElementNames[] =
     L"Nyquist Frequency",
 
     L"Left/Right Level",
+    L"Left/Right Level Indicator",
     L"Mid/Side Level",
+    L"Mid/Side Level Indicator",
     L"Left/Side Axis",
 };
 

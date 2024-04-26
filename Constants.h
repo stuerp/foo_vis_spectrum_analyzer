@@ -355,8 +355,10 @@ enum class VisualElement : uint32_t
     GaugeLeftRight              = 27,
     GaugeMidSide                = 28,
     LevelMeterAxis              = 29,
+    GaugeLeftRightIndicator     = 30,
+    GaugeMidSideIndicator       = 31,
 
-    Count                       = 30
+    Count                       = 32
 };
 
 enum class ColorSource : uint32_t

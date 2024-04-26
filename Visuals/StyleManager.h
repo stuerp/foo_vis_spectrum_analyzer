@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.25) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.04.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -330,10 +330,26 @@ private:
         },
 
         {
+            VisualElement::GaugeLeftRightIndicator,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
             VisualElement::GaugeMidSide,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugeMidSideIndicator,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 

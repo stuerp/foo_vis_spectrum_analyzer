@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2024.04.25) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.h (2024.04.26) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -47,7 +47,9 @@ private:
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
     Style * _LeftRightStyle;
+    Style * _LeftRightIndicatorStyle;
     Style * _MidSideStyle;
+    Style * _MidSideIndicatorStyle;
     Style * _AxisStyle;
 
 #ifdef _DEBUG

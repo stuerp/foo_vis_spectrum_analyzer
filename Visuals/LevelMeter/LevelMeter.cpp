@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2024.04.25) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2024.04.26) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "framework.h"
 
@@ -87,26 +87,42 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
         {
             FLOAT x = (FLOAT) _Analysis->_Balance * GetWidth();
 
+            D2D1_RECT_F Rect = { CenterX, 2.f, x, CenterY - 2.f };
+
             if (_LeftRightStyle->IsEnabled())
             {
-                D2D1_RECT_F Rect = { CenterX, 2.f, x, CenterY - 2.f };
-
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _LeftRightStyle->_Brush);
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
+            if (_LeftRightIndicatorStyle->IsEnabled())
+            {
+                Rect.left  = x - _LeftRightIndicatorStyle->_Thickness;
+                Rect.right = x + _LeftRightIndicatorStyle->_Thickness;
+
+                renderTarget->FillRectangle(Rect, _LeftRightIndicatorStyle->_Brush);
+            }
+
             x = (FLOAT) _Analysis->_Phase * GetWidth();
+
+            Rect = { CenterX, CenterY + 2.f, x, GetHeight() - 2.f };
 
             if (_MidSideStyle->IsEnabled())
             {
-                D2D1_RECT_F Rect = { CenterX, CenterY + 2.f, x, GetHeight() - 2.f };
-
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _MidSideStyle->_Brush);
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+
+            if (_MidSideIndicatorStyle->IsEnabled())
+            {
+                Rect.left  = x - _MidSideIndicatorStyle->_Thickness;
+                Rect.right = x + _MidSideIndicatorStyle->_Thickness;
+
+                renderTarget->FillRectangle(Rect, _MidSideIndicatorStyle->_Brush);
             }
         }
 
@@ -149,26 +165,42 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
         {
             FLOAT y = (FLOAT) _Analysis->_Balance * GetHeight();
 
+            D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
+
             if (_LeftRightStyle->IsEnabled())
             {
-                D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
-
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _LeftRightStyle->_Brush);
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
             }
 
+            if (_LeftRightIndicatorStyle->IsEnabled())
+            {
+                Rect.top    = y - _LeftRightIndicatorStyle->_Thickness;
+                Rect.bottom = y + _LeftRightIndicatorStyle->_Thickness;
+
+                renderTarget->FillRectangle(Rect, _LeftRightIndicatorStyle->_Brush);
+            }
+
             y = (FLOAT) _Analysis->_Phase * GetHeight();
+
+            Rect = { CenterX + 2.f, CenterY, GetWidth() - 2.f, y };
 
             if (_MidSideStyle->IsEnabled())
             {
-                D2D1_RECT_F Rect = { CenterX + 2.f, CenterY, GetWidth() - 2.f, y };
-
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _MidSideStyle->_Brush);
                 else
                     renderTarget->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            }
+
+            if (_MidSideIndicatorStyle->IsEnabled())
+            {
+                Rect.top    = y - _MidSideIndicatorStyle->_Thickness;
+                Rect.bottom = y + _MidSideIndicatorStyle->_Thickness;
+
+                renderTarget->FillRectangle(Rect, _MidSideIndicatorStyle->_Brush);
             }
         }
 
@@ -226,7 +258,13 @@ HRESULT LevelMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRight, renderTarget, Size, L"", &_LeftRightStyle);
 
     if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRightIndicator, renderTarget, Size, L"", &_LeftRightIndicatorStyle);
+
+    if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSide, renderTarget, Size, L"", &_MidSideStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSideIndicator, renderTarget, Size, L"", &_MidSideIndicatorStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, renderTarget, Size, L"+1.0", &_AxisStyle);
@@ -257,10 +295,22 @@ void LevelMeter::ReleaseDeviceSpecificResources() noexcept
         _AxisStyle = nullptr;
     }
 
+    if (_MidSideIndicatorStyle)
+    {
+        _MidSideIndicatorStyle->ReleaseDeviceSpecificResources();
+        _MidSideIndicatorStyle = nullptr;
+    }
+
     if (_MidSideStyle)
     {
         _MidSideStyle->ReleaseDeviceSpecificResources();
         _MidSideStyle = nullptr;
+    }
+
+    if (_LeftRightIndicatorStyle)
+    {
+        _LeftRightIndicatorStyle->ReleaseDeviceSpecificResources();
+        _LeftRightIndicatorStyle = nullptr;
     }
 
     if (_LeftRightStyle)
