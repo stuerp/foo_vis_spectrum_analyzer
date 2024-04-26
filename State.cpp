@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.21) P. Stuer **/
+/** $VER: State.cpp (2024.04.26) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -852,6 +852,8 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
         if (Version >= 27)
         {
             reader->read(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+            _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
+
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
         }
     }

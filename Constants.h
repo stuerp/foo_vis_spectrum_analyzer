@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.25) P. Stuer **/
+/** $VER: Constans.h (2024.04.26) P. Stuer **/
 
 #pragma once
 
@@ -483,6 +483,8 @@ enum class ChannelPair : uint32_t
 
     TopFrontLeftRight,
     TopBackLeftRight,
+
+    Count,
 };
 
 enum class HorizontalAlignment : uint32_t

@@ -62,7 +62,7 @@ private:
     void ProcessEvents();
     void Render();
     void Process();
-    void UpdatePeakIndicators();
+    void Animate();
 
     #pragma region Timer
 

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.25) P. Stuer **/
+/** $VER: Analysis.h (2024.04.26) P. Stuer **/
 
 #pragma once
 
@@ -59,7 +59,7 @@ struct GaugeValue
 class Analysis
 {
 public:
-    Analysis() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(), _Phase() { };
+    Analysis() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     Analysis(const Analysis &) = delete;
     Analysis & operator=(const Analysis &) = delete;
@@ -70,7 +70,7 @@ public:
 
     void Initialize(const State * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void UpdatePeakValues() noexcept;
+    void UpdatePeakValues(bool isStopped) noexcept;
 
     void Reset();
 
@@ -142,14 +142,14 @@ public:
     size_t _RMSSampleCount; // Number of samples used in the current RMS window.
 
     // Balance Meter
-    double _Left;           // in dBFS
-    double _Right;          // in dBFS
+    double _Left;           // -1.0 .. 1.0
+    double _Right;          // -1.0 .. 1.0
 
-    double _Mid;            // in dBFS
-    double _Side;           // in dBFS
+    double _Mid;            // -1.0 .. 1.0
+    double _Side;           // -1.0 .. 1.0
 
-    double _Balance;        // -1.0 .. 1.0
-    double _Phase;          // -1.0 .. 1.0
+    double _Balance;        // 0.0 .. 1.0, 0.5 = Center
+    double _Phase;          // 0.0 .. 1.0, 0.5 = Center
 
 private:
     const double Amax = M_SQRT1_2;

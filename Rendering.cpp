@@ -190,7 +190,7 @@ void UIElement::Render()
             hr = S_OK;
         }
 
-        UpdatePeakIndicators();
+        Animate();
     }
 }
 
@@ -235,15 +235,15 @@ void UIElement::Process()
 }
 
 /// <summary>
-/// Updates the peak indicators.
+/// Animates the values.
 /// </summary>
-void UIElement::UpdatePeakIndicators()
+void UIElement::Animate()
 {
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     if (_MainState._PeakMode != PeakMode::None)
     {
         for (auto & Iter : _Grid)
-            Iter._Graph->GetAnalysis().UpdatePeakValues();
+            Iter._Graph->GetAnalysis().UpdatePeakValues(_ThreadState._PlaybackTime == 0.);
     }
 }
 
