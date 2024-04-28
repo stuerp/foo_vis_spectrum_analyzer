@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.04.25) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.04.28) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1205,8 +1205,16 @@
     #define Y_C15    Y_B08 + 11
     #pragma endregion
 
+    #pragma region Scrolling
+    // Checkbox
+    #define W_C27    80
+    #define H_C27    H_CHB
+    #define X_C27    X_C15
+    #define Y_C27    Y_C15 + H_C15 + IY
+    #pragma endregion
+
 #define W_B08   W_B07
-#define H_B08   11 + H_C15 + 7
+#define H_B08   11 + H_C15 + IY + H_C27 + 7
 #pragma endregion
 
 #pragma region Peak Meter

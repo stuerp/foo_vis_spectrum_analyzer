@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.25) P. Stuer **/
+/** $VER: Resources.h (2024.04.28) P. Stuer **/
 
 #pragma once
 
@@ -391,6 +391,7 @@
 #define IDC_SPECTOGRAM                  7150
 
 #define IDC_SCROLLING_SPECTOGRAM        7152
+#define IDC_HORIZONTAL_SPECTOGRAM       7154
 
 // Peak Meter
 

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.04.26) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.04.28) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -244,6 +244,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_LED_GAP, L"Specifies the gap between the LEDs in pixels." },
 
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
+            { IDC_HORIZONTAL_SPECTOGRAM, L"Renders the spectogram horizontally." },
 
             { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
             { IDC_RMS_PLUS_3, L"Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
@@ -1059,6 +1060,10 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
+    }
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTOGRAM, BM_SETCHECK, _State->_HorizontalSpectogram);
     }
 
     #pragma endregion
@@ -2323,6 +2328,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_HORIZONTAL_SPECTOGRAM:
+        {
+            _State->_HorizontalSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_HORIZONTAL_PEAK_METER:
         {
             _State->_HorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2945,7 +2956,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_LED_GAP_LBL, IDC_LED_GAP,
 
         IDC_SPECTOGRAM,
-            IDC_SCROLLING_SPECTOGRAM,
+            IDC_SCROLLING_SPECTOGRAM, IDC_HORIZONTAL_SPECTOGRAM,
 
         IDC_PEAK_METER,
             IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
@@ -3264,6 +3275,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
 
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
+    GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
 
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);

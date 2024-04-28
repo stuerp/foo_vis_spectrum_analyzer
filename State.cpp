@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.26) P. Stuer **/
+/** $VER: State.cpp (2024.04.28) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -222,6 +222,7 @@ void State::Reset() noexcept
 
     // Spectogram
     _ScrollingSpectogram = true;
+    _HorizontalSpectogram = true;
 
     // Peak Meter
     _HorizontalPeakMeter = false;
@@ -466,6 +467,7 @@ State & State::operator=(const State & other)
 
     // Spectogram
     _ScrollingSpectogram = other._ScrollingSpectogram;
+    _HorizontalSpectogram = other._HorizontalSpectogram;
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
@@ -855,6 +857,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
 
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
+            reader->read_object_t(_HorizontalSpectogram, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1147,6 +1150,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         // Version 27, v0.7.7.0
         writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
         writer->write_object_t(_HorizontalLevelMeter, abortHandler);
+        writer->write_object_t(_HorizontalSpectogram, abortHandler);
     }
     catch (exception & ex)
     {

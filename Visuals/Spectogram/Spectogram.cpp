@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.04.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.04.28) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "framework.h"
 #include "Spectogram.h"
@@ -49,9 +49,9 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 void Spectogram::Reset()
 {
     _X = 0.f;
+    _Y = 0.f;
     _PlaybackTime = 0.;
     _TrackTime = 0.;
-    _RequestErase = true;
 
     _XLabels.clear();
 
@@ -77,11 +77,17 @@ void Spectogram::Resize() noexcept
     {
         _BitmapBounds = _Bounds;
 
-        if (_GraphSettings->_XAxisTop)
-            _BitmapBounds.top += _XTextStyle->_Height;
+        if (_State->_HorizontalSpectogram)
+        {
+            if (_GraphSettings->_XAxisTop)
+                _BitmapBounds.top += _XTextStyle->_Height;
 
-        if (_GraphSettings->_XAxisBottom)
-            _BitmapBounds.bottom -= _XTextStyle->_Height;
+            if (_GraphSettings->_XAxisBottom)
+                _BitmapBounds.bottom -= _XTextStyle->_Height;
+        }
+        else
+        {
+        }
 
         _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
     }
@@ -159,14 +165,17 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
         Update();
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
     // Draw the offscreen bitmap.
+    if (_State->_HorizontalSpectogram)
     {
         SetTransform(renderTarget, _BitmapBounds);
 
         if (_State->_ScrollingSpectogram)
         {
-            D2D1_RECT_F Src = D2D1_RECT_F(_X + 1.f, 0.f, _BitmapSize.width,      _BitmapSize.height);
-            D2D1_RECT_F Dst = D2D1_RECT_F(     0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
+            D2D1_RECT_F Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
+            D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
             renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
@@ -186,39 +195,82 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
         }
 
         ResetTransform(renderTarget);
+
+        // Draw the X-axis (Time).
+        if (!_XLabels.empty())
+        {
+            if (_GraphSettings->_XAxisTop)
+                RenderXAxis(renderTarget, true);
+
+            if (_GraphSettings->_XAxisBottom)
+                RenderXAxis(renderTarget, false);
+        }
+
+        // Draw the Y-axis (Frequency).
+        if (!_YLabels.empty())
+        {
+            if (_GraphSettings->_YAxisLeft)
+                RenderYAxis(renderTarget, true);
+
+            if (_GraphSettings->_YAxisRight)
+                RenderYAxis(renderTarget, false);
+        }
     }
-
-    // Draw the X-axis (Time).
-    if (!_XLabels.empty())
+    else
     {
-        if (_GraphSettings->_XAxisTop)
-            RenderXAxis(renderTarget, true);
+        SetTransform(renderTarget, _BitmapBounds);
 
-        if (_GraphSettings->_XAxisBottom)
-            RenderXAxis(renderTarget, false);
-    }
+        if (_State->_ScrollingSpectogram)
+        {
+            // Render the new lines.
+            D2D1_RECT_F Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
+            D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
 
-    // Draw the Y-axis (Frequency).
-    if (!_YLabels.empty())
-    {
-        if (_GraphSettings->_YAxisLeft)
-            RenderYAxis(renderTarget, true);
+            renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
-        if (_GraphSettings->_YAxisRight)
-            RenderYAxis(renderTarget, false);
+            // Render the old lines.
+            Src.bottom = Src.top;
+            Src.top    = 0.f;
+
+            Dst.top    = Dst.bottom;
+            Dst.bottom = _BitmapSize.height;
+
+            renderTarget->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+        }
+        else
+        {
+            D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+
+            renderTarget->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity);
+        }
+
+        ResetTransform(renderTarget);
     }
 
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
     {
-        _X++;
-
-        if (_X > _Size.width)
+        if (_State->_HorizontalSpectogram)
         {
-            _X = 0.f;
+            _X++;
 
-            if (!_State->_ScrollingSpectogram)
-                _XLabels.clear();
+            if (_X > _Size.width)
+            {
+                _X = 0.f;
+
+                if (!_State->_ScrollingSpectogram)
+                    _XLabels.clear();
+            }
         }
+        else
+            _Y++;
+
+            if (_Y > _Size.height)
+            {
+                _Y = 0.f;
+
+                if (!_State->_ScrollingSpectogram)
+                    _XLabels.clear();
+            }
     }
 
     _PlaybackTime = _State->_PlaybackTime;
@@ -292,65 +344,91 @@ void Spectogram::RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const 
 /// </summary>
 void Spectogram::Update() noexcept
 {
+    if (_Analysis->_NyquistFrequency == 0.f)
+        return;
+
     _BitmapRenderTarget->BeginDraw();
 
-    if (_RequestErase)
+    if (_State->_HorizontalSpectogram)
     {
-        _BitmapRenderTarget->Clear(); // Make the bitmap completely transparent.
-
-        _RequestErase = false;
-    }
-
-    // Draw the next spectogram line.
-    {
-        const FLOAT Bandwidth = Max((_BitmapSize.height / (FLOAT) _BandCount), 1.f);
-
-        FLOAT y1 = 0.f;
-        FLOAT y2 = Bandwidth;
-
-        for (const auto & fb : _Analysis->_FrequencyBands)
+        // Draw the next spectogram line.
         {
-            if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
-                break;
+            const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) _BandCount;
 
-            assert(InRange(fb.CurValue, 0.0, 1.0));
+            FLOAT y1 = 0.f;
+            FLOAT y2 = Bandwidth;
 
-            _SpectogramStyle->SetBrushColor(fb.CurValue);
+            for (const auto & fb : _Analysis->_FrequencyBands)
+            {
+                if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                    break;
 
-            _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectogramStyle->_Brush);
+                assert(InRange(fb.CurValue, 0.0, 1.0));
 
-            y1  = y2;
-            y2 += Bandwidth;
+                _SpectogramStyle->SetBrushColor(fb.CurValue);
+
+                _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectogramStyle->_Brush);
+
+                y1  = y2;
+                y2 += Bandwidth;
+            }
         }
-    }
 
-    // Draw the Nyquist marker.
-    if (_NyquistMarker->_ColorSource != ColorSource::None)
-        RenderNyquistFrequencyMarker(_BitmapRenderTarget);
+        // Draw the Nyquist marker.
+        if (_NyquistMarker->_ColorSource != ColorSource::None)
+            RenderNyquistFrequencyMarker(_BitmapRenderTarget);
 
-    _BitmapRenderTarget->EndDraw();
+        _BitmapRenderTarget->EndDraw();
 
-    // Update the X-axis.
-    if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
-    {
-        for (auto & Label : _XLabels)
-            if (!_GraphSettings->_FlipHorizontally)
-                Label.X--; // Scroll to the left.
+        // Update the X-axis.
+        if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+        {
+            for (auto & Label : _XLabels)
+                if (!_GraphSettings->_FlipHorizontally)
+                    Label.X--; // Scroll to the left.
+                else
+                    Label.X++; // Scroll to the right.
+        }
+
+        if (_TrackTime != _State->_TrackTime) // in seconds
+        {
+            if (_State->_ScrollingSpectogram)
+            {
+                _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
+
+                if (_XLabels.back().X + Offset + _XTextStyle->_Width < 0.f)
+                    _XLabels.pop_back();
+            }
             else
-                Label.X++; // Scroll to the right.
-    }
-
-    if (_TrackTime != _State->_TrackTime) // in seconds
-    {
-        if (_State->_ScrollingSpectogram)
-        {
-            _XLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _Size.width });
-
-            if (_XLabels.back().X + Offset + _XTextStyle->_Width < 0.f)
-                _XLabels.pop_back();
+                _XLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? _Size.width - _X : _X });
         }
-        else
-            _XLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? _Size.width - _X : _X });
+    }
+    else
+    {
+        // Draw the next spectogram line.
+        {
+            const FLOAT Bandwidth = _BitmapSize.width / (FLOAT) _BandCount;
+
+            FLOAT x1 = 0.f;
+            FLOAT x2 = Bandwidth;
+
+            for (const auto & fb : _Analysis->_FrequencyBands)
+            {
+                if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                    break;
+
+                assert(InRange(fb.CurValue, 0.0, 1.0));
+
+                _SpectogramStyle->SetBrushColor(fb.CurValue);
+
+                _BitmapRenderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectogramStyle->_Brush);
+
+                x1  = x2;
+                x2 += Bandwidth;
+            }
+        }
+
+        _BitmapRenderTarget->EndDraw();
     }
 }
 
@@ -504,23 +582,25 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 {
     HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, renderTarget, _Size, L"", &_SpectogramStyle);
+    D2D1_SIZE_F Size = renderTarget->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_XLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, renderTarget, Size, L"", &_SpectogramStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, L"00:00", &_XTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, Size, L"", &_XLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_YLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, Size, L"00:00", &_XTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"99.9fk", &_YTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, L"", &_YLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _Size, L"", &_NyquistMarker);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, Size, L"99.9fk", &_YTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, Size, L"", &_NyquistMarker);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -531,8 +611,22 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
             hr = renderTarget->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
 
         if (SUCCEEDED(hr) && (_Bitmap == nullptr))
+        {
+            _BitmapRenderTarget->BeginDraw();
+            _BitmapRenderTarget->Clear(); // Make the bitmap completely transparent.
+            _BitmapRenderTarget->EndDraw();
+
+//          _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE); // Don't use: This causes ghost images in the final output.
+            _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
             hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+        }
     }
+
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
 
     return hr;
 }
@@ -542,6 +636,10 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// </summary>
 void Spectogram::ReleaseDeviceSpecificResources()
 {
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
+
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
 

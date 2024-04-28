@@ -192,7 +192,7 @@ void Style::ReleaseDeviceSpecificResources()
 }
 
 /// <summary>
-/// Selects the color of a solid color brush from the gradient colors based on a value between 0. and 1..
+/// Selects the color of a solid color brush from the amplitude map colors based on a value between 0. and 1..
 /// </summary>
 HRESULT Style::SetBrushColor(double value) noexcept
 {

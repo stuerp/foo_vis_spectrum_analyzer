@@ -336,6 +336,7 @@ void Gauges::ReleaseDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+
     if (_RMSStyle)
     {
         _RMSStyle->ReleaseDeviceSpecificResources();

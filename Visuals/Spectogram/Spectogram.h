@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.04.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.04.28) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -59,6 +59,7 @@ private:
 private:
     D2D1_RECT_F _BitmapBounds;
     FLOAT _X;
+    FLOAT _Y;
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
@@ -104,6 +105,10 @@ private:
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 
     Style * _SpectogramStyle;
 
