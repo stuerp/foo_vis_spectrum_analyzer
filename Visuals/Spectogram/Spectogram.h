@@ -44,10 +44,10 @@ public:
     void ReleaseDeviceSpecificResources();
 
 private:
-    void Update() noexcept;
+    bool Update() noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
-    void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
+    void RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
     void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
     void InitYAxis() noexcept;
@@ -68,23 +68,25 @@ private:
     double _LoFrequency;
     double _HiFrequency;
 
-    struct XLabel
+    struct TimeLabel
     {
-        XLabel(const WCHAR * text, FLOAT x)
+        TimeLabel(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
         {
             Text = text;
             X = x;
+            Y = y;
         }
 
         std::wstring Text;
         FLOAT X;
+        FLOAT Y;
     };
 
-    std::deque<XLabel> _XLabels;
+    std::deque<TimeLabel> _TimeLabels;
 
-    struct YLabel
+    struct FreqLabel
     {
-        YLabel(const WCHAR * text, double frequency, bool isDimmed = false)
+        FreqLabel(const WCHAR * text, double frequency, bool isDimmed = false)
         {
             Text = text;
             Frequency = frequency;
@@ -96,12 +98,11 @@ private:
         bool IsDimmed;
         bool IsHidden;
 
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
+        D2D1_RECT_F Rect1;
+        D2D1_RECT_F Rect2;
     };
 
-    std::vector<YLabel> _YLabels;
-    std::vector<YLabel> _VisibleYLabels;
+    std::vector<FreqLabel> _FreqLabels;
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;

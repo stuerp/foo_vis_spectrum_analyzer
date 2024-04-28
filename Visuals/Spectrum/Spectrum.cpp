@@ -71,6 +71,10 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
+    _XAxis.Render(renderTarget);
+
+    _YAxis.Render(renderTarget);
+
     {
         SetTransform(renderTarget, _ClientBounds);
 
@@ -85,10 +89,6 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 
         ResetTransform(renderTarget);
     }
-
-    _XAxis.Render(renderTarget);
-
-    _YAxis.Render(renderTarget);
 }
 
 /// <summary>
@@ -107,10 +107,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
     FLOAT x1 = (_ClientSize.width - SpectrumWidth) / 2.f;
     FLOAT x2 = x1 + Bandwidth;
 
-    auto OldAntialiasMode = renderTarget->GetAntialiasMode();
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -209,9 +206,6 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
         x1 = x2;
         x2 = x1 + Bandwidth;
     }
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 
 /// <summary>
@@ -221,6 +215,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     GeometryPoints Points;
     CComPtr<ID2D1PathGeometry> Curve;
@@ -300,6 +296,8 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
     const FLOAT xl = ((_ClientSize.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
 
     const FLOAT x = xl + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
