@@ -92,6 +92,9 @@ v0.7.7.x, 2024-04-xx
 
 * New: Left/Right and Mid/Side level meter.
   * The left/right channel pair is selectable.
+* Spectogram
+  * New: Vertical scrolling and static spectogram
+  * Improved: Overall polishing
 * Added: Separate peak and RMS level read outs to the peak meter.
 
 v0.7.6.2, 2024-04-17

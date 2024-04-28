@@ -375,7 +375,7 @@ void Spectogram::Update() noexcept
         }
 
         // Draw the Nyquist marker.
-        if (_NyquistMarker->_ColorSource != ColorSource::None)
+        if (_NyquistMarkerStyle->IsEnabled())
             RenderNyquistFrequencyMarker(_BitmapRenderTarget);
 
         _BitmapRenderTarget->EndDraw();
@@ -428,6 +428,10 @@ void Spectogram::Update() noexcept
             }
         }
 
+        // Draw the Nyquist marker.
+        if (_NyquistMarkerStyle->IsEnabled())
+            RenderNyquistFrequencyMarker(_BitmapRenderTarget);
+
         _BitmapRenderTarget->EndDraw();
     }
 }
@@ -443,9 +447,18 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 
     const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    const FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+    if (_State->_HorizontalSpectogram)
+    {
+        const FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
-    renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X + 1, y), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
+    }
+    else
+    {
+        const FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.width);
+
+        renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
+    }
 }
 
 /// <summary>
@@ -600,7 +613,7 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, Size, L"99.9fk", &_YTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, Size, L"", &_NyquistMarker);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, Size, L"", &_NyquistMarkerStyle);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -643,10 +656,10 @@ void Spectogram::ReleaseDeviceSpecificResources()
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
 
-    if (_NyquistMarker)
+    if (_NyquistMarkerStyle)
     {
-        _NyquistMarker->ReleaseDeviceSpecificResources();
-        _NyquistMarker = nullptr;
+        _NyquistMarkerStyle->ReleaseDeviceSpecificResources();
+        _NyquistMarkerStyle = nullptr;
     }
 
     if (_YTextStyle)

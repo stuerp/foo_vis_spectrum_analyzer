@@ -118,7 +118,7 @@ private:
     Style * _YLineStyle;
     Style * _YTextStyle;
 
-    Style * _NyquistMarker;
+    Style * _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
 
