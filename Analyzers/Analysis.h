@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.26) P. Stuer **/
+/** $VER: Analysis.h (2024.04.28) P. Stuer **/
 
 #pragma once
 
@@ -81,7 +81,6 @@ private:
     void GenerateAveePlayerFrequencyBands();
 
     void GetAnalyzer(const audio_chunk & chunk) noexcept;
-    void GetGaugeValues(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -91,6 +90,9 @@ private:
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
     // Peak Meter
+    void InitializeGauges(uint32_t channelMask) noexcept;
+    void GetGaugeValues(const audio_chunk & chunk) noexcept;
+
     double NormalizeValue(double amplitude) const noexcept
     {
         return std::clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);

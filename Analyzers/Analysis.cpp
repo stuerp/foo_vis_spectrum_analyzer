@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.26) P. Stuer **/
+/** $VER: Analysis.cpp (2024.04.28) P. Stuer **/
 
 #include "framework.h"
 
@@ -175,8 +175,8 @@ void Analysis::Reset()
     }
 
     {
-        _GaugeValues.clear();
         _CurrentChannelMask = 0;
+        InitializeGauges((uint32_t) Channel::ConfigStereo);
     }
 
     {
@@ -649,7 +649,7 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 #pragma region Peak Meter
 
 /// <summary>
-/// Gets the Peak and RMS level (Root Mean Square level) values of each selected channel.
+/// Gets the values for the peak and the level meter.
 /// </summary>
 void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 {
@@ -664,52 +664,7 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
     if (ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
 
-    if ((_CurrentChannelMask != ChannelMask) || (chunk.get_channel_count() != _GaugeValues.size()))
-    {
-        static const WCHAR * ChannelNames[] =
-        {
-            L"FL", L"FR", L"FC",
-            L"LFE",
-            L"BL", L"BR", 
-            L"FCL", L"FCR",
-            L"BC", L"SL", L"SR", L"TC",
-            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
-        };
-
-        size_t i = 0;
-
-        _GaugeValues.clear();
-
-        for (uint32_t SelectedChannels = ChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
-        {
-            if (SelectedChannels & 1)
-                _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
-        }
-
-        _CurrentChannelMask = ChannelMask;
-    }
-    else
-    {
-        for (auto & gv : _GaugeValues)
-            gv.Peak = -std::numeric_limits<double>::infinity();
-    }
-
-    // Make sure the vector is large enough to hold a value for each selected channel.
-    {
-        const size_t ValueCount = (size_t) std::popcount(ChannelMask);
-
-        if (_GaugeValues.size() != ValueCount)
-        {
-            _GaugeValues.clear();
-
-            _GaugeValues.push_back({ L"FL", -std::numeric_limits<double>::infinity(), _State->_HoldTime });
-            _GaugeValues.push_back({ L"FR", -std::numeric_limits<double>::infinity(), _State->_HoldTime });
-
-            _CurrentChannelMask = (uint32_t) Channel::ConfigStereo;
-
-            return;
-        }
-    }
+    InitializeGauges(ChannelMask);
 
     audio_sample BalanceSamples[2] = { };
 
@@ -779,15 +734,14 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
     _RMSSampleCount += SamplesPerChannel;
     _RMSTimeElapsed += ChunkDuration;
 
-    // Normalize and smooth the values.
+    // Normalize and smooth the values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
     for (auto & gv : _GaugeValues)
     {
-        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
         gv.Peak       = ToDecibel(gv.Peak);
         gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
     }
 
-    // Determine the balance values.
+    // Determine the window-dependent values.
     if (_RMSTimeElapsed > _State->_RMSWindow)
     {
         for (auto & gv : _GaugeValues)
@@ -795,8 +749,6 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSSampleCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
-
-        //  Log::Write(Log::Level::Trace, "%5.3f %6d %5.3f %+5.3f %5.3f", mv.RMSTime, (int) mv.RMSSamples, mv.RMS, mv.RMSRender);
 
             // Reset the RMS window values.
             gv.Reset();
@@ -826,6 +778,44 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 
         _Mid   = 0.;
         _Side  = 0.;
+    }
+}
+
+/// <summary>
+/// Initializes the gauges before processing an audio chunk.
+/// </summary>
+void Analysis::InitializeGauges(uint32_t channelMask) noexcept
+{
+    if (_CurrentChannelMask != channelMask)
+    {
+        // The chunk configuration has changed. Recreate the gauges.
+        static const WCHAR * ChannelNames[] =
+        {
+            L"FL", L"FR", L"FC",
+            L"LFE",
+            L"BL", L"BR", 
+            L"FCL", L"FCR",
+            L"BC", L"SL", L"SR", L"TC",
+            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
+        };
+
+        size_t i = 0;
+
+        _GaugeValues.clear();
+
+        for (uint32_t SelectedChannels = channelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
+        {
+            if (SelectedChannels & 1)
+                _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+        }
+
+        _CurrentChannelMask = channelMask;
+    }
+    else
+    {
+        // Reset only the peak level of each gauge.
+        for (auto & gv : _GaugeValues)
+            gv.Peak = -std::numeric_limits<double>::infinity();
     }
 }
 

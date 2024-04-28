@@ -419,7 +419,7 @@ HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Gets the metrics used to render the gauges.
 /// </summary>
-bool Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
+bool Gauges::GetMetrics(GaugeMetrics & gm) const noexcept
 {
     const FLOAT n = (FLOAT) _Analysis->_GaugeValues.size();
 
@@ -439,8 +439,6 @@ bool Gauges::GetGaugeMetrics(GaugeMetrics & gm) const noexcept
     gm._TotalBarWidth  = (gm._BarWidth  * n) + gm._TotalBarGap;
 
     gm._Offset = _State->_HorizontalPeakMeter ? ::floor((GetHeight() - gm._TotalBarHeight) / 2.f): ::floor((GetWidth() - gm._TotalBarWidth) / 2.f);
-
-Log::Write(Log::Level::Trace, "Channels: %d, Width: %d", (int) n, (int) gm._BarHeight);
 
     return true;
 }

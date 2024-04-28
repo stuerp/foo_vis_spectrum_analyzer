@@ -1,5 +1,5 @@
 ﻿
-/** $VER: PeakMeter.cpp (2024.04.22) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2024.04.28) P. Stuer - Represents a peak meter. **/
 
 #include "framework.h"
 
@@ -215,10 +215,8 @@ void PeakMeter::Resize() noexcept
         _Gauges.Resize();
     }
 
-Log::Write(Log::Level::Trace, "Resize");
-
     // Don't continue the resize operation until the gauge metrics have been calculated.
-    if (!_Gauges.GetGaugeMetrics(_GaugeMetrics))
+    if (!_Gauges.GetMetrics(_GaugeMetrics))
         return;
 
     // Gauge names transform
@@ -473,6 +471,8 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 
     if (SUCCEEDED(hr))
         hr = _Gauges.CreateDeviceSpecificResources(renderTarget);
+
+    _IsResized = !_IsResized && _Gauges.GetMetrics(_GaugeMetrics);
 
     if (SUCCEEDED(hr))
         Resize();

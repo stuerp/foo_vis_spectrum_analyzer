@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterTypes.h (2024.04.22) P. Stuer - Defines the peak meter types. **/
+/** $VER: PeakMeterTypes.h (2024.04.28) P. Stuer - Defines the peak meter types. **/
 
 #pragma once
 
