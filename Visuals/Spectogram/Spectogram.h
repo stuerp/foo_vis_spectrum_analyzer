@@ -48,9 +48,9 @@ private:
 
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
     void RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
-    void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
+    void RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
-    void InitYAxis() noexcept;
+    void InitFreqAxis() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
 
@@ -113,11 +113,11 @@ private:
 
     Style * _SpectogramStyle;
 
-    Style * _XLineStyle;
-    Style * _XTextStyle;
+    Style * _TimeLineStyle;
+    Style * _TimeTextStyle;
 
-    Style * _YLineStyle;
-    Style * _YTextStyle;
+    Style * _FreqLineStyle;
+    Style * _FreqTextStyle;
 
     Style * _NyquistMarkerStyle;
 

@@ -1023,7 +1023,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak Meter", L"Left/Right Mid/Side Meter" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
