@@ -96,6 +96,7 @@ v0.7.7.x, 2024-04-xx
   * New: Vertical scrolling and static spectogram
   * Improved: Overall polishing and removal of glitches.
 * Added: Separate peak and RMS level read outs to the peak meter.
+* Fixed: An old color bug in the owner-drawn menu list.
 
 v0.7.6.2, 2024-04-17
 
