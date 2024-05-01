@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.04.28) P. Stuer **/
+/** $VER: State.h (2024.05.01) P. Stuer **/
 
 #pragma once
 
@@ -208,6 +208,7 @@ public:
 
                 bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
                 bool _HorizontalSpectogram;                             // True if the spectogram should be rendered horizontally.
+                bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
 
             #pragma endregion
 

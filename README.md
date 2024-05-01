@@ -88,12 +88,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.7.7.x, 2024-04-xx
+v0.8.0.0-beta1, 2024-05-01
 
 * New: Left/Right and Mid/Side level meter.
   * The left/right channel pair is selectable.
 * Spectogram
-  * New: Vertical scrolling and static spectogram
+  * New: Vertical scrolling and static spectogram. A special setting is available to align the spectogram with a spectrum bars visualization over or under the spectogram.
   * Improved: Overall polishing and removal of glitches.
 * Added: Separate peak and RMS level read outs to the peak meter.
 * Fixed: An old color bug in the owner-drawn menu list.

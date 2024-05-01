@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.04.28) P. Stuer **/
+/** $VER: Resources.rc (2024.05.01) P. Stuer **/
 
 #include "Resources.h"
 
@@ -327,6 +327,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control     "Scrolling",                IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
         control     "Horizontal",               IDC_HORIZONTAL_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
+        control     "Use spectrum bar metrics", IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
 
     groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 

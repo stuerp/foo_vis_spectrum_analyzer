@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.04.29) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "framework.h"
 #include "Spectogram.h"
@@ -71,7 +71,7 @@ void Spectogram::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    // Resize the offscreen bitmap.
+    // Resize the offscreen bitmap. Compensate for the axes.
     {
         _BitmapBounds = _Bounds;
 
@@ -82,6 +82,12 @@ void Spectogram::Resize() noexcept
 
             if (_GraphSettings->_XAxisBottom)
                 _BitmapBounds.bottom -= _TimeTextStyle->_Height;
+
+            if (_GraphSettings->_YAxisLeft)
+                _BitmapBounds.left += _FreqTextStyle->_Width;
+
+            if (_GraphSettings->_YAxisRight)
+                _BitmapBounds.right -= _FreqTextStyle->_Width;
         }
         else
         {
@@ -99,13 +105,15 @@ void Spectogram::Resize() noexcept
         }
 
         _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+    }
 
-bool _UseSpectrumBarMetrics = true; // TODO
+    const FLOAT Bandwidth = std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f);
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
-        if (_UseSpectrumBarMetrics && !_State->_HorizontalSpectogram)
+    // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
+    {
+        if (_State->_UseSpectrumBarMetrics && !_State->_HorizontalSpectogram)
         {
-            const FLOAT Bandwidth = std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f);
-            const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
             const FLOAT dx = (_BitmapSize.width - SpectrumWidth) / 2.f;
 
             _BitmapBounds.left  += dx;
@@ -120,48 +128,68 @@ bool _UseSpectrumBarMetrics = true; // TODO
         const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
         const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-        D2D1_RECT_F Rect = { };
-
-        const FLOAT dx = _FreqTextStyle->_Width  / 2.f;
-        const FLOAT dy = _FreqTextStyle->_Height / 2.f;
-
-        const FLOAT y1 = _GraphSettings->_XAxisTop ? _TimeTextStyle->_Height : 0.f;
+        BOUNDS Rect = { };
 
         if (_State->_HorizontalSpectogram)
         {
+            const FLOAT y1 = (_GraphSettings->_XAxisTop ? _TimeTextStyle->_Height : 0.f) - (_FreqTextStyle->_Height / 2.f);
+
             for (auto & Iter : _FreqLabels)
             {
                 const FLOAT y = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
 
                 if (!_GraphSettings->_FlipVertically)
                 {
-                    Rect.top    = y1 + _BitmapSize.height - y - dy;
-                    Rect.bottom = Rect.top + _FreqTextStyle->_Height;
-
-                    if (Rect.bottom < (y1 - dy))
-                        break;
+                    Rect.y1 = y1 + _BitmapSize.height - y;
+                    Rect.y2 = Rect.y1 + _FreqTextStyle->_Height;
                 }
                 else
                 {
-                    Rect.top    = y1 + y - dy;
-                    Rect.bottom = Rect.top + _FreqTextStyle->_Height;
-
-                    if (Rect.bottom > (y1 + _BitmapSize.height + dy))
-                        break;
+                    Rect.y1 = y1 + y;
+                    Rect.y2 = Rect.y1 + _FreqTextStyle->_Height;
                 }
-
-                if ((Rect.top <_BitmapBounds.top) || (Rect.bottom > _BitmapBounds.bottom))
-                    continue;
 
                 Iter.Rect1 = Rect;
 
                 Iter.Rect1.left  = 0.f;
-                Iter.Rect1.right = _FreqTextStyle->_Width;
+                Iter.Rect1.right = _FreqTextStyle->_Width - Offset;
   
                 Iter.Rect2 = Rect;
 
-                Iter.Rect2.left  = _Size.width - _FreqTextStyle->_Width;
+                Iter.Rect2.left  = _Size.width - _FreqTextStyle->_Width + Offset;
                 Iter.Rect2.right = _Size.width;
+
+                Iter.IsHidden = (Rect.y2 < _BitmapBounds.top) || (Rect.y1 > _BitmapBounds.bottom);
+            }
+
+            if (_FreqLabels.size() > 2)
+            {
+                #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+
+                const FreqLabel * Anchor = &_FreqLabels[0];
+
+                // Determine which labels should be hidden.
+                for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
+                {
+                    if (_FreqLabels[i].IsHidden)
+                        continue;
+
+                    // Don't render the label if it overlaps with the anchor label.
+                    if (IsOverlappingVertically(_FreqLabels[i].Rect1, Anchor->Rect1))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    // Don't render the label if it overlaps with the next label and that label is a major label.
+                    if (IsOverlappingVertically(_FreqLabels[i].Rect1, _FreqLabels[i + 1].Rect1) && (NotesMode && !_FreqLabels[i + 1].IsMinor))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    Anchor = &_FreqLabels[i];
+                }
             }
         }
         else
@@ -170,18 +198,28 @@ bool _UseSpectrumBarMetrics = true; // TODO
             {
                 const FLOAT x = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
 
-                if (!_GraphSettings->_FlipHorizontally)
                 {
-                    Rect.left  = _BitmapBounds.left + x - dx;
-                    Rect.right = Rect.left + _FreqTextStyle->_Width;
+                    CComPtr<IDWriteTextLayout> TextLayout;
 
-                    if ((Rect.right < _BitmapBounds.left) || (Rect.left > _BitmapBounds.right))
-                        continue;
-                }
-                else
-                {
-                    Rect.right = _BitmapBounds.right - x + dx;
-                    Rect.left  = Rect.right - _FreqTextStyle->_Width;
+                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _FreqTextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
+
+                    if (SUCCEEDED(hr))
+                    {
+                        DWRITE_TEXT_METRICS TextMetrics = { };
+
+                        TextLayout->GetMetrics(&TextMetrics);
+
+                        if (!_GraphSettings->_FlipHorizontally)
+                        {
+                            Rect.x1 = _BitmapBounds.left + x - (TextMetrics.width / 2.f);
+                            Rect.x2 = Rect.x1 + TextMetrics.width;
+                        }
+                        else
+                        {
+                            Rect.x2 = _BitmapBounds.right - x + (TextMetrics.width / 2.f);
+                            Rect.x1 = Rect.x2 - TextMetrics.width;
+                        }
+                    }
                 }
 
                 Iter.Rect1 = Rect;
@@ -193,6 +231,38 @@ bool _UseSpectrumBarMetrics = true; // TODO
 
                 Iter.Rect2.bottom = _Size.height;
                 Iter.Rect2.top    = Iter.Rect2.bottom - _FreqTextStyle->_Height;
+
+                Iter.IsHidden = (Rect.x2 < _BitmapBounds.left) || (Rect.x1 > _BitmapBounds.right);
+            }
+
+            if (_FreqLabels.size() > 2)
+            {
+                #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+
+                const FreqLabel * Anchor = &_FreqLabels[0];
+
+                // Determine which labels should be hidden.
+                for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
+                {
+                    if (_FreqLabels[i].IsHidden)
+                        continue;
+
+                    // Don't render the label if it overlaps with the anchor label.
+                    if (IsOverlappingHorizontally(_FreqLabels[i].Rect1, Anchor->Rect1))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    // Don't render the label if it overlaps with the next label and that label is a major label.
+                    if (IsOverlappingHorizontally(_FreqLabels[i].Rect1, _FreqLabels[i + 1].Rect1) && (NotesMode && !_FreqLabels[i + 1].IsMinor))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    Anchor = &_FreqLabels[i];
+                }
             }
         }
     }
@@ -247,13 +317,26 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
         ResetTransform(renderTarget);
 
         // Draw the Time axis.
-        if (!_TimeLabels.empty())
         {
             if (_GraphSettings->_XAxisTop)
-                RenderTimeAxis(renderTarget, true);
+            {
+                if (!_TimeLabels.empty())
+                    RenderTimeAxis(renderTarget, true);
+
+                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+                renderTarget->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+            }
 
             if (_GraphSettings->_XAxisBottom)
-                RenderTimeAxis(renderTarget, false);
+            {
+                if (!_TimeLabels.empty())
+                    RenderTimeAxis(renderTarget, false);
+    
+                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+                renderTarget->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+            }
         }
 
         // Draw the Frequency axis.
@@ -297,27 +380,42 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
         ResetTransform(renderTarget);
 
         // Draw the Time axis.
-        if (!_TimeLabels.empty())
         {
             if (_GraphSettings->_XAxisTop)
-                RenderTimeAxis(renderTarget, true);
+            {
+                if (!_TimeLabels.empty())
+                    RenderTimeAxis(renderTarget, true);
+
+                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+                renderTarget->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+            }
 
             if (_GraphSettings->_XAxisBottom)
-                RenderTimeAxis(renderTarget, false);
+            {
+                if (!_TimeLabels.empty())
+                    RenderTimeAxis(renderTarget, false);
+    
+                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+                renderTarget->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+            }
         }
 
         // Draw the Frequency axis.
-        if (!_FreqLabels.empty())
         {
             if (_GraphSettings->_YAxisLeft)
-                RenderFreqAxis(renderTarget, true);
+            {
+                if (!_FreqLabels.empty())
+                    RenderFreqAxis(renderTarget, true);
+            }
 
             if (_GraphSettings->_YAxisRight)
-                RenderFreqAxis(renderTarget, false);
+            {
+                if (!_FreqLabels.empty())
+                    RenderFreqAxis(renderTarget, false);
+            }
         }
-
-        renderTarget->DrawLine({              0.f, 0.f}, {              0.f, _BitmapSize.height}, _DebugBrush);
-        renderTarget->DrawLine({_BitmapSize.width - 30.f, 0.f}, {_BitmapSize.width - 30.f, _BitmapSize.height}, _DebugBrush);
     }
 
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
@@ -326,7 +424,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
         {
             _X++;
 
-            if (_X > _Size.width)
+            if (_X > _BitmapSize.width)
             {
                 _X = 0.f;
 
@@ -338,7 +436,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
         {
             _Y++;
 
-            if (_Y > _Size.height)
+            if (_Y > _BitmapSize.height)
             {
                 _Y = 0.f;
 
@@ -354,63 +452,79 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
-void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept
+void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
 {
     if (_State->_HorizontalSpectogram)
     {
-        const FLOAT y1 = top ? _TimeTextStyle->_Height / 2.f : _Size.height - _TimeTextStyle->_Height;
-        const FLOAT y2 = top ? _TimeTextStyle->_Height       : y1 + (_TimeTextStyle->_Height / 2.f);
+        const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle->_Height;
+        const FLOAT y2 = first ? _TimeTextStyle->_Height : _Size.height;
 
-        D2D1_RECT_F Rect = { 0.f, top ? 0.f : y1, 0.f, top ? y2 : _Size.height };
+        BOUNDS Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
+
+        renderTarget->PushAxisAlignedClip({ _BitmapBounds.left, y1, _BitmapBounds.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
         for (const auto & Label : _TimeLabels)
         {
+            const FLOAT x = !_GraphSettings->_FlipHorizontally ? _BitmapBounds.left + Label.X : _BitmapBounds.right - Label.X;
+
             // Draw the tick.
-            renderTarget->DrawLine( { Label.X, y1 }, { Label.X, y2 }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
+            renderTarget->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
             if (!_GraphSettings->_FlipHorizontally)
             {
-                Rect.left  = Label.X + Offset;
-                Rect.right = Rect.left + _TimeTextStyle->_Width;
+                Rect.x1 = x + Offset;
+                Rect.x2 = Rect.x1 + _TimeTextStyle->_Width;
             }
             else
             {
-                Rect.left  = Label.X - Offset;
-                Rect.right = Rect.left - _TimeTextStyle->_Width;
+                Rect.x1 = x - Offset;
+                Rect.x2 = Rect.x1 - _TimeTextStyle->_Width;
             }
 
             // Draw the label.
             _TimeTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle->_TextFormat, Rect, _TimeTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+
+        renderTarget->PopAxisAlignedClip();
     }
     else
     {
-        const FLOAT x1 = top ? _Size.width - _TimeTextStyle->_Width : 0.f;
-        const FLOAT x2 = top ? _Size.width                          : _TimeTextStyle->_Width;
+        const FLOAT x1 = first ? _BitmapBounds.right                          : _BitmapBounds.left - _TimeTextStyle->_Width;
+        const FLOAT x2 = first ? _BitmapBounds.right + _TimeTextStyle->_Width : _BitmapBounds.left;
 
-        D2D1_RECT_F Rect = { x1, 0.f, x2, 0.f };
+        BOUNDS Rect = { x1, 0.f, x2, 0.f };
+
+        renderTarget->PushAxisAlignedClip({ x1, _BitmapBounds.top, x2, _BitmapBounds.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
         for (const auto & Label : _TimeLabels)
         {
+            const FLOAT y = !_GraphSettings->_FlipVertically ? _BitmapBounds.top - _TimeTextStyle->_Height + Label.Y : _BitmapBounds.top + Label.Y;
+
             // Draw the tick.
-            renderTarget->DrawLine( { x1, Label.Y, }, { x2, Label.Y }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+            renderTarget->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
             if (!_GraphSettings->_FlipVertically)
             {
-                Rect.bottom = Label.Y;
-                Rect.top    = Rect.bottom - _TimeTextStyle->_Height;
+                Rect.y2 = y;
+                Rect.y1 = Rect.y2 - _TimeTextStyle->_Height;
             }
             else
             {
-                Rect.bottom = Label.Y;
-                Rect.top    = Rect.bottom + _TimeTextStyle->_Height;
+                Rect.y2 = y;
+                Rect.y1 = Rect.y2 + _TimeTextStyle->_Height;
             }
 
             // Draw the label.
             _TimeTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle->_TextFormat, Rect, _TimeTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+
+        renderTarget->PopAxisAlignedClip();
     }
 }
 
@@ -419,22 +533,34 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) cons
 /// </summary>
 void Spectogram::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
 {
-    FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
+    const FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
+
+    if (_State->_HorizontalSpectogram)
+        _FreqTextStyle->SetHorizontalAlignment(left? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+    else
+        _FreqTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
     for (const auto & Iter : _FreqLabels)
     {
-        _FreqTextStyle->_Brush->SetOpacity(Iter.IsDimmed ? Opacity * .5f : Opacity);
+        if (Iter.IsHidden)
+            continue;
 
-        if (_State->_HorizontalSpectogram)
-            _FreqTextStyle->SetHorizontalAlignment(((_GraphSettings->_XAxisMode == XAxisMode::Notes) || (_GraphSettings->_XAxisMode == XAxisMode::Octaves)) ? DWRITE_TEXT_ALIGNMENT_LEADING : DWRITE_TEXT_ALIGNMENT_TRAILING);
-        else
-            _FreqTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        _FreqTextStyle->_Brush->SetOpacity(Iter.IsMinor ? Opacity * .5f : Opacity);
 
         if (left)
             renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _FreqTextStyle->_TextFormat, Iter.Rect1, _FreqTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         else
             renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _FreqTextStyle->_TextFormat, Iter.Rect2, _FreqTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
     }
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    if (left)
+        renderTarget->DrawLine({ _BitmapBounds.left, _BitmapBounds.top },    { _BitmapBounds.right, _BitmapBounds.top },    _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
+    else
+        renderTarget->DrawLine({ _BitmapBounds.left, _BitmapBounds.bottom }, { _BitmapBounds.right, _BitmapBounds.bottom }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
     _FreqTextStyle->_Brush->SetOpacity(Opacity);
 }
@@ -511,9 +637,10 @@ bool Spectogram::Update() noexcept
     {
         // Draw the next spectogram line.
         {
-            const FLOAT Bandwidth = _BitmapSize.width / (FLOAT) _BandCount;
+            const FLOAT Bandwidth = _State->_UseSpectrumBarMetrics ? std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f) : _BitmapSize.width / (FLOAT) _BandCount;
+            const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
-            FLOAT x1 = 0.f;
+            FLOAT x1 = _State->_UseSpectrumBarMetrics ? (_BitmapSize.width - SpectrumWidth) / 2.f : 0.f;
             FLOAT x2 = Bandwidth;
 
             for (const auto & fb : _Analysis->_FrequencyBands)
@@ -554,9 +681,9 @@ bool Spectogram::Update() noexcept
         {
             if (_State->_ScrollingSpectogram)
             {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphSettings->_FlipVertically ? 0.f : _BitmapSize.height });
+                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphSettings->_FlipVertically ? _BitmapBounds.top : _BitmapSize.height });
 
-                if (_TimeLabels.back().Y > _BitmapSize.height)
+                if (_TimeLabels.back().Y > _BitmapSize.height + _TimeTextStyle->_Height)
                     _TimeLabels.pop_back();
             }
             else

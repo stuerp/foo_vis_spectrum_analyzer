@@ -130,13 +130,23 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
     {
         const D2D1_RECT_F & Bounds = _Spectogram.GetClientBounds();
 
-        if (!InRange(y, Bounds.top, Bounds.bottom))
-            return false;
+        if (_State->_HorizontalSpectogram)
+        {
+            if (!InRange(y, Bounds.top, Bounds.bottom))
+                return false;
 
-        if (!_GraphSettings->_FlipVertically)
-            y = (Bounds.bottom + Bounds.top) - y;
+            if (!_GraphSettings->_FlipVertically)
+                y = (Bounds.bottom + Bounds.top) - y;
 
-        index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        }
+        else
+        {
+            if (!InRange(x, Bounds.left, Bounds.right))
+                return false;
+
+            index = std::clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        }
     }
     else
         return false;

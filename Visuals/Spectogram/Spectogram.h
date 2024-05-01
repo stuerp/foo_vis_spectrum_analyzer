@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.04.28) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -20,9 +20,6 @@
 #include "Element.h"
 
 #include <deque>
-
-#include "SpectogramXAxis.h"
-#include "SpectogramYAxis.h"
 
 class Spectogram : public Element
 {
@@ -90,12 +87,12 @@ private:
         {
             Text = text;
             Frequency = frequency;
-            IsDimmed = isDimmed;
+            IsMinor = isDimmed;
         }
 
         std::wstring Text;
         double Frequency;
-        bool IsDimmed;
+        bool IsMinor;
         bool IsHidden;
 
         D2D1_RECT_F Rect1;
@@ -122,9 +119,6 @@ private:
     Style * _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
-
-    SpectogramXAxis _XAxis;
-    SpectogramYAxis _YAxis;
 
     const FLOAT Offset = 4.f; // Distance between the tick and the text.
 };

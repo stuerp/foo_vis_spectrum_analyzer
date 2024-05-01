@@ -1,5 +1,5 @@
 
-/** $VER: GaugeNames.cpp (2024.04.22) P. Stuer - Implements the gauge names of the peak meter. **/
+/** $VER: GaugeNames.cpp (2024.05.01) P. Stuer - Implements the gauge names of the peak meter. **/
 
 #include "framework.h"
 
@@ -86,7 +86,7 @@ void GaugeNames::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
         {
             if (_GraphSettings->_XAxisTop)
             {
-                Rect.left  = _GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->GetWidth();
+                Rect.left  = (_GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->GetWidth()) + Offset;
                 Rect.right = _GraphSettings->_FlipHorizontally ? _TextStyle->GetWidth() : GetWidth();
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -94,7 +94,7 @@ void GaugeNames::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 
             if (_GraphSettings->_XAxisBottom)
             {
-                Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f;
+                Rect.left  = (_GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f) + Offset;
                 Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->GetWidth();
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);

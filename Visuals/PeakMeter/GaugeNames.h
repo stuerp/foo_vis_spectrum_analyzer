@@ -1,5 +1,5 @@
 
-/** $VER: GaugeNames.h (2024.04.22) P. Stuer - Implements the gauge names of the peak meter. **/
+/** $VER: GaugeNames.h (2024.05.01) P. Stuer - Implements the gauge names of the peak meter. **/
 
 #pragma once
 
@@ -61,4 +61,6 @@ private:
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
+
+    const FLOAT Offset = 4.f;
 };

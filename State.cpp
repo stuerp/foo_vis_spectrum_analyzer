@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.28) P. Stuer **/
+/** $VER: State.cpp (2024.05.01) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -223,6 +223,7 @@ void State::Reset() noexcept
     // Spectogram
     _ScrollingSpectogram = true;
     _HorizontalSpectogram = true;
+    _UseSpectrumBarMetrics = false;
 
     // Peak Meter
     _HorizontalPeakMeter = false;
@@ -468,6 +469,7 @@ State & State::operator=(const State & other)
     // Spectogram
     _ScrollingSpectogram = other._ScrollingSpectogram;
     _HorizontalSpectogram = other._HorizontalSpectogram;
+    _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
@@ -858,6 +860,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
             reader->read_object_t(_HorizontalSpectogram, abortHandler);
+            reader->read_object_t(_UseSpectrumBarMetrics, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1147,10 +1150,11 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         writer->write_object_t(_GaugeGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
 
-        // Version 27, v0.7.7.0
+        // Version 27, v0.8.0.0-beta1
         writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
         writer->write_object_t(_HorizontalLevelMeter, abortHandler);
         writer->write_object_t(_HorizontalSpectogram, abortHandler);
+        writer->write_object_t(_UseSpectrumBarMetrics, abortHandler);
     }
     catch (exception & ex)
     {
