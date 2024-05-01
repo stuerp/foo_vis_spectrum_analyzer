@@ -90,6 +90,12 @@ void Spectogram::Resize() noexcept
 
             if (_GraphSettings->_XAxisBottom)
                 _BitmapBounds.left += _TimeTextStyle->_Width;
+
+            if (_GraphSettings->_YAxisLeft)
+                _BitmapBounds.top += _FreqTextStyle->_Height;
+
+            if (_GraphSettings->_YAxisRight)
+                _BitmapBounds.bottom -= _FreqTextStyle->_Height;
         }
 
         _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
@@ -185,7 +191,7 @@ bool _UseSpectrumBarMetrics = true; // TODO
 
                 Iter.Rect2 = Rect;
 
-                Iter.Rect2.bottom = _BitmapSize.height;
+                Iter.Rect2.bottom = _Size.height;
                 Iter.Rect2.top    = Iter.Rect2.bottom - _FreqTextStyle->_Height;
             }
         }
@@ -309,6 +315,9 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
             if (_GraphSettings->_YAxisRight)
                 RenderFreqAxis(renderTarget, false);
         }
+
+        renderTarget->DrawLine({              0.f, 0.f}, {              0.f, _BitmapSize.height}, _DebugBrush);
+        renderTarget->DrawLine({_BitmapSize.width - 30.f, 0.f}, {_BitmapSize.width - 30.f, _BitmapSize.height}, _DebugBrush);
     }
 
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
@@ -762,7 +771,7 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f,1.f,0.f), &_DebugBrush);
 #endif
 
     return hr;
