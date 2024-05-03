@@ -73,10 +73,7 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    auto OldAntialiasMode = renderTarget->GetAntialiasMode();
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     const FLOAT CenterX = GetWidth()  / 2.f;
     const FLOAT CenterY = GetHeight() / 2.f;
@@ -237,9 +234,6 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
             renderTarget->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
         }
     }
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 
 /// <summary>

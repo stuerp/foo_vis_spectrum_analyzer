@@ -63,10 +63,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
 
-    auto OldAntialiasMode = renderTarget->GetAntialiasMode();
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
 #ifdef _DEBUG
     renderTarget->FillRectangle({ 0.f, 0.f, 16.f, 16.f }, _DebugBrush); // Top/Left indicator
@@ -288,9 +285,6 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
             Rect.x1 = Rect.x2 + _State->_GaugeGap;
         }
     }
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
@@ -433,13 +427,13 @@ bool Gauges::GetMetrics(GaugeMetrics & gm) const noexcept
     gm._TickSize = 4.f;
     gm._TotalTickSize = (FLOAT) (_GraphSettings->_YAxisLeft + _GraphSettings->_YAxisRight) * gm._TickSize;
 
-    gm._BarHeight = ::floor((GetHeight() - gm._TotalBarGap - gm._TotalTickSize) / n);
-    gm._BarWidth  = ::floor((GetWidth()  - gm._TotalBarGap - gm._TotalTickSize) / n);
+    gm._BarHeight = (GetHeight() - gm._TotalBarGap - gm._TotalTickSize) / n;
+    gm._BarWidth  = (GetWidth()  - gm._TotalBarGap - gm._TotalTickSize) / n;
 
     gm._TotalBarHeight = (gm._BarHeight * n) + gm._TotalBarGap;
     gm._TotalBarWidth  = (gm._BarWidth  * n) + gm._TotalBarGap;
 
-    gm._Offset = _State->_HorizontalPeakMeter ? ::floor((GetHeight() - gm._TotalBarHeight) / 2.f): ::floor((GetWidth() - gm._TotalBarWidth) / 2.f);
+    gm._Offset = (_State->_HorizontalPeakMeter ? (GetHeight() - gm._TotalBarHeight) : (GetWidth() - gm._TotalBarWidth)) / 2.f;
 
     return true;
 }

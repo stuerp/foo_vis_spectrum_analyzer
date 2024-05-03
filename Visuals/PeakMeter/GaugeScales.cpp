@@ -215,6 +215,8 @@ void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
     if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
         return;
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+
     if (_State->_HorizontalPeakMeter)
     {
         for (const Label & Iter : _Labels)

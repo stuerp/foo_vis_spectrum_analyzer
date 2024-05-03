@@ -97,7 +97,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 {
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In pixels
+    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
@@ -290,7 +290,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
 
     const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In pixels
+    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
     const FLOAT x1 = ((_ClientSize.width - SpectrumWidth) / 2.f) + (Bandwidth / 2.f);
 

@@ -159,7 +159,7 @@ void XAxis::Resize() noexcept
         return;
 
     // Calculate the position of the labels.
-    const FLOAT Bandwidth = std::max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In pixels
+    const FLOAT Bandwidth = std::max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _BandCount : _Size.width;
 
     const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f);

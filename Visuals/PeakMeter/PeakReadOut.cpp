@@ -56,6 +56,8 @@ void PeakReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & 
     if (!SUCCEEDED(hr) || !IsVisible())
         return;
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+
     if (_State->_HorizontalPeakMeter)
         RenderHorizontal(renderTarget, gaugeMetrics);
     else

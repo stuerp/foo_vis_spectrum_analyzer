@@ -59,6 +59,8 @@ void GaugeNames::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & g
     if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
         return;
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
     if (_State->_HorizontalPeakMeter)
         RenderHorizontal(renderTarget, gaugeMetrics);
     else
