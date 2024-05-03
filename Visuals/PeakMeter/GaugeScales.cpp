@@ -72,6 +72,9 @@ void GaugeScales::Resize() noexcept
         const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? 0.f : GetWidth();
         const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? GetWidth() : 0.f;
 
+        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetHeight() : 0.f;
+        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->GetHeight() : GetHeight();
+
         for (Label & Iter : _Labels)
         {
             FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
@@ -83,8 +86,8 @@ void GaugeScales::Resize() noexcept
                 continue;
             }
 
-            Iter.Point1 = D2D1_POINT_2F(x, _TextStyle->GetHeight());
-            Iter.Point2 = D2D1_POINT_2F(x, GetHeight() - _TextStyle->GetHeight());
+            Iter.Point1 = D2D1_POINT_2F(x, y1);
+            Iter.Point2 = D2D1_POINT_2F(x, y2);
 
             x -= cx;
 
@@ -132,10 +135,13 @@ void GaugeScales::Resize() noexcept
     }
     else
     {
-        const FLOAT cy = (_TextStyle->GetHeight() / 2.f);
+        const FLOAT cy = _TextStyle->GetHeight() / 2.f;
 
         // Calculate the position of the labels based on the height.
         D2D1_RECT_F OldRect = {  };
+
+        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetWidth() : 0.f;
+        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->GetWidth() : GetWidth();
 
         const FLOAT yMin = !_GraphSettings->_FlipVertically ? GetHeight() : 0.f;
         const FLOAT yMax = !_GraphSettings->_FlipVertically ? 0.f : GetHeight();
@@ -151,8 +157,8 @@ void GaugeScales::Resize() noexcept
                 continue;
             }
 
-            Iter.Point1 = D2D1_POINT_2F(_TextStyle->GetWidth(),              y);
-            Iter.Point2 = D2D1_POINT_2F(GetWidth() - _TextStyle->GetWidth(), y);
+            Iter.Point1 = D2D1_POINT_2F(x1, y);
+            Iter.Point2 = D2D1_POINT_2F(x2, y);
 
             y -= cy;
 
