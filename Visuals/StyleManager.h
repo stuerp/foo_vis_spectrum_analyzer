@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.05.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -88,6 +88,27 @@ public:
             return S_OK;
 
         return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
+    }
+
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, Style ** style) noexcept
+    {
+        if (*style != nullptr)
+        {
+            if ((*style)->_Brush != nullptr)
+                return S_OK;
+            else
+                return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
+        }
+
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+
+        if ((*style)->_Brush != nullptr)
+            return S_OK;
+
+        return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
     }
 
     void ReleaseDeviceSpecificResources();

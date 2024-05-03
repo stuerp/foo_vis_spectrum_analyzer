@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.03.13) P. Stuer **/
+/** $VER: Support.h (2024.05.03) P. Stuer **/
 
 #pragma once
 
@@ -95,7 +95,7 @@ inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 /// Returns true if the specified flags are set.
 /// </summary>
 template <class T>
-inline static T IsSet(T a, T b)
+inline static bool IsSet(T a, T b)
 {
     return (a & b) == b;
 }

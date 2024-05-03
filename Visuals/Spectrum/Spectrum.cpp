@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.04.29) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.05.03) P. Stuer **/
 
 #include "framework.h"
 #include "Spectrum.h"
@@ -70,7 +70,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 
     if (!SUCCEEDED(hr))
         return;
-
+/*
     _XAxis.Render(renderTarget);
 
     _YAxis.Render(renderTarget);
@@ -83,12 +83,22 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
         else
         if (_State->_VisualizationType == VisualizationType::Curve)
             RenderCurve(renderTarget);
-
+  
         if (_NyquistMarker->IsEnabled())
             RenderNyquistFrequencyMarker(renderTarget);
 
         ResetTransform(renderTarget);
     }
+*/
+    const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
+    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+
+    renderTarget->SetTransform(Translate * FlipV);
+
+    if (_State->_VisualizationType == VisualizationType::Bars)
+        RenderRadialBars(renderTarget);
+
+    ResetTransform(renderTarget);
 }
 
 /// <summary>
@@ -280,6 +290,75 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 }
 
 /// <summary>
+/// Renders the spectrum analysis as radial bars.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
+{
+    if (_Analysis->_FrequencyBands.size() == 0)
+        return;
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    const double InnerRadius =  std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f) * 0.2f;
+    const double OuterRadius = (std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f) * 1.0f) - InnerRadius;
+
+    double a = M_PI_2;
+    const double da = 2 * M_PI / (double) _Analysis->_FrequencyBands.size();
+
+    CComPtr<ID2D1PathGeometry> Path;
+
+    for (const auto & fb : _Analysis->_FrequencyBands)
+    {
+        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Path);
+
+        if (SUCCEEDED(hr))
+        {
+            CComPtr<ID2D1GeometrySink> Sink;
+
+            hr = Path->Open(&Sink);
+
+            if (SUCCEEDED(hr))
+            {
+                FLOAT x = (FLOAT) (::cos(a) * InnerRadius);
+                FLOAT y = (FLOAT) (::sin(a) * InnerRadius);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+
+                const double r = InnerRadius + (OuterRadius * fb.CurValue);
+
+                x = (FLOAT) (::cos(a) * r);
+                y = (FLOAT) (::sin(a) * r);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                a -= da;
+
+                x = (FLOAT) (::cos(a) * r);
+                y = (FLOAT) (::sin(a) * r);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                x = (FLOAT) (::cos(a) * InnerRadius);
+                y = (FLOAT) (::sin(a) * InnerRadius);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+                Sink->Close();
+
+                Sink.Release();
+
+                renderTarget->FillGeometry(Path, _BarArea->_Brush);
+            }
+
+            Path.Release();
+        }
+    }
+}
+
+/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -322,7 +401,17 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
         hr = CreateOpacityMask(renderTarget);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
+    {
+        Style * style = _State->_StyleManager.GetStyle(VisualElement::BarArea);
+
+//FIXME
+const FLOAT InnerRadius = .2f;
+
+        if (style->IsRadial())
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
+        else
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, InnerRadius, &_BarArea);
+    }
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);

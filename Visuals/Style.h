@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.04.20) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2024.05.03) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -14,6 +14,7 @@
 #include "Gradients.h"
 
 #include "DirectWrite.h"
+#include "Support.h"
 
 #include <string>
 
@@ -33,6 +34,7 @@ public:
     bool IsEnabled() const noexcept { return (_ColorSource != ColorSource::None); }
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
     void ReleaseDeviceSpecificResources();
 
     HRESULT MeasureText(const std::wstring & text) noexcept;
@@ -60,6 +62,11 @@ public:
     FLOAT GetHeight() const noexcept
     {
         return _Height;
+    }
+
+    bool IsRadial() const noexcept
+    {
+        return IsSet(_Flags, (uint64_t) Style::RadialGradient);
     }
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
@@ -106,6 +113,9 @@ public:
 
         AmplitudeAware      = 0x20,
 
-        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware,
+        SupportsRadial      = 0x40,
+        RadialGradient      = 0x80,
+
+        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
     };
 };

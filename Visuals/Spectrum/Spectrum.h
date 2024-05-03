@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.04.06) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.05.03) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -50,6 +50,7 @@ private:
 
     void RenderBars(ID2D1RenderTarget * renderTarget);
     void RenderCurve(ID2D1RenderTarget * renderTarget);
+    void RenderRadialBars(ID2D1RenderTarget * renderTarget);
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);

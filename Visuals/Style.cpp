@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.04.02) P. Stuer **/
+/** $VER: Style.cpp (2024.05.03) P. Stuer **/
 
 #include "framework.h"
 #include "Style.h"
@@ -178,6 +178,35 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         if (SUCCEEDED(hr))
             MeasureText(text);
     }
+
+    return hr;
+}
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// </summary>
+HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
+{
+    HRESULT hr = S_OK;
+
+    if (_ColorSource != ColorSource::Gradient)
+        hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+    else
+    {
+        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        {
+            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+
+            if (SUCCEEDED(hr))
+                hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+        }
+        else
+            hr = _Direct2D.CreateRadialGradientBrush(renderTarget, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
+    }
+
+    if (_Brush)
+        _Brush->SetOpacity(_Opacity);
 
     return hr;
 }
