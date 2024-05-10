@@ -225,7 +225,7 @@ HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, co
     if (rOffset != 0.f)
     {
         for (auto & x : gs)
-            x.position = rOffset + ((1. - rOffset) * x.position);
+            x.position = rOffset + ((1.f - rOffset) * x.position);
     }
 
     CComPtr<ID2D1GradientStopCollection> Collection;
