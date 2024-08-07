@@ -88,10 +88,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.8.0.0-beta2, 2024-05-xx
+v0.8.0.0-beta2, 2024-08-xx
 
 * Fixed: Rounding errors when calculating the gauge metrics with non-default DPI settings.
 * Fixed: Gauge scale lines were too short (Regression).
+* Fixed: Slow spectrum rendering with DSD streams.
 
 v0.8.0.0-beta1, 2024-05-01
 

@@ -70,7 +70,8 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 
     if (!SUCCEEDED(hr))
         return;
-/*
+
+#ifndef _RADIAL
     _XAxis.Render(renderTarget);
 
     _YAxis.Render(renderTarget);
@@ -89,7 +90,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 
         ResetTransform(renderTarget);
     }
-*/
+#else
     const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
     const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
 
@@ -99,6 +100,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
         RenderRadialBars(renderTarget);
 
     ResetTransform(renderTarget);
+#endif
 }
 
 /// <summary>
@@ -404,13 +406,15 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
     {
         Style * style = _State->_StyleManager.GetStyle(VisualElement::BarArea);
 
-//FIXME
-const FLOAT InnerRadius = .2f;
-
         if (style->IsRadial())
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
-        else
+        {
+            //FIXME
+            const FLOAT InnerRadius = .2f;
+
             hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, InnerRadius, &_BarArea);
+        }
+        else
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
     }
 
     if (SUCCEEDED(hr))

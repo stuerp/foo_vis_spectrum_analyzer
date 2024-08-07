@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.05.01) P. Stuer **/
+/** $VER: State.h (2024.08.07) P. Stuer **/
 
 #pragma once
 
@@ -247,9 +247,12 @@ public:
 
     #pragma region Not Serialized
 
+    // These parameters will never be serialized.
+
     bool _IsDUI;                                                        // True if the Default User Interface is being used.
     bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
+    uint32_t _SampleRate;
     size_t _BinCount;
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.

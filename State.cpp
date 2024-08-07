@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.05.01) P. Stuer **/
+/** $VER: State.cpp (2024.08.07) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -30,8 +30,6 @@ State::State()
 /// </summary>
 void State::Reset() noexcept
 {
-    _UseToneGenerator = false;
-
     _DialogBounds = { };
     _PageIndex = 0;
 
@@ -242,6 +240,12 @@ void State::Reset() noexcept
         _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
     else
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
+
+    /* Not serialized */
+
+    _UseToneGenerator = false;
+
+    _SampleRate = 0;
 
     _Barrier = 0;
     _ActivePresetName.clear();

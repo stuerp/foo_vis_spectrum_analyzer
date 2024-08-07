@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.03.26) P. Stuer **/
+/** $VER: UIElement.h (2024.08.07) P. Stuer **/
 
 #pragma once
 
@@ -61,8 +61,10 @@ private:
 
     void ProcessEvents();
     void Render();
-    void Process();
+    void Process() noexcept;
     void Animate();
+
+    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
 
     #pragma region Timer
 
@@ -225,8 +227,6 @@ private:
     TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
     size_t _LastIndex;
-
-    uint32_t _SampleRate;
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 
