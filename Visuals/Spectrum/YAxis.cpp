@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept
+void YAxis::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;

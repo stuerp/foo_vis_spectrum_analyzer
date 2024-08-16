@@ -288,7 +288,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         {
             if (CommandId >= IDM_PRESET_NAME)
             {
-                State NewState;
+                state_t NewState;
 
                 size_t Index = (size_t) CommandId - IDM_PRESET_NAME;
 

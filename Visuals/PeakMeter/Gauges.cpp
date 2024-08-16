@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Gauges::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void Gauges::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -71,7 +71,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
 
     if (_State->_HorizontalPeakMeter)
     {
-        BOUNDS Rect = {  };
+        rect_t Rect = {  };
 
         for (auto & Value : _Analysis->_GaugeValues)
         {
@@ -179,7 +179,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
     }
     else
     {
-        BOUNDS Rect = {  };
+        rect_t Rect = {  };
 
         for (auto & Value : _Analysis->_GaugeValues)
         {

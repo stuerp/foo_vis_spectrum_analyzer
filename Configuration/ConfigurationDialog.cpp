@@ -3566,7 +3566,7 @@ void ConfigurationDialog::GetPresetNames() noexcept
 /// </summary>
 void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
 {
-    State NewState;
+    state_t NewState;
 
     PresetManager::Load(_State->_PresetsDirectoryPath, presetName, &NewState);
 

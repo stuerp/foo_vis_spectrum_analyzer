@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-AnalogStyleAnalyzer::AnalogStyleAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction)
+AnalogStyleAnalyzer::AnalogStyleAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 

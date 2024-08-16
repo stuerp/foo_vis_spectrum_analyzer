@@ -17,7 +17,7 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Analysis::Initialize(const State * threadState, const GraphSettings * settings) noexcept
+void Analysis::Initialize(const state_t * threadState, const GraphSettings * settings) noexcept
 {
     _State = threadState;
     _GraphSettings = settings;

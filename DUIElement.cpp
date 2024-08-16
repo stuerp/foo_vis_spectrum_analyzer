@@ -60,7 +60,7 @@ GUID DUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr DUIElement::g_get_default_configuration()
 {
-    State DefaultConfiguration;
+    state_t DefaultConfiguration;
 
     ui_element_config_builder Builder;
 

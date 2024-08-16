@@ -23,7 +23,7 @@ PeakMeter::PeakMeter()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void PeakMeter::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void PeakMeter::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _Gauges.Initialize(state, settings, analysis);
     _GaugeScales.Initialize(state, settings, analysis);

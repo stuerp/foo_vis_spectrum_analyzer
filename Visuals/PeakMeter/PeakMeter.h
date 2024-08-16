@@ -38,7 +38,7 @@ public:
 
     virtual ~PeakMeter() { }
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;

@@ -20,7 +20,7 @@ using namespace stringcvt;
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-State::State()
+state_t::state_t()
 {
     Reset();
 }
@@ -28,7 +28,7 @@ State::State()
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void State::Reset() noexcept
+void state_t::Reset() noexcept
 {
     _DialogBounds = { };
     _PageIndex = 0;
@@ -259,7 +259,7 @@ void State::Reset() noexcept
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-State & State::operator=(const State & other)
+state_t & state_t::operator=(const state_t & other)
 {
     _DialogBounds = other._DialogBounds;
     _PageIndex = other._PageIndex;
@@ -522,7 +522,7 @@ State & State::operator=(const State & other)
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
+void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
     Reset();
 
@@ -888,7 +888,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void State::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
+void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
 {
     try
     {
@@ -1179,7 +1179,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 /// <summary>
 /// One time conversion of the old color settings.
 /// </summary>
-void State::ConvertColorSettings() noexcept
+void state_t::ConvertColorSettings() noexcept
 {
     {
         Style * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
@@ -1372,7 +1372,7 @@ void State::ConvertColorSettings() noexcept
 /// <summary>
 /// One time conversion of the old graph settings.
 /// </summary>
-void State::ConvertGraphSettings() noexcept
+void state_t::ConvertGraphSettings() noexcept
 {
     for (auto & gs : _GraphSettings)
     {
@@ -1396,7 +1396,7 @@ void State::ConvertGraphSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops State::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
+const GradientStops state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops_Deprecated;

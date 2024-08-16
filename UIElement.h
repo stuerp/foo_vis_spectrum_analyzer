@@ -161,8 +161,8 @@ private:
     #pragma endregion
 
 protected:
-    State _MainState;
-    State _ThreadState;
+    state_t _MainState;
+    state_t _ThreadState;
 
     CriticalSection _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;

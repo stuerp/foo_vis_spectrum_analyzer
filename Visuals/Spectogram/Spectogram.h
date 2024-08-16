@@ -31,7 +31,7 @@ public:
     Spectogram(Spectogram &&) = delete;
     Spectogram & operator=(Spectogram &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset();

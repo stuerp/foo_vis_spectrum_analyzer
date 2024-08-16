@@ -27,7 +27,7 @@ Graph::~Graph()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
+void Graph::Initialize(state_t * state, const GraphSettings * settings) noexcept
 {
     _State = state;
     _GraphSettings = settings;

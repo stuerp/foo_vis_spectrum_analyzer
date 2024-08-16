@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.04.22) P. Stuer **/
+/** $VER: framework.h (2024.08.16) P. Stuer **/
 
 #pragma once
 
@@ -51,7 +51,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 /// <summary>
 /// A more sane way of representing a rectangle
 /// </summary>
-struct BOUNDS
+struct rect_t
 {
     operator D2D1_RECT_F () const noexcept
     {

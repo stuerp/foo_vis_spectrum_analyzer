@@ -32,7 +32,7 @@ public:
     XAxis(XAxis &&) = delete;
     XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept;
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }

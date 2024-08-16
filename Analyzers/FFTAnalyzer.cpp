@@ -23,7 +23,7 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+FFTAnalyzer::FFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 

@@ -21,14 +21,14 @@
 /// Represents the configuration of the component.
 /// </summary>
 #pragma warning(disable: 4820)
-class State
+class state_t
 {
 public:
-    State();
+    state_t();
 
-    State & operator=(const State & other);
+    state_t & operator=(const state_t & other);
 
-    virtual ~State() { }
+    virtual ~state_t() { }
 
     void Reset() noexcept;
 

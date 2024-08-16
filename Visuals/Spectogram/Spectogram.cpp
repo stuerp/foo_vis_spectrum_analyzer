@@ -23,7 +23,7 @@ Spectogram::Spectogram()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectogram::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void Spectogram::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -128,7 +128,7 @@ void Spectogram::Resize() noexcept
         const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
         const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-        BOUNDS Rect = { };
+        rect_t Rect = { };
 
         if (_State->_HorizontalSpectogram)
         {
@@ -459,7 +459,7 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) co
         const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle->_Height;
         const FLOAT y2 = first ? _TimeTextStyle->_Height : _Size.height;
 
-        BOUNDS Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
+        rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
 
         renderTarget->PushAxisAlignedClip({ _BitmapBounds.left, y1, _BitmapBounds.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -494,7 +494,7 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) co
         const FLOAT x1 = first ? _BitmapBounds.right                          : _BitmapBounds.left - _TimeTextStyle->_Width;
         const FLOAT x2 = first ? _BitmapBounds.right + _TimeTextStyle->_Width : _BitmapBounds.left;
 
-        BOUNDS Rect = { x1, 0.f, x2, 0.f };
+        rect_t Rect = { x1, 0.f, x2, 0.f };
 
         renderTarget->PushAxisAlignedClip({ x1, _BitmapBounds.top, x2, _BitmapBounds.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 

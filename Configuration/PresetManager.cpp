@@ -15,7 +15,7 @@
 /// <summary>
 /// Loads a state object from a file.
 /// </summary>
-bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName, State * state) noexcept
+bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName, state_t * state) noexcept
 {
     Path PresetPath;
 
@@ -46,7 +46,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
         if (Value != PresetManager::Version)
             return false;
 
-        State NewState;
+        state_t NewState;
 
         NewState.Read(Reader, Size, fb2k::noAbort, true);
 
@@ -65,7 +65,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
 /// <summary>
 /// Saves a state object to a file.
 /// </summary>
-bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName, const State * state) noexcept
+bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName, const state_t * state) noexcept
 {
     Path PresetPath;
 

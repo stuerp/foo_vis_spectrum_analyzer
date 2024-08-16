@@ -68,7 +68,7 @@ public:
 
     virtual ~Analysis() { Reset(); };
 
-    void Initialize(const State * state, const GraphSettings * settings) noexcept;
+    void Initialize(const state_t * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void UpdatePeakValues(bool isStopped) noexcept;
 
@@ -122,7 +122,7 @@ private:
     }
 
 public:
-    const State * _State;
+    const state_t * _State;
     const GraphSettings * _GraphSettings;
 
     uint32_t _SampleRate;

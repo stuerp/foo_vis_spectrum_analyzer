@@ -21,8 +21,8 @@ public:
 
     ~PresetManager() = delete;
 
-    static bool Load(const Path & rootPath, const std::wstring & presetName, State * state) noexcept;
-    static bool Save(const Path & rootPath, const std::wstring & presetName, const State * state) noexcept;
+    static bool Load(const Path & rootPath, const std::wstring & presetName, state_t * state) noexcept;
+    static bool Save(const Path & rootPath, const std::wstring & presetName, const state_t * state) noexcept;
     static bool Delete(const Path & rootPath, const std::wstring & presetName) noexcept;
 
     static bool GetPresetNames(const Path & rootPath, std::vector<std::wstring> & FileNames) noexcept;

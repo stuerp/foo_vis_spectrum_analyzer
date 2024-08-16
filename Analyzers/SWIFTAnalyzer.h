@@ -32,7 +32,7 @@ public:
 
     virtual ~SWIFTAnalyzer() { }
 
-    SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
+    SWIFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;

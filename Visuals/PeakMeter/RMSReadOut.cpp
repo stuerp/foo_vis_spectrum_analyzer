@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void RMSReadOut::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void RMSReadOut::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;

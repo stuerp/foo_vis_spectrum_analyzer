@@ -38,7 +38,7 @@ public:
 
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
 
-    void Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const State * state) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 

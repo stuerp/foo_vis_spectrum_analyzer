@@ -70,7 +70,7 @@ protected:
     }
 
 protected:
-    State * _State;
+    state_t * _State;
     const GraphSettings * _GraphSettings;
     const Analysis * _Analysis;
 

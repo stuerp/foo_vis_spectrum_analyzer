@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void GaugeScales::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void GaugeScales::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
