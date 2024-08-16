@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.05.03) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.08.16) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -18,6 +18,8 @@
 
 #include "XAxis.h"
 #include "YAxis.h"
+
+#include "Chrono.h"
 
 #include <vector>
 #include <string>
@@ -81,6 +83,8 @@ private:
 
     XAxis _XAxis;
     YAxis _YAxis;
+
+    Chrono _Chrono;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;

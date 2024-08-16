@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.05.03) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.08.16) P. Stuer **/
 
 #include "framework.h"
 #include "Spectrum.h"
@@ -26,6 +26,8 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings, const A
 
     _XAxis.Initialize(state, settings, analysis);
     _YAxis.Initialize(state, settings, analysis);
+
+    _Chrono.Reset();
 }
 
 /// <summary>
@@ -60,6 +62,8 @@ void Spectrum::Resize() noexcept
 
     _IsResized = false;
 }
+
+#define _RADIAL
 
 /// <summary>
 /// Renders this instance to the specified render target.
@@ -302,11 +306,14 @@ void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    const double InnerRadius =  std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f) * 0.2f;
-    const double OuterRadius = (std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f) * 1.0f) - InnerRadius;
+    const double Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
+    const double InnerRadius =  Side * _State->_InnerRadius;
+    const double OuterRadius = (Side * _State->_OuterRadius) - InnerRadius;
 
-    double a = M_PI_2;
-    const double da = 2 * M_PI / (double) _Analysis->_FrequencyBands.size();
+//  double a = ::fmod(M_PI_2 + (_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+    double a = ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+
+    const double da = (2. * M_PI) / (double) _Analysis->_FrequencyBands.size();
 
     CComPtr<ID2D1PathGeometry> Path;
 
@@ -404,17 +411,15 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 
     if (SUCCEEDED(hr))
     {
-        Style * style = _State->_StyleManager.GetStyle(VisualElement::BarArea);
+//      Style * style = _State->_StyleManager.GetStyle(VisualElement::BarArea);
 
-        if (style->IsRadial())
-        {
-            //FIXME
-            const FLOAT InnerRadius = .2f;
-
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, InnerRadius, &_BarArea);
-        }
-        else
+#ifdef _RADIAL
+//      if (style->IsRadial())
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarArea);
+//      else
+#else
             hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
+#endif
     }
 
     if (SUCCEEDED(hr))

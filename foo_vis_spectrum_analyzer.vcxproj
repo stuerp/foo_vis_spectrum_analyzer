@@ -211,6 +211,7 @@
     <ClInclude Include="Visuals\PeakMeter\PeakReadOut.h" />
     <ClInclude Include="Visuals\PeakMeter\RMSReadOut.h" />
     <ClInclude Include="Visuals\Spectogram\Spectogram.h" />
+    <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />

@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.08.07) P. Stuer **/
+/** $VER: State.cpp (2024.08.16) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -209,6 +209,11 @@ void State::Reset() noexcept
     _PeakMode = PeakMode::Classic;
     _HoldTime = 30.;
     _Acceleration = 0.5;
+
+    // Radial Bars
+    _InnerRadius = 0.2f;
+    _OuterRadius = 1.0f;
+    _AngularVelocity = 1.f;
 
     // Curve
     _LineWidth_Deprecated = 2.f;
@@ -461,6 +466,11 @@ State & State::operator=(const State & other)
     _PeakMode = other._PeakMode;
     _HoldTime = other._HoldTime;
     _Acceleration = other._Acceleration;
+
+    // Radial Bars
+    _InnerRadius = other._InnerRadius;
+    _OuterRadius = other._OuterRadius;
+    _AngularVelocity = other._AngularVelocity;
 
     // Curve
     _LineWidth_Deprecated = other._LineWidth_Deprecated;

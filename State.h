@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.08.07) P. Stuer **/
+/** $VER: State.h (2024.08.16) P. Stuer **/
 
 #pragma once
 
@@ -201,6 +201,14 @@ public:
                 bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
                 FLOAT _LEDSize;                                         // Size of the LED.
                 FLOAT _LEDGap;                                          // Gap between the LEDs.
+
+            #pragma endregion
+
+            #pragma region Radial Bars
+
+                FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
+                FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
+                FLOAT _AngularVelocity;                                 // Radians / s
 
             #pragma endregion
 

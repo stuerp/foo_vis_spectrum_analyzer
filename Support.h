@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.05.03) P. Stuer **/
+/** $VER: Support.h (2024.08.16) P. Stuer **/
 
 #pragma once
 
@@ -74,12 +74,12 @@ inline static FLOAT ToDIPs(FLOAT points)
 }
 
 /// <summary>
-/// Wraps an index.
+/// Wraps around a value.
 /// </summary>
 template<class T>
-inline static T Wrap(T index, T length)
+inline static T Wrap(T value, T max)
 {
-    return (length + (index % length)) % length;
+    return (max + (value % max)) % max;
 }
 
 /// <summary>
