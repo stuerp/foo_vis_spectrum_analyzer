@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2024.04.08) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: XAxis.h (2024.04.08) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -19,20 +19,20 @@
 #include <string>
 
 /// <summary>
-/// Implements the Y axis of a graph.
+/// Implements the X axis of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-class YAxis : public Element
+class XAxis : public Element
 {
 public:
-    YAxis() { }
+    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency() { }
 
-    YAxis(const YAxis &) = delete;
-    YAxis & operator=(const YAxis &) = delete;
-    YAxis(YAxis &&) = delete;
-    YAxis & operator=(YAxis &&) = delete;
+    XAxis(const XAxis &) = delete;
+    XAxis & operator=(const XAxis &) = delete;
+    XAxis(XAxis &&) = delete;
+    XAxis & operator=(XAxis &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept;
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
@@ -40,28 +40,31 @@ public:
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
     void ReleaseDeviceSpecificResources();
 
-    FLOAT GetWidth() const
+    FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle->_TextWidth;
+        return _TextStyle->_Height;
     }
 
 private:
     void Resize() noexcept;
 
 private:
-    bool _FlipVertically;
+    size_t _BandCount;
+    double _LoFrequency;
+    double _HiFrequency;
 
     struct Label
     {
         std::wstring Text;
-        double Amplitude;
+        double Frequency;
+        bool IsDimmed;
         bool IsHidden;
 
-        D2D1_POINT_2F PointL;
-        D2D1_POINT_2F PointR;
+        D2D1_POINT_2F PointT;
+        D2D1_POINT_2F PointB;
 
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
+        D2D1_RECT_F RectT;
+        D2D1_RECT_F RectB;
     };
 
     std::vector<Label> _Labels;

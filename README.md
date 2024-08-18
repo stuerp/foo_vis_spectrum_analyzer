@@ -45,7 +45,7 @@ or
 To build the code you need:
 
 * [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
-* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2023-09-23
+* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2024-08-07
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320
 * [Columns UI SDK](https://yuo.be/columns-ui-sdk) 7.0.0
 
@@ -87,6 +87,25 @@ Open `foo_vis_spectrum_analyzer.sln` with Visual Studio and build the solution.
 To create the component first build the x86 configuration and next the x64 configuration.
 
 ## Change Log
+
+v0.8.0.0-beta2, 2024-08-18
+
+* New: Radial Bar visualization.
+* Improved: Smoothing factor can be specified with 2 decimals. (Forum request)
+* Improved: The spectrum bars can be horizontally aligned in the graph area. (Forum request)
+* Fixed: Rounding errors when calculating the gauge metrics with non-default DPI settings.
+* Fixed: Gauge scale lines were too short (Regression).
+* Fixed: Slow spectrum rendering with DSD streams.
+
+v0.8.0.0-beta1, 2024-05-01
+
+* New: Left/Right and Mid/Side level meter.
+  * The left/right channel pair is selectable.
+* Spectogram
+  * New: Vertical scrolling and static spectogram. A special setting is available to align the spectogram with a spectrum bars visualization over or under the spectogram.
+  * Improved: Overall polishing and removal of glitches.
+* Added: Separate peak and RMS level read outs to the peak meter.
+* Fixed: An old color bug in the owner-drawn menu list.
 
 v0.7.6.2, 2024-04-17
 

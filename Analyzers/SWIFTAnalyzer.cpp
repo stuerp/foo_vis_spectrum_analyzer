@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(state, sampleRate, channelCount, channelSetup, WindowFunction())
+SWIFTAnalyzer::SWIFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : Analyzer(state, sampleRate, channelCount, channelSetup, WindowFunction())
 {
 }
 

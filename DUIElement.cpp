@@ -2,8 +2,8 @@
 /** $VER: DUIElement.cpp (2024.03.11) P. Stuer **/
 
 #include "framework.h"
-#include "DUIElement.h"
 
+#include "DUIElement.h"
 #include "Color.h"
 #include "Log.h"
 
@@ -26,9 +26,9 @@ DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback
 /// <summary>
 /// Retrieves the name of the element.
 /// </summary>
-void DUIElement::g_get_name(pfc::string_base & p_out)
+void DUIElement::g_get_name(pfc::string_base & name)
 {
-    p_out = STR_COMPONENT_NAME;
+    name = STR_COMPONENT_NAME;
 }
 
 /// <summary>
@@ -60,7 +60,7 @@ GUID DUIElement::g_get_subclass()
 /// </summary>
 ui_element_config::ptr DUIElement::g_get_default_configuration()
 {
-    State DefaultConfiguration;
+    state_t DefaultConfiguration;
 
     ui_element_config_builder Builder;
 
@@ -103,7 +103,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 }
 
 /// <summary>
-/// Used by host to notify the element about various events.
+/// Used by the host to notify the element about various events.
 /// See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value.
 /// Container classes should dispatch all notifications to their children.
 /// </summary>

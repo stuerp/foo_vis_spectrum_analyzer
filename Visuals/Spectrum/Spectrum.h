@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.04.06) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2024.08.16) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -19,6 +19,8 @@
 #include "XAxis.h"
 #include "YAxis.h"
 
+#include "Chrono.h"
+
 #include <vector>
 #include <string>
 
@@ -35,7 +37,7 @@ public:
     Spectrum(Spectrum &&) = delete;
     Spectrum & operator=(Spectrum &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
@@ -50,6 +52,7 @@ private:
 
     void RenderBars(ID2D1RenderTarget * renderTarget);
     void RenderCurve(ID2D1RenderTarget * renderTarget);
+    void RenderRadialBars(ID2D1RenderTarget * renderTarget);
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
@@ -80,6 +83,8 @@ private:
 
     XAxis _XAxis;
     YAxis _YAxis;
+
+    Chrono _Chrono;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;

@@ -34,7 +34,7 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    Analyzer(const State * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
+    Analyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }
@@ -60,7 +60,7 @@ public:
     }
 
 protected:
-    const State * _State;
+    const state_t * _State;
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelSetup;

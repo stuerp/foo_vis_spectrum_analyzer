@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.03.13) P. Stuer **/
+/** $VER: Support.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -74,12 +74,12 @@ inline static FLOAT ToDIPs(FLOAT points)
 }
 
 /// <summary>
-/// Wraps an index.
+/// Wraps around a value.
 /// </summary>
 template<class T>
-inline static T Wrap(T index, T length)
+inline static T Wrap(T value, T max)
 {
-    return (length + (index % length)) % length;
+    return (max + (value % max)) % max;
 }
 
 /// <summary>
@@ -88,14 +88,14 @@ inline static T Wrap(T index, T length)
 template<class T, class U>
 inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
-    return dstMin + (U) (((double) (value - srcMin) * (dstMax - dstMin)) / (double) (srcMax - srcMin));
+    return dstMin + (U) (((double) (value - srcMin) * (double) (dstMax - dstMin)) / (double) (srcMax - srcMin));
 }
 
 /// <summary>
 /// Returns true if the specified flags are set.
 /// </summary>
 template <class T>
-inline static T IsSet(T a, T b)
+inline static bool IsSet(T a, T b)
 {
     return (a & b) == b;
 }
@@ -214,4 +214,12 @@ inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t 
     const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
 
     return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
+}
+
+/// <summary>
+/// Converts the specified value from degrees to radians.
+/// </summary>
+inline double Degrees2Radians(double degrees)
+{
+    return (degrees * 2 * M_PI) / 360.;
 }

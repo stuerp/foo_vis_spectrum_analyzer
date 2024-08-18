@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.16) P. Stuer **/
+/** $VER: Constans.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -243,6 +243,20 @@ enum class SmoothingMethod
     Peak = 2,
 };
 
+enum class HorizontalAlignment
+{
+    Near = 0,
+    Center,
+    Far,
+};
+
+enum class VerticalAlignment
+{
+    Near = 0,
+    Center,
+    Far,
+};
+
 enum class XAxisMode
 {
     None = 0,
@@ -267,6 +281,8 @@ enum class VisualizationType
     Curve = 1,
     Spectogram = 2,
     PeakMeter = 3,
+    LevelMeter = 4,
+    RadialBars = 5,
 };
 
 enum class PeakMode
@@ -338,18 +354,26 @@ enum class VisualElement : uint32_t
 
     Spectogram                  = 18,
 
-    PeakMeterBackground         = 19,
-    PeakMeterPeakLevel          = 20,
-    PeakMeter0dBPeakLevel       = 23,
-    PeakMeterMaxPeakLevel       = 25,
+    GaugeBackground             = 19,
 
-    PeakMeterRMSLevel           = 21,
-    PeakMeter0dBRMSLevel        = 24,
-    PeakMeterRMSLevelText       = 22,
+    GaugePeakLevel              = 20,
+    Gauge0dBPeakLevel           = 23,
+    GaugeMaxPeakLevel           = 25,
+    GaugePeakLevelText          = 26,
+
+    GaugeRMSLevel               = 21,
+    Gauge0dBRMSLevel            = 24,
+    GaugeRMSLevelText           = 22,
 
     NyquistMarker               = 15,
 
-    Count                       = 26
+    GaugeLeftRight              = 27,
+    GaugeMidSide                = 28,
+    LevelMeterAxis              = 29,
+    GaugeLeftRightIndicator     = 30,
+    GaugeMidSideIndicator       = 31,
+
+    Count                       = 32
 };
 
 enum class ColorSource : uint32_t
@@ -423,20 +447,24 @@ enum class Channel : uint32_t
     FrontCenter = 1 << 2,
 
     LFE = 1 << 3,
+
     BackLeft = 1 << 4,
     BackRight = 1 << 5,
 
     FrontCenterLeft = 1 << 6,
     FrontCenterRight = 1 << 7,
+
     BackCenter = 1 << 8,
 
     SideLeft = 1 << 9,
     SideRight = 1 << 10,
 
     TopCenter = 1 << 11,
+
     TopFrontLeft = 1 << 12,
     TopFrontCenter = 1 << 13,
     TopFrontRight = 1 << 14,
+
     TopBackLeft = 1 << 15,
     TopBackCenter = 1 << 16,
     TopBackRight = 1 << 17,
@@ -462,14 +490,28 @@ enum class Channel : uint32_t
 
 inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
 
-enum class HorizontalAlignment : uint32_t
+enum class ChannelPair : uint32_t
+{
+    FrontLeftRight = 0,
+    BackLeftRight,
+
+    FrontCenterLeftRight,
+    SideLeftRight,
+
+    TopFrontLeftRight,
+    TopBackLeftRight,
+
+    Count,
+};
+
+enum class HorizontalTextAlignment : uint32_t
 {
     Left = 0,
     Center = 1,
     Right = 2
 };
 
-enum class VerticalAlignment : uint32_t
+enum class VerticalTextAlignment : uint32_t
 {
     Top = 0,
     Center = 1,

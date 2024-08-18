@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.04.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2024.05.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -88,6 +88,27 @@ public:
             return S_OK;
 
         return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
+    }
+
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, Style ** style) noexcept
+    {
+        if (*style != nullptr)
+        {
+            if ((*style)->_Brush != nullptr)
+                return S_OK;
+            else
+                return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
+        }
+
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+
+        if ((*style)->_Brush != nullptr)
+            return S_OK;
+
+        return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
     }
 
     void ReleaseDeviceSpecificResources();
@@ -248,7 +269,7 @@ private:
 
         // Peak
         {
-            VisualElement::PeakMeterBackground,
+            VisualElement::GaugeBackground,
             {
                 Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -256,7 +277,7 @@ private:
         },
 
         {
-            VisualElement::PeakMeterPeakLevel,
+            VisualElement::GaugePeakLevel,
             {
                 Style::SupportsOpacity,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -264,7 +285,7 @@ private:
         },
 
         {
-            VisualElement::PeakMeter0dBPeakLevel,
+            VisualElement::Gauge0dBPeakLevel,
             {
                 Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -272,16 +293,24 @@ private:
         },
 
         {
-            VisualElement::PeakMeterMaxPeakLevel,
+            VisualElement::GaugeMaxPeakLevel,
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
+        {
+            VisualElement::GaugePeakLevelText,
+            {
+                Style::SupportsOpacity | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
+            }
+        },
+
         // RMS
         {
-            VisualElement::PeakMeterRMSLevel,
+            VisualElement::GaugeRMSLevel,
             {
                 Style::SupportsOpacity,
                 ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -289,7 +318,7 @@ private:
         },
 
         {
-            VisualElement::PeakMeter0dBRMSLevel,
+            VisualElement::Gauge0dBRMSLevel,
             {
                 Style::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -297,7 +326,7 @@ private:
         },
 
         {
-            VisualElement::PeakMeterRMSLevelText,
+            VisualElement::GaugeRMSLevelText,
             {
                 Style::SupportsOpacity | Style::SupportsFont,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
@@ -309,6 +338,47 @@ private:
             {
                 Style::SupportsOpacity | Style::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        // Level Meter
+        {
+            VisualElement::GaugeLeftRight,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugeLeftRightIndicator,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugeMidSide,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::GaugeMidSideIndicator,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+            }
+        },
+
+        {
+            VisualElement::LevelMeterAxis,
+            {
+                Style::SupportsOpacity | Style::SupportsThickness | Style::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f,
             }
         },
     };

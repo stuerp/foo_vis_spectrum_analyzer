@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.04.07) P. Stuer **/
+/** $VER: Rendering.cpp (2024.08.07) P. Stuer **/
 
 #include "framework.h"
 #include "UIElement.h"
@@ -171,7 +171,7 @@ void UIElement::Render()
     {
         _FrameCounter.NewFrame();
 
-        UpdateSpectrum();
+        Process();
 
         _RenderTarget->BeginDraw();
 
@@ -190,60 +190,96 @@ void UIElement::Render()
             hr = S_OK;
         }
 
-        UpdatePeakIndicators();
+        Animate();
     }
 }
 
 /// <summary>
 /// Updates the spectrum of all the graphs using the next audio chunk.
 /// </summary>
-void UIElement::UpdateSpectrum()
+void UIElement::Process() noexcept
 {
+    if (!_VisualisationStream.is_valid())
+        return;
+
     double PlaybackTime; // in seconds
 
-    if (_VisualisationStream.is_valid() && _VisualisationStream->get_absolute_time(PlaybackTime))
+    if (!_VisualisationStream->get_absolute_time(PlaybackTime))
+        return;
+
+    if (PlaybackTime == _ThreadState._PlaybackTime)
+        return; // Playback is paused.
+
+    audio_chunk_impl Chunk;
+
+    if ((_ThreadState._SampleRate == 0) && _VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, 0.001))
+        InitializeSampleRateDependentParameters(Chunk);
+
+    if (_ThreadState._SampleRate == 0)
+        return;
+
+    if (_ThreadState._UseToneGenerator)
     {
-        if (PlaybackTime != _ThreadState._PlaybackTime) // Delta Time will be 0 when the playback is paused.
+        if (_ToneGenerator.GetChunk(Chunk, _ThreadState._SampleRate))
         {
-            audio_chunk_impl Chunk;
-
-            if (_MainState._UseToneGenerator)
-            {
-                if (_ToneGenerator.GetChunk(Chunk, _SampleRate))
-                {
-                    for (auto & Iter : _Grid)
-                        Iter._Graph->Process(Chunk);
-                }
-            }
-            else
-            {
-                const bool IsSlidingWindow = _ThreadState._Transform == Transform::SWIFT;
-
-                const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime :  (double) _MainState._BinCount / (double) _SampleRate;
-                const double Offset     = IsSlidingWindow ?                _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
-
-                if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-                {
-                    for (auto & Iter : _Grid)
-                        Iter._Graph->Process(Chunk);
-                }
-
-                _ThreadState._PlaybackTime = PlaybackTime;
-            }
+            for (auto & Iter : _Grid)
+                Iter._Graph->Process(Chunk);
         }
+    }
+    else
+    {
+        const bool IsSlidingWindow = (_ThreadState._Transform == Transform::SWIFT);
+
+        const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime : (double) _ThreadState._BinCount / (double) _ThreadState._SampleRate;
+        const double Offset     = IsSlidingWindow ?                _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
+
+        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+        {
+            for (auto & Iter : _Grid)
+                Iter._Graph->Process(Chunk);
+        }
+
+        _ThreadState._PlaybackTime = PlaybackTime;
     }
 }
 
 /// <summary>
-/// Updates the peak indicators.
+/// Initializes the parameters that depend on the sample rate of the chunk.
 /// </summary>
-void UIElement::UpdatePeakIndicators()
+void UIElement::InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept
+{
+    _ThreadState._SampleRate = chunk.get_sample_rate();
+
+    #pragma warning (disable: 4061)
+    switch (_ThreadState._FFTMode)
+    {
+        default:
+            _ThreadState._BinCount = (size_t) (64. * ::exp2((long) _ThreadState._FFTMode));
+            break;
+
+        case FFTMode::FFTCustom:
+            _ThreadState._BinCount = (_ThreadState._FFTCustom > 0) ? (size_t) _ThreadState._FFTCustom : 64;
+            break;
+
+        case FFTMode::FFTDuration:
+            _ThreadState._BinCount = (_ThreadState._FFTDuration > 0.) ? (size_t) (((double) _ThreadState._SampleRate * _ThreadState._FFTDuration) / 1000.) : 64;
+            break;
+    }
+    #pragma warning (default: 4061)
+
+    _ToneGenerator.Initialize(997., 1., 0., _ThreadState._BinCount);
+}
+
+/// <summary>
+/// Animates the values.
+/// </summary>
+void UIElement::Animate()
 {
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     if (_MainState._PeakMode != PeakMode::None)
     {
         for (auto & Iter : _Grid)
-            Iter._Graph->GetAnalysis().UpdatePeakValues();
+            Iter._Graph->GetAnalysis().UpdatePeakValues(_ThreadState._PlaybackTime == 0.);
     }
 }
 

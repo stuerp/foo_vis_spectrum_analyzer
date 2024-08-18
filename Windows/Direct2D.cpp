@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.03.12) P. Stuer **/
+/** $VER: Direct2D.cpp (2024.05.03) P. Stuer **/
 
 #include "framework.h"
 #include "Direct2D.h"
@@ -188,9 +188,9 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
     if (gradientStops.empty())
         return E_FAIL;
 
-    // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
-    auto gs = gradientStops;
+    GradientStops gs = gradientStops;
 
+    // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
     std::reverse(gs.begin(), gs.end());
 
     for (auto & x : gs)
@@ -207,6 +207,33 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
 
         hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection, gradientBrush);
     }
+
+    return hr;
+}
+
+/// <summary>
+/// Creates a radial gradient brush.
+/// </summary>
+HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+{
+    if (gradientStops.empty())
+        return E_FAIL;
+
+    GradientStops gs = gradientStops;
+
+    // Recalculate the stop offsets to take into account the inner radius.
+    if (rOffset != 0.f)
+    {
+        for (auto & x : gs)
+            x.position = rOffset + ((1.f - rOffset) * x.position);
+    }
+
+    CComPtr<ID2D1GradientStopCollection> Collection;
+
+    HRESULT hr = renderTarget->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+
+    if (SUCCEEDED(hr))
+        hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection, gradientBrush);
 
     return hr;
 }

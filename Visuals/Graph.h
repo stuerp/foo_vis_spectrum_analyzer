@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.04.06) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.04.22) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #pragma once
 
@@ -19,6 +19,7 @@
 #include "Spectrum.h"
 #include "Spectogram.h"
 #include "PeakMeter.h"
+#include "LevelMeter.h"
 
 #include "Log.h"
 
@@ -31,7 +32,7 @@ public:
     Graph();
     virtual ~Graph();
 
-    void Initialize(State * state, const GraphSettings * settings) noexcept;
+    void Initialize(state_t * state, const GraphSettings * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
     void Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
     void Reset();
@@ -42,9 +43,11 @@ public:
     }
 
     Analysis & GetAnalysis() noexcept { return _Analysis; }
+
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
     Spectogram & GetSpectogram() noexcept { return _Spectogram; }
     PeakMeter & GetPeakMeter() noexcept { return _PeakMeter; }
+    LevelMeter & GetCorrelationMeter() noexcept { return _CorrelationMeter; }
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -86,6 +89,7 @@ private:
     Spectrum _Spectrum;
     Spectogram _Spectogram;
     PeakMeter _PeakMeter;
+    LevelMeter _CorrelationMeter;
 
     Style * _BackgroundStyle;
     Style * _DescriptionTextStyle;

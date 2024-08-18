@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.15) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.08.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -27,7 +27,7 @@ Graph::~Graph()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
+void Graph::Initialize(state_t * state, const GraphSettings * settings) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -39,6 +39,7 @@ void Graph::Initialize(State * state, const GraphSettings * settings) noexcept
     _Spectrum.Initialize(state, settings, &_Analysis);
     _Spectogram.Initialize(state, settings, &_Analysis);
     _PeakMeter.Initialize(state, settings, &_Analysis);
+    _CorrelationMeter.Initialize(state, settings, &_Analysis);
 }
 
 /// <summary>
@@ -53,6 +54,7 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     _Spectrum.Move(cr);
     _Spectogram.Move(cr);
     _PeakMeter.Move(cr);
+    _CorrelationMeter.Move(cr);
 }
 
 /// <summary>
@@ -77,7 +79,7 @@ void Graph::Reset()
     for (FrequencyBand & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
-    for (MeterValue & mv : _Analysis._GaugeValues)
+    for (GaugeValue & mv : _Analysis._GaugeValues)
     {
         mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
         mv.PeakRender = mv.RMSRender = 0.;
@@ -86,6 +88,7 @@ void Graph::Reset()
     _Spectrum.Reset();
     _Spectogram.Reset();
     _PeakMeter.Reset();
+    _CorrelationMeter.Reset();
 }
 
 /// <summary>
@@ -105,13 +108,14 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetClientBounds();
+        const rect_t & Bounds = (const rect_t &) _Spectrum.GetClientBounds();
 
-        const FLOAT Bandwidth = Max(::floor((Bounds.right - Bounds.left) / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+        const FLOAT Bandwidth = Max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
 
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.right - Bounds.left;
+        const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (Bounds.Width() - SpectrumWidth) / 2.f : (Bounds.Width() - SpectrumWidth));
 
-        const FLOAT x1 = Bounds.left + ((Bounds.right - Bounds.left) - SpectrumWidth) / 2.f;
+        const FLOAT x1 = Bounds.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
 
         if (!InRange(x, x1, x2))
@@ -127,13 +131,23 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
     {
         const D2D1_RECT_F & Bounds = _Spectogram.GetClientBounds();
 
-        if (!InRange(y, Bounds.top, Bounds.bottom))
-            return false;
+        if (_State->_HorizontalSpectogram)
+        {
+            if (!InRange(y, Bounds.top, Bounds.bottom))
+                return false;
 
-        if (!_GraphSettings->_FlipVertically)
-            y = (Bounds.bottom + Bounds.top) - y;
+            if (!_GraphSettings->_FlipVertically)
+                y = (Bounds.bottom + Bounds.top) - y;
 
-        index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        }
+        else
+        {
+            if (!InRange(x, Bounds.left, Bounds.right))
+                return false;
+
+            index = std::clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        }
     }
     else
         return false;
@@ -165,6 +179,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
     {
         case VisualizationType::Bars:
         case VisualizationType::Curve:
+        case VisualizationType::RadialBars:
         {
             _Spectrum.Render(renderTarget);
             RenderDescription(renderTarget);
@@ -181,6 +196,12 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
         case VisualizationType::PeakMeter:
         {
             _PeakMeter.Render(renderTarget);
+            break;
+        }
+
+        case VisualizationType::LevelMeter:
+        {
+            _CorrelationMeter.Render(renderTarget);
             break;
         }
     }
@@ -247,6 +268,8 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 /// </summary>
 void Graph::ReleaseDeviceSpecificResources() noexcept
 {
+    _CorrelationMeter.ReleaseDeviceSpecificResources();
+
     _PeakMeter.ReleaseDeviceSpecificResources();
 
     _Spectogram.ReleaseDeviceSpecificResources();

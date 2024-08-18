@@ -1,5 +1,5 @@
 ﻿
-/** $VER: GraphSettings.h (2024.04.16) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2024.04.22) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -39,6 +39,11 @@ private:
     void Initialize()
     {
         _Channels = (uint32_t) Channel::ConfigStereo;
+        _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
+
+        _HorizontalAlignment = HorizontalAlignment::Center;
+        _VerticalAlignment = VerticalAlignment::Center;
+
         _FlipHorizontally = false;
         _FlipVertically = false;
 
@@ -65,13 +70,19 @@ private:
         _TPadding = 0.;
         _BPadding = 0.;
 
-        _HAlignment = HorizontalAlignment::Center;
-        _VAlignment = VerticalAlignment::Center;
+        _HAlignment = HorizontalTextAlignment::Center;
+        _VAlignment = VerticalTextAlignment::Center;
     }
 
 public:
     std::wstring _Description;
+
     uint32_t _Channels;
+    uint32_t _ChannelPairs;
+
+    HorizontalAlignment _HorizontalAlignment;   // Horizonal alignment of a visualization in the graph area.
+    VerticalAlignment _VerticalAlignment;       // Horizonal alignment of a visualization in the graph area.
+
     bool _FlipHorizontally;
     bool _FlipVertically;
 
@@ -83,12 +94,12 @@ public:
     bool _YAxisLeft;
     bool _YAxisRight;
 
-    double _AmplitudeLo;    // Lower amplitude, -120.0 .. 0.0
-    double _AmplitudeHi;    // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0
+    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0
     double _AmplitudeStep;
 
-    bool _UseAbsolute;      // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-    double _Gamma;          // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
+    bool _UseAbsolute;                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+    double _Gamma;                              // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
 
     FLOAT _HRatio;
     FLOAT _VRatio;
@@ -98,8 +109,8 @@ public:
     FLOAT _TPadding;
     FLOAT _BPadding;
 
-    HorizontalAlignment _HAlignment;
-    VerticalAlignment _VAlignment;
+    HorizontalTextAlignment _HAlignment;
+    VerticalTextAlignment _VAlignment;
 
-    static const uint32_t _CurentVersion = 2;
+    static const uint32_t _CurentVersion = 3;
 };

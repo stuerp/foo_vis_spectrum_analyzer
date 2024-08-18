@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.04.08) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2024.04.21) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -28,12 +28,30 @@ public:
     virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
     {
         _Bounds = bounds;
-        _Size = { bounds.right - bounds.left, bounds.bottom - bounds.top };
+        _Size = { std::abs(bounds.right - bounds.left), std::abs(bounds.bottom - bounds.top) };
+
         _IsResized = true;
     }
 
-    virtual FLOAT GetLeft() const noexcept { return _Bounds.left; }
-    virtual FLOAT GetRight() const noexcept { return _Bounds.right; }
+    virtual FLOAT GetWidth() const noexcept
+    {
+        return _Size.width;
+    }
+
+    virtual FLOAT GetHeight() const noexcept
+    {
+        return _Size.height;
+    }
+
+    virtual FLOAT GetLeft() const noexcept
+    {
+        return _Bounds.left;
+    }
+
+    virtual FLOAT GetRight() const noexcept
+    {
+        return _Bounds.right;
+    }
 
     virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
@@ -52,7 +70,7 @@ protected:
     }
 
 protected:
-    State * _State;
+    state_t * _State;
     const GraphSettings * _GraphSettings;
     const Analysis * _Analysis;
 

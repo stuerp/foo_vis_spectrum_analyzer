@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.04.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -21,9 +21,6 @@
 
 #include <deque>
 
-#include "SpectogramXAxis.h"
-#include "SpectogramYAxis.h"
-
 class Spectogram : public Element
 {
 public:
@@ -34,7 +31,7 @@ public:
     Spectogram(Spectogram &&) = delete;
     Spectogram & operator=(Spectogram &&) = delete;
 
-    void Initialize(State * state, const GraphSettings * settings, const Analysis * analysis);
+    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset();
@@ -44,13 +41,13 @@ public:
     void ReleaseDeviceSpecificResources();
 
 private:
-    void Update() noexcept;
+    bool Update() noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
-    void RenderXAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
-    void RenderYAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
+    void RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
+    void RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
 
-    void InitYAxis() noexcept;
+    void InitFreqAxis() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
 
@@ -59,6 +56,7 @@ private:
 private:
     D2D1_RECT_F _BitmapBounds;
     FLOAT _X;
+    FLOAT _Y;
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
@@ -67,58 +65,60 @@ private:
     double _LoFrequency;
     double _HiFrequency;
 
-    struct XLabel
+    struct TimeLabel
     {
-        XLabel(const WCHAR * text, FLOAT x)
+        TimeLabel(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
         {
             Text = text;
             X = x;
+            Y = y;
         }
 
         std::wstring Text;
         FLOAT X;
+        FLOAT Y;
     };
 
-    std::deque<XLabel> _XLabels;
+    std::deque<TimeLabel> _TimeLabels;
 
-    struct YLabel
+    struct FreqLabel
     {
-        YLabel(const WCHAR * text, double frequency, bool isDimmed = false)
+        FreqLabel(const WCHAR * text, double frequency, bool isDimmed = false)
         {
             Text = text;
             Frequency = frequency;
-            IsDimmed = isDimmed;
+            IsMinor = isDimmed;
         }
 
         std::wstring Text;
         double Frequency;
-        bool IsDimmed;
+        bool IsMinor;
         bool IsHidden;
 
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
+        D2D1_RECT_F Rect1;
+        D2D1_RECT_F Rect2;
     };
 
-    std::vector<YLabel> _YLabels;
-    std::vector<YLabel> _VisibleYLabels;
+    std::vector<FreqLabel> _FreqLabels;
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+
     Style * _SpectogramStyle;
 
-    Style * _XLineStyle;
-    Style * _XTextStyle;
+    Style * _TimeLineStyle;
+    Style * _TimeTextStyle;
 
-    Style * _YLineStyle;
-    Style * _YTextStyle;
+    Style * _FreqLineStyle;
+    Style * _FreqTextStyle;
 
-    Style * _NyquistMarker;
+    Style * _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
-
-    SpectogramXAxis _XAxis;
-    SpectogramYAxis _YAxis;
 
     const FLOAT Offset = 4.f; // Distance between the tick and the text.
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.04.06) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.08.18) P. Stuer **/
 
 #include "framework.h"
 #include "Spectrum.h"
@@ -16,7 +16,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis)
+void Spectrum::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -26,6 +26,8 @@ void Spectrum::Initialize(State * state, const GraphSettings * settings, const A
 
     _XAxis.Initialize(state, settings, analysis);
     _YAxis.Initialize(state, settings, analysis);
+
+    _Chrono.Reset();
 }
 
 /// <summary>
@@ -46,11 +48,11 @@ void Spectrum::Resize() noexcept
     if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetHeight() : 0.f;
-    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetHeight() : 0.f;
+    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
 
-    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetWidth()  : 0.f;
-    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetWidth()  : 0.f;
+    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
 
     _XAxis.Move({ _Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom });
     _YAxis.Move({ _Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb });
@@ -71,24 +73,38 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
+    if (_State->_VisualizationType != VisualizationType::RadialBars)
     {
-        SetTransform(renderTarget, _ClientBounds);
+        _XAxis.Render(renderTarget);
 
-        if (_State->_VisualizationType == VisualizationType::Bars)
-            RenderBars(renderTarget);
-        else
-        if (_State->_VisualizationType == VisualizationType::Curve)
-            RenderCurve(renderTarget);
+        _YAxis.Render(renderTarget);
 
-        if (_NyquistMarker->IsEnabled())
-            RenderNyquistFrequencyMarker(renderTarget);
+        {
+            SetTransform(renderTarget, _ClientBounds);
+
+            if (_State->_VisualizationType == VisualizationType::Bars)
+                RenderBars(renderTarget);
+            else
+            if (_State->_VisualizationType == VisualizationType::Curve)
+                RenderCurve(renderTarget);
+  
+            if (_NyquistMarker->IsEnabled())
+                RenderNyquistFrequencyMarker(renderTarget);
+
+            ResetTransform(renderTarget);
+        }
+    }
+    else
+    {
+        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
+        const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+
+        renderTarget->SetTransform(Translate * FlipV);
+
+        RenderRadialBars(renderTarget);
 
         ResetTransform(renderTarget);
     }
-
-    _XAxis.Render(renderTarget);
-
-    _YAxis.Render(renderTarget);
 }
 
 /// <summary>
@@ -97,20 +113,18 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 {
-    const FLOAT Bandwidth = Max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f);
-
+    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
     const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
 
-    FLOAT x1 = (_ClientSize.width - SpectrumWidth) / 2.f;
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+
+    FLOAT x1 = HOffset;
     FLOAT x2 = x1 + Bandwidth;
 
-    auto OldAntialiasMode = renderTarget->GetAntialiasMode();
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -209,9 +223,6 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
         x1 = x2;
         x2 = x1 + Bandwidth;
     }
-
-    if (_State->_LEDMode)
-        renderTarget->SetAntialiasMode(OldAntialiasMode);
 }
 
 /// <summary>
@@ -221,6 +232,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     GeometryPoints Points;
     CComPtr<ID2D1PathGeometry> Curve;
@@ -285,6 +298,84 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 }
 
 /// <summary>
+/// Renders the spectrum analysis as radial bars.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
+{
+    if (_Analysis->_FrequencyBands.size() == 0)
+        return;
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    const double Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
+    const double InnerRadius =  Side * _State->_InnerRadius;
+    const double OuterRadius = (Side * _State->_OuterRadius) - InnerRadius;
+
+    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
+//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+
+    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+
+    CComPtr<ID2D1PathGeometry> Path;
+
+    for (const auto & fb : _Analysis->_FrequencyBands)
+    {
+        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Path);
+
+        if (SUCCEEDED(hr))
+        {
+            CComPtr<ID2D1GeometrySink> Sink;
+
+            hr = Path->Open(&Sink);
+
+            if (SUCCEEDED(hr))
+            {
+                FLOAT Sin, Cos;
+
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                FLOAT x = (FLOAT) (Cos * InnerRadius);
+                FLOAT y = (FLOAT) (Sin * InnerRadius);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+
+                const double r = InnerRadius + (OuterRadius * fb.CurValue);
+
+                x = (FLOAT) (Cos * r);
+                y = (FLOAT) (Sin * r);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                a -= da;
+
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                x = (FLOAT) (Cos * r);
+                y = (FLOAT) (Sin * r);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                x = (FLOAT) (Cos * InnerRadius);
+                y = (FLOAT) (Sin * InnerRadius);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+
+                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+                Sink->Close();
+
+                Sink.Release();
+
+                renderTarget->FillGeometry(Path, _BarArea->_Brush);
+            }
+
+            Path.Release();
+        }
+    }
+}
+
+/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -295,11 +386,16 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
 
     const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    const FLOAT BandWidth = Max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In pixels
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
-    const FLOAT xl = ((_ClientSize.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f);
+    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
 
-    const FLOAT x = xl + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+
+    const FLOAT x1 = HOffset + (Bandwidth / 2.f);
+
+    const FLOAT x = x1 + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarker->_Brush, _NyquistMarker->_Thickness, nullptr);
 }
@@ -325,34 +421,48 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
         hr = CreateOpacityMask(renderTarget);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
+    {
+        if (_State->_VisualizationType == VisualizationType::Bars)
+        {
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_PeakArea);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_PeakArea);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_PeakTop);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_PeakTop);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackground);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackground);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackground);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackground);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLine);
+        }
+        else
+        if (_State->_VisualizationType == VisualizationType::Curve)
+        {
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLine);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveArea);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveArea);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLine);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLine);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakArea);
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakArea);
+
+        }
+        else
+        if (_State->_VisualizationType == VisualizationType::RadialBars)
+        {
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarArea);
+        }
+    }
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _ClientSize, L"", &_NyquistMarker);
@@ -408,7 +518,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
 
     bool IsFlatLine = true;
 
-    const FLOAT BandWidth = Max((_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 1.f);
+    const FLOAT BandWidth = std::max((_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 1.f);
 
     FLOAT x = BandWidth / 2.f; // Make sure the knots are nicely centered in the band rectangle.
     FLOAT y = 0.f;

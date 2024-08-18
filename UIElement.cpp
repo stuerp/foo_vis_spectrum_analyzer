@@ -1,7 +1,8 @@
 
-/** $VER: UIElement.cpp (2024.03.26) P. Stuer **/
+/** $VER: UIElement.cpp (2024.08.07) P. Stuer **/
 
 #include "framework.h"
+
 #include "UIElement.h"
 
 #include "DirectX.h"
@@ -18,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _IsStartingUp(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U), _SampleRate(44100)
+UIElement::UIElement(): _IsVisible(true), _IsStartingUp(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U)
 {
 }
 
@@ -287,7 +288,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
         {
             if (CommandId >= IDM_PRESET_NAME)
             {
-                State NewState;
+                state_t NewState;
 
                 size_t Index = (size_t) CommandId - IDM_PRESET_NAME;
 
@@ -472,27 +473,9 @@ void UIElement::UpdateState() noexcept
     _CriticalSection.Enter();
 
     {
-        #pragma warning (disable: 4061)
-        switch (_MainState._FFTMode)
-        {
-            default:
-                _MainState._BinCount = (size_t) (64. * ::exp2((long) _MainState._FFTMode));
-                break;
-
-            case FFTMode::FFTCustom:
-                _MainState._BinCount = (_MainState._FFTCustom > 0) ? (size_t) _MainState._FFTCustom : 64;
-                break;
-
-            case FFTMode::FFTDuration:
-                _MainState._BinCount = (_MainState._FFTDuration > 0.) ? (size_t) (((double) _SampleRate * _MainState._FFTDuration) / 1000.) : 64;
-                break;
-        }
-        #pragma warning (default: 4061)
-
-        _ToneGenerator.Initialize(997., 1., 0., _MainState._BinCount);
-
         _ThreadState = _MainState;
 
+        _ThreadState._SampleRate = 0;
         _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
 
         // Create the graphs.
@@ -559,13 +542,6 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 
     UpdateState();
 
-    // Get the sample rate from the track because the spectrum analyzer requires it. The next opportunity is to get it from the audio chunk but that is too late.
-    // Also, set the sample rate after the FFT size to prevent the render thread from getting wrong results.
-    _SampleRate = (uint32_t) track->get_info_ref()->info().info_get_int("samplerate");
-
-    if (_SampleRate == 0)
-        _SampleRate = 44100;
-
     // Use the script from the configuration to load the album art.
     if (!_MainState._ArtworkFilePath.empty())
     {
@@ -592,7 +568,7 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
     _Event.Raise(Event::PlaybackStopped);
 
-    _SampleRate = 44100;
+    _MainState._SampleRate = 0;
 }
 
 /// <summary>

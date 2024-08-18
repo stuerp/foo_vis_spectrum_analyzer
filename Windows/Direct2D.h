@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2024.03.09) P. Stuer **/
+/** $VER: Direct2D.h (2024.05.03) P. Stuer **/
 
 #pragma once
 
@@ -32,6 +32,7 @@ public:
 
     HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept;
     HRESULT CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
+    HRESULT CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept;
 
 private:
     static HRESULT GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize);

@@ -20,7 +20,7 @@
 struct DialogParameters
 {
     HWND _hWnd;
-    State * _State;
+    state_t * _State;
 };
 
 /// <summary>
@@ -142,8 +142,8 @@ private:
 
     CToolTipCtrl _ToolTipControl;
 
-    State * _State;
-    State _OldState;
+    state_t * _State;
+    state_t _OldState;
     bool _IsInitializing;
     bool _IgnoreNotifications;
 

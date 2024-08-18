@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.04.10) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2024.04.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "framework.h"
 #include "StyleManager.h"
@@ -74,16 +74,24 @@ Style * StyleManager::GetStyleByIndex(int index)
 
         VisualElement::Spectogram,
 
-        VisualElement::PeakMeterBackground,
-        VisualElement::PeakMeterPeakLevel,
-        VisualElement::PeakMeter0dBPeakLevel,
-        VisualElement::PeakMeterMaxPeakLevel,
+        VisualElement::GaugeBackground,
 
-        VisualElement::PeakMeterRMSLevel,
-        VisualElement::PeakMeter0dBRMSLevel,
-        VisualElement::PeakMeterRMSLevelText,
+        VisualElement::GaugePeakLevel,
+        VisualElement::Gauge0dBPeakLevel,
+        VisualElement::GaugeMaxPeakLevel,
+        VisualElement::GaugePeakLevelText,
+
+        VisualElement::GaugeRMSLevel,
+        VisualElement::Gauge0dBRMSLevel,
+        VisualElement::GaugeRMSLevelText,
 
         VisualElement::NyquistMarker,
+
+        VisualElement::GaugeLeftRight,
+        VisualElement::GaugeLeftRightIndicator,
+        VisualElement::GaugeMidSide,
+        VisualElement::GaugeMidSideIndicator,
+        VisualElement::LevelMeterAxis,
     };
 
     assert((size_t) VisualElement::Count == _countof(IndexToId));

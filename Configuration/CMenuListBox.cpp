@@ -1,10 +1,12 @@
 
-/** $VER: CMenuListBox.cpp (2024.01.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.cpp (2024.04.29) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #include "framework.h"
 #include "CMenuListBox.h"
 
 #include "Theme.h"
+
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -69,25 +71,23 @@ void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis)
     {
         COLORREF Color = _Theme.GetSysColor((dis->itemState & ODS_SELECTED) ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
 
-        HPEN hPen = ::CreatePen(PS_SOLID, 1, Color);
-
-        HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
+        COLORREF OldColor = ::SetTextColor(hDC, Color);
 
         int OldBkMode = ::SetBkMode(hDC, TRANSPARENT);
 
-        CString Text;
+        {
+            CString Text;
 
-        this->GetText((int) dis->itemID, Text);
+            this->GetText((int) dis->itemID, Text);
 
-        ::InflateRect(&ri, -4, -4);
+            ::InflateRect(&ri, -4, -4);
 
-        ::DrawTextW(hDC, Text, Text.GetLength(), &ri, DT_SINGLELINE | DT_VCENTER);
+            ::DrawTextW(hDC, Text, Text.GetLength(), &ri, DT_SINGLELINE | DT_VCENTER);
+        }
 
         ::SetBkMode(hDC, OldBkMode);
 
-        ::SelectObject(hDC, hOldPen);
-
-        ::DeleteObject(hPen);
+        ::SetTextColor(hDC, OldColor);
     }
 }
 

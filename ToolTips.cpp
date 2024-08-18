@@ -57,12 +57,21 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
             ::TrackMouseEvent(&tme);
         }
 
-        _LastMousePos = POINT(-1, -1);
+        _LastMousePos = pt;
         _LastIndex = ~0U;
 
-        _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
+        FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+        FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-        _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
+        std::wstring Text;
+        size_t Index;
+
+        if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, Index))
+        {
+            _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
+
+            _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
+        }
     }
     else
     {
@@ -73,14 +82,14 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
             FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
             FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
-            std::wstring ToolTip;
+            std::wstring Text;
             size_t Index;
 
-            if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, ToolTip, Index))
+            if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, Index))
             {
                 if (Index != _LastIndex)
                 {
-                    _TrackingToolInfo.lpszText = (LPWSTR) ToolTip.c_str();
+                    _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
 
                     _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
 

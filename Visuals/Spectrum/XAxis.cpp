@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.04.11) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2024.05.01) P. Stuer - Implements the X axis of a graph. **/
 
 #include "framework.h"
 #include "XAxis.h"
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(State * state, const GraphSettings * settings, const Analysis * analysis) noexcept
+void XAxis::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -159,14 +159,15 @@ void XAxis::Resize() noexcept
         return;
 
     // Calculate the position of the labels.
-    const FLOAT BandWidth = Max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In pixels
+    const FLOAT Bandwidth = std::max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In DIP
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _BandCount : _Size.width;
 
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BandWidth * (FLOAT) _BandCount : _Size.width;
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_Size.width - SpectrumWidth) / 2.f : (_Size.width - SpectrumWidth));
 
-    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) + (BandWidth / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f) - (BandWidth / 2.f);
+    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + HOffset : _Bounds.right - HOffset;
 
-    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_TextHeight : 0.f); // Top axis
-    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_TextHeight : 0.f); // Bottom axis
+    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
+    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
 
     const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
@@ -234,6 +235,8 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
         return;
 
     FLOAT Opacity = _TextStyle->_Brush->GetOpacity();
+
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
     for (const Label & Iter : _Labels)
     {

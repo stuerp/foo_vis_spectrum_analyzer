@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.04.16) P. Stuer **/
+/** $VER: State.cpp (2024.08.18) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -20,7 +20,7 @@ using namespace stringcvt;
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-State::State()
+state_t::state_t()
 {
     Reset();
 }
@@ -28,10 +28,8 @@ State::State()
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void State::Reset() noexcept
+void state_t::Reset() noexcept
 {
-    _UseToneGenerator = false;
-
     _DialogBounds = { };
     _PageIndex = 0;
 
@@ -212,6 +210,11 @@ void State::Reset() noexcept
     _HoldTime = 30.;
     _Acceleration = 0.5;
 
+    // Radial Bars
+    _InnerRadius = 0.2f;
+    _OuterRadius = 1.0f;
+    _AngularVelocity = 60.f; // degrees / sec
+
     // Curve
     _LineWidth_Deprecated = 2.f;
     _LineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
@@ -222,12 +225,17 @@ void State::Reset() noexcept
 
     // Spectogram
     _ScrollingSpectogram = true;
+    _HorizontalSpectogram = true;
+    _UseSpectrumBarMetrics = false;
 
     // Peak Meter
     _HorizontalPeakMeter = false;
     _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
     _GaugeGap = 1.f; // pixels
+
+    _ChannelPair = ChannelPair::FrontLeftRight;
+    _HorizontalLevelMeter = false;
 
     _StyleManager.Reset();
 
@@ -238,15 +246,20 @@ void State::Reset() noexcept
     else
         _PresetsDirectoryPath = ::wideFromUTF8(Path);
 
+    /* Not serialized */
+
+    _UseToneGenerator = false;
+
+    _SampleRate = 0;
+
     _Barrier = 0;
     _ActivePresetName.clear();
-
 }
 
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-State & State::operator=(const State & other)
+state_t & state_t::operator=(const state_t & other)
 {
     _DialogBounds = other._DialogBounds;
     _PageIndex = other._PageIndex;
@@ -428,12 +441,12 @@ State & State::operator=(const State & other)
 
     #pragma region Graphs
 
-        _GraphSettings = other._GraphSettings;
+    _GraphSettings = other._GraphSettings;
 
-        _VerticalLayout = other._VerticalLayout;
+    _VerticalLayout = other._VerticalLayout;
 
-        _GridRowCount = other._GridRowCount;
-        _GridColumnCount = other._GridColumnCount;
+    _GridRowCount = other._GridRowCount;
+    _GridColumnCount = other._GridColumnCount;
 
     #pragma endregion
 
@@ -454,6 +467,11 @@ State & State::operator=(const State & other)
     _HoldTime = other._HoldTime;
     _Acceleration = other._Acceleration;
 
+    // Radial Bars
+    _InnerRadius = other._InnerRadius;
+    _OuterRadius = other._OuterRadius;
+    _AngularVelocity = other._AngularVelocity;
+
     // Curve
     _LineWidth_Deprecated = other._LineWidth_Deprecated;
     _LineColor_Deprecated = other._LineColor_Deprecated;
@@ -464,12 +482,18 @@ State & State::operator=(const State & other)
 
     // Spectogram
     _ScrollingSpectogram = other._ScrollingSpectogram;
+    _HorizontalSpectogram = other._HorizontalSpectogram;
+    _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
 
     // Peak Meter
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
     _GaugeGap = other._GaugeGap;
+
+    // Level Meter
+    _ChannelPair = other._ChannelPair;
+    _HorizontalLevelMeter = other._HorizontalLevelMeter;
 
     #pragma endregion
 
@@ -498,7 +522,7 @@ State & State::operator=(const State & other)
 /// <summary>
 /// Reads this instance with the specified reader. (CUI version)
 /// </summary>
-void State::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
+void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
     Reset();
 
@@ -733,7 +757,6 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read(&_FitMode, sizeof(_FitMode), abortHandler);
         }
 
-        // Version 18, v0.7.1.0-beta-2
         if (Version >= 18)
         {
             reader->read_object_t(_ShowArtworkOnBackground, abortHandler);
@@ -789,11 +812,16 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
                     reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
                 }
 
+                if (GraphSettingsVersion > 2)
+                {
+                    reader->read_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                    reader->read_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                }
+
                 _GraphSettings.push_back(gs);
             }
         }
 
-        // Version 19, v0.7.2.0
         if (Version >= 19)
         {
             reader->read_object_t(_ConstantQ, abortHandler);
@@ -842,6 +870,23 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
             reader->read_object_t(_GaugeGap, abortHandler);
             reader->read_object_t(_RMSPlus3, abortHandler);
         }
+
+        if (Version >= 27)
+        {
+            reader->read(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+            _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
+
+            reader->read_object_t(_HorizontalLevelMeter, abortHandler);
+            reader->read_object_t(_HorizontalSpectogram, abortHandler);
+            reader->read_object_t(_UseSpectrumBarMetrics, abortHandler);
+        }
+
+        if (Version >= 28)
+        {
+            reader->read_object_t(_InnerRadius, abortHandler);
+            reader->read_object_t(_OuterRadius, abortHandler);
+            reader->read_object_t(_AngularVelocity, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -854,7 +899,7 @@ void State::Read(stream_reader * reader, size_t size, abort_callback & abortHand
 /// <summary>
 /// Writes this instance to the specified writer. (CUI version)
 /// </summary>
-void State::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
+void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
 {
     try
     {
@@ -1093,6 +1138,13 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
                 writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
                 writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
             }
+
+            // Version 3, v0.8.0.0-beta2
+            if (GraphSettings::_CurentVersion > 2)
+            {
+                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+            }
         }
 
         // Version 19, v0.7.2.0
@@ -1129,6 +1181,17 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
         // Version 26, v0.7.6.0
         writer->write_object_t(_GaugeGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
+
+        // Version 27, v0.8.0.0-beta1
+        writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+        writer->write_object_t(_HorizontalLevelMeter, abortHandler);
+        writer->write_object_t(_HorizontalSpectogram, abortHandler);
+        writer->write_object_t(_UseSpectrumBarMetrics, abortHandler);
+
+        // Version 28, v0.8.0.0-beta2
+        writer->write_object_t(_InnerRadius, abortHandler);
+        writer->write_object_t(_OuterRadius, abortHandler);
+        writer->write_object_t(_AngularVelocity, abortHandler);
     }
     catch (exception & ex)
     {
@@ -1139,7 +1202,7 @@ void State::Write(stream_writer * writer, abort_callback & abortHandler, bool is
 /// <summary>
 /// One time conversion of the old color settings.
 /// </summary>
-void State::ConvertColorSettings() noexcept
+void state_t::ConvertColorSettings() noexcept
 {
     {
         Style * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
@@ -1332,7 +1395,7 @@ void State::ConvertColorSettings() noexcept
 /// <summary>
 /// One time conversion of the old graph settings.
 /// </summary>
-void State::ConvertGraphSettings() noexcept
+void state_t::ConvertGraphSettings() noexcept
 {
     for (auto & gs : _GraphSettings)
     {
@@ -1356,7 +1419,7 @@ void State::ConvertGraphSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops State::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
+const GradientStops state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops_Deprecated;

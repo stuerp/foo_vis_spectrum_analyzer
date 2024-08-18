@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.04.02) P. Stuer **/
+/** $VER: Style.cpp (2024.05.03) P. Stuer **/
 
 #include "framework.h"
 #include "Style.h"
@@ -44,8 +44,8 @@ Style & Style::operator=(const Style & other)
     _CurrentGradientStops = other._CurrentGradientStops;
 
     _TextFormat = other._TextFormat;
-    _TextWidth = other._TextWidth;
-    _TextHeight = other._TextHeight;
+    _Width = other._Width;
+    _Height = other._Height;
 
     return *this;
 }
@@ -73,8 +73,8 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
     _CurrentColor         = customColor;
     _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
 
-    _TextWidth  = 0.f;
-    _TextHeight = 0.f;
+    _Width  = 0.f;
+    _Height = 0.f;
 }
 
 /// <summary>
@@ -183,6 +183,35 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
 }
 
 /// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// </summary>
+HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
+{
+    HRESULT hr = S_OK;
+
+    if (_ColorSource != ColorSource::Gradient)
+        hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+    else
+    {
+        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        {
+            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+
+            if (SUCCEEDED(hr))
+                hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+        }
+        else
+            hr = _Direct2D.CreateRadialGradientBrush(renderTarget, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
+    }
+
+    if (_Brush)
+        _Brush->SetOpacity(_Opacity);
+
+    return hr;
+}
+
+/// <summary>
 /// Releases the device specific resources.
 /// </summary>
 void Style::ReleaseDeviceSpecificResources()
@@ -192,7 +221,7 @@ void Style::ReleaseDeviceSpecificResources()
 }
 
 /// <summary>
-/// Selects the color of a solid color brush from the gradient colors based on a value between 0. and 1..
+/// Selects the color of a solid color brush from the amplitude map colors based on a value between 0. and 1..
 /// </summary>
 HRESULT Style::SetBrushColor(double value) noexcept
 {
@@ -320,5 +349,5 @@ HRESULT Style::MeasureText(const std::wstring & text) noexcept
     if (_TextFormat == nullptr)
         return E_FAIL;
 
-    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _TextWidth, _TextHeight);
+    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _Width, _Height);
 }

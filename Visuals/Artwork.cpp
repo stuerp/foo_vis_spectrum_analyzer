@@ -54,7 +54,7 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const State * state) noexcept
+void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
 {
     _CriticalSection.Enter();
 

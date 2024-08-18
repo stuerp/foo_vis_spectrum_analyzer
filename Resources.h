@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.04.17) P. Stuer **/
+/** $VER: Resources.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -7,19 +7,19 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          7
-#define NUM_FILE_PATCH          6
-#define NUM_FILE_PRERELEASE     2
+#define NUM_FILE_MINOR          8
+#define NUM_FILE_PATCH          0
+#define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       7
-#define NUM_PRODUCT_PATCH       6
-#define NUM_PRODUCT_PRERELEASE  2
+#define NUM_PRODUCT_MINOR       8
+#define NUM_PRODUCT_PATCH       0
+#define NUM_PRODUCT_PRERELEASE  0
 
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta2"
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -40,11 +40,11 @@
 #define STR_COPYRIGHT           TEXT(STR_COMPONENT_COPYRIGHT)
 
 #define STR_FILE_NAME           TEXT(STR_COMPONENT_FILENAME)
-#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE)
+#define STR_FILE_VERSION        TOSTRING(NUM_FILE_MAJOR) TEXT(".") TOSTRING(NUM_FILE_MINOR) TEXT(".") TOSTRING(NUM_FILE_PATCH) TEXT(".") TOSTRING(NUM_FILE_PRERELEASE) "-beta2"
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
-#define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE)
+#define STR_PRODUCT_VERSION     TOSTRING(NUM_PRODUCT_MAJOR) TEXT(".") TOSTRING(NUM_PRODUCT_MINOR) TEXT(".") TOSTRING(NUM_PRODUCT_PATCH) TEXT(".") TOSTRING(NUM_PRODUCT_PRERELEASE) "-beta2"
 
 #define STR_ABOUT_NAME          STR_INTERNAL_NAME
 #define STR_ABOUT_WEB           TEXT("https://github.com/stuerp/") STR_COMPONENT_BASENAME
@@ -302,12 +302,20 @@
 #define IDC_VERTICAL_LAYOUT             5106
 
 #define IDC_GRAPH_DESCRIPTION_LBL       5108
-#define IDC_GRAPH_DESCRIPTION           5110
+#define IDC_GRAPH_DESCRIPTION           5109
 
-#define IDC_FLIP_HORIZONTALLY           5112
-#define IDC_FLIP_VERTICALLY             5114
+#define IDC_LAYOUT                      5110
 
-#define IDC_CHANNELS                    5116
+#define IDC_HORIZONTAL_ALIGNMENT_LBL    5112
+#define IDC_HORIZONTAL_ALIGNMENT        5113
+
+#define IDC_VERTICAL_ALIGNMENT_LBL      5114
+#define IDC_VERTICAL_ALIGNMENT          5115
+
+#define IDC_FLIP_HORIZONTALLY           5116
+#define IDC_FLIP_VERTICALLY             5118
+
+#define IDC_CHANNELS                    5120
 
 #pragma endregion
 
@@ -391,6 +399,21 @@
 #define IDC_SPECTOGRAM                  7150
 
 #define IDC_SCROLLING_SPECTOGRAM        7152
+#define IDC_HORIZONTAL_SPECTOGRAM       7154
+#define IDC_SPECTRUM_BAR_METRICS        7156
+
+// Radial Bars
+
+#define IDC_RADIAL_BARS                 7190
+
+#define IDC_INNER_RADIUS_LBL            7192
+#define IDC_INNER_RADIUS                7193
+
+#define IDC_OUTER_RADIUS_LBL            7194
+#define IDC_OUTER_RADIUS                7195
+
+#define IDC_ANGULAR_VELOCITY_LBL        7196
+#define IDC_ANGULAR_VELOCITY            7197
 
 // Peak Meter
 
@@ -400,12 +423,21 @@
 #define IDC_RMS_PLUS_3                  7164
 
 #define IDC_RMS_WINDOW_LBL              7166
-#define IDC_RMS_WINDOW                  7168
-#define IDC_RMS_WINDOW_SPIN             7170
-#define IDC_RMS_WINDOW_UNIT             7172
+#define IDC_RMS_WINDOW                  7167
+#define IDC_RMS_WINDOW_SPIN             7168
+#define IDC_RMS_WINDOW_UNIT             7169
 
-#define IDC_GAUGE_GAP_LBL               7174
-#define IDC_GAUGE_GAP                   7176
+#define IDC_GAUGE_GAP_LBL               7170
+#define IDC_GAUGE_GAP                   7171
+
+// Level Meter
+
+#define IDC_LEVEL_METER                 7180
+
+#define IDC_CHANNEL_PAIRS_LBL           7182
+#define IDC_CHANNEL_PAIRS               7183
+
+#define IDC_HORIZONTAL_LEVEL_METER      7184
 
 #pragma endregion
 

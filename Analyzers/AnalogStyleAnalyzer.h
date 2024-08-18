@@ -30,7 +30,7 @@ public:
 
     virtual ~AnalogStyleAnalyzer() { }
 
-    AnalogStyleAnalyzer(const State * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
+    AnalogStyleAnalyzer(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
 
     bool Initialize(const vector<FrequencyBand> & frequencyBands);
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
