@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.05.01) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2024.08.18) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -27,6 +27,8 @@
 #define H_D01   H_A00 - DY - DY
 #define X_D01   DX
 #define Y_D01   DY
+
+/** Page: Transform **/
 
 #pragma region Transform
 // Groupbox
@@ -365,6 +367,8 @@
 
 #pragma endregion
 
+/** Page: Frequencies **/
+
 #pragma region Frequencies
 
 // Groupbox
@@ -551,6 +555,8 @@
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7
 #pragma endregion
 
+/** Page: Filters **/
+
 #pragma region Filters
 // Groupbox
 #define X_B09   X_D01 + W_D01 + IX
@@ -696,9 +702,10 @@
 #define H_B09   11 + H_H02 + IY + H_H04 + IY + H_H06 + IY + H_H09 + IY + H_H12 + IY + H_H14 + IY + H_H17 + IY + H_H20 + 7
 #pragma endregion
 
-/** Page: Graph Common **/
+/** Page: Common **/
 
 #pragma region Common
+
 // Groupbox
 #define X_B04   X_D01 + W_D01 + IX
 #define Y_B04   Y_D01
@@ -753,6 +760,7 @@
 
 #define W_B04  184
 #define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7
+
 #pragma endregion
 
 #pragma region Artwork
@@ -874,7 +882,10 @@
 
 #define W_B06  184
 #define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
+
 #pragma endregion
+
+/** Page: Graphs **/
 
 #pragma region Graphs
 
@@ -914,27 +925,60 @@
 #define X_G25    X_G24 + W_G24 + IX
 #define Y_G25    Y_G24
 
-// Checkbox: Flip horizontally
-#define W_G26   82
-#define H_G26   H_CHB
-#define X_G26   X_G24
-#define Y_G26   Y_G25 + H_G25 + IY
+#pragma region Layout
+// Groupbox
+#define X_B16   X_G24
+#define Y_B16   Y_G25 + H_G25 + IY
 
-// Checkbox: Flip vertically
-#define W_G27   82
-#define H_G27   H_CHB
-#define X_G27   X_G26 + W_G26 + IX
-#define Y_G27   Y_G26
+    // Label: Horizontal Alignment
+    #define W_G33    66
+    #define H_G33    H_LBL
+    #define X_G33    X_B16 + 5
+    #define Y_G33    Y_B16 + 11
+
+    // Combobox: Horizontal Alignment
+    #define W_G34    82
+    #define H_G34    H_CBX
+    #define X_G34    X_G33 + W_G33 + IX
+    #define Y_G34    Y_G33
+
+    // Label: Vertical Alignment
+    #define W_G35    66
+    #define H_G35    H_LBL
+    #define X_G35    X_G33
+    #define Y_G35    Y_G34 + H_G34 + IY
+
+    // Combobox: Vertical Alignment
+    #define W_G36    82
+    #define H_G36    H_CBX
+    #define X_G36    X_G35 + W_G35 + IX
+    #define Y_G36    Y_G35
+
+    // Checkbox: Flip horizontally
+    #define W_G26   80
+    #define H_G26   H_CHB
+    #define X_G26   X_G33
+    #define Y_G26   Y_G34 + H_G34 + IY
+
+    // Checkbox: Flip vertically
+    #define W_G27   80
+    #define H_G27   H_CHB
+    #define X_G27   X_G26 + W_G26 + IX
+    #define Y_G27   Y_G26
+
+#define W_B16  170
+#define H_B16   11 + H_G34 + IY + H_G26 + 7
+#pragma endregion
 
 #pragma region X axis
 // Groupbox
-#define X_B02   X_G26
-#define Y_B02   Y_G26 + H_G26 + IY
+#define X_B02   X_B16
+#define Y_B02   Y_B16 + H_B16 + IY
 
     #pragma region X axis
 
     // Label
-    #define W_A05    54
+    #define W_A05    66
     #define H_A05    H_LBL
     #define X_A05    X_B02 + 5
     #define Y_A05    Y_B02 + 11
@@ -971,7 +1015,7 @@
     #pragma region Y axis
 
     // Label
-    #define W_A07    54
+    #define W_A07    66
     #define H_A07    H_LBL
     #define X_A07    X_B03 + 5
     #define Y_A07    Y_B03 + 11
@@ -1081,6 +1125,8 @@
 #pragma endregion
 
 #pragma endregion
+
+/** Page: Visualization **/
 
 #pragma region Visualization
 
@@ -1225,10 +1271,92 @@
 #define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + 7
 #pragma endregion
 
+#pragma region Radial Bars
+
+// Groupbox
+#define X_B15   X_B08
+#define Y_B15   Y_B08 + H_B08 + IY
+
+    #pragma region Inner radius
+    // Label
+    #define W_C30    52
+    #define H_C30    H_LBL
+    #define X_C30    X_B15 + 5
+    #define Y_C30    Y_B15 + 11
+
+    // Textbox
+    #define W_C31    30
+    #define H_C31    H_TBX
+    #define X_C31    X_C30 + W_C30 + IX
+    #define Y_C31    Y_C30
+    #pragma endregion
+
+    #pragma region Outer radius
+    // Label
+    #define W_C32    W_C30
+    #define H_C32    H_LBL
+    #define X_C32    X_C30
+    #define Y_C32    Y_C31 + H_C31 + IY
+
+    // Textbox
+    #define W_C33    W_C31
+    #define H_C33    H_TBX
+    #define X_C33    X_C32 + W_C32 + IX
+    #define Y_C33    Y_C32
+    #pragma endregion
+
+    #pragma region Angular velocity
+    // Label
+    #define W_C34    W_C32
+    #define H_C34    H_LBL
+    #define X_C34    X_C32
+    #define Y_C34    Y_C33 + H_C33 + IY
+
+    // Textbox
+    #define W_C35    W_C33
+    #define H_C35    H_TBX
+    #define X_C35    X_C34 + W_C34 + IX
+    #define Y_C35    Y_C34
+    #pragma endregion
+
+#define W_B15   W_B08
+#define H_B15   11 + H_C31 + IY + H_C33 + IY + H_C35 + 7
+
+#pragma endregion
+
+#pragma region Level Meter
+// Groupbox
+#define X_B14   X_B13 + W_B13 + IX
+#define Y_B14   Y_B13
+
+    #pragma region Channel Pairs
+    // Label
+    #define W_C50    46
+    #define H_C50    H_LBL
+    #define X_C50    X_B14 + 5
+    #define Y_C50    Y_B14 + 11
+
+    // Combobox
+    #define W_C51    76
+    #define H_C51    H_CBX
+    #define X_C51    X_C50 + W_C50 + IX
+    #define Y_C51    Y_C50
+    #pragma endregion
+
+    // Checkbox: Horizontal
+    #define W_C52    60
+    #define H_C52    H_CHB
+    #define X_C52    X_C51
+    #define Y_C52    Y_C51 + H_C51 + IY
+
+#define W_B14  5 + W_C50 + IX + W_C51 + 5
+#define H_B14  11 + H_C51 + IY + H_C52 + 7
+#pragma endregion
+
 #pragma region Peak Meter
 // Groupbox
-#define X_B12   X_B08
-#define Y_B12   Y_B08 + H_B08 + IY
+#define X_B12   X_B14
+#define Y_B12   Y_B14 + H_B14 + IY
 
     // Checkbox: Horizontal
     #define W_C16    80
@@ -1274,40 +1402,13 @@
     #define X_C26   X_C25 + W_C25 + IX
     #define Y_C26   Y_C25
 
-#define W_B12  W_B08
+#define W_B12  W_B14
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
 #pragma endregion
 
-#pragma region Level Meter
-// Groupbox
-#define X_B14   X_B13 + W_B13 + IX
-#define Y_B14   Y_B13
-
-    #pragma region Channel Pairs
-    // Label
-    #define W_C50    46
-    #define H_C50    H_LBL
-    #define X_C50    X_B14 + 5
-    #define Y_C50    Y_B14 + 11
-
-    // Combobox
-    #define W_C51    76
-    #define H_C51    H_CBX
-    #define X_C51    X_C50 + W_C50 + IX
-    #define Y_C51    Y_C50
-    #pragma endregion
-
-    // Checkbox: Horizontal
-    #define W_C52    60
-    #define H_C52    H_CHB
-    #define X_C52    X_C51
-    #define Y_C52    Y_C51 + H_C51 + IY
-
-#define W_B14  5 + W_C50 + IX + W_C51 + 5
-#define H_B14  11 + H_C51 + IY + H_C52 + 7
 #pragma endregion
 
-#pragma endregion
+/** Page: Styles **/
 
 #pragma region Styles
 
@@ -1491,6 +1592,8 @@
 #define Y_I17   Y_I16
 
 #pragma endregion
+
+/** Page: Presets **/
 
 #pragma region Presets
 

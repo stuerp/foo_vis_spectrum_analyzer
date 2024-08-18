@@ -162,7 +162,9 @@ void XAxis::Resize() noexcept
     const FLOAT Bandwidth = std::max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _BandCount : _Size.width;
 
-    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + ((_Size.width - SpectrumWidth) / 2.f) : _Bounds.right - ((_Size.width - SpectrumWidth) / 2.f);
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_Size.width - SpectrumWidth) / 2.f : (_Size.width - SpectrumWidth));
+
+    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + HOffset : _Bounds.right - HOffset;
 
     const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
     const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis

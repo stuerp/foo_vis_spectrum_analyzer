@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2024.08.16) P. Stuer **/
+/** $VER: State.cpp (2024.08.18) P. Stuer **/
 
 #include "framework.h"
 #include "State.h"
@@ -213,7 +213,7 @@ void state_t::Reset() noexcept
     // Radial Bars
     _InnerRadius = 0.2f;
     _OuterRadius = 1.0f;
-    _AngularVelocity = 1.f;
+    _AngularVelocity = 60.f; // degrees / sec
 
     // Curve
     _LineWidth_Deprecated = 2.f;
@@ -441,12 +441,12 @@ state_t & state_t::operator=(const state_t & other)
 
     #pragma region Graphs
 
-        _GraphSettings = other._GraphSettings;
+    _GraphSettings = other._GraphSettings;
 
-        _VerticalLayout = other._VerticalLayout;
+    _VerticalLayout = other._VerticalLayout;
 
-        _GridRowCount = other._GridRowCount;
-        _GridColumnCount = other._GridColumnCount;
+    _GridRowCount = other._GridRowCount;
+    _GridColumnCount = other._GridColumnCount;
 
     #pragma endregion
 
@@ -757,7 +757,6 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read(&_FitMode, sizeof(_FitMode), abortHandler);
         }
 
-        // Version 18, v0.7.1.0-beta-2
         if (Version >= 18)
         {
             reader->read_object_t(_ShowArtworkOnBackground, abortHandler);
@@ -813,11 +812,16 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                     reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
                 }
 
+                if (GraphSettingsVersion > 2)
+                {
+                    reader->read_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                    reader->read_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                }
+
                 _GraphSettings.push_back(gs);
             }
         }
 
-        // Version 19, v0.7.2.0
         if (Version >= 19)
         {
             reader->read_object_t(_ConstantQ, abortHandler);
@@ -875,6 +879,13 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
             reader->read_object_t(_HorizontalSpectogram, abortHandler);
             reader->read_object_t(_UseSpectrumBarMetrics, abortHandler);
+        }
+
+        if (Version >= 28)
+        {
+            reader->read_object_t(_InnerRadius, abortHandler);
+            reader->read_object_t(_OuterRadius, abortHandler);
+            reader->read_object_t(_AngularVelocity, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1127,6 +1138,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
                 writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
                 writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
             }
+
+            // Version 3, v0.8.0.0-beta2
+            if (GraphSettings::_CurentVersion > 2)
+            {
+                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+            }
         }
 
         // Version 19, v0.7.2.0
@@ -1169,6 +1187,11 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_HorizontalLevelMeter, abortHandler);
         writer->write_object_t(_HorizontalSpectogram, abortHandler);
         writer->write_object_t(_UseSpectrumBarMetrics, abortHandler);
+
+        // Version 28, v0.8.0.0-beta2
+        writer->write_object_t(_InnerRadius, abortHandler);
+        writer->write_object_t(_OuterRadius, abortHandler);
+        writer->write_object_t(_AngularVelocity, abortHandler);
     }
     catch (exception & ex)
     {

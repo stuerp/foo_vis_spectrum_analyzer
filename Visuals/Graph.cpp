@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.04.22) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2024.08.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
 #include "framework.h"
 #include "Graph.h"
@@ -108,13 +108,14 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const D2D1_RECT_F & Bounds = _Spectrum.GetClientBounds();
+        const rect_t & Bounds = (const rect_t &) _Spectrum.GetClientBounds();
 
-        const FLOAT Bandwidth = Max(::floor((Bounds.right - Bounds.left) / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+        const FLOAT Bandwidth = Max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
 
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.right - Bounds.left;
+        const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (Bounds.Width() - SpectrumWidth) / 2.f : (Bounds.Width() - SpectrumWidth));
 
-        const FLOAT x1 = Bounds.left + ((Bounds.right - Bounds.left) - SpectrumWidth) / 2.f;
+        const FLOAT x1 = Bounds.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
 
         if (!InRange(x, x1, x2))
@@ -178,6 +179,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
     {
         case VisualizationType::Bars:
         case VisualizationType::Curve:
+        case VisualizationType::RadialBars:
         {
             _Spectrum.Render(renderTarget);
             RenderDescription(renderTarget);

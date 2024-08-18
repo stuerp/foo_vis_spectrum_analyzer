@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.08.16) P. Stuer **/
+/** $VER: Support.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -214,4 +214,12 @@ inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t 
     const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
 
     return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
+}
+
+/// <summary>
+/// Converts the specified value from degrees to radians.
+/// </summary>
+inline double Degrees2Radians(double degrees)
+{
+    return (degrees * 2 * M_PI) / 360.;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.04.28) P. Stuer **/
+/** $VER: Analysis.cpp (2024.08.18) P. Stuer **/
 
 #include "framework.h"
 
@@ -54,6 +54,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::Spectogram:
+        case VisualizationType::RadialBars:
         {
             const audio_sample * Samples = chunk.get_data();
             const size_t SampleCount = chunk.get_sample_count();
@@ -389,6 +390,9 @@ void Analysis::UpdatePeakValues(bool isStopped) noexcept
             }
             break;
         }
+
+        case VisualizationType::RadialBars:
+            break;
     }
 }
 

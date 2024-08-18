@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2024.08.16) P. Stuer **/
+/** $VER: Resources.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -302,12 +302,20 @@
 #define IDC_VERTICAL_LAYOUT             5106
 
 #define IDC_GRAPH_DESCRIPTION_LBL       5108
-#define IDC_GRAPH_DESCRIPTION           5110
+#define IDC_GRAPH_DESCRIPTION           5109
 
-#define IDC_FLIP_HORIZONTALLY           5112
-#define IDC_FLIP_VERTICALLY             5114
+#define IDC_LAYOUT                      5110
 
-#define IDC_CHANNELS                    5116
+#define IDC_HORIZONTAL_ALIGNMENT_LBL    5112
+#define IDC_HORIZONTAL_ALIGNMENT        5113
+
+#define IDC_VERTICAL_ALIGNMENT_LBL      5114
+#define IDC_VERTICAL_ALIGNMENT          5115
+
+#define IDC_FLIP_HORIZONTALLY           5116
+#define IDC_FLIP_VERTICALLY             5118
+
+#define IDC_CHANNELS                    5120
 
 #pragma endregion
 
@@ -394,6 +402,19 @@
 #define IDC_HORIZONTAL_SPECTOGRAM       7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
 
+// Radial Bars
+
+#define IDC_RADIAL_BARS                 7190
+
+#define IDC_INNER_RADIUS_LBL            7192
+#define IDC_INNER_RADIUS                7193
+
+#define IDC_OUTER_RADIUS_LBL            7194
+#define IDC_OUTER_RADIUS                7195
+
+#define IDC_ANGULAR_VELOCITY_LBL        7196
+#define IDC_ANGULAR_VELOCITY            7197
+
 // Peak Meter
 
 #define IDC_PEAK_METER                  7160
@@ -402,21 +423,21 @@
 #define IDC_RMS_PLUS_3                  7164
 
 #define IDC_RMS_WINDOW_LBL              7166
-#define IDC_RMS_WINDOW                  7168
-#define IDC_RMS_WINDOW_SPIN             7170
-#define IDC_RMS_WINDOW_UNIT             7172
+#define IDC_RMS_WINDOW                  7167
+#define IDC_RMS_WINDOW_SPIN             7168
+#define IDC_RMS_WINDOW_UNIT             7169
 
-#define IDC_GAUGE_GAP_LBL               7174
-#define IDC_GAUGE_GAP                   7176
+#define IDC_GAUGE_GAP_LBL               7170
+#define IDC_GAUGE_GAP                   7171
 
 // Level Meter
 
-#define IDC_LEVEL_METER                 7200
+#define IDC_LEVEL_METER                 7180
 
-#define IDC_CHANNEL_PAIRS_LBL           7202
-#define IDC_CHANNEL_PAIRS               7204
+#define IDC_CHANNEL_PAIRS_LBL           7182
+#define IDC_CHANNEL_PAIRS               7183
 
-#define IDC_HORIZONTAL_LEVEL_METER      7206
+#define IDC_HORIZONTAL_LEVEL_METER      7184
 
 #pragma endregion
 

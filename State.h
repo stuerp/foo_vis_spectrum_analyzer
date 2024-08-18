@@ -1,5 +1,5 @@
 ﻿
-/** $VER: State.h (2024.08.16) P. Stuer **/
+/** $VER: State.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -153,88 +153,84 @@ public:
 
     #pragma endregion
 
+    #pragma region Common
+
+        bool _ShowToolTips;                                         // True if tooltips should be displayed.
+        bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
+
+        SmoothingMethod _SmoothingMethod;
+        double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+
+    #pragma endregion
+
+    #pragma region Artwork
+
+        uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
+        FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
+        FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
+
+        ColorOrder _ColorOrder;
+
+        bool _ShowArtworkOnBackground;
+
+        FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
+        std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
+        FitMode _FitMode;                                           // Determines how over- or undersized artwork is rendered.
+        bool _FitWindow;                                            // True when the component window instead of the client area of the graph is used to fit artwork.
+
+    #pragma endregion
+
     #pragma region Graphs
 
-        #pragma region Common
+        bool _VerticalLayout;                                       // Shows the graphs vertically instead of horizontally.
 
-            bool _ShowToolTips;                                         // True if tooltips should be displayed.
-            bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
+    #pragma endregion
 
-            SmoothingMethod _SmoothingMethod;
-            double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+    #pragma region Visualization
 
-        #pragma endregion
+        VisualizationType _VisualizationType;
 
-        #pragma region Artwork
+        PeakMode _PeakMode;
+        double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
+        double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
 
-            uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
-            FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
-            FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
+        #pragma region Bars
 
-            ColorOrder _ColorOrder;
-
-            bool _ShowArtworkOnBackground;
-
-            FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-            std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
-            FitMode _FitMode;                                           // Determines how over- or undersized artwork is rendered.
-            bool _FitWindow;                                            // True when the component window instead of the client area of the graph is used to fit artwork.
+            bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
+            FLOAT _LEDSize;                                         // Size of the LED.
+            FLOAT _LEDGap;                                          // Gap between the LEDs.
 
         #pragma endregion
 
-        #pragma region Graphs
+        #pragma region Radial Bars
 
-            bool _VerticalLayout;                                       // Shows the graphs vertically instead of horizontally.
+            FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
+            FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
+            FLOAT _AngularVelocity;                                 // degrees / s
 
         #pragma endregion
 
-        #pragma region Visualization
+        #pragma region Spectogram
 
-            VisualizationType _VisualizationType;
+            bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
+            bool _HorizontalSpectogram;                             // True if the spectogram should be rendered horizontally.
+            bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
 
-            PeakMode _PeakMode;
-            double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
-            double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
+        #pragma endregion
 
-            #pragma region Bars
+        #pragma region Peak Meter
 
-                bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-                FLOAT _LEDSize;                                         // Size of the LED.
-                FLOAT _LEDGap;                                          // Gap between the LEDs.
+            bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
+            bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
+            double _RMSWindow;                                      // Duration of the RMS window, in seconds.
+            FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
 
-            #pragma endregion
+        #pragma endregion
 
-            #pragma region Radial Bars
+        #pragma region Level Meter
 
-                FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
-                FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
-                FLOAT _AngularVelocity;                                 // Radians / s
-
-            #pragma endregion
-
-            #pragma region Spectogram
-
-                bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
-                bool _HorizontalSpectogram;                             // True if the spectogram should be rendered horizontally.
-                bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
-
-            #pragma endregion
-
-            #pragma region Peak Meter
-
-                bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
-                bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
-                double _RMSWindow;                                      // Duration of the RMS window, in seconds.
-                FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
-
-            #pragma endregion
-
-            #pragma region Level Meter
-
-                ChannelPair _ChannelPair;
-                bool _HorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
-
-            #pragma endregion
+            ChannelPair _ChannelPair;
+            bool _HorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
 
         #pragma endregion
 
@@ -344,5 +340,5 @@ private:
     const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 27;
+    const size_t _CurrentVersion = 28;
 };

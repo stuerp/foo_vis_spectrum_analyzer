@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.08.16) P. Stuer **/
+/** $VER: Spectrum.cpp (2024.08.18) P. Stuer **/
 
 #include "framework.h"
 #include "Spectrum.h"
@@ -63,8 +63,6 @@ void Spectrum::Resize() noexcept
     _IsResized = false;
 }
 
-#define _RADIAL
-
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
@@ -75,36 +73,38 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-#ifndef _RADIAL
-    _XAxis.Render(renderTarget);
-
-    _YAxis.Render(renderTarget);
-
+    if (_State->_VisualizationType != VisualizationType::RadialBars)
     {
-        SetTransform(renderTarget, _ClientBounds);
+        _XAxis.Render(renderTarget);
 
-        if (_State->_VisualizationType == VisualizationType::Bars)
-            RenderBars(renderTarget);
-        else
-        if (_State->_VisualizationType == VisualizationType::Curve)
-            RenderCurve(renderTarget);
+        _YAxis.Render(renderTarget);
+
+        {
+            SetTransform(renderTarget, _ClientBounds);
+
+            if (_State->_VisualizationType == VisualizationType::Bars)
+                RenderBars(renderTarget);
+            else
+            if (_State->_VisualizationType == VisualizationType::Curve)
+                RenderCurve(renderTarget);
   
-        if (_NyquistMarker->IsEnabled())
-            RenderNyquistFrequencyMarker(renderTarget);
+            if (_NyquistMarker->IsEnabled())
+                RenderNyquistFrequencyMarker(renderTarget);
+
+            ResetTransform(renderTarget);
+        }
+    }
+    else
+    {
+        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
+        const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+
+        renderTarget->SetTransform(Translate * FlipV);
+
+        RenderRadialBars(renderTarget);
 
         ResetTransform(renderTarget);
     }
-#else
-    const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
-    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
-
-    renderTarget->SetTransform(Translate * FlipV);
-
-    if (_State->_VisualizationType == VisualizationType::Bars)
-        RenderRadialBars(renderTarget);
-
-    ResetTransform(renderTarget);
-#endif
 }
 
 /// <summary>
@@ -119,7 +119,9 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
     const FLOAT PeakThickness = _PeakTop->_Thickness / 2.f;
     const FLOAT BarThickness = _BarTop->_Thickness / 2.f;
 
-    FLOAT x1 = (_ClientSize.width - SpectrumWidth) / 2.f;
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+
+    FLOAT x1 = HOffset;
     FLOAT x2 = x1 + Bandwidth;
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
@@ -310,10 +312,10 @@ void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
     const double InnerRadius =  Side * _State->_InnerRadius;
     const double OuterRadius = (Side * _State->_OuterRadius) - InnerRadius;
 
-//  double a = ::fmod(M_PI_2 + (_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
-    double a = ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
+//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
 
-    const double da = (2. * M_PI) / (double) _Analysis->_FrequencyBands.size();
+    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
 
     CComPtr<ID2D1PathGeometry> Path;
 
@@ -329,27 +331,33 @@ void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
             if (SUCCEEDED(hr))
             {
-                FLOAT x = (FLOAT) (::cos(a) * InnerRadius);
-                FLOAT y = (FLOAT) (::sin(a) * InnerRadius);
+                FLOAT Sin, Cos;
+
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                FLOAT x = (FLOAT) (Cos * InnerRadius);
+                FLOAT y = (FLOAT) (Sin * InnerRadius);
 
                 Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
 
                 const double r = InnerRadius + (OuterRadius * fb.CurValue);
 
-                x = (FLOAT) (::cos(a) * r);
-                y = (FLOAT) (::sin(a) * r);
+                x = (FLOAT) (Cos * r);
+                y = (FLOAT) (Sin * r);
 
                 Sink->AddLine(D2D1::Point2F(x, y));
 
                 a -= da;
 
-                x = (FLOAT) (::cos(a) * r);
-                y = (FLOAT) (::sin(a) * r);
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                x = (FLOAT) (Cos * r);
+                y = (FLOAT) (Sin * r);
 
                 Sink->AddLine(D2D1::Point2F(x, y));
 
-                x = (FLOAT) (::cos(a) * InnerRadius);
-                y = (FLOAT) (::sin(a) * InnerRadius);
+                x = (FLOAT) (Cos * InnerRadius);
+                y = (FLOAT) (Sin * InnerRadius);
 
                 Sink->AddLine(D2D1::Point2F(x, y));
 
@@ -380,7 +388,10 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
 
     const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
-    const FLOAT x1 = ((_ClientSize.width - SpectrumWidth) / 2.f) + (Bandwidth / 2.f);
+
+    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+
+    const FLOAT x1 = HOffset + (Bandwidth / 2.f);
 
     const FLOAT x = x1 + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
@@ -411,43 +422,47 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 
     if (SUCCEEDED(hr))
     {
-//      Style * style = _State->_StyleManager.GetStyle(VisualElement::BarArea);
-
-#ifdef _RADIAL
-//      if (style->IsRadial())
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarArea);
-//      else
-#else
+        if (_State->_VisualizationType == VisualizationType::Bars)
+        {
             hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarArea);
-#endif
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_PeakArea);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_PeakTop);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackground);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackground);
+
+        }
+        else
+        if (_State->_VisualizationType == VisualizationType::Curve)
+        {
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLine);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveArea);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLine);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakArea);
+
+        }
+        else
+        if (_State->_VisualizationType == VisualizationType::RadialBars)
+        {
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarArea);
+        }
     }
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTop);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_PeakArea);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_PeakTop);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackground);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackground);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLine);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveArea);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLine);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakArea);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, renderTarget, _ClientSize, L"", &_NyquistMarker);

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: Resources.rc (2024.05.01) P. Stuer **/
+/** $VER: Resources.rc (2024.08.18) P. Stuer **/
 
 #include "Resources.h"
 
@@ -259,8 +259,13 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     rtext           "Description:"                  IDC_GRAPH_DESCRIPTION_LBL       X_G24, Y_G24 + 2, W_G24, H_G24
     edittext                                        IDC_GRAPH_DESCRIPTION           X_G25, Y_G25,     W_G25, H_G25, ES_AUTOHSCROLL | WS_TABSTOP
 
-    control         "Flip horizontally"             IDC_FLIP_HORIZONTALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G26, Y_G26, W_G26, H_G26
-    control         "Flip vertically"               IDC_FLIP_VERTICALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G27, Y_G27, W_G27, H_G27
+    groupbox "Layout", IDC_LAYOUT, X_B16, Y_B16, W_B16, H_B16, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext           "Horizontal alignment:",    IDC_HORIZONTAL_ALIGNMENT_LBL,   X_G33, Y_G33 + 2, W_G33, H_G33
+        combobox                                    IDC_HORIZONTAL_ALIGNMENT,       X_G34, Y_G34,     W_G34, H_G34, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        control         "Flip horizontally"         IDC_FLIP_HORIZONTALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G26, Y_G26, W_G26, H_G26
+        control         "Flip vertically"           IDC_FLIP_VERTICALLY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G27, Y_G27, W_G27, H_G27
 
     groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -328,6 +333,17 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         control     "Scrolling",                IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
         control     "Horizontal",               IDC_HORIZONTAL_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
         control     "Use spectrum bar metrics", IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
+
+    groupbox "Radial Bars", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext       "Inner radius:"             IDC_INNER_RADIUS_LBL,           X_C30, Y_C30 + 2, W_C30, H_C30
+        edittext                                IDC_INNER_RADIUS,               X_C31, Y_C31, W_C31, H_C31, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Outer radius:"             IDC_OUTER_RADIUS_LBL,           X_C32, Y_C32 + 2, W_C32, H_C32
+        edittext                                IDC_OUTER_RADIUS,               X_C33, Y_C33, W_C33, H_C33, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Angular velocity:"         IDC_ANGULAR_VELOCITY_LBL,       X_C34, Y_C34 + 2, W_C34, H_C34
+        edittext                                IDC_ANGULAR_VELOCITY,           X_C35, Y_C35, W_C35, H_C35, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 

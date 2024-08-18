@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.04.26) P. Stuer **/
+/** $VER: Constans.h (2024.08.18) P. Stuer **/
 
 #pragma once
 
@@ -243,6 +243,20 @@ enum class SmoothingMethod
     Peak = 2,
 };
 
+enum class HorizontalAlignment
+{
+    Near = 0,
+    Center,
+    Far,
+};
+
+enum class VerticalAlignment
+{
+    Near = 0,
+    Center,
+    Far,
+};
+
 enum class XAxisMode
 {
     None = 0,
@@ -268,6 +282,7 @@ enum class VisualizationType
     Spectogram = 2,
     PeakMeter = 3,
     LevelMeter = 4,
+    RadialBars = 5,
 };
 
 enum class PeakMode
@@ -489,14 +504,14 @@ enum class ChannelPair : uint32_t
     Count,
 };
 
-enum class HorizontalAlignment : uint32_t
+enum class HorizontalTextAlignment : uint32_t
 {
     Left = 0,
     Center = 1,
     Right = 2
 };
 
-enum class VerticalAlignment : uint32_t
+enum class VerticalTextAlignment : uint32_t
 {
     Top = 0,
     Center = 1,

@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.05.01) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2024.08.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -210,6 +210,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_GRAPH_DESCRIPTION, L"Describes the configuration of this graph." },
 
+            { IDC_HORIZONTAL_ALIGNMENT, L"Determines how the visual gets horizontally aligned in the graph area." },
+            { IDC_VERTICAL_ALIGNMENT, L"Determines how the visual gets vertically aligned in the graph area." },
+
             { IDC_FLIP_HORIZONTALLY, L"Renders the visualization from right to left." },
             { IDC_FLIP_VERTICALLY, L"Renders the visualization upside down." },
 
@@ -246,6 +249,10 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
             { IDC_HORIZONTAL_SPECTOGRAM, L"Renders the spectogram horizontally." },
             { IDC_SPECTRUM_BAR_METRICS, L"Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
+
+            { IDC_INNER_RADIUS, L"Sets the inner radius as a percentage of the smallest side of the graph area." },
+            { IDC_OUTER_RADIUS, L"Sets the outer radius as a percentage of the smallest side of the graph area." },
+            { IDC_ANGULAR_VELOCITY, L"Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
 
             { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
             { IDC_RMS_PLUS_3, L"Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
@@ -826,7 +833,7 @@ void ConfigurationDialog::Initialize()
 
         w.SetCurSel((int) _State->_SmoothingMethod);
 
-        SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 1);
+        SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 2);
     }
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTips);
@@ -916,6 +923,7 @@ void ConfigurationDialog::Initialize()
     #pragma endregion
 
     #pragma region Graphs
+
     {
         _State->_SelectedGraph = 0;
 
@@ -923,6 +931,18 @@ void ConfigurationDialog::Initialize()
 
         {
             SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
+        }
+
+        // Horizontal Alignment
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT);
+
+            w.ResetContent();
+
+            for (const auto & x : { L"Near", L"Center", L"Far" })
+                w.AddString(x);
+
+            w.SetCurSel((int) gs._HorizontalAlignment);
         }
 
         // X Axis
@@ -1024,7 +1044,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -1071,6 +1091,14 @@ void ConfigurationDialog::Initialize()
         SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
     }
 
+    #pragma endregion
+
+    #pragma region Radial Bars
+    {
+        SetDouble(IDC_INNER_RADIUS, _State->_InnerRadius * 100., 0, 1);
+        SetDouble(IDC_OUTER_RADIUS, _State->_OuterRadius * 100., 0, 1);
+        SetDouble(IDC_ANGULAR_VELOCITY, _State->_AngularVelocity, 0, 1);
+    }
     #pragma endregion
 
     #pragma region Peak Meter
@@ -1420,6 +1448,20 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
             return;
         }
+
+        #pragma region Layout
+
+        case IDC_HORIZONTAL_ALIGNMENT:
+        {
+            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+
+            gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
+
+            UpdateGraphsPage();
+            break;
+        }
+
+        #pragma endregion
 
         #pragma region X axis
 
@@ -1857,6 +1899,28 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region Radial Bars
+
+        case IDC_INNER_RADIUS:
+        {
+            _State->_InnerRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            break;
+        }
+
+        case IDC_OUTER_RADIUS:
+        {
+            _State->_OuterRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            break;
+        }
+
+        case IDC_ANGULAR_VELOCITY:
+        {
+            _State->_AngularVelocity = (FLOAT) std::clamp(::_wtof(Text), -360., 360.);
+            break;
+        }
+
+        #pragma endregion
+
         #pragma region Peak Meter
 
         case IDC_RMS_WINDOW:
@@ -2082,7 +2146,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Spectrum smoothing
         case IDC_SMOOTHING_FACTOR:
         {
-            SetDouble(id, _State->_SmoothingFactor, 0, 1);
+            SetDouble(id, _State->_SmoothingFactor, 0, 2);
             break;
         }
 
@@ -2109,6 +2173,25 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_LED_GAP:
         {
             SetDouble(id, _State->_LEDGap, 0, 0);
+            break;
+        }
+
+        // Radial Bars
+        case IDC_INNER_RADIUS:
+        {
+            SetDouble(id, _State->_InnerRadius * 100., 0, 1);
+            break;
+        }
+
+        case IDC_OUTER_RADIUS:
+        {
+            SetDouble(id, _State->_OuterRadius * 100., 0, 1);
+            break;
+        }
+
+        case IDC_ANGULAR_VELOCITY:
+        {
+            SetDouble(id, _State->_AngularVelocity, 0, 1);
             break;
         }
 
@@ -2483,9 +2566,13 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         {
             Style * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
+            UINT DPI;
+
+            GetDPI(m_hWnd, DPI);
+
             LOGFONTW lf = { };
 
-            lf.lfHeight = -::MulDiv((int) style->_FontSize, (int) ::GetDpiForWindow(m_hWnd), 72);
+            lf.lfHeight = -::MulDiv((int) style->_FontSize, (int) DPI, 72);
             lf.lfWeight = FW_NORMAL;
             lf.lfCharSet = DEFAULT_CHARSET;
             lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
@@ -2971,6 +3058,11 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_SPECTOGRAM,
             IDC_SCROLLING_SPECTOGRAM, IDC_HORIZONTAL_SPECTOGRAM, IDC_SPECTRUM_BAR_METRICS,
 
+        IDC_RADIAL_BARS,
+            IDC_INNER_RADIUS_LBL, IDC_INNER_RADIUS,
+            IDC_OUTER_RADIUS_LBL, IDC_OUTER_RADIUS,
+            IDC_ANGULAR_VELOCITY_LBL, IDC_ANGULAR_VELOCITY,
+
         IDC_PEAK_METER,
             IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
             IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
@@ -2987,7 +3079,12 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
             IDC_ADD_GRAPH, IDC_REMOVE_GRAPH, IDC_VERTICAL_LAYOUT,
 
-        IDC_GRAPH_DESCRIPTION_LBL, IDC_GRAPH_DESCRIPTION, IDC_VERTICAL_LAYOUT, IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY,
+        IDC_GRAPH_DESCRIPTION_LBL, IDC_GRAPH_DESCRIPTION, IDC_VERTICAL_LAYOUT,
+
+        IDC_LAYOUT,
+            IDC_HORIZONTAL_ALIGNMENT_LBL, IDC_HORIZONTAL_ALIGNMENT,
+            IDC_VERTICAL_ALIGNMENT_LBL, IDC_VERTICAL_ALIGNMENT,
+            IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY,
 
         // X axis
         IDC_X_AXIS,
@@ -3212,6 +3309,9 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
+    // Layout
+    ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gs._HorizontalAlignment);
+
     CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
     CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
 
@@ -3270,18 +3370,20 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
+    const bool IsBars = (_State->_VisualizationType == VisualizationType::Bars);
     const bool IsSpectogram = (_State->_VisualizationType == VisualizationType::Spectogram);
     const bool IsPeakMeter = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsRadialBars = (_State->_VisualizationType == VisualizationType::RadialBars);
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram && !IsRadialBars);
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram;
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram && !IsRadialBars;
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
 
-    const bool HasLEDs = (_State->_VisualizationType == VisualizationType::Bars) || IsPeakMeter || IsLevelMeter;
+    const bool HasLEDs = IsBars || IsPeakMeter || IsLevelMeter;
  
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
@@ -3290,6 +3392,10 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
     GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectogram && !_State->_HorizontalSpectogram);
+
+    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadialBars);
+    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadialBars);
+    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadialBars);
 
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
