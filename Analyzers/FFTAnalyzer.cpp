@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2024.08.18) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "framework.h"
 #include "FFTAnalyzer.h"
@@ -108,7 +108,7 @@ void FFTAnalyzer::Transform() noexcept
 
         for (complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
             Iter = complex<double>(_Data[i] * WindowFactor, 0.);
 
@@ -140,10 +140,12 @@ void FFTAnalyzer::Transform() noexcept
 /// </summary>
 void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
-    const bool UseBandGain = (_State->_SmoothGainTransition && (_State->_SummationMethod == SummationMethod::Sum || _State->_SummationMethod == SummationMethod::RMSSum));
-    const bool IsRMS = (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
+    const bool IsRMS       =  (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
+    const bool IsMedian    =   _State->_SummationMethod == SummationMethod::Median;
+    const bool UseBandGain =  (_State->_SmoothGainTransition && (_State->_SummationMethod == SummationMethod::Sum || _State->_SummationMethod == SummationMethod::RMSSum));
+    const bool IsAverage   = ((_State->_SummationMethod == SummationMethod::Average || _State->_SummationMethod == SummationMethod::RMS) || UseBandGain);
 
-    std::vector<double> Values(16);
+    std::vector<double> Values;
 
     for (FrequencyBand & fb : freqBands)
     {
@@ -153,7 +155,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
         const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
               int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
 
-        const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+        const double BandGain = UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
         if (LoIdx <= HiIdx)
         {
@@ -202,10 +204,10 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
                 ++Count;
             }
 
-            if (((_State->_SummationMethod == SummationMethod::Average || _State->_SummationMethod == SummationMethod::RMS) || UseBandGain) && (Count != 0))
+            if (IsAverage && (Count != 0))
                 Value /= Count;
             else
-            if (_State->_SummationMethod == SummationMethod::Median)
+            if (IsMedian)
                 Value = Median(Values);
 
             fb.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
@@ -298,15 +300,17 @@ double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, doub
 
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
-        double Pos = ::floor(value) + i;
-        double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
+        const double Pos = ::floor(value) + i;
+        const double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
 
-        double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
+        double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
 
-        size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size() / 2);
+        w *= (-1 + Wrap(i, 2) * 2);
 
-        re += fftCoeffs[CoefIdx].real() * w * (-1 + Wrap(i, 2) * 2);
-        im += fftCoeffs[CoefIdx].imag() * w * (-1 + Wrap(i, 2) * 2);
+        const size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size());
+
+        re += fftCoeffs[CoefIdx].real() * w;
+        im += fftCoeffs[CoefIdx].imag() * w;
     }
 
     return ::hypot(re, im);

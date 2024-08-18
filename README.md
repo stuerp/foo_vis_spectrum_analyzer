@@ -96,6 +96,7 @@ v0.8.0.0-beta2, 2024-08-18
 * Fixed: Rounding errors when calculating the gauge metrics with non-default DPI settings.
 * Fixed: Gauge scale lines were too short (Regression).
 * Fixed: Slow spectrum rendering with DSD streams.
+* Builds with foobar2000 SDK 2024-08-07.
 
 v0.8.0.0-beta1, 2024-05-01
 
