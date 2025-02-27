@@ -174,7 +174,7 @@ void UIElement::Render()
         Process();
 
         _RenderTarget->BeginDraw();
-
+        _RenderTarget->Clear(D2D1::ColorF(_ThreadState._StyleManager._DominantColor));
         for (auto & Iter : _Grid)
             Iter._Graph->Render(_RenderTarget, _Artwork);
 
