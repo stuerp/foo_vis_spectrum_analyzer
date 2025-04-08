@@ -1,5 +1,5 @@
 
-/** $VER: ToneGenerator.h (2024.03.09) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
+/** $VER: ToneGenerator.h (2025.04.08) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
 
 #pragma once
 
@@ -31,7 +31,8 @@ public:
 
         Reset();
 
-        _Data.resize(bufferSize);
+        if (bufferSize != 0)
+            _Data.resize(bufferSize);
     }
 
     virtual ~ToneGenerator()

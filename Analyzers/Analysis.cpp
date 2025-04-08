@@ -122,7 +122,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
                 }
             }
 
-            // From here one CurValue is guaranteed in the range 0.0 .. 1.0
+            // From here on CurValue is guaranteed in the range 0.0 .. 1.0
         }
   
         case VisualizationType::PeakMeter:
