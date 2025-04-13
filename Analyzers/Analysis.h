@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.28) P. Stuer **/
+/** $VER: Analysis.h (2025.04.13) P. Stuer **/
 
 #pragma once
 
@@ -35,6 +35,11 @@ struct GaugeValue
     void Reset() noexcept
     {
         RMSTotal = 0.;
+
+        PeakRender = 0.;
+        MaxPeakRender = 0.;
+
+        RMSRender = 0.;
     }
 
     std::wstring Name;
