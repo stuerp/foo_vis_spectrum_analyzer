@@ -30,16 +30,16 @@ struct GaugeValue
     GaugeValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
     {
         Reset();
-    }
-
-    void Reset() noexcept
-    {
-        RMSTotal = 0.;
 
         PeakRender = 0.;
         MaxPeakRender = 0.;
 
         RMSRender = 0.;
+    }
+
+    void Reset() noexcept
+    {
+        RMSTotal = 0.;
     }
 
     std::wstring Name;
