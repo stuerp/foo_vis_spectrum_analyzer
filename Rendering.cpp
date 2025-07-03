@@ -228,7 +228,7 @@ void UIElement::Process() noexcept
     }
     else
     {
-        const bool IsSlidingWindow = (_ThreadState._Transform == Transform::SWIFT);
+        const bool IsSlidingWindow = (_ThreadState._Transform == Transform::SWIFT) || (_ThreadState._Transform == Transform::AnalogStyle);
 
         const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime : (double) _ThreadState._BinCount / (double) _ThreadState._SampleRate;
         const double Offset     = IsSlidingWindow ?                _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
