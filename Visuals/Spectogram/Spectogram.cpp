@@ -1,7 +1,7 @@
 
 /** $VER: Spectogram.cpp (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Spectogram.h"
 
 #include "Support.h"

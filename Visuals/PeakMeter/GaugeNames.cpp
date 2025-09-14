@@ -1,7 +1,7 @@
 
 /** $VER: GaugeNames.cpp (2024.05.01) P. Stuer - Implements the gauge names of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "GaugeNames.h"
 

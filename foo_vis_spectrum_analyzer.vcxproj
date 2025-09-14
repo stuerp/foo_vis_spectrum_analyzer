@@ -69,17 +69,29 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -106,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -141,20 +153,20 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PrecompiledHeaderFile>framework.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)x64\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(PlatformTarget).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Message>Executing post-build script...</Message>
@@ -168,7 +180,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -179,14 +191,14 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <StringPooling>true</StringPooling>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>framework.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)x64\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(PlatformTarget).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>
@@ -240,7 +252,7 @@
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
-    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
@@ -273,12 +285,12 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
-    <ClCompile Include="framework.cpp">
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">framework.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">framework.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">framework.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -329,6 +341,9 @@
     <ClCompile Include="Windows\WIC.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\3rdParty\columns_ui_sdk\columns_ui-sdk-public.vcxproj">
+      <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">
       <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>
     </ProjectReference>
@@ -349,15 +364,14 @@
     <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".editorconfig" />
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
     <None Include="Build-FB2KComponent.ps1" />
     <None Include="Analyzers\FFT.h" />
     <None Include="cpp.hint" />
+    <None Include="LICENSE" />
     <None Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\Bars.png" />

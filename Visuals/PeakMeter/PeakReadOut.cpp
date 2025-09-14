@@ -1,7 +1,7 @@
-﻿
+
 /** $VER: PeakReadOut.cpp (2024.04.22) P. Stuer - Implements the peak read out of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "PeakReadOut.h"
 

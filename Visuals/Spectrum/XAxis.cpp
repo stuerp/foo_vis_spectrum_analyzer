@@ -1,7 +1,7 @@
 
 /** $VER: XAXis.cpp (2024.05.01) P. Stuer - Implements the X axis of a graph. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "XAxis.h"
 
 #include "StyleManager.h"

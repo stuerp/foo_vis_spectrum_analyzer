@@ -1,7 +1,7 @@
 
 /** $VER: AnalogStyleAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Analog-style spectrum analyzer, https://codepen.io/TF3RDL/pen/MWLzPoO **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "AnalogStyleAnalyzer.h"
 

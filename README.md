@@ -88,6 +88,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
+v0.8.0.0-beta3, 2025-xx-xx
+
+* Fixed: Weird behavior in IIR filter bank/analog-style analyzer. Provided by TF3RDL
+
 v0.8.0.0-beta2, 2024-08-18
 
 * New: Radial Bar visualization.

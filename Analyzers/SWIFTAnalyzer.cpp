@@ -1,7 +1,7 @@
 
 /** $VER: SWIFTAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
-#include "framework.h"
+#include "pch.h"
 #include "SWIFTAnalyzer.h"
 
 #include "Support.h"

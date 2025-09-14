@@ -1,7 +1,7 @@
 
 /** $VER: CColorDialogEx.cpp (2023.12.31) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "CColorDialogEx.h"
 
 #include "Resources.h"

@@ -1,4 +1,4 @@
-﻿
+
 /** $VER: State.h (2024.08.18) P. Stuer **/
 
 #pragma once

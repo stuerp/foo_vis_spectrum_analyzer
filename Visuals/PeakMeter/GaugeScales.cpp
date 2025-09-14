@@ -1,7 +1,7 @@
 
 /** $VER: GaugeScales.cpp (2024.05.03) P. Stuer - Implements the gauge scales of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "GaugeScales.h"
 

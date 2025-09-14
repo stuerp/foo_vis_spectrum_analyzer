@@ -1,7 +1,7 @@
 
 /** $VER: DirectX.cpp (2024.01.30) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "DirectX.h"
 
 #include "Direct2D.h"

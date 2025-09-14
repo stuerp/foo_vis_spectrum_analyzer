@@ -1,7 +1,7 @@
 
 /** $VER: Spectrum.cpp (2024.08.18) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Spectrum.h"
 
 #include "Direct2D.h"

@@ -1,7 +1,7 @@
 
 /** $VER: Gauges.cpp (2024.04.22) P. Stuer - Implements the gauges of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "Gauges.h"
 

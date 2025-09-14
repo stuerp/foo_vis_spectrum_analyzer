@@ -1,7 +1,7 @@
 
 /** $VER: DUIElement.cpp (2024.03.11) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "DUIElement.h"
 #include "Color.h"

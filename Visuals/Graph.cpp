@@ -1,7 +1,7 @@
 
 /** $VER: Graph.cpp (2024.08.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Graph.h"
 
 #include "StyleManager.h"

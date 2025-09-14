@@ -1,7 +1,7 @@
 
 /** $VER: Log.cpp (2024.03.09) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Log.h"
 
 #include <CppCoreCheck/Warnings.h>

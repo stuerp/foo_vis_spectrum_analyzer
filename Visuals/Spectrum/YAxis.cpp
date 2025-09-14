@@ -1,7 +1,7 @@
 
 /** $VER: YAXis.cpp (2024.04.08) P. Stuer - Implements the Y axis of a graph. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "YAxis.h"
 
 #include "StyleManager.h"

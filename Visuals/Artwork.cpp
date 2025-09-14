@@ -1,7 +1,7 @@
 
 /** $VER: Artwork.cpp (2024.04.06) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Artwork.h"
 
 #include "WIC.h"

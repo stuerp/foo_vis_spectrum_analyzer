@@ -1,7 +1,7 @@
 
 /** $VER: ColorThief.cpp (2024.03.09) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
 
-#include "framework.h"
+#include "pch.h"
 #include "ColorThief.h"
 
 #include "Raster.h"

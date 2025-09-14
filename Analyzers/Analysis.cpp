@@ -1,7 +1,7 @@
 
 /** $VER: Analysis.cpp (2024.08.18) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "Analysis.h"
 #include "Log.h"
