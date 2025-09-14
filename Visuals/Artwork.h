@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.04.06) P. Stuer  **/
+/** $VER: Artwork.h (2025.09.14) P. Stuer  **/
 
 #pragma once
 
@@ -12,8 +12,9 @@
 #include <Windows.h>
 #include <d2d1_2.h>
 
+#include <libmsc.h>
+
 #include "State.h"
-#include "CriticalSection.h"
 
 #include "Log.h"
 
@@ -88,7 +89,7 @@ private:
     }
 
 private:
-    CriticalSection _CriticalSection;
+    msc::critical_section_t _CriticalSection;
 
     std::vector<uint8_t> _Raster;
     std::wstring _FilePath;

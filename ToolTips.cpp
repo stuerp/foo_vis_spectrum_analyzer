@@ -1,5 +1,5 @@
 
-/** $VER: ToolTips.cpp (2024.03.26) P. Stuer **/
+/** $VER: ToolTips.cpp (2025.09.14) P. Stuer **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -20,19 +20,6 @@ void UIElement::CreateToolTipControl() noexcept
 }
 
 /// <summary>
-/// Deletes the current tracking tooltip.
-/// </summary>
-void UIElement::DeleteTrackingToolTip() noexcept
-{
-    if (!_ToolTipControl.IsWindow())
-        return;
-
-    _ToolTipControl.TrackActivate(&_TrackingToolInfo, FALSE);
-
-    _TrackingGraph = nullptr;
-}
-
-/// <summary>
 /// Handles mouse move messages.
 /// </summary>
 void UIElement::OnMouseMove(UINT, CPoint pt)
@@ -49,10 +36,12 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 
         // Tell Windows we want to know when the mouse leaves this window.
         {
-            TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT) };
-
-            tme.dwFlags   = TME_LEAVE;
-            tme.hwndTrack = m_hWnd;
+            TRACKMOUSEEVENT tme =
+            {
+                .cbSize    = sizeof(TRACKMOUSEEVENT),
+                .dwFlags   = TME_LEAVE,
+                .hwndTrack = m_hWnd
+            };
         
             ::TrackMouseEvent(&tme);
         }
@@ -71,6 +60,8 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
             _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
 
             _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
+
+            _LastIndex = Index;
         }
     }
     else
@@ -87,43 +78,42 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 
             if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, Index))
             {
+                // Reposition the tooltip.
+                {
+                    ::ClientToScreen(m_hWnd, &pt);
+
+                    RECT tr;
+
+                    _ToolTipControl.GetClientRect(&tr);
+
+                    int x = pt.x + 4;
+                    int y = pt.y - 4 - tr.bottom;
+
+                    RECT wr;
+
+                    GetWindowRect(&wr);
+
+                    if (x + tr.right >=  wr.right)
+                        x = pt.x - 4 - tr.right;
+
+                    if (y <=  wr.top)
+                        y = pt.y + 4;
+
+                    _ToolTipControl.TrackPosition(x, y);
+                }
+
                 if (Index != _LastIndex)
                 {
                     _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
 
                     _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
+                    _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
 
                     _LastIndex = Index;
                 }
-
-                // Reposition the tooltip.
-                ::ClientToScreen(m_hWnd, &pt);
-
-                RECT tr;
-
-                _ToolTipControl.GetClientRect(&tr);
-
-                int x = pt.x + 4;
-                int y = pt.y - 4 - tr.bottom;
-
-                RECT wr;
-
-                GetWindowRect(&wr);
-
-                if (x + tr.right >=  wr.right)
-                    x = pt.x - 4 - tr.right;
-
-                if (y <=  wr.top)
-                    y = pt.y + 4;
-
-                _ToolTipControl.TrackPosition(x, y);
             }
             else
-            {
-                _ToolTipControl.TrackActivate(&_TrackingToolInfo, FALSE);
-
-                _TrackingGraph = nullptr;
-            }
+                DeleteTrackingToolTip();
         }
     }
 }
@@ -133,6 +123,28 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 /// </summary>
 void UIElement::OnMouseLeave()
 {
+    POINT pt; GetCursorPos(&pt); HWND hWndNew = WindowFromPoint(pt);
+
+    if (hWndNew == _ToolTipControl.m_hWnd)
+    {
+        _TrackingGraph = nullptr; // Make sure we request future Mouse Leave notifications.
+
+        return;
+    }
+
     DeleteTrackingToolTip();
 }
 
+/// <summary>
+/// Deletes the current tracking tooltip.
+/// </summary>
+void UIElement::DeleteTrackingToolTip() noexcept
+{
+    if (!_ToolTipControl.IsWindow())
+        return;
+
+    _ToolTipControl.TrackActivate(&_TrackingToolInfo, FALSE);
+
+    _TrackingGraph = nullptr;
+    _LastIndex = ~0U;
+}

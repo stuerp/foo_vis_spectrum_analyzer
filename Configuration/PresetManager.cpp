@@ -10,6 +10,8 @@
 
 #include "Log.h"
 
+namespace fio = foobar2000_io;
+
 #pragma hdrstop
 
 /// <summary>
@@ -26,7 +28,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_read, fb2k::noAbort);
+        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_read, fb2k::noAbort);
 
         auto Reader = File.get_ptr();
 
@@ -76,7 +78,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_write_new, fb2k::noAbort);
+        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_write_new, fb2k::noAbort);
 
         auto Writer = File.get_ptr();
 

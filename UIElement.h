@@ -150,7 +150,7 @@ private:
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
         MSG_WM_DPICHANGED(OnDPIChanged)
 
-        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
+        MSG_WM_MOUSEMOVE(OnMouseMove)   // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
@@ -164,7 +164,7 @@ protected:
     state_t _MainState;
     state_t _ThreadState;
 
-    CriticalSection _CriticalSection;
+    msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
 
     RECT _OldBounds;

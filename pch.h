@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2024.08.16) P. Stuer **/
+/** $VER: framework.h (2025.09.14) P. Stuer **/
 
 #pragma once
 
@@ -30,7 +30,7 @@
 #include <cassert>
 #include <bit>
 
-#include "CriticalSection.h"
+#include <libmsc.h>
 
 #ifndef Assert
 #if defined(DEBUG) || defined(_DEBUG)
