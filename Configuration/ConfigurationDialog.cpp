@@ -1,5 +1,5 @@
 ﻿
-/** $VER: ConfigurationDialog.cpp (2024.08.18) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.06.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "framework.h"
 #include "ConfigurationDialog.h"
@@ -1602,7 +1602,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
                 SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
-            bool HasSelection = (Index != LB_ERR);
+            bool HasSelection = (Index != (size_t) LB_ERR);
             bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
             bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
@@ -3356,7 +3356,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
         uint32_t Channels = gs._Channels;
 
-        for (int i = 0; i < _countof(ChannelNames); ++i)
+        for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {
             w.SetSel(i, (Channels & 1) ? TRUE : FALSE);
 

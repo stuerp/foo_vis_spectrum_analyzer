@@ -1,5 +1,5 @@
 
-/** $VER: Rendering.cpp (2024.08.07) P. Stuer **/
+/** $VER: Rendering.cpp (2025.09.14) P. Stuer **/
 
 #include "framework.h"
 #include "UIElement.h"
@@ -228,7 +228,7 @@ void UIElement::Process() noexcept
     }
     else
     {
-        const bool IsSlidingWindow = (_ThreadState._Transform == Transform::SWIFT);
+        const bool IsSlidingWindow = (_ThreadState._Transform == Transform::SWIFT) || (_ThreadState._Transform == Transform::AnalogStyle);
 
         const double WindowSize = IsSlidingWindow ? PlaybackTime - _ThreadState._PlaybackTime : (double) _ThreadState._BinCount / (double) _ThreadState._SampleRate;
         const double Offset     = IsSlidingWindow ?                _ThreadState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _ThreadState._ReactionAlignment));
@@ -267,7 +267,8 @@ void UIElement::InitializeSampleRateDependentParameters(audio_chunk_impl & chunk
     }
     #pragma warning (default: 4061)
 
-    _ToneGenerator.Initialize(997., 1., 0., _ThreadState._BinCount);
+    if (_ThreadState._UseToneGenerator)
+        _ToneGenerator.Initialize(997., 1., 0., _ThreadState._BinCount);
 }
 
 /// <summary>
