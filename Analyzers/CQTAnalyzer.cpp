@@ -20,7 +20,7 @@ CQTAnalyzer::CQTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t ch
 /// </summary>
 bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
-    for (FrequencyBand & fb : frequencyBands)
+    for (frequency_band_t & fb : frequencyBands)
     {
         double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
         double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);

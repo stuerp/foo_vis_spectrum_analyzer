@@ -13,7 +13,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
+HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
 {
     _CriticalSection.Enter();
 
@@ -35,7 +35,7 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
+HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
 {
     _CriticalSection.Enter();
 
@@ -54,7 +54,7 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
+void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
 {
     _CriticalSection.Enter();
 
@@ -79,7 +79,7 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
             if ((state->_FitMode == FitMode::FitHeight) || (state->_FitMode == FitMode::FitBig))
                 HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
 
-            Scalar = Min(WScalar, HScalar);
+            Scalar = std::min(WScalar, HScalar);
         }
         else
         {
@@ -106,7 +106,7 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
 /// <summary>
 /// Realizes this instance.
 /// </summary>
-HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT artwork_t::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
     _CriticalSection.Enter();
 
@@ -147,7 +147,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Creates a palette from the specified bitmap source.
 /// </summary>
-HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
+HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
     HRESULT hr = E_FAIL;
 

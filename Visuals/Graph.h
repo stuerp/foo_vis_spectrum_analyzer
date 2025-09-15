@@ -34,7 +34,7 @@ public:
 
     void Initialize(state_t * state, const GraphSettings * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
     void Reset();
 
     void Process(const audio_chunk & chunk) noexcept
@@ -42,7 +42,7 @@ public:
         _Analysis.Process(chunk);
     }
 
-    Analysis & GetAnalysis() noexcept { return _Analysis; }
+    analysis_t & GetAnalysis() noexcept { return _Analysis; }
 
     Spectrum & GetSpectrum() noexcept { return _Spectrum; }
     Spectogram & GetSpectogram() noexcept { return _Spectogram; }
@@ -77,14 +77,14 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
     void RenderForeground(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
 
 private:
     std::wstring _Description;
 
-    Analysis _Analysis;
+    analysis_t _Analysis;
 
     Spectrum _Spectrum;
     Spectogram _Spectogram;

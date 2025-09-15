@@ -19,13 +19,13 @@ AnalogStyleAnalyzer::AnalogStyleAnalyzer(const state_t * state, uint32_t sampleR
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
+bool AnalogStyleAnalyzer::Initialize(const vector<frequency_band_t> & frequencyBands)
 {
     assert(_SampleRate != 0);
 
     const double TimeResolution =  _State->_ConstantQ ? std::numeric_limits<double>::infinity() : _State->_TimeResolution;
 
-    for (const FrequencyBand & fb : frequencyBands)
+    for (const frequency_band_t & fb : frequencyBands)
     {
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
         const double rad = M_PI * fb.Ctr / (double) _SampleRate;

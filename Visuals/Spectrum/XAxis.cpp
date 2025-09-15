@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept
+void XAxis::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;

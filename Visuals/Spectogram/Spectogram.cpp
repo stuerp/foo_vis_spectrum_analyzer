@@ -23,7 +23,7 @@ Spectogram::Spectogram()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectogram::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void Spectogram::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;

@@ -18,15 +18,15 @@
 
 #include "Log.h"
 
-class Artwork
+class artwork_t
 {
 public:
-    Artwork()
+    artwork_t()
     {
         SetStatus(Idle);
     }
 
-    virtual ~Artwork()
+    virtual ~artwork_t()
     {
         Release();
     }

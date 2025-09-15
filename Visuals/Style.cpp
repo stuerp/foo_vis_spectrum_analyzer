@@ -155,7 +155,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        if (msc::IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -194,7 +194,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        if (msc::IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 

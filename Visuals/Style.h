@@ -66,7 +66,7 @@ public:
 
     bool IsRadial() const noexcept
     {
-        return IsSet(_Flags, (uint64_t) Style::RadialGradient);
+        return msc::IsSet(_Flags, (uint64_t) Style::RadialGradient);
     }
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;

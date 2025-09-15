@@ -3478,8 +3478,8 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
-    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) IsSet(style->_Flags, (uint64_t) Style::HorizontalGradient));
-    SendDlgItemMessageW(IDC_AMPLITUDE_BASED, BM_SETCHECK, (WPARAM) IsSet(style->_Flags, (uint64_t) Style::AmplitudeBasedColor));
+    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) msc::IsSet(style->_Flags, (uint64_t) Style::HorizontalGradient));
+    SendDlgItemMessageW(IDC_AMPLITUDE_BASED, BM_SETCHECK, (WPARAM) msc::IsSet(style->_Flags, (uint64_t) Style::AmplitudeBasedColor));
 
     SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
@@ -3495,13 +3495,13 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
 
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && msc::IsSet(style->_Flags, (uint64_t) (Style::AmplitudeAware | Style::HorizontalGradient)));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
+    GetDlgItem(IDC_OPACITY).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) Style::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) Style::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) Style::SupportsFont));
 
     UpdateColorControls();
 }

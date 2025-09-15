@@ -177,7 +177,7 @@ protected:
 private:
     #pragma region Shared
 
-    Artwork _Artwork;
+    artwork_t _Artwork;
 
     #pragma endregion
 

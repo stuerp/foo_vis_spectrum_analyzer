@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2025.09.15) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "pch.h"
 #include "SWIFTAnalyzer.h"
@@ -11,42 +11,30 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-SWIFTAnalyzer::SWIFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, WindowFunction())
+swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, WindowFunction())
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool SWIFTAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
+bool swift_analyzer_t::Initialize(const FrequencyBands & frequencyBands) noexcept
 {
-    const double Factor1 = M_PI * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / (M_PI * 1000.));
-    const double Factor2 = _State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.;
+    const double Factor = 4. * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
-    // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
-    for (const FrequencyBand & fb : frequencyBands)
-    {
-        // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
-        Coef c =
-        {
-            ::cos(fb.Ctr * M_PI * 2. / (double) _SampleRate),
-            ::sin(fb.Ctr * M_PI * 2. / (double) _SampleRate),
-            ::exp(-::abs(fb.Hi - fb.Lo) * Factor1 * Factor2)
-        };
+    const double a = M_PI * 2. / (double) _SampleRate;
 
-        for (uint32_t i = 0; i < _State->_FilterBankOrder; ++i)
-            c.Values[i] = { };
-
-        _Coefs.push_back(c);
-    }
+    // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one. Pre-calculate rX and rY here since sin and cos functions are pretty slow.
+    for (const frequency_band_t & fb : frequencyBands)
+        _Coefs.push_back(swift_coef_t(::cos(fb.Ctr * a), ::sin(fb.Ctr * a), ::exp(-::abs(fb.Hi - fb.Lo) * Factor)));
 
     return true;
 }
 
 /// <summary>
-/// Calculates the transform and returns the frequency bands.
+/// Calculates the transform and returns the updated frequency bands.
 /// </summary>
-bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool swift_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;
@@ -60,23 +48,23 @@ bool SWIFTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampl
 
         for (auto & Coef : _Coefs)
         {
-            Value CurValue = { Sample, 0. };
+            swift_value_t CurValue = { Sample, 0. };
 
             for (uint32_t j = 0; j < _State->_FilterBankOrder; ++j)
             {
-                Value & value = Coef.Values[j];
+                swift_value_t & Value = Coef.Values[j];
 
-                value =
+                Value =
                 {
-                    (value.x * Coef.rX - value.y * Coef.rY) * Coef.Decay + CurValue.x * (1. - Coef.Decay),
-                    (value.x * Coef.rY + value.y * Coef.rX) * Coef.Decay + CurValue.y * (1. - Coef.Decay)
+                    (Value.x * Coef.rX - Value.y * Coef.rY) * Coef.Decay + CurValue.x * (1. - Coef.Decay),
+                    (Value.x * Coef.rY + Value.y * Coef.rX) * Coef.Decay + CurValue.y * (1. - Coef.Decay)
                 };
 
-                CurValue = value;
+                CurValue = Value;
             }
 
             // CurValue now contains the last calculated value.
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
+            frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
             k++;
         }
     }

@@ -151,7 +151,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 
     std::vector<double> Values;
 
-    for (FrequencyBand & fb : freqBands)
+    for (frequency_band_t & fb : freqBands)
     {
         const double LoHz = HzToFFTIndex(Min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
         const double HiHz = HzToFFTIndex(Max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
@@ -231,7 +231,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
-    for (FrequencyBand & fb : freqBands)
+    for (frequency_band_t & fb : freqBands)
     {
         double Sum = 0.;
 
@@ -259,7 +259,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands &
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 
-    for (FrequencyBand & fb : freqBands)
+    for (frequency_band_t & fb : freqBands)
     {
         double re = 0.;
         double im = 0.;

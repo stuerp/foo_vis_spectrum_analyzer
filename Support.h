@@ -31,15 +31,6 @@ inline static T Max(T a, T b)
 }
 
 /// <summary>
-/// Returns the input value clamped between min and max.
-/// </summary>
-template <class T>
-inline static T Clamp(T value, T minValue, T maxValue)
-{
-    return Min(Max(value, minValue), maxValue);
-}
-
-/// <summary>
 /// Returns true of the input value is in the interval between min and max.
 /// </summary>
 template <class T>
@@ -89,27 +80,6 @@ template<class T, class U>
 inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
     return dstMin + (U) (((double) (value - srcMin) * (double) (dstMax - dstMin)) / (double) (srcMax - srcMin));
-}
-
-/// <summary>
-/// Returns true if the specified flags are set.
-/// </summary>
-template <class T>
-inline static bool IsSet(T a, T b)
-{
-    return (a & b) == b;
-}
-
-/// <summary>
-/// Gets the handle of the module that contains the executing code.
-/// </summary>
-inline HMODULE GetCurrentModule() noexcept
-{
-    HMODULE hModule = NULL;
-
-    ::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR) GetCurrentModule, &hModule);
-
-    return hModule;
 }
 
 /// <summary>

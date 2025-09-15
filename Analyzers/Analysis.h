@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.04.13) P. Stuer **/
+/** $VER: Analysis.h (2025.09.15) P. Stuer **/
 
 #pragma once
 
@@ -25,9 +25,9 @@
 /// <summary>
 /// Represents the values of a gauge.
 /// </summary>
-struct GaugeValue
+struct gauge_value_t
 {
-    GaugeValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
+    gauge_value_t(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
     {
         Reset();
 
@@ -61,17 +61,17 @@ struct GaugeValue
 /// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
-class Analysis
+class analysis_t
 {
 public:
-    Analysis() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
-    Analysis(const Analysis &) = delete;
-    Analysis & operator=(const Analysis &) = delete;
-    Analysis(Analysis &&) = delete;
-    Analysis & operator=(Analysis &&) = delete;
+    analysis_t(const analysis_t &) = delete;
+    analysis_t & operator=(const analysis_t &) = delete;
+    analysis_t(analysis_t &&) = delete;
+    analysis_t & operator=(analysis_t &&) = delete;
 
-    virtual ~Analysis() { Reset(); };
+    virtual ~analysis_t() { Reset(); };
 
     void Initialize(const state_t * state, const GraphSettings * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
@@ -132,7 +132,7 @@ public:
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
-    std::vector<GaugeValue> _GaugeValues;
+    std::vector<gauge_value_t> _GaugeValues;
     uint32_t _CurrentChannelMask;
 
     const WindowFunction * _WindowFunction;
@@ -140,7 +140,7 @@ public:
 
     fft_analyzer_t * _FFTAnalyzer;
     CQTAnalyzer * _CQTAnalyzer;
-    SWIFTAnalyzer * _SWIFTAnalyzer;
+    swift_analyzer_t * _SWIFTAnalyzer;
     AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
 
     FrequencyBands _FrequencyBands;

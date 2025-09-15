@@ -35,7 +35,7 @@ bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color)
     cc.rgbResult = Color::ToCOLORREF(color);
     cc.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE | CC_SOLIDCOLOR;
     cc.lpfnHook = (LPCCHOOKPROC) Hook;
-    cc.hInstance = (HWND) GetCurrentModule();//::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
+    cc.hInstance = (HWND) msc::GetCurrentModule();//::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
     cc.lpTemplateName = MAKEINTRESOURCE(IDD_CHOOSECOLOR);
     cc.lCustData = (LPARAM) this;
 

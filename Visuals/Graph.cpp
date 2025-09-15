@@ -60,7 +60,7 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
+void Graph::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -76,10 +76,10 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
 /// </summary>
 void Graph::Reset()
 {
-    for (FrequencyBand & fb : _Analysis._FrequencyBands)
+    for (frequency_band_t & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
-    for (GaugeValue & mv : _Analysis._GaugeValues)
+    for (gauge_value_t & mv : _Analysis._GaugeValues)
     {
         mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
         mv.PeakRender = mv.RMSRender = 0.;
@@ -160,7 +160,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 /// <summary>
 /// Renders the background.
 /// </summary>
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept
+void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
 //  if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);

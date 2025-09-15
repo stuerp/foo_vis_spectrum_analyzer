@@ -1,5 +1,5 @@
 
-/** $VER: framework.h (2025.09.14) P. Stuer **/
+/** $VER: pch.h (2025.09.15) P. Stuer **/
 
 #pragma once
 
@@ -10,9 +10,9 @@
 #include <SDKDDKVer.h>
 
 #define NOMINMAX
+
 #include <helpers/foobar2000+atl.h>
 #include <helpers/helpers.h>
-#undef NOMINMAX
 
 #include <dxgi1_3.h>
 #include <d3d11_2.h>
@@ -26,9 +26,10 @@
 #include <strsafe.h>
 
 #include <algorithm>
-#include <cmath>
-#include <cassert>
 #include <bit>
+#include <cassert>
+#include <cmath>
+#include <string>
 
 #include <libmsc.h>
 

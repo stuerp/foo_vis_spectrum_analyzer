@@ -16,7 +16,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void Spectrum::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -170,7 +170,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the peak indicator area.
                 if (_PeakArea->IsEnabled())
                 {
-                    if ((_PeakArea->_ColorSource == ColorSource::Gradient) && IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
+                    if ((_PeakArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _PeakArea->SetBrushColor(fb.MaxValue);
 
                     if (!_State->_LEDMode)
@@ -200,7 +200,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the area of the bar.
                 if (_BarArea->IsEnabled())
                 {
-                    if ((_BarArea->_ColorSource == ColorSource::Gradient) && IsSet(_BarArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
+                    if ((_BarArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_BarArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
                         _BarArea->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)

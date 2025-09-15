@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.h (2024.03.09) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.h (2025.09.15) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #pragma once
 
@@ -20,37 +20,40 @@
 /// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class SWIFTAnalyzer : public analyzer_t
+class swift_analyzer_t : public analyzer_t
 {
 public:
-    SWIFTAnalyzer() = delete;
+    swift_analyzer_t() = delete;
 
-    SWIFTAnalyzer(const SWIFTAnalyzer &) = delete;
-    SWIFTAnalyzer & operator=(const SWIFTAnalyzer &) = delete;
-    SWIFTAnalyzer(SWIFTAnalyzer &&) = delete;
-    SWIFTAnalyzer & operator=(SWIFTAnalyzer &&) = delete;
+    swift_analyzer_t(const swift_analyzer_t &) = delete;
+    swift_analyzer_t & operator=(const swift_analyzer_t &) = delete;
+    swift_analyzer_t(swift_analyzer_t &&) = delete;
+    swift_analyzer_t & operator=(swift_analyzer_t &&) = delete;
 
-    virtual ~SWIFTAnalyzer() { }
+    virtual ~swift_analyzer_t() { }
 
-    SWIFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
+    swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
-    bool Initialize(const vector<FrequencyBand> & frequencyBands);
+    bool Initialize(const FrequencyBands & frequencyBands) noexcept;
     bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
 
 private:
-    struct Value
+    struct swift_value_t
     {
         double x;
         double y;
     };
 
-    struct Coef
+    struct swift_coef_t
     {
+        swift_coef_t() noexcept { };
+        swift_coef_t(double rx, double ry, double decay) noexcept : rX(rx), rY(ry), Decay(decay), Values() { }
+
         double rX;
         double rY;
         double Decay;
-        Value Values[MaxFilterBankOrder];
+        swift_value_t Values[MaxFilterBankOrder];
     };
 
-    std::vector<Coef> _Coefs;
+    std::vector<swift_coef_t> _Coefs;
 };
