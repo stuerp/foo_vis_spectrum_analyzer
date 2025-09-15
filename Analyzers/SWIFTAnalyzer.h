@@ -20,7 +20,7 @@
 /// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class SWIFTAnalyzer : public Analyzer
+class SWIFTAnalyzer : public analyzer_t
 {
 public:
     SWIFTAnalyzer() = delete;

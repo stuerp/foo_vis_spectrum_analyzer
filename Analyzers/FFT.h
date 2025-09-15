@@ -8,23 +8,21 @@
 #include <vector>
 #include <complex>
 
-using namespace std;
-
 /// <summary>
 /// Implements a wrapper for the complex FFT from Project Nayuki (https://www.nayuki.io/page/free-small-fft-in-multiple-languages).
 /// </summary>
-class FFT
+class fft_t
 {
 public:
     /// <summary>
     /// Initializes a new instance of the class.
     /// </summary>
-    FFT() : _FFTSize() { }
+    fft_t() noexcept : _FFTSize() { }
 
     /// <summary>
     /// Frees all allocated resources.
     /// </summary>
-    ~FFT() { }
+    ~fft_t() { }
 
     /// <summary>
     /// Initializes the instance.
@@ -42,7 +40,7 @@ public:
     /// </summary>
     /// <param name="timeData"></param>
     /// <param name="freqData">freqData[0] = DC; freqData[1] = 1Hz; freqData[fftSize / 2] = Nyquist frequency</param>
-    bool Transform(const vector<complex<double>> & timeData, std::vector<complex<double>> & freqData) noexcept
+    bool Transform(const std::vector<std::complex<double>> & timeData, std::vector<complex<double>> & freqData) noexcept
     {
         freqData = timeData;
 
@@ -50,7 +48,7 @@ public:
         {
             Fft::transform(freqData, _Exp, false);
         }
-        catch (exception)
+        catch (std::exception &)
         {
             std::fill(freqData.begin(), freqData.end(), 0.);
         }
@@ -61,5 +59,5 @@ public:
 private:
     size_t _FFTSize;
 
-    vector<complex<double>> _Exp; // Trigonometric table
+    std::vector<std::complex<double>> _Exp; // Trigonometric table
 };

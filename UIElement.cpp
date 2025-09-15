@@ -398,7 +398,7 @@ void UIElement::OnColorsChanged()
     ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
     // Notify the render thread.
-    _Event.Raise(Event::UserInterfaceColorsChanged);
+    _Event.Raise(event_t::UserInterfaceColorsChanged);
 
     _CriticalSection.Leave();
 
@@ -538,7 +538,7 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void UIElement::on_playback_new_track(metadb_handle_ptr track)
 {
-    _Event.Raise(Event::PlaybackStartedNewTrack);
+    _Event.Raise(event_t::PlaybackStartedNewTrack);
 
     UpdateState();
 
@@ -566,7 +566,7 @@ void UIElement::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _Event.Raise(Event::PlaybackStopped);
+    _Event.Raise(event_t::PlaybackStopped);
 
     _MainState._SampleRate = 0;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.08.18) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.09.15) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -11,7 +11,7 @@
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-FFTAnalyzer::~FFTAnalyzer()
+fft_analyzer_t::~fft_analyzer_t()
 {
     if (_Data)
     {
@@ -23,7 +23,7 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
@@ -44,7 +44,7 @@ FFTAnalyzer::FFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t ch
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
 {
     Add(samples, sampleCount, channels);
 
@@ -74,7 +74,7 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
 /// Adds multiple samples to the analyzer buffer.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
+void fft_analyzer_t::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
 {
 //  Log::Write(Log::Level::Trace, "%8d: %5d, %5d, %5d", (int) ::GetTickCount64() _Size, _Curr, sampleCount / 2);
 
@@ -97,20 +97,20 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t
 /// <summary>
 /// Calculates the Fast Fourier Transform and updates the frequency data.
 /// </summary>
-void FFTAnalyzer::Transform() noexcept
+void fft_analyzer_t::Transform() noexcept
 {
     double Norm = 0.;
 
-    // Fill the FFT buffer from the sample ring buffer with Time domain data and apply the windowing function.
+    // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
     {
         size_t i = _Curr;
         size_t j = 0;
 
-        for (complex<double> & Iter : _TimeData)
+        for (std::complex<double> & Iter : _TimeData)
         {
             const double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
-            Iter = complex<double>(_Data[i] * WindowFactor, 0.);
+            Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
 
             i = (i + 1) % _Size;
 
@@ -123,7 +123,7 @@ void FFTAnalyzer::Transform() noexcept
     {
         const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
-        for (complex<double> & Iter : _TimeData)
+        for (std::complex<double> & Iter : _TimeData)
             Iter *= Factor;
     }
 
@@ -131,14 +131,18 @@ void FFTAnalyzer::Transform() noexcept
     _FFT.Transform(_TimeData, _FreqData);
 
     // Normalize the Frequency domain data.
-    for (complex<double> & Iter : _FreqData)
-        Iter /= (double) _FFTSize / 2.;
+    {
+        const double Factor = 2. / (double) _FFTSize;
+
+        for (std::complex<double> & Iter : _FreqData)
+            Iter *= Factor;
+    }
 }
 
 /// <summary>
 /// Maps the Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
-void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
     const bool IsRMS       =  (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
     const bool IsMedian    =   _State->_SummationMethod == SummationMethod::Median;
@@ -225,7 +229,7 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
     for (FrequencyBand & fb : freqBands)
     {
@@ -251,7 +255,7 @@ void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & f
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 
@@ -293,7 +297,7 @@ void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & fr
 /// <summary>
 /// Applies a Lanzcos kernel to the specified value.
 /// </summary>
-double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
+double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
 {
     double re = 0.;
     double im = 0.;
@@ -319,7 +323,7 @@ double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, doub
 /// <summary>
 /// Calculates the median.
 /// </summary>
-double FFTAnalyzer::Median(std::vector<double> & data) const noexcept
+double fft_analyzer_t::Median(std::vector<double> & data) const noexcept
 {
     if (data.size() == 0)
         return DBL_MIN;

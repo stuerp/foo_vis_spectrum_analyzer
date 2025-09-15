@@ -122,7 +122,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
                 }
             }
 
-            // From here on CurValue is guaranteed in the range 0.0 .. 1.0
+            // From here on CurValue is guaranteed to be in the range 0.0 .. 1.0.
         }
   
         case VisualizationType::PeakMeter:
@@ -507,12 +507,12 @@ void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
     if (_WindowFunction == nullptr)
         _WindowFunction = WindowFunction::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
-    if (_BrownPucketteKernel == nullptr)
-        _BrownPucketteKernel = WindowFunction::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
-
     if ((_FFTAnalyzer == nullptr) && (_State->_Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+        if (_BrownPucketteKernel == nullptr)
+            _BrownPucketteKernel = WindowFunction::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+
+        _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))

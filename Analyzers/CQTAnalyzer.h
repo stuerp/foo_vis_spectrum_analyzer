@@ -18,7 +18,7 @@
 /// Implements a Constant-Q Transform analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class CQTAnalyzer : public Analyzer
+class CQTAnalyzer : public analyzer_t
 {
 public:
     CQTAnalyzer() = delete;

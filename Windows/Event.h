@@ -10,13 +10,13 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
-class Event
+class event_t
 {
 public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    Event()
+    event_t()
     {
         Reset();
     }
@@ -42,15 +42,15 @@ public:
     /// <summary>
     /// Gets the current flags and resets them.
     /// </summary>
-    Event::Flags GetFlags() noexcept
+    event_t::Flags GetFlags() noexcept
     {
-        return (Event::Flags) ::InterlockedExchange64(&_Flags, 0);
+        return (event_t::Flags) ::InterlockedExchange64(&_Flags, 0);
     }
 
     /// <summary>
     /// Raises the specified flags.
     /// </summary>
-    void Raise(Event::Flags flags) noexcept
+    void Raise(event_t::Flags flags) noexcept
     {
         ::InterlockedOr64(&_Flags, flags);
     }
@@ -58,7 +58,7 @@ public:
     /// <summary>
     /// Returns true if the flags in the specified mask are set.
     /// </summary>
-    static bool IsRaised(Event::Flags value, Event::Flags mask) noexcept
+    static bool IsRaised(event_t::Flags value, event_t::Flags mask) noexcept
     {
         return (value & mask) == mask;
     }

@@ -18,7 +18,7 @@
 /// Implements an Analog-style spectrum analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class AnalogStyleAnalyzer : public Analyzer
+class AnalogStyleAnalyzer : public analyzer_t
 {
 public:
     AnalogStyleAnalyzer() = delete;

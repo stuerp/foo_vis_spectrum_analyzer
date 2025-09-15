@@ -138,7 +138,7 @@ public:
     const WindowFunction * _WindowFunction;
     const WindowFunction * _BrownPucketteKernel;
 
-    FFTAnalyzer * _FFTAnalyzer;
+    fft_analyzer_t * _FFTAnalyzer;
     CQTAnalyzer * _CQTAnalyzer;
     SWIFTAnalyzer * _SWIFTAnalyzer;
     AnalogStyleAnalyzer * _AnalogStyleAnalyzer;

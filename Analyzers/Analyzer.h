@@ -19,22 +19,22 @@ using namespace std;
 /// Provides a base class for analyzers.
 /// </summary>
 #pragma warning(disable: 4820)
-class Analyzer
+class analyzer_t
 {
 public:
-    Analyzer() = delete;
+    analyzer_t() = delete;
 
-    Analyzer(const Analyzer &) = delete;
-    Analyzer & operator=(const Analyzer &) = delete;
-    Analyzer(Analyzer &&) = delete;
-    Analyzer & operator=(Analyzer &&) = delete;
+    analyzer_t(const analyzer_t &) = delete;
+    analyzer_t & operator=(const analyzer_t &) = delete;
+    analyzer_t(analyzer_t &&) = delete;
+    analyzer_t & operator=(analyzer_t &&) = delete;
 
-    virtual ~Analyzer() { }
+    virtual ~analyzer_t() { }
 
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    Analyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
+    analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }

@@ -57,12 +57,12 @@ protected:
 private:
     #pragma region Render thread
 
-    void OnTimer();
+    void OnTimer() noexcept;
 
-    void ProcessEvents();
-    void Render();
+    void ProcessEvents() noexcept;
+    void Render() noexcept;
     void Process() noexcept;
-    void Animate();
+    void Animate() noexcept;
 
     void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
 
@@ -171,7 +171,7 @@ protected:
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
 
-    Event _Event;
+    event_t _Event;
     bool _IsStartingUp;
 
 private:
