@@ -1,12 +1,7 @@
 
-/** $VER: libmsc.h (2025.09.14) P. Stuer - My Support Classes, The "Most Original Name" Winner **/
+/** $VER: libmsc.h (2025.09.16) P. Stuer - My Support Classes, The "Most Original Name" Winner **/
 
 #pragma once
-
-// Avoid conflict or confusion with std::filesystem
-#ifdef _FILESYSTEM_
-#error std::filesystem is already included.
-#endif
 
 // UTF-8 Everywhere recommendation
 #ifndef _UNICODE
@@ -16,9 +11,9 @@
 #include <SDKDDKVer.h>
 #include <windows.h>
 
-#include "ghc\filesystem.hpp"
+#include <filesystem>
 
-namespace fs = ghc::filesystem;
+namespace fs = std::filesystem;
 
 #include "CriticalSection.h"
 #include "Encoding.h"

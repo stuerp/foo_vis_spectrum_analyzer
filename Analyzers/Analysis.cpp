@@ -416,9 +416,9 @@ void analysis_t::GenerateLinearFrequencyBands()
 
     for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Ctr = DeScaleF(Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Ctr = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
@@ -433,7 +433,7 @@ void analysis_t::GenerateLinearFrequencyBands()
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
-    const double Root24 = ::exp2(1. / 24.);
+    const double Root24 = ::exp2(1. / 24.); // 24 semitones
 
     const double Pitch = (_State->_Pitch > 0.) ? ::round((::log2(_State->_Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _State->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz

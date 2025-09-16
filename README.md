@@ -6,11 +6,11 @@
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
-![Screenshot](Assets/Bars.png?raw=true "Screenshot")
+![Screenshot](assets/Bars.png?raw=true "Screenshot")
 
-![Screenshot](Assets/Curve.png?raw=true "Screenshot")
+![Screenshot](assets/Curve.png?raw=true "Screenshot")
 
-![Screenshot](Assets/MultipleGraphs.png?raw=true "Screenshot")
+![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
 
 ## Features
 
@@ -37,6 +37,10 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 or
 
 * Import `foo_vis_spectrum_analyzer.fbk2-component` into foobar2000 using the "*File / Preferences / Components / Install...*" menu item.
+
+## Usage
+
+You can find the user guide [here](docs/README.md).
 
 ## Developing
 
@@ -90,7 +94,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.8.0.0-beta3, 2025-xx-xx
 
-* Fixed: Weird behavior in IIR filter bank/analog-style analyzer. Provided by TF3RDL
+* Fixed: Weird behavior in IIR filter bank/analog-style analyzer. (Provided by TF3RDL)
 * Fixed: Stability of the tooltip.
 * Fixed: SWIFT analyzer (Regression)
 

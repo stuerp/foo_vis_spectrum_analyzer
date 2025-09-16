@@ -235,7 +235,7 @@ HRESULT Style::SetBrushColor(double value) noexcept
     if (!SUCCEEDED(hr))
         return hr;
 
-    size_t Index = Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
+    size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
     D2D1_COLOR_F Color = _AmplitudeMap[Index];
 

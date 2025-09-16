@@ -136,7 +136,7 @@ void Spectogram::Resize() noexcept
 
             for (auto & Iter : _FreqLabels)
             {
-                const FLOAT y = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+                const FLOAT y = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
 
                 if (!_GraphSettings->_FlipVertically)
                 {
@@ -196,7 +196,7 @@ void Spectogram::Resize() noexcept
         {
             for (auto & Iter : _FreqLabels)
             {
-                const FLOAT x = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
+                const FLOAT x = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
 
                 {
                     CComPtr<IDWriteTextLayout> TextLayout;
@@ -589,7 +589,7 @@ bool Spectogram::Update() noexcept
                 if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                assert(InRange(fb.CurValue, 0.0, 1.0));
+                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectogramStyle->SetBrushColor(fb.CurValue);
 
@@ -648,7 +648,7 @@ bool Spectogram::Update() noexcept
                 if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                assert(InRange(fb.CurValue, 0.0, 1.0));
+                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectogramStyle->SetBrushColor(fb.CurValue);
 
@@ -709,13 +709,13 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 
     if (_State->_HorizontalSpectogram)
     {
-        const FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+        const FLOAT y = msc::Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
         renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }
     else
     {
-        const FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.width);
+        const FLOAT x = msc::Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
         renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }

@@ -175,7 +175,7 @@ void XAxis::Resize() noexcept
     // Calculate the rectangles of the labels.
     for (Label & Iter : _Labels)
     {
-        const FLOAT dx = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
+        const FLOAT dx = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
         const FLOAT x = !_GraphSettings->_FlipHorizontally ? xl + dx : xl - dx;
 
@@ -199,7 +199,7 @@ void XAxis::Resize() noexcept
         }
 
         // Labels outside the bounds are always hidden.
-        Iter.IsHidden = !InRange(x, _Bounds.left, _Bounds.right);
+        Iter.IsHidden = !msc::InRange(x, _Bounds.left, _Bounds.right);
     }
 
     if (_Labels.size() > 2)

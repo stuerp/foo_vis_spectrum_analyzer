@@ -43,7 +43,7 @@ void Element::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
 /// </summary>
 bool Element::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {
-    return InRange(a.left, b.left, b.right) || InRange(a.right, b.left, b.right);
+    return msc::InRange(a.left, b.left, b.right) || msc::InRange(a.right, b.left, b.right);
 }
 
 /// <summary>
@@ -51,5 +51,5 @@ bool Element::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F
 /// </summary>
 bool Element::IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {
-    return InRange(a.top, b.top, b.bottom) || InRange(a.bottom, b.top, b.bottom);
+    return msc::InRange(a.top, b.top, b.bottom) || msc::InRange(a.bottom, b.top, b.bottom);
 }

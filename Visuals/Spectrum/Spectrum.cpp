@@ -128,8 +128,8 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
-        assert(InRange(fb.CurValue, 0.0, 1.0));
-        assert(InRange(fb.MaxValue, 0.0, 1.0));
+        assert(msc::InRange(fb.CurValue, 0.0, 1.0));
+        assert(msc::InRange(fb.MaxValue, 0.0, 1.0));
 
         x1 = std::clamp(x1, 0.f, _ClientSize.width);
         x2 = std::clamp(x2, 0.f, _ClientSize.width);
@@ -393,7 +393,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
 
     const FLOAT x1 = HOffset + (Bandwidth / 2.f);
 
-    const FLOAT x = x1 + Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+    const FLOAT x = x1 + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 

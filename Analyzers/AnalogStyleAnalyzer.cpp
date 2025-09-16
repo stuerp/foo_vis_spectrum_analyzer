@@ -84,7 +84,7 @@ bool AnalogStyleAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t
                 Value = Coef.Out[j - 1];
             }
 
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, ::abs(Value));
+            frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, ::abs(Value));
             ++k;
         }
     }

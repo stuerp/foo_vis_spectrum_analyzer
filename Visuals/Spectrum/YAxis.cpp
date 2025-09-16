@@ -64,10 +64,10 @@ void YAxis::Resize() noexcept
 
     for (Label & Iter : _Labels)
     {
-        FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
+        FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
 
         // Don't generate any labels outside the bounds.
-        if (!InRange(y, _Bounds.top, _Bounds.bottom))
+        if (!msc::InRange(y, _Bounds.top, _Bounds.bottom))
         {
             Iter.IsHidden = true;
             continue;

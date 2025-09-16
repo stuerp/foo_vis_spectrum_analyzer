@@ -86,7 +86,7 @@ void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bou
             WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
             HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
 
-            Scalar = Max(WScalar, HScalar);
+            Scalar = std::max(WScalar, HScalar);
         }
 
         Size.width  *= Scalar;

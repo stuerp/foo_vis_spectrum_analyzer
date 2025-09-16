@@ -20,13 +20,13 @@ double GraphSettings::ScaleA(double value) const
         case YAxisMode::None:
 
         case YAxisMode::Decibels:
-            return Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
+            return msc::Map(ToDecibel(value), _AmplitudeLo, _AmplitudeHi, 0.0, 1.0);
 
         case YAxisMode::Linear:
         {
             const double Exponent = 1.0 / _Gamma;
 
-            return Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
+            return msc::Map(::pow(value, Exponent), _UseAbsolute ? 0.0 : ::pow(ToMagnitude(_AmplitudeLo), Exponent), ::pow(ToMagnitude(_AmplitudeHi), Exponent), 0.0, 1.0);
         }
     }
 }

@@ -108,7 +108,7 @@ void fft_analyzer_t::Transform() noexcept
 
         for (std::complex<double> & Iter : _TimeData)
         {
-            const double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
             Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
 
@@ -153,8 +153,8 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 
     for (frequency_band_t & fb : freqBands)
     {
-        const double LoHz = HzToFFTIndex(Min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
-        const double HiHz = HzToFFTIndex(Max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double LoHz = HzToFFTIndex(std::min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double HiHz = HzToFFTIndex(std::max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
 
         const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
               int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
@@ -163,7 +163,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 
         if (LoIdx <= HiIdx)
         {
-            HiIdx -= Max(HiIdx - LoIdx - (int) _FreqData.size(), 0);
+            HiIdx -= std::max(HiIdx - LoIdx - (int) _FreqData.size(), 0);
 
             double Value = (_State->_SummationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -173,18 +173,18 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 
             for (int Idx = LoIdx; Idx <= HiIdx; ++Idx)
             {
-                size_t CoefIdx = Wrap((size_t) Idx, _FreqData.size());
+                size_t CoefIdx = msc::Wrap((size_t) Idx, _FreqData.size());
 
                 double Coef = std::abs(_FreqData[CoefIdx]);
 
                 switch (_State->_SummationMethod)
                 {
                     case SummationMethod::Minimum:
-                        Value = Min(Coef, Value);
+                        Value = std::min(Coef, Value);
                         break;
 
                     case SummationMethod::Maximum:
-                        Value = Max(Coef, Value);
+                        Value = std::max(Coef, Value);
                         break;
 
                     case SummationMethod::Sum:
@@ -231,21 +231,23 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
 {
+    const double Scale = (double) _FreqData.size() / sampleRate;
+
     for (frequency_band_t & fb : freqBands)
     {
         double Sum = 0.;
 
-        const double MinBin = Min(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
-        const double MidBin = fb.Ctr            * (double) _FreqData.size() / sampleRate;
-        const double MaxBin = Max(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
+        const double MinBin = std::min(fb.Lo, fb.Hi) * Scale;
+        const double MidBin = fb.Ctr                 * Scale;
+        const double MaxBin = std::max(fb.Lo, fb.Hi) * Scale;
 
-        const double OverflowCompensation = Max(0., MaxBin - MinBin - (double) _FreqData.size());
+        const double OverflowCompensation = std::max(0., MaxBin - MinBin - (double) _FreqData.size());
 
         for (double i = ::floor(MidBin); i >= ::floor(MinBin + OverflowCompensation); --i)
-            Sum += ::pow(std::abs(_FreqData[Wrap((size_t) i, _FreqData.size())]) * Max(Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
+            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
 
         for (double i = ::ceil(MidBin); i <= ::ceil(MaxBin - OverflowCompensation); ++i)
-            Sum += ::pow(std::abs(_FreqData[Wrap((size_t) i, _FreqData.size())]) * Max(Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
+            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
         fb.NewValue = ::sqrt(Sum);
     }
@@ -267,9 +269,9 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands &
         const double Center      = fb.Ctr * HzToBin;
 
         const double Bandwidth    = ::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
-        const double tlen         = Min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
-        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : Min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
-        const double flen         = Min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
+        const double tlen         = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
+        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : std::min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
+        const double flen         = std::min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
 
         const double Start        = ::ceil (Center - flen / 2.);
         const double End          = ::floor(Center + flen / 2.);
@@ -309,9 +311,9 @@ double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoef
 
         double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
 
-        w *= (-1 + Wrap(i, 2) * 2);
+        w *= (-1 + msc::Wrap(i, 2) * 2);
 
-        const size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size());
+        const size_t CoefIdx = msc::Wrap((size_t) Pos, fftCoeffs.size());
 
         re += fftCoeffs[CoefIdx].real() * w;
         im += fftCoeffs[CoefIdx].imag() * w;

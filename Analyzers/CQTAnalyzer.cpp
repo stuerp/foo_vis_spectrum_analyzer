@@ -23,9 +23,9 @@ bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleC
     for (frequency_band_t & fb : frequencyBands)
     {
         double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
-        double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
+        double TLen = std::min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
 
-        double DownsampleAmount = Max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
+        double DownsampleAmount = std::max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
         double Coeff = 2. * ::cos(2. * M_PI * fb.Ctr / (double) _SampleRate * DownsampleAmount);
 
         double f1 = 0.;

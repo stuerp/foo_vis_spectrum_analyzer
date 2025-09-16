@@ -100,13 +100,13 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
     double NormalizeLRMS(double level) const noexcept
     {
-        return Map(level, -1., 1., 0., 1.);
+        return msc::Map(level, -1., 1., 0., 1.);
     }
 
     double SmoothValue(double value, double smoothedValue) const noexcept

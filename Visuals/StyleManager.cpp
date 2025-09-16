@@ -231,7 +231,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%8d: %s failed to read styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write("%8d: %s failed to read styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
 
         Reset();
     }
@@ -288,6 +288,6 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Error, "%8d: %s. failed to write styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write("%8d: %s. failed to write styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
     }
 }

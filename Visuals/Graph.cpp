@@ -110,7 +110,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
     {
         const rect_t & Bounds = (const rect_t &) _Spectrum.GetClientBounds();
 
-        const FLOAT Bandwidth = Max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
+        const FLOAT Bandwidth = std::max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
         const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
 
         const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (Bounds.Width() - SpectrumWidth) / 2.f : (Bounds.Width() - SpectrumWidth));
@@ -118,13 +118,13 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
         const FLOAT x1 = Bounds.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
 
-        if (!InRange(x, x1, x2))
+        if (!msc::InRange(x, x1, x2))
             return false;
 
         if (_GraphSettings->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        index = std::clamp((size_t) ::floor(Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        index = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
@@ -133,20 +133,20 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 
         if (_State->_HorizontalSpectogram)
         {
-            if (!InRange(y, Bounds.top, Bounds.bottom))
+            if (!msc::InRange(y, Bounds.top, Bounds.bottom))
                 return false;
 
             if (!_GraphSettings->_FlipVertically)
                 y = (Bounds.bottom + Bounds.top) - y;
 
-            index = std::clamp((size_t) ::floor(Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            index = std::clamp((size_t) ::floor(msc::Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
         else
         {
-            if (!InRange(x, Bounds.left, Bounds.right))
+            if (!msc::InRange(x, Bounds.left, Bounds.right))
                 return false;
 
-            index = std::clamp((size_t) ::floor(Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            index = std::clamp((size_t) ::floor(msc::Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
     }
     else

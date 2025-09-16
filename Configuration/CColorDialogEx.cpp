@@ -113,7 +113,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 
             ::ClipCursor(&ClipRect);
 
-            _Color.a = Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
+            _Color.a = msc::Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
 
             ::SetDlgItemInt(hDlg, IDC_ALPHA_VALUE, (UINT) (_Color.a * 100.f), FALSE);
             ::InvalidateRect(hDlg, &_SliderRect, FALSE);
@@ -132,7 +132,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
             if (!::PtInRect(&_SliderRect, POINT(x, y)))
                 break;
 
-            _Color.a = Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
+            _Color.a = msc::Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
 
             ::SetDlgItemInt(hDlg, IDC_ALPHA_VALUE, (UINT) (_Color.a * 100.f), FALSE);
             ::InvalidateRect(hDlg, &_SliderRect, FALSE);

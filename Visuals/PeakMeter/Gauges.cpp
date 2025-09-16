@@ -421,7 +421,7 @@ bool Gauges::GetMetrics(GaugeMetrics & gm) const noexcept
     if (n == 0)
         return false;
 
-    gm._dBFSZero = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
+    gm._dBFSZero = msc::Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
 
     gm._TotalBarGap = _State->_GaugeGap * (FLOAT) (n - 1);
     gm._TickSize = 4.f;

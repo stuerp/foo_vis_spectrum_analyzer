@@ -1595,7 +1595,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             // Show the position of the selected color of the gradient.
             size_t Index = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!msc::InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
                 t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
@@ -1627,7 +1627,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
             SelectedIndex = lb.GetCurSel();
 
-            if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
+            if (!msc::InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
                 return;
 
             SetDlgItemTextW(IDC_PRESET_NAME, _PresetNames[(size_t) SelectedIndex].c_str());
@@ -1657,7 +1657,7 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 
         int SelectedIndex = lb.GetCurSel();
 
-        if (!InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
+        if (!msc::InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
             return;
 
         std::wstring PresetName = _PresetNames[(size_t) SelectedIndex];
@@ -1755,7 +1755,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_LO_FREQUENCY:
         {
-            _State->_LoFrequency = Min(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
+            _State->_LoFrequency = std::min(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN)).SetPos32((int)(_State->_LoFrequency * 100.));
             break;
@@ -1763,7 +1763,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_HI_FREQUENCY:
         {
-            _State->_HiFrequency = Max(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
+            _State->_HiFrequency = std::max(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_LoFrequency);
 
             CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN)).SetPos32((int)(_State->_HiFrequency * 100.));
             break;
@@ -1967,7 +1967,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             int Position = std::clamp(::_wtoi(Text), 0, 100);
@@ -2470,7 +2470,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             D2D1_COLOR_F Color = style->_CurrentGradientStops[SelectedIndex].color;
@@ -2498,7 +2498,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) SelectedIndex);
@@ -2708,14 +2708,14 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_LO_FREQUENCY_SPIN:
         {
-            _State->_LoFrequency = Min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_HiFrequency);
+            _State->_LoFrequency = std::min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_HiFrequency);
             SetDouble(IDC_LO_FREQUENCY, _State->_LoFrequency);
             break;
         }
 
         case IDC_HI_FREQUENCY_SPIN:
         {
-            _State->_HiFrequency = Max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_LoFrequency);
+            _State->_HiFrequency = std::max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_LoFrequency);
             SetDouble(IDC_HI_FREQUENCY, _State->_HiFrequency);
             break;
         }
@@ -2729,14 +2729,14 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_MIN_NOTE_SPIN:
         {
-            _State->_MinNote = Min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MaxNote);
+            _State->_MinNote = std::min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MaxNote);
             SetNote(IDC_MIN_NOTE, _State->_MinNote);
             break;
         }
 
         case IDC_MAX_NOTE_SPIN:
         {
-            _State->_MaxNote = Max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MinNote);
+            _State->_MaxNote = std::max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MinNote);
             SetNote(IDC_MAX_NOTE, _State->_MaxNote);
             break;
         }

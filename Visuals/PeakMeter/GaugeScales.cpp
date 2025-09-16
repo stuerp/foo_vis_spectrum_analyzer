@@ -77,10 +77,10 @@ void GaugeScales::Resize() noexcept
 
         for (Label & Iter : _Labels)
         {
-            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
+            FLOAT x = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
             // Don't generate any labels outside the bounds.
-            if (!InRange(x, 0.f, GetWidth()))
+            if (!msc::InRange(x, 0.f, GetWidth()))
             {
                 Iter.IsHidden = true;
                 continue;
@@ -148,10 +148,10 @@ void GaugeScales::Resize() noexcept
 
         for (Label & Iter : _Labels)
         {
-            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
+            FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
             // Don't generate any labels outside the bounds.
-            if (!InRange(y, 0.f, GetHeight()))
+            if (!msc::InRange(y, 0.f, GetHeight()))
             {
                 Iter.IsHidden = true;
                 continue;

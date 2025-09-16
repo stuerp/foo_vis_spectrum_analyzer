@@ -62,7 +62,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     if (FAILED(hr))
     {
-        Log::Write(Log::Level::Critical, "%8d: %s: Unable to create DirectX device independent resources: 0x%08X", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), hr);
+        Log.AtFatal().Write("%8d: %s: Unable to create DirectX device independent resources: 0x%08X", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), hr);
 
         return -1;
     }
@@ -82,7 +82,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
     }
     catch (std::exception & ex)
     {
-        Log::Write(Log::Level::Critical, "%8d: %s: Unable to create visualisation stream: %s.", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtFatal().Write("%8d: %s: Unable to create visualisation stream: %s.", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
 
         return -1;
     }
