@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "DirectWrite.h"
 
-#include "COMException.h"
+#include <libmsc.h>
 
 #pragma comment(lib, "dwrite")
 
@@ -18,7 +18,7 @@ HRESULT DirectWrite::Initialize()
     HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(Factory), (IUnknown **) &Factory);
 
     if (!SUCCEEDED(hr))
-        throw COMException(hr, L"Unable to create DirectWrite factory.");
+        throw msc::win32_exception("Unable to create DirectWrite factory.", (DWORD) hr);
 
     return hr;
 }

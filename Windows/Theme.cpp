@@ -7,7 +7,7 @@
 /// <summary>
 /// Retrieves the current color of the specified display element, taking dark mode into account (Taken from libppui)
 /// </summary>
-COLORREF Theme::GetSysColor(int index) const noexcept
+COLORREF theme_t::GetSysColor(int index) const noexcept
 {
     if (!_DarkMode)
         return ::GetSysColor(index);
@@ -50,4 +50,4 @@ COLORREF Theme::GetSysColor(int index) const noexcept
     }
 }
 
-Theme _Theme;
+theme_t _Theme;

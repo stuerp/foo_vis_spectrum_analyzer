@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2024.08.07) P. Stuer **/
+/** $VER: UIElement.cpp (2025.09.17) P. Stuer **/
 
 #include "pch.h"
 
@@ -19,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-UIElement::UIElement(): _IsVisible(true), _IsStartingUp(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastIndex(~0U)
 {
 }
 
@@ -28,7 +28,7 @@ UIElement::UIElement(): _IsVisible(true), _IsStartingUp(true), _DPI(), _ThreadPo
 /// <summary>
 /// Gets the window class definition.
 /// </summary>
-CWndClassInfo & UIElement::GetWndClassInfo()
+CWndClassInfo & uielement_t::GetWndClassInfo()
 {
     static ATL::CWndClassInfoW wci =
     {
@@ -54,7 +54,7 @@ CWndClassInfo & UIElement::GetWndClassInfo()
 /// <summary>
 /// Creates the window.
 /// </summary>
-LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
+LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 {
     DirectX::Initialize();
 
@@ -62,7 +62,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
     if (FAILED(hr))
     {
-        Log.AtFatal().Write("%8d: %s: Unable to create DirectX device independent resources: 0x%08X", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), hr);
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectX device independent resources: 0x%08X", hr);
 
         return -1;
     }
@@ -76,37 +76,17 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 
         VisualisationManager->create_stream(_VisualisationStream, visualisation_manager::KStreamFlagNewFFT);
 
-//      _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
-        _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
-
+        if (_VisualisationStream.is_valid())
+        {
+        //  _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+            _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
+        }
     }
     catch (std::exception & ex)
     {
-        Log.AtFatal().Write("%8d: %s: Unable to create visualisation stream: %s.", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create visualisation stream: %s.", ex.what());
 
         return -1;
-    }
-
-    // Register ourselves with the album art notification manager.
-    {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
-
-        if (AlbumArtNotificationManager.is_valid())
-            AlbumArtNotificationManager->add(this);
-    }
-
-    // Get the artwork data from the album art.
-    if (_MainState._ArtworkFilePath.empty())
-    {
-        auto aanm = now_playing_album_art_notify_manager::get();
-
-        if (aanm != nullptr)
-        {
-            album_art_data_ptr aad = aanm->current();
-
-            if (aad.is_valid())
-                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
-        }
     }
 
     // Create the tooltip control.
@@ -121,7 +101,7 @@ LRESULT UIElement::OnCreate(LPCREATESTRUCT cs)
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void UIElement::OnDestroy()
+void uielement_t::OnDestroy()
 {
     StopTimer();
 
@@ -132,13 +112,6 @@ void UIElement::OnDestroy()
             delete Iter._Graph;
 
         _Grid.clear();
-    }
-
-    {
-        auto Manager = now_playing_album_art_notify_manager::tryGet();
-
-        if (Manager.is_valid())
-            Manager->remove(this);
     }
 
     _VisualisationStream.release();
@@ -155,7 +128,7 @@ void UIElement::OnDestroy()
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void UIElement::OnPaint(CDCHandle hDC)
+void uielement_t::OnPaint(CDCHandle hDC)
 {
 //  Log::Write(Log::Level::Trace, "%8d: OnPaint", (uint32_t) ::GetTickCount64());
     StartTimer();
@@ -166,7 +139,7 @@ void UIElement::OnPaint(CDCHandle hDC)
 /// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
-void UIElement::OnSize(UINT type, CSize size)
+void uielement_t::OnSize(UINT type, CSize size)
 {
     if (_RenderTarget == nullptr)
         return;
@@ -185,7 +158,7 @@ void UIElement::OnSize(UINT type, CSize size)
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void UIElement::OnContextMenu(CWindow wnd, CPoint position)
+void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 {
     CMenu Menu;
     CMenu RefreshRateLimitMenu;
@@ -308,7 +281,10 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
                     UpdateState();
 
                     if (_ConfigurationDialog.IsWindow())
+                    {
                         _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
+                        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Preset loaded).");
+                    }
                 }
             }
         }
@@ -320,7 +296,7 @@ void UIElement::OnContextMenu(CWindow wnd, CPoint position)
 /// <summary>
 /// Toggles between panel and full screen mode.
 /// </summary>
-void UIElement::OnLButtonDblClk(UINT flags, CPoint point)
+void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
 {
     ToggleFullScreen();
 }
@@ -328,7 +304,7 @@ void UIElement::OnLButtonDblClk(UINT flags, CPoint point)
 /// <summary>
 /// Handles a DPI change.
 /// </summary>
-LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
+LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 {
     _DPI = dpiX;
 
@@ -340,7 +316,7 @@ LRESULT UIElement::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 /// <summary>
 /// Resizes all visual elements.
 /// </summary>
-void UIElement::Resize()
+void uielement_t::Resize()
 {
     if (_RenderTarget == nullptr)
         return;
@@ -385,7 +361,7 @@ void UIElement::Resize()
 /// <summary>
 /// Handles a change of the user interface colors.
 /// </summary>
-void UIElement::OnColorsChanged()
+void uielement_t::OnColorsChanged()
 {
     GetColors();
 
@@ -404,13 +380,16 @@ void UIElement::OnColorsChanged()
 
     // Notify the configuration dialog.
     if (_ConfigurationDialog.IsWindow())
+    {
         _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS);
+        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors changed).");
+    }
 }
 
 /// <summary>
 /// Handles the UM_CONFIGURATION_CHANGED message.
 /// </summary>
-LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     UpdateState();
 
@@ -418,9 +397,40 @@ LRESULT UIElement::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lPara
 }
 
 /// <summary>
+/// Starts the timer.
+/// </summary>
+void uielement_t::StartTimer() noexcept
+{
+    if (_ThreadPoolTimer != nullptr)
+        StopTimer();
+
+    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+
+    FILETIME DueTime = { };
+
+    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _MainState._RefreshRateLimit, 0);
+}
+
+/// <summary>
+/// Stops the timer.
+/// </summary>
+void uielement_t::StopTimer() noexcept
+{
+    if (_ThreadPoolTimer == nullptr)
+        return;
+
+    ::SetThreadpoolTimer(_ThreadPoolTimer, nullptr, 0, 0);
+
+    ::WaitForThreadpoolTimerCallbacks(_ThreadPoolTimer, true);
+
+    ::CloseThreadpoolTimer(_ThreadPoolTimer);
+    _ThreadPoolTimer = nullptr;
+}
+
+/// <summary>
 /// Toggles the frame counter display.
 /// </summary>
-void UIElement::ToggleFrameCounter() noexcept
+void uielement_t::ToggleFrameCounter() noexcept
 {
     _MainState._ShowFrameCounter = !_MainState._ShowFrameCounter;
 }
@@ -428,7 +438,7 @@ void UIElement::ToggleFrameCounter() noexcept
 /// <summary>
 /// Toggles hardware/software rendering.
 /// </summary>
-void UIElement::ToggleHardwareRendering() noexcept
+void uielement_t::ToggleHardwareRendering() noexcept
 {
     _MainState._UseHardwareRendering = !_MainState._UseHardwareRendering;
 
@@ -438,7 +448,7 @@ void UIElement::ToggleHardwareRendering() noexcept
 /// <summary>
 /// Shows the configuration dialog.
 /// </summary>
-void UIElement::Configure() noexcept
+void uielement_t::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
@@ -454,7 +464,7 @@ void UIElement::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void UIElement::UpdateState() noexcept
+void uielement_t::UpdateState() noexcept
 {
 //  Log::Write(Log::Level::Trace, "%8d: UpdateState", (uint32_t) ::GetTickCount64());
 
@@ -489,7 +499,7 @@ void UIElement::UpdateState() noexcept
 
             for (const auto & Iter : _ThreadState._GraphSettings)
             {
-                auto * g = new Graph();
+                auto * g = new graph_t();
 
                 g->Initialize(&_ThreadState, &Iter);
 
@@ -518,7 +528,7 @@ void UIElement::UpdateState() noexcept
 /// <summary>
 /// Gets the graph that contains the specified point.
 /// </summary>
-Graph * UIElement::GetGraph(const CPoint & pt) noexcept
+graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 {
     for (auto & Iter : _Grid)
     {
@@ -536,35 +546,26 @@ Graph * UIElement::GetGraph(const CPoint & pt) noexcept
 /// <summary>
 /// Playback advanced to new track.
 /// </summary>
-void UIElement::on_playback_new_track(metadb_handle_ptr track)
+void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
     _Event.Raise(event_t::PlaybackStartedNewTrack);
 
     UpdateState();
 
-    // Use the script from the configuration to load the album art.
-    if (!_MainState._ArtworkFilePath.empty())
+    // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
+    if (track.is_valid())
     {
-        if (track.is_valid())
-        {
-            titleformat_object::ptr Script;
-
-            bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
-
-            pfc::string Result;
-
-            if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
-                _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
-        }
+        if (!_MainState._ArtworkFilePath.empty())
+            GetAlbumArtFromScript(track, fb2k::noAbort);
+        else
+            GetAlbumArtFromTrack(track, fb2k::noAbort);
     }
-    else
-        LoadAlbumArt(track, fb2k::noAbort);
 }
 
 /// <summary>
 /// Playback stopped.
 /// </summary>
-void UIElement::on_playback_stop(play_control::t_stop_reason reason)
+void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 {
     _Event.Raise(event_t::PlaybackStopped);
 
@@ -574,44 +575,31 @@ void UIElement::on_playback_stop(play_control::t_stop_reason reason)
 /// <summary>
 /// Playback paused/resumed.
 /// </summary>
-void UIElement::on_playback_pause(bool)
+void uielement_t::on_playback_pause(bool)
 {
 }
 
 /// <summary>
 /// Called every second, for time display.
 /// </summary>
-void UIElement::on_playback_time(double time)
+void uielement_t::on_playback_time(double time)
 {
     _ThreadState._TrackTime = time;
 }
 
 #pragma endregion
 
-#pragma region now_playing_album_art_notify
-
-void UIElement::on_album_art(album_art_data::ptr aad)
-{
-/*
-    // The script in the configuration takes precedence over the album art supplied by the track.
-    if (!_MainState._ArtworkFilePath.empty())
-        return;
-
-    if (aad.is_valid())
-        _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
-*/
-}
-
-#pragma endregion
-
 /// <summary>
-/// 
+/// Gets the album art from the specified track.
 /// </summary>
-void UIElement::LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort)
+void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort)
 {
     static_api_ptr_t<album_art_manager_v2> aam;
 
     auto Extractor = aam->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+
+    if (!Extractor.is_valid())
+        return;
 
     try
     {
@@ -620,16 +608,25 @@ void UIElement::LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & a
         if (aad.is_valid())
             _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
     }
-    catch (const exception_album_art_not_found &)
+    catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {
-        return;
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to get album art from playing track: %s", e.what());
     }
-    catch (const exception_aborted &)
-    {
-        throw;
-    }
-    catch (...)
-    {
-        return;
-    }
+}
+
+/// <summary>
+/// Gets the album art from a script.
+/// </summary>
+void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort)
+{
+    titleformat_object::ptr Script;
+
+    bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
+
+    pfc::string Result;
+
+    if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
+        _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
+    else
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to get album art from script.");
 }

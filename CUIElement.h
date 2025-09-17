@@ -16,7 +16,7 @@ class CUIColorClient;
 /// <summary>
 /// Implements a Columns UI element.
 /// </summary>
-class CUIElement : public UIElement, public uie::window
+class CUIElement : public uielement_t, public uie::window
 {
 public:
     CUIElement();
@@ -28,6 +28,10 @@ public:
 
     virtual ~CUIElement();
 
+    LRESULT OnEraseBackground(CDCHandle hDC) override final;
+    void ToggleFullScreen() noexcept override final;
+
+    // Columns User Interface
     #pragma region uie::window interface
 
     /// <summary>
@@ -113,8 +117,7 @@ public:
 
     #pragma endregion
 
-    LRESULT OnEraseBackground(CDCHandle hDC);
-    void ToggleFullScreen() noexcept override final;
+private:
     void GetColors() noexcept override;
 
 private:

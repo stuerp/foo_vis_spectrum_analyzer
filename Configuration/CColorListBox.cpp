@@ -84,7 +84,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
             HGDIOBJ hOldPen = ::SelectObject(hDC, hPen);
 
             {
-                HBRUSH hBrush = Color::CreateBrush(_Colors[dis->itemID]);
+                HBRUSH hBrush = color_t::CreateBrush(_Colors[dis->itemID]);
 
                 HGDIOBJ hOldBrush = ::SelectObject(hDC, hBrush);
 

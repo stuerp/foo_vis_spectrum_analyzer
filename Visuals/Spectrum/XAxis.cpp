@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void XAxis::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -22,7 +22,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
 
     _Labels.clear();
 
-    const FrequencyBands & fb = _Analysis->_FrequencyBands;
+    const frequency_bands_t & fb = _Analysis->_FrequencyBands;
 
     if (fb.size() == 0)
         return;
@@ -54,7 +54,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
                 }
@@ -76,7 +76,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
 
-                    Label lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
 
@@ -98,7 +98,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    Label lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency };
 
                     _Labels.push_back(lb);
 
@@ -127,7 +127,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
 
-                    Label lb = { Text, Frequency, j != 0 };
+                    label_t lb = { Text, Frequency, j != 0 };
 
                     _Labels.push_back(lb);
 
@@ -145,7 +145,7 @@ void XAxis::Initialize(state_t * state, const GraphSettings * settings, const an
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void XAxis::Move(const D2D1_RECT_F & rect)
+void x_axis_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -153,7 +153,7 @@ void XAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void XAxis::Resize() noexcept
+void x_axis_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -173,7 +173,7 @@ void XAxis::Resize() noexcept
     const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
     // Calculate the rectangles of the labels.
-    for (Label & Iter : _Labels)
+    for (label_t & Iter : _Labels)
     {
         const FLOAT dx = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
@@ -206,7 +206,7 @@ void XAxis::Resize() noexcept
     {
         #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
 
-        const Label * LastLabel = nullptr;
+        const label_t * LastLabel = nullptr;
 
         // Determine which labels should be hidden.
         for (size_t i = 1; i < _Labels.size() - 1; ++i)
@@ -227,7 +227,7 @@ void XAxis::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void XAxis::Render(ID2D1RenderTarget * renderTarget)
+void x_axis_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -238,7 +238,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
-    for (const Label & Iter : _Labels)
+    for (const label_t & Iter : _Labels)
     {
         // Draw the vertical grid line.
         if (_LineStyle->IsEnabled())
@@ -266,7 +266,7 @@ void XAxis::Render(ID2D1RenderTarget * renderTarget)
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
@@ -282,7 +282,7 @@ HRESULT XAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void XAxis::ReleaseDeviceSpecificResources()
+void x_axis_t::ReleaseDeviceSpecificResources()
 {
     SafeRelease(&_TextStyle);
     SafeRelease(&_LineStyle);

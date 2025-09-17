@@ -20,19 +20,19 @@
 #include "Element.h"
 #include "PeakMeterTypes.h"
 
-class GaugeScales : public Element
+class gauge_scales_t : public element_t
 {
 public:
-    GaugeScales() { };
+    gauge_scales_t() { };
 
-    GaugeScales(const GaugeScales &) = delete;
-    GaugeScales & operator=(const GaugeScales &) = delete;
-    GaugeScales(GaugeScales &&) = delete;
-    GaugeScales & operator=(GaugeScales &&) = delete;
+    gauge_scales_t(const gauge_scales_t &) = delete;
+    gauge_scales_t & operator=(const gauge_scales_t &) = delete;
+    gauge_scales_t(gauge_scales_t &&) = delete;
+    gauge_scales_t & operator=(gauge_scales_t &&) = delete;
 
-    virtual ~GaugeScales() { }
+    virtual ~gauge_scales_t() { }
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;
@@ -70,8 +70,8 @@ private:
 
     std::vector<Label> _Labels;
 
-    Style * _TextStyle;
-    Style * _LineStyle;
+    style_t * _TextStyle;
+    style_t * _LineStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

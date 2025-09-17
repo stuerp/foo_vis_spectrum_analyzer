@@ -59,7 +59,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 /// </summary>
 void CColorButton::SetColor(COLORREF color)
 {
-    SetColor(Color::ToD2D1_COLOR_F(color));
+    SetColor(color_t::ToD2D1_COLOR_F(color));
 }
 
 /// <summary>

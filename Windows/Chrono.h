@@ -12,13 +12,13 @@
 
 #include <stdint.h>
 
-class Chrono
+class chrono_t
 {
 public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    Chrono()
+    chrono_t()
     {
         if (!::QueryPerformanceFrequency((LARGE_INTEGER *) &_Frequency))
             _Frequency = 1;

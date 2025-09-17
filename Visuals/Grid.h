@@ -19,21 +19,21 @@
 /// <summary>
 /// Implements a grid layout.
 /// </summary>
-class GridItem
+class grid_item_t
 {
 public:
-    GridItem(Graph * graph, FLOAT hRatio, FLOAT vRatio) : _Graph(graph), _HRatio(hRatio), _VRatio(vRatio) { }
+    grid_item_t(graph_t * graph, FLOAT hRatio, FLOAT vRatio) : _Graph(graph), _HRatio(hRatio), _VRatio(vRatio) { }
 
 public:
-    Graph * _Graph;
+    graph_t * _Graph;
     FLOAT _HRatio;
     FLOAT _VRatio;
 };
 
-class Grid
+class grid_t
 {
 public:
-    using GridItems = std::vector<GridItem>;
+    using grid_items_t = std::vector<grid_item_t>;
 
     void Initialize(size_t rowCount, size_t colCount)
     {
@@ -49,7 +49,7 @@ public:
         {
             for (size_t j = 0; j < _ColCount; ++j)
             {
-                GridItem & gi = _Items[(i * _ColCount) + j];
+                grid_item_t & gi = _Items[(i * _ColCount) + j];
 
                 FLOAT w = width  * gi._HRatio;
                 FLOAT h = height * gi._VRatio;
@@ -74,14 +74,14 @@ public:
         _Items.clear();
     }
 
-    void push_back(const GridItem & gi) { _Items.push_back(gi); }
+    void push_back(const grid_item_t & gi) { _Items.push_back(gi); }
 
-    GridItems::iterator begin() { return _Items.begin(); }
-    GridItems::iterator end()   { return _Items.end(); } 
+    grid_items_t::iterator begin() { return _Items.begin(); }
+    grid_items_t::iterator end()   { return _Items.end(); } 
 
 private:
     size_t _RowCount;
     size_t _ColCount;
 
-    GridItems _Items;
+    grid_items_t _Items;
 };

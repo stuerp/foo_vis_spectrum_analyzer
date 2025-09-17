@@ -16,7 +16,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectrum::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -33,7 +33,7 @@ void Spectrum::Initialize(state_t * state, const GraphSettings * settings, const
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void Spectrum::Move(const D2D1_RECT_F & rect)
+void spectrum_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 
@@ -43,7 +43,7 @@ void Spectrum::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void Spectrum::Resize() noexcept
+void spectrum_t::Resize() noexcept
 {
     if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -66,7 +66,7 @@ void Spectrum::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Spectrum::Render(ID2D1RenderTarget * renderTarget)
+void spectrum_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -111,7 +111,7 @@ void Spectrum::Render(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
 {
     const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
@@ -170,7 +170,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the peak indicator area.
                 if (_PeakArea->IsEnabled())
                 {
-                    if ((_PeakArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_PeakArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
+                    if ((_PeakArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_PeakArea->_Flags, (uint64_t) (style_t::HorizontalGradient | style_t::AmplitudeBasedColor)))
                         _PeakArea->SetBrushColor(fb.MaxValue);
 
                     if (!_State->_LEDMode)
@@ -200,7 +200,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the area of the bar.
                 if (_BarArea->IsEnabled())
                 {
-                    if ((_BarArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_BarArea->_Flags, (uint64_t) (Style::HorizontalGradient | Style::AmplitudeBasedColor)))
+                    if ((_BarArea->_ColorSource == ColorSource::Gradient) && msc::IsSet(_BarArea->_Flags, (uint64_t) (style_t::HorizontalGradient | style_t::AmplitudeBasedColor)))
                         _BarArea->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)
@@ -229,7 +229,7 @@ void Spectrum::RenderBars(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as a curve.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -301,7 +301,7 @@ void Spectrum::RenderCurve(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as radial bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 {
     if (_Analysis->_FrequencyBands.size() == 0)
         return;
@@ -379,7 +379,7 @@ void Spectrum::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
+void spectrum_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
@@ -404,7 +404,7 @@ void Spectrum::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) co
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -473,7 +473,7 @@ HRESULT Spectrum::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
+HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
@@ -511,7 +511,7 @@ HRESULT Spectrum::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, bool usePeak) const
+HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(GeometryPoints & points, bool usePeak) const
 {
     if (_Analysis->_FrequencyBands.size() < 2)
         return E_FAIL;
@@ -551,7 +551,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
         points.p2.reserve(n - 1);
 
         // Create all the control points.
-        BezierSpline::GetControlPoints(points.p0, n, points.p1, points.p2);
+        bezier_spline_t::GetControlPoints(points.p0, n, points.p1, points.p2);
 
         for (size_t i = 0; i < (n - 1); ++i)
         {
@@ -566,7 +566,7 @@ HRESULT Spectrum::CreateGeometryPointsFromAmplitude(GeometryPoints & points, boo
 /// <summary>
 /// Creates a curve from the power values.
 /// </summary>
-HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
+HRESULT spectrum_t::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
 {
     if (gp.p0.size() < 2)
         return E_FAIL;
@@ -609,7 +609,7 @@ HRESULT Spectrum::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1Pat
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Spectrum::ReleaseDeviceSpecificResources()
+void spectrum_t::ReleaseDeviceSpecificResources()
 {
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();

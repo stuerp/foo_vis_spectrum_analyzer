@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "WIC.h"
 
-#include "COMException.h"
+#include <libmsc.h>
 
 #pragma comment(lib, "windowscodecs")
 
@@ -18,7 +18,7 @@ HRESULT WIC::Initialize()
     hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
 
     if (!SUCCEEDED(hr))
-        throw COMException(hr, L"Unable to create WIC factory.");
+        throw msc::win32_exception("Unable to create WIC factory.", (DWORD) hr);
 
     return hr;
 }

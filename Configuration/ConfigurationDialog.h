@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2024.03.23) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2025.09.17) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -58,15 +58,17 @@ private:
 
     LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam);
 
-#ifdef _DEBUG
     /// <summary>
     /// Returns a brush that the system uses to draw the dialog background. For layout debugging purposes.
     /// </summary>
     HBRUSH OnCtlColorDlg(HDC, HWND) const noexcept
     {
-        return (HBRUSH)::GetStockObject(DKGRAY_BRUSH);
+    #ifdef _DEBUG
+        return ::CreateSolidBrush(RGB(250, 250, 250));
+    #else
+        return FALSE;
+    #endif
     }
-#endif
 
     void Initialize();
     void Terminate();
@@ -94,8 +96,8 @@ private:
     void ConfigurationChanged() const noexcept;
 
     void UpdateColorControls();
-    void UpdateCurrentColor(Style * style) const noexcept;
-    void UpdateGradientStopPositons(Style * style, size_t index) const noexcept;
+    void UpdateCurrentColor(style_t * style) const noexcept;
+    void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
     void GetPresetNames() noexcept;
     void GetPreset(const std::wstring & presetName) noexcept;
 
@@ -109,6 +111,8 @@ private:
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_CLOSE(OnClose)
+
+        MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 

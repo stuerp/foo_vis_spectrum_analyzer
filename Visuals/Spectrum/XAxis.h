@@ -22,17 +22,17 @@
 /// Implements the X axis of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-class XAxis : public Element
+class x_axis_t : public element_t
 {
 public:
-    XAxis() : _BandCount(), _LoFrequency(), _HiFrequency() { }
+    x_axis_t() : _BandCount(), _LoFrequency(), _HiFrequency() { }
 
-    XAxis(const XAxis &) = delete;
-    XAxis & operator=(const XAxis &) = delete;
-    XAxis(XAxis &&) = delete;
-    XAxis & operator=(XAxis &&) = delete;
+    x_axis_t(const x_axis_t &) = delete;
+    x_axis_t & operator=(const x_axis_t &) = delete;
+    x_axis_t(x_axis_t &&) = delete;
+    x_axis_t & operator=(x_axis_t &&) = delete;
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis) noexcept;
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
@@ -53,7 +53,7 @@ private:
     double _LoFrequency;
     double _HiFrequency;
 
-    struct Label
+    struct label_t
     {
         std::wstring Text;
         double Frequency;
@@ -67,8 +67,8 @@ private:
         D2D1_RECT_F RectB;
     };
 
-    std::vector<Label> _Labels;
+    std::vector<label_t> _Labels;
 
-    Style * _LineStyle;
-    Style * _TextStyle;
+    style_t * _LineStyle;
+    style_t * _TextStyle;
 };

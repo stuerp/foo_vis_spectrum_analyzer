@@ -11,14 +11,14 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTAnalyzer::CQTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
+cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     for (frequency_band_t & fb : frequencyBands)
     {

@@ -21,17 +21,17 @@
 
 #include <deque>
 
-class Spectogram : public Element
+class spectogram_t : public element_t
 {
 public:
-    Spectogram();
+    spectogram_t();
 
-    Spectogram(const Spectogram &) = delete;
-    Spectogram & operator=(const Spectogram &) = delete;
-    Spectogram(Spectogram &&) = delete;
-    Spectogram & operator=(Spectogram &&) = delete;
+    spectogram_t(const spectogram_t &) = delete;
+    spectogram_t & operator=(const spectogram_t &) = delete;
+    spectogram_t(spectogram_t &&) = delete;
+    spectogram_t & operator=(spectogram_t &&) = delete;
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset();
@@ -108,15 +108,15 @@ private:
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
-    Style * _SpectogramStyle;
+    style_t * _SpectogramStyle;
 
-    Style * _TimeLineStyle;
-    Style * _TimeTextStyle;
+    style_t * _TimeLineStyle;
+    style_t * _TimeTextStyle;
 
-    Style * _FreqLineStyle;
-    Style * _FreqTextStyle;
+    style_t * _FreqLineStyle;
+    style_t * _FreqTextStyle;
 
-    Style * _NyquistMarkerStyle;
+    style_t * _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
 

@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void GaugeScales::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -41,7 +41,7 @@ void GaugeScales::Initialize(state_t * state, const GraphSettings * settings, co
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void GaugeScales::Move(const D2D1_RECT_F & rect)
+void gauge_scales_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -49,7 +49,7 @@ void GaugeScales::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void GaugeScales::Reset()
+void gauge_scales_t::Reset()
 {
     _IsResized = true;
 }
@@ -57,7 +57,7 @@ void GaugeScales::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void GaugeScales::Resize() noexcept
+void gauge_scales_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -211,7 +211,7 @@ void GaugeScales::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
+void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -267,7 +267,7 @@ void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
     }
 }
 
-HRESULT GaugeScales::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_scales_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -290,7 +290,7 @@ HRESULT GaugeScales::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTar
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void GaugeScales::ReleaseDeviceSpecificResources() noexcept
+void gauge_scales_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

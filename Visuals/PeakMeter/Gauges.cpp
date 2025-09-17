@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Gauges::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -24,7 +24,7 @@ void Gauges::Initialize(state_t * state, const GraphSettings * settings, const a
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void Gauges::Move(const D2D1_RECT_F & rect)
+void gauge_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -32,7 +32,7 @@ void Gauges::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Gauges::Reset()
+void gauge_t::Reset()
 {
     _IsResized = true;
 }
@@ -40,7 +40,7 @@ void Gauges::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void Gauges::Resize() noexcept
+void gauge_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -51,7 +51,7 @@ void Gauges::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -289,7 +289,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT Gauges::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -325,7 +325,7 @@ HRESULT Gauges::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) 
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Gauges::ReleaseDeviceSpecificResources() noexcept
+void gauge_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -367,7 +367,7 @@ void Gauges::ReleaseDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 {
     D2D1_SIZE_F Size = renderTarget->GetSize();
 
@@ -414,7 +414,7 @@ HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Gets the metrics used to render the gauges.
 /// </summary>
-bool Gauges::GetMetrics(GaugeMetrics & gm) const noexcept
+bool gauge_t::GetMetrics(gauge_metrics_t & gm) const noexcept
 {
     const FLOAT n = (FLOAT) _Analysis->_GaugeValues.size();
 

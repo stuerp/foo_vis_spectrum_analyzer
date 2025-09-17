@@ -13,21 +13,21 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-Graph::Graph()
+graph_t::graph_t()
 {
 }
 
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-Graph::~Graph()
+graph_t::~graph_t()
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Graph::Initialize(state_t * state, const GraphSettings * settings) noexcept
+void graph_t::Initialize(state_t * state, const graph_settings_t * settings) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -39,13 +39,13 @@ void Graph::Initialize(state_t * state, const GraphSettings * settings) noexcept
     _Spectrum.Initialize(state, settings, &_Analysis);
     _Spectogram.Initialize(state, settings, &_Analysis);
     _PeakMeter.Initialize(state, settings, &_Analysis);
-    _CorrelationMeter.Initialize(state, settings, &_Analysis);
+    _LevelMeter.Initialize(state, settings, &_Analysis);
 }
 
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void Graph::Move(const D2D1_RECT_F & rect) noexcept
+void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     const D2D1_RECT_F cr = { rect.left + _GraphSettings->_LPadding, rect.top + _GraphSettings->_TPadding, rect.right - _GraphSettings->_RPadding, rect.bottom - _GraphSettings->_BPadding };
 
@@ -54,13 +54,13 @@ void Graph::Move(const D2D1_RECT_F & rect) noexcept
     _Spectrum.Move(cr);
     _Spectogram.Move(cr);
     _PeakMeter.Move(cr);
-    _CorrelationMeter.Move(cr);
+    _LevelMeter.Move(cr);
 }
 
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Graph::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
+void graph_t::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -74,7 +74,7 @@ void Graph::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexce
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Graph::Reset()
+void graph_t::Reset()
 {
     for (frequency_band_t & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
@@ -88,13 +88,13 @@ void Graph::Reset()
     _Spectrum.Reset();
     _Spectogram.Reset();
     _PeakMeter.Reset();
-    _CorrelationMeter.Reset();
+    _LevelMeter.Reset();
 }
 
 /// <summary>
 /// Initializes a structure with the tool area of this graph.
 /// </summary>
-void Graph::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
+void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 {
     ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
 
@@ -104,7 +104,7 @@ void Graph::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 /// <summary>
 /// Gets the tooltip at the specified x or y position.
 /// </summary>
-bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
+bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
@@ -160,7 +160,7 @@ bool Graph::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & in
 /// <summary>
 /// Renders the background.
 /// </summary>
-void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
+void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
 //  if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
@@ -173,7 +173,7 @@ void Graph::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwo
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
+void graph_t::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 {
     switch (_State->_VisualizationType)
     {
@@ -201,7 +201,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 
         case VisualizationType::LevelMeter:
         {
-            _CorrelationMeter.Render(renderTarget);
+            _LevelMeter.Render(renderTarget);
             break;
         }
     }
@@ -210,7 +210,7 @@ void Graph::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Renders the description.
 /// </summary>
-void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
+void graph_t::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 {
     if (_Description.empty())
         return;
@@ -247,7 +247,7 @@ void Graph::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT graph_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -266,9 +266,9 @@ HRESULT Graph::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) n
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Graph::ReleaseDeviceSpecificResources() noexcept
+void graph_t::ReleaseDeviceSpecificResources() noexcept
 {
-    _CorrelationMeter.ReleaseDeviceSpecificResources();
+    _LevelMeter.ReleaseDeviceSpecificResources();
 
     _PeakMeter.ReleaseDeviceSpecificResources();
 

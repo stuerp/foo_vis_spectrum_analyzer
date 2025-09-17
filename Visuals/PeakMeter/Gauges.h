@@ -1,5 +1,5 @@
 
-/** $VER: Gauges.h (2024.04.22) P. Stuer - Implements the gauges of the peak meter. **/
+/** $VER: Gauges.h (2024.04.22) P. Stuer - Implements a gauge of the peak meter. **/
 
 #pragma once
 
@@ -20,28 +20,28 @@
 #include "Element.h"
 #include "PeakMeterTypes.h"
 
-class Gauges : public Element
+class gauge_t : public element_t
 {
 public:
-    Gauges() { };
+    gauge_t() { };
 
-    Gauges(const Gauges &) = delete;
-    Gauges & operator=(const Gauges &) = delete;
-    Gauges(Gauges &&) = delete;
-    Gauges & operator=(Gauges &&) = delete;
+    gauge_t(const gauge_t &) = delete;
+    gauge_t & operator=(const gauge_t &) = delete;
+    gauge_t(gauge_t &&) = delete;
+    gauge_t & operator=(gauge_t &&) = delete;
 
-    virtual ~Gauges() { }
+    virtual ~gauge_t() { }
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
-    bool GetMetrics(GaugeMetrics & gaugeMetrics) const noexcept;
+    bool GetMetrics(gauge_metrics_t & gaugeMetrics) const noexcept;
 
 private:
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
@@ -49,14 +49,14 @@ private:
 private:
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    Style * _BackgroundStyle;
+    style_t * _BackgroundStyle;
 
-    Style * _PeakStyle;
-    Style * _Peak0dBStyle;
-    Style * _MaxPeakStyle;
+    style_t * _PeakStyle;
+    style_t * _Peak0dBStyle;
+    style_t * _MaxPeakStyle;
 
-    Style * _RMSStyle;
-    Style * _RMS0dBStyle;
+    style_t * _RMSStyle;
+    style_t * _RMS0dBStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

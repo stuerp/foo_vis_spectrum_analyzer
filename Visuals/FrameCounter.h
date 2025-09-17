@@ -24,20 +24,20 @@
 /// Implements the frame counter display.
 /// </summary>
 #pragma warning(disable: 4820)
-class FrameCounter
+class frame_counter_t
 {
 public:
-    FrameCounter() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight()
+    frame_counter_t() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight()
     {
         ::QueryPerformanceFrequency(&_Frequency);
 
         NewFrame();
     }
 
-    FrameCounter(const FrameCounter &) = delete;
-    FrameCounter & operator=(const FrameCounter &) = delete;
-    FrameCounter(FrameCounter &&) = delete;
-    FrameCounter & operator=(FrameCounter &&) = delete;
+    frame_counter_t(const frame_counter_t &) = delete;
+    frame_counter_t & operator=(const frame_counter_t &) = delete;
+    frame_counter_t(frame_counter_t &&) = delete;
+    frame_counter_t & operator=(frame_counter_t &&) = delete;
 
     void Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept;
 
@@ -55,7 +55,7 @@ private:
 
 private:
     LARGE_INTEGER _Frequency;
-    RingBuffer<LONGLONG, 16> _Times;
+    ring_buffer_t<LONGLONG, 16> _Times;
 
     std::wstring _FontFamilyName;
     FLOAT _FontSize;    // In points.

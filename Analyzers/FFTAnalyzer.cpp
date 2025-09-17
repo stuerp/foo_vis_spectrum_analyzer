@@ -23,7 +23,7 @@ fft_analyzer_t::~fft_analyzer_t()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel, size_t fftSize) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
@@ -44,7 +44,7 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     Add(samples, sampleCount, channels);
 
@@ -142,7 +142,7 @@ void fft_analyzer_t::Transform() noexcept
 /// <summary>
 /// Maps the Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
-void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
     const bool IsRMS       =  (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
     const bool IsMedian    =   _State->_SummationMethod == SummationMethod::Median;
@@ -229,7 +229,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBa
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
     const double Scale = (double) _FreqData.size() / sampleRate;
 
@@ -257,7 +257,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands 
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 

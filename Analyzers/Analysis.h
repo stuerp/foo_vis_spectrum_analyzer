@@ -73,7 +73,7 @@ public:
 
     virtual ~analysis_t() { Reset(); };
 
-    void Initialize(const state_t * state, const GraphSettings * settings) noexcept;
+    void Initialize(const state_t * state, const graph_settings_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void UpdatePeakValues(bool isStopped) noexcept;
 
@@ -128,22 +128,22 @@ private:
 
 public:
     const state_t * _State;
-    const GraphSettings * _GraphSettings;
+    const graph_settings_t * _GraphSettings;
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
     std::vector<gauge_value_t> _GaugeValues;
     uint32_t _CurrentChannelMask;
 
-    const WindowFunction * _WindowFunction;
-    const WindowFunction * _BrownPucketteKernel;
+    const window_function_t * _WindowFunction;
+    const window_function_t * _BrownPucketteKernel;
 
     fft_analyzer_t * _FFTAnalyzer;
-    CQTAnalyzer * _CQTAnalyzer;
+    cqt_analyzer_t * _CQTAnalyzer;
     swift_analyzer_t * _SWIFTAnalyzer;
-    AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
+    analog_style_analyzer_t * _AnalogStyleAnalyzer;
 
-    FrequencyBands _FrequencyBands;
+    frequency_bands_t _FrequencyBands;
 
     // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).

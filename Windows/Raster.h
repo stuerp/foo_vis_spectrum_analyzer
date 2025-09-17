@@ -1,5 +1,5 @@
 
-/** $VER: Raster.h (2024.03.09) P. Stuer **/
+/** $VER: Raster.h (2025.09.17) P. Stuer **/
 
 #pragma once
 
@@ -16,34 +16,25 @@
 /// <summary>
 /// Represents a bitmap image.
 /// </summary>
-class Raster
+class raster_t
 {
 public:
-    Raster() : _Width(), _Height(), _Data(), _Size(), _Stride(), _PixelFormat(), _BitsPerPixel() { }
+    raster_t() noexcept : Width(), Height(), Data(), Size(), Stride(), PixelFormat(), BitsPerPixel() { }
 
     HRESULT Initialize(IWICBitmapSource * source) noexcept;
 
-    UINT Width() const { return _Width; }
-    UINT Height() const { return _Height; }
+public:
+    UINT Width;
+    UINT Height;
 
-    BYTE * Data() const { return _Data; }
-    UINT Size() const { return _Size; }
+    BYTE * Data;
+    UINT Size;
 
-    UINT Stride() const { return _Stride; }
-    const WICPixelFormatGUID & Format() const { return _PixelFormat; }
-    UINT BitsPerPixel() const { return _BitsPerPixel; }
+    UINT Stride;
+    WICPixelFormatGUID PixelFormat;
+    UINT BitsPerPixel;
 
 private:
-    UINT _Width;
-    UINT _Height;
-
-    BYTE * _Data;
-    UINT _Size;
-
-    UINT _Stride;
-    WICPixelFormatGUID _PixelFormat;
-    UINT _BitsPerPixel;
-
     CComPtr<IWICBitmap> _Bitmap;
     CComPtr<IWICBitmapLock> _Lock;
 };

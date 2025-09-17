@@ -10,15 +10,15 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
-class SafeModuleHandle
+class safe_module_handle_t
 {
 public:
-    SafeModuleHandle(const WCHAR * libraryName)
+    safe_module_handle_t(const WCHAR * libraryName)
     {
         _Handle = ::LoadLibraryW(libraryName);
     }
 
-    virtual ~SafeModuleHandle()
+    virtual ~safe_module_handle_t()
     {
         if (_Handle != nullptr)
         {

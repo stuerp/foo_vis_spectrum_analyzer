@@ -18,25 +18,25 @@
 /// Implements an Analog-style spectrum analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class AnalogStyleAnalyzer : public analyzer_t
+class analog_style_analyzer_t : public analyzer_t
 {
 public:
-    AnalogStyleAnalyzer() = delete;
+    analog_style_analyzer_t() = delete;
 
-    AnalogStyleAnalyzer(const AnalogStyleAnalyzer &) = delete;
-    AnalogStyleAnalyzer & operator=(const AnalogStyleAnalyzer &) = delete;
-    AnalogStyleAnalyzer(AnalogStyleAnalyzer &&) = delete;
-    AnalogStyleAnalyzer & operator=(AnalogStyleAnalyzer &&) = delete;
+    analog_style_analyzer_t(const analog_style_analyzer_t &) = delete;
+    analog_style_analyzer_t & operator=(const analog_style_analyzer_t &) = delete;
+    analog_style_analyzer_t(analog_style_analyzer_t &&) = delete;
+    analog_style_analyzer_t & operator=(analog_style_analyzer_t &&) = delete;
 
-    virtual ~AnalogStyleAnalyzer() { }
+    virtual ~analog_style_analyzer_t() { }
 
-    AnalogStyleAnalyzer(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
+    analog_style_analyzer_t(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
 
     bool Initialize(const vector<frequency_band_t> & frequencyBands);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
-    struct Coef
+    struct coef_t
     {
         double a0;
         double a1;
@@ -50,5 +50,5 @@ private:
         double Out[MaxFilterBankOrder];
     };
 
-    std::vector<Coef> _Coefs;
+    std::vector<coef_t> _Coefs;
 };

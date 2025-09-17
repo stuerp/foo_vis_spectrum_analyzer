@@ -20,23 +20,23 @@
 #include "Element.h"
 #include "PeakMeterTypes.h"
 
-class RMSReadOut : public Element
+class rms_read_out_t : public element_t
 {
 public:
-    RMSReadOut() { };
+    rms_read_out_t() { };
 
-    RMSReadOut(const RMSReadOut &) = delete;
-    RMSReadOut & operator=(const RMSReadOut &) = delete;
-    RMSReadOut(RMSReadOut &&) = delete;
-    RMSReadOut & operator=(RMSReadOut &&) = delete;
+    rms_read_out_t(const rms_read_out_t &) = delete;
+    rms_read_out_t & operator=(const rms_read_out_t &) = delete;
+    rms_read_out_t(rms_read_out_t &&) = delete;
+    rms_read_out_t & operator=(rms_read_out_t &&) = delete;
 
-    virtual ~RMSReadOut() { }
+    virtual ~rms_read_out_t() { }
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics);
 
     bool IsVisible() const noexcept { return _TextStyle->IsEnabled(); }
 
@@ -54,11 +54,11 @@ public:
     }
 
 private:
-    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
-    void RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept;
+    void RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept;
 
 private:
-    Style * _TextStyle;
+    style_t * _TextStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

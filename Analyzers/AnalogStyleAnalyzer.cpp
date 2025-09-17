@@ -12,14 +12,14 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-AnalogStyleAnalyzer::AnalogStyleAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
+analog_style_analyzer_t::analog_style_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool AnalogStyleAnalyzer::Initialize(const vector<frequency_band_t> & frequencyBands)
+bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & frequencyBands)
 {
     assert(_SampleRate != 0);
 
@@ -37,7 +37,7 @@ bool AnalogStyleAnalyzer::Initialize(const vector<frequency_band_t> & frequencyB
         const double Q = fb.Ctr / Bandwidth * QCompensationFactor / (_State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
-        Coef c = { };
+        coef_t c = { };
 
         c.a0 = K / Q * Norm;
         c.a1 = 0.;
@@ -57,7 +57,7 @@ bool AnalogStyleAnalyzer::Initialize(const vector<frequency_band_t> & frequencyB
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool AnalogStyleAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;

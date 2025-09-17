@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-StyleManager::StyleManager()
+style_manager_t::style_manager_t()
 {
     Reset();
 }
@@ -22,7 +22,7 @@ StyleManager::StyleManager()
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-StyleManager & StyleManager::operator=(const StyleManager & other)
+style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 {
     for (const auto & Iter : other._Styles)
         _Styles[Iter.first] = Iter.second;
@@ -33,7 +33,7 @@ StyleManager & StyleManager::operator=(const StyleManager & other)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void StyleManager::Reset() noexcept
+void style_manager_t::Reset() noexcept
 {
     _Styles = _DefaultStyles;
 
@@ -47,7 +47,7 @@ void StyleManager::Reset() noexcept
 /// <summary>
 /// Gets the style of the visual element specified by an index.
 /// </summary>
-Style * StyleManager::GetStyleByIndex(int index)
+style_t * style_manager_t::GetStyleByIndex(int index)
 {
     static const VisualElement IndexToId[] =
     {
@@ -104,7 +104,7 @@ Style * StyleManager::GetStyleByIndex(int index)
 /// <summary>
 /// Updates the style parameters of all styles that are using the artwork as source.
 /// </summary>
-void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_COLOR_F dominantColor)
+void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor)
 {
     for (auto & Iter : _Styles)
     {
@@ -128,7 +128,7 @@ void StyleManager::SetArtworkDependentParameters(const GradientStops & gs, D2D1_
 /// <summary>
 /// Updates the current color of each style.
 /// </summary>
-void StyleManager::UpdateCurrentColors()
+void style_manager_t::UpdateCurrentColors()
 {
     for (auto & Iter : _Styles)
         Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
@@ -137,7 +137,7 @@ void StyleManager::UpdateCurrentColors()
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void StyleManager::ReleaseDeviceSpecificResources()
+void style_manager_t::ReleaseDeviceSpecificResources()
 {
     for (auto & Iter : _Styles)
         Iter.second.ReleaseDeviceSpecificResources();
@@ -146,7 +146,7 @@ void StyleManager::ReleaseDeviceSpecificResources()
 /// <summary>
 /// Reads this instance from a stream.
 /// </summary>
-void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
+void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept
 {
     try
     {
@@ -167,13 +167,13 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             if (Version < 4)
                 pfc::string Name = reader->read_string(abortHandler);
 
-            Style & style = _Styles[(VisualElement) Id];
+            style_t & style = _Styles[(VisualElement) Id];
 
             uint64_t Flags;
 
             reader->read_object_t(Flags, abortHandler);
 
-            style._Flags = (style._Flags & Style::System) | (Flags & ~Style::System); // Retain the value of system style flags.
+            style._Flags = (style._Flags & style_t::System) | (Flags & ~style_t::System); // Retain the value of system style flags.
 
             uint32_t Integer;
 
@@ -182,7 +182,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             reader->read_object_t(style._ColorIndex, abortHandler);
             reader->read_object_t(Integer, abortHandler); style._ColorScheme = (ColorScheme) Integer;
 
-            GradientStops gs;
+            gradient_stops_t gs;
 
             size_t GradientStopCount; reader->read_object_t(GradientStopCount, abortHandler);
 
@@ -209,7 +209,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
             }
 
             // Sets the default font settings.
-            if (style._Flags & Style::SupportsFont)
+            if (style._Flags & style_t::SupportsFont)
             {
                 auto DefaultStyle = _DefaultStyles[(VisualElement) Id];
 ;
@@ -240,7 +240,7 @@ void StyleManager::Read(stream_reader * reader, size_t size, abort_callback & ab
 /// <summary>
 /// Writes this instance to a stream.
 /// </summary>
-void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
+void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandler) const noexcept
 {
     try
     {
@@ -259,7 +259,7 @@ void StyleManager::Write(stream_writer * writer, abort_callback & abortHandler) 
             }
 
             {
-                const Style & style = Iter.second;
+                const style_t & style = Iter.second;
 
                 writer->write_object_t(style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);

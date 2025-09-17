@@ -12,7 +12,7 @@
 
 #pragma hdrstop
 
-LevelMeter::LevelMeter()
+level_meter_t::level_meter_t()
 {
     _Bounds = { };
     _Size = { };
@@ -27,7 +27,7 @@ LevelMeter::LevelMeter()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void LevelMeter::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void level_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -39,7 +39,7 @@ void LevelMeter::Initialize(state_t * state, const GraphSettings * settings, con
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void LevelMeter::Move(const D2D1_RECT_F & rect)
+void level_meter_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -47,7 +47,7 @@ void LevelMeter::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void LevelMeter::Reset()
+void level_meter_t::Reset()
 {
     _IsResized = true;
 }
@@ -55,7 +55,7 @@ void LevelMeter::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void LevelMeter::Resize() noexcept
+void level_meter_t::Resize() noexcept
 {
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
@@ -66,7 +66,7 @@ void LevelMeter::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
+void level_meter_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -239,7 +239,7 @@ void LevelMeter::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT LevelMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -277,7 +277,7 @@ HRESULT LevelMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void LevelMeter::ReleaseDeviceSpecificResources() noexcept
+void level_meter_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -319,7 +319,7 @@ void LevelMeter::ReleaseDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT LevelMeter::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT level_meter_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 {
     D2D1_SIZE_F Size = renderTarget->GetSize();
 

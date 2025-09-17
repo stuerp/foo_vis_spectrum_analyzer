@@ -14,7 +14,7 @@
 /// </summary>
 HRESULT GetDPI(HWND hWnd, UINT & dpi)
 {
-    SafeModuleHandle Module = SafeModuleHandle(L"user32.dll");
+    safe_module_handle_t Module = safe_module_handle_t(L"user32.dll");
 
     typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
 

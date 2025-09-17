@@ -247,7 +247,6 @@
     <ClInclude Include="Visuals\Style.h" />
     <ClInclude Include="Visuals\StyleManager.h" />
     <ClInclude Include="Windows\Color.h" />
-    <ClInclude Include="Windows\COMException.h" />
     <ClInclude Include="Visuals\ColorThief.h" />
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
@@ -327,7 +326,7 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Windows\DirectX.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
-    <ClCompile Include="Rendering.cpp" />
+    <ClCompile Include="UIElementRendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />
     <ClCompile Include="Visuals\Spectrum\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />

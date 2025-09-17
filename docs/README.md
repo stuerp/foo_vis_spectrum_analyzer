@@ -397,21 +397,29 @@ Prevents the mirror image of the spectrum (anything above the Nyquist frequency)
 
 Some visualizations can use artwork to display on the background or to use as a source for a color list. The artwork can come from the playing track or from file location.
 
+> [!Note]
+> The color selection runs only when a new track is started.
+
 `No. artwork colors`
 
 The maximum number of colors to select from the artwork.
 
 `Lightness threshold`
 
-Determines when a color is considered light. Expressed as a percentage of whiteness.
+Determines when a color is considered light. Expressed as a percentage of whiteness, white being 100%.
 
 `Sort colors by`
 
 Determines how to sort the colors selected from the artwork.
 
+- `None` will start the color list with the color that is used the most in the artwork followed by lesser used colors.
+- `Increasing hue` and `Decreasing hue` sort by hue.
+- `Increasing lightness` and `Decreasing lightness` sort by lightness.
+- `Increasing saturation` and `Decreasing saturation` sort by saturation.
+
 `Show artwork on background`
 
-Displays the artwork on the graph background.
+Displays artwork on the graph background. By default the front cover of the playing track is used. You can override this behavior using the `Artwork file path` setting.
 
 `Fit mode`
 

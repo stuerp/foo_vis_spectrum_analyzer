@@ -9,7 +9,7 @@
 /// <summary>
 /// Gets open-ended Bezier spline control points.
 /// </summary>
-void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size_t count, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
+void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size_t count, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
 {
     if (count < 2)
         return;
@@ -68,7 +68,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
 /// <summary>
 /// Solves a tridiagonal system for one of coordinates (x or y) of first Bezier control points.
 /// </summary>
-std::vector<FLOAT> BezierSpline::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
+std::vector<FLOAT> bezier_spline_t::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
 {
     size_t n = rhs.size();
 

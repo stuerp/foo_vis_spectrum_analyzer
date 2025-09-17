@@ -12,7 +12,7 @@
 
 #pragma hdrstop
 
-Spectogram::Spectogram()
+spectogram_t::spectogram_t()
 {
     _Bounds = { };
     _Size = { };
@@ -23,7 +23,7 @@ Spectogram::Spectogram()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectogram::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -37,7 +37,7 @@ void Spectogram::Initialize(state_t * state, const GraphSettings * settings, con
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void Spectogram::Move(const D2D1_RECT_F & rect)
+void spectogram_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 
@@ -48,7 +48,7 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Spectogram::Reset()
+void spectogram_t::Reset()
 {
     _X = 0.f;
     _Y = 0.f;
@@ -66,7 +66,7 @@ void Spectogram::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void Spectogram::Resize() noexcept
+void spectogram_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -273,7 +273,7 @@ void Spectogram::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectogram.
 /// </summary>
-void Spectogram::Render(ID2D1RenderTarget * renderTarget)
+void spectogram_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -452,7 +452,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
-void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
+void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
 {
     if (_State->_HorizontalSpectogram)
     {
@@ -531,7 +531,7 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) co
 /// <summary>
 /// Renders a Y-axis (Frequency)
 /// </summary>
-void Spectogram::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
+void spectogram_t::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
 {
     const FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
 
@@ -568,7 +568,7 @@ void Spectogram::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) con
 /// <summary>
 /// Updates this instance.
 /// </summary>
-bool Spectogram::Update() noexcept
+bool spectogram_t::Update() noexcept
 {
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
@@ -700,7 +700,7 @@ bool Spectogram::Update() noexcept
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
+void spectogram_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
@@ -724,11 +724,11 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 /// <summary>
 /// Initializes the Y-axis.
 /// </summary>
-void Spectogram::InitFreqAxis() noexcept
+void spectogram_t::InitFreqAxis() noexcept
 {
     _FreqLabels.clear();
 
-    const FrequencyBands & fb = _Analysis->_FrequencyBands;
+    const frequency_bands_t & fb = _Analysis->_FrequencyBands;
 
     if (fb.size() == 0)
         return;
@@ -851,7 +851,7 @@ void Spectogram::InitFreqAxis() noexcept
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -907,7 +907,7 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Spectogram::ReleaseDeviceSpecificResources()
+void spectogram_t::ReleaseDeviceSpecificResources()
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

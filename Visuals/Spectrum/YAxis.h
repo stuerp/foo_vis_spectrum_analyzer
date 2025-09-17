@@ -22,17 +22,17 @@
 /// Implements the Y axis of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-class YAxis : public Element
+class y_axis_t : public element_t
 {
 public:
-    YAxis() { }
+    y_axis_t() { }
 
-    YAxis(const YAxis &) = delete;
-    YAxis & operator=(const YAxis &) = delete;
-    YAxis(YAxis &&) = delete;
-    YAxis & operator=(YAxis &&) = delete;
+    y_axis_t(const y_axis_t &) = delete;
+    y_axis_t & operator=(const y_axis_t &) = delete;
+    y_axis_t(y_axis_t &&) = delete;
+    y_axis_t & operator=(y_axis_t &&) = delete;
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis) noexcept;
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
@@ -51,7 +51,7 @@ private:
 private:
     bool _FlipVertically;
 
-    struct Label
+    struct label_t
     {
         std::wstring Text;
         double Amplitude;
@@ -64,8 +64,8 @@ private:
         D2D1_RECT_F RectR;
     };
 
-    std::vector<Label> _Labels;
+    std::vector<label_t> _Labels;
 
-    Style * _LineStyle;
-    Style * _TextStyle;
+    style_t * _LineStyle;
+    style_t * _TextStyle;
 };

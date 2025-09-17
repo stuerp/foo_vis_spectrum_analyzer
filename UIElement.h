@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2024.08.07) P. Stuer **/
+/** $VER: UIElement.h (2025.09.17) P. Stuer **/
 
 #pragma once
 
@@ -19,15 +19,15 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
+class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base
 {
 public:
-    UIElement();
+    uielement_t();
 
-    UIElement(const UIElement &) = delete;
-    UIElement & operator=(const UIElement &) = delete;
-    UIElement(UIElement &&) = delete;
-    UIElement & operator=(UIElement &&) = delete;
+    uielement_t(const uielement_t &) = delete;
+    uielement_t & operator=(const uielement_t &) = delete;
+    uielement_t(uielement_t &&) = delete;
+    uielement_t & operator=(uielement_t &&) = delete;
 
     #pragma region CWindowImpl
 
@@ -55,40 +55,7 @@ protected:
     void UpdateState() noexcept;
 
 private:
-    #pragma region Render thread
-
-    void OnTimer() noexcept;
-
-    void ProcessEvents() noexcept;
-    void Render() noexcept;
-    void Process() noexcept;
-    void Animate() noexcept;
-
-    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
-
-    #pragma region Timer
-
-    void StartTimer() noexcept;
-    void StopTimer() noexcept;
-
-    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
-
-    #pragma endregion
-
-    #pragma region DirectX
-
-    HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
-
-    HRESULT CreateArtworkDependentResources();
-
-    HRESULT CreateDeviceSpecificResources();
-    void ReleaseDeviceSpecificResources();
-
-    #pragma endregion
-
-    #pragma endregion
-
+    // These methods (must) run on the main foobar2000 UI thread.
     #pragma region UI thread
 
     #pragma region CWindowImpl
@@ -107,7 +74,7 @@ private:
 
     #pragma endregion
 
-    #pragma region Playback callback methods
+    #pragma region play_callback methods
 
     void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
     void on_playback_new_track(metadb_handle_ptr p_track);
@@ -122,9 +89,13 @@ private:
 
     #pragma endregion
 
-    void LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort);
+    void StartTimer() noexcept;
+    void StopTimer() noexcept;
 
-    virtual void ToggleFullScreen() noexcept = 0;
+    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+
+    virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
+
     void ToggleFrameCounter() noexcept;
     void ToggleHardwareRendering() noexcept;
 
@@ -134,13 +105,14 @@ private:
     // Tool Tips
     void CreateToolTipControl() noexcept;
     void DeleteTrackingToolTip() noexcept;
-    Graph * GetGraph(const CPoint & pt) noexcept;
+    graph_t * GetGraph(const CPoint & pt) noexcept;
 
-    void on_album_art(album_art_data::ptr data);
+    void GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort);
+    void GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort);
 
     #pragma region CWindowImpl
 
-    BEGIN_MSG_MAP_EX(UIElement)
+    BEGIN_MSG_MAP_EX(uielement_t)
         MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_ERASEBKGND(OnEraseBackground)
@@ -160,6 +132,32 @@ private:
 
     #pragma endregion
 
+    // These methods run on the render thread.
+    #pragma region Render thread
+
+    void OnTimer() noexcept;
+
+    void ProcessEvents() noexcept;
+    void Render() noexcept;
+    void Process() noexcept;
+    void Animate() noexcept;
+
+    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
+
+    #pragma region DirectX
+
+    HRESULT CreateDeviceIndependentResources();
+    void ReleaseDeviceIndependentResources();
+
+    HRESULT CreateArtworkDependentResources();
+
+    HRESULT CreateDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources();
+
+    #pragma endregion
+
+    #pragma endregion
+
 protected:
     state_t _MainState;
     state_t _ThreadState;
@@ -170,9 +168,9 @@ protected:
     RECT _OldBounds;
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
+    bool _IsInitializing;
 
     event_t _Event;
-    bool _IsStartingUp;
 
 private:
     #pragma region Shared
@@ -194,8 +192,8 @@ private:
     visualisation_stream_v2::ptr _VisualisationStream;
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
 
-    FrameCounter _FrameCounter;
-    Grid _Grid;
+    frame_counter_t _FrameCounter;
+    grid_t _Grid;
 
     #pragma endregion
 
@@ -223,7 +221,7 @@ private:
 
     CToolTipCtrl _ToolTipControl;
 
-    Graph * _TrackingGraph;
+    graph_t * _TrackingGraph;
     TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
     size_t _LastIndex;

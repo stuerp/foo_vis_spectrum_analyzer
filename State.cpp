@@ -44,7 +44,7 @@ void state_t::Reset() noexcept
     // Transform
     _Transform = Transform::FFT;
 
-    _WindowFunction = WindowFunctions::Hann;
+    _WindowFunction = WindowFunction::Hann;
     _WindowParameter = 1.;
     _WindowSkew = 0.;
     _Truncate = true;
@@ -79,7 +79,7 @@ void state_t::Reset() noexcept
     _BandwidthAmount = 6.;
     _UseGranularBandwidth = true;
 
-    _KernelShape = WindowFunctions::Nuttall;
+    _KernelShape = WindowFunction::Nuttall;
     _KernelShapeParameter = 1.;
     _KernelAsymmetry = 0.;
 
@@ -186,7 +186,7 @@ void state_t::Reset() noexcept
 
     _GraphSettings.clear();
 
-    _GraphSettings.push_back(GraphSettings(L"Stereo"));
+    _GraphSettings.push_back(graph_settings_t(L"Stereo"));
 
     _VerticalLayout = false;
 
@@ -776,7 +776,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
             for (size_t i = 0; i < Count; ++i)
             {
-                GraphSettings gs;
+                graph_settings_t gs;
 
                 pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
                 reader->read_object_t(gs._Channels, abortHandler);
@@ -1094,7 +1094,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_GridRowCount, abortHandler);
         writer->write_object_t(_GridColumnCount, abortHandler);
 
-        writer->write_object_t(GraphSettings::_CurentVersion, abortHandler);
+        writer->write_object_t(graph_settings_t::_CurentVersion, abortHandler);
 
         writer->write_object_t(_VerticalLayout, abortHandler);
 
@@ -1128,7 +1128,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             writer->write_object_t(gs._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
-            if (GraphSettings::_CurentVersion > 1)
+            if (graph_settings_t::_CurentVersion > 1)
             {
                 writer->write_object_t(gs._LPadding, abortHandler);
                 writer->write_object_t(gs._RPadding, abortHandler);
@@ -1140,7 +1140,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             }
 
             // Version 3, v0.8.0.0-beta2
-            if (GraphSettings::_CurentVersion > 2)
+            if (graph_settings_t::_CurentVersion > 2)
             {
                 writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
                 writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
@@ -1205,7 +1205,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 void state_t::ConvertColorSettings() noexcept
 {
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
+        style_t * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
 
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 
@@ -1232,11 +1232,11 @@ void state_t::ConvertColorSettings() noexcept
             style->_CurrentColor = style->_CustomColor;
         }
 
-        style->_Flags |= (_HorizontalGradient_Deprecated ? Style::HorizontalGradient : 0);
+        style->_Flags |= (_HorizontalGradient_Deprecated ? style_t::HorizontalGradient : 0);
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::VerticalGridLine);
+        style_t * style = _StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         style->_CustomColor = _XLineColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1258,7 +1258,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::XAxisText);
+        style_t * style = _StyleManager.GetStyle(VisualElement::XAxisText);
 
         style->_CustomColor = _XTextColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1280,7 +1280,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+        style_t * style = _StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         style->_CustomColor = _YLineColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1302,7 +1302,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::YAxisText);
+        style_t * style = _StyleManager.GetStyle(VisualElement::YAxisText);
 
         style->_CustomColor = _YTextColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1324,7 +1324,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarArea);
+        style_t * style = _StyleManager.GetStyle(VisualElement::BarArea);
 
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 
@@ -1336,7 +1336,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+        style_t * style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
         style->_CustomColor = _DarkBandColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1346,7 +1346,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+        style_t * style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
 
         style->_CustomColor = _LightBandColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1356,7 +1356,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurveLine);
+        style_t * style = _StyleManager.GetStyle(VisualElement::CurveLine);
 
         style->_CustomColor = _LineColor_Deprecated;
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1379,7 +1379,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        Style * style = _StyleManager.GetStyle(VisualElement::CurveArea);
+        style_t * style = _StyleManager.GetStyle(VisualElement::CurveArea);
 
         style->_CustomGradientStops = _CustomGradientStops_Deprecated;
 
@@ -1419,7 +1419,7 @@ void state_t::ConvertGraphSettings() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const GradientStops state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
+const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops_Deprecated;

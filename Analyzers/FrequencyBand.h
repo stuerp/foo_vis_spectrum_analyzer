@@ -59,4 +59,4 @@ struct frequency_band_t
     D2D1_COLOR_F GradientColor;
 };
 
-typedef std::vector<frequency_band_t> FrequencyBands;
+typedef std::vector<frequency_band_t> frequency_bands_t;

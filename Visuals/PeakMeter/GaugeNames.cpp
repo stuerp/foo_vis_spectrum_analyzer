@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void GaugeNames::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void gauge_names_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -22,7 +22,7 @@ void GaugeNames::Initialize(state_t * state, const GraphSettings * settings, con
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void GaugeNames::Move(const D2D1_RECT_F & rect)
+void gauge_names_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -30,7 +30,7 @@ void GaugeNames::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void GaugeNames::Reset()
+void gauge_names_t::Reset()
 {
     _IsResized = true;
 }
@@ -38,7 +38,7 @@ void GaugeNames::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void GaugeNames::Resize() noexcept
+void gauge_names_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -49,7 +49,7 @@ void GaugeNames::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void GaugeNames::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+void gauge_names_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -70,7 +70,7 @@ void GaugeNames::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & g
 /// <summary>
 /// Draws the channel names. Note: Rendered in absolute coordinates! No transformation.
 /// </summary>
-void GaugeNames::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -110,7 +110,7 @@ void GaugeNames::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 /// <summary>
 /// Draws the channel names.
 /// </summary>
-void GaugeNames::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -150,7 +150,7 @@ void GaugeNames::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT GaugeNames::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_names_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -170,7 +170,7 @@ HRESULT GaugeNames::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void GaugeNames::ReleaseDeviceSpecificResources() noexcept
+void gauge_names_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

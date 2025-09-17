@@ -9,7 +9,7 @@
 /// <summary>
 /// Creates the ToolTip control.
 /// </summary>
-void UIElement::CreateToolTipControl() noexcept
+void uielement_t::CreateToolTipControl() noexcept
 {
     if (_ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE) == NULL)
         return;
@@ -22,7 +22,7 @@ void UIElement::CreateToolTipControl() noexcept
 /// <summary>
 /// Handles mouse move messages.
 /// </summary>
-void UIElement::OnMouseMove(UINT, CPoint pt)
+void uielement_t::OnMouseMove(UINT, CPoint pt)
 {
     if (!_ToolTipControl.IsWindow())
         return;
@@ -121,7 +121,7 @@ void UIElement::OnMouseMove(UINT, CPoint pt)
 /// <summary>
 /// Turns off the tracking tooltip when the mouse leaves the window.
 /// </summary>
-void UIElement::OnMouseLeave()
+void uielement_t::OnMouseLeave()
 {
     POINT pt; GetCursorPos(&pt); HWND hWndNew = WindowFromPoint(pt);
 
@@ -138,7 +138,7 @@ void UIElement::OnMouseLeave()
 /// <summary>
 /// Deletes the current tracking tooltip.
 /// </summary>
-void UIElement::DeleteTrackingToolTip() noexcept
+void uielement_t::DeleteTrackingToolTip() noexcept
 {
     if (!_ToolTipControl.IsWindow())
         return;

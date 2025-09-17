@@ -32,16 +32,16 @@ public:
 
     virtual ~fft_analyzer_t();
 
-    fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize);
-    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
+    fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel, size_t fftSize);
+    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
     void Transform() noexcept;
 
-    void AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
-    void AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
-    void AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept;
+    void AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
+    void AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
+    void AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
 
     double Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;
@@ -98,5 +98,5 @@ private:
     std::vector<std::complex<double>> _TimeData;
     std::vector<std::complex<double>> _FreqData;
 
-    const WindowFunction & _BrownPucketteKernel;
+    const window_function_t & _BrownPucketteKernel;
 };

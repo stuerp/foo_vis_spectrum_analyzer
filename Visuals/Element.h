@@ -17,14 +17,15 @@
 
 #include "Style.h"
 
-class Element
+class element_t
 {
 public:
-    Element() : _State(), _GraphSettings(), _IsResized(true) {}
+    element_t() : _State(), _GraphSettings(), _IsResized(true) {}
 
-    virtual ~Element() {}
+    virtual ~element_t() {}
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
+
     virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
     {
         _Bounds = bounds;
@@ -60,7 +61,7 @@ public:
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
 
 protected:
-    void SafeRelease(Style ** style)
+    void SafeRelease(style_t ** style)
     {
         if (*style != nullptr)
         {
@@ -71,7 +72,7 @@ protected:
 
 protected:
     state_t * _State;
-    const GraphSettings * _GraphSettings;
+    const graph_settings_t * _GraphSettings;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Bounds;

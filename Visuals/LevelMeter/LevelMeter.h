@@ -19,19 +19,19 @@
 
 #include "Element.h"
 
-class LevelMeter : public Element
+class level_meter_t : public element_t
 {
 public:
-    LevelMeter();
+    level_meter_t();
 
-    LevelMeter(const LevelMeter &) = delete;
-    LevelMeter & operator=(const LevelMeter &) = delete;
-    LevelMeter(LevelMeter &&) = delete;
-    LevelMeter & operator=(LevelMeter &&) = delete;
+    level_meter_t(const level_meter_t &) = delete;
+    level_meter_t & operator=(const level_meter_t &) = delete;
+    level_meter_t(level_meter_t &&) = delete;
+    level_meter_t & operator=(level_meter_t &&) = delete;
 
-    virtual ~LevelMeter() { }
+    virtual ~level_meter_t() { }
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;
@@ -46,11 +46,11 @@ private:
 private:
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    Style * _LeftRightStyle;
-    Style * _LeftRightIndicatorStyle;
-    Style * _MidSideStyle;
-    Style * _MidSideIndicatorStyle;
-    Style * _AxisStyle;
+    style_t * _LeftRightStyle;
+    style_t * _LeftRightIndicatorStyle;
+    style_t * _MidSideStyle;
+    style_t * _MidSideIndicatorStyle;
+    style_t * _AxisStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

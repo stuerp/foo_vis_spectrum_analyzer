@@ -11,14 +11,14 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, WindowFunction())
+swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, window_function_t())
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool swift_analyzer_t::Initialize(const FrequencyBands & frequencyBands) noexcept
+bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noexcept
 {
     const double Factor = 4. * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
@@ -34,7 +34,7 @@ bool swift_analyzer_t::Initialize(const FrequencyBands & frequencyBands) noexcep
 /// <summary>
 /// Calculates the transform and returns the updated frequency bands.
 /// </summary>
-bool swift_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool swift_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;

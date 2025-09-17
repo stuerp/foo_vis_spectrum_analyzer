@@ -19,17 +19,17 @@
 #include <string>
 
 #pragma warning(disable: 4820)
-class Style
+class style_t
 {
 public:
-    Style() { }
+    style_t() { }
 
-    Style(const Style &);
-    Style & operator=(const Style & other);
+    style_t(const style_t &);
+    style_t & operator=(const style_t & other);
 
-    virtual ~Style() { }
+    virtual ~style_t() { }
 
-    Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
+    style_t(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
 
     bool IsEnabled() const noexcept { return (_ColorSource != ColorSource::None); }
 
@@ -66,10 +66,10 @@ public:
 
     bool IsRadial() const noexcept
     {
-        return msc::IsSet(_Flags, (uint64_t) Style::RadialGradient);
+        return msc::IsSet(_Flags, (uint64_t) style_t::RadialGradient);
     }
 
-    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
+    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
@@ -81,7 +81,7 @@ public:
     D2D1_COLOR_F _CustomColor;          // User-specified color
     uint32_t _ColorIndex;               // User-specified color index in Windows / DUI / CUI list
     ColorScheme _ColorScheme;           // User-specified color scheme
-    GradientStops _CustomGradientStops; // User-specified gradient stops
+    gradient_stops_t _CustomGradientStops; // User-specified gradient stops
 
     FLOAT _Opacity;                     // Opacity of the brush or area
     FLOAT _Thickness;                   // Line thickness
@@ -92,7 +92,7 @@ public:
 
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;
-    GradientStops _CurrentGradientStops;
+    gradient_stops_t _CurrentGradientStops;
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
     FLOAT _Width;

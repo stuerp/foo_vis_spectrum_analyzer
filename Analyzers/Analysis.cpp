@@ -17,12 +17,12 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * threadState, const GraphSettings * settings) noexcept
+void analysis_t::Initialize(const state_t * state, const graph_settings_t * settings) noexcept
 {
-    _State = threadState;
+    _State = state;
     _GraphSettings = settings;
 
-    switch (threadState->_FrequencyDistribution)
+    switch (_State->_FrequencyDistribution)
     {
         default:
 
@@ -505,19 +505,19 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
     if (_WindowFunction == nullptr)
-        _WindowFunction = WindowFunction::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
+        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
     if ((_FFTAnalyzer == nullptr) && (_State->_Transform == Transform::FFT))
     {
         if (_BrownPucketteKernel == nullptr)
-            _BrownPucketteKernel = WindowFunction::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+            _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
 
         _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_State->_Transform == Transform::SWIFT))
@@ -529,7 +529,7 @@ void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
 
     if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
     {
-        _AnalogStyleAnalyzer = new AnalogStyleAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
 
         _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
     }

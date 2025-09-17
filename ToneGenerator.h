@@ -18,10 +18,10 @@
 
 #include <vector>
 
-class ToneGenerator
+class tone_generator_t
 {
 public:
-    ToneGenerator() { };
+    tone_generator_t() { };
 
     void Initialize(double frequency, double amplitude, double noiseAmplitude, size_t bufferSize)
     {
@@ -32,10 +32,10 @@ public:
         Reset();
 
         if (bufferSize != 0)
-            _Data.resize(bufferSize);
+            _Frames.resize(bufferSize);
     }
 
-    virtual ~ToneGenerator()
+    virtual ~tone_generator_t()
     {
         Reset();
     }
@@ -46,7 +46,7 @@ public:
     {
         _Clock = 0.;
 
-        _Data.clear();
+        _Frames.clear();
     }
 
 private:
@@ -58,7 +58,7 @@ private:
 
     const uint32_t _ChannelCount = 1;
 
-    std::vector<audio_sample> _Data;
+    std::vector<audio_sample> _Frames;
 };
 
-extern ToneGenerator _ToneGenerator;
+extern tone_generator_t _ToneGenerator;

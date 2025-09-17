@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void PeakReadOut::Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis)
+void peak_read_out_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -22,7 +22,7 @@ void PeakReadOut::Initialize(state_t * state, const GraphSettings * settings, co
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void PeakReadOut::Move(const D2D1_RECT_F & rect)
+void peak_read_out_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -30,7 +30,7 @@ void PeakReadOut::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void PeakReadOut::Reset()
+void peak_read_out_t::Reset()
 {
     _IsResized = true;
 }
@@ -38,7 +38,7 @@ void PeakReadOut::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void PeakReadOut::Resize() noexcept
+void peak_read_out_t::Resize() noexcept
 {
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
@@ -49,7 +49,7 @@ void PeakReadOut::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void PeakReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+void peak_read_out_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -67,7 +67,7 @@ void PeakReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & 
 /// <summary>
 /// Render this instance horizontally.
 /// </summary>
-void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void peak_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -106,7 +106,7 @@ void PeakReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const Gauge
 /// <summary>
 /// Render this instance vertically.
 /// </summary>
-void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void peak_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -145,7 +145,7 @@ void PeakReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMe
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT PeakReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -165,7 +165,7 @@ HRESULT PeakReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTar
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void PeakReadOut::ReleaseDeviceSpecificResources() noexcept
+void peak_read_out_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

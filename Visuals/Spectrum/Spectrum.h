@@ -27,17 +27,17 @@
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class Spectrum : public Element
+class spectrum_t : public element_t
 {
 public:
-    Spectrum() {}
+    spectrum_t() {}
 
-    Spectrum(const Spectrum &) = delete;
-    Spectrum & operator=(const Spectrum &) = delete;
-    Spectrum(Spectrum &&) = delete;
-    Spectrum & operator=(Spectrum &&) = delete;
+    spectrum_t(const spectrum_t &) = delete;
+    spectrum_t & operator=(const spectrum_t &) = delete;
+    spectrum_t(spectrum_t &&) = delete;
+    spectrum_t & operator=(spectrum_t &&) = delete;
 
-    void Initialize(state_t * state, const GraphSettings * settings, const analysis_t * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Move(const D2D1_RECT_F & rect);
     void Render(ID2D1RenderTarget * renderTarget);
     void Reset() { }
@@ -81,25 +81,25 @@ private:
     D2D1_RECT_F _ClientBounds;
     D2D1_SIZE_F _ClientSize;
 
-    XAxis _XAxis;
-    YAxis _YAxis;
+    x_axis_t _XAxis;
+    y_axis_t _YAxis;
 
-    Chrono _Chrono;
+    chrono_t _Chrono;
 
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    Style * _BarArea;
-    Style * _BarTop;
-    Style * _PeakArea;
-    Style * _PeakTop;
-    Style * _DarkBackground;
-    Style * _LightBackground;
+    style_t * _BarArea;
+    style_t * _BarTop;
+    style_t * _PeakArea;
+    style_t * _PeakTop;
+    style_t * _DarkBackground;
+    style_t * _LightBackground;
 
-    Style * _CurveLine;
-    Style * _CurveArea;
-    Style * _CurvePeakLine;
-    Style * _CurvePeakArea;
+    style_t * _CurveLine;
+    style_t * _CurveArea;
+    style_t * _CurvePeakLine;
+    style_t * _CurvePeakArea;
 
-    Style * _NyquistMarker;
+    style_t * _NyquistMarker;
 };
