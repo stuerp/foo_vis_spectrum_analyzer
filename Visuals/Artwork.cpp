@@ -169,11 +169,19 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
         // Convert to Direct2D colors.
         if (SUCCEEDED(hr))
         {
-            colors.clear();
+            size_t i = 0;
+
+            colors.resize(Palette.size());
 
             for (const auto & p : Palette)
-                colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+                colors[i++] = D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f);
         }
+    }
+    else
+    {
+        colors.clear();
+
+        colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
     }
 
     SetStatus(GotColors);

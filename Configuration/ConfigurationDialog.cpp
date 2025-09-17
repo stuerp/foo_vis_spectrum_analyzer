@@ -3430,9 +3430,9 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
                 style->_CurrentGradientStops = style->_CustomGradientStops;
             else
             if (style->_ColorScheme == ColorScheme::Artwork)
-                style->_CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+                style->_CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
             else
-                style->_CurrentGradientStops = GetGradientStops(style->_ColorScheme);
+                style->_CurrentGradientStops = GetBuiltInGradientStops(style->_ColorScheme);
             break;
         }
 
@@ -3539,9 +3539,9 @@ void ConfigurationDialog::UpdateColorControls()
             gs = style->_CustomGradientStops;
         else
         if (style->_ColorScheme == ColorScheme::Artwork)
-            gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetGradientStops(ColorScheme::Artwork);
+            gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
         else
-            gs = GetGradientStops(style->_ColorScheme);
+            gs = GetBuiltInGradientStops(style->_ColorScheme);
 
         // Update the gradient control.
         _Gradient.SetGradientStops(gs);

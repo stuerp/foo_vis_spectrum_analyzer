@@ -116,7 +116,7 @@ static const gradient_stops_t GradientStopsSoX =
 /// <summary>
 /// Gets a gradient stop vector.
 /// </summary>
-const gradient_stops_t GetGradientStops(ColorScheme colorScheme)
+const gradient_stops_t GetBuiltInGradientStops(ColorScheme colorScheme) noexcept
 {
     switch (colorScheme)
     {

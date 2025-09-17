@@ -162,8 +162,8 @@ void state_t::Reset() noexcept
     // Common
     _ColorScheme_Deprecated = ColorScheme::Prism1;
 
-    _GradientStops = GetGradientStops(_ColorScheme_Deprecated);
-    _CustomGradientStops_Deprecated = GetGradientStops(ColorScheme::Custom);
+    _GradientStops = GetBuiltInGradientStops(_ColorScheme_Deprecated);
+    _CustomGradientStops_Deprecated = GetBuiltInGradientStops(ColorScheme::Custom);
 
     _ShowToolTips = true;
     _SuppressMirrorImage = true;
@@ -1211,7 +1211,7 @@ void state_t::ConvertColorSettings() noexcept
 
         style->_ColorScheme = _ColorScheme_Deprecated;
 
-        if ((_BackgroundMode_Deprecated > BackgroundMode::Artwork) && (_ArtworkGradientStops.size() > 0))
+        if ((_BackgroundMode_Deprecated > BackgroundMode::Artwork) && !_ArtworkGradientStops.empty())
         {
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
@@ -1427,5 +1427,5 @@ const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme color
     if (colorScheme == ColorScheme::Artwork)
         return _ArtworkGradientStops;
 
-    return GetGradientStops(colorScheme);
+    return GetBuiltInGradientStops(colorScheme);
 }

@@ -79,10 +79,10 @@ void graph_t::Reset()
     for (frequency_band_t & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
 
-    for (gauge_value_t & mv : _Analysis._GaugeValues)
+    for (gauge_value_t & gv : _Analysis._GaugeValues)
     {
-        mv.Peak = mv.RMS = -std::numeric_limits<double>::infinity();
-        mv.PeakRender = mv.RMSRender = 0.;
+        gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
+        gv.PeakRender = gv.RMSRender = 0.;
     }
 
     _Spectrum.Reset();
@@ -102,9 +102,9 @@ void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 }
 
 /// <summary>
-/// Gets the tooltip at the specified x or y position.
+/// Gets the tooltip and frequency band index at the specified x or y position.
 /// </summary>
-bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept
+bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & bandIndex) const noexcept
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
@@ -124,7 +124,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (_GraphSettings->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        index = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
@@ -139,20 +139,20 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!_GraphSettings->_FlipVertically)
                 y = (Bounds.bottom + Bounds.top) - y;
 
-            index = std::clamp((size_t) ::floor(msc::Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
         else
         {
             if (!msc::InRange(x, Bounds.left, Bounds.right))
                 return false;
 
-            index = std::clamp((size_t) ::floor(msc::Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
     }
     else
-        return false;
+        return false; // No tooltip available.
 
-    toolTip = _Analysis._FrequencyBands[index].Label;
+    toolTip = _Analysis._FrequencyBands[bandIndex].Label;
 
     return true;
 }

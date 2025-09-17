@@ -1,5 +1,5 @@
 
-/** $VER: ToolTips.cpp (2025.09.14) P. Stuer **/
+/** $VER: ToolTips.cpp (2025.09.17) P. Stuer **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -47,21 +47,21 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
         }
 
         _LastMousePos = pt;
-        _LastIndex = ~0U;
+        _LastBandIndex = ~0U;
 
-        FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-        FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+        const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+        const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
         std::wstring Text;
-        size_t Index;
+        size_t BandIndex;
 
-        if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, Index))
+        if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, BandIndex))
         {
             _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
 
             _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
 
-            _LastIndex = Index;
+            _LastBandIndex = BandIndex;
         }
     }
     else
@@ -70,13 +70,13 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
         {
             _LastMousePos = pt;
 
-            FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-            FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+            const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+            const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
             std::wstring Text;
-            size_t Index;
+            size_t BandIndex;
 
-            if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, Index))
+            if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, BandIndex))
             {
                 // Reposition the tooltip.
                 {
@@ -102,14 +102,14 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
                     _ToolTipControl.TrackPosition(x, y);
                 }
 
-                if (Index != _LastIndex)
+                if (BandIndex != _LastBandIndex)
                 {
                     _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
 
                     _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
                     _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
 
-                    _LastIndex = Index;
+                    _LastBandIndex = BandIndex;
                 }
             }
             else
@@ -146,5 +146,5 @@ void uielement_t::DeleteTrackingToolTip() noexcept
     _ToolTipControl.TrackActivate(&_TrackingToolInfo, FALSE);
 
     _TrackingGraph = nullptr;
-    _LastIndex = ~0U;
+    _LastBandIndex = ~0U;
 }

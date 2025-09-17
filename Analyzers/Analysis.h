@@ -48,11 +48,11 @@ struct gauge_value_t
 
     double Peak;            // in dBFS
     double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
     double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
     double HoldTime;        // Time to hold the current max value.
     double DecaySpeed;      // Speed at which the current max value decays.
     double Opacity;         // 0.0 .. 1.0

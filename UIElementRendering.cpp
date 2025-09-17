@@ -98,11 +98,11 @@ void uielement_t::ProcessEvents() noexcept
         if (_Artwork.Bitmap() == nullptr)
         {
             // Set the default dominant color and gradient for the artwork color scheme.
-            _ThreadState._ArtworkGradientStops = GetGradientStops(ColorScheme::Artwork);
+            _ThreadState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
 
             _ThreadState._StyleManager._DominantColor = _ThreadState._ArtworkGradientStops[0].color;
-
             _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
+            _ThreadState._StyleManager.ReleaseGradientBrushes();
 
             _IsConfigurationChanged = true;
         }
@@ -207,12 +207,12 @@ void uielement_t::Process() noexcept
 /// </summary>
 void uielement_t::Animate() noexcept
 {
+    if (_MainState._PeakMode == PeakMode::None)
+        return;
+
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    if (_MainState._PeakMode != PeakMode::None)
-    {
-        for (auto & Iter : _Grid)
-            Iter._Graph->_Analysis.UpdatePeakValues(_ThreadState._PlaybackTime == 0.);
-    }
+    for (auto & Iter : _Grid)
+        Iter._Graph->_Analysis.UpdatePeakValues(_ThreadState._PlaybackTime == 0.);
 }
 
 /// <summary>
@@ -382,6 +382,7 @@ HRESULT uielement_t::CreateArtworkDependentResources()
 
     if (SUCCEEDED(hr))
     {
+        _ThreadState._StyleManager._DominantColor = _ThreadState._ArtworkGradientStops[0].color;
         _ThreadState._StyleManager.SetArtworkDependentParameters(_ThreadState._ArtworkGradientStops, _ThreadState._StyleManager._DominantColor);
         _ThreadState._StyleManager.ReleaseGradientBrushes();
 

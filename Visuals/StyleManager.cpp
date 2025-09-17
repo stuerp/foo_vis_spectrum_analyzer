@@ -40,7 +40,7 @@ void style_manager_t::Reset() noexcept
     for (auto & Iter : _Styles)
     {
         Iter.second._CurrentColor = Iter.second._CustomColor;
-        Iter.second._CurrentGradientStops = GetGradientStops(Iter.second._ColorScheme);
+        Iter.second._CurrentGradientStops = GetBuiltInGradientStops(Iter.second._ColorScheme);
     }
 }
 
@@ -224,7 +224,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             if (style._ColorScheme == ColorScheme::Custom)
                 style._CurrentGradientStops = style._CustomGradientStops;
             else
-                style._CurrentGradientStops = GetGradientStops(style._ColorScheme);
+                style._CurrentGradientStops = GetBuiltInGradientStops(style._ColorScheme);
 
             style.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
         }

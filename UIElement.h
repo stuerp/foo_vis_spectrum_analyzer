@@ -224,7 +224,7 @@ private:
     graph_t * _TrackingGraph;
     TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
-    size_t _LastIndex;
+    size_t _LastBandIndex;
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 

@@ -71,7 +71,7 @@ style_t::style_t(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customCol
     _FontSize = fontSize;
 
     _CurrentColor         = customColor;
-    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
+    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetBuiltInGradientStops(_ColorScheme);
 
     _Width  = 0.f;
     _Height = 0.f;

@@ -127,7 +127,7 @@ private:
             VisualElement::GraphBackground,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -135,7 +135,7 @@ private:
             VisualElement::GraphDescriptionText,
             {
                 style_t::SupportsOpacity | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 14.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 14.f,
             }
         },
 
@@ -143,7 +143,7 @@ private:
             VisualElement::GraphDescriptionBackground,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(1.f, 1.f, 1.f, .25f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(1.f, 1.f, 1.f, .25f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -151,7 +151,7 @@ private:
             VisualElement::VerticalGridLine,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -159,7 +159,7 @@ private:
             VisualElement::XAxisText,
             {
                 style_t::SupportsOpacity | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 
@@ -167,7 +167,7 @@ private:
             VisualElement::HorizontalGridLine,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -175,7 +175,7 @@ private:
             VisualElement::YAxisText,
             {
                 style_t::SupportsOpacity | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
             }
         },
 
@@ -183,7 +183,7 @@ private:
             VisualElement::BarArea,
             {
                 style_t::SupportsOpacity | style_t::AmplitudeAware,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -191,7 +191,7 @@ private:
             VisualElement::BarTop,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 5.f, L"", 0.f,
+                ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 5.f, L"", 0.f,
             }
         },
 
@@ -199,7 +199,7 @@ private:
             VisualElement::BarPeakArea,
             {
                 style_t::SupportsOpacity | style_t::AmplitudeAware,
-                ColorSource::None, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f,
+                ColorSource::None, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f,
             }
         },
 
@@ -207,7 +207,7 @@ private:
             VisualElement::BarPeakTop,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -215,7 +215,7 @@ private:
             VisualElement::BarDarkBackground,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -223,7 +223,7 @@ private:
             VisualElement::BarLightBackground,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -231,7 +231,7 @@ private:
             VisualElement::CurveLine,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
             }
         },
 
@@ -239,7 +239,7 @@ private:
             VisualElement::CurveArea,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .5f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .5f, 0.f, L"", 0.f,
             }
         },
 
@@ -247,7 +247,7 @@ private:
             VisualElement::CurvePeakLine,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
             }
         },
 
@@ -255,7 +255,7 @@ private:
             VisualElement::CurvePeakArea,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), .25f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .25f, 0.f, L"", 0.f,
             }
         },
 
@@ -263,7 +263,7 @@ private:
             VisualElement::Spectogram,
             {
                 style_t::SupportsOpacity | style_t::AmplitudeAware | style_t::AmplitudeBasedColor,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -272,7 +272,7 @@ private:
             VisualElement::GaugeBackground,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -280,7 +280,7 @@ private:
             VisualElement::GaugePeakLevel,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -288,7 +288,7 @@ private:
             VisualElement::Gauge0dBPeakLevel,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -296,7 +296,7 @@ private:
             VisualElement::GaugeMaxPeakLevel,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -304,7 +304,7 @@ private:
             VisualElement::GaugePeakLevelText,
             {
                 style_t::SupportsOpacity | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
             }
         },
 
@@ -313,7 +313,7 @@ private:
             VisualElement::GaugeRMSLevel,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -321,7 +321,7 @@ private:
             VisualElement::Gauge0dBRMSLevel,
             {
                 style_t::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -329,7 +329,7 @@ private:
             VisualElement::GaugeRMSLevelText,
             {
                 style_t::SupportsOpacity | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f,
             }
         },
 
@@ -337,7 +337,7 @@ private:
             VisualElement::NyquistMarker,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -346,7 +346,7 @@ private:
             VisualElement::GaugeLeftRight,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -354,7 +354,7 @@ private:
             VisualElement::GaugeLeftRightIndicator,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -362,7 +362,7 @@ private:
             VisualElement::GaugeMidSide,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -370,7 +370,7 @@ private:
             VisualElement::GaugeMidSideIndicator,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -378,7 +378,7 @@ private:
             VisualElement::LevelMeterAxis,
             {
                 style_t::SupportsOpacity | style_t::SupportsThickness | style_t::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f,
             }
         },
     };
