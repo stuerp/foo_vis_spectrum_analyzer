@@ -294,6 +294,38 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 }
 
 /// <summary>
+/// Handles a left mousebutton down message.
+/// </summary>
+void uielement_t::OnLButtonDown(UINT flags, CPoint point)
+{
+    if (_ThreadState._ShowToolTipsAlways)
+        return; // Already showing tooltips.
+
+    _ToolTipControl.Activate(true);
+
+    DeleteTrackingToolTip();
+
+    _ThreadState._ShowToolTipsNow = true;
+
+    OnMouseMove(flags, point);
+}
+
+/// <summary>
+/// Handles a left mousebutton up message.
+/// </summary>
+void uielement_t::OnLButtonUp(UINT flags, CPoint point)
+{
+    if (_ThreadState._ShowToolTipsAlways)
+        return; // Already showing tooltips.
+
+    _ToolTipControl.Activate(false);
+
+    DeleteTrackingToolTip();
+
+    _ThreadState._ShowToolTipsNow = false;
+}
+
+/// <summary>
 /// Toggles between panel and full screen mode.
 /// </summary>
 void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
@@ -520,7 +552,7 @@ void uielement_t::UpdateState() noexcept
             _ToolTipControl.AddTool(&ti);
         }
 
-        _ToolTipControl.Activate(_ThreadState._ShowToolTips);
+        _ToolTipControl.Activate(_ThreadState._ShowToolTipsAlways);
     }
 
     Resize();

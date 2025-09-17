@@ -24,7 +24,7 @@ void uielement_t::CreateToolTipControl() noexcept
 /// </summary>
 void uielement_t::OnMouseMove(UINT, CPoint pt)
 {
-    if (!_ToolTipControl.IsWindow())
+    if (!_ToolTipControl.IsWindow() || (!_ThreadState._ShowToolTipsAlways && !_ThreadState._ShowToolTipsNow))
         return;
 
     if (_TrackingGraph == nullptr)
@@ -46,6 +46,8 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
             ::TrackMouseEvent(&tme);
         }
 
+        _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
+
         _LastMousePos = pt;
         _LastBandIndex = ~0U;
 
@@ -57,8 +59,33 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
 
         if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, BandIndex))
         {
-            _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
+            // Position the tooltip.
+            {
+                ::ClientToScreen(m_hWnd, &pt);
 
+                RECT tr;
+
+                _ToolTipControl.GetClientRect(&tr);
+
+                int x = pt.x + 4;
+                int y = pt.y - 4 - tr.bottom;
+
+                RECT wr;
+
+                GetWindowRect(&wr);
+
+                if (x + tr.right >=  wr.right)
+                    x = pt.x - 4 - tr.right;
+
+                if (y <=  wr.top)
+                    y = pt.y + 4;
+
+                _ToolTipControl.TrackPosition(x, y);
+            }
+
+            _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
+
+            _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
             _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
 
             _LastBandIndex = BandIndex;
@@ -66,55 +93,55 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
     }
     else
     {
-        if (pt != _LastMousePos)
+        if (pt == _LastMousePos)
+            return;
+
+        _LastMousePos = pt;
+
+        const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+        const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+
+        std::wstring Text;
+        size_t BandIndex;
+
+        if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, BandIndex))
         {
-            _LastMousePos = pt;
-
-            const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-            const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-
-            std::wstring Text;
-            size_t BandIndex;
-
-            if (_TrackingGraph->GetToolTipText(ScaledX, ScaledY, Text, BandIndex))
+            // Position the tooltip.
             {
-                // Reposition the tooltip.
-                {
-                    ::ClientToScreen(m_hWnd, &pt);
+                ::ClientToScreen(m_hWnd, &pt);
 
-                    RECT tr;
+                RECT tr;
 
-                    _ToolTipControl.GetClientRect(&tr);
+                _ToolTipControl.GetClientRect(&tr);
 
-                    int x = pt.x + 4;
-                    int y = pt.y - 4 - tr.bottom;
+                int x = pt.x + 4;
+                int y = pt.y - 4 - tr.bottom;
 
-                    RECT wr;
+                RECT wr;
 
-                    GetWindowRect(&wr);
+                GetWindowRect(&wr);
 
-                    if (x + tr.right >=  wr.right)
-                        x = pt.x - 4 - tr.right;
+                if (x + tr.right >=  wr.right)
+                    x = pt.x - 4 - tr.right;
 
-                    if (y <=  wr.top)
-                        y = pt.y + 4;
+                if (y <=  wr.top)
+                    y = pt.y + 4;
 
-                    _ToolTipControl.TrackPosition(x, y);
-                }
-
-                if (BandIndex != _LastBandIndex)
-                {
-                    _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
-
-                    _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
-                    _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
-
-                    _LastBandIndex = BandIndex;
-                }
+                _ToolTipControl.TrackPosition(x, y);
             }
-            else
-                DeleteTrackingToolTip();
+
+            if (BandIndex != _LastBandIndex)
+            {
+                _TrackingToolInfo.lpszText = (LPWSTR) Text.c_str();
+
+                _ToolTipControl.UpdateTipText(&_TrackingToolInfo);
+                _ToolTipControl.TrackActivate(&_TrackingToolInfo, TRUE);
+
+                _LastBandIndex = BandIndex;
+            }
         }
+        else
+            DeleteTrackingToolTip();
     }
 }
 

@@ -165,7 +165,7 @@ void state_t::Reset() noexcept
     _GradientStops = GetBuiltInGradientStops(_ColorScheme_Deprecated);
     _CustomGradientStops_Deprecated = GetBuiltInGradientStops(ColorScheme::Custom);
 
-    _ShowToolTips = true;
+    _ShowToolTipsAlways = true;
     _SuppressMirrorImage = true;
 
     // Artwork
@@ -420,7 +420,7 @@ state_t & state_t::operator=(const state_t & other)
         _GradientStops = other._GradientStops;                  // Deprecated
         _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;      // Deprecated
 
-        _ShowToolTips = other._ShowToolTips;
+        _ShowToolTipsAlways = other._ShowToolTipsAlways;
         _SuppressMirrorImage = other._SuppressMirrorImage;
 
         // Artwork
@@ -645,7 +645,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_AmplitudeStep_Deprecated, sizeof(_AmplitudeStep_Deprecated), abortHandler);
 
         reader->read(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
-        reader->read(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
+        reader->read(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
         reader->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
         reader->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
@@ -999,7 +999,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write(&_AmplitudeStep_Deprecated, sizeof(_AmplitudeStep_Deprecated), abortHandler);
 
         writer->write(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
-        writer->write(&_ShowToolTips, sizeof(_ShowToolTips), abortHandler);
+        writer->write(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
         writer->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
         writer->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);

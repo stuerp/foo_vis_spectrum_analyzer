@@ -64,6 +64,8 @@ private:
     void OnDestroy();
     void OnPaint(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
+    void OnLButtonDown(UINT nFlags, CPoint point);
+    void OnLButtonUp(UINT nFlags, CPoint point);
     void OnLButtonDblClk(UINT nFlags, CPoint point);
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
@@ -119,6 +121,8 @@ private:
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
         MSG_WM_CONTEXTMENU(OnContextMenu)
+        MSG_WM_LBUTTONDOWN(OnLButtonDown)
+        MSG_WM_LBUTTONUP(OnLButtonUp)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
         MSG_WM_DPICHANGED(OnDPIChanged)
 

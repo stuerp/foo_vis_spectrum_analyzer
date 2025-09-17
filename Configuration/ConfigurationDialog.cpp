@@ -836,7 +836,7 @@ void ConfigurationDialog::Initialize()
         SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 2);
     }
     {
-        SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTips);
+        SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTipsAlways);
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
     }
     #pragma endregion
@@ -2391,7 +2391,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_SHOW_TOOLTIPS:
         {
-            _State->_ShowToolTips = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 

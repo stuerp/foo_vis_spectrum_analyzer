@@ -155,19 +155,19 @@ public:
 
     #pragma region Common
 
-        bool _ShowToolTips;                                         // True if tooltips should be displayed.
-        bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
+        bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
+        bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
 
         SmoothingMethod _SmoothingMethod;
-        double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+        double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
 
     #pragma endregion
 
     #pragma region Artwork
 
-        uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
-        FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
-        FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
+        uint32_t _NumArtworkColors;                                     // Number of colors to select from the artwork.
+        FLOAT _LightnessThreshold;                                      // 0.0 .. 1.0
+        FLOAT _TransparencyThreshold;                                   // 0.0 .. 1.0 (Not configurable)
 
         ColorOrder _ColorOrder;
 
@@ -272,6 +272,8 @@ public:
 
     LONG64 _Barrier;
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
+
+    bool _ShowToolTipsNow;
 
     #pragma endregion
 
