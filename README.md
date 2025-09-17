@@ -95,9 +95,12 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.8.0.0-beta3, 2025-xx-xx
 
 * New: [User guide](docs/README.md) documenting all the configuration settings.
+* Improved: Radial Bars
+  * Implemented horizontal and amplitude-based gradient.
 * Fixed: Weird behavior in IIR filter bank/analog-style analyzer. (Provided by TF3RDL)
 * Fixed: Stability of the tooltip.
 * Fixed: SWIFT analyzer (Regression)
+* Fixed: Artwork color sorting (Regression)
 
 You can read the full history [here](docs/History.md).
 

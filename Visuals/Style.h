@@ -46,20 +46,27 @@ public:
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
     };
 
-    style_t(Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
+    style_t(Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
 
-    bool IsEnabled() const noexcept { return (_ColorSource != ColorSource::None); }
+    bool IsEnabled() const noexcept
+    {
+        return (_ColorSource != ColorSource::None);
+    }
 
-    bool Has(Features feature) const noexcept { return IsSet(_Flags, feature); }
+    bool Has(Features feature) const noexcept
+    {
+        return IsSet(_Flags, feature);
+    }
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept;
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
-    void ReleaseDeviceSpecificResources();
+    void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
 
     HRESULT MeasureText(const std::wstring & text) noexcept;
 
     HRESULT SetBrushColor(double value) noexcept;
-    void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors);
 
     void SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT ta) const noexcept
     {
@@ -72,6 +79,8 @@ public:
         if (_TextFormat)
             _TextFormat->SetParagraphAlignment(pa);
     }
+
+    bool IsAmplitudeBased() const noexcept { return (_ColorSource == ColorSource::Gradient) && Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor); }
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 

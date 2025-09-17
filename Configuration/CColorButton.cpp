@@ -157,7 +157,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
 
     if (SUCCEEDED(hr) && (_Brush == nullptr))
     {
-        if (_GradientStops.size() == 0)
+        if (_GradientStops.empty())
         {
             CComPtr<ID2D1SolidColorBrush> SolidBrush;
 

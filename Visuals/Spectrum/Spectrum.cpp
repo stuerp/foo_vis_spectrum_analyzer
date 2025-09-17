@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2024.08.18) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.17) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -170,7 +170,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the peak indicator area.
                 if (_PeakAreaStyle->IsEnabled())
                 {
-                    if ((_PeakAreaStyle->_ColorSource == ColorSource::Gradient) && _PeakAreaStyle->Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
+                    if (_PeakAreaStyle->IsAmplitudeBased())
                         _PeakAreaStyle->SetBrushColor(fb.MaxValue);
 
                     if (!_State->_LEDMode)
@@ -200,7 +200,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the area of the bar.
                 if (_BarAreaStyle->IsEnabled())
                 {
-                    if ((_BarAreaStyle->_ColorSource == ColorSource::Gradient) && _BarAreaStyle->Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
+                    if (_BarAreaStyle->IsAmplitudeBased())
                         _BarAreaStyle->SetBrushColor(fb.CurValue);
 
                     if (!_State->_LEDMode)
@@ -235,7 +235,7 @@ void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget)
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    GeometryPoints Points;
+    geometry_points_t Points;
     CComPtr<ID2D1PathGeometry> Curve;
 
     if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle->IsEnabled() || _CurvePeakLineStyle->IsEnabled()))
@@ -303,7 +303,7 @@ void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 {
-    if (_Analysis->_FrequencyBands.size() == 0)
+    if (_Analysis->_FrequencyBands.empty())
         return;
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -316,6 +316,9 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 //  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
 
     const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+
+    size_t i = 0;
+    double n = (double) (_Analysis->_FrequencyBands.size() - 1);
 
     CComPtr<ID2D1PathGeometry> Path;
 
@@ -367,11 +370,23 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
                 Sink.Release();
 
-                renderTarget->FillGeometry(Path, _BarAreaStyle->_Brush);
+                if (_BarAreaStyle->IsEnabled())
+                {
+                    if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
+                    {
+                        const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
+
+                        _BarAreaStyle->SetBrushColor(Value);
+                    }
+
+                    renderTarget->FillGeometry(Path, _BarAreaStyle->_Brush);
+                }
             }
 
             Path.Release();
         }
+
+        ++i;
     }
 }
 
@@ -460,7 +475,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
         else
         if (_State->_VisualizationType == VisualizationType::RadialBars)
         {
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
         }
     }
 
@@ -511,7 +526,7 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(GeometryPoints & points, bool usePeak) const
+HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const
 {
     if (_Analysis->_FrequencyBands.size() < 2)
         return E_FAIL;
@@ -566,7 +581,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(GeometryPoints & points, b
 /// <summary>
 /// Creates a curve from the power values.
 /// </summary>
-HRESULT spectrum_t::CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
+HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
 {
     if (gp.p0.size() < 2)
         return E_FAIL;

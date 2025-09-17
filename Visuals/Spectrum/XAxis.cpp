@@ -24,7 +24,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
 
     const frequency_bands_t & fb = _Analysis->_FrequencyBands;
 
-    if (fb.size() == 0)
+    if (fb.empty())
         return;
 
     _BandCount = fb.size();

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2024.08.16) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.17) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -57,7 +57,7 @@ private:
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
 
-    struct GeometryPoints
+    struct geometry_points_t
     {
         std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
         std::vector<D2D1_POINT_2F> p1;
@@ -71,8 +71,8 @@ private:
         }
     };
 
-    HRESULT CreateGeometryPointsFromAmplitude(GeometryPoints & gp, bool usePeak) const;
-    HRESULT CreateCurve(const GeometryPoints & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
+    HRESULT CreateGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const;
+    HRESULT CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
     const FLOAT PaddingX = 1.f;

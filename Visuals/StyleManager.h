@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2024.05.03) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2025.09.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -53,11 +53,11 @@ public:
         return &_Styles[visualElement];
     }
 
-    style_t * GetStyleByIndex(int index);
+    style_t * GetStyleByIndex(int index) noexcept;
 
-    void SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor);
+    void SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept;
 
-    void UpdateCurrentColors();
+    void UpdateCurrentColors() noexcept;
 
     void ReleaseGradientBrushes() noexcept
     {
@@ -71,47 +71,38 @@ public:
     // Helper
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text, style_t ** style) noexcept
     {
-        if (*style != nullptr)
-        {
-            if ((*style)->_Brush != nullptr)
-                return S_OK;
-            else
-                return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
-        }
-
-        *style = GetStyle(visualElement);
-
         if (*style == nullptr)
-            return E_FAIL;
+        {
+            *style = GetStyle(visualElement);
+
+            if (*style == nullptr)
+                return E_FAIL;
+        }
 
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(renderTarget, text, size);
+        return (*style)->CreateDeviceSpecificResources(renderTarget, size, text);
     }
 
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
+    // Helper for radial bars
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
     {
-        if (*style != nullptr)
-        {
-            if ((*style)->_Brush != nullptr)
-                return S_OK;
-            else
-                return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
-        }
-
-        *style = GetStyle(visualElement);
-
         if (*style == nullptr)
-            return E_FAIL;
+        {
+            *style = GetStyle(visualElement);
+
+            if (*style == nullptr)
+                return E_FAIL;
+        }
 
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(renderTarget, center, offset, rx, ry, rOffset);
+        return (*style)->CreateDeviceSpecificResources(renderTarget, size, center, offset, rx, ry, rOffset);
     }
 
-    void ReleaseDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources() noexcept;
 
 public:
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;

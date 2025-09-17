@@ -47,7 +47,7 @@ void style_manager_t::Reset() noexcept
 /// <summary>
 /// Gets the style of the visual element specified by an index.
 /// </summary>
-style_t * style_manager_t::GetStyleByIndex(int index)
+style_t * style_manager_t::GetStyleByIndex(int index) noexcept
 {
     static const VisualElement IndexToId[] =
     {
@@ -104,7 +104,7 @@ style_t * style_manager_t::GetStyleByIndex(int index)
 /// <summary>
 /// Updates the style parameters of all styles that are using the artwork as source.
 /// </summary>
-void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor)
+void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept
 {
     for (auto & Iter : _Styles)
     {
@@ -128,7 +128,7 @@ void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs,
 /// <summary>
 /// Updates the current color of each style.
 /// </summary>
-void style_manager_t::UpdateCurrentColors()
+void style_manager_t::UpdateCurrentColors() noexcept
 {
     for (auto & Iter : _Styles)
         Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
@@ -137,7 +137,7 @@ void style_manager_t::UpdateCurrentColors()
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_manager_t::ReleaseDeviceSpecificResources()
+void style_manager_t::ReleaseDeviceSpecificResources() noexcept
 {
     for (auto & Iter : _Styles)
         Iter.second.ReleaseDeviceSpecificResources();

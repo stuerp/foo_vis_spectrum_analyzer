@@ -529,6 +529,9 @@ Sets the inner radius as a percentage of the smallest side of the graph.
 
 Sets the outer radius as a percentage of the smallest side of the graph.
 
+> [!Note]
+> If the inner radius is greater than the outer radius the bars are drawn inwards.
+
 `Angular velocity`
 
 Sets the angular velocity of the rotation in degrees per second. Use positive values for clockwise rotation; negative values for anti-clockwise rotation.

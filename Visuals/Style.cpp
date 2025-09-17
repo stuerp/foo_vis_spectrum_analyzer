@@ -54,7 +54,7 @@ style_t & style_t::operator=(const style_t & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize)
+style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
     _Flags = flags;
 
@@ -81,7 +81,7 @@ style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F 
 /// <summary>
 /// Updates the current color based on the color source.
 /// </summary>
-void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors)
+void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
 {
     switch (_ColorSource)
     {
@@ -148,7 +148,7 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -156,7 +156,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (Has(style_t::Features::AmplitudeBasedColor))
+        if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -187,7 +187,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -195,7 +195,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (Has(style_t::Features::AmplitudeBasedColor))
+        if (Has(style_t::Features::HorizontalGradient) || Has(style_t::Features::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -215,7 +215,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_t::ReleaseDeviceSpecificResources()
+void style_t::ReleaseDeviceSpecificResources() noexcept
 {
     _TextFormat.Release();
     _Brush.Release();
@@ -226,7 +226,7 @@ void style_t::ReleaseDeviceSpecificResources()
 /// </summary>
 HRESULT style_t::SetBrushColor(double value) noexcept
 {
-    if (_AmplitudeMap.size() == 0)
+    if (_AmplitudeMap.empty())
         return E_FAIL;
 
     ID2D1SolidColorBrush * ColorBrush = nullptr;
@@ -236,7 +236,7 @@ HRESULT style_t::SetBrushColor(double value) noexcept
     if (!SUCCEEDED(hr))
         return hr;
 
-    size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
+    const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
     D2D1_COLOR_F Color = _AmplitudeMap[Index];
 
@@ -253,7 +253,7 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 /// <remarks>Assumes a sane gradient collection with position running from 0.f to 1.f in ascending order.
 HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
-    if (gradientStops.size() == 0)
+    if (gradientStops.empty())
         return E_FAIL;
 
     const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0. and 1.

@@ -3606,7 +3606,7 @@ void ConfigurationDialog::UpdateGradientStopPositons(style_t * style, size_t ind
 {
     auto & gs = style->_CurrentGradientStops;
 
-    if (gs.size() == 0)
+    if (gs.empty())
         return;
 
     if (index == 0)

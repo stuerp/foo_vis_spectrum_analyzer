@@ -169,7 +169,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 {
     gradientStops.clear();
 
-    if (colors.size() == 0)
+    if (colors.empty())
         return S_OK;
 
     gradientStops.push_back({ 0.f, colors[0] });

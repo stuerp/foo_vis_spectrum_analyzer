@@ -327,7 +327,7 @@ double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoef
 /// </summary>
 double fft_analyzer_t::Median(std::vector<double> & data) const noexcept
 {
-    if (data.size() == 0)
+    if (data.empty())
         return DBL_MIN;
 
     if (data.size() == 1)

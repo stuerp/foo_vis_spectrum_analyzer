@@ -47,23 +47,32 @@ template<Flags Enum> constexpr Enum operator ~(Enum value)
     return (Enum) ~(underlying_t) value;
 }
 
-template<Flags Enum> constexpr Enum Set(Enum & value, Enum flag)
+/// <summary>
+/// Sets the  specified flags.
+/// </summary>
+template<Flags Enum> constexpr Enum Set(Enum & value, Enum flags)
 {
-    value = value | flag;
+    value = value | flags;
 
     return value;
 }
 
-template<Flags Enum> constexpr Enum UnSet(Enum & value, Enum flag)
+/// <summary>
+/// Unsets the  specified flags.
+/// </summary>
+template<Flags Enum> constexpr Enum UnSet(Enum & value, Enum flags)
 {
-    value = value & ~flag;
+    value = value & ~flags;
 
     return value;
 }
 
-template<Flags Enum> bool IsSet(Enum value, Enum flag)
+/// <summary>
+/// Returns true when all the specified flags are set.
+/// </summary>
+template<Flags Enum> bool IsSet(Enum value, Enum flags)
 {
     using underlying_t = std::underlying_type_t<Enum>;
 
-    return ((underlying_t) value & (underlying_t) flag) == (underlying_t) flag;
+    return ((underlying_t) value & (underlying_t) flags) == (underlying_t) flags;
 }

@@ -466,8 +466,6 @@ void uielement_t::Configure() noexcept
 /// </summary>
 void uielement_t::UpdateState() noexcept
 {
-//  Log::Write(Log::Level::Trace, "%8d: UpdateState", (uint32_t) ::GetTickCount64());
-
     {
         DeleteTrackingToolTip();
 
@@ -487,6 +485,9 @@ void uielement_t::UpdateState() noexcept
 
         _ThreadState._SampleRate = 0;
         _ThreadState._StyleManager.ReleaseDeviceSpecificResources();
+
+        // Recreate the resources that depend on the artwork.
+        CreateArtworkDependentResources();
 
         // Create the graphs.
         {

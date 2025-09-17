@@ -58,7 +58,7 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
     if (!SUCCEEDED(hr))
         return;
 
-    if ((_Analysis->_GaugeValues.size() == 0) || (GetWidth() <= 0.f) || (GetHeight() <= 0.f))
+    if (_Analysis->_GaugeValues.empty() || (GetWidth() <= 0.f) || (GetHeight() <= 0.f))
         return;
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;

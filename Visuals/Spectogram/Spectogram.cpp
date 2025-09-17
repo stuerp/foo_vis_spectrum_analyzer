@@ -730,7 +730,7 @@ void spectogram_t::InitFreqAxis() noexcept
 
     const frequency_bands_t & fb = _Analysis->_FrequencyBands;
 
-    if (fb.size() == 0)
+    if (fb.empty())
         return;
 
     _BandCount = fb.size();
