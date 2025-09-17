@@ -1025,7 +1025,7 @@ void ConfigurationDialog::Initialize()
 
         {
             assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
-            assert(_countof(ChannelNames) == (size_t) Channel::Count);
+            assert(_countof(ChannelNames) == (size_t) Channels::Count);
 
             auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
@@ -2540,9 +2540,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                style->_Flags |= style_t::HorizontalGradient;
+                Set(style->_Flags, style_t::Features::HorizontalGradient);
             else
-                style->_Flags &= ~style_t::HorizontalGradient;
+                UnSet(style->_Flags, style_t::Features::HorizontalGradient);
 
             UpdateStylesPage();
             break;
@@ -2553,9 +2553,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                style->_Flags |= style_t::AmplitudeBasedColor;
+                Set(style->_Flags, style_t::Features::AmplitudeBasedColor);
             else
-                style->_Flags &= ~style_t::AmplitudeBasedColor;
+                UnSet(style->_Flags, style_t::Features::AmplitudeBasedColor);
             break;
         }
 
@@ -2567,23 +2567,27 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetDPI(m_hWnd, DPI);
 
-            LOGFONTW lf = { };
+            LOGFONTW lf =
+            {
+                .lfHeight         = -::MulDiv((int) style->_FontSize, (int) DPI, 72),
+                .lfWeight         = FW_NORMAL,
+                .lfCharSet        = DEFAULT_CHARSET,
+                .lfOutPrecision   = OUT_DEFAULT_PRECIS,
+                .lfClipPrecision  = CLIP_DEFAULT_PRECIS,
+                .lfQuality        = CLEARTYPE_QUALITY,
+                .lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE,
+            };
 
-            lf.lfHeight = -::MulDiv((int) style->_FontSize, (int) DPI, 72);
-            lf.lfWeight = FW_NORMAL;
-            lf.lfCharSet = DEFAULT_CHARSET;
-            lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
-            lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-            lf.lfQuality = CLEARTYPE_QUALITY;
-            lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
             ::wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), style->_FontName.c_str());
 
-            CHOOSEFONTW cf = { sizeof(cf) };
-
-            cf.hwndOwner = m_hWnd;
-            cf.lpLogFont = &lf;
-            cf.iPointSize = (INT) (style->_FontSize * 10.f);
-            cf.Flags = CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT;
+            CHOOSEFONTW cf =
+            {
+                .lStructSize = sizeof(cf),
+                .hwndOwner   = m_hWnd,
+                .lpLogFont   = &lf,
+                .iPointSize  = (INT) (style->_FontSize * 10.f),
+                .Flags       = CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT,
+             };
 
             if (!::ChooseFontW(&cf))
                 return;
@@ -3475,8 +3479,8 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
-    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) msc::IsSet(style->_Flags, (uint64_t) style_t::HorizontalGradient));
-    SendDlgItemMessageW(IDC_AMPLITUDE_BASED, BM_SETCHECK, (WPARAM) msc::IsSet(style->_Flags, (uint64_t) style_t::AmplitudeBasedColor));
+    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) style->Has(style_t::Features::HorizontalGradient));
+    SendDlgItemMessageW(IDC_AMPLITUDE_BASED,     BM_SETCHECK, (WPARAM) style->Has(style_t::Features::AmplitudeBasedColor));
 
     SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
     ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
@@ -3492,13 +3496,13 @@ void ConfigurationDialog::UpdateStylesPage() noexcept
     GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
 
     GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && msc::IsSet(style->_Flags, (uint64_t) (style_t::AmplitudeAware | style_t::HorizontalGradient)));
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && style->Has(style_t::Features::AmplitudeAware | style_t::Features::HorizontalGradient));
 
-    GetDlgItem(IDC_OPACITY).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) style_t::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) style_t::SupportsThickness));
+    GetDlgItem(IDC_OPACITY)  .EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) style_t::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && msc::IsSet(style->_Flags, (uint64_t) style_t::SupportsFont));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsFont));
 
     UpdateColorControls();
 }

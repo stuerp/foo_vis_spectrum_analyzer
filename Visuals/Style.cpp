@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2024.05.03) P. Stuer **/
+/** $VER: Style.cpp (2025.09.17) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -43,7 +43,8 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    _TextFormat = other._TextFormat;
+//  _TextFormat = other._TextFormat;
+
     _Width = other._Width;
     _Height = other._Height;
 
@@ -53,7 +54,7 @@ style_t & style_t::operator=(const style_t & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize)
+style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize)
 {
     _Flags = flags;
 
@@ -155,7 +156,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (msc::IsSet(_Flags, (uint64_t) style_t::AmplitudeBasedColor))
+        if (Has(style_t::Features::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -163,13 +164,13 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, _Flags & style_t::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
     }
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
 
-    if ((_Flags & SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
+    if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
@@ -194,7 +195,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (msc::IsSet(_Flags, (uint64_t) style_t::AmplitudeBasedColor))
+        if (Has(style_t::Features::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 

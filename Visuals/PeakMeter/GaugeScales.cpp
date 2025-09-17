@@ -64,7 +64,7 @@ void gauge_scales_t::Resize() noexcept
 
     if (_State->_HorizontalPeakMeter)
     {
-        const FLOAT cx = (_TextStyle->GetWidth() / 2.f);
+        const FLOAT cx = (_TextStyle->_Width / 2.f);
 
         // Calculate the position of the labels based on the width.
         D2D1_RECT_F OldRect = {  };
@@ -72,8 +72,8 @@ void gauge_scales_t::Resize() noexcept
         const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? 0.f : GetWidth();
         const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? GetWidth() : 0.f;
 
-        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetHeight() : 0.f;
-        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->GetHeight() : GetHeight();
+        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Height : 0.f;
+        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->_Height : GetHeight();
 
         for (Label & Iter : _Labels)
         {
@@ -101,9 +101,9 @@ void gauge_scales_t::Resize() noexcept
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
+                if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
-                    x = GetWidth() - _TextStyle->GetWidth();
+                    x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
@@ -116,15 +116,15 @@ void gauge_scales_t::Resize() noexcept
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
+                if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
-                    x = GetWidth() - _TextStyle->GetWidth();
+                    x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
 
-            Iter.Rect1 = { x, 0.f,                                   x + _TextStyle->GetWidth(), _TextStyle->GetHeight() };
-            Iter.Rect2 = { x, GetHeight() - _TextStyle->GetHeight(), x + _TextStyle->GetWidth(), GetHeight() };
+            Iter.Rect1 = { x, 0.f,                                   x + _TextStyle->_Width, _TextStyle->_Height };
+            Iter.Rect2 = { x, GetHeight() - _TextStyle->_Height, x + _TextStyle->_Width, GetHeight() };
 
             // Hide overlapping labels except for the first and the last one.
             Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.Rect1, OldRect);
@@ -135,13 +135,13 @@ void gauge_scales_t::Resize() noexcept
     }
     else
     {
-        const FLOAT cy = _TextStyle->GetHeight() / 2.f;
+        const FLOAT cy = _TextStyle->_Height / 2.f;
 
         // Calculate the position of the labels based on the height.
         D2D1_RECT_F OldRect = {  };
 
-        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetWidth() : 0.f;
-        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->GetWidth() : GetWidth();
+        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Width : 0.f;
+        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->_Width : GetWidth();
 
         const FLOAT yMin = !_GraphSettings->_FlipVertically ? GetHeight() : 0.f;
         const FLOAT yMax = !_GraphSettings->_FlipVertically ? 0.f : GetHeight();
@@ -172,9 +172,9 @@ void gauge_scales_t::Resize() noexcept
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
-                    y = GetHeight() - _TextStyle->GetHeight();
+                    y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
                 }
             }
@@ -187,15 +187,15 @@ void gauge_scales_t::Resize() noexcept
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
-                    y = GetHeight() - _TextStyle->GetHeight();
+                    y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
                 }
             }
 
-            Iter.Rect1 = { 0.f,                                 y, _TextStyle->GetWidth(), y + _TextStyle->GetHeight() };
-            Iter.Rect2 = { GetWidth() - _TextStyle->GetWidth(), y, GetWidth(),             y + _TextStyle->GetHeight() };
+            Iter.Rect1 = { 0.f,                                 y, _TextStyle->_Width, y + _TextStyle->_Height };
+            Iter.Rect2 = { GetWidth() - _TextStyle->_Width, y, GetWidth(),             y + _TextStyle->_Height };
 
             // Hide overlapping labels except for the first and the last one.
             Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.Rect1, OldRect);

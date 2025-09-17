@@ -45,12 +45,12 @@ public:
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->GetWidth();
+        return _TextStyle->_Width;
     }
 
     FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle->GetHeight();
+        return _TextStyle->_Height;
     }
 
 private:

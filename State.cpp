@@ -1232,7 +1232,8 @@ void state_t::ConvertColorSettings() noexcept
             style->_CurrentColor = style->_CustomColor;
         }
 
-        style->_Flags |= (_HorizontalGradient_Deprecated ? style_t::HorizontalGradient : 0);
+        if (_HorizontalGradient_Deprecated)
+            style->_Flags |= style_t::Features::HorizontalGradient;
     }
 
     {

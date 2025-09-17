@@ -38,7 +38,7 @@ public:
 private:
     void Initialize()
     {
-        _Channels = (uint32_t) Channel::ConfigStereo;
+        _Channels = (uint32_t) Channels::ConfigStereo;
         _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
 
         _HorizontalAlignment = HorizontalAlignment::Center;

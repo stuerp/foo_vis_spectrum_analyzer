@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2024.04.26) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2025.09.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 #include "StyleManager.h"
@@ -173,7 +173,8 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
 
             reader->read_object_t(Flags, abortHandler);
 
-            style._Flags = (style._Flags & style_t::System) | (Flags & ~style_t::System); // Retain the value of system style flags.
+            // Add only the non-system flags to the style from the read value.
+            style._Flags = (style._Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
 
             uint32_t Integer;
 
@@ -209,7 +210,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             }
 
             // Sets the default font settings.
-            if (style._Flags & style_t::SupportsFont)
+            if (style.Has(style_t::Features::SupportsFont))
             {
                 auto DefaultStyle = _DefaultStyles[(VisualElement) Id];
 ;
@@ -261,7 +262,7 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
             {
                 const style_t & style = Iter.second;
 
-                writer->write_object_t(style._Flags, abortHandler);
+                writer->write_object_t((uint64_t) style._Flags, abortHandler);
                 writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
                 writer->write_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
                 writer->write_object_t(style._ColorIndex, abortHandler);

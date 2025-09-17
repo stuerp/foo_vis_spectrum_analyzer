@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2024.05.03) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2025.09.17) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -29,9 +29,28 @@ public:
 
     virtual ~style_t() { }
 
-    style_t(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
+    enum class Features : uint64_t
+    {
+        SupportsOpacity     = 0x01,
+        SupportsThickness   = 0x02,
+        SupportsFont        = 0x04,
+
+        HorizontalGradient  = 0x08,
+        AmplitudeBasedColor = 0x10,
+
+        AmplitudeAware      = 0x20,
+
+        SupportsRadial      = 0x40,
+        RadialGradient      = 0x80,
+
+        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
+    };
+
+    style_t(Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize);
 
     bool IsEnabled() const noexcept { return (_ColorSource != ColorSource::None); }
+
+    bool Has(Features feature) const noexcept { return IsSet(_Flags, feature); }
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
@@ -54,28 +73,13 @@ public:
             _TextFormat->SetParagraphAlignment(pa);
     }
 
-    FLOAT GetWidth() const noexcept
-    {
-        return _Width;
-    }
-
-    FLOAT GetHeight() const noexcept
-    {
-        return _Height;
-    }
-
-    bool IsRadial() const noexcept
-    {
-        return msc::IsSet(_Flags, (uint64_t) style_t::RadialGradient);
-    }
-
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
-    uint64_t _Flags;
+    Features _Flags;
 
     ColorSource _ColorSource;           // Determines the source of the color
     D2D1_COLOR_F _CustomColor;          // User-specified color
@@ -95,27 +99,10 @@ public:
     gradient_stops_t _CurrentGradientStops;
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
-    FLOAT _Width;
-    FLOAT _Height;
-
     // DirectX resources
     CComPtr<ID2D1Brush> _Brush;
     CComPtr<IDWriteTextFormat> _TextFormat;
 
-    enum Feature
-    {
-        SupportsOpacity     = 0x01,
-        SupportsThickness   = 0x02,
-        SupportsFont        = 0x04,
-
-        HorizontalGradient  = 0x08,
-        AmplitudeBasedColor = 0x10,
-
-        AmplitudeAware      = 0x20,
-
-        SupportsRadial      = 0x40,
-        RadialGradient      = 0x80,
-
-        System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
-    };
+    FLOAT _Width;
+    FLOAT _Height;
 };

@@ -491,7 +491,7 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
     }
     else
     {
-        const FLOAT x1 = first ? _BitmapBounds.right                          : _BitmapBounds.left - _TimeTextStyle->_Width;
+        const FLOAT x1 = first ? _BitmapBounds.right                         : _BitmapBounds.left - _TimeTextStyle->_Width;
         const FLOAT x2 = first ? _BitmapBounds.right + _TimeTextStyle->_Width : _BitmapBounds.left;
 
         rect_t Rect = { x1, 0.f, x2, 0.f };

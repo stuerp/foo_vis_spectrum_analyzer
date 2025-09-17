@@ -89,17 +89,17 @@ private:
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    style_t * _BarArea;
-    style_t * _BarTop;
-    style_t * _PeakArea;
-    style_t * _PeakTop;
-    style_t * _DarkBackground;
-    style_t * _LightBackground;
+    style_t * _BarAreaStyle;
+    style_t * _BarTopStyle;
+    style_t * _PeakAreaStyle;
+    style_t * _PeakTopStyle;
+    style_t * _DarkBackgroundStyle;
+    style_t * _LightBackgroundStyle;
 
-    style_t * _CurveLine;
-    style_t * _CurveArea;
-    style_t * _CurvePeakLine;
-    style_t * _CurvePeakArea;
+    style_t * _CurveLineStyle;
+    style_t * _CurveAreaStyle;
+    style_t * _CurvePeakLineStyle;
+    style_t * _CurvePeakAreaStyle;
 
-    style_t * _NyquistMarker;
+    style_t * _NyquistMarkerStyle;
 };

@@ -177,7 +177,7 @@ void analysis_t::Reset()
 
     {
         _CurrentChannelMask = 0;
-        InitializeGauges((uint32_t) Channel::ConfigStereo);
+        InitializeGauges((uint32_t) Channels::ConfigStereo);
     }
 
     {
@@ -674,14 +674,14 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
 
     const uint32_t ChannelPairs[] =
     {
-        (uint32_t) Channel::FrontLeft       | (uint32_t) Channel::FrontRight,
-        (uint32_t) Channel::BackLeft        | (uint32_t) Channel::BackRight,
+        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
+        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
 
-        (uint32_t) Channel::FrontCenterLeft | (uint32_t) Channel::FrontCenterRight,
-        (uint32_t) Channel::SideLeft        | (uint32_t) Channel::SideRight,
+        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
+        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
 
-        (uint32_t) Channel::TopFrontLeft    | (uint32_t) Channel::TopFrontRight,
-        (uint32_t) Channel::TopBackLeft     | (uint32_t) Channel::TopBackRight,
+        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
+        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
     };
 
     const audio_sample * EndOfChunk = Samples + SampleCount;

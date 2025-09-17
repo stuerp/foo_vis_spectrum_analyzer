@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2025.09.06) P. Stuer **/
+/** $VER: Support.h (2025.09.17) P. Stuer **/
 
 #pragma once
 

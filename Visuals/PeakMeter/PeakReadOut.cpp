@@ -85,8 +85,8 @@ void peak_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const g
         // Draw the peak text display.
         if (_TextStyle->IsEnabled())
         {
-            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f;
-            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->GetWidth();
+            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f;
+            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->_Width;
 
             WCHAR Text[16];
 
@@ -124,8 +124,8 @@ void peak_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gau
         if (_TextStyle->IsEnabled())
         {
 
-            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->GetHeight();
-            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->GetHeight() : GetHeight();
+            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->_Height;
+            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
             WCHAR Text[16];
 

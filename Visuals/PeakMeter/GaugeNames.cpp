@@ -88,16 +88,16 @@ void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gau
         {
             if (_GraphSettings->_XAxisTop)
             {
-                Rect.left  = (_GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->GetWidth()) + Offset;
-                Rect.right = _GraphSettings->_FlipHorizontally ? _TextStyle->GetWidth() : GetWidth();
+                Rect.left  = (_GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->_Width) + Offset;
+                Rect.right = _GraphSettings->_FlipHorizontally ? _TextStyle->_Width: GetWidth();
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphSettings->_XAxisBottom)
             {
-                Rect.left  = (_GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f) + Offset;
-                Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->GetWidth();
+                Rect.left  = (_GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f) + Offset;
+                Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
@@ -128,16 +128,16 @@ void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge
         {
             if (_GraphSettings->_XAxisTop)
             {
-                Rect.top    = _GraphSettings->_FlipVertically ? GetHeight() - _TextStyle->GetHeight() : 0.f;
-                Rect.bottom = _GraphSettings->_FlipVertically ? GetHeight()                           : _TextStyle->GetHeight();
+                Rect.top    = _GraphSettings->_FlipVertically ? GetHeight() - _TextStyle->_Height : 0.f;
+                Rect.bottom = _GraphSettings->_FlipVertically ? GetHeight()                       : _TextStyle->_Height;
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphSettings->_XAxisBottom)
             {
-                Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->GetHeight();
-                Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->GetHeight() : GetHeight();
+                Rect.top    = _GraphSettings->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
+                Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
                 renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
