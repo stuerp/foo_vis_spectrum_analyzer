@@ -209,6 +209,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::Spectogram:
+        case VisualizationType::RadialBars:
         {
             // Animate the spectrum peak value.
             for (auto & fb : _FrequencyBands)
@@ -390,9 +391,6 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             }
             break;
         }
-
-        case VisualizationType::RadialBars:
-            break;
     }
 }
 

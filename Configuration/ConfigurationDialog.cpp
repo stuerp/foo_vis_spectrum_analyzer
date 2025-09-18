@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.07.19) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.09.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -3377,9 +3377,9 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     const bool IsLevelMeter = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsRadialBars = (_State->_VisualizationType == VisualizationType::RadialBars);
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram && !IsRadialBars);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram && !IsRadialBars;
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram;
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);

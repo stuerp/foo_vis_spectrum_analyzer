@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.17) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.18) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -312,6 +312,8 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
     const double InnerRadius =  Side * _State->_InnerRadius;
     const double OuterRadius = (Side * _State->_OuterRadius) - InnerRadius;
 
+    const FLOAT PeakThickness = _PeakTopStyle->_Thickness / 2.f;
+
     FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
 //  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
 
@@ -324,54 +326,130 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
-        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Path);
+        FLOAT t = a;
 
-        if (SUCCEEDED(hr))
+        if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
         {
-            CComPtr<ID2D1GeometrySink> Sink;
+            // Draw the peak indicator top.
+            if (_PeakTopStyle->IsEnabled())
+            {
+                HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Path);
 
-            hr = Path->Open(&Sink);
+                if (SUCCEEDED(hr))
+                {
+                    CComPtr<ID2D1GeometrySink> Sink;
+
+                    hr = Path->Open(&Sink);
+
+                    if (SUCCEEDED(hr))
+                    {
+                        const double r1 = InnerRadius + (OuterRadius * fb.MaxValue) - PeakThickness;
+                        const double r2 = InnerRadius + (OuterRadius * fb.MaxValue) + PeakThickness;
+
+                        FLOAT Sin, Cos;
+
+                        ::D2D1SinCos(a, &Sin, &Cos);
+
+                        FLOAT x = (FLOAT) (Cos * r1);
+                        FLOAT y = (FLOAT) (Sin * r1);
+
+                        Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+
+                        x = (FLOAT) (Cos * r2);
+                        y = (FLOAT) (Sin * r2);
+
+                        Sink->AddLine(D2D1::Point2F(x, y));
+
+                        a -= da;
+
+                        ::D2D1SinCos(a, &Sin, &Cos);
+
+                        x = (FLOAT) (Cos * r2);
+                        y = (FLOAT) (Sin * r2);
+
+                        Sink->AddLine(D2D1::Point2F(x, y));
+
+                        x = (FLOAT) (Cos * r1);
+                        y = (FLOAT) (Sin * r1);
+
+                        Sink->AddLine(D2D1::Point2F(x, y));
+
+                        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+                        Sink->Close();
+
+                        Sink.Release();
+
+                        if (_PeakTopStyle->Has(style_t::Features::HorizontalGradient))
+                        {
+                            const double Value = _PeakTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
+
+                            _PeakTopStyle->SetBrushColor(Value);
+                        }
+
+                        const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _PeakTopStyle->_Opacity;
+
+                        _PeakTopStyle->_Brush->SetOpacity(Opacity);
+
+                        renderTarget->FillGeometry(Path, _PeakTopStyle->_Brush);
+                    }
+
+                    Path.Release();
+                }
+            }
+        }
+
+        a = t;
+
+        // Draw the area of the bar.
+        if (_BarAreaStyle->IsEnabled())
+        {
+            HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Path);
 
             if (SUCCEEDED(hr))
             {
-                FLOAT Sin, Cos;
+                CComPtr<ID2D1GeometrySink> Sink;
 
-                ::D2D1SinCos(a, &Sin, &Cos);
+                hr = Path->Open(&Sink);
 
-                FLOAT x = (FLOAT) (Cos * InnerRadius);
-                FLOAT y = (FLOAT) (Sin * InnerRadius);
-
-                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
-
-                const double r = InnerRadius + (OuterRadius * fb.CurValue);
-
-                x = (FLOAT) (Cos * r);
-                y = (FLOAT) (Sin * r);
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-
-                a -= da;
-
-                ::D2D1SinCos(a, &Sin, &Cos);
-
-                x = (FLOAT) (Cos * r);
-                y = (FLOAT) (Sin * r);
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-
-                x = (FLOAT) (Cos * InnerRadius);
-                y = (FLOAT) (Sin * InnerRadius);
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-
-                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-
-                Sink->Close();
-
-                Sink.Release();
-
-                if (_BarAreaStyle->IsEnabled())
+                if (SUCCEEDED(hr))
                 {
+                    FLOAT Sin, Cos;
+
+                    ::D2D1SinCos(a, &Sin, &Cos);
+
+                    FLOAT x = (FLOAT) (Cos * InnerRadius);
+                    FLOAT y = (FLOAT) (Sin * InnerRadius);
+
+                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+
+                    const double r = InnerRadius + (OuterRadius * fb.CurValue);
+
+                    x = (FLOAT) (Cos * r);
+                    y = (FLOAT) (Sin * r);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+
+                    a -= da;
+
+                    ::D2D1SinCos(a, &Sin, &Cos);
+
+                    x = (FLOAT) (Cos * r);
+                    y = (FLOAT) (Sin * r);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+
+                    x = (FLOAT) (Cos * InnerRadius);
+                    y = (FLOAT) (Sin * InnerRadius);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+
+                    Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+                    Sink->Close();
+
+                    Sink.Release();
+
                     if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
                     {
                         const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
@@ -381,10 +459,12 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
                     renderTarget->FillGeometry(Path, _BarAreaStyle->_Brush);
                 }
-            }
 
-            Path.Release();
+                Path.Release();
+            }
         }
+
+        a = t - da;
 
         ++i;
     }
@@ -476,6 +556,9 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
         if (_State->_VisualizationType == VisualizationType::RadialBars)
         {
             hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
+
+            if (SUCCEEDED(hr))
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_PeakTopStyle);
         }
     }
 

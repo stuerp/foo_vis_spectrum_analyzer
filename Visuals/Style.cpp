@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.09.17) P. Stuer **/
+/** $VER: Style.cpp (2025.09.18) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -43,7 +43,7 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-//  _TextFormat = other._TextFormat;
+    ReleaseDeviceSpecificResources();
 
     _Width = other._Width;
     _Height = other._Height;
