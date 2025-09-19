@@ -1,7 +1,7 @@
 
 /** $VER: BezierSpline.cpp (2023.12.30) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit **/
 
-#include "framework.h"
+#include "pch.h"
 #include "BezierSpline.h"
 
 #pragma hdrstop
@@ -9,7 +9,7 @@
 /// <summary>
 /// Gets open-ended Bezier spline control points.
 /// </summary>
-void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size_t count, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
+void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size_t count, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
 {
     if (count < 2)
         return;
@@ -22,7 +22,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
         // 3P1 = 2P0 + P3
         firstControlPoints.push_back(D2D1::Point2F((2 * knots[0].x + knots[1].x) / 3, (2 * knots[0].y + knots[1].y) / 3));
 
-        // P2 = 2P1 – P0
+        // P2 = 2P1 â€“ P0
         secondControlPoints.push_back(D2D1::Point2F(2 * firstControlPoints[0].x - knots[0].x, 2 * firstControlPoints[0].y - knots[0].y));
 
         return;
@@ -68,7 +68,7 @@ void BezierSpline::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, size
 /// <summary>
 /// Solves a tridiagonal system for one of coordinates (x or y) of first Bezier control points.
 /// </summary>
-std::vector<FLOAT> BezierSpline::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
+std::vector<FLOAT> bezier_spline_t::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
 {
     size_t n = rhs.size();
 

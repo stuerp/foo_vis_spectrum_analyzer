@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2024.04.28) P. Stuer **/
+/** $VER: Analysis.h (2025.09.15) P. Stuer **/
 
 #pragma once
 
@@ -25,11 +25,16 @@
 /// <summary>
 /// Represents the values of a gauge.
 /// </summary>
-struct GaugeValue
+struct gauge_value_t
 {
-    GaugeValue(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
+    gauge_value_t(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
     {
         Reset();
+
+        PeakRender = 0.;
+        MaxPeakRender = 0.;
+
+        RMSRender = 0.;
     }
 
     void Reset() noexcept
@@ -43,11 +48,11 @@ struct GaugeValue
 
     double Peak;            // in dBFS
     double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
     double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
     double HoldTime;        // Time to hold the current max value.
     double DecaySpeed;      // Speed at which the current max value decays.
     double Opacity;         // 0.0 .. 1.0
@@ -56,19 +61,19 @@ struct GaugeValue
 /// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
-class Analysis
+class analysis_t
 {
 public:
-    Analysis() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
-    Analysis(const Analysis &) = delete;
-    Analysis & operator=(const Analysis &) = delete;
-    Analysis(Analysis &&) = delete;
-    Analysis & operator=(Analysis &&) = delete;
+    analysis_t(const analysis_t &) = delete;
+    analysis_t & operator=(const analysis_t &) = delete;
+    analysis_t(analysis_t &&) = delete;
+    analysis_t & operator=(analysis_t &&) = delete;
 
-    virtual ~Analysis() { Reset(); };
+    virtual ~analysis_t() { Reset(); };
 
-    void Initialize(const state_t * state, const GraphSettings * settings) noexcept;
+    void Initialize(const state_t * state, const graph_settings_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void UpdatePeakValues(bool isStopped) noexcept;
 
@@ -95,13 +100,13 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
     double NormalizeLRMS(double level) const noexcept
     {
-        return Map(level, -1., 1., 0., 1.);
+        return msc::Map(level, -1., 1., 0., 1.);
     }
 
     double SmoothValue(double value, double smoothedValue) const noexcept
@@ -123,22 +128,22 @@ private:
 
 public:
     const state_t * _State;
-    const GraphSettings * _GraphSettings;
+    const graph_settings_t * _GraphSettings;
 
     uint32_t _SampleRate;
     double _NyquistFrequency;
-    std::vector<GaugeValue> _GaugeValues;
+    std::vector<gauge_value_t> _GaugeValues;
     uint32_t _CurrentChannelMask;
 
-    const WindowFunction * _WindowFunction;
-    const WindowFunction * _BrownPucketteKernel;
+    const window_function_t * _WindowFunction;
+    const window_function_t * _BrownPucketteKernel;
 
-    FFTAnalyzer * _FFTAnalyzer;
-    CQTAnalyzer * _CQTAnalyzer;
-    SWIFTAnalyzer * _SWIFTAnalyzer;
-    AnalogStyleAnalyzer * _AnalogStyleAnalyzer;
+    fft_analyzer_t * _FFTAnalyzer;
+    cqt_analyzer_t * _CQTAnalyzer;
+    swift_analyzer_t * _SWIFTAnalyzer;
+    analog_style_analyzer_t * _AnalogStyleAnalyzer;
 
-    FrequencyBands _FrequencyBands;
+    frequency_bands_t _FrequencyBands;
 
     // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).

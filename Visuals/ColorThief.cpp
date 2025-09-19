@@ -1,7 +1,7 @@
 
 /** $VER: ColorThief.cpp (2024.03.09) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
 
-#include "framework.h"
+#include "pch.h"
 #include "ColorThief.h"
 
 #include "Raster.h"
@@ -38,13 +38,13 @@ HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palet
     if (SUCCEEDED(hr))
         hr = Converter->Initialize(bitmapSource, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 
-    Raster r;
+    raster_t r;
 
     if (SUCCEEDED(hr))
         hr = r.Initialize(Converter);
 
     if (SUCCEEDED(hr))
-        palette = GetPaletteInternal(r.Data(), r.Width(), r.Height(), r.Stride(), colorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
+        palette = GetPaletteInternal(r.Data, r.Width, r.Height, r.Stride, colorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
 
     return hr;
 }

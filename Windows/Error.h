@@ -1,5 +1,5 @@
 
-/** $VER: Error.h (2024.03.12) P. Stuer - Encapsulates the Win32 error number. **/
+/** $VER: error_t.h (2025.09.16) P. Stuer - Encapsulates the Win32 error number. **/
 
 #pragma once
 
@@ -12,20 +12,20 @@
 
 #include <string>
 
-class Error
+class error_t
 {
 public:
-    Error() : _Number(NOERROR) { }
+    error_t() : _Number(NOERROR) { }
 
-    Error(const Error &);
-    Error & operator=(const Error &);
-    Error(Error &&) = delete;
-    Error & operator=(Error &&) = delete;
+    error_t(const error_t &);
+    error_t & operator=(const error_t &);
+    error_t(error_t &&) = delete;
+    error_t & operator=(error_t &&) = delete;
 
-    virtual ~Error() { }
+    virtual ~error_t() { }
 
-    Error(DWORD number) : _Number(number) { }
-    Error & operator=(DWORD);
+    error_t(DWORD number) : _Number(number) { }
+    error_t & operator=(DWORD);
 
     operator DWORD() const noexcept { return _Number; }
 
@@ -35,19 +35,19 @@ private:
     DWORD _Number;
 };
 
-inline Error::Error(const Error & other)
+inline error_t::error_t(const error_t & other)
 {
     _Number= other._Number;
 }
 
-inline Error & Error::operator=(const Error & other)
+inline error_t & error_t::operator=(const error_t & other)
 {
     _Number = other._Number;
 
     return *this;
 }
 
-inline Error & Error::operator=(DWORD number)
+inline error_t & error_t::operator=(DWORD number)
 {
     _Number = number;
 
@@ -57,7 +57,7 @@ inline Error & Error::operator=(DWORD number)
 /// <summary>
 /// Gets the message that describes this error.
 /// </summary>
-inline std::wstring Error::Message() const noexcept
+inline std::wstring error_t::Message() const noexcept
 {
     std::wstring Message;
 

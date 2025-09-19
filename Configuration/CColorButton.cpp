@@ -1,7 +1,7 @@
 
 /** $VER: CColorButton.cpp (2024.02.26) P. Stuer - Implements a list box that displays colors using WTL. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "CColorButton.h"
 #include "CColorDialogEx.h"
 
@@ -59,7 +59,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 /// </summary>
 void CColorButton::SetColor(COLORREF color)
 {
-    SetColor(Color::ToD2D1_COLOR_F(color));
+    SetColor(color_t::ToD2D1_COLOR_F(color));
 }
 
 /// <summary>
@@ -157,7 +157,7 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
 
     if (SUCCEEDED(hr) && (_Brush == nullptr))
     {
-        if (_GradientStops.size() == 0)
+        if (_GradientStops.empty())
         {
             CComPtr<ID2D1SolidColorBrush> SolidBrush;
 

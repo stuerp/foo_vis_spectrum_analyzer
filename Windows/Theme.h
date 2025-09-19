@@ -10,7 +10,7 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
-class Theme
+class theme_t
 {
 public:
     void Initialize(bool darkMode)
@@ -24,4 +24,4 @@ private:
     bool _DarkMode;
 };
 
-extern Theme _Theme;
+extern theme_t _Theme;

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.04.22) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.h (2024.04.22) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
 
 #pragma once
 
@@ -26,28 +26,21 @@
 /// <summary>
 /// Implements a graphical representation of the spectrum analysis.
 /// </summary>
-class Graph : public Element
+class graph_t : public element_t
 {
 public:
-    Graph();
-    virtual ~Graph();
+    graph_t();
+    virtual ~graph_t();
 
-    void Initialize(state_t * state, const GraphSettings * settings) noexcept;
+    void Initialize(state_t * state, const graph_settings_t * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
     void Reset();
 
     void Process(const audio_chunk & chunk) noexcept
     {
         _Analysis.Process(chunk);
     }
-
-    Analysis & GetAnalysis() noexcept { return _Analysis; }
-
-    Spectrum & GetSpectrum() noexcept { return _Spectrum; }
-    Spectogram & GetSpectogram() noexcept { return _Spectogram; }
-    PeakMeter & GetPeakMeter() noexcept { return _PeakMeter; }
-    LevelMeter & GetCorrelationMeter() noexcept { return _CorrelationMeter; }
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -77,21 +70,22 @@ public:
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderBackground(ID2D1RenderTarget * renderTarget, Artwork & artwork) noexcept;
+    void RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
     void RenderForeground(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
+
+public:
+    analysis_t _Analysis;
 
 private:
     std::wstring _Description;
 
-    Analysis _Analysis;
+    spectrum_t _Spectrum;
+    spectogram_t _Spectogram;
+    peak_meter_t _PeakMeter;
+    level_meter_t _LevelMeter;
 
-    Spectrum _Spectrum;
-    Spectogram _Spectogram;
-    PeakMeter _PeakMeter;
-    LevelMeter _CorrelationMeter;
-
-    Style * _BackgroundStyle;
-    Style * _DescriptionTextStyle;
-    Style * _DescriptionBackgroundStyle;
+    style_t * _BackgroundStyle;
+    style_t * _DescriptionTextStyle;
+    style_t * _DescriptionBackgroundStyle;
 };

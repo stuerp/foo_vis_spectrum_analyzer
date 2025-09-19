@@ -22,7 +22,7 @@
 /// <summary>
 /// Represents the metrics used to render the gauges.
 /// </summary>
-struct GaugeMetrics
+struct gauge_metrics_t
 {
     FLOAT _TotalBarGap;
     FLOAT _TickSize;

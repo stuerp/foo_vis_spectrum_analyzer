@@ -1,7 +1,7 @@
 
 /** $VER: YAXis.cpp (2024.04.08) P. Stuer - Implements the Y axis of a graph. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "YAxis.h"
 
 #include "StyleManager.h"
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void YAxis::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis) noexcept
+void y_axis_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -33,7 +33,7 @@ void YAxis::Initialize(state_t * state, const GraphSettings * settings, const An
 
             ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
-            Label lb = { Text, Amplitude };
+            label_t lb = { Text, Amplitude };
 
             _Labels.push_back(lb);
         }
@@ -43,7 +43,7 @@ void YAxis::Initialize(state_t * state, const GraphSettings * settings, const An
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void YAxis::Move(const D2D1_RECT_F & rect)
+void y_axis_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -51,7 +51,7 @@ void YAxis::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void YAxis::Resize() noexcept
+void y_axis_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -62,12 +62,12 @@ void YAxis::Resize() noexcept
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
 
-    for (Label & Iter : _Labels)
+    for (label_t & Iter : _Labels)
     {
-        FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
+        FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
 
         // Don't generate any labels outside the bounds.
-        if (!InRange(y, _Bounds.top, _Bounds.bottom))
+        if (!msc::InRange(y, _Bounds.top, _Bounds.bottom))
         {
             Iter.IsHidden = true;
             continue;
@@ -99,7 +99,7 @@ void YAxis::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void YAxis::Render(ID2D1RenderTarget * renderTarget)
+void y_axis_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -108,7 +108,7 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally
 
-    for (const Label & Iter : _Labels)
+    for (const label_t & Iter : _Labels)
     {
         // Draw the horizontal grid line.
         if (_LineStyle->IsEnabled())
@@ -132,7 +132,7 @@ void YAxis::Render(ID2D1RenderTarget * renderTarget)
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
@@ -148,7 +148,7 @@ HRESULT YAxis::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void YAxis::ReleaseDeviceSpecificResources()
+void y_axis_t::ReleaseDeviceSpecificResources()
 {
     SafeRelease(&_TextStyle);
     SafeRelease(&_LineStyle);

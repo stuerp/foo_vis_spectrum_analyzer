@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2024.04.06) P. Stuer  **/
+/** $VER: Artwork.h (2025.09.14) P. Stuer  **/
 
 #pragma once
 
@@ -12,20 +12,21 @@
 #include <Windows.h>
 #include <d2d1_2.h>
 
+#include <libmsc.h>
+
 #include "State.h"
-#include "CriticalSection.h"
 
 #include "Log.h"
 
-class Artwork
+class artwork_t
 {
 public:
-    Artwork()
+    artwork_t()
     {
         SetStatus(Idle);
     }
 
-    virtual ~Artwork()
+    virtual ~artwork_t()
     {
         Release();
     }
@@ -44,8 +45,6 @@ public:
 
     void Release() noexcept
     {
-    //  Log::Write(Log::Level::Trace, "%8d: Releasing artwork.", (uint32_t) ::GetTickCount64());
-
         _CriticalSection.Enter();
 
         _Bitmap.Release();
@@ -81,14 +80,13 @@ private:
     {
         _CriticalSection.Enter();
 
-    //  Log::Write(Log::Level::Trace, "%8d: Setting artwork status to %d.", (uint32_t) ::GetTickCount64(), status);
         _Status = status;
 
         _CriticalSection.Leave();
     }
 
 private:
-    CriticalSection _CriticalSection;
+    msc::critical_section_t _CriticalSection;
 
     std::vector<uint8_t> _Raster;
     std::wstring _FilePath;

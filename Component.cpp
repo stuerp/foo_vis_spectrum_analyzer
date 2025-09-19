@@ -1,7 +1,7 @@
 
 /** $VER: Component.cpp (2024.01.05) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include <sdk/componentversion.h>
 

@@ -1,54 +1,112 @@
 
-/** $VER: Log.cpp (2024.03.09) P. Stuer **/
+/** $VER: Log.cpp (2025.07.13) P. Stuer - Another logger implementation **/
 
-#include "framework.h"
+#include "pch.h"
+
 #include "Log.h"
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#include <SDKDDKVer.h>
-
-#define NOMINMAX
-#include <helpers/foobar2000+atl.h>
-#include <helpers/helpers.h>
-#undef NOMINMAX
-
-#include <strsafe.h>
-
-#pragma hdrstop
-
-namespace Log
+class NullLog : public ILog
 {
+public:
+    NullLog() noexcept { };
+
+    NullLog(const NullLog &) = delete;
+    NullLog(const NullLog &&) = delete;
+    NullLog & operator=(const NullLog &) = delete;
+    NullLog & operator=(NullLog &&) = delete;
+
+    virtual ~NullLog() final { };
+
+    ILog & SetLevel(LogLevel level) noexcept override final { return *this; }
+    LogLevel GetLevel() const noexcept override final { return LogLevel::Never; }
+
+    ILog & AtFatal() noexcept override final { return *this; }
+    ILog & AtError() noexcept override final { return *this; }
+    ILog & AtWarn() noexcept override final { return *this; }
+    ILog & AtInfo() noexcept override final { return *this; }
+    ILog & AtDebug() noexcept override final { return *this; }
+    ILog & AtTrace() noexcept override final { return *this; }
+    ILog & Write(const char * format, ... ) noexcept override final { return *this; }
+};
+
+ILog & Null = *new NullLog();
+
+class LogImpl : public ILog
+{
+public:
 #ifdef _DEBUG
-static Level _Level = Level::Trace;
+    LogImpl() noexcept { SetLevel(LogLevel::Debug); }
 #else
-static Level _Level = Level::Information;
+    LogImpl() noexcept { SetLevel(LogLevel::Info); }
 #endif
 
-/// <summary>
-/// Writes a message to the console.
-/// </summary>
-void Write(Level logLevel, const char * format, ...) noexcept
-{
-    if (logLevel < _Level)
-        return;
+    LogImpl(const LogImpl &) = delete;
+    LogImpl(const LogImpl &&) = delete;
+    LogImpl & operator=(const LogImpl &) = delete;
+    LogImpl & operator=(LogImpl &&) = delete;
 
-    va_list va;
+    virtual ~LogImpl() noexcept { };
 
-    va_start(va, format);
+    ILog & SetLevel(LogLevel level) noexcept override final
+    {
+        _Level = level;
 
-    console::printfv(format, va);
+        return *this;
+    }
 
-#ifdef _DEBUG
-    CHAR Text[256];
+    LogLevel GetLevel() const noexcept override final
+    {
+        return _Level;
+    }
 
-    ::vsprintf_s(Text, _countof(Text), format, va);
-    ::OutputDebugStringA(Text); ::OutputDebugStringA("\n");
-#endif
+    ILog & AtFatal() noexcept override final
+    {
+        return (_Level >= LogLevel::Fatal) ? *this : Null;
+    }
 
-    va_end(va);
-}
+    ILog & AtError() noexcept override final
+    {
+        return (_Level >= LogLevel::Error) ? *this : Null;
+    }
 
-}
+    ILog & AtWarn() noexcept override final
+    {
+        return (_Level >= LogLevel::Warn) ? *this : Null;
+    }
+
+    ILog & AtInfo() noexcept override final
+    {
+        return (_Level >= LogLevel::Info) ? *this : Null;
+    }
+
+    ILog & AtDebug() noexcept override final
+    {
+        return (_Level >= LogLevel::Debug) ? *this : Null;
+    }
+
+    ILog & AtTrace() noexcept override final
+    {
+        return (_Level >= LogLevel::Trace) ? *this : Null;
+    }
+
+    ILog & Write(const char * format, ... ) noexcept override final
+    {
+        char Line[1024] = { };
+
+        va_list args;
+
+        va_start(args, format);
+
+        (void) ::vsnprintf(Line, sizeof(Line) - 1, format, args);
+        console::print(Line);
+
+        return *this;
+    }
+
+private:
+    LogLevel _Level;
+};
+
+ILog & Log = *new LogImpl();
+
+//::GetCurrentThreadId()

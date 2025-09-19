@@ -14,12 +14,13 @@
 #include <vector>
 
 #pragma warning(disable: 4820)
-struct FrequencyBand
+struct frequency_band_t
 {
-    FrequencyBand() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
-    FrequencyBand(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
-    FrequencyBand(const FrequencyBand & other)
+    frequency_band_t(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+
+    frequency_band_t(const frequency_band_t & other)
     {
         NewValue = other.NewValue;
         CurValue = other.CurValue;
@@ -39,7 +40,7 @@ struct FrequencyBand
         GradientColor     = other.GradientColor;
     }
 
-    virtual ~FrequencyBand() { }
+    virtual ~frequency_band_t() { }
 
     double NewValue;    // 0.0 .. 1.0
     double CurValue;    // 0.0 .. 1.0
@@ -58,4 +59,4 @@ struct FrequencyBand
     D2D1_COLOR_F GradientColor;
 };
 
-typedef std::vector<FrequencyBand> FrequencyBands;
+typedef std::vector<frequency_band_t> frequency_bands_t;

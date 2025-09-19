@@ -1,7 +1,7 @@
-﻿
+
 /** $VER: RMSReadOut.cpp (2024.04.22) P. Stuer - Implements the RMS read out of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "RMSReadOut.h"
 
@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void RMSReadOut::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void rms_read_out_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -22,7 +22,7 @@ void RMSReadOut::Initialize(state_t * state, const GraphSettings * settings, con
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void RMSReadOut::Move(const D2D1_RECT_F & rect)
+void rms_read_out_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -30,7 +30,7 @@ void RMSReadOut::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void RMSReadOut::Reset()
+void rms_read_out_t::Reset()
 {
     _IsResized = true;
 }
@@ -38,7 +38,7 @@ void RMSReadOut::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void RMSReadOut::Resize() noexcept
+void rms_read_out_t::Resize() noexcept
 {
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
@@ -49,7 +49,7 @@ void RMSReadOut::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void RMSReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+void rms_read_out_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -67,7 +67,7 @@ void RMSReadOut::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & g
 /// <summary>
 /// Render this instance horizontally.
 /// </summary>
-void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void rms_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -85,8 +85,8 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
         // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
         {
-            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->GetWidth() : 0.f;
-            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->GetWidth();
+            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f;
+            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->_Width;
 
             WCHAR Text[16];
 
@@ -106,7 +106,7 @@ void RMSReadOut::RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeM
 /// <summary>
 /// Render this instance vertically.
 /// </summary>
-void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept
+void rms_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -124,8 +124,8 @@ void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
         // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
         {
-            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->GetHeight();
-            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->GetHeight() : GetHeight();
+            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->_Height;
+            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
             WCHAR Text[16];
 
@@ -145,7 +145,7 @@ void RMSReadOut::RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMet
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT RMSReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT rms_read_out_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -165,7 +165,7 @@ HRESULT RMSReadOut::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void RMSReadOut::ReleaseDeviceSpecificResources() noexcept
+void rms_read_out_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

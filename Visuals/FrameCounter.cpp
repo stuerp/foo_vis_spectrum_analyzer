@@ -1,7 +1,7 @@
 
 /** $VER: FrameCounter.cpp (2024.03.31) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "FrameCounter.h"
 
 #pragma hdrstop
@@ -9,7 +9,7 @@
 /// <summary>
 /// Registers the time when starting a new frame.
 /// </summary>
-void FrameCounter::NewFrame() noexcept
+void frame_counter_t::NewFrame() noexcept
 {
     LARGE_INTEGER Counter;
 
@@ -21,7 +21,7 @@ void FrameCounter::NewFrame() noexcept
 /// <summary>
 /// Gets the current frame rate.
 /// </summary>
-float FrameCounter::GetFPS() const noexcept
+float frame_counter_t::GetFPS() const noexcept
 {
     float FPS = (float)((_Times.Count() - 1) * _Frequency.QuadPart) / (float) (_Times.Last() - _Times.First());
 
@@ -31,7 +31,7 @@ float FrameCounter::GetFPS() const noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
+void frame_counter_t::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 {
     _ClientWidth = clientWidth;
     _ClientHeight = clientHeight;
@@ -40,7 +40,7 @@ void FrameCounter::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT frame_counter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -76,7 +76,7 @@ HRESULT FrameCounter::Render(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Creates resources which are not bound to any D3D device.
 /// </summary>
-HRESULT FrameCounter::CreateDeviceIndependentResources() noexcept
+HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 {
     if (_TextFormat != nullptr)
         return S_OK;
@@ -114,7 +114,7 @@ HRESULT FrameCounter::CreateDeviceIndependentResources() noexcept
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void FrameCounter::ReleaseDeviceIndependentResources() noexcept
+void frame_counter_t::ReleaseDeviceIndependentResources() noexcept
 {
     _TextFormat.Release();
 }
@@ -123,7 +123,7 @@ void FrameCounter::ReleaseDeviceIndependentResources() noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     if (_Brush != nullptr)
         return S_OK;
@@ -136,7 +136,7 @@ HRESULT FrameCounter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTa
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void FrameCounter::ReleaseDeviceSpecificResources() noexcept
+void frame_counter_t::ReleaseDeviceSpecificResources() noexcept
 {
     _Brush.Release();
 }

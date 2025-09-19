@@ -13,10 +13,10 @@
 #pragma once
 
 template<typename T, size_t size>
-class RingBuffer
+class ring_buffer_t
 {
 public:
-    RingBuffer() : _Curr(0), _Count(0), _Items() { }
+    ring_buffer_t() : _Curr(0), _Count(0), _Items() { }
 
     T operator [](size_t index) const
     {

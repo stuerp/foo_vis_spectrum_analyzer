@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2024.08.18) P. Stuer **/
+/** $VER: Support.h (2025.09.16) P. Stuer **/
 
 #pragma once
 
@@ -13,45 +13,9 @@
 HRESULT GetDPI(HWND hWnd, UINT & dpi);
 
 /// <summary>
-/// Returns the minimum value of the specified values.
-/// </summary>
-template <class T>
-inline static T Min(T a, T b)
-{
-    return (a < b) ? a : b;
-}
-
-/// <summary>
-/// Returns the maximum value of the specified values.
-/// </summary>
-template <class T>
-inline static T Max(T a, T b)
-{
-    return (a > b) ? a : b;
-}
-
-/// <summary>
-/// Returns the input value clamped between min and max.
-/// </summary>
-template <class T>
-inline static T Clamp(T value, T minValue, T maxValue)
-{
-    return Min(Max(value, minValue), maxValue);
-}
-
-/// <summary>
-/// Returns true of the input value is in the interval between min and max.
-/// </summary>
-template <class T>
-inline static T InRange(T value, T minValue, T maxValue)
-{
-    return (minValue <= value) && (value <= maxValue);
-}
-
-/// <summary>
 /// Converts magnitude to decibel (dB).
 /// </summary>
-inline static double ToDecibel(double magnitude)
+inline static double ToDecibel(const double magnitude) noexcept
 {
     return 20.0 * ::log10(magnitude);
 }
@@ -59,7 +23,7 @@ inline static double ToDecibel(double magnitude)
 /// <summary>
 /// Converts decibel (dB) to magnitude.
 /// </summary>
-inline static double ToMagnitude(double dB)
+inline static double ToMagnitude(const double dB) noexcept
 {
     return ::pow(10.0, dB / 20.0);
 }
@@ -67,55 +31,15 @@ inline static double ToMagnitude(double dB)
 /// <summary>
 /// Converts points to DIPs (Device Independent Pixels).
 /// </summary>
-inline static FLOAT ToDIPs(FLOAT points)
+inline static FLOAT ToDIPs(const FLOAT points) noexcept
 {
-
     return (points / 72.0f) * (FLOAT) USER_DEFAULT_SCREEN_DPI; // FIXME: Should 96.0 change on high DPI screens?
 }
 
 /// <summary>
-/// Wraps around a value.
+/// Calculates the scale factor from the specified frequency.
 /// </summary>
-template<class T>
-inline static T Wrap(T value, T max)
-{
-    return (max + (value % max)) % max;
-}
-
-/// <summary>
-/// Maps a value from one range (srcMin, srcMax) to another (dstMin, dstMax).
-/// </summary>
-template<class T, class U>
-inline static U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
-{
-    return dstMin + (U) (((double) (value - srcMin) * (double) (dstMax - dstMin)) / (double) (srcMax - srcMin));
-}
-
-/// <summary>
-/// Returns true if the specified flags are set.
-/// </summary>
-template <class T>
-inline static bool IsSet(T a, T b)
-{
-    return (a & b) == b;
-}
-
-/// <summary>
-/// Gets the handle of the module that contains the executing code.
-/// </summary>
-inline HMODULE GetCurrentModule() noexcept
-{
-    HMODULE hModule = NULL;
-
-    ::GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR) GetCurrentModule, &hModule);
-
-    return hModule;
-}
-
-/// <summary>
-/// Calculates the scale factor of the specified frequency.
-/// </summary>
-inline double ScaleF(double f, ScalingFunction function, double skewFactor)
+inline double ScaleF(const double f, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {
@@ -160,9 +84,9 @@ inline double ScaleF(double f, ScalingFunction function, double skewFactor)
 }
 
 /// <summary>
-/// Calculates the frequency of the specified scale factor.
+/// Calculates the frequency from the specified scale factor.
 /// </summary>
-inline double DeScaleF(double x, ScalingFunction function, double skewFactor)
+inline double DeScaleF(const double x, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {
@@ -209,7 +133,7 @@ inline double DeScaleF(double x, ScalingFunction function, double skewFactor)
 /// <summary>
 /// 
 /// </summary>
-inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor)
+inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor) noexcept
 {
     const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
 
@@ -219,7 +143,7 @@ inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t 
 /// <summary>
 /// Converts the specified value from degrees to radians.
 /// </summary>
-inline double Degrees2Radians(double degrees)
+inline double Degrees2Radians(double degrees) noexcept
 {
     return (degrees * 2 * M_PI) / 360.;
 }

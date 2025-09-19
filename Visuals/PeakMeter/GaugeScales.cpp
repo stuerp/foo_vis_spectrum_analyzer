@@ -1,7 +1,7 @@
 
 /** $VER: GaugeScales.cpp (2024.05.03) P. Stuer - Implements the gauge scales of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "GaugeScales.h"
 
@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void GaugeScales::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -41,7 +41,7 @@ void GaugeScales::Initialize(state_t * state, const GraphSettings * settings, co
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void GaugeScales::Move(const D2D1_RECT_F & rect)
+void gauge_scales_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -49,7 +49,7 @@ void GaugeScales::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void GaugeScales::Reset()
+void gauge_scales_t::Reset()
 {
     _IsResized = true;
 }
@@ -57,14 +57,14 @@ void GaugeScales::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void GaugeScales::Resize() noexcept
+void gauge_scales_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     if (_State->_HorizontalPeakMeter)
     {
-        const FLOAT cx = (_TextStyle->GetWidth() / 2.f);
+        const FLOAT cx = (_TextStyle->_Width / 2.f);
 
         // Calculate the position of the labels based on the width.
         D2D1_RECT_F OldRect = {  };
@@ -72,15 +72,15 @@ void GaugeScales::Resize() noexcept
         const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? 0.f : GetWidth();
         const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? GetWidth() : 0.f;
 
-        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetHeight() : 0.f;
-        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->GetHeight() : GetHeight();
+        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Height : 0.f;
+        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->_Height : GetHeight();
 
         for (Label & Iter : _Labels)
         {
-            FLOAT x = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
+            FLOAT x = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
             // Don't generate any labels outside the bounds.
-            if (!InRange(x, 0.f, GetWidth()))
+            if (!msc::InRange(x, 0.f, GetWidth()))
             {
                 Iter.IsHidden = true;
                 continue;
@@ -101,9 +101,9 @@ void GaugeScales::Resize() noexcept
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
+                if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
-                    x = GetWidth() - _TextStyle->GetWidth();
+                    x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
@@ -116,15 +116,15 @@ void GaugeScales::Resize() noexcept
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->GetWidth()) > GetWidth()))
+                if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
-                    x = GetWidth() - _TextStyle->GetWidth();
+                    x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
 
-            Iter.Rect1 = { x, 0.f,                                   x + _TextStyle->GetWidth(), _TextStyle->GetHeight() };
-            Iter.Rect2 = { x, GetHeight() - _TextStyle->GetHeight(), x + _TextStyle->GetWidth(), GetHeight() };
+            Iter.Rect1 = { x, 0.f,                                   x + _TextStyle->_Width, _TextStyle->_Height };
+            Iter.Rect2 = { x, GetHeight() - _TextStyle->_Height, x + _TextStyle->_Width, GetHeight() };
 
             // Hide overlapping labels except for the first and the last one.
             Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.Rect1, OldRect);
@@ -135,23 +135,23 @@ void GaugeScales::Resize() noexcept
     }
     else
     {
-        const FLOAT cy = _TextStyle->GetHeight() / 2.f;
+        const FLOAT cy = _TextStyle->_Height / 2.f;
 
         // Calculate the position of the labels based on the height.
         D2D1_RECT_F OldRect = {  };
 
-        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->GetWidth() : 0.f;
-        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->GetWidth() : GetWidth();
+        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Width : 0.f;
+        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->_Width : GetWidth();
 
         const FLOAT yMin = !_GraphSettings->_FlipVertically ? GetHeight() : 0.f;
         const FLOAT yMax = !_GraphSettings->_FlipVertically ? 0.f : GetHeight();
 
         for (Label & Iter : _Labels)
         {
-            FLOAT y = Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
+            FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
             // Don't generate any labels outside the bounds.
-            if (!InRange(y, 0.f, GetHeight()))
+            if (!msc::InRange(y, 0.f, GetHeight()))
             {
                 Iter.IsHidden = true;
                 continue;
@@ -172,9 +172,9 @@ void GaugeScales::Resize() noexcept
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
-                    y = GetHeight() - _TextStyle->GetHeight();
+                    y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
                 }
             }
@@ -187,15 +187,15 @@ void GaugeScales::Resize() noexcept
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->GetHeight()) > GetHeight()))
+                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
-                    y = GetHeight() - _TextStyle->GetHeight();
+                    y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
                 }
             }
 
-            Iter.Rect1 = { 0.f,                                 y, _TextStyle->GetWidth(), y + _TextStyle->GetHeight() };
-            Iter.Rect2 = { GetWidth() - _TextStyle->GetWidth(), y, GetWidth(),             y + _TextStyle->GetHeight() };
+            Iter.Rect1 = { 0.f,                                 y, _TextStyle->_Width, y + _TextStyle->_Height };
+            Iter.Rect2 = { GetWidth() - _TextStyle->_Width, y, GetWidth(),             y + _TextStyle->_Height };
 
             // Hide overlapping labels except for the first and the last one.
             Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.Rect1, OldRect);
@@ -211,7 +211,7 @@ void GaugeScales::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
+void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -267,7 +267,7 @@ void GaugeScales::Render(ID2D1RenderTarget * renderTarget)
     }
 }
 
-HRESULT GaugeScales::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_scales_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -290,7 +290,7 @@ HRESULT GaugeScales::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTar
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void GaugeScales::ReleaseDeviceSpecificResources() noexcept
+void gauge_scales_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

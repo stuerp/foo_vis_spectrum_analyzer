@@ -147,8 +147,6 @@ inline const double MaxThickness = 32.;
 inline const double MinFontSize = 1.;
 inline const double MaxFontSize = 200.;
 
-
-
 enum class Transform
 {
     FFT = 0,
@@ -440,7 +438,7 @@ enum class ColorScheme : uint32_t
 };
 
 // Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
-enum class Channel : uint32_t
+enum class Channels : uint32_t
 {
     FrontLeft = 1 << 0,
     FrontRight = 1 << 1,
@@ -488,7 +486,7 @@ enum class Channel : uint32_t
     Count = 18,
 };
 
-inline const uint32_t AllChannels = ((1 << (uint32_t) Channel::Count) - 1);
+inline const uint32_t AllChannels = ((1 << (uint32_t) Channels::Count) - 1);
 
 enum class ChannelPair : uint32_t
 {

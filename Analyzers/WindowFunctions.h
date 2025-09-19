@@ -14,7 +14,7 @@
 
 using namespace std;
 
-enum class WindowFunctions
+enum class WindowFunction
 {
     Boxcar = 0,         // Rectangular
 
@@ -51,19 +51,19 @@ enum class WindowFunctions
 /// Implements the base functor for all window functions.
 /// </summary>
 #pragma warning(disable: 4820)
-class WindowFunction
+class window_function_t
 {
 public:
-    WindowFunction() : _Skew(), _Truncate(true) { }
+    window_function_t() : _Skew(), _Truncate(true) { }
 
-    WindowFunction(const WindowFunction &) = delete;
-    WindowFunction & operator=(const WindowFunction & other) = delete;
-    WindowFunction(WindowFunction &&) = delete;
-    WindowFunction & operator=(WindowFunction && other) = delete;
+    window_function_t(const window_function_t &) = delete;
+    window_function_t & operator=(const window_function_t & other) = delete;
+    window_function_t(window_function_t &&) = delete;
+    window_function_t & operator=(window_function_t && other) = delete;
 
-    virtual ~WindowFunction() { }
+    virtual ~window_function_t() { }
 
-    WindowFunction(double skew, bool truncate) : _Skew(skew), _Truncate(truncate) { _SkewSquared = 10. * _Skew * _Skew; }
+    window_function_t(double skew, bool truncate) : _Skew(skew), _Truncate(truncate) { _SkewSquared = 10. * _Skew * _Skew; }
 
     virtual double operator () (double x) const
     {
@@ -73,7 +73,7 @@ public:
         return (_Truncate && (::fabs(x) >  1.)) ? 0. : x;
     }
 
-    static WindowFunction * Create(WindowFunctions windowFunction, double windowParameter, double windowSkew, bool truncate);
+    static window_function_t * Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
 
 private:
     double _Skew;
@@ -85,10 +85,10 @@ private:
 /// <summary>
 /// Implements the boxcar (rectangular, Dirichlet) window function.
 /// </summary>
-class Boxcar : public WindowFunction
+class Boxcar : public window_function_t
 {
 public:
-    Boxcar(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Boxcar(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Boxcar() { }
 
@@ -101,10 +101,10 @@ public:
 /// <summary>
 /// Implements the Hanning (cosine squared, raised cosine) window function.
 /// </summary>
-class Hann : public WindowFunction
+class Hann : public window_function_t
 {
 public:
-    Hann(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Hann(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Hann() { }
 
@@ -120,10 +120,10 @@ public:
 /// <summary>
 /// Implements the Hamming window function.
 /// </summary>
-class Hamming : public WindowFunction
+class Hamming : public window_function_t
 {
 public:
-    Hamming(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Hamming(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Hamming() { }
 
@@ -140,10 +140,10 @@ public:
 /// <summary>
 /// Implements the Blackman window function.
 /// </summary>
-class Blackman : public WindowFunction
+class Blackman : public window_function_t
 {
 public:
-    Blackman(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Blackman(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Blackman() { }
 
@@ -158,10 +158,10 @@ public:
 /// <summary>
 /// Implements the Nuttall window function.
 /// </summary>
-class Nuttall : public WindowFunction
+class Nuttall : public window_function_t
 {
 public:
-    Nuttall(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Nuttall(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Nuttall() { }
 
@@ -176,10 +176,10 @@ public:
 /// <summary>
 /// Implements the Flat Top window function.
 /// </summary>
-class FlatTop : public WindowFunction
+class FlatTop : public window_function_t
 {
 public:
-    FlatTop(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    FlatTop(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~FlatTop() { }
 
@@ -194,10 +194,10 @@ public:
 /// <summary>
 /// Implements the Bartlett window function.
 /// </summary>
-class Bartlett : public WindowFunction
+class Bartlett : public window_function_t
 {
 public:
-    Bartlett(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Bartlett(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Bartlett() { }
 
@@ -212,10 +212,10 @@ public:
 /// <summary>
 /// Implements the Parzen window function.
 /// </summary>
-class Parzen : public WindowFunction
+class Parzen : public window_function_t
 {
 public:
-    Parzen(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    Parzen(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~Parzen() { }
 
@@ -230,10 +230,10 @@ public:
 /// <summary>
 /// Implements the Welch window function.
 /// </summary>
-class Welch : public WindowFunction
+class Welch : public window_function_t
 {
 public:
-    Welch(double skew, bool truncate, double power) : WindowFunction(skew, truncate), _Power(power) { }
+    Welch(double skew, bool truncate, double power) : window_function_t(skew, truncate), _Power(power) { }
 
     virtual ~Welch() { }
 
@@ -251,10 +251,10 @@ private:
 /// <summary>
 /// Implements the Power-of-Sine window function.
 /// </summary>
-class PowerOfSine : public WindowFunction
+class PowerOfSine : public window_function_t
 {
 public:
-    PowerOfSine(double skew, bool truncate, double power) : WindowFunction(skew, truncate), _Power(power) { }
+    PowerOfSine(double skew, bool truncate, double power) : window_function_t(skew, truncate), _Power(power) { }
 
     virtual ~PowerOfSine() { }
 
@@ -272,10 +272,10 @@ private:
 /// <summary>
 /// Implements the Power-of-Circle window function.
 /// </summary>
-class PowerOfCircle : public WindowFunction
+class PowerOfCircle : public window_function_t
 {
 public:
-    PowerOfCircle(double skew, bool truncate, double power) : WindowFunction(skew, truncate), _Power(power) { }
+    PowerOfCircle(double skew, bool truncate, double power) : window_function_t(skew, truncate), _Power(power) { }
 
     virtual ~PowerOfCircle() { }
 
@@ -293,10 +293,10 @@ private:
 /// <summary>
 /// Implements the Gauss window function.
 /// </summary>
-class Gauss : public WindowFunction
+class Gauss : public window_function_t
 {
 public:
-    Gauss(double skew, bool truncate, double sigma) : WindowFunction(skew, truncate), _Sigma(sigma) { }
+    Gauss(double skew, bool truncate, double sigma) : window_function_t(skew, truncate), _Sigma(sigma) { }
 
     virtual ~Gauss() { }
 
@@ -314,10 +314,10 @@ private:
 /// <summary>
 /// Implements the Tukey window function.
 /// </summary>
-class Tukey : public WindowFunction
+class Tukey : public window_function_t
 {
 public:
-    Tukey(double skew, bool truncate, double parameter) : WindowFunction(skew, truncate), _Parameter(parameter) { }
+    Tukey(double skew, bool truncate, double parameter) : window_function_t(skew, truncate), _Parameter(parameter) { }
 
     virtual ~Tukey() { }
 
@@ -335,10 +335,10 @@ private:
 /// <summary>
 /// Implements the Kaiser window function.
 /// </summary>
-class Kaiser : public WindowFunction
+class Kaiser : public window_function_t
 {
 public:
-    Kaiser(double skew, bool truncate, double alpha) : WindowFunction(skew, truncate), _AlphaSquared(alpha * alpha) { }
+    Kaiser(double skew, bool truncate, double alpha) : window_function_t(skew, truncate), _AlphaSquared(alpha * alpha) { }
 
     virtual ~Kaiser() { }
 
@@ -356,10 +356,10 @@ private:
 /// <summary>
 /// Implements the Poison window function.
 /// </summary>
-class Poison : public WindowFunction
+class Poison : public window_function_t
 {
 public:
-    Poison(double skew, bool truncate, double parameter) : WindowFunction(skew, truncate), _ParameterSquared(parameter * parameter) { }
+    Poison(double skew, bool truncate, double parameter) : window_function_t(skew, truncate), _ParameterSquared(parameter * parameter) { }
 
     virtual ~Poison() { }
 
@@ -377,10 +377,10 @@ private:
 /// <summary>
 /// Implements a hyperbolic secant window function.
 /// </summary>
-class HyperbolicSecant : public WindowFunction
+class HyperbolicSecant : public window_function_t
 {
 public:
-    HyperbolicSecant(double skew, bool truncate, double parameter) : WindowFunction(skew, truncate), _ParameterSquared(parameter * parameter) { }
+    HyperbolicSecant(double skew, bool truncate, double parameter) : window_function_t(skew, truncate), _ParameterSquared(parameter * parameter) { }
 
     virtual ~HyperbolicSecant() { }
 
@@ -398,10 +398,10 @@ private:
 /// <summary>
 /// Implements a quadratic spline window function.
 /// </summary>
-class QuadraticSpline : public WindowFunction
+class QuadraticSpline : public window_function_t
 {
 public:
-    QuadraticSpline(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    QuadraticSpline(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~QuadraticSpline() { }
 
@@ -416,10 +416,10 @@ public:
 /// <summary>
 /// Implements the Ogg Vorbis window function.
 /// </summary>
-class OggVorbis : public WindowFunction
+class OggVorbis : public window_function_t
 {
 public:
-    OggVorbis(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    OggVorbis(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~OggVorbis() { }
 
@@ -434,10 +434,10 @@ public:
 /// <summary>
 /// Implements a cascaded sine / cosine window function.
 /// </summary>
-class CascadedSine : public WindowFunction
+class CascadedSine : public window_function_t
 {
 public:
-    CascadedSine(double skew, bool truncate) : WindowFunction(skew, truncate) { }
+    CascadedSine(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
     virtual ~CascadedSine() { }
 
@@ -452,10 +452,10 @@ public:
 /// <summary>
 /// Implements a Galss window function.
 /// </summary>
-class Galss : public WindowFunction
+class Galss : public window_function_t
 {
 public:
-    Galss(double skew, bool truncate) : WindowFunction(skew, truncate) { _Denominator = ::pow(::tanh(M_SQRT2), 2.); }
+    Galss(double skew, bool truncate) : window_function_t(skew, truncate) { _Denominator = ::pow(::tanh(M_SQRT2), 2.); }
 
     virtual ~Galss() { }
 
@@ -473,78 +473,78 @@ private:
 /// <summary>
 /// Creates the specified window function.
 /// </summary>
-inline WindowFunction * WindowFunction::Create(WindowFunctions windowFunction, double windowParameter, double windowSkew, bool truncate)
+inline window_function_t * window_function_t::Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate)
 {
     switch (windowFunction)
     {
         default:
 
-        case WindowFunctions::Boxcar:
+        case WindowFunction::Boxcar:
             return new Boxcar(windowSkew, truncate);
 
         // Cosine-sum windows
-        case WindowFunctions::Hann:
+        case WindowFunction::Hann:
             return new Hann(windowSkew, truncate);
 
-        case WindowFunctions::Hamming:
+        case WindowFunction::Hamming:
             return new Hamming(windowSkew, truncate);
 
-        case WindowFunctions::Blackman:
+        case WindowFunction::Blackman:
             return new Blackman(windowSkew, truncate);
 
-        case WindowFunctions::Nuttall:
+        case WindowFunction::Nuttall:
             return new Nuttall(windowSkew, truncate);
 
-        case WindowFunctions::FlatTop:
+        case WindowFunction::FlatTop:
             return new FlatTop(windowSkew, truncate);
 
         // B-spline windows
-        case WindowFunctions::Bartlett:
+        case WindowFunction::Bartlett:
             return new Bartlett(windowSkew, truncate);
 
-        case WindowFunctions::Parzen:
+        case WindowFunction::Parzen:
             return new Parzen(windowSkew, truncate);
 
         // Polynomial windows
-        case WindowFunctions::Welch:
+        case WindowFunction::Welch:
             return new Welch(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::PowerOfSine:
+        case WindowFunction::PowerOfSine:
             return new PowerOfSine(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::PowerOfCircle:
+        case WindowFunction::PowerOfCircle:
             return new PowerOfSine(windowSkew, truncate, windowParameter);
 
         // Adjustable windows
-        case WindowFunctions::Gauss:
+        case WindowFunction::Gauss:
             return new Gauss(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::Tukey:
+        case WindowFunction::Tukey:
             return new Tukey(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::Kaiser:
+        case WindowFunction::Kaiser:
             return new Kaiser(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::Poison:
+        case WindowFunction::Poison:
             return new Poison(windowSkew, truncate, windowParameter);
 
         // Other windows
-        case WindowFunctions::HyperbolicSecant:
+        case WindowFunction::HyperbolicSecant:
             return new HyperbolicSecant(windowSkew, truncate, windowParameter);
 
-        case WindowFunctions::QuadraticSpline:
+        case WindowFunction::QuadraticSpline:
             return new QuadraticSpline(windowSkew, truncate);
 
-        case WindowFunctions::OggVorbis:
+        case WindowFunction::OggVorbis:
             return new OggVorbis(windowSkew, truncate);
 
-        case WindowFunctions::CascadedSine:
+        case WindowFunction::CascadedSine:
             return new CascadedSine(windowSkew, truncate);
 
-        case WindowFunctions::Galss:
+        case WindowFunction::Galss:
             return new Galss(windowSkew, truncate);
 
-        case WindowFunctions::Count:
+        case WindowFunction::Count:
             return nullptr;
     }
 }

@@ -1,7 +1,7 @@
-﻿
+
 /** $VER: PeakMeter.cpp (2024.04.28) P. Stuer - Represents a peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "PeakMeter.h"
 
@@ -12,7 +12,7 @@
 
 #pragma hdrstop
 
-PeakMeter::PeakMeter()
+peak_meter_t::peak_meter_t()
 {
     _Bounds = { };
     _Size = { };
@@ -23,7 +23,7 @@ PeakMeter::PeakMeter()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void PeakMeter::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void peak_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _Gauges.Initialize(state, settings, analysis);
     _GaugeScales.Initialize(state, settings, analysis);
@@ -41,7 +41,7 @@ void PeakMeter::Initialize(state_t * state, const GraphSettings * settings, cons
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void PeakMeter::Move(const D2D1_RECT_F & rect)
+void peak_meter_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 
@@ -55,7 +55,7 @@ void PeakMeter::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void PeakMeter::Reset()
+void peak_meter_t::Reset()
 {
     _IsResized = true;
 
@@ -69,7 +69,7 @@ void PeakMeter::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void PeakMeter::Resize() noexcept
+void peak_meter_t::Resize() noexcept
 {
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
@@ -408,7 +408,7 @@ void PeakMeter::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
+void peak_meter_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -456,7 +456,7 @@ void PeakMeter::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = _GaugeNames.CreateDeviceSpecificResources(renderTarget);
 
@@ -483,7 +483,7 @@ HRESULT PeakMeter::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void PeakMeter::ReleaseDeviceSpecificResources() noexcept
+void peak_meter_t::ReleaseDeviceSpecificResources() noexcept
 {
     _Gauges.ReleaseDeviceSpecificResources();
 

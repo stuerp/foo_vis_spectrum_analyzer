@@ -1,7 +1,7 @@
 
 /** $VER: Raster.cpp (2024.03.09) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Raster.h"
 
 #pragma hdrstop
@@ -9,33 +9,33 @@
 /// <summary>
 /// Initializes this instance from a WIC bitmap source.
 /// </summary>
-HRESULT Raster::Initialize(IWICBitmapSource * bitmapSource) noexcept
+HRESULT raster_t::Initialize(IWICBitmapSource * bitmapSource) noexcept
 {
     // Create the bitmap from the image frame.
     HRESULT hr = _WIC.CreateBitmapFromSource(bitmapSource, WICBitmapCacheOnDemand, &_Bitmap);
 
     if (SUCCEEDED(hr))
-        hr = _Bitmap->GetSize(&_Width, &_Height);
+        hr = _Bitmap->GetSize(&Width, &Height);
 
     // Lock the complete bitmap.
     if (SUCCEEDED(hr))
     {
-        WICRect LockRect = { 0, 0, (INT) _Width, (INT) _Height };
+        WICRect LockRect = { 0, 0, (INT) Width, (INT) Height };
 
         hr = _Bitmap->Lock(&LockRect, WICBitmapLockRead, &_Lock);
     }
 
     if (SUCCEEDED(hr))
-        hr = _Lock->GetDataPointer(&_Size, &_Data);
+        hr = _Lock->GetDataPointer(&Size, &Data);
 
     if (SUCCEEDED(hr))
-        hr = _Lock->GetStride(&_Stride);
+        hr = _Lock->GetStride(&Stride);
 
     if (SUCCEEDED(hr))
-        hr = _Lock->GetPixelFormat(&_PixelFormat);
+        hr = _Lock->GetPixelFormat(&PixelFormat);
 
     if (SUCCEEDED(hr))
-        hr = _WIC.GetBitsPerPixel(_PixelFormat, _BitsPerPixel);
+        hr = _WIC.GetBitsPerPixel(PixelFormat, BitsPerPixel);
 
     return hr;
 }

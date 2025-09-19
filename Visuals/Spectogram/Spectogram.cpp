@@ -1,7 +1,7 @@
 
 /** $VER: Spectogram.cpp (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Spectogram.h"
 
 #include "Support.h"
@@ -12,7 +12,7 @@
 
 #pragma hdrstop
 
-Spectogram::Spectogram()
+spectogram_t::spectogram_t()
 {
     _Bounds = { };
     _Size = { };
@@ -23,7 +23,7 @@ Spectogram::Spectogram()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Spectogram::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -37,7 +37,7 @@ void Spectogram::Initialize(state_t * state, const GraphSettings * settings, con
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void Spectogram::Move(const D2D1_RECT_F & rect)
+void spectogram_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 
@@ -48,7 +48,7 @@ void Spectogram::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Spectogram::Reset()
+void spectogram_t::Reset()
 {
     _X = 0.f;
     _Y = 0.f;
@@ -66,7 +66,7 @@ void Spectogram::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void Spectogram::Resize() noexcept
+void spectogram_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -136,7 +136,7 @@ void Spectogram::Resize() noexcept
 
             for (auto & Iter : _FreqLabels)
             {
-                const FLOAT y = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+                const FLOAT y = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
 
                 if (!_GraphSettings->_FlipVertically)
                 {
@@ -196,7 +196,7 @@ void Spectogram::Resize() noexcept
         {
             for (auto & Iter : _FreqLabels)
             {
-                const FLOAT x = Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
+                const FLOAT x = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
 
                 {
                     CComPtr<IDWriteTextLayout> TextLayout;
@@ -273,7 +273,7 @@ void Spectogram::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectogram.
 /// </summary>
-void Spectogram::Render(ID2D1RenderTarget * renderTarget)
+void spectogram_t::Render(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -452,7 +452,7 @@ void Spectogram::Render(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
-void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
+void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
 {
     if (_State->_HorizontalSpectogram)
     {
@@ -491,7 +491,7 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) co
     }
     else
     {
-        const FLOAT x1 = first ? _BitmapBounds.right                          : _BitmapBounds.left - _TimeTextStyle->_Width;
+        const FLOAT x1 = first ? _BitmapBounds.right                         : _BitmapBounds.left - _TimeTextStyle->_Width;
         const FLOAT x2 = first ? _BitmapBounds.right + _TimeTextStyle->_Width : _BitmapBounds.left;
 
         rect_t Rect = { x1, 0.f, x2, 0.f };
@@ -531,7 +531,7 @@ void Spectogram::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) co
 /// <summary>
 /// Renders a Y-axis (Frequency)
 /// </summary>
-void Spectogram::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
+void spectogram_t::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
 {
     const FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
 
@@ -568,7 +568,7 @@ void Spectogram::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) con
 /// <summary>
 /// Updates this instance.
 /// </summary>
-bool Spectogram::Update() noexcept
+bool spectogram_t::Update() noexcept
 {
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
@@ -589,7 +589,7 @@ bool Spectogram::Update() noexcept
                 if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                assert(InRange(fb.CurValue, 0.0, 1.0));
+                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectogramStyle->SetBrushColor(fb.CurValue);
 
@@ -648,7 +648,7 @@ bool Spectogram::Update() noexcept
                 if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                assert(InRange(fb.CurValue, 0.0, 1.0));
+                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectogramStyle->SetBrushColor(fb.CurValue);
 
@@ -700,7 +700,7 @@ bool Spectogram::Update() noexcept
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
+void spectogram_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
@@ -709,13 +709,13 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 
     if (_State->_HorizontalSpectogram)
     {
-        const FLOAT y = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+        const FLOAT y = msc::Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
         renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }
     else
     {
-        const FLOAT x = Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.width);
+        const FLOAT x = msc::Map(NyquistScale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
         renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }
@@ -724,13 +724,13 @@ void Spectogram::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 /// <summary>
 /// Initializes the Y-axis.
 /// </summary>
-void Spectogram::InitFreqAxis() noexcept
+void spectogram_t::InitFreqAxis() noexcept
 {
     _FreqLabels.clear();
 
-    const FrequencyBands & fb = _Analysis->_FrequencyBands;
+    const frequency_bands_t & fb = _Analysis->_FrequencyBands;
 
-    if (fb.size() == 0)
+    if (fb.empty())
         return;
 
     _BandCount = fb.size();
@@ -851,7 +851,7 @@ void Spectogram::InitFreqAxis() noexcept
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 {
     HRESULT hr = S_OK;
 
@@ -907,7 +907,7 @@ HRESULT Spectogram::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Spectogram::ReleaseDeviceSpecificResources()
+void spectogram_t::ReleaseDeviceSpecificResources()
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

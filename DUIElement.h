@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "framework.h"
+#include "pch.h"
 
 #include <helpers/BumpableElem.h>
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Implements a Default UI element.
 /// </summary>
-class DUIElement : public UIElement, public ui_element_instance
+class DUIElement : public uielement_t, public ui_element_instance
 {
 public:
     DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
@@ -24,6 +24,7 @@ public:
 
     LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void OnContextMenu(CWindow wnd, CPoint position) override final;
+
     void ToggleFullScreen() noexcept override final;
 
     // Default User Interface

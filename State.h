@@ -1,4 +1,4 @@
-﻿
+
 /** $VER: State.h (2024.08.18) P. Stuer **/
 
 #pragma once
@@ -58,7 +58,7 @@ public:
 
         Transform _Transform;                                           // FFT, CQT or SWIFT
 
-        WindowFunctions _WindowFunction;
+        WindowFunction _WindowFunction;
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
@@ -88,7 +88,7 @@ public:
         double _BandwidthAmount;                                        // 0 .. 256, Brown-Puckette kernel size
         bool _UseGranularBandwidth;                                     // True: Don't constrain bandwidth to powers of 2.
 
-        WindowFunctions _KernelShape;
+        WindowFunction _KernelShape;
         double _KernelShapeParameter;                                   // 0 .. 10, Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // -1 .. 1, Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
 
@@ -155,19 +155,19 @@ public:
 
     #pragma region Common
 
-        bool _ShowToolTips;                                         // True if tooltips should be displayed.
-        bool _SuppressMirrorImage;                                  // True if the mirror image of the spectrum is not rendered.
+        bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
+        bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
 
         SmoothingMethod _SmoothingMethod;
-        double _SmoothingFactor;                                    // Smoothing factor, 0.0 .. 1.0
+        double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
 
     #pragma endregion
 
     #pragma region Artwork
 
-        uint32_t _NumArtworkColors;                                 // Number of colors to select from the artwork.
-        FLOAT _LightnessThreshold;                                  // 0.0 .. 1.0
-        FLOAT _TransparencyThreshold;                               // 0.0 .. 1.0 (Not configurable)
+        uint32_t _NumArtworkColors;                                     // Number of colors to select from the artwork.
+        FLOAT _LightnessThreshold;                                      // 0.0 .. 1.0
+        FLOAT _TransparencyThreshold;                                   // 0.0 .. 1.0 (Not configurable)
 
         ColorOrder _ColorOrder;
 
@@ -236,14 +236,14 @@ public:
 
     #pragma endregion
 
-    StyleManager _StyleManager;
+    style_manager_t _StyleManager;
 
     #pragma region Graphs
 
     size_t _GridRowCount;
     size_t _GridColumnCount;
 
-    std::vector<GraphSettings> _GraphSettings;
+    std::vector<graph_settings_t> _GraphSettings;
 
     #pragma endregion
 
@@ -260,11 +260,9 @@ public:
     size_t _BinCount;
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
-    GradientStops _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
+    gradient_stops_t _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
 
-    GradientStops _GradientStops;                                       // The current gradient stops.
-
-    bool _NewArtworkParameters;                                         // True when the parameters to calculate the artwork palette have changed.
+    gradient_stops_t _GradientStops;                                       // The current gradient stops.
 
     size_t _SelectedGraph;
     int _SelectedStyle;
@@ -274,6 +272,8 @@ public:
 
     LONG64 _Barrier;
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
+
+    bool _ShowToolTipsNow;
 
     #pragma endregion
 
@@ -337,7 +337,7 @@ private:
     bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
 
-    const GradientStops SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
+    const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
     const size_t _CurrentVersion = 28;

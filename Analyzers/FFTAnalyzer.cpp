@@ -1,7 +1,7 @@
 
-/** $VER: FFTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.09.15) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
-#include "framework.h"
+#include "pch.h"
 #include "FFTAnalyzer.h"
 
 #include "Log.h"
@@ -11,7 +11,7 @@
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-FFTAnalyzer::~FFTAnalyzer()
+fft_analyzer_t::~fft_analyzer_t()
 {
     if (_Data)
     {
@@ -23,7 +23,7 @@ FFTAnalyzer::~FFTAnalyzer()
 /// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-FFTAnalyzer::FFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction, const WindowFunction & brownPucketteKernel, size_t fftSize) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel, size_t fftSize) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
     _FFTSize = fftSize;
 
@@ -44,7 +44,7 @@ FFTAnalyzer::FFTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t ch
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     Add(samples, sampleCount, channels);
 
@@ -74,7 +74,7 @@ bool FFTAnalyzer::AnalyzeSamples(const audio_sample * samples, size_t sampleCoun
 /// Adds multiple samples to the analyzer buffer.
 /// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
+void fft_analyzer_t::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
 {
 //  Log::Write(Log::Level::Trace, "%8d: %5d, %5d, %5d", (int) ::GetTickCount64() _Size, _Curr, sampleCount / 2);
 
@@ -97,20 +97,20 @@ void FFTAnalyzer::Add(const audio_sample * samples, size_t sampleCount, uint32_t
 /// <summary>
 /// Calculates the Fast Fourier Transform and updates the frequency data.
 /// </summary>
-void FFTAnalyzer::Transform() noexcept
+void fft_analyzer_t::Transform() noexcept
 {
     double Norm = 0.;
 
-    // Fill the FFT buffer from the sample ring buffer with Time domain data and apply the windowing function.
+    // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
     {
         size_t i = _Curr;
         size_t j = 0;
 
-        for (complex<double> & Iter : _TimeData)
+        for (std::complex<double> & Iter : _TimeData)
         {
-            double WindowFactor = _WindowFunction(Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
-            Iter = complex<double>(_Data[i] * WindowFactor, 0.);
+            Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
 
             i = (i + 1) % _Size;
 
@@ -123,7 +123,7 @@ void FFTAnalyzer::Transform() noexcept
     {
         const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
-        for (complex<double> & Iter : _TimeData)
+        for (std::complex<double> & Iter : _TimeData)
             Iter *= Factor;
     }
 
@@ -131,33 +131,39 @@ void FFTAnalyzer::Transform() noexcept
     _FFT.Transform(_TimeData, _FreqData);
 
     // Normalize the Frequency domain data.
-    for (complex<double> & Iter : _FreqData)
-        Iter /= (double) _FFTSize / 2.;
+    {
+        const double Factor = 2. / (double) _FFTSize;
+
+        for (std::complex<double> & Iter : _FreqData)
+            Iter *= Factor;
+    }
 }
 
 /// <summary>
 /// Maps the Fast Fourier Transform coefficients on the frequency bands.
 /// </summary>
-void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
-    const bool UseBandGain = (_State->_SmoothGainTransition && (_State->_SummationMethod == SummationMethod::Sum || _State->_SummationMethod == SummationMethod::RMSSum));
-    const bool IsRMS = (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
+    const bool IsRMS       =  (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
+    const bool IsMedian    =   _State->_SummationMethod == SummationMethod::Median;
+    const bool UseBandGain =  (_State->_SmoothGainTransition && (_State->_SummationMethod == SummationMethod::Sum || _State->_SummationMethod == SummationMethod::RMSSum));
+    const bool IsAverage   = ((_State->_SummationMethod == SummationMethod::Average || _State->_SummationMethod == SummationMethod::RMS) || UseBandGain);
 
-    std::vector<double> Values(16);
+    std::vector<double> Values;
 
-    for (FrequencyBand & fb : freqBands)
+    for (frequency_band_t & fb : freqBands)
     {
-        const double LoHz = HzToFFTIndex(Min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
-        const double HiHz = HzToFFTIndex(Max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double LoHz = HzToFFTIndex(std::min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double HiHz = HzToFFTIndex(std::max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
 
         const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
               int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
 
-        const double BandGain =  UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+        const double BandGain = UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
         if (LoIdx <= HiIdx)
         {
-            HiIdx -= Max(HiIdx - LoIdx - (int) _FreqData.size(), 0);
+            HiIdx -= std::max(HiIdx - LoIdx - (int) _FreqData.size(), 0);
 
             double Value = (_State->_SummationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -167,18 +173,18 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
 
             for (int Idx = LoIdx; Idx <= HiIdx; ++Idx)
             {
-                size_t CoefIdx = Wrap((size_t) Idx, _FreqData.size());
+                size_t CoefIdx = msc::Wrap((size_t) Idx, _FreqData.size());
 
                 double Coef = std::abs(_FreqData[CoefIdx]);
 
                 switch (_State->_SummationMethod)
                 {
                     case SummationMethod::Minimum:
-                        Value = Min(Coef, Value);
+                        Value = std::min(Coef, Value);
                         break;
 
                     case SummationMethod::Maximum:
-                        Value = Max(Coef, Value);
+                        Value = std::max(Coef, Value);
                         break;
 
                     case SummationMethod::Sum:
@@ -202,10 +208,10 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
                 ++Count;
             }
 
-            if (((_State->_SummationMethod == SummationMethod::Average || _State->_SummationMethod == SummationMethod::RMS) || UseBandGain) && (Count != 0))
+            if (IsAverage && (Count != 0))
                 Value /= Count;
             else
-            if (_State->_SummationMethod == SummationMethod::Median)
+            if (IsMedian)
                 Value = Median(Values);
 
             fb.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
@@ -223,23 +229,25 @@ void FFTAnalyzer::AnalyzeSamples(uint32_t sampleRate, FrequencyBands & freqBands
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Mel-Frequency Cepstrum, MFC).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
-    for (FrequencyBand & fb : freqBands)
+    const double Scale = (double) _FreqData.size() / sampleRate;
+
+    for (frequency_band_t & fb : freqBands)
     {
         double Sum = 0.;
 
-        const double MinBin = Min(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
-        const double MidBin = fb.Ctr            * (double) _FreqData.size() / sampleRate;
-        const double MaxBin = Max(fb.Lo, fb.Hi) * (double) _FreqData.size() / sampleRate;
+        const double MinBin = std::min(fb.Lo, fb.Hi) * Scale;
+        const double MidBin = fb.Ctr                 * Scale;
+        const double MaxBin = std::max(fb.Lo, fb.Hi) * Scale;
 
-        const double OverflowCompensation = Max(0., MaxBin - MinBin - (double) _FreqData.size());
+        const double OverflowCompensation = std::max(0., MaxBin - MinBin - (double) _FreqData.size());
 
         for (double i = ::floor(MidBin); i >= ::floor(MinBin + OverflowCompensation); --i)
-            Sum += ::pow(std::abs(_FreqData[Wrap((size_t) i, _FreqData.size())]) * Max(Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
+            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
 
         for (double i = ::ceil(MidBin); i <= ::ceil(MaxBin - OverflowCompensation); ++i)
-            Sum += ::pow(std::abs(_FreqData[Wrap((size_t) i, _FreqData.size())]) * Max(Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
+            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
         fb.NewValue = ::sqrt(Sum);
     }
@@ -249,11 +257,11 @@ void FFTAnalyzer::AnalyzeSamplesUsingTFB(uint32_t sampleRate, FrequencyBands & f
 /// Maps the Fast Fourier Transform coefficients on the frequency bands (Brown-Puckette).
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & freqBands) const noexcept
+void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
     const double HzToBin = (double) _FreqData.size() / sampleRate;
 
-    for (FrequencyBand & fb : freqBands)
+    for (frequency_band_t & fb : freqBands)
     {
         double re = 0.;
         double im = 0.;
@@ -261,9 +269,9 @@ void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & fr
         const double Center      = fb.Ctr * HzToBin;
 
         const double Bandwidth    = ::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
-        const double tlen         = Min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
-        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : Min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
-        const double flen         = Min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
+        const double tlen         = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
+        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : std::min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
+        const double flen         = std::min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
 
         const double Start        = ::ceil (Center - flen / 2.);
         const double End          = ::floor(Center + flen / 2.);
@@ -291,22 +299,24 @@ void FFTAnalyzer::AnalyzeSamplesUsingBP(uint32_t sampleRate, FrequencyBands & fr
 /// <summary>
 /// Applies a Lanzcos kernel to the specified value.
 /// </summary>
-double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
+double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
 {
     double re = 0.;
     double im = 0.;
 
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
-        double Pos = ::floor(value) + i;
-        double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
+        const double Pos = ::floor(value) + i;
+        const double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
 
-        double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(M_PI * Twiddle / kernelSize) / (M_PI * Twiddle / kernelSize);
+        double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
 
-        size_t CoefIdx = Wrap((size_t) Pos, fftCoeffs.size() / 2);
+        w *= (-1 + msc::Wrap(i, 2) * 2);
 
-        re += fftCoeffs[CoefIdx].real() * w * (-1 + Wrap(i, 2) * 2);
-        im += fftCoeffs[CoefIdx].imag() * w * (-1 + Wrap(i, 2) * 2);
+        const size_t CoefIdx = msc::Wrap((size_t) Pos, fftCoeffs.size());
+
+        re += fftCoeffs[CoefIdx].real() * w;
+        im += fftCoeffs[CoefIdx].imag() * w;
     }
 
     return ::hypot(re, im);
@@ -315,9 +325,9 @@ double FFTAnalyzer::Lanzcos(const std::vector<complex<double>> & fftCoeffs, doub
 /// <summary>
 /// Calculates the median.
 /// </summary>
-double FFTAnalyzer::Median(std::vector<double> & data) const noexcept
+double fft_analyzer_t::Median(std::vector<double> & data) const noexcept
 {
-    if (data.size() == 0)
+    if (data.empty())
         return DBL_MIN;
 
     if (data.size() == 1)

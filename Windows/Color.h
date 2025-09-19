@@ -12,7 +12,7 @@
 
 #include <vector>
 
-class Color
+class color_t
 {
 public:
     /// <summary>

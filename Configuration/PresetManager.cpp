@@ -1,7 +1,7 @@
 
 /** $VER: PresetManager.cpp (2024.03.14) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "PresetManager.h"
 
 #include <Path.h>
@@ -9,6 +9,8 @@
 #include <Error.h>
 
 #include "Log.h"
+
+namespace fio = foobar2000_io;
 
 #pragma hdrstop
 
@@ -26,7 +28,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_read, fb2k::noAbort);
+        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_read, fb2k::noAbort);
 
         auto Reader = File.get_ptr();
 
@@ -56,7 +58,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%8d: %s failed to read preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
+        Log.AtError().Write("%8d: %s failed to read preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
@@ -76,7 +78,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        filesystem::g_open(File, Convert::To(PresetPath), filesystem::open_mode_write_new, fb2k::noAbort);
+        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_write_new, fb2k::noAbort);
 
         auto Writer = File.get_ptr();
 
@@ -89,7 +91,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
     }
     catch (pfc::exception ex)
     {
-        Log::Write(Log::Level::Error, "%8d: %s failed to write preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
+        Log.AtError().Write("%8d: %s failed to write preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), ex.what());
 
         return false;
     }
@@ -109,9 +111,9 @@ bool PresetManager::Delete(const Path & rootPath, const std::wstring & presetNam
 
     if (!Success)
     {
-        Error LastError(::GetLastError());
+        error_t LastError(::GetLastError());
 
-        Log::Write(Log::Level::Error, "%8d: %s failed to delete preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), LastError.Message().c_str());
+        Log.AtError().Write("%8d: %s failed to delete preset \"%s\": %s", (int) ::GetTickCount64(), core_api::get_my_file_name(), presetName.c_str(), LastError.Message().c_str());
 
         return false;
     }

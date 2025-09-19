@@ -18,18 +18,18 @@
 /// Implements a Constant-Q Transform analyzer.
 /// </summary>
 #pragma warning(disable: 4820)
-class CQTAnalyzer : public Analyzer
+class cqt_analyzer_t : public analyzer_t
 {
 public:
-    CQTAnalyzer() = delete;
+    cqt_analyzer_t() = delete;
 
-    CQTAnalyzer(const CQTAnalyzer &) = delete;
-    CQTAnalyzer & operator=(const CQTAnalyzer &) = delete;
-    CQTAnalyzer(CQTAnalyzer &&) = delete;
-    CQTAnalyzer & operator=(CQTAnalyzer &&) = delete;
+    cqt_analyzer_t(const cqt_analyzer_t &) = delete;
+    cqt_analyzer_t & operator=(const cqt_analyzer_t &) = delete;
+    cqt_analyzer_t(cqt_analyzer_t &&) = delete;
+    cqt_analyzer_t & operator=(cqt_analyzer_t &&) = delete;
 
-    virtual ~CQTAnalyzer() { }
+    virtual ~cqt_analyzer_t() { }
 
-    CQTAnalyzer(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept;
+    cqt_analyzer_t(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
+    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 };

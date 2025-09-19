@@ -1,7 +1,7 @@
 
 /** $VER: Analysis.cpp (2024.08.18) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "Analysis.h"
 #include "Log.h"
@@ -17,12 +17,12 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Analysis::Initialize(const state_t * threadState, const GraphSettings * settings) noexcept
+void analysis_t::Initialize(const state_t * state, const graph_settings_t * settings) noexcept
 {
-    _State = threadState;
+    _State = state;
     _GraphSettings = settings;
 
-    switch (threadState->_FrequencyDistribution)
+    switch (_State->_FrequencyDistribution)
     {
         default:
 
@@ -45,7 +45,7 @@ void Analysis::Initialize(const state_t * threadState, const GraphSettings * set
 /// <summary>
 /// Processes the audio samples.
 /// </summary>
-void Analysis::Process(const audio_chunk & chunk) noexcept
+void analysis_t::Process(const audio_chunk & chunk) noexcept
 {
     switch (_State->_VisualizationType)
     {
@@ -122,7 +122,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
                 }
             }
 
-            // From here one CurValue is guaranteed in the range 0.0 .. 1.0
+            // From here on CurValue is guaranteed to be in the range 0.0 .. 1.0.
         }
   
         case VisualizationType::PeakMeter:
@@ -137,7 +137,7 @@ void Analysis::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Analysis::Reset()
+void analysis_t::Reset()
 {
     if (_AnalogStyleAnalyzer != nullptr)
     {
@@ -177,7 +177,7 @@ void Analysis::Reset()
 
     {
         _CurrentChannelMask = 0;
-        InitializeGauges((uint32_t) Channel::ConfigStereo);
+        InitializeGauges((uint32_t) Channels::ConfigStereo);
     }
 
     {
@@ -198,7 +198,7 @@ void Analysis::Reset()
 /// <summary>
 /// Updates the peak values.
 /// </summary>
-void Analysis::UpdatePeakValues(bool isStopped) noexcept
+void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 {
     const double Acceleration = _State->_Acceleration / 256.;
 
@@ -209,6 +209,7 @@ void Analysis::UpdatePeakValues(bool isStopped) noexcept
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::Spectogram:
+        case VisualizationType::RadialBars:
         {
             // Animate the spectrum peak value.
             for (auto & fb : _FrequencyBands)
@@ -390,9 +391,6 @@ void Analysis::UpdatePeakValues(bool isStopped) noexcept
             }
             break;
         }
-
-        case VisualizationType::RadialBars:
-            break;
     }
 }
 
@@ -403,7 +401,7 @@ void Analysis::UpdatePeakValues(bool isStopped) noexcept
 /// <summary>
 /// Generates frequency bands using a linear distribution.
 /// </summary>
-void Analysis::GenerateLinearFrequencyBands()
+void analysis_t::GenerateLinearFrequencyBands()
 {
     const double MinScale = ScaleF(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
@@ -414,11 +412,11 @@ void Analysis::GenerateLinearFrequencyBands()
 
     double i = 0.;
 
-    for (FrequencyBand & fb: _FrequencyBands)
+    for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo  = DeScaleF(Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Ctr = DeScaleF(Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DeScaleF(Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Ctr = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
@@ -431,9 +429,9 @@ void Analysis::GenerateLinearFrequencyBands()
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void Analysis::GenerateOctaveFrequencyBands()
+void analysis_t::GenerateOctaveFrequencyBands()
 {
-    const double Root24 = ::exp2(1. / 24.);
+    const double Root24 = ::exp2(1. / 24.); // 24 semitones
 
     const double Pitch = (_State->_Pitch > 0.) ? ::round((::log2(_State->_Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _State->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
@@ -451,7 +449,7 @@ void Analysis::GenerateOctaveFrequencyBands()
 
     for (double i = LoNote; i <= HiNote; ++i)
     {
-        FrequencyBand fb = 
+        frequency_band_t fb = 
         {
             C0 * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
             C0 * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
@@ -476,7 +474,7 @@ void Analysis::GenerateOctaveFrequencyBands()
 /// <summary>
 /// Generates frequency bands like AveePlayer.
 /// </summary>
-void Analysis::GenerateAveePlayerFrequencyBands()
+void analysis_t::GenerateAveePlayerFrequencyBands()
 {
     const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
 
@@ -484,7 +482,7 @@ void Analysis::GenerateAveePlayerFrequencyBands()
 
     double i = 0.;
 
-    for (FrequencyBand & fb : _FrequencyBands)
+    for (frequency_band_t & fb : _FrequencyBands)
     {
         fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, _State->_BandCount - 1, _State->_SkewFactor);
         fb.Ctr = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             _State->_BandCount - 1, _State->_SkewFactor);
@@ -502,34 +500,34 @@ void Analysis::GenerateAveePlayerFrequencyBands()
 /// <summary>
 /// Gets an analyzer and its supporting objects, if any.
 /// </summary>
-void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
+void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
 {
     if (_WindowFunction == nullptr)
-        _WindowFunction = WindowFunction::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
-
-    if (_BrownPucketteKernel == nullptr)
-        _BrownPucketteKernel = WindowFunction::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
     if ((_FFTAnalyzer == nullptr) && (_State->_Transform == Transform::FFT))
     {
-        _FFTAnalyzer = new FFTAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+        if (_BrownPucketteKernel == nullptr)
+            _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+
+        _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new CQTAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_State->_Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new SWIFTAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config());
+        _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config());
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }
 
     if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
     {
-        _AnalogStyleAnalyzer = new AnalogStyleAnalyzer(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
 
         _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
     }
@@ -540,18 +538,18 @@ void Analysis::GetAnalyzer(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Applies acoustic weighting to the spectrum.
 /// </summary>
-void Analysis::ApplyAcousticWeighting()
+void analysis_t::ApplyAcousticWeighting()
 {
     const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
 
-    for (FrequencyBand & fb : _FrequencyBands)
+    for (frequency_band_t & fb : _FrequencyBands)
         fb.NewValue *= GetWeight(fb.Ctr + Offset);
 }
 
 /// <summary>
 /// Gets the total weight.
 /// </summary>
-double Analysis::GetWeight(double x) const noexcept
+double analysis_t::GetWeight(double x) const noexcept
 {
     const double a = GetFrequencyTilt(x, _State->_Slope, _State->_SlopeOffset);
     const double b = Equalize(x, _State->_EqualizeAmount, _State->_EqualizeDepth, _State->_EqualizeOffset);
@@ -622,27 +620,27 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 /// <summary>
 /// Normalizes the amplitude.
 /// </summary>
-void Analysis::Normalize() noexcept
+void analysis_t::Normalize() noexcept
 {
-    for (FrequencyBand & fb : _FrequencyBands)
+    for (frequency_band_t & fb : _FrequencyBands)
         fb.CurValue = std::clamp(_GraphSettings->ScaleA(fb.NewValue), 0.0, 1.0);
 }
 
 /// <summary>
 /// Normalizes the amplitude and applies average smoothing.
 /// </summary>
-void Analysis::NormalizeWithAverageSmoothing(double factor) noexcept
+void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 {
-    for (FrequencyBand & fb : _FrequencyBands)
+    for (frequency_band_t & fb : _FrequencyBands)
         fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
 }
 
 /// <summary>
 /// Normalizes the amplitude and applies peak smoothing.
 /// </summary>
-void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
+void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
-    for (FrequencyBand & fb : _FrequencyBands)
+    for (frequency_band_t & fb : _FrequencyBands)
         fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) : 0.0), 0.0, 1.0);
 }
 
@@ -655,7 +653,7 @@ void Analysis::NormalizeWithPeakSmoothing(double factor) noexcept
 /// <summary>
 /// Gets the values for the peak and the level meter.
 /// </summary>
-void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
+void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Samples = chunk.get_data();
     const size_t SampleCount = chunk.get_sample_count();
@@ -674,14 +672,14 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 
     const uint32_t ChannelPairs[] =
     {
-        (uint32_t) Channel::FrontLeft       | (uint32_t) Channel::FrontRight,
-        (uint32_t) Channel::BackLeft        | (uint32_t) Channel::BackRight,
+        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
+        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
 
-        (uint32_t) Channel::FrontCenterLeft | (uint32_t) Channel::FrontCenterRight,
-        (uint32_t) Channel::SideLeft        | (uint32_t) Channel::SideRight,
+        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
+        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
 
-        (uint32_t) Channel::TopFrontLeft    | (uint32_t) Channel::TopFrontRight,
-        (uint32_t) Channel::TopBackLeft     | (uint32_t) Channel::TopBackRight,
+        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
+        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
     };
 
     const audio_sample * EndOfChunk = Samples + SampleCount;
@@ -788,7 +786,7 @@ void Analysis::GetGaugeValues(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Initializes the gauges before processing an audio chunk.
 /// </summary>
-void Analysis::InitializeGauges(uint32_t channelMask) noexcept
+void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
 {
     if (_CurrentChannelMask != channelMask)
     {

@@ -1,7 +1,7 @@
 
 /** $VER: Element.cpp (2024.04.08) P. Stuer - Base class for all visual elements **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Element.h"
 
 #include "Log.h"
@@ -11,7 +11,7 @@
 /// <summary>
 /// Sets the coordinate transform of the element.
 /// </summary>
-void Element::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept
+void element_t::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept
 {
     D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
@@ -33,7 +33,7 @@ void Element::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F &
 /// <summary>
 /// Resets the coordinate transform of the element.
 /// </summary>
-void Element::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
+void element_t::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
 {
     renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 }
@@ -41,15 +41,15 @@ void Element::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
 /// <summary>
 /// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
 /// </summary>
-bool Element::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
+bool element_t::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {
-    return InRange(a.left, b.left, b.right) || InRange(a.right, b.left, b.right);
+    return msc::InRange(a.left, b.left, b.right) || msc::InRange(a.right, b.left, b.right);
 }
 
 /// <summary>
 /// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
 /// </summary>
-bool Element::IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
+bool element_t::IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {
-    return InRange(a.top, b.top, b.bottom) || InRange(a.bottom, b.top, b.bottom);
+    return msc::InRange(a.top, b.top, b.bottom) || msc::InRange(a.bottom, b.top, b.bottom);
 }

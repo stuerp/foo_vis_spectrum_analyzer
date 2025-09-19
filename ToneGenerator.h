@@ -1,5 +1,5 @@
 
-/** $VER: ToneGenerator.h (2024.03.09) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
+/** $VER: ToneGenerator.h (2025.04.08) P. Stuer - Generates a waveform and can produce foobar2000-compliant audio chunks for testing purposes. **/
 
 #pragma once
 
@@ -18,10 +18,10 @@
 
 #include <vector>
 
-class ToneGenerator
+class tone_generator_t
 {
 public:
-    ToneGenerator() { };
+    tone_generator_t() { };
 
     void Initialize(double frequency, double amplitude, double noiseAmplitude, size_t bufferSize)
     {
@@ -31,10 +31,11 @@ public:
 
         Reset();
 
-        _Data.resize(bufferSize);
+        if (bufferSize != 0)
+            _Frames.resize(bufferSize);
     }
 
-    virtual ~ToneGenerator()
+    virtual ~tone_generator_t()
     {
         Reset();
     }
@@ -45,7 +46,7 @@ public:
     {
         _Clock = 0.;
 
-        _Data.clear();
+        _Frames.clear();
     }
 
 private:
@@ -57,7 +58,7 @@ private:
 
     const uint32_t _ChannelCount = 1;
 
-    std::vector<audio_sample> _Data;
+    std::vector<audio_sample> _Frames;
 };
 
-extern ToneGenerator _ToneGenerator;
+extern tone_generator_t _ToneGenerator;

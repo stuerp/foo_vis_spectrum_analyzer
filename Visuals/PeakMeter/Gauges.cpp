@@ -1,7 +1,7 @@
 
 /** $VER: Gauges.cpp (2024.04.22) P. Stuer - Implements the gauges of the peak meter. **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "Gauges.h"
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void Gauges::Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis)
+void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
 {
     _State = state;
     _GraphSettings = settings;
@@ -24,7 +24,7 @@ void Gauges::Initialize(state_t * state, const GraphSettings * settings, const A
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void Gauges::Move(const D2D1_RECT_F & rect)
+void gauge_t::Move(const D2D1_RECT_F & rect)
 {
     SetBounds(rect);
 }
@@ -32,7 +32,7 @@ void Gauges::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void Gauges::Reset()
+void gauge_t::Reset()
 {
     _IsResized = true;
 }
@@ -40,7 +40,7 @@ void Gauges::Reset()
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void Gauges::Resize() noexcept
+void gauge_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -51,14 +51,14 @@ void Gauges::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics)
+void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
         return;
 
-    if ((_Analysis->_GaugeValues.size() == 0) || (GetWidth() <= 0.f) || (GetHeight() <= 0.f))
+    if (_Analysis->_GaugeValues.empty() || (GetWidth() <= 0.f) || (GetHeight() <= 0.f))
         return;
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
@@ -289,7 +289,7 @@ void Gauges::Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gauge
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT Gauges::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -325,7 +325,7 @@ HRESULT Gauges::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) 
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Gauges::ReleaseDeviceSpecificResources() noexcept
+void gauge_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -367,7 +367,7 @@ void Gauges::ReleaseDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 {
     D2D1_SIZE_F Size = renderTarget->GetSize();
 
@@ -414,14 +414,14 @@ HRESULT Gauges::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Gets the metrics used to render the gauges.
 /// </summary>
-bool Gauges::GetMetrics(GaugeMetrics & gm) const noexcept
+bool gauge_t::GetMetrics(gauge_metrics_t & gm) const noexcept
 {
     const FLOAT n = (FLOAT) _Analysis->_GaugeValues.size();
 
     if (n == 0)
         return false;
 
-    gm._dBFSZero = Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
+    gm._dBFSZero = msc::Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
 
     gm._TotalBarGap = _State->_GaugeGap * (FLOAT) (n - 1);
     gm._TickSize = 4.f;

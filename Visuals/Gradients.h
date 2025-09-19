@@ -13,6 +13,6 @@
 
 #include "Constants.h"
 
-typedef std::vector<D2D1_GRADIENT_STOP> GradientStops;
+typedef std::vector<D2D1_GRADIENT_STOP> gradient_stops_t;
 
-const GradientStops GetGradientStops(ColorScheme colorScheme);
+const gradient_stops_t GetBuiltInGradientStops(ColorScheme colorScheme) noexcept;

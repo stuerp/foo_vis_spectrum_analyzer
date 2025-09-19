@@ -1,7 +1,7 @@
 
 /** $VER: Artwork.cpp (2024.04.06) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Artwork.h"
 
 #include "WIC.h"
@@ -13,7 +13,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
+HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
 {
     _CriticalSection.Enter();
 
@@ -35,7 +35,7 @@ HRESULT Artwork::Initialize(const uint8_t * data, size_t size) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
+HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
 {
     _CriticalSection.Enter();
 
@@ -54,7 +54,7 @@ HRESULT Artwork::Initialize(const std::wstring & filePath) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
+void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
 {
     _CriticalSection.Enter();
 
@@ -79,14 +79,14 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
             if ((state->_FitMode == FitMode::FitHeight) || (state->_FitMode == FitMode::FitBig))
                 HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
 
-            Scalar = Min(WScalar, HScalar);
+            Scalar = std::min(WScalar, HScalar);
         }
         else
         {
             WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
             HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
 
-            Scalar = Max(WScalar, HScalar);
+            Scalar = std::max(WScalar, HScalar);
         }
 
         Size.width  *= Scalar;
@@ -106,7 +106,7 @@ void Artwork::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bound
 /// <summary>
 /// Realizes this instance.
 /// </summary>
-HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT artwork_t::Realize(ID2D1RenderTarget * renderTarget) noexcept
 {
     _CriticalSection.Enter();
 
@@ -114,8 +114,6 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 
     if (!_Raster.empty() || !_FilePath.empty())
     {
-    //  Log::Write(Log::Level::Trace, "%8d: Realizing artwork.", (uint32_t) ::GetTickCount64());
-
         // Load the frame from the raster data.
         if (_Frame == nullptr)
             hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
@@ -147,7 +145,7 @@ HRESULT Artwork::Realize(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// Creates a palette from the specified bitmap source.
 /// </summary>
-HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
+HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
     HRESULT hr = E_FAIL;
 
@@ -171,11 +169,19 @@ HRESULT Artwork::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCou
         // Convert to Direct2D colors.
         if (SUCCEEDED(hr))
         {
-            colors.clear();
+            size_t i = 0;
+
+            colors.resize(Palette.size());
 
             for (const auto & p : Palette)
-                colors.push_back(D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f));
+                colors[i++] = D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f);
         }
+    }
+    else
+    {
+        colors.clear();
+
+        colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
     }
 
     SetStatus(GotColors);

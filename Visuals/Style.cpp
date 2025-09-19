@@ -1,7 +1,7 @@
 
-/** $VER: Style.cpp (2024.05.03) P. Stuer **/
+/** $VER: Style.cpp (2025.09.18) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Style.h"
 
 #include "Direct2D.h"
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-Style::Style(const Style & other)
+style_t::style_t(const style_t & other)
 {
     operator=(other);
 }
@@ -23,7 +23,7 @@ Style::Style(const Style & other)
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-Style & Style::operator=(const Style & other)
+style_t & style_t::operator=(const style_t & other)
 {
     _Flags = other._Flags;
 
@@ -43,7 +43,8 @@ Style & Style::operator=(const Style & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    _TextFormat = other._TextFormat;
+    ReleaseDeviceSpecificResources();
+
     _Width = other._Width;
     _Height = other._Height;
 
@@ -53,7 +54,7 @@ Style & Style::operator=(const Style & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, GradientStops customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize)
+style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
     _Flags = flags;
 
@@ -71,7 +72,7 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
     _FontSize = fontSize;
 
     _CurrentColor         = customColor;
-    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetGradientStops(_ColorScheme);
+    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetBuiltInGradientStops(_ColorScheme);
 
     _Width  = 0.f;
     _Height = 0.f;
@@ -80,7 +81,7 @@ Style::Style(uint64_t flags, ColorSource colorSource, D2D1_COLOR_F customColor, 
 /// <summary>
 /// Updates the current color based on the color source.
 /// </summary>
-void Style::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors)
+void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
 {
     switch (_ColorSource)
     {
@@ -126,7 +127,7 @@ void Style::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::ve
 /// <summary>
 /// Gets the selected Windows color.
 /// </summary>
-D2D1_COLOR_F Style::GetWindowsColor(uint32_t index) noexcept
+D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
 {
     static const int ColorIndex[] =
     {
@@ -147,7 +148,7 @@ D2D1_COLOR_F Style::GetWindowsColor(uint32_t index) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const std::wstring & text, const D2D1_SIZE_F & size) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -155,7 +156,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -163,13 +164,13 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, _Flags & Style::HorizontalGradient, (ID2D1LinearGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
     }
 
     if (_Brush)
         _Brush->SetOpacity(_Opacity);
 
-    if ((_Flags & SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
+    if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
         const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
@@ -186,7 +187,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -194,7 +195,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (IsSet(_Flags, (uint64_t) Style::AmplitudeBasedColor))
+        if (Has(style_t::Features::HorizontalGradient))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -214,7 +215,7 @@ HRESULT Style::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, c
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void Style::ReleaseDeviceSpecificResources()
+void style_t::ReleaseDeviceSpecificResources() noexcept
 {
     _TextFormat.Release();
     _Brush.Release();
@@ -223,9 +224,9 @@ void Style::ReleaseDeviceSpecificResources()
 /// <summary>
 /// Selects the color of a solid color brush from the amplitude map colors based on a value between 0. and 1..
 /// </summary>
-HRESULT Style::SetBrushColor(double value) noexcept
+HRESULT style_t::SetBrushColor(double value) noexcept
 {
-    if (_AmplitudeMap.size() == 0)
+    if (_AmplitudeMap.empty())
         return E_FAIL;
 
     ID2D1SolidColorBrush * ColorBrush = nullptr;
@@ -235,7 +236,7 @@ HRESULT Style::SetBrushColor(double value) noexcept
     if (!SUCCEEDED(hr))
         return hr;
 
-    size_t Index = Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
+    const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
     D2D1_COLOR_F Color = _AmplitudeMap[Index];
 
@@ -250,9 +251,9 @@ HRESULT Style::SetBrushColor(double value) noexcept
 /// Creates a color table to map the amplitudes to.
 /// </summary>
 /// <remarks>Assumes a sane gradient collection with position running from 0.f to 1.f in ascending order.
-HRESULT Style::CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
+HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
-    if (gradientStops.size() == 0)
+    if (gradientStops.empty())
         return E_FAIL;
 
     const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0. and 1.
@@ -344,7 +345,7 @@ HRESULT Style::CreateAmplitudeMap(ColorScheme colorScheme, const GradientStops &
 /// <summary>
 /// Updates the text width and height.
 /// </summary>
-HRESULT Style::MeasureText(const std::wstring & text) noexcept
+HRESULT style_t::MeasureText(const std::wstring & text) noexcept
 {
     if (_TextFormat == nullptr)
         return E_FAIL;

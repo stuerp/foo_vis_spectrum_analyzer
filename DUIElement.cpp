@@ -1,7 +1,7 @@
 
 /** $VER: DUIElement.cpp (2024.03.11) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "DUIElement.h"
 #include "Color.h"
@@ -44,7 +44,7 @@ const char * DUIElement::g_get_description()
 /// </summary>
 GUID DUIElement::g_get_guid()
 {
-    return UIElement::GetGUID();
+    return uielement_t::GetGUID();
 }
 
 /// <summary>
@@ -134,20 +134,20 @@ static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Fact
 /// </summary>
 LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 {
-    if (!_IsStartingUp)
+    if (!_IsInitializing)
         return 0;
 
     RECT cr;
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = Color::CreateBrush(_MainState._StyleManager._UserInterfaceColors[1]);
+    HBRUSH hBrush = color_t::CreateBrush(_MainState._StyleManager._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 
     ::DeleteObject((HGDIOBJ) hBrush);
 
-    _IsStartingUp = false;
+    _IsInitializing = false;
 
     return 1;
 }
@@ -160,7 +160,7 @@ void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
     if (m_callback->is_edit_mode_enabled())
         SetMsgHandled(FALSE);
     else
-        UIElement::OnContextMenu(wnd, position);
+        uielement_t::OnContextMenu(wnd, position);
 }
 
 /// <summary>
@@ -178,9 +178,9 @@ void DUIElement::GetColors() noexcept
 {
     _MainState._StyleManager._UserInterfaceColors.clear();
 
-    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(Color::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
+    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
 }

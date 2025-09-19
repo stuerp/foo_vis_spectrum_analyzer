@@ -1,9 +1,9 @@
 
-/** $VER: UIElement.h (2024.08.07) P. Stuer **/
+/** $VER: UIElement.h (2025.09.17) P. Stuer **/
 
 #pragma once
 
-#include "framework.h"
+#include "pch.h"
 
 #include "State.h"
 #include "ConfigurationDialog.h"
@@ -19,15 +19,15 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class UIElement : public CWindowImpl<UIElement>, private play_callback_impl_base, now_playing_album_art_notify
+class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base
 {
 public:
-    UIElement();
+    uielement_t();
 
-    UIElement(const UIElement &) = delete;
-    UIElement & operator=(const UIElement &) = delete;
-    UIElement(UIElement &&) = delete;
-    UIElement & operator=(UIElement &&) = delete;
+    uielement_t(const uielement_t &) = delete;
+    uielement_t & operator=(const uielement_t &) = delete;
+    uielement_t(uielement_t &&) = delete;
+    uielement_t & operator=(uielement_t &&) = delete;
 
     #pragma region CWindowImpl
 
@@ -55,25 +55,98 @@ protected:
     void UpdateState() noexcept;
 
 private:
-    #pragma region Render thread
+    // These methods (must) run on the main foobar2000 UI thread.
+    #pragma region UI thread
 
-    void OnTimer();
+    #pragma region CWindowImpl
 
-    void ProcessEvents();
-    void Render();
-    void Process() noexcept;
-    void Animate();
+    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
+    void OnDestroy();
+    void OnPaint(CDCHandle dc);
+    void OnSize(UINT nType, CSize size);
+    void OnLButtonDown(UINT nFlags, CPoint point);
+    void OnLButtonUp(UINT nFlags, CPoint point);
+    void OnLButtonDblClk(UINT nFlags, CPoint point);
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
 
-    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
+    void OnMouseMove(UINT, CPoint);
+    void OnMouseLeave();
 
-    #pragma region Timer
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    #pragma endregion
+
+    #pragma region play_callback methods
+
+    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
+    void on_playback_new_track(metadb_handle_ptr p_track);
+    void on_playback_stop(play_control::t_stop_reason p_reason);
+    void on_playback_seek(double p_time) { }
+    void on_playback_pause(bool p_state);
+    void on_playback_edited(metadb_handle_ptr p_track) { }
+    void on_playback_dynamic_info(const file_info& p_info) { }
+    void on_playback_dynamic_info_track(const file_info& p_info) { }
+    void on_playback_time(double time);
+    void on_volume_change(float p_new_val) { }
+
+    #pragma endregion
 
     void StartTimer() noexcept;
     void StopTimer() noexcept;
 
     static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
 
+    virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
+
+    void ToggleFrameCounter() noexcept;
+    void ToggleHardwareRendering() noexcept;
+
+    void Configure() noexcept;
+    void Resize();
+
+    // Tool Tips
+    void CreateToolTipControl() noexcept;
+    void DeleteTrackingToolTip() noexcept;
+    graph_t * GetGraph(const CPoint & pt) noexcept;
+
+    void GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort);
+    void GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort);
+
+    #pragma region CWindowImpl
+
+    BEGIN_MSG_MAP_EX(uielement_t)
+        MSG_WM_CREATE(OnCreate)
+        MSG_WM_DESTROY(OnDestroy)
+        MSG_WM_ERASEBKGND(OnEraseBackground)
+        MSG_WM_PAINT(OnPaint)
+        MSG_WM_SIZE(OnSize)
+        MSG_WM_CONTEXTMENU(OnContextMenu)
+        MSG_WM_LBUTTONDOWN(OnLButtonDown)
+        MSG_WM_LBUTTONUP(OnLButtonUp)
+        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+        MSG_WM_DPICHANGED(OnDPIChanged)
+
+        MSG_WM_MOUSEMOVE(OnMouseMove)   // Required for CToolTip
+        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
+
+        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
+    END_MSG_MAP()
+
     #pragma endregion
+
+    #pragma endregion
+
+    // These methods run on the render thread.
+    #pragma region Render thread
+
+    void OnTimer() noexcept;
+
+    void ProcessEvents() noexcept;
+    void Render() noexcept;
+    void Process() noexcept;
+    void Animate() noexcept;
+
+    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
 
     #pragma region DirectX
 
@@ -89,95 +162,24 @@ private:
 
     #pragma endregion
 
-    #pragma region UI thread
-
-    #pragma region CWindowImpl
-
-    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
-    void OnDestroy();
-    void OnPaint(CDCHandle dc);
-    void OnSize(UINT nType, CSize size);
-    void OnLButtonDblClk(UINT nFlags, CPoint point);
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
-
-    void OnMouseMove(UINT, CPoint);
-    void OnMouseLeave();
-
-    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-    #pragma endregion
-
-    #pragma region Playback callback methods
-
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
-    void on_playback_new_track(metadb_handle_ptr p_track);
-    void on_playback_stop(play_control::t_stop_reason p_reason);
-    void on_playback_seek(double p_time) { }
-    void on_playback_pause(bool p_state);
-    void on_playback_edited(metadb_handle_ptr p_track) { }
-    void on_playback_dynamic_info(const file_info& p_info) { }
-    void on_playback_dynamic_info_track(const file_info& p_info) { }
-    void on_playback_time(double time);
-    void on_volume_change(float p_new_val) { }
-
-    #pragma endregion
-
-    void LoadAlbumArt(const metadb_handle_ptr & track, abort_callback & abort);
-
-    virtual void ToggleFullScreen() noexcept = 0;
-    void ToggleFrameCounter() noexcept;
-    void ToggleHardwareRendering() noexcept;
-
-    void Configure() noexcept;
-    void Resize();
-
-    // Tool Tips
-    void CreateToolTipControl() noexcept;
-    void DeleteTrackingToolTip() noexcept;
-    Graph * GetGraph(const CPoint & pt) noexcept;
-
-    void on_album_art(album_art_data::ptr data);
-
-    #pragma region CWindowImpl
-
-    BEGIN_MSG_MAP_EX(UIElement)
-        MSG_WM_CREATE(OnCreate)
-        MSG_WM_DESTROY(OnDestroy)
-        MSG_WM_ERASEBKGND(OnEraseBackground)
-        MSG_WM_PAINT(OnPaint)
-        MSG_WM_SIZE(OnSize)
-        MSG_WM_CONTEXTMENU(OnContextMenu)
-        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
-        MSG_WM_DPICHANGED(OnDPIChanged)
-
-        MSG_WM_MOUSEMOVE(OnMouseMove) // Required for CToolTip
-        MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
-
-        MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
-    END_MSG_MAP()
-
-    #pragma endregion
-
-    #pragma endregion
-
 protected:
     state_t _MainState;
     state_t _ThreadState;
 
-    CriticalSection _CriticalSection;
+    msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
 
     RECT _OldBounds;
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
+    bool _IsInitializing;
 
-    Event _Event;
-    bool _IsStartingUp;
+    event_t _Event;
 
 private:
     #pragma region Shared
 
-    Artwork _Artwork;
+    artwork_t _Artwork;
 
     #pragma endregion
 
@@ -194,8 +196,8 @@ private:
     visualisation_stream_v2::ptr _VisualisationStream;
     bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
 
-    FrameCounter _FrameCounter;
-    Grid _Grid;
+    frame_counter_t _FrameCounter;
+    grid_t _Grid;
 
     #pragma endregion
 
@@ -223,10 +225,10 @@ private:
 
     CToolTipCtrl _ToolTipControl;
 
-    Graph * _TrackingGraph;
+    graph_t * _TrackingGraph;
     TTTOOLINFOW _TrackingToolInfo;
     POINT _LastMousePos;
-    size_t _LastIndex;
+    size_t _LastBandIndex;
 
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 

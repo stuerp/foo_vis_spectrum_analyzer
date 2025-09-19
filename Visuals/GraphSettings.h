@@ -1,4 +1,4 @@
-﻿
+
 /** $VER: GraphSettings.h (2024.04.22) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
@@ -18,15 +18,15 @@
 /// Represents the settings of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-struct GraphSettings
+struct graph_settings_t
 {
 public:
-    GraphSettings()
+    graph_settings_t()
     {
         Initialize();
     }
 
-    GraphSettings(const std::wstring & description)
+    graph_settings_t(const std::wstring & description)
     {
         _Description = description;
 
@@ -38,7 +38,7 @@ public:
 private:
     void Initialize()
     {
-        _Channels = (uint32_t) Channel::ConfigStereo;
+        _Channels = (uint32_t) Channels::ConfigStereo;
         _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
 
         _HorizontalAlignment = HorizontalAlignment::Center;

@@ -1,7 +1,7 @@
 
 /** $VER: Color.cpp (2024.01.21) P. Stuer - Color support **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Color.h"
 
 struct ColorHSL
@@ -18,7 +18,7 @@ FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z);
 /// <summary>
 /// Sorts a color vector by hue.
 /// </summary>
-void Color::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
+void color_t::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
     std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
     {
@@ -41,7 +41,7 @@ void Color::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) 
 /// <summary>
 /// Sorts a color vector by saturation.
 /// </summary>
-void Color::SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
+void color_t::SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
     std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
     {
@@ -64,7 +64,7 @@ void Color::SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool asce
 /// <summary>
 /// Sorts a color vector by lightness.
 /// </summary>
-void Color::SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
+void color_t::SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
     std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
     {

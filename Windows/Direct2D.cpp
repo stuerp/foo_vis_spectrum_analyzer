@@ -1,10 +1,10 @@
 
 /** $VER: Direct2D.cpp (2024.05.03) P. Stuer **/
 
-#include "framework.h"
+#include "pch.h"
 #include "Direct2D.h"
 
-#include "COMException.h"
+#include <libmsc.h>
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
@@ -30,7 +30,7 @@ HRESULT Direct2D::Initialize()
     HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &Factory);
 
     if (!SUCCEEDED(hr))
-        throw COMException(hr, L"Unable to create Direct2D factory.");
+        throw msc::win32_exception("Unable to create Direct2D factory.", (DWORD) hr);
 
     return hr;
 }
@@ -169,7 +169,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 {
     gradientStops.clear();
 
-    if (colors.size() == 0)
+    if (colors.empty())
         return S_OK;
 
     gradientStops.push_back({ 0.f, colors[0] });
@@ -183,12 +183,12 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    GradientStops gs = gradientStops;
+    gradient_stops_t gs = gradientStops;
 
     // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
     std::reverse(gs.begin(), gs.end());
@@ -214,12 +214,12 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const Gr
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, const GradientStops & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    GradientStops gs = gradientStops;
+    gradient_stops_t gs = gradientStops;
 
     // Recalculate the stop offsets to take into account the inner radius.
     if (rOffset != 0.f)

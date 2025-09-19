@@ -1,7 +1,7 @@
 
 /** $VER: AnalogStyleAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Analog-style spectrum analyzer, https://codepen.io/TF3RDL/pen/MWLzPoO **/
 
-#include "framework.h"
+#include "pch.h"
 
 #include "AnalogStyleAnalyzer.h"
 
@@ -12,20 +12,20 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-AnalogStyleAnalyzer::AnalogStyleAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction)
+analog_style_analyzer_t::analog_style_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBands)
+bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & frequencyBands)
 {
     assert(_SampleRate != 0);
 
     const double TimeResolution =  _State->_ConstantQ ? std::numeric_limits<double>::infinity() : _State->_TimeResolution;
 
-    for (const FrequencyBand & fb : frequencyBands)
+    for (const frequency_band_t & fb : frequencyBands)
     {
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
         const double rad = M_PI * fb.Ctr / (double) _SampleRate;
@@ -37,7 +37,7 @@ bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBand
         const double Q = fb.Ctr / Bandwidth * QCompensationFactor / (_State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
-        Coef c = { };
+        coef_t c = { };
 
         c.a0 = K / Q * Norm;
         c.a1 = 0.;
@@ -57,7 +57,7 @@ bool AnalogStyleAnalyzer::Initialize(const vector<FrequencyBand> & frequencyBand
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool AnalogStyleAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;
@@ -84,7 +84,7 @@ bool AnalogStyleAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t
                 Value = Coef.Out[j - 1];
             }
 
-            frequencyBands[k].NewValue = Max(frequencyBands[k].NewValue, ::abs(Value));
+            frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, ::abs(Value));
             ++k;
         }
     }

@@ -1,7 +1,7 @@
 
 /** $VER: CQTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
-#include "framework.h"
+#include "pch.h"
 #include "CQTAnalyzer.h"
 
 #include "Support.h"
@@ -11,21 +11,21 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CQTAnalyzer::CQTAnalyzer(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const WindowFunction & windowFunction) : Analyzer(state, sampleRate, channelCount, channelSetup, windowFunction)
+cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool CQTAnalyzer::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, FrequencyBands & frequencyBands) noexcept
+bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
-    for (FrequencyBand & fb : frequencyBands)
+    for (frequency_band_t & fb : frequencyBands)
     {
         double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
-        double TLen = Min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
+        double TLen = std::min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
 
-        double DownsampleAmount = Max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
+        double DownsampleAmount = std::max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
         double Coeff = 2. * ::cos(2. * M_PI * fb.Ctr / (double) _SampleRate * DownsampleAmount);
 
         double f1 = 0.;

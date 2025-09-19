@@ -20,43 +20,43 @@
 #include "Element.h"
 #include "PeakMeterTypes.h"
 
-class GaugeNames : public Element
+class gauge_names_t : public element_t
 {
 public:
-    GaugeNames() { };
+    gauge_names_t() { };
 
-    GaugeNames(const GaugeNames &) = delete;
-    GaugeNames & operator=(const GaugeNames &) = delete;
-    GaugeNames(GaugeNames &&) = delete;
-    GaugeNames & operator=(GaugeNames &&) = delete;
+    gauge_names_t(const gauge_names_t &) = delete;
+    gauge_names_t & operator=(const gauge_names_t &) = delete;
+    gauge_names_t(gauge_names_t &&) = delete;
+    gauge_names_t & operator=(gauge_names_t &&) = delete;
 
-    virtual ~GaugeNames() { }
+    virtual ~gauge_names_t() { }
 
-    void Initialize(state_t * state, const GraphSettings * settings, const Analysis * analysis);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
     void Reset();
     void Move(const D2D1_RECT_F & rect);
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics);
+    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->GetWidth();
+        return _TextStyle->_Width;
     }
 
     FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle->GetHeight();
+        return _TextStyle->_Height;
     }
 
 private:
-    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
-    void RenderVertical(ID2D1RenderTarget * renderTarget, const GaugeMetrics & gaugeMetrics) const noexcept;
+    void RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept;
+    void RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept;
 
 private:
-    Style * _TextStyle;
+    style_t * _TextStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

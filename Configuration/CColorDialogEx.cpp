@@ -1,7 +1,7 @@
 
 /** $VER: CColorDialogEx.cpp (2023.12.31) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
-#include "framework.h"
+#include "pch.h"
 #include "CColorDialogEx.h"
 
 #include "Resources.h"
@@ -32,10 +32,10 @@ bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color)
     cc.hwndOwner = hWnd;
 
     cc.lpCustColors = (LPDWORD) CustomColors;
-    cc.rgbResult = Color::ToCOLORREF(color);
+    cc.rgbResult = color_t::ToCOLORREF(color);
     cc.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE | CC_SOLIDCOLOR;
     cc.lpfnHook = (LPCCHOOKPROC) Hook;
-    cc.hInstance = (HWND) GetCurrentModule();//::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
+    cc.hInstance = (HWND) msc::GetCurrentModule();//::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
     cc.lpTemplateName = MAKEINTRESOURCE(IDD_CHOOSECOLOR);
     cc.lCustData = (LPARAM) this;
 
@@ -113,7 +113,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 
             ::ClipCursor(&ClipRect);
 
-            _Color.a = Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
+            _Color.a = msc::Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
 
             ::SetDlgItemInt(hDlg, IDC_ALPHA_VALUE, (UINT) (_Color.a * 100.f), FALSE);
             ::InvalidateRect(hDlg, &_SliderRect, FALSE);
@@ -132,7 +132,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
             if (!::PtInRect(&_SliderRect, POINT(x, y)))
                 break;
 
-            _Color.a = Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
+            _Color.a = msc::Map(y, _SliderRect.top, _SliderRect.bottom - 1, 0.f, 1.f);
 
             ::SetDlgItemInt(hDlg, IDC_ALPHA_VALUE, (UINT) (_Color.a * 100.f), FALSE);
             ::InvalidateRect(hDlg, &_SliderRect, FALSE);
