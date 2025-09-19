@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.17) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.19) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -74,6 +74,8 @@ private:
     HRESULT CreateGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const;
     HRESULT CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
+    HRESULT CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** segment) const noexcept;
+
 private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
@@ -91,8 +93,8 @@ private:
 
     style_t * _BarAreaStyle;
     style_t * _BarTopStyle;
-    style_t * _PeakAreaStyle;
-    style_t * _PeakTopStyle;
+    style_t * _BarPeakAreaStyle;
+    style_t * _BarPeakTopStyle;
     style_t * _DarkBackgroundStyle;
     style_t * _LightBackgroundStyle;
 

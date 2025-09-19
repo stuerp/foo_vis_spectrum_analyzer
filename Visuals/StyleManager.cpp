@@ -212,7 +212,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             // Sets the default font settings.
             if (style.Has(style_t::Features::SupportsFont))
             {
-                auto DefaultStyle = _DefaultStyles[(VisualElement) Id];
+                const auto & DefaultStyle = _DefaultStyles[(VisualElement) Id];
 ;
                 if (style._FontName.empty())
                     style._FontName = DefaultStyle._FontName;

@@ -195,7 +195,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
         hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (Has(style_t::Features::HorizontalGradient) || Has(style_t::Features::AmplitudeBasedColor))
+        if (Has(style_t::Features::HorizontalGradient))
         {
             hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
