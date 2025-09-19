@@ -104,7 +104,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Message>Executing post-build script...</Message>
@@ -137,7 +137,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>

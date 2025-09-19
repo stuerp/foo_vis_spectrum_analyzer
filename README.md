@@ -8,9 +8,19 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Bars.png?raw=true "Screenshot")
 
+<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
+
 ![Screenshot](assets/Curve.png?raw=true "Screenshot")
 
+<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
 ![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
+
+<sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
+
+![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Radial Bars Mode</sup>
 
 ## Features
 
@@ -92,16 +102,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.8.0.0-beta3, 2025-09-19
+v0.8.0.0-beta4, 2025-xx-xx
 
-* New: [User guide](docs/README.md) documenting all the configuration settings.
-* New: When the `Tool tips` option is disabled you can still get a tool tip when you click and hold the left mousebutton over a frequency band.
-* Improved: Radial Bars
-  * Implemented horizontal and amplitude-based gradient, peak mode.
-* Fixed: Weird behavior in IIR filter bank/analog-style analyzer. (Provided by TF3RDL)
-* Fixed: Stability of the tooltip.
-* Fixed: SWIFT analyzer (Regression)
-* Fixed: Artwork color sorting (Regression)
+* 
 
 You can read the full history [here](docs/History.md).
 
