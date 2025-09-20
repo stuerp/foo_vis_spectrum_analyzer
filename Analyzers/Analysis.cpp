@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2024.08.18) P. Stuer **/
+/** $VER: Analysis.cpp (2025.09.20) P. Stuer **/
 
 #include "pch.h"
 
@@ -62,7 +62,13 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             if ((Samples == nullptr) || (SampleCount == 0))
                 return;
 
-            _SampleRate = chunk.get_sample_rate();
+            if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
+                Reset();
+
+            _SampleRate    = chunk.get_sample_rate();
+            _ChannelCount  = chunk.get_channel_count();
+            _ChannelConfig = chunk.get_channel_config();
+
             _NyquistFrequency = (double) _SampleRate / 2.;
 
             GetAnalyzer(chunk);
@@ -177,6 +183,7 @@ void analysis_t::Reset()
 
     {
         _CurrentChannelMask = 0;
+
         InitializeGauges((uint32_t) Channels::ConfigStereo);
     }
 
@@ -480,13 +487,15 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 
     _FrequencyBands.resize(_State->_BandCount);
 
+    const size_t n = _State->_BandCount - 1;
+
     double i = 0.;
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, _State->_BandCount - 1, _State->_SkewFactor);
-        fb.Ctr = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             _State->_BandCount - 1, _State->_SkewFactor);
-        fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, _State->_BandCount - 1, _State->_SkewFactor);
+        fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
+        fb.Ctr = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
+        fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
@@ -510,24 +519,24 @@ void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
         if (_BrownPucketteKernel == nullptr)
             _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
 
-        _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+        _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
     }
 
     if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))
     {
-        _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
     }
 
     if ((_SWIFTAnalyzer == nullptr) && (_State->_Transform == Transform::SWIFT))
     {
-        _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config());
+        _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
 
         _SWIFTAnalyzer->Initialize(_FrequencyBands);
     }
 
     if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
     {
-        _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), *_WindowFunction);
+        _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
 
         _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
     }

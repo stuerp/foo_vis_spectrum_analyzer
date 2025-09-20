@@ -44,9 +44,9 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
-    Add(samples, sampleCount, channels);
+    Add(frameData, frameCount, channels);
 
     Transform();
 
@@ -72,23 +72,21 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleC
 
 /// <summary>
 /// Adds multiple samples to the analyzer buffer.
-/// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
+/// It assumes that the buffer contains frames of sample data with a reading for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void fft_analyzer_t::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
+void fft_analyzer_t::Add(const audio_sample * frameData, size_t frameCount, uint32_t channels) noexcept
 {
-//  Log::Write(Log::Level::Trace, "%8d: %5d, %5d, %5d", (int) ::GetTickCount64() _Size, _Curr, sampleCount / 2);
-
-    if (samples == nullptr)
+    if (frameData == nullptr)
         return;
 
     // Make sure there are enough samples for all the channels.
-    sampleCount -= (sampleCount % _ChannelCount);
+    frameCount -= (frameCount % _ChannelCount);
 
     // Merge the samples of all channels into one averaged sample.
     #pragma loop(hint_parallel(2))
-    for (size_t i = 0; i < sampleCount; i += _ChannelCount)
+    for (size_t i = 0; i < frameCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&samples[i], channels);
+        _Data[_Curr] = AverageSamples(&frameData[i], channels);
 
         _Curr = (_Curr + 1) % _Size;
     }
@@ -108,7 +106,7 @@ void fft_analyzer_t::Transform() noexcept
 
         for (std::complex<double> & Iter : _TimeData)
         {
-            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, 0ull, _FFTSize, -1., 1.));
 
             Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
 

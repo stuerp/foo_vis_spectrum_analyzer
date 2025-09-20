@@ -95,6 +95,9 @@ void uielement_t::ProcessEvents() noexcept
         _ThreadState._PlaybackTime = 0.;
         _ThreadState._TrackTime = 0.;
 
+        for (auto & Iter : _Grid)
+            Iter._Graph->Reset();
+
         if (_Artwork.Bitmap() == nullptr)
         {
             // Set the default dominant color and gradient for the artwork color scheme.
@@ -106,9 +109,6 @@ void uielement_t::ProcessEvents() noexcept
 
             _IsConfigurationChanged = true;
         }
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
@@ -172,7 +172,13 @@ void uielement_t::Process() noexcept
 
     // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters.
     if ((_ThreadState._SampleRate == 0) && _VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, 0.001))
+    {
         InitializeSampleRateDependentParameters(Chunk);
+
+        _ThreadState._PlaybackTime = PlaybackTime;
+
+        return;
+    }
 
     if (_ThreadState._SampleRate == 0)
         return;
