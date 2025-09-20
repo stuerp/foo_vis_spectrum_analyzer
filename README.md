@@ -106,6 +106,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.8.0.0-beta4, 2025-xx-xx
 
 * New: The log verbosity can be set on the **Common** page of the configuration dialog.
+* Fixed: Rendering negative infinity in the peak meter read out was broken. (Beta 2 regression)
 
 You can read the full history [here](docs/History.md).
 

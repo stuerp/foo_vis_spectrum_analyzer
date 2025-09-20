@@ -86,14 +86,14 @@ void rms_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const ga
         if (_TextStyle->IsEnabled())
         {
             Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f;
-            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                          : _TextStyle->_Width;
+            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
 
             WCHAR Text[16];
 
             if (::isfinite(gv.RMS))
                 ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS);
             else
-                ::wcscpy_s(Text, _countof(Text), L"-∞");
+                ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
 //          renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -124,7 +124,7 @@ void rms_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gaug
         // Draw the RMS text display.
         if (_TextStyle->IsEnabled())
         {
-            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                     : GetHeight() - _TextStyle->_Height;
+            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
             Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
             WCHAR Text[16];
@@ -132,7 +132,7 @@ void rms_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gaug
             if (::isfinite(gv.RMS))
                 ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", gv.RMS);
             else
-                ::wcscpy_s(Text, _countof(Text), L"-∞");
+                ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
 //          renderTarget->FillRectangle(Rect, _DebugBrush);
             renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
