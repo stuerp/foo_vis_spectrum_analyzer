@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.09.18) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.09.20) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -199,6 +199,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork when displayed." },
             { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
+
+            { IDC_LOG_LEVEL, L"Sets the verbosity of the log information that gets written to the console." },
 
             // Graphs
             { IDC_GRAPH_SETTINGS, L"Shows the list of graphs." },
@@ -922,6 +924,24 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    #pragma region Component
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_LOG_LEVEL);
+
+        w.ResetContent();
+
+        int i = -1;
+
+        for (const auto & Text : { L"Never", L"Fatal", L"Error", L"Warn", L"Info", L"Debug", L"Trace", L"Always", })
+        {
+            w.AddString(Text);
+
+            if (++i == CfgLogLevel)
+                w.SetCurSel((int) i);
+        }
+    }
+    #pragma endregion
+
     #pragma region Graphs
 
     {
@@ -1432,6 +1452,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             _State->_FitMode = (FitMode) SelectedIndex;
 
             UpdateCommonPage();
+            break;
+        }
+
+        case IDC_LOG_LEVEL:
+        {
+            CfgLogLevel.set((int64_t) SelectedIndex);
+
+            Log.SetLevel((LogLevel) CfgLogLevel.get());
             break;
         }
 
@@ -2661,6 +2689,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_RESET:
         {
             _State->Reset();
+            CfgLogLevel.set((int64_t) DefaultCfgLogLevel);
 
             Initialize();
             break;
@@ -3033,6 +3062,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
             IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
 
+        // Artwork
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
             IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
@@ -3041,6 +3071,10 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
+
+        // Component
+        IDC_COMPONENT,
+            IDC_LOG_LEVEL_LBL, IDC_LOG_LEVEL
     };
 
     static const int Page5[] =

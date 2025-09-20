@@ -1,5 +1,5 @@
 
-/** $VER: Resources.rc (2024.08.18) P. Stuer **/
+/** $VER: Resources.rc (2025.09.20) P. Stuer **/
 
 #include "Resources.h"
 
@@ -247,6 +247,10 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext           "Artwork file path:"        IDC_FILE_PATH_LBL,              X_G13, Y_G13 + 2, W_G13, H_G13
         edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
 
+    groupbox "Component", IDC_COMPONENT, X_K00, Y_K00, W_K00, H_K00, BS_GROUPBOX, WS_EX_TRANSPARENT
+        rtext           "Log level:"                IDC_LOG_LEVEL_LBL,              X_K01, Y_K01 + 2, W_K01, H_K01
+        combobox                                    IDC_LOG_LEVEL,                  X_K02, Y_K02,     W_K02, H_K02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
     // Graph Settings
 
     listbox IDC_GRAPH_SETTINGS, X_G20, Y_G20, W_G20, H_G20, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
@@ -256,7 +260,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control         "Vertical layout" IDC_VERTICAL_LAYOUT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G23, Y_G23, W_G23, H_G23
 
-    rtext           "Description:"                  IDC_GRAPH_DESCRIPTION_LBL       X_G24, Y_G24 + 2, W_G24, H_G24
+    rtext               "Description:"              IDC_GRAPH_DESCRIPTION_LBL       X_G24, Y_G24 + 2, W_G24, H_G24
     edittext                                        IDC_GRAPH_DESCRIPTION           X_G25, Y_G25,     W_G25, H_G25, ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Layout", IDC_LAYOUT, X_B16, Y_B16, W_B16, H_B16, BS_GROUPBOX, WS_EX_TRANSPARENT

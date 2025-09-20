@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.09.17) P. Stuer **/
+/** $VER: UIElement.cpp (2025.09.20) P. Stuer **/
 
 #include "pch.h"
 
@@ -627,23 +627,25 @@ void uielement_t::on_playback_time(double time)
 /// </summary>
 void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort)
 {
-    static_api_ptr_t<album_art_manager_v2> aam;
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " is getting front cover album art for playing track.");
 
-    auto Extractor = aam->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+    static_api_ptr_t<album_art_manager_v2> AlbumArtManager;
 
-    if (!Extractor.is_valid())
+    auto AlbumArtExtractor = AlbumArtManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+
+    if (!AlbumArtExtractor.is_valid())
         return;
 
     try
     {
-        auto aad = Extractor->query(album_art_ids::cover_front, abort);
+        auto AlbumArtData = AlbumArtExtractor->query(album_art_ids::cover_front, abort);
 
-        if (aad.is_valid())
-            _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        if (AlbumArtData.is_valid())
+            _Artwork.Initialize((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
     }
     catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to get album art from playing track: %s", e.what());
+        Log.AtDebug().Write(STR_COMPONENT_BASENAME " failed to get front cover album art for playing track: %s", e.what());
     }
 }
 
@@ -652,6 +654,8 @@ void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_ca
 /// </summary>
 void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort)
 {
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " is getting album art from script \"\".", pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()).c_str());
+
     titleformat_object::ptr Script;
 
     bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_MainState._ArtworkFilePath.c_str()));
@@ -661,5 +665,5 @@ void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_c
     if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
         _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
     else
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to get album art from script.");
+        Log.AtDebug().Write(STR_COMPONENT_BASENAME " failed to get album art from script result \"%s\".", Result.c_str());
 }

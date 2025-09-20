@@ -1,11 +1,12 @@
 
-/** $VER: ConfigurationDialog.h (2025.09.17) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2025.09.20) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
 #include "pch.h"
 
 #include <sdk/coreDarkMode.h>
+#include <sdk/cfg_var.h>
 
 #include "Resources.h"
 #include "State.h"

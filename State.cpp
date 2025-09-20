@@ -1,13 +1,15 @@
 
-/** $VER: State.cpp (2024.08.18) P. Stuer **/
+/** $VER: State.cpp (2025.09.20) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
 #include "Gradients.h"
+#include "Resources.h"
 #include "Log.h"
 
 #include <SDK/file.h>
+#include "SDK/filesystem.h"
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -241,12 +243,11 @@ void state_t::Reset() noexcept
 
     pfc::string Path = core_api::get_profile_path();
 
-    if (Path.startsWith("file://"))
-        _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
-    else
-        _PresetsDirectoryPath = ::wideFromUTF8(Path);
+    Path = foobar2000_io::filesystem::g_get_native_path(Path);
 
-    /* Not serialized */
+    _PresetsDirectoryPath = ::wideFromUTF8(Path);
+
+    /** Not serialized **/
 
     _UseToneGenerator = false;
 
@@ -890,7 +891,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
     }
     catch (exception & ex)
     {
-        Log.AtError().Write("%8d: %s failed to read DUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read DUI configuration: %s", ex.what());
 
         Reset();
     }
@@ -1195,7 +1196,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
     }
     catch (exception & ex)
     {
-        Log.AtError().Write("%8d: %s failed to write CUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write CUI configuration: %s", ex.what());
     }
 }
 
@@ -1430,3 +1431,5 @@ const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme color
 
     return GetBuiltInGradientStops(colorScheme);
 }
+
+cfg_var_modern::cfg_int CfgLogLevel({ 0xd61902e0, 0x709a, 0x4551, { 0x98, 0x18, 0x18, 0x6d, 0x4b, 0xa4, 0xc3, 0x34 } }, DefaultCfgLogLevel);

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2024.08.18) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2025.09.20) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -882,6 +882,26 @@
 
 #define W_B06  184
 #define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
+
+#pragma region Component
+// Groupbox
+#define X_K00   X_B06
+#define Y_K00   Y_B06 + H_B06 + IY
+#define W_K00   W_B06
+
+    // Label: Log level
+    #define X_K01    X_K00 +  5
+    #define Y_K01    Y_K00 + 11
+    #define W_K01    34
+    #define H_K01    H_LBL
+
+    // Combobox: Log level
+    #define X_K02    X_K01 + W_K01 + IX
+    #define Y_K02    Y_K01
+    #define W_K02    48
+    #define H_K02    H_CBX
+
+#define H_K00   11 + H_K02 + 7
 
 #pragma endregion
 

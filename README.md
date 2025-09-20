@@ -24,6 +24,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
+* Spectrum Analyzer (Bars, Curve, Radial Bars), Spectogram, Peak Meter and Level Meter visualizations.
 * Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 * Multiple frequency range and smoothing options
 * Multiple graphs
@@ -104,7 +105,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.8.0.0-beta4, 2025-xx-xx
 
-* 
+* New: The log verbosity can be set on the **Common** page of the configuration dialog.
 
 You can read the full history [here](docs/History.md).
 

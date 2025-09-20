@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.09.19) P. Stuer **/
+/** $VER: Resources.h (2025.09.20) P. Stuer **/
 
 #pragma once
 
@@ -293,6 +293,11 @@
 #define IDC_FILE_PATH                   6122
 
 #pragma endregion
+
+#define IDC_COMPONENT                   6200
+
+#define IDC_LOG_LEVEL_LBL               6202
+#define IDC_LOG_LEVEL                   6204
 
 /** Graphs **/
 

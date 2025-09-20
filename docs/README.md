@@ -443,6 +443,15 @@ Determines the opacity of the artwork when displayed.
 
 A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background.
 
+#### Component
+
+`Log Level`
+
+Allows you to control the messages the component will write to the foobar2000 console.
+
+> [!Warning]
+> The **Debug** and **Trace** levels may generate a lot of technical output.
+
 ---
 
 ### Visualization page
