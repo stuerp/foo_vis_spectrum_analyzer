@@ -342,7 +342,7 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 29; // v0.8.0.0-beta4
+    const size_t _CurrentVersion = 28; // v0.8.0.0-beta2
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

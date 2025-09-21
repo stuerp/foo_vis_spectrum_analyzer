@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.20) P. Stuer **/
+/** $VER: State.cpp (2025.09.21) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -521,7 +521,7 @@ state_t & state_t::operator=(const state_t & other)
 }
 
 /// <summary>
-/// Reads this instance with the specified reader. (CUI version)
+/// Reads this instance with the specified reader.
 /// </summary>
 void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
@@ -898,7 +898,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 }
 
 /// <summary>
-/// Writes this instance to the specified writer. (CUI version)
+/// Writes this instance to the specified writer.
 /// </summary>
 void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
 {
@@ -1193,6 +1193,9 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_InnerRadius, abortHandler);
         writer->write_object_t(_OuterRadius, abortHandler);
         writer->write_object_t(_AngularVelocity, abortHandler);
+
+        // Version 29, v0.8.0.0-beta4
+        writer->write_object_t(_InnerRadius, abortHandler);
     }
     catch (exception & ex)
     {

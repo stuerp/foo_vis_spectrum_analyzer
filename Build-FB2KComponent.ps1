@@ -79,7 +79,7 @@ elseif ($Platform -eq 'Win32')
     }
 
     # install the component in the foobar2000 x86 components directory: "bin/x86/profile/user-components/TargetName"
-    $foobar2000Path = '../bin/x86';
+    $foobar2000Path = '../bin.x86';
 
     if (Test-Path -Path "$foobar2000Path/foobar2000.exe")
     {

@@ -89,6 +89,28 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
         return -1;
     }
 
+    // Register ourselves with the album art notification manager.
+    {
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
+
+        if (AlbumArtNotificationManager.is_valid())
+            AlbumArtNotificationManager->add(this);
+    }
+/*
+    // Get the artwork data from the album art.
+    if (_MainState._ArtworkFilePath.empty())
+    {
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
+
+        if (AlbumArtNotificationManager.is_valid())
+        {
+            album_art_data_ptr aad = AlbumArtNotificationManager->current();
+
+            if (aad.is_valid())
+                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+        }
+    }
+*/
     // Create the tooltip control.
     CreateToolTipControl();
 
@@ -104,6 +126,14 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 void uielement_t::OnDestroy()
 {
     StopTimer();
+
+    // Unregister ourselves with the album art notification manager.
+    {
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
+
+        if (AlbumArtNotificationManager.is_valid())
+            AlbumArtNotificationManager->remove(this);
+    }
 
     _CriticalSection.Enter();
 
@@ -622,12 +652,24 @@ void uielement_t::on_playback_time(double time)
 
 #pragma endregion
 
+#pragma region now_playing_album_art_notify
+
+/// <summary>
+/// Called when album art has finished loading for the now playing track.
+/// </summary>
+void uielement_t::on_album_art(album_art_data::ptr aad)
+{
+ // Log.AtDebug().Write(STR_COMPONENT_BASENAME " received album art notification.");
+}
+
+#pragma endregion
+
 /// <summary>
 /// Gets the album art from the specified track.
 /// </summary>
 void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort)
 {
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME " is getting front cover album art for playing track.");
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " is getting front cover album art for the playing track.");
 
     static_api_ptr_t<album_art_manager_v2> AlbumArtManager;
 

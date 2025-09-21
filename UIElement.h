@@ -19,7 +19,7 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base
+class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base, now_playing_album_art_notify
 {
 public:
     uielement_t();
@@ -108,6 +108,8 @@ private:
     void CreateToolTipControl() noexcept;
     void DeleteTrackingToolTip() noexcept;
     graph_t * GetGraph(const CPoint & pt) noexcept;
+
+    void on_album_art(album_art_data::ptr data);
 
     void GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort);
     void GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort);

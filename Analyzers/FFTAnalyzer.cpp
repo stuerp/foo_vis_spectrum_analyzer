@@ -106,7 +106,7 @@ void fft_analyzer_t::Transform() noexcept
 
         for (std::complex<double> & Iter : _TimeData)
         {
-            const double WindowFactor = _WindowFunction(msc::Map(j, 0ull, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
             Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
 
