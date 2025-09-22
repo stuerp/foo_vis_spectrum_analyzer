@@ -75,3 +75,5 @@ struct rect_t
     FLOAT x2;
     FLOAT y2;
 };
+
+ constexpr WCHAR NegativeInfinity[3] = { '-', 0x221E, '\0' };

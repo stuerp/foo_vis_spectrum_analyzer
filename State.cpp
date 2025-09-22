@@ -1,13 +1,15 @@
 
-/** $VER: State.cpp (2024.08.18) P. Stuer **/
+/** $VER: State.cpp (2025.09.22) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
 #include "Gradients.h"
+#include "Resources.h"
 #include "Log.h"
 
 #include <SDK/file.h>
+#include "SDK/filesystem.h"
 
 #include <pfc/string_conv.h>
 #include <pfc/string-conv-lite.h>
@@ -174,6 +176,7 @@ void state_t::Reset() noexcept
     _TransparencyThreshold = 125.f / 255.f;
 
     _ColorOrder = ColorOrder::None;
+    _ArtworkType = ArtworkType::Front;
 
     _BackgroundMode_Deprecated = BackgroundMode::Artwork;
     _ShowArtworkOnBackground = true;
@@ -241,12 +244,11 @@ void state_t::Reset() noexcept
 
     pfc::string Path = core_api::get_profile_path();
 
-    if (Path.startsWith("file://"))
-        _PresetsDirectoryPath = ::wideFromUTF8(Path + strlen("file://"));
-    else
-        _PresetsDirectoryPath = ::wideFromUTF8(Path);
+    Path = foobar2000_io::filesystem::g_get_native_path(Path);
 
-    /* Not serialized */
+    _PresetsDirectoryPath = ::wideFromUTF8(Path);
+
+    /** Not serialized **/
 
     _UseToneGenerator = false;
 
@@ -431,7 +433,10 @@ state_t & state_t::operator=(const state_t & other)
         _ColorOrder = other._ColorOrder;
 
         _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;                //Deprecated
+
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
+        _ArtworkType = other._ArtworkType;
+
         _ArtworkOpacity = other._ArtworkOpacity;
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
@@ -520,7 +525,7 @@ state_t & state_t::operator=(const state_t & other)
 }
 
 /// <summary>
-/// Reads this instance with the specified reader. (CUI version)
+/// Reads this instance with the specified reader.
 /// </summary>
 void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
@@ -887,17 +892,22 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_OuterRadius, abortHandler);
             reader->read_object_t(_AngularVelocity, abortHandler);
         }
+
+        if (Version >= 29)
+        {
+            reader->read(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
+        }
     }
     catch (exception & ex)
     {
-        Log.AtError().Write("%8d: %s failed to read DUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read DUI configuration: %s", ex.what());
 
         Reset();
     }
 }
 
 /// <summary>
-/// Writes this instance to the specified writer. (CUI version)
+/// Writes this instance to the specified writer.
 /// </summary>
 void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool isPreset) const noexcept
 {
@@ -1192,10 +1202,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_InnerRadius, abortHandler);
         writer->write_object_t(_OuterRadius, abortHandler);
         writer->write_object_t(_AngularVelocity, abortHandler);
+
+        // Version 29, v0.8.0.0
+        writer->write(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
     }
     catch (exception & ex)
     {
-        Log.AtError().Write("%8d: %s failed to write CUI configuration: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write CUI configuration: %s", ex.what());
     }
 }
 
@@ -1430,3 +1443,5 @@ const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme color
 
     return GetBuiltInGradientStops(colorScheme);
 }
+
+cfg_var_modern::cfg_int CfgLogLevel({ 0xd61902e0, 0x709a, 0x4551, { 0x98, 0x18, 0x18, 0x6d, 0x4b, 0xa4, 0xc3, 0x34 } }, DefaultCfgLogLevel);

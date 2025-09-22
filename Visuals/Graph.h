@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2024.04.22) P. Stuer - Implements a graphical representation of the spectrum analysis. **/
+/** $VER: Graph.h (2025.09.21) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #pragma once
 
@@ -24,7 +24,7 @@
 #include "Log.h"
 
 /// <summary>
-/// Implements a graphical representation of the spectrum analysis.
+/// Implements a graph on which the visual are rendered.
 /// </summary>
 class graph_t : public element_t
 {
@@ -34,13 +34,9 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
+    void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
     void Reset();
-
-    void Process(const audio_chunk & chunk) noexcept
-    {
-        _Analysis.Process(chunk);
-    }
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 

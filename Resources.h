@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.09.14) P. Stuer **/
+/** $VER: Resources.h (2025.09.22) P. Stuer **/
 
 #pragma once
 
@@ -16,10 +16,12 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
+#define STR_RELEASE_TAG         ""
+
 /** Component specific **/
 
 #define STR_COMPONENT_NAME          "Spectrum Analyzer"
-#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) "-beta3"
+#define STR_COMPONENT_VERSION       TOSTRING(NUM_FILE_MAJOR) "." TOSTRING(NUM_FILE_MINOR) "." TOSTRING(NUM_FILE_PATCH) "." TOSTRING(NUM_FILE_PRERELEASE) STR_RELEASE_TAG
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
@@ -46,7 +48,7 @@
 #define STR_FILE_DESCRIPTION    TEXT(STR_COMPONENT_DESCRIPTION)
 
 #define STR_PRODUCT_NAME        STR_INTERNAL_NAME
-#define STR_PRODUCT_VERSION     TEXT(TOSTRING(NUM_PRODUCT_MAJOR)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_MINOR)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_PATCH)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_PRERELEASE)) TEXT("-beta3")
+#define STR_PRODUCT_VERSION     TEXT(TOSTRING(NUM_PRODUCT_MAJOR)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_MINOR)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_PATCH)) TEXT(".") TEXT(TOSTRING(NUM_PRODUCT_PRERELEASE)) TEXT(STR_RELEASE_TAG)
 
 #define STR_ABOUT_NAME          STR_INTERNAL_NAME
 #define STR_ABOUT_WEB           TEXT(STR_COMPONENT_URL)
@@ -266,6 +268,9 @@
 
 #define IDC_ARTWORK_BACKGROUND          6082
 
+#define IDC_ARTWORK_TYPE_LBL            6124
+#define IDC_ARTWORK_TYPE                6126
+
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086
 #define IDC_FIT_WINDOW                  6088
@@ -291,6 +296,11 @@
 #define IDC_FILE_PATH                   6122
 
 #pragma endregion
+
+#define IDC_COMPONENT                   6200
+
+#define IDC_LOG_LEVEL_LBL               6202
+#define IDC_LOG_LEVEL                   6204
 
 /** Graphs **/
 

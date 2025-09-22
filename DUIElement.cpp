@@ -16,7 +16,7 @@
 /// </summary>
 DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
-    _MainState._IsDUI = true;
+    _UIThread._IsDUI = true;
 
     GetColors();
 
@@ -87,7 +87,7 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    _MainState.Read(&Parser.m_stream, Parser.get_remaining());
+    _UIThread.Read(&Parser.m_stream, Parser.get_remaining());
 }
 
 /// <summary>
@@ -97,7 +97,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _MainState.Write(&Builder.m_stream);
+    _UIThread.Write(&Builder.m_stream);
 
     return Builder.finish(g_get_guid());
 }
@@ -141,7 +141,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = color_t::CreateBrush(_MainState._StyleManager._UserInterfaceColors[1]);
+    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 
@@ -176,11 +176,11 @@ void DUIElement::ToggleFullScreen() noexcept
 /// </summary>
 void DUIElement::GetColors() noexcept
 {
-    _MainState._StyleManager._UserInterfaceColors.clear();
+    _UIThread._StyleManager._UserInterfaceColors.clear();
 
-    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
-    _MainState._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
+    _UIThread._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
+    _UIThread._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
+    _UIThread._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
+    _UIThread._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
+    _UIThread._StyleManager._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
 }

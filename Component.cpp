@@ -1,11 +1,13 @@
 
-/** $VER: Component.cpp (2024.01.05) P. Stuer **/
+/** $VER: Component.cpp (2025.09.20) P. Stuer **/
 
 #include "pch.h"
 
 #include <sdk/componentversion.h>
 
+#include "State.h"
 #include "Resources.h"
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -28,17 +30,15 @@ namespace
     VALIDATE_COMPONENT_FILENAME(STR_COMPONENT_FILENAME)
 }
 
-class Component : public initquit
+class Component : public init_stage_callback
 {
 public:
-    virtual void FB2KAPI on_init()
+    void on_init_stage(t_uint32 stage) noexcept override
     {
-        if (core_api::is_quiet_mode_enabled())
-            return;
-    }
-
-    virtual void FB2KAPI on_quit()
-    {
+        if (stage == init_stages::after_config_read)
+        {
+            Log.SetLevel((LogLevel) CfgLogLevel.get());
+        }
     }
 };
 

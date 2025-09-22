@@ -124,7 +124,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + Bandwidth;
 
-    renderTarget->SetAntialiasMode(_State->_LEDMode ? D2D1_ANTIALIAS_MODE_ALIASED /* Required by FillOpacityMask() */ : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    renderTarget->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {

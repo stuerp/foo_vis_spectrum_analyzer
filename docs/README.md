@@ -421,6 +421,13 @@ Determines how to sort the colors selected from the artwork.
 
 Displays artwork on the graph background. By default the front cover of the playing track is used. You can override this behavior using the `Artwork file path` setting.
 
+`Artwork type`
+
+Determines which artwork will be displayed on the graph background.
+
+> [!Note]
+> The selection only becomes active when a new track is started.
+
 `Fit mode`
 
 Determines how over- and undersized artwork is rendered.
@@ -442,6 +449,15 @@ Determines the opacity of the artwork when displayed.
 `Artwork file path`
 
 A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background.
+
+#### Component
+
+`Log Level`
+
+Allows you to control the messages the component will write to the foobar2000 console.
+
+> [!Warning]
+> The **Debug** and **Trace** levels may generate a lot of technical output.
 
 ---
 

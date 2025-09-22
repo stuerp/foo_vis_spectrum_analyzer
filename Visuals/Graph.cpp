@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2024.08.18) P. Stuer - Implements a graphical representation of a spectrum analysis. **/
+/** $VER: Graph.cpp (2025.09.21) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -47,7 +47,13 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings) noe
 /// </summary>
 void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    const D2D1_RECT_F cr = { rect.left + _GraphSettings->_LPadding, rect.top + _GraphSettings->_TPadding, rect.right - _GraphSettings->_RPadding, rect.bottom - _GraphSettings->_BPadding };
+    const D2D1_RECT_F cr =
+    {
+        .left   = rect.left   + _GraphSettings->_LPadding,
+        .top    = rect.top    + _GraphSettings->_TPadding,
+        .right  = rect.right  - _GraphSettings->_RPadding,
+        .bottom = rect.bottom - _GraphSettings->_BPadding
+    };
 
     SetBounds(cr);
 
@@ -55,6 +61,14 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
     _Spectogram.Move(cr);
     _PeakMeter.Move(cr);
     _LevelMeter.Move(cr);
+}
+
+/// <summary>
+/// Process a chunk of audio data.
+/// </summary>
+void graph_t::Process(const audio_chunk & chunk) noexcept
+{
+    _Analysis.Process(chunk); // Delegate it to the analysis.
 }
 
 /// <summary>
@@ -162,12 +176,36 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// </summary>
 void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
-//  if (_BackgroundStyle->IsEnabled())
+    if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
-    // Render the bitmap if there is one.
-    if (_State->_ShowArtworkOnBackground && (_State->_VisualizationType != VisualizationType::PeakMeter) && (artwork.Bitmap() != nullptr))
-        artwork.Render(renderTarget, _State->_FitWindow ? _Spectrum.GetBounds() : _Spectrum.GetClientBounds(), _State);
+    if (!_State->_ShowArtworkOnBackground)
+        return;
+
+    if (artwork.Bitmap() == nullptr)
+        return;
+
+    switch (_State->_VisualizationType)
+    {
+        case VisualizationType::Bars:
+        case VisualizationType::Curve:
+        case VisualizationType::RadialBars:
+        {
+            artwork.Render(renderTarget, _State->_FitWindow ? _Spectrum.GetBounds() : _Spectrum.GetClientBounds(), _State);
+            break;
+        }
+
+        case VisualizationType::Spectogram:
+        {
+            artwork.Render(renderTarget, _State->_FitWindow ? _Spectogram.GetBounds() : _Spectogram.GetClientBounds(), _State);
+            break;
+        }
+
+        case VisualizationType::PeakMeter:
+        case VisualizationType::LevelMeter:
+        default:
+            break;
+    }
 }
 
 /// <summary>
@@ -228,10 +266,12 @@ void graph_t::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
     {
         const FLOAT Inset = 2.f;
 
-        D2D1_RECT_F Rect = { };
+        D2D1_RECT_F Rect =
+        {
+            .left = _Spectrum.GetClientBounds().left + 10.f,
+            .top  = _Spectrum.GetClientBounds().top  + 10.f,
+        };
 
-        Rect.left   = _Spectrum.GetClientBounds().left + 10.f;
-        Rect.top    = _Spectrum.GetClientBounds().top  + 10.f;
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
         Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 

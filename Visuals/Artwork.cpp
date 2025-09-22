@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2024.04.06) P. Stuer **/
+/** $VER: Artwork.cpp (2025.09.22) P. Stuer **/
 
 #include "pch.h"
 #include "Artwork.h"
@@ -17,12 +17,65 @@ HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
 {
     _CriticalSection.Enter();
 
-    Release();
+    ReleaseDeviceSpecificResources();
 
     if ((data != nullptr) && (size != 0))
     {
         _Raster.assign(data, data + size);
         _FilePath.clear();
+
+        _FormatConverter.Release();
+        _Frame.Release();
+    }
+
+    HRESULT hr = S_OK;
+
+    if (_Frame == nullptr)
+        hr = _WIC.Load(_Raster.data(), _Raster.size(), &_Frame);
+
+    // Create a format converter to 32bppPBGRA.
+    if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
+    {
+        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+
+        if (SUCCEEDED(hr))
+            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+    }
+
+    SetStatus(Initialized);
+
+    _CriticalSection.Leave();
+
+    return hr;
+}
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
+{
+    _CriticalSection.Enter();
+
+    ReleaseDeviceSpecificResources();
+
+    _FilePath = filePath;
+    _Raster.clear();
+
+    _FormatConverter.Release();
+    _Frame.Release();
+
+    HRESULT hr = S_OK;
+
+    if (_Frame == nullptr)
+        hr = _WIC.Load(_FilePath, &_Frame);
+
+    // Create a format converter to 32bppPBGRA.
+    if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
+    {
+        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+
+        if (SUCCEEDED(hr))
+            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     }
 
     SetStatus(Initialized);
@@ -33,18 +86,24 @@ HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
 }
 
 /// <summary>
-/// Initializes this instance.
+/// Uninitializes this instance.
 /// </summary>
-HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
+HRESULT artwork_t::Uninitialize() noexcept
 {
     _CriticalSection.Enter();
 
-    Release();
+    ReleaseDeviceSpecificResources();
 
-    _FilePath = filePath;
-    _Raster.clear();
+    _FormatConverter.Release();
+    _Frame.Release();
 
-    SetStatus(Initialized);
+    _FilePath.clear();
+
+    std::vector<uint8_t> Empty;
+
+    _Raster.swap(Empty);
+
+    SetStatus(Idle);
 
     _CriticalSection.Leave();
 
@@ -106,40 +165,38 @@ void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bou
 /// <summary>
 /// Realizes this instance.
 /// </summary>
-HRESULT artwork_t::Realize(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     _CriticalSection.Enter();
 
     HRESULT hr = S_OK;
 
-    if (!_Raster.empty() || !_FilePath.empty())
+    // Create a Direct2D bitmap from the WIC bitmap source.
+    if ((_FormatConverter != nullptr) && (_Bitmap == nullptr))
     {
-        // Load the frame from the raster data.
-        if (_Frame == nullptr)
-            hr = !_Raster.empty() ? _WIC.Load(_Raster.data(), _Raster.size(), &_Frame) : _WIC.Load(_FilePath, &_Frame);
+        hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
-        // Create a format coverter to 32bppPBGRA.
-        if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
-        {
-            hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
-
-            if (SUCCEEDED(hr))
-                hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
-        }
-
-        // Create a Direct2D bitmap from the WIC bitmap source.
-        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
-        {
-            hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
-
-            if (SUCCEEDED(hr))
-                SetStatus(Realized);
-        }
+        if (SUCCEEDED(hr))
+            SetStatus(Realized);
     }
 
     _CriticalSection.Leave();
 
     return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void artwork_t::ReleaseDeviceSpecificResources() noexcept
+{
+    _CriticalSection.Enter();
+
+    _Bitmap.Release();
+
+    SetStatus(Initialized);
+
+    _CriticalSection.Leave();
 }
 
 /// <summary>

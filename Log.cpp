@@ -31,21 +31,21 @@ public:
 
 ILog & Null = *new NullLog();
 
-class LogImpl : public ILog
+class log_impl_t : public ILog
 {
 public:
 #ifdef _DEBUG
-    LogImpl() noexcept { SetLevel(LogLevel::Debug); }
+    log_impl_t() noexcept { SetLevel(LogLevel::Debug); }
 #else
-    LogImpl() noexcept { SetLevel(LogLevel::Info); }
+    log_impl_t() noexcept { SetLevel(LogLevel::Info); }
 #endif
 
-    LogImpl(const LogImpl &) = delete;
-    LogImpl(const LogImpl &&) = delete;
-    LogImpl & operator=(const LogImpl &) = delete;
-    LogImpl & operator=(LogImpl &&) = delete;
+    log_impl_t(const log_impl_t &) = delete;
+    log_impl_t(const log_impl_t &&) = delete;
+    log_impl_t & operator=(const log_impl_t &) = delete;
+    log_impl_t & operator=(log_impl_t &&) = delete;
 
-    virtual ~LogImpl() noexcept { };
+    virtual ~log_impl_t() noexcept { };
 
     ILog & SetLevel(LogLevel level) noexcept override final
     {
@@ -107,6 +107,6 @@ private:
     LogLevel _Level;
 };
 
-ILog & Log = *new LogImpl();
+ILog & Log = *new log_impl_t();
 
 //::GetCurrentThreadId()

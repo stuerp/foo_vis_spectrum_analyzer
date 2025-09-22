@@ -1,10 +1,12 @@
 
-/** $VER: FFTAnalyzer.cpp (2025.09.15) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.09.21) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
 
 #include "Log.h"
+
+#include <execution>
 
 #pragma hdrstop
 
@@ -44,9 +46,11 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
 {
-    Add(samples, sampleCount, channels);
+//  const auto Start = std::chrono::steady_clock::now();
+
+    Add(frameData, frameCount, channels);
 
     Transform();
 
@@ -67,28 +71,29 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * samples, size_t sampleC
             break;
     }
 
+//  const auto Finish = std::chrono::steady_clock::now();
+
+//  Log.AtInfo().Write("%6d ms", std::chrono::duration_cast<std::chrono::milliseconds>(Finish - Start));
+
     return true;
 }
 
 /// <summary>
 /// Adds multiple samples to the analyzer buffer.
-/// It assumes that the buffer contains tuples of sample data for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
+/// It assumes that the buffer contains frames of sample data with a reading for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void fft_analyzer_t::Add(const audio_sample * samples, size_t sampleCount, uint32_t channels) noexcept
+void fft_analyzer_t::Add(const audio_sample * frameData, size_t frameCount, uint32_t channels) noexcept
 {
-//  Log::Write(Log::Level::Trace, "%8d: %5d, %5d, %5d", (int) ::GetTickCount64() _Size, _Curr, sampleCount / 2);
-
-    if (samples == nullptr)
+    if (frameData == nullptr)
         return;
 
     // Make sure there are enough samples for all the channels.
-    sampleCount -= (sampleCount % _ChannelCount);
+    frameCount -= (frameCount % _ChannelCount);
 
     // Merge the samples of all channels into one averaged sample.
-    #pragma loop(hint_parallel(2))
-    for (size_t i = 0; i < sampleCount; i += _ChannelCount)
+    for (size_t i = 0; i < frameCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&samples[i], channels);
+        _Data[_Curr] = AverageSamples(&frameData[i], channels);
 
         _Curr = (_Curr + 1) % _Size;
     }
@@ -106,7 +111,7 @@ void fft_analyzer_t::Transform() noexcept
         size_t i = _Curr;
         size_t j = 0;
 
-        for (std::complex<double> & Iter : _TimeData)
+        for (auto & Iter : _TimeData)
         {
             const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
 
@@ -123,8 +128,15 @@ void fft_analyzer_t::Transform() noexcept
     {
         const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
+#ifdef oldcode
         for (std::complex<double> & Iter : _TimeData)
             Iter *= Factor;
+#else
+        std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
+        {
+            return x * Factor;
+        });
+#endif
     }
 
     // Transform the data from the Time domain to the Frequency domain.
@@ -134,8 +146,15 @@ void fft_analyzer_t::Transform() noexcept
     {
         const double Factor = 2. / (double) _FFTSize;
 
+#ifdef oldcode
         for (std::complex<double> & Iter : _FreqData)
             Iter *= Factor;
+#else
+        std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
+        {
+            return x * Factor;
+        });
+#endif
     }
 }
 

@@ -131,7 +131,11 @@ public:
     const graph_settings_t * _GraphSettings;
 
     uint32_t _SampleRate;
+    uint32_t _ChannelCount;
+    uint32_t _ChannelConfig;
+
     double _NyquistFrequency;
+
     std::vector<gauge_value_t> _GaugeValues;
     uint32_t _CurrentChannelMask;
 
