@@ -24,7 +24,7 @@ void uielement_t::CreateToolTipControl() noexcept
 /// </summary>
 void uielement_t::OnMouseMove(UINT, CPoint pt)
 {
-    if (!_ToolTipControl.IsWindow() || (!_ThreadState._ShowToolTipsAlways && !_ThreadState._ShowToolTipsNow))
+    if (!_ToolTipControl.IsWindow() || (!_RenderThread._ShowToolTipsAlways && !_RenderThread._ShowToolTipsNow))
         return;
 
     if (_TrackingGraph == nullptr)

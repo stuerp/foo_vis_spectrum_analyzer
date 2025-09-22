@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.21) P. Stuer **/
+/** $VER: State.cpp (2025.09.22) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"

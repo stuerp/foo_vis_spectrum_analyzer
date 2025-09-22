@@ -176,7 +176,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// </summary>
 void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
 {
-//  if (_BackgroundStyle->IsEnabled())
+    if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     if (!_State->_ShowArtworkOnBackground)

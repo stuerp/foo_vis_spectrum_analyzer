@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2025.09.14) P. Stuer  **/
+/** $VER: Artwork.h (2025.09.22) P. Stuer  **/
 
 #pragma once
 
@@ -28,13 +28,18 @@ public:
 
     virtual ~artwork_t()
     {
-        Release();
+        ReleaseDeviceSpecificResources();
+
+        Uninitialize();
     }
 
     HRESULT Initialize(const uint8_t * data, size_t size) noexcept;
     HRESULT Initialize(const std::wstring & filePath) noexcept;
+    HRESULT Uninitialize() noexcept;
 
-    HRESULT Realize(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
+
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
 
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
@@ -42,25 +47,6 @@ public:
     void Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
-
-    void Release() noexcept
-    {
-        _CriticalSection.Enter();
-
-        _Bitmap.Release();
-        _FormatConverter.Release();
-        _Frame.Release();
-
-        _FilePath.clear();
-
-        std::vector<uint8_t> Empty;
-
-        _Raster.swap(Empty);
-
-        SetStatus(Idle);
-
-        _CriticalSection.Leave();
-    }
 
     bool IsIdle() const noexcept { return _Status == Idle; }
     bool IsInitialized() const noexcept { return _Status == Initialized; }

@@ -37,7 +37,7 @@ public:
 #ifdef _DEBUG
     log_impl_t() noexcept { SetLevel(LogLevel::Debug); }
 #else
-    LogImpl() noexcept { SetLevel(LogLevel::Info); }
+    log_impl_t() noexcept { SetLevel(LogLevel::Info); }
 #endif
 
     log_impl_t(const log_impl_t &) = delete;

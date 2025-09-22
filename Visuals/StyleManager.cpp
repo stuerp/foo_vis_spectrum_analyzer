@@ -1,10 +1,11 @@
 
-/** $VER: StyleManager.cpp (2025.09.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2025.09.22) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 #include "StyleManager.h"
 
 #include "Support.h"
+#include "Resources.h"
 #include "Log.h"
 
 #include <exception>
@@ -232,7 +233,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
     }
     catch (std::exception & ex)
     {
-        Log.AtError().Write("%8d: %s failed to read styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read styles: %s", ex.what());
 
         Reset();
     }
@@ -289,6 +290,6 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
     }
     catch (std::exception & ex)
     {
-        Log.AtError().Write("%8d: %s. failed to write styles: %s", (uint32_t) ::GetTickCount64(), core_api::get_my_file_name(), ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write styles: %s", ex.what());
     }
 }

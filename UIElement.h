@@ -165,8 +165,8 @@ private:
     #pragma endregion
 
 protected:
-    state_t _MainState;
-    state_t _ThreadState;
+    state_t _UIThread;
+    state_t _RenderThread;
 
     msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;

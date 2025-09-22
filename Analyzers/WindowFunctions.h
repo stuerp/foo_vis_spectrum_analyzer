@@ -99,7 +99,7 @@ public:
 };
 
 /// <summary>
-/// Implements the Hanning (cosine squared, raised cosine) window function.
+/// Implements the Hann (cosine squared, raised cosine) window function.
 /// </summary>
 class Hann : public window_function_t
 {
@@ -112,8 +112,8 @@ public:
     {
         x = __super::operator()(x);
 
-    //  return ::pow(::cos(x * M_PI_2), 2.);
-        return 0.5 * (1. - ::cos(x * 2. * M_PI));
+        return ::pow(::cos(x * M_PI_2), 2.);
+    //  return 0.5 * (1. - ::cos(x * 2. * M_PI));
     }
 };
 
