@@ -193,7 +193,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
             { IDC_ARTWORK_BACKGROUND, L"Displays artwork on the graph background." },
-            { IDC_ARTWORK_TYPE, L"Specifies which artwork will be show on the graph background." },
+            { IDC_ARTWORK_TYPE, L"Specifies which artwork will be shown on the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
             { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
@@ -293,6 +293,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FONT_NAME_SELECT, L"Opens a dialog to select a font." },
             { IDC_FONT_SIZE, L"Determines the size of the font in points." },
 
+            // Presets
             { IDC_PRESETS_ROOT, L"Specifies the location of the preset files." },
             { IDC_PRESETS_ROOT_SELECT, L"Opens a dialog to select a location." },
             { IDC_PRESET_NAMES, L"Lists the presets in the current preset location." },
