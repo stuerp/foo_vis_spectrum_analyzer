@@ -103,13 +103,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.8.0.0, 2025-09-22
+v0.8.1.0-alpha1, 2025-xx-xx
 
-* New: The album art type that is shown on the background can be selected in the configuration dialog.
-* New: The log verbosity can be set on the **Common** page of the configuration dialog.
-* Improved: Stability of album art rendering with multiple instances and heavy load.
-* Fixed: Rendering negative infinity in the peak meter readout was broken. (Beta 2 regression)
-* Fixed: Analyzer initialization after channel configuration changes.
+* 
 
 You can read the full history [here](docs/History.md).
 

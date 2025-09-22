@@ -5,7 +5,6 @@
 #include "PresetManager.h"
 
 #include <Path.h>
-#include <Convert.h>
 #include <Error.h>
 
 #include "Resources.h"
@@ -29,7 +28,7 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_read, fb2k::noAbort);
+        fio::filesystem::g_open(File, msc::WideToUTF8(PresetPath).c_str(), fio::filesystem::open_mode_read, fb2k::noAbort);
 
         auto Reader = File.get_ptr();
 
@@ -79,7 +78,7 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
     {
         file_ptr File;
 
-        fio::filesystem::g_open(File, Convert::To(PresetPath), fio::filesystem::open_mode_write_new, fb2k::noAbort);
+        fio::filesystem::g_open(File, msc::WideToUTF8(PresetPath).c_str(), fio::filesystem::open_mode_write_new, fb2k::noAbort);
 
         auto Writer = File.get_ptr();
 
