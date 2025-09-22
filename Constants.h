@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2024.08.18) P. Stuer **/
+/** $VER: Constans.h (2025.09.22) P. Stuer **/
 
 #pragma once
 
@@ -314,6 +314,15 @@ enum class ColorOrder
 
     LightnessAscending = 5,
     LightnessDescending = 6,
+};
+
+enum class ArtworkType
+{
+    Front = 0,
+    Back,
+    Disc,
+    Icon,
+    Artist
 };
 
 enum class FitMode

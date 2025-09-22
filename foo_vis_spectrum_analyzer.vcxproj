@@ -260,7 +260,7 @@
     <ClInclude Include="Visuals\FrameCounter.h" />
     <ClInclude Include="Visuals\Gradients.h" />
     <ClInclude Include="Visuals\Graph.h" />
-    <ClInclude Include="Layout.h" />
+    <ClInclude Include="Configuration\Layout.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Visuals\RingBuffer.h" />
     <ClInclude Include="Visuals\Spectrum\Spectrum.h" />
@@ -365,6 +365,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="Configuration\ConfigurationDialog.rc" />
     <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <ItemGroup>

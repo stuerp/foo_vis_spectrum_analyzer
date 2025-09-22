@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.09.20) P. Stuer **/
+/** $VER: Resources.h (2025.09.22) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-beta4"
+#define STR_RELEASE_TAG         ""
 
 /** Component specific **/
 
@@ -267,6 +267,9 @@
 #define IDC_ARTWORK                     6078
 
 #define IDC_ARTWORK_BACKGROUND          6082
+
+#define IDC_ARTWORK_TYPE_LBL            6124
+#define IDC_ARTWORK_TYPE                6126
 
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086

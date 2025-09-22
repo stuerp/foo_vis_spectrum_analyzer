@@ -23,6 +23,9 @@ HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
     {
         _Raster.assign(data, data + size);
         _FilePath.clear();
+
+        _FormatConverter.Release();
+        _Frame.Release();
     }
 
     HRESULT hr = S_OK;
@@ -57,6 +60,9 @@ HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
 
     _FilePath = filePath;
     _Raster.clear();
+
+    _FormatConverter.Release();
+    _Frame.Release();
 
     HRESULT hr = S_OK;
 

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.09.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.09.22) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -193,6 +193,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
             { IDC_ARTWORK_BACKGROUND, L"Displays artwork on the graph background." },
+            { IDC_ARTWORK_TYPE, L"Specifies which artwork will be show on the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
             { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
@@ -920,6 +921,16 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _State->_ColorOrder);
     }
     {
+        auto w = (CComboBox) GetDlgItem(IDC_ARTWORK_TYPE);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"Front", L"Back", L"Disc", L"Icon", L"Artist" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_ArtworkType);
+    }
+    {
         GetDlgItem(IDC_FILE_PATH).SetWindowTextW(_State->_ArtworkFilePath.c_str());
     }
     #pragma endregion
@@ -1444,6 +1455,12 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         case IDC_COLOR_ORDER:
         {
             _State->_ColorOrder = (ColorOrder) SelectedIndex;
+            break;
+        }
+
+        case IDC_ARTWORK_TYPE:
+        {
+            _State->_ArtworkType = (ArtworkType) SelectedIndex;
             break;
         }
 
@@ -3065,6 +3082,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         // Artwork
         IDC_ARTWORK,
             IDC_ARTWORK_BACKGROUND,
+            IDC_ARTWORK_TYPE_LBL, IDC_ARTWORK_TYPE,
             IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
             IDC_FILE_PATH_LBL, IDC_FILE_PATH,

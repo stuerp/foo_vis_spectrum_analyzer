@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.09.20) P. Stuer **/
+/** $VER: State.h (2025.09.22) P. Stuer **/
 
 #pragma once
 
@@ -174,6 +174,7 @@ public:
         ColorOrder _ColorOrder;
 
         bool _ShowArtworkOnBackground;
+        ArtworkType _ArtworkType;
 
         FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
         std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
@@ -342,7 +343,7 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 28; // v0.8.0.0-beta2
+    const size_t _CurrentVersion = 29; // v0.8.0.0
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

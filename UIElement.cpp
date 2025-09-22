@@ -63,7 +63,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
     if (FAILED(hr))
     {
-        error_t LastError(hr);
+        error_t LastError((DWORD) hr);
 
         Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectX device independent resources: %s", LastError.Message().c_str());
 
@@ -679,16 +679,41 @@ void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_ca
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting front cover album art for the playing track.");
 
+    GUID ArtworkGUID;
+
+    switch (_UIThread._ArtworkType)
+    {
+        case ArtworkType::Back:
+            ArtworkGUID = album_art_ids::cover_back;
+            break;
+
+        case ArtworkType::Disc:
+            ArtworkGUID = album_art_ids::disc;
+            break;
+
+        case ArtworkType::Icon:
+            ArtworkGUID = album_art_ids::icon;
+            break;
+
+        case ArtworkType::Artist:
+            ArtworkGUID = album_art_ids::artist;
+            break;
+
+        case ArtworkType::Front:
+        default:
+            ArtworkGUID = album_art_ids::cover_front;
+    }
+
     static_api_ptr_t<album_art_manager_v2> AlbumArtManager;
 
-    auto AlbumArtExtractor = AlbumArtManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(album_art_ids::cover_front), abort);
+    auto AlbumArtExtractor = AlbumArtManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(ArtworkGUID), abort);
 
     if (!AlbumArtExtractor.is_valid())
         return;
 
     try
     {
-        auto AlbumArtData = AlbumArtExtractor->query(album_art_ids::cover_front, abort);
+        auto AlbumArtData = AlbumArtExtractor->query(ArtworkGUID, abort);
 
         if (AlbumArtData.is_valid())
             _Artwork.Initialize((uint8_t *) AlbumArtData->data(), AlbumArtData->size());

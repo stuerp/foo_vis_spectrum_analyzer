@@ -176,6 +176,7 @@ void state_t::Reset() noexcept
     _TransparencyThreshold = 125.f / 255.f;
 
     _ColorOrder = ColorOrder::None;
+    _ArtworkType = ArtworkType::Front;
 
     _BackgroundMode_Deprecated = BackgroundMode::Artwork;
     _ShowArtworkOnBackground = true;
@@ -432,7 +433,10 @@ state_t & state_t::operator=(const state_t & other)
         _ColorOrder = other._ColorOrder;
 
         _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;                //Deprecated
+
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
+        _ArtworkType = other._ArtworkType;
+
         _ArtworkOpacity = other._ArtworkOpacity;
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
@@ -888,6 +892,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_OuterRadius, abortHandler);
             reader->read_object_t(_AngularVelocity, abortHandler);
         }
+
+        if (Version >= 29)
+        {
+            reader->read(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1194,8 +1203,8 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_OuterRadius, abortHandler);
         writer->write_object_t(_AngularVelocity, abortHandler);
 
-        // Version 29, v0.8.0.0-beta4
-        writer->write_object_t(_InnerRadius, abortHandler);
+        // Version 29, v0.8.0.0
+        writer->write(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
     }
     catch (exception & ex)
     {

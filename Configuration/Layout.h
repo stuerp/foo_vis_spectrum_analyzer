@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.09.20) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2025.09.22) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -824,13 +824,25 @@
     #define X_G02    X_B06 + 5
     #define Y_G02    Y_G12 + H_G12 + IY
 
+    // Label: Artwork Type
+    #define W_G40    66
+    #define H_G40    H_LBL
+    #define X_G40    X_G08
+    #define Y_G40    Y_G02 + H_G02 + IY
+
+    // Combobox:  Artwork Type
+    #define W_G41    86
+    #define H_G41    H_CBX
+    #define X_G41    X_G40 + W_G40 + IX
+    #define Y_G41    Y_G40
+
     #pragma region Fit mode
 
     // Label: Fit mode
     #define W_G30    66
     #define H_G30    H_LBL
     #define X_G30    X_G02
-    #define Y_G30    Y_G02 + H_G02 + IY
+    #define Y_G30    Y_G41 + H_G41 + IY
 
     // Combobox: Fit mode
     #define W_G31    86
@@ -881,7 +893,7 @@
     #pragma endregion
 
 #define W_B06  184
-#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
+#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G41 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
 
 #pragma region Component
 // Groupbox
