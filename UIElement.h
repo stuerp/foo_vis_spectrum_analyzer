@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.09.17) P. Stuer **/
+/** $VER: UIElement.h (2025.09.23) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base, now_playing_album_art_notify
+class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base /*, now_playing_album_art_notify*/
 {
 public:
     uielement_t();
@@ -113,6 +113,8 @@ private:
 
     void GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort);
     void GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort);
+
+    static GUID GetArtworkTypeGUID(ArtworkType artworkType) noexcept;
 
     #pragma region CWindowImpl
 

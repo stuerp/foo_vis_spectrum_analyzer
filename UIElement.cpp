@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.09.22) P. Stuer **/
+/** $VER: UIElement.cpp (2025.09.23) P. Stuer **/
 
 #include "pch.h"
 
@@ -91,29 +91,41 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
         return -1;
     }
-
+/*
     // Register ourselves with the album art notification manager.
     {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
+        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager_v2::tryGet();
 
         if (AlbumArtNotificationManager.is_valid())
             AlbumArtNotificationManager->add(this);
     }
-/*
-    // Get the artwork data from the album art.
-    if (_MainState._ArtworkFilePath.empty())
+*/
+    // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing).
     {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
+        metadb_handle_ptr CurrentTrack;
 
-        if (AlbumArtNotificationManager.is_valid())
+        if (playback_control::get()->get_now_playing(CurrentTrack))
         {
-            album_art_data_ptr aad = AlbumArtNotificationManager->current();
+            GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
-            if (aad.is_valid())
-                hr = _Artwork.Initialize((uint8_t *) aad->data(), aad->size());
+            static_api_ptr_t<album_art_manager_v2> ArtworkManager;
+
+            auto ArtworkExtractor = ArtworkManager->open(pfc::list_single_ref_t(CurrentTrack), pfc::list_single_ref_t(ArtworkGUID), fb2k::noAbort);
+
+            if (ArtworkExtractor.is_valid())
+            {
+                try
+                {
+                    album_art_data::ptr AlbumArtData;
+
+                    if (ArtworkExtractor->query(ArtworkGUID, AlbumArtData, fb2k::noAbort) && AlbumArtData.is_valid())
+                        hr = _Artwork.Initialize((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
+                }
+                catch (...) { }
+            }
         }
     }
-*/
+
     // Create the tooltip control.
     CreateToolTipControl();
 
@@ -129,7 +141,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 void uielement_t::OnDestroy()
 {
     StopTimer();
-
+/*
     // Unregister ourselves with the album art notification manager.
     {
         auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
@@ -137,7 +149,7 @@ void uielement_t::OnDestroy()
         if (AlbumArtNotificationManager.is_valid())
             AlbumArtNotificationManager->remove(this);
     }
-
+*/
     _CriticalSection.Enter();
 
     {
@@ -661,6 +673,7 @@ void uielement_t::on_playback_time(double time)
 
 #pragma endregion
 
+/*
 #pragma region now_playing_album_art_notify
 
 /// <summary>
@@ -671,6 +684,7 @@ void uielement_t::on_album_art(album_art_data::ptr aad)
 }
 
 #pragma endregion
+*/
 
 /// <summary>
 /// Gets the album art from the specified track.
@@ -679,30 +693,7 @@ void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_ca
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting front cover album art for the playing track.");
 
-    GUID ArtworkGUID;
-
-    switch (_UIThread._ArtworkType)
-    {
-        case ArtworkType::Back:
-            ArtworkGUID = album_art_ids::cover_back;
-            break;
-
-        case ArtworkType::Disc:
-            ArtworkGUID = album_art_ids::disc;
-            break;
-
-        case ArtworkType::Icon:
-            ArtworkGUID = album_art_ids::icon;
-            break;
-
-        case ArtworkType::Artist:
-            ArtworkGUID = album_art_ids::artist;
-            break;
-
-        case ArtworkType::Front:
-        default:
-            ArtworkGUID = album_art_ids::cover_front;
-    }
+    GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
     static_api_ptr_t<album_art_manager_v2> AlbumArtManager;
 
@@ -741,4 +732,20 @@ void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_c
         _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
     else
         Log.AtTrace().Write(STR_COMPONENT_BASENAME " failed to get album art from script result \"%s\".", Result.c_str());
+}
+
+/// <summary>
+/// Returns the API GUID for the specified artwork type.
+/// </summary>
+GUID uielement_t::GetArtworkTypeGUID(ArtworkType artworkType) noexcept
+{
+    switch (artworkType)
+    {
+        default:
+        case ArtworkType::Front:  return album_art_ids::cover_front;
+        case ArtworkType::Back:   return album_art_ids::cover_back;
+        case ArtworkType::Disc:   return album_art_ids::disc;
+        case ArtworkType::Icon:   return album_art_ids::icon;
+        case ArtworkType::Artist: return album_art_ids::artist;
+    }
 }

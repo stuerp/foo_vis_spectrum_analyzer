@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2025.09.22) P. Stuer  **/
+/** $VER: Artwork.h (2025.09.23) P. Stuer  **/
 
 #pragma once
 
@@ -48,8 +48,6 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
-    bool IsIdle() const noexcept { return _Status == Idle; }
-    bool IsInitialized() const noexcept { return _Status == Initialized; }
     bool IsRealized() const noexcept { return _Status == Realized; }
 
 private:

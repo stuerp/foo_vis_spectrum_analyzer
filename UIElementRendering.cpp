@@ -317,7 +317,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
     }
 
     // Create the background bitmap from the artwork.
-    if (SUCCEEDED(hr) && _Artwork.IsInitialized())
+    if (SUCCEEDED(hr) && (_Artwork.Bitmap() == nullptr))
     {
         for (auto & Iter : _Grid)
             Iter._Graph->ReleaseDeviceSpecificResources();

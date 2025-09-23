@@ -60,7 +60,7 @@ You can find the user guide [here](docs/README.md).
 To build the code you need:
 
 * [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
-* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2024-08-07
+* [foobar2000 SDK](https://www.foobar2000.org/SDK) 2025-03-07
 * [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320
 * [Columns UI SDK](https://yuo.be/columns-ui-sdk) 7.0.0
 
@@ -105,7 +105,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.8.1.0-alpha1, 2025-xx-xx
 
-* 
+* Fixed: Artwork not showing up when a track is already playing when switching to fullscreen. (0.8.0.0-beta2 regression)
 
 You can read the full history [here](docs/History.md).
 

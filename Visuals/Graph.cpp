@@ -184,7 +184,7 @@ void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & art
 
     if (artwork.Bitmap() == nullptr)
         return;
-
+//Log.AtInfo().Write(">> %08X RenderBackground", (uint32_t) this);
     switch (_State->_VisualizationType)
     {
         case VisualizationType::Bars:
