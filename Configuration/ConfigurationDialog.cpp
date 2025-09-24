@@ -1477,7 +1477,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_LOG_LEVEL:
         {
-            CfgLogLevel.set((int64_t) SelectedIndex);
+            CfgLogLevel = (int64_t) SelectedIndex;
 
             Log.SetLevel((LogLevel) CfgLogLevel.get());
             break;
@@ -2709,7 +2709,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_RESET:
         {
             _State->Reset();
-            CfgLogLevel.set((int64_t) DefaultCfgLogLevel);
+            CfgLogLevel = (int64_t) DefaultCfgLogLevel;
 
             Initialize();
             break;

@@ -30,12 +30,12 @@ public:
     {
         ReleaseDeviceSpecificResources();
 
-        Uninitialize();
+        ReleaseWICResources();
     }
 
-    HRESULT Initialize(const uint8_t * data, size_t size) noexcept;
-    HRESULT Initialize(const std::wstring & filePath) noexcept;
-    HRESULT Uninitialize() noexcept;
+    HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
+    HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
+    HRESULT ReleaseWICResources() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;

@@ -348,4 +348,4 @@ private:
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;
 
-extern cfg_var_modern::cfg_int CfgLogLevel;
+extern cfg_int CfgLogLevel;

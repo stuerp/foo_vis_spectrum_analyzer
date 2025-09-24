@@ -164,14 +164,14 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
             }
         }
 
-        const bool GreaterThanNyquist = fb.Ctr >= _Analysis->_NyquistFrequency;
+        const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
             if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (_ClientSize.height * fb.MaxValue);
+                Rect.bottom = _ClientSize.height * (FLOAT) fb.MaxValue;
 
                 // Draw the peak indicator area.
                 if (_BarPeakAreaStyle->IsEnabled())
@@ -201,7 +201,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
 
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (_ClientSize.height * fb.CurValue);
+                Rect.bottom = _ClientSize.height * (FLOAT) fb.CurValue;
 
                 // Draw the bar area.
                 if (_BarAreaStyle->IsEnabled())

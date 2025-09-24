@@ -108,21 +108,10 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
         {
             GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
-            static_api_ptr_t<album_art_manager_v2> ArtworkManager;
-
-            auto ArtworkExtractor = ArtworkManager->open(pfc::list_single_ref_t(CurrentTrack), pfc::list_single_ref_t(ArtworkGUID), fb2k::noAbort);
-
-            if (ArtworkExtractor.is_valid())
-            {
-                try
-                {
-                    album_art_data::ptr AlbumArtData;
-
-                    if (ArtworkExtractor->query(ArtworkGUID, AlbumArtData, fb2k::noAbort) && AlbumArtData.is_valid())
-                        hr = _Artwork.Initialize((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
-                }
-                catch (...) { }
-            }
+            if (_UIThread._ArtworkFilePath.empty())
+                GetAlbumArtFromTrack(CurrentTrack, fb2k::noAbort);
+            else
+                GetAlbumArtFromScript(CurrentTrack, fb2k::noAbort);
         }
     }
 
@@ -648,7 +637,7 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _Artwork.Uninitialize();
+    _Artwork.ReleaseWICResources();
 
     _UIThread._SampleRate = 0;
 
@@ -695,19 +684,26 @@ void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_ca
 
     GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
-    static_api_ptr_t<album_art_manager_v2> AlbumArtManager;
+    static_api_ptr_t<album_art_manager_v2> ArtworkManager;
 
-    auto AlbumArtExtractor = AlbumArtManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(ArtworkGUID), abort);
+    auto ArtworkExtractor = ArtworkManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(ArtworkGUID), abort);
 
-    if (!AlbumArtExtractor.is_valid())
+    if (!ArtworkExtractor.is_valid())
         return;
 
     try
     {
-        auto AlbumArtData = AlbumArtExtractor->query(ArtworkGUID, abort);
+/*
+        auto AlbumArtData = ArtworkExtractor->query(ArtworkGUID, abort);
 
         if (AlbumArtData.is_valid())
-            _Artwork.Initialize((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
+            _Artwork.CreateWICResources((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
+*/
+        album_art_data::ptr AlbumArtData;
+
+        if (ArtworkExtractor->query(ArtworkGUID, AlbumArtData, abort) && AlbumArtData.is_valid())
+            _Artwork.CreateWICResources((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
+
     }
     catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {
@@ -729,7 +725,7 @@ void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_c
     pfc::string Result;
 
     if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
-        _Artwork.Initialize(pfc::wideFromUTF8(Result).c_str());
+        _Artwork.CreateWICResources(pfc::wideFromUTF8(Result).c_str());
     else
         Log.AtTrace().Write(STR_COMPONENT_BASENAME " failed to get album art from script result \"%s\".", Result.c_str());
 }
