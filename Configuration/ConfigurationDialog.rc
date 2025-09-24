@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2025.09.22) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2025.09.24) P. Stuer **/
 
 #include "Resources.h"
 
@@ -267,66 +267,68 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control         "Use absolute",             IDC_USE_ABSOLUTE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
 
-        rtext           "Gamma:"                    IDC_GAMMA_LBL,              X_A41, Y_A41 + 2, W_A41, H_A41
-        edittext                                    IDC_GAMMA                   X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Gamma:"                    IDC_GAMMA_LBL,                  X_A41, Y_A41 + 2, W_A41, H_A41
+        edittext                                    IDC_GAMMA                       X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     listbox IDC_CHANNELS, X_G28, Y_G28, W_G28, H_G28, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 
-    // Visualization
-    rtext           "Type:",                    IDC_VISUALIZATION_LBL, X_E01, Y_E01 + 2, W_E01, H_E01
-    combobox                                    IDC_VISUALIZATION,     X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    // Visualization page
+    rtext           "Type:",                        IDC_VISUALIZATION_LBL,          X_E01, Y_E01 + 2, W_E01, H_E01
+    combobox                                        IDC_VISUALIZATION,              X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     groupbox "Peak Indicators", IDC_PEAK_INDICATORS, X_B13, Y_B13, W_B13, H_B13, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Peak mode:",               IDC_PEAK_MODE_LBL,              X_A11, Y_A11 + 2, W_A11, H_A11
+        rtext       "Peak mode:",                   IDC_PEAK_MODE_LBL,              X_A11, Y_A11 + 2, W_A11, H_A11
         combobox                                    IDC_PEAK_MODE,                  X_A12, Y_A12,     W_A12, H_A12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Hold time:"                IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
+        rtext       "Hold time:"                    IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
         edittext                                    IDC_HOLD_TIME,                  X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext           "Acceleration:"             IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
+        rtext       "Acceleration:"                 IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
         edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "LEDs", IDC_LEDS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "Enabled",                  IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
+        control     "Enabled",                      IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
 
-        rtext       "LED size:"                 IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
-        edittext                                IDC_LED_SIZE,                   X_C18, Y_C18, W_C18, H_C18, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "LED size:"                     IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
+        edittext                                    IDC_LED_SIZE,                   X_C18, Y_C18, W_C18, H_C18, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext       "LED gap:"                  IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
-        edittext                                IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "LED gap:"                      IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
+        edittext                                    IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+/*
+    groupbox "Bars", IDC_BARS, X_B17, Y_B17, W_B17, H_B17, BS_GROUPBOX, WS_EX_TRANSPARENT
+*/
+    groupbox "Radial Bars", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext       "Inner radius:"                 IDC_INNER_RADIUS_LBL,           X_C30, Y_C30 + 2, W_C30, H_C30
+        edittext                                    IDC_INNER_RADIUS,               X_C31, Y_C31, W_C31, H_C31, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Outer radius:"                 IDC_OUTER_RADIUS_LBL,           X_C32, Y_C32 + 2, W_C32, H_C32
+        edittext                                    IDC_OUTER_RADIUS,               X_C33, Y_C33, W_C33, H_C33, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Angular velocity:"             IDC_ANGULAR_VELOCITY_LBL,       X_C34, Y_C34 + 2, W_C34, H_C34
+        edittext                                    IDC_ANGULAR_VELOCITY,           X_C35, Y_C35, W_C35, H_C35, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Spectogram", IDC_SPECTOGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "Scrolling",                IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
-        control     "Horizontal",               IDC_HORIZONTAL_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
-        control     "Use spectrum bar metrics", IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
-
-    groupbox "Radial Bars", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
-
-        rtext       "Inner radius:"             IDC_INNER_RADIUS_LBL,           X_C30, Y_C30 + 2, W_C30, H_C30
-        edittext                                IDC_INNER_RADIUS,               X_C31, Y_C31, W_C31, H_C31, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-
-        rtext       "Outer radius:"             IDC_OUTER_RADIUS_LBL,           X_C32, Y_C32 + 2, W_C32, H_C32
-        edittext                                IDC_OUTER_RADIUS,               X_C33, Y_C33, W_C33, H_C33, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-
-        rtext       "Angular velocity:"         IDC_ANGULAR_VELOCITY_LBL,       X_C34, Y_C34 + 2, W_C34, H_C34
-        edittext                                IDC_ANGULAR_VELOCITY,           X_C35, Y_C35, W_C35, H_C35, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control     "Scrolling",                    IDC_SCROLLING_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C15, Y_C15, W_C15, H_C15
+        control     "Horizontal",                   IDC_HORIZONTAL_SPECTOGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
+        control     "Use spectrum bar metrics",     IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
 
     groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "Horizontal",               IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
+        control     "Horizontal",                   IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
 
-        control     "RMS +3",                   IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
+        control     "RMS +3",                       IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
 
-        rtext       "RMS Window:"               IDC_RMS_WINDOW_LBL,              X_C21, Y_C21 + 2, W_C21, H_C21
-        edittext                                IDC_RMS_WINDOW,                  X_C22, Y_C22,     W_C22, H_C22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-        control     "",                         IDC_RMS_WINDOW_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext       "s"                         IDC_RMS_WINDOW_UNIT,             X_C23, Y_C23 + 2, W_C23, H_C23
+        rtext       "RMS Window:"                   IDC_RMS_WINDOW_LBL,             X_C21, Y_C21 + 2, W_C21, H_C21
+        edittext                                    IDC_RMS_WINDOW,                 X_C22, Y_C22,     W_C22, H_C22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        control     "",                             IDC_RMS_WINDOW_SPIN,            "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+        ltext       "s"                             IDC_RMS_WINDOW_UNIT,            X_C23, Y_C23 + 2, W_C23, H_C23
 
-        rtext       "Gauge gap:"                IDC_GAUGE_GAP_LBL,               X_C25, Y_C25 + 2, W_C25, H_C25
-        edittext                                IDC_GAUGE_GAP,                   X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Gauge gap:"                    IDC_GAUGE_GAP_LBL,              X_C25, Y_C25 + 2, W_C25, H_C25
+        edittext                                    IDC_GAUGE_GAP,                  X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Level Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
 

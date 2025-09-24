@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2024.04.21) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2025.09.24) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -59,6 +59,26 @@ public:
 
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
+
+    /// <summary>
+    /// Calculates the horizontal offset to start rendering the visualization.
+    /// </summary>
+    static FLOAT GetHOffset(HorizontalAlignment horizontalAlignment, FLOAT width) noexcept
+    {
+        switch (horizontalAlignment)
+        {
+            case HorizontalAlignment::Center:
+                return width / 2.f;
+
+            default:
+            case HorizontalAlignment::Fit:
+            case HorizontalAlignment::Near:
+                return 0.f;
+
+            case HorizontalAlignment::Far:
+                return width;
+        }
+    }
 
 protected:
     void SafeRelease(style_t ** style)

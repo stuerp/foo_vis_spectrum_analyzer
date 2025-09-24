@@ -106,7 +106,7 @@ void y_axis_t::Render(ID2D1RenderTarget * renderTarget)
     if (!SUCCEEDED(hr))
         return;
 
-    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
 
     for (const label_t & Iter : _Labels)
     {

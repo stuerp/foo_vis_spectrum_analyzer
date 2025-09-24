@@ -80,7 +80,7 @@ Create the following directory structure:
         columns_ui-sdk
         WTL10_10320
     bin
-        x86
+    bin.x86
     foo_vis_spectrum_analyzer
     out
     sdk
@@ -88,7 +88,7 @@ Create the following directory structure:
 * `3rdParty/columns_ui-sdk` contains the Columns UI SDK 7.0.0.
 * `3rdParty/WTL10_10320` contains WTL 10.0.10320.
 * `bin` contains a portable version of foobar2000 64-bit for debugging purposes.
-* `bin/x86` contains a portable version of foobar2000 32-bit for debugging purposes.
+* `bin.x86` contains a portable version of foobar2000 32-bit for debugging purposes.
 * `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
 * `out` receives a deployable version of the component.
 * `sdk` contains the foobar2000 SDK.
@@ -105,6 +105,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.8.1.0-alpha1, 2025-xx-xx
 
+* New: The graph horizontal alignment setting has a new *Fit* option to make the Bar visualization use the complete width of the graph (minus the X-axis when enabled).
+* Improved: Going forward older versions of the component will be able to read the configuration and preset files from newer versions in case you want or need to downgrade.
 * Fixed: Artwork not showing up when a track is already playing when switching to fullscreen. (0.8.0.0-beta2 regression)
 
 You can read the full history [here](docs/History.md).

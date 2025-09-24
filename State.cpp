@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.22) P. Stuer **/
+/** $VER: State.cpp (2025.09.24) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -540,7 +540,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
     {
         reader->read(&Version, sizeof(Version), abortHandler);
 
-        if (Version > _CurrentVersion)
+        if (Version > 9999) // Just a version number that seems sane...
             return;
 
         reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
@@ -897,6 +897,10 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
         }
+
+        if (Version >= 30)
+        {
+        }
     }
     catch (exception & ex)
     {
@@ -1152,7 +1156,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             // Version 3, v0.8.0.0-beta2
             if (graph_settings_t::_CurentVersion > 2)
             {
-                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
                 writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
             }
         }

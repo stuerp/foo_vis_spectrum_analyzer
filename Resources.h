@@ -404,15 +404,7 @@
 
 // Bars
 
-#define IDC_BARS                        7140
-
-// Spectogram
-
-#define IDC_SPECTOGRAM                  7150
-
-#define IDC_SCROLLING_SPECTOGRAM        7152
-#define IDC_HORIZONTAL_SPECTOGRAM       7154
-#define IDC_SPECTRUM_BAR_METRICS        7156
+#define IDC_BARS                        7200
 
 // Radial Bars
 
@@ -426,6 +418,14 @@
 
 #define IDC_ANGULAR_VELOCITY_LBL        7196
 #define IDC_ANGULAR_VELOCITY            7197
+
+// Spectogram
+
+#define IDC_SPECTOGRAM                  7150
+
+#define IDC_SCROLLING_SPECTOGRAM        7152
+#define IDC_HORIZONTAL_SPECTOGRAM       7154
+#define IDC_SPECTRUM_BAR_METRICS        7156
 
 // Peak Meter
 

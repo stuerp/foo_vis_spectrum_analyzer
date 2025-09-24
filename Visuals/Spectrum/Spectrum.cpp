@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.19) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.24) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -113,16 +113,22 @@ void spectrum_t::Render(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
 {
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
-    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
+    FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
+
+    // Use the full width of the graph?
+    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = ::floor(t);
+
+    const FLOAT BarWidth = std::max(t, 2.f); // In DIP
+    const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
     const FLOAT BarTopThickness  = _BarTopStyle->_Thickness / 2.f;
     const FLOAT PeakTopThickness = _BarPeakTopStyle->_Thickness / 2.f;
 
-    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     FLOAT x1 = HOffset;
-    FLOAT x2 = x1 + Bandwidth;
+    FLOAT x2 = x1 + BarWidth;
 
     renderTarget->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
@@ -221,7 +227,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
         }
 
         x1 = x2;
-        x2 = x1 + Bandwidth;
+        x2 = x1 + BarWidth;
     }
 }
 
@@ -428,20 +434,26 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void spectrum_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
+    // Calculate the x coordinate.
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
+    // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
+    FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+    // Use the full width of the graph?
+    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = ::floor(t);
 
-    const FLOAT x1 = HOffset + (Bandwidth / 2.f);
+    const FLOAT BarWidth = std::max(t, 2.f); // In DIP
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
+    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
-    const FLOAT x = x1 + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+    const FLOAT x = HOffset + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
+    // Draw the line
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);

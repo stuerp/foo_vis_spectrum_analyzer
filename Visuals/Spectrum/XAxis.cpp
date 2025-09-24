@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2024.05.01) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2025.09.24) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 #include "XAxis.h"
@@ -158,13 +158,19 @@ void x_axis_t::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
+    FLOAT t = _Size.width / (FLOAT) _BandCount;
+
+    // Use the full width of the graph?
+    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = ::floor(t);
+
     // Calculate the position of the labels.
-    const FLOAT Bandwidth = std::max(::floor(_Size.width / (FLOAT) _BandCount), 2.f); // In DIP
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _BandCount : _Size.width;
+    const FLOAT BarWidth = std::max(t, 2.f); // In DIP
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _BandCount : _Size.width;
+    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _Size.width - SpectrumWidth);
 
-    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_Size.width - SpectrumWidth) / 2.f : (_Size.width - SpectrumWidth));
-
-    const FLOAT xl = !_GraphSettings->_FlipHorizontally ? _Bounds.left + HOffset : _Bounds.right - HOffset;
+    const FLOAT x1 = !_GraphSettings->_FlipHorizontally ? _Bounds.left  + HOffset : _Bounds.right - HOffset;
+    const FLOAT x2 = !_GraphSettings->_FlipHorizontally ? _Bounds.right - HOffset : _Bounds.left  + HOffset;
 
     const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
     const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
@@ -177,7 +183,7 @@ void x_axis_t::Resize() noexcept
     {
         const FLOAT dx = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
-        const FLOAT x = !_GraphSettings->_FlipHorizontally ? xl + dx : xl - dx;
+        const FLOAT x = !_GraphSettings->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 
         Iter.PointT = D2D1_POINT_2F(x, yt);
         Iter.PointB = D2D1_POINT_2F(x, yb);
@@ -194,6 +200,37 @@ void x_axis_t::Resize() noexcept
                 TextLayout->GetMetrics(&TextMetrics);
 
                 Iter.RectT = { x - (TextMetrics.width / 2.f), _Bounds.top, x + (TextMetrics.width / 2.f), yt };
+
+                // Make sure the label is completely visible.
+                if (!_GraphSettings->_FlipHorizontally)
+                {
+                    if (Iter.RectT.left < x1)
+                    {
+                        Iter.RectT.left  = x1;
+                        Iter.RectT.right = x1 + TextMetrics.width;
+                    }
+                    else
+                    if (Iter.RectT.right > x2)
+                    {
+                        Iter.RectT.left  = x2 - TextMetrics.width;
+                        Iter.RectT.right = x2;
+                    }
+                }
+                else
+                {
+                    if (Iter.RectT.right > x1)
+                    {
+                        Iter.RectT.left  = x1 - TextMetrics.width;
+                        Iter.RectT.right = x1;
+                    }
+                    else
+                    if (Iter.RectT.left < x2)
+                    {
+                        Iter.RectT.left  = x2;
+                        Iter.RectT.right = x2 + TextMetrics.width;
+                    }
+                }
+
                 Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
             }
         }
@@ -204,7 +241,7 @@ void x_axis_t::Resize() noexcept
 
     if (_Labels.size() > 2)
     {
-        #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+        const bool NotesMode = (_GraphSettings->_XAxisMode == XAxisMode::Notes);
 
         const label_t * LastLabel = nullptr;
 

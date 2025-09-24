@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.09.22) P. Stuer **/
+/** $VER: Constans.h (2025.09.24) P. Stuer **/
 
 #pragma once
 
@@ -246,6 +246,7 @@ enum class HorizontalAlignment
     Near = 0,
     Center,
     Far,
+    Fit,
 };
 
 enum class VerticalAlignment

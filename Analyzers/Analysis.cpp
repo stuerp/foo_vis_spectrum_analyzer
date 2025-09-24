@@ -438,23 +438,23 @@ void analysis_t::GenerateLinearFrequencyBands()
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
-    const double Root24 = ::exp2(1. / 24.); // 24 semitones
+    const double Root24 = ::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
     const double Pitch = (_State->_Pitch > 0.) ? ::round((::log2(_State->_Pitch) - 4.) * 12.) * 2. : 0.;
     const double C0 = _State->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
-    const double LoNote = ::round(_State->_MinNote * 2. / NoteGroup);
-    const double HiNote = ::round(_State->_MaxNote * 2. / NoteGroup);
+    const double LoIndex = ::round(_State->_MinNote * 2. / NoteGroup);
+    const double HiIndex = ::round(_State->_MaxNote * 2. / NoteGroup);
 
     const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.clear();
 
-    static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
+    static const WCHAR * NoteNames[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
 
-    for (double i = LoNote; i <= HiNote; ++i)
+    for (double i = LoIndex; i <= HiIndex; ++i)
     {
         frequency_band_t fb = 
         {
@@ -465,11 +465,12 @@ void analysis_t::GenerateOctaveFrequencyBands()
 
         // Pre-calculate the tooltip text and the band background color.
         {
-            int Note = (int) (i * (NoteGroup / 2.));
+            const uint32_t Note = (uint32_t) (i * (NoteGroup / 2.));
 
-            int n = Note % 12;
+            const uint32_t n      = Note % (uint32_t) _countof(NoteNames);
+            const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
-            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
+            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.09.21) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.cpp (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -124,10 +124,15 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
     {
         const rect_t & Bounds = (const rect_t &) _Spectrum.GetClientBounds();
 
-        const FLOAT Bandwidth = std::max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
+        FLOAT t = Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
-        const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (Bounds.Width() - SpectrumWidth) / 2.f : (Bounds.Width() - SpectrumWidth));
+        // Allow non-integer bar widths?
+        if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+            t = ::floor(t);
+
+        const FLOAT BarWidth = std::max(t, 2.f);
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
+        const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, Bounds.Width() - SpectrumWidth);
 
         const FLOAT x1 = Bounds.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;

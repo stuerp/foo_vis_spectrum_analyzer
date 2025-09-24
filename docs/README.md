@@ -611,7 +611,12 @@ Allow you to edit the description of the selected graph.
 
 `Horizontal alignment`
 
-Determines the horizontal alignment of a graph within its bounds.
+Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X axis).
+
+- *Near* aligns the visualization with the near side of the graph (aka the *left* edge when using normal orientation).
+- *Center* centers the visualization in the graph area.
+- *Far* aligns the visualization with the far side of the graph (aka the *right* edge when using normal orientation).
+- *Fit* makes the visualization use the full horizontal the graph area.
 
 `Flip horizontally`
 
@@ -812,11 +817,8 @@ Deletes the currently selected preset.
 
 ## FAQs
 
-**Q:** Common question 1  
-**A:** Clear, concise answer.
-
-**Q:** Common question 2  
-**A:** Clear, concise answer.
+**Q:** Why does the fullscreen version of the component not respect my settings when using DUI?
+**A:** In DUI the fullscreen version of the component is a completely new instance with its own settings. You have to configure it separately.
 
 ---
 
