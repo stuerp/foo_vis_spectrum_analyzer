@@ -109,6 +109,7 @@ v0.8.1.0-alpha1, 2025-xx-xx
 * Improved: Going forward older versions of the component will be able to read the configuration and preset files from newer versions in case you want or need to downgrade.
 * Fixed: Artwork not showing up when a track is already playing when switching to fullscreen. (0.8.0.0-beta2 regression)
 * Fixed: Restored compatibility with foobar 1.6.18.
+* Fixed: Spectrum bar top and peak size miscalculation. (0.7.6.2 regression)
 
 You can read the full history [here](docs/History.md).
 
