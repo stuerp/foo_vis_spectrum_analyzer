@@ -198,33 +198,16 @@ void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & art
     if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+        return;
+
     if (!_State->_ShowArtworkOnBackground)
         return;
 
     if (artwork.Bitmap() == nullptr)
         return;
 
-    switch (_State->_VisualizationType)
-    {
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::RadialBars:
-        {
-            artwork.Render(renderTarget, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
-            break;
-        }
-
-        case VisualizationType::Spectogram:
-        {
-            artwork.Render(renderTarget, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
-            break;
-        }
-
-        case VisualizationType::PeakMeter:
-        case VisualizationType::LevelMeter:
-        default:
-            break;
-    }
+    artwork.Render(renderTarget, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
 }
 
 /// <summary>
@@ -232,36 +215,12 @@ void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & art
 /// </summary>
 void graph_t::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 {
-    switch (_State->_VisualizationType)
-    {
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::RadialBars:
-        {
-            _Visualization->Render(renderTarget);
-            RenderDescription(renderTarget);
-            break;
-        }
+    _Visualization->Render(renderTarget);
 
-        case VisualizationType::Spectogram:
-        {
-            _Visualization->Render(renderTarget);
-            RenderDescription(renderTarget);
-            break;
-        }
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+        return;
 
-        case VisualizationType::PeakMeter:
-        {
-            _Visualization->Render(renderTarget);
-            break;
-        }
-
-        case VisualizationType::LevelMeter:
-        {
-            _Visualization->Render(renderTarget);
-            break;
-        }
-    }
+    RenderDescription(renderTarget);
 }
 
 /// <summary>

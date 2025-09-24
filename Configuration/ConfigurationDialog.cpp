@@ -1061,6 +1061,8 @@ void ConfigurationDialog::Initialize()
 
             auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
+            w.ResetContent();
+
             for (const auto & x : ChannelNames)
                 w.AddString(x);
         }

@@ -130,9 +130,6 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT BarTopThickness  = _BarTopStyle->_Thickness / 2.f;
-    const FLOAT PeakTopThickness = _BarPeakTopStyle->_Thickness / 2.f;
-
     const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     FLOAT x1 = HOffset;
@@ -196,8 +193,8 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                 // Draw the peak indicator top.
                 if (_BarPeakTopStyle->IsEnabled())
                 {
-                    Rect.top    = ::ceil(std::clamp(Rect.bottom - PeakTopThickness, 0.f, _ClientSize.height));
-                    Rect.bottom = ::ceil(std::clamp(Rect.top    + PeakTopThickness, 0.f, _ClientSize.height));
+                    Rect.top    = ::ceil(std::clamp(Rect.bottom - _BarPeakTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(std::clamp(Rect.top    + _BarPeakTopStyle->_Thickness,       0.f, _ClientSize.height));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
 
@@ -226,8 +223,8 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                 // Draw the bar top.
                 if (_BarTopStyle->IsEnabled())
                 {
-                    Rect.top    = std::clamp(Rect.bottom - BarTopThickness, 0.f, _ClientSize.height);
-                    Rect.bottom = std::clamp(Rect.top    + BarTopThickness, 0.f, _ClientSize.height);
+                    Rect.top    = std::clamp(Rect.bottom - _BarTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height);
+                    Rect.bottom = std::clamp(Rect.top    + _BarTopStyle->_Thickness,       0.f, _ClientSize.height);
 
                     renderTarget->FillRectangle(Rect, _BarTopStyle->_Brush);
                 }
@@ -326,9 +323,6 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept
 
     const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
 
-    const FLOAT BarTopThickness  = _BarTopStyle->_Thickness / 2.f;
-    const FLOAT PeakTopThickness = _BarPeakTopStyle->_Thickness / 2.f;
-
     FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
 //  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
 
@@ -371,8 +365,8 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept
             // Draw the peak indicator top.
             if (_BarPeakTopStyle->IsEnabled() &&(_State->_PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
             {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - PeakTopThickness;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + PeakTopThickness;
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - _BarPeakTopStyle->_Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + _BarPeakTopStyle->_Thickness;
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
@@ -417,8 +411,8 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept
             // Draw the peak indicator top.
             if (_BarTopStyle->IsEnabled())
             {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) - BarTopThickness;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) + BarTopThickness;
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) - _BarTopStyle->_Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) + _BarTopStyle->_Thickness;
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
