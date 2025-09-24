@@ -24,7 +24,13 @@ public:
 
     virtual ~element_t() {}
 
+    virtual void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept { };
+    virtual void Move(const D2D1_RECT_F & rect) noexcept { };
+    virtual void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    virtual void Reset() noexcept { }
+
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
+    virtual const D2D1_RECT_F & GetClientBounds() const noexcept { return _Bounds; };
 
     virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
     {
@@ -54,6 +60,8 @@ public:
         return _Bounds.right;
     }
 
+    virtual void ReleaseDeviceSpecificResources() noexcept { };
+
     virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
 
@@ -81,7 +89,7 @@ public:
     }
 
 protected:
-    void SafeRelease(style_t ** style)
+    void SafeRelease(style_t ** style) noexcept
     {
         if (*style != nullptr)
         {

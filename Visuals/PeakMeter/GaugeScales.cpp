@@ -1,5 +1,5 @@
 
-/** $VER: GaugeScales.cpp (2024.05.03) P. Stuer - Implements the gauge scales of the peak meter. **/
+/** $VER: GaugeScales.cpp (2025.09.24) P. Stuer - Implements the gauge scales of the peak meter. **/
 
 #include "pch.h"
 
@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -41,7 +41,7 @@ void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settin
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void gauge_scales_t::Move(const D2D1_RECT_F & rect)
+void gauge_scales_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -49,7 +49,7 @@ void gauge_scales_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void gauge_scales_t::Reset()
+void gauge_scales_t::Reset() noexcept
 {
     _IsResized = true;
 }
@@ -211,7 +211,7 @@ void gauge_scales_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget)
+void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 

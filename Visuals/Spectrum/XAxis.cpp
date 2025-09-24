@@ -145,7 +145,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void x_axis_t::Move(const D2D1_RECT_F & rect)
+void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -264,7 +264,7 @@ void x_axis_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void x_axis_t::Render(ID2D1RenderTarget * renderTarget)
+void x_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -303,7 +303,7 @@ void x_axis_t::Render(ID2D1RenderTarget * renderTarget)
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
@@ -319,7 +319,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void x_axis_t::ReleaseDeviceSpecificResources()
+void x_axis_t::ReleaseDeviceSpecificResources() noexcept
 {
     SafeRelease(&_TextStyle);
     SafeRelease(&_LineStyle);

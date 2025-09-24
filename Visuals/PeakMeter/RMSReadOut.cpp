@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void rms_read_out_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void rms_read_out_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -22,7 +22,7 @@ void rms_read_out_t::Initialize(state_t * state, const graph_settings_t * settin
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void rms_read_out_t::Move(const D2D1_RECT_F & rect)
+void rms_read_out_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -30,7 +30,7 @@ void rms_read_out_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void rms_read_out_t::Reset()
+void rms_read_out_t::Reset() noexcept
 {
     _IsResized = true;
 }
@@ -49,7 +49,7 @@ void rms_read_out_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void rms_read_out_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
+void rms_read_out_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 

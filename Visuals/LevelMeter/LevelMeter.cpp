@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2024.04.26) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2025.09.24) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -12,6 +12,9 @@
 
 #pragma hdrstop
 
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
 level_meter_t::level_meter_t()
 {
     _Bounds = { };
@@ -25,9 +28,17 @@ level_meter_t::level_meter_t()
 }
 
 /// <summary>
+/// Destroys this instance.
+/// </summary>
+level_meter_t::~level_meter_t()
+{
+    ReleaseDeviceSpecificResources();
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void level_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -39,7 +50,7 @@ void level_meter_t::Initialize(state_t * state, const graph_settings_t * setting
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void level_meter_t::Move(const D2D1_RECT_F & rect)
+void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -47,7 +58,7 @@ void level_meter_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void level_meter_t::Reset()
+void level_meter_t::Reset() noexcept
 {
     _IsResized = true;
 }
@@ -66,7 +77,7 @@ void level_meter_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void level_meter_t::Render(ID2D1RenderTarget * renderTarget)
+void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 

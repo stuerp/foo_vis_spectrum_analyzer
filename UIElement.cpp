@@ -570,7 +570,7 @@ void uielement_t::UpdateState() noexcept
             {
                 auto * g = new graph_t();
 
-                g->Initialize(&_RenderThread, &Iter);
+                g->Initialize(&_RenderThread, &Iter, nullptr);
 
                 _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
             }

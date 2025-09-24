@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2024.04.22) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2025.09.24) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -36,13 +36,14 @@ public:
     peak_meter_t(peak_meter_t &&) = delete;
     peak_meter_t & operator=(peak_meter_t &&) = delete;
 
-    virtual ~peak_meter_t() { }
+    virtual ~peak_meter_t();
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Reset();
-    void Move(const D2D1_RECT_F & rect);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Reset() noexcept;
+
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;

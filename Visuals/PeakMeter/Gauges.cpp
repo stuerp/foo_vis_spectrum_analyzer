@@ -1,5 +1,5 @@
 
-/** $VER: Gauges.cpp (2024.04.22) P. Stuer - Implements the gauges of the peak meter. **/
+/** $VER: Gauges.cpp (2025.09.24) P. Stuer - Implements the gauges of the peak meter. **/
 
 #include "pch.h"
 
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -24,7 +24,7 @@ void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, con
 /// <summary>
 /// Moves this instance.
 /// </summary>
-void gauge_t::Move(const D2D1_RECT_F & rect)
+void gauge_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -32,7 +32,7 @@ void gauge_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void gauge_t::Reset()
+void gauge_t::Reset() noexcept
 {
     _IsResized = true;
 }
@@ -51,7 +51,7 @@ void gauge_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics)
+void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 

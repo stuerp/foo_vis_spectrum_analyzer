@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.19) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.24) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -37,25 +37,27 @@ public:
     spectrum_t(spectrum_t &&) = delete;
     spectrum_t & operator=(spectrum_t &&) = delete;
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget);
-    void Reset() { }
+    virtual ~spectrum_t();
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources();
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Reset() noexcept { }
+
+    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    void ReleaseDeviceSpecificResources() noexcept;
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _ClientBounds; }
 
 private:
     void Resize() noexcept;
 
-    void RenderBars(ID2D1RenderTarget * renderTarget);
-    void RenderCurve(ID2D1RenderTarget * renderTarget);
-    void RenderRadialBars(ID2D1RenderTarget * renderTarget);
+    void RenderBars(ID2D1RenderTarget * renderTarget) noexcept;
+    void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
+    void RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
 
-    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget);
+    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
 
     struct geometry_points_t
     {
@@ -71,7 +73,7 @@ private:
         }
     };
 
-    HRESULT CreateGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const;
+    HRESULT CreateGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
     HRESULT CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
     HRESULT CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** segment) const noexcept;

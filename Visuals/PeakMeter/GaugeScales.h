@@ -1,5 +1,5 @@
 
-/** $VER: GaugeScales.h (2024.04.22) P. Stuer - Implements the gauge scales of the peak meter. **/
+/** $VER: GaugeScales.h (2025.09.24) P. Stuer - Implements the gauge scales of the peak meter. **/
 
 #pragma once
 
@@ -32,11 +32,11 @@ public:
 
     virtual ~gauge_scales_t() { }
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Reset();
-    void Move(const D2D1_RECT_F & rect);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Reset() noexcept;
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget);
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;

@@ -32,11 +32,13 @@ public:
 
     virtual ~gauge_t() { }
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Reset();
-    void Move(const D2D1_RECT_F & rect);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    void Reset() noexcept;
+
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics);
+    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;

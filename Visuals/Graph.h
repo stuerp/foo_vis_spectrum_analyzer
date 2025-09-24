@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2025.09.21) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.h (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #pragma once
 
@@ -32,11 +32,13 @@ public:
     graph_t();
     virtual ~graph_t();
 
-    void Initialize(state_t * state, const graph_settings_t * settings) noexcept;
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    void Reset() noexcept;
+
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
-    void Reset();
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -75,12 +77,13 @@ public:
 
 private:
     std::wstring _Description;
-
+    std::unique_ptr<element_t> _Visualization;
+/*
     spectrum_t _Spectrum;
     spectogram_t _Spectogram;
     peak_meter_t _PeakMeter;
     level_meter_t _LevelMeter;
-
+*/
     style_t * _BackgroundStyle;
     style_t * _DescriptionTextStyle;
     style_t * _DescriptionBackgroundStyle;

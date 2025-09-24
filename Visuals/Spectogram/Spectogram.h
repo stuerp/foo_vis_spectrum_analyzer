@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2025.09.24) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -31,14 +31,16 @@ public:
     spectogram_t(spectogram_t &&) = delete;
     spectogram_t & operator=(spectogram_t &&) = delete;
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Move(const D2D1_RECT_F & rect);
-    void Render(ID2D1RenderTarget * renderTarget);
-    void Reset();
+    virtual ~spectogram_t();
+
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Reset() noexcept;
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
 
-    void ReleaseDeviceSpecificResources();
+    void ReleaseDeviceSpecificResources() noexcept;
 
 private:
     bool Update() noexcept;
