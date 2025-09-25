@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.09.23) P. Stuer **/
+/** $VER: UIElement.h (2025.09.25) P. Stuer **/
 
 #pragma once
 
@@ -111,8 +111,8 @@ private:
 
     void on_album_art(album_art_data::ptr data);
 
-    void GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort);
-    void GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort);
+    bool GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
+    bool GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
 
     static GUID GetArtworkTypeGUID(ArtworkType artworkType) noexcept;
 

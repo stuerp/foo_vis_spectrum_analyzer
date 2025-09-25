@@ -109,9 +109,9 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
             GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
             if (_UIThread._ArtworkFilePath.empty())
-                GetAlbumArtFromTrack(CurrentTrack, fb2k::noAbort);
+                GetArtworkFromTrack(CurrentTrack, fb2k::noAbort);
             else
-                GetAlbumArtFromScript(CurrentTrack, fb2k::noAbort);
+                GetArtworkFromScript(CurrentTrack, fb2k::noAbort);
         }
     }
 
@@ -622,10 +622,10 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
     {
-        if (!_UIThread._ArtworkFilePath.empty())
-            GetAlbumArtFromScript(track, fb2k::noAbort);
+        if (_UIThread._ArtworkFilePath.empty())
+            GetArtworkFromTrack(track, fb2k::noAbort);
         else
-            GetAlbumArtFromTrack(track, fb2k::noAbort);
+            GetArtworkFromScript(track, fb2k::noAbort);
     }
 
     // Notify the render thread.
@@ -678,9 +678,9 @@ void uielement_t::on_album_art(album_art_data::ptr aad)
 /// <summary>
 /// Gets the album art from the specified track.
 /// </summary>
-void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_callback & abort)
+bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {
-    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting front cover album art for the playing track.");
+    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork for the playing track.");
 
     GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
 
@@ -689,45 +689,57 @@ void uielement_t::GetAlbumArtFromTrack(const metadb_handle_ptr & track, abort_ca
     auto ArtworkExtractor = ArtworkManager->open(pfc::list_single_ref_t(track), pfc::list_single_ref_t(ArtworkGUID), abort);
 
     if (!ArtworkExtractor.is_valid())
-        return;
+        return false;
 
     try
     {
-/*
-        auto AlbumArtData = ArtworkExtractor->query(ArtworkGUID, abort);
+        album_art_data::ptr ArtworkData;
 
-        if (AlbumArtData.is_valid())
-            _Artwork.CreateWICResources((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
-*/
-        album_art_data::ptr AlbumArtData;
+        if (!ArtworkExtractor->query(ArtworkGUID, ArtworkData, abort))
+        {
+            auto StubExtractor = ArtworkManager->open_stub(abort);
 
-        if (ArtworkExtractor->query(ArtworkGUID, AlbumArtData, abort) && AlbumArtData.is_valid())
-            _Artwork.CreateWICResources((uint8_t *) AlbumArtData->data(), AlbumArtData->size());
+            if (!StubExtractor.is_valid())
+                return false;
 
+            if (!StubExtractor->query(ArtworkGUID, ArtworkData, abort))
+                return false;
+        }
+
+        if (ArtworkData.is_valid())
+            _Artwork.CreateWICResources((uint8_t *) ArtworkData->data(), ArtworkData->size());
     }
     catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {
-        Log.AtTrace().Write(STR_COMPONENT_BASENAME " failed to get front cover album art for playing track: %s", e.what());
+        Log.AtTrace().Write(STR_COMPONENT_BASENAME " failed to get artwork for the playing track: %s", e.what());
     }
+
+    return true;
 }
 
 /// <summary>
-/// Gets the album art from a script.
+/// Gets the artwork from a script.
 /// </summary>
-void uielement_t::GetAlbumArtFromScript(const metadb_handle_ptr & track, abort_callback & abort)
+bool uielement_t::GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {
-    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting album art from script \"\".", pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str()).c_str());
+    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork from script \"%s\".", pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str()).c_str());
 
     titleformat_object::ptr Script;
 
-    bool Success = titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str()));
+    if (!titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str())))
+        return false;
+
+    if (!Script.is_valid())
+        return false;
 
     pfc::string Result;
 
-    if (Success && Script.is_valid() && track->format_title(0, Result, Script, 0))
-        _Artwork.CreateWICResources(pfc::wideFromUTF8(Result).c_str());
-    else
-        Log.AtTrace().Write(STR_COMPONENT_BASENAME " failed to get album art from script result \"%s\".", Result.c_str());
+    if (!track->format_title(0, Result, Script, 0))
+        return false;
+
+    _Artwork.CreateWICResources(pfc::wideFromUTF8(Result).c_str());
+
+    return true;
 }
 
 /// <summary>
