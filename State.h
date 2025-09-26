@@ -128,7 +128,7 @@ public:
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
         uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
         uint32_t _BandsPerOctave;                                       // Bands per octave, 1 .. 48
-        double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+        double _TuningPitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
         int _Transpose;                                                 // Transpose, -24 ..24 quarter tones
 
         ScalingFunction _ScalingFunction;

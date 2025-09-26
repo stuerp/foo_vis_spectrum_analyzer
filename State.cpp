@@ -97,7 +97,7 @@ void state_t::Reset() noexcept
     _MinNote = 0;
     _MaxNote = 126;
     _BandsPerOctave = 12;
-    _Pitch = 440.0;
+    _TuningPitch = 440.0;
     _Transpose = 0;
 
     // Frequencies
@@ -348,7 +348,7 @@ state_t & state_t::operator=(const state_t & other)
         _MinNote = other._MinNote;
         _MaxNote = other._MaxNote;
         _BandsPerOctave = other._BandsPerOctave;
-        _Pitch = other._Pitch;
+        _TuningPitch = other._TuningPitch;
         _Transpose = other._Transpose;
 
         _ScalingFunction = other._ScalingFunction;
@@ -593,7 +593,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
         reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
         reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-        reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
+        reader->read(&_TuningPitch, sizeof(_TuningPitch), abortHandler);
         reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
 
         reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
@@ -962,7 +962,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
         writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
         writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-        writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
+        writer->write(&_TuningPitch, sizeof(_TuningPitch), abortHandler);
         writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
 
         writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);

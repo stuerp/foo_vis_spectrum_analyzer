@@ -92,7 +92,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -103,7 +103,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
                     _Labels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
                 }
                 break;
             }
@@ -114,7 +114,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
 
@@ -132,7 +132,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
                     _Labels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }

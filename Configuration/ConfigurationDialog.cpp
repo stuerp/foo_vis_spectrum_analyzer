@@ -611,14 +611,14 @@ void ConfigurationDialog::Initialize()
                 { 6, 10000 }, // 100.0
             };
 
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_PITCH)); _NumericEdits.push_back(ne); SetDouble(IDC_PITCH, _State->_Pitch);
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_PITCH)); _NumericEdits.push_back(ne); SetDouble(IDC_PITCH, _State->_TuningPitch);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN));
 
             w.SetAccel(_countof(Accel), Accel);
 
             w.SetRange32((int) (MinPitch * 100.), (int) (MaxPitch * 100.));
-            w.SetPos32((int) (_State->_Pitch * 100.));
+            w.SetPos32((int) (_State->_TuningPitch * 100.));
         }
 
         {
@@ -1820,7 +1820,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_PITCH:
         {
-            _State->_Pitch = std::clamp(::_wtof(Text), MinPitch, MaxPitch);
+            _State->_TuningPitch = std::clamp(::_wtof(Text), MinPitch, MaxPitch);
             break;
         }
 
@@ -2140,7 +2140,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_NUM_BANDS:             { SetInteger(id, (int64_t) _State->_BandCount); break; }
         case IDC_LO_FREQUENCY:          { SetDouble(id, _State->_LoFrequency); break; }
         case IDC_HI_FREQUENCY:          { SetDouble(id, _State->_HiFrequency); break; }
-        case IDC_PITCH:                 { SetDouble(id, _State->_Pitch); break; }
+        case IDC_PITCH:                 { SetDouble(id, _State->_TuningPitch); break; }
         case IDC_SKEW_FACTOR:           { SetDouble(id, _State->_SkewFactor); break; }
         case IDC_BANDWIDTH:             { SetDouble(id, _State->_Bandwidth, 0, 1); break; }
 
@@ -2801,8 +2801,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_PITCH_SPIN:
         {
-            _State->_Pitch = ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.);
-            SetDouble(IDC_PITCH, _State->_Pitch);
+            _State->_TuningPitch = ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.);
+            SetDouble(IDC_PITCH, _State->_TuningPitch);
             break;
         }
 

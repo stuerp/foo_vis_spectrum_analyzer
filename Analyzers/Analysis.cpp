@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.09.20) P. Stuer **/
+/** $VER: Analysis.cpp (2025.09.26) P. Stuer **/
 
 #include "pch.h"
 
@@ -460,8 +460,8 @@ void analysis_t::GenerateOctaveFrequencyBands()
 {
     const double Root24 = ::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
-    const double PitchNote   = (_State->_Pitch > 0.) ? ::round(12.* (::log2(_State->_Pitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
-    const double C0Frequency = _State->_Pitch * ::pow(Root24, -PitchNote);                                      // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
+    const double TuningNote  = (_State->_TuningPitch > 0.) ? ::round(12.* (::log2(_State->_TuningPitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
+    const double C0Frequency =  _State->_TuningPitch * ::pow(Root24, -TuningNote);                                          // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 

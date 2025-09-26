@@ -809,7 +809,7 @@ void spectogram_t::InitFreqAxis() noexcept
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -820,7 +820,7 @@ void spectogram_t::InitFreqAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
                 }
                 break;
             }
@@ -831,7 +831,7 @@ void spectogram_t::InitFreqAxis() noexcept
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
 
@@ -849,7 +849,7 @@ void spectogram_t::InitFreqAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
