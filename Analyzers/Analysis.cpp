@@ -434,14 +434,34 @@ void analysis_t::GenerateLinearFrequencyBands()
 }
 
 /// <summary>
+/// Returns the MIDI note nearest to the specified frequency.
+/// </summary>
+static int FrequencyToNote(double frequency) noexcept
+{
+    const int A4 = 69;
+
+    return A4 + (int) ::round(12. * ::log2(frequency / 440.));
+}
+
+/// <summary>
+/// Returns the frequency of the specified MIDI note.
+/// </summary>
+static double NoteToFrequency(int note) noexcept
+{
+    const int A4 = 69;
+
+    return 440. * ::pow(2., (note - A4) / 12.);
+}
+
+/// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
     const double Root24 = ::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
-    const double Pitch = (_State->_Pitch > 0.) ? ::round((::log2(_State->_Pitch) - 4.) * 12.) * 2. : 0.;
-    const double C0 = _State->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double PitchNote   = (_State->_Pitch > 0.) ? ::round(12.* (::log2(_State->_Pitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
+    const double C0Frequency = _State->_Pitch * ::pow(Root24, -PitchNote);                                      // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
@@ -458,10 +478,12 @@ void analysis_t::GenerateOctaveFrequencyBands()
     {
         frequency_band_t fb = 
         {
-            C0 * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
-            C0 * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
-            C0 * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
+
+        double f = NoteToFrequency(FrequencyToNote(fb.Ctr));
 
         // Pre-calculate the tooltip text and the band background color.
         {
@@ -470,7 +492,10 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t n      = Note % (uint32_t) _countof(NoteNames);
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
-            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
+            if (msc::InRange(f, fb.Lo, fb.Hi))
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
+            else
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
