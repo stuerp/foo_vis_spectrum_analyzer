@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2024.04.28) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2025.09.24) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -12,6 +12,9 @@
 
 #pragma hdrstop
 
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
 peak_meter_t::peak_meter_t()
 {
     _Bounds = { };
@@ -21,9 +24,17 @@ peak_meter_t::peak_meter_t()
 }
 
 /// <summary>
+/// Destroys this instance.
+/// </summary>
+peak_meter_t::~peak_meter_t()
+{
+    ReleaseDeviceSpecificResources();
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void peak_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _Gauges.Initialize(state, settings, analysis);
     _GaugeScales.Initialize(state, settings, analysis);
@@ -41,7 +52,7 @@ void peak_meter_t::Initialize(state_t * state, const graph_settings_t * settings
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void peak_meter_t::Move(const D2D1_RECT_F & rect)
+void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 
@@ -55,7 +66,7 @@ void peak_meter_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void peak_meter_t::Reset()
+void peak_meter_t::Reset() noexcept
 {
     _IsResized = true;
 
@@ -408,7 +419,7 @@ void peak_meter_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void peak_meter_t::Render(ID2D1RenderTarget * renderTarget)
+void peak_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 

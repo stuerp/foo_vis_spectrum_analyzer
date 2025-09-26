@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.8.0.0, 2025-09-22
+
+* New: The album art type that is shown on the background can be selected in the configuration dialog.
+* New: The log verbosity can be set on the **Common** page of the configuration dialog.
+* Improved: Stability of album art rendering with multiple instances and heavy load.
+* Fixed: Rendering negative infinity in the peak meter readout was broken. (Beta 2 regression)
+* Fixed: Analyzer initialization after channel configuration changes.
+
 v0.8.0.0-beta3, 2025-09-19
 
 * New: [User guide](docs/README.md) documenting all the configuration settings.

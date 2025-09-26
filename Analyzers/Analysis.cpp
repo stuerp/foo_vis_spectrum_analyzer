@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.09.20) P. Stuer **/
+/** $VER: Analysis.cpp (2025.09.26) P. Stuer **/
 
 #include "pch.h"
 
@@ -434,42 +434,68 @@ void analysis_t::GenerateLinearFrequencyBands()
 }
 
 /// <summary>
+/// Returns the MIDI note nearest to the specified frequency.
+/// </summary>
+static int FrequencyToNote(double frequency) noexcept
+{
+    const int A4 = 69;
+
+    return A4 + (int) ::round(12. * ::log2(frequency / 440.));
+}
+
+/// <summary>
+/// Returns the frequency of the specified MIDI note.
+/// </summary>
+static double NoteToFrequency(int note) noexcept
+{
+    const int A4 = 69;
+
+    return 440. * ::pow(2., (note - A4) / 12.);
+}
+
+/// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
-    const double Root24 = ::exp2(1. / 24.); // 24 semitones
+    const double Root24 = ::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
-    const double Pitch = (_State->_Pitch > 0.) ? ::round((::log2(_State->_Pitch) - 4.) * 12.) * 2. : 0.;
-    const double C0 = _State->_Pitch * ::pow(Root24, -Pitch); // ~16.35 Hz
+    const double TuningNote  = (_State->_TuningPitch > 0.) ? ::round(12.* (::log2(_State->_TuningPitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
+    const double C0Frequency =  _State->_TuningPitch * ::pow(Root24, -TuningNote);                                          // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
-    const double LoNote = ::round(_State->_MinNote * 2. / NoteGroup);
-    const double HiNote = ::round(_State->_MaxNote * 2. / NoteGroup);
+    const double LoIndex = ::round(_State->_MinNote * 2. / NoteGroup);
+    const double HiIndex = ::round(_State->_MaxNote * 2. / NoteGroup);
 
     const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.clear();
 
-    static const WCHAR * NoteName[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
+    static const WCHAR * NoteNames[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
 
-    for (double i = LoNote; i <= HiNote; ++i)
+    for (double i = LoIndex; i <= HiIndex; ++i)
     {
         frequency_band_t fb = 
         {
-            C0 * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
-            C0 * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
-            C0 * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
+            C0Frequency * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
+
+        double f = NoteToFrequency(FrequencyToNote(fb.Ctr));
 
         // Pre-calculate the tooltip text and the band background color.
         {
-            int Note = (int) (i * (NoteGroup / 2.));
+            const uint32_t Note = (uint32_t) (i * (NoteGroup / 2.));
 
-            int n = Note % 12;
+            const uint32_t n      = Note % (uint32_t) _countof(NoteNames);
+            const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
-            ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteName[n], Note / 12, fb.Ctr);
+            if (msc::InRange(f, fb.Lo, fb.Hi))
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
+            else
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }

@@ -1,5 +1,5 @@
 
-/** $VER: RMSReadOut.h (2024.04.22) P. Stuer - Implements the RMS read out of the peak meter. **/
+/** $VER: RMSReadOut.h (2025.09.24) P. Stuer - Implements the RMS read out of the peak meter. **/
 
 #pragma once
 
@@ -32,11 +32,13 @@ public:
 
     virtual ~rms_read_out_t() { }
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis);
-    void Reset();
-    void Move(const D2D1_RECT_F & rect);
+    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
+    void Move(const D2D1_RECT_F & rect) noexcept;
+    void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    void Reset() noexcept;
+
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics);
+    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept;
 
     bool IsVisible() const noexcept { return _TextStyle->IsEnabled(); }
 

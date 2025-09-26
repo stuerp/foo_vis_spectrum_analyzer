@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.09.21) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.cpp (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -27,7 +27,7 @@ graph_t::~graph_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, const graph_settings_t * settings) noexcept
+void graph_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t *) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -36,10 +36,30 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings) noe
 
     _Analysis.Initialize(state, settings);
 
-    _Spectrum.Initialize(state, settings, &_Analysis);
-    _Spectogram.Initialize(state, settings, &_Analysis);
-    _PeakMeter.Initialize(state, settings, &_Analysis);
-    _LevelMeter.Initialize(state, settings, &_Analysis);
+    _Visualization.reset();
+
+    switch (_State->_VisualizationType)
+    {
+        case VisualizationType::Bars:
+        case VisualizationType::Curve:
+        case VisualizationType::RadialBars:
+            _Visualization = std::make_unique<spectrum_t>();
+            break;
+
+        case VisualizationType::Spectogram:
+            _Visualization = std::make_unique<spectogram_t>();
+            break;
+
+        case VisualizationType::PeakMeter:
+            _Visualization = std::make_unique<peak_meter_t>();
+            break;
+
+        case VisualizationType::LevelMeter:
+            _Visualization = std::make_unique<level_meter_t>();
+            break;
+    }
+
+    _Visualization->Initialize(state, settings, &_Analysis);
 }
 
 /// <summary>
@@ -57,10 +77,7 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 
     SetBounds(cr);
 
-    _Spectrum.Move(cr);
-    _Spectogram.Move(cr);
-    _PeakMeter.Move(cr);
-    _LevelMeter.Move(cr);
+    _Visualization->Move(cr);
 }
 
 /// <summary>
@@ -88,7 +105,7 @@ void graph_t::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noex
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void graph_t::Reset()
+void graph_t::Reset() noexcept
 {
     for (frequency_band_t & fb : _Analysis._FrequencyBands)
         fb.CurValue = 0.;
@@ -99,10 +116,7 @@ void graph_t::Reset()
         gv.PeakRender = gv.RMSRender = 0.;
     }
 
-    _Spectrum.Reset();
-    _Spectogram.Reset();
-    _PeakMeter.Reset();
-    _LevelMeter.Reset();
+    _Visualization->Reset();
 }
 
 /// <summary>
@@ -122,12 +136,17 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const rect_t & Bounds = (const rect_t &) _Spectrum.GetClientBounds();
+        const rect_t & Bounds = (const rect_t &) _Visualization->GetClientBounds();
 
-        const FLOAT Bandwidth = std::max(::floor(Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size()), 2.f);
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
+        FLOAT t = Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
-        const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (Bounds.Width() - SpectrumWidth) / 2.f : (Bounds.Width() - SpectrumWidth));
+        // Allow non-integer bar widths?
+        if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+            t = ::floor(t);
+
+        const FLOAT BarWidth = std::max(t, 2.f);
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
+        const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, Bounds.Width() - SpectrumWidth);
 
         const FLOAT x1 = Bounds.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
@@ -143,7 +162,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
     {
-        const D2D1_RECT_F & Bounds = _Spectogram.GetClientBounds();
+        const D2D1_RECT_F & Bounds = _Visualization->GetClientBounds();
 
         if (_State->_HorizontalSpectogram)
         {
@@ -179,33 +198,16 @@ void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & art
     if (_BackgroundStyle->IsEnabled())
         renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+        return;
+
     if (!_State->_ShowArtworkOnBackground)
         return;
 
     if (artwork.Bitmap() == nullptr)
         return;
 
-    switch (_State->_VisualizationType)
-    {
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::RadialBars:
-        {
-            artwork.Render(renderTarget, _State->_FitWindow ? _Spectrum.GetBounds() : _Spectrum.GetClientBounds(), _State);
-            break;
-        }
-
-        case VisualizationType::Spectogram:
-        {
-            artwork.Render(renderTarget, _State->_FitWindow ? _Spectogram.GetBounds() : _Spectogram.GetClientBounds(), _State);
-            break;
-        }
-
-        case VisualizationType::PeakMeter:
-        case VisualizationType::LevelMeter:
-        default:
-            break;
-    }
+    artwork.Render(renderTarget, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
 }
 
 /// <summary>
@@ -213,36 +215,12 @@ void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & art
 /// </summary>
 void graph_t::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
 {
-    switch (_State->_VisualizationType)
-    {
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::RadialBars:
-        {
-            _Spectrum.Render(renderTarget);
-            RenderDescription(renderTarget);
-            break;
-        }
+    _Visualization->Render(renderTarget);
 
-        case VisualizationType::Spectogram:
-        {
-            _Spectogram.Render(renderTarget);
-            RenderDescription(renderTarget);
-            break;
-        }
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+        return;
 
-        case VisualizationType::PeakMeter:
-        {
-            _PeakMeter.Render(renderTarget);
-            break;
-        }
-
-        case VisualizationType::LevelMeter:
-        {
-            _LevelMeter.Render(renderTarget);
-            break;
-        }
-    }
+    RenderDescription(renderTarget);
 }
 
 /// <summary>
@@ -268,8 +246,8 @@ void graph_t::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
 
         D2D1_RECT_F Rect =
         {
-            .left = _Spectrum.GetClientBounds().left + 10.f,
-            .top  = _Spectrum.GetClientBounds().top  + 10.f,
+            .left = _Visualization->GetClientBounds().left + 10.f,
+            .top  = _Visualization->GetClientBounds().top  + 10.f,
         };
 
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
@@ -308,13 +286,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void graph_t::ReleaseDeviceSpecificResources() noexcept
 {
-    _LevelMeter.ReleaseDeviceSpecificResources();
-
-    _PeakMeter.ReleaseDeviceSpecificResources();
-
-    _Spectogram.ReleaseDeviceSpecificResources();
-
-    _Spectrum.ReleaseDeviceSpecificResources();
+    _Visualization->ReleaseDeviceSpecificResources();
 
     SafeRelease(&_DescriptionBackgroundStyle);
     SafeRelease(&_DescriptionTextStyle);

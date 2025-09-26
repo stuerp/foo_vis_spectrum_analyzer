@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.09.22) P. Stuer **/
+/** $VER: Resources.h (2025.09.25) P. Stuer **/
 
 #pragma once
 
@@ -8,12 +8,12 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          8
-#define NUM_FILE_PATCH          0
+#define NUM_FILE_PATCH          1
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       8
-#define NUM_PRODUCT_PATCH       0
+#define NUM_PRODUCT_PATCH       1
 #define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_RELEASE_TAG         ""
@@ -404,15 +404,7 @@
 
 // Bars
 
-#define IDC_BARS                        7140
-
-// Spectogram
-
-#define IDC_SPECTOGRAM                  7150
-
-#define IDC_SCROLLING_SPECTOGRAM        7152
-#define IDC_HORIZONTAL_SPECTOGRAM       7154
-#define IDC_SPECTRUM_BAR_METRICS        7156
+#define IDC_BARS                        7200
 
 // Radial Bars
 
@@ -426,6 +418,14 @@
 
 #define IDC_ANGULAR_VELOCITY_LBL        7196
 #define IDC_ANGULAR_VELOCITY            7197
+
+// Spectogram
+
+#define IDC_SPECTOGRAM                  7150
+
+#define IDC_SCROLLING_SPECTOGRAM        7152
+#define IDC_HORIZONTAL_SPECTOGRAM       7154
+#define IDC_SPECTRUM_BAR_METRICS        7156
 
 // Peak Meter
 

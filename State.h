@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.09.22) P. Stuer **/
+/** $VER: State.h (2025.09.24) P. Stuer **/
 
 #pragma once
 
@@ -128,8 +128,8 @@ public:
         uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
         uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
         uint32_t _BandsPerOctave;                                       // Bands per octave, 1 .. 48
-        double _Pitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
-        int _Transpose;                                                 // Transpose, -24 ..24 semitones
+        double _TuningPitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
+        int _Transpose;                                                 // Transpose, -24 ..24 quarter tones
 
         ScalingFunction _ScalingFunction;
 
@@ -343,9 +343,9 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 29; // v0.8.0.0
+    const size_t _CurrentVersion = 30; // v0.8.1.0-alpha1
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;
 
-extern cfg_var_modern::cfg_int CfgLogLevel;
+extern cfg_int CfgLogLevel;

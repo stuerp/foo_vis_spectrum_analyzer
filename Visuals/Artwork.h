@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2025.09.22) P. Stuer  **/
+/** $VER: Artwork.h (2025.09.23) P. Stuer  **/
 
 #pragma once
 
@@ -30,12 +30,12 @@ public:
     {
         ReleaseDeviceSpecificResources();
 
-        Uninitialize();
+        ReleaseWICResources();
     }
 
-    HRESULT Initialize(const uint8_t * data, size_t size) noexcept;
-    HRESULT Initialize(const std::wstring & filePath) noexcept;
-    HRESULT Uninitialize() noexcept;
+    HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
+    HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
+    HRESULT ReleaseWICResources() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
@@ -48,8 +48,6 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
-    bool IsIdle() const noexcept { return _Status == Idle; }
-    bool IsInitialized() const noexcept { return _Status == Initialized; }
     bool IsRealized() const noexcept { return _Status == Realized; }
 
 private:

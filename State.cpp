@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.22) P. Stuer **/
+/** $VER: State.cpp (2025.09.24) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -97,7 +97,7 @@ void state_t::Reset() noexcept
     _MinNote = 0;
     _MaxNote = 126;
     _BandsPerOctave = 12;
-    _Pitch = 440.0;
+    _TuningPitch = 440.0;
     _Transpose = 0;
 
     // Frequencies
@@ -348,7 +348,7 @@ state_t & state_t::operator=(const state_t & other)
         _MinNote = other._MinNote;
         _MaxNote = other._MaxNote;
         _BandsPerOctave = other._BandsPerOctave;
-        _Pitch = other._Pitch;
+        _TuningPitch = other._TuningPitch;
         _Transpose = other._Transpose;
 
         _ScalingFunction = other._ScalingFunction;
@@ -540,7 +540,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
     {
         reader->read(&Version, sizeof(Version), abortHandler);
 
-        if (Version > _CurrentVersion)
+        if (Version > 9999) // Just a version number that seems sane...
             return;
 
         reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
@@ -593,7 +593,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_MinNote, sizeof(_MinNote), abortHandler);
         reader->read(&_MaxNote, sizeof(_MaxNote), abortHandler);
         reader->read(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-        reader->read(&_Pitch, sizeof(_Pitch), abortHandler);
+        reader->read(&_TuningPitch, sizeof(_TuningPitch), abortHandler);
         reader->read(&_Transpose, sizeof(_Transpose), abortHandler);
 
         reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
@@ -897,6 +897,10 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
         }
+
+        if (Version >= 30)
+        {
+        }
     }
     catch (exception & ex)
     {
@@ -958,7 +962,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write(&_MinNote, sizeof(_MinNote), abortHandler);
         writer->write(&_MaxNote, sizeof(_MaxNote), abortHandler);
         writer->write(&_BandsPerOctave, sizeof(_BandsPerOctave), abortHandler);
-        writer->write(&_Pitch, sizeof(_Pitch), abortHandler);
+        writer->write(&_TuningPitch, sizeof(_TuningPitch), abortHandler);
         writer->write(&_Transpose, sizeof(_Transpose), abortHandler);
 
         writer->write(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
@@ -1152,7 +1156,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             // Version 3, v0.8.0.0-beta2
             if (graph_settings_t::_CurentVersion > 2)
             {
-                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
+                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
                 writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
             }
         }
@@ -1444,4 +1448,4 @@ const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme color
     return GetBuiltInGradientStops(colorScheme);
 }
 
-cfg_var_modern::cfg_int CfgLogLevel({ 0xd61902e0, 0x709a, 0x4551, { 0x98, 0x18, 0x18, 0x6d, 0x4b, 0xa4, 0xc3, 0x34 } }, DefaultCfgLogLevel);
+cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);

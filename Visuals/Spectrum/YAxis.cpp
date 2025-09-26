@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2024.04.08) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2025.09.24) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -43,7 +43,7 @@ void y_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void y_axis_t::Move(const D2D1_RECT_F & rect)
+void y_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 }
@@ -99,14 +99,14 @@ void y_axis_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void y_axis_t::Render(ID2D1RenderTarget * renderTarget)
+void y_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
         return;
 
-    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
 
     for (const label_t & Iter : _Labels)
     {
@@ -132,7 +132,7 @@ void y_axis_t::Render(ID2D1RenderTarget * renderTarget)
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
 
@@ -148,7 +148,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void y_axis_t::ReleaseDeviceSpecificResources()
+void y_axis_t::ReleaseDeviceSpecificResources() noexcept
 {
     SafeRelease(&_TextStyle);
     SafeRelease(&_LineStyle);

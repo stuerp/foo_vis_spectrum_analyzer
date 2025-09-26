@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2024.05.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2025.09.24) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectogram.h"
@@ -12,6 +12,9 @@
 
 #pragma hdrstop
 
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
 spectogram_t::spectogram_t()
 {
     _Bounds = { };
@@ -21,9 +24,17 @@ spectogram_t::spectogram_t()
 }
 
 /// <summary>
+/// Destroys this instance.
+/// </summary>
+spectogram_t::~spectogram_t()
+{
+    ReleaseDeviceSpecificResources();
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -37,7 +48,7 @@ void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void spectogram_t::Move(const D2D1_RECT_F & rect)
+void spectogram_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 
@@ -48,7 +59,7 @@ void spectogram_t::Move(const D2D1_RECT_F & rect)
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void spectogram_t::Reset()
+void spectogram_t::Reset() noexcept
 {
     _X = 0.f;
     _Y = 0.f;
@@ -273,7 +284,7 @@ void spectogram_t::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectogram.
 /// </summary>
-void spectogram_t::Render(ID2D1RenderTarget * renderTarget)
+void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -586,7 +597,7 @@ bool spectogram_t::Update() noexcept
 
             for (const auto & fb : _Analysis->_FrequencyBands)
             {
-                if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
                 assert(msc::InRange(fb.CurValue, 0.0, 1.0));
@@ -645,7 +656,7 @@ bool spectogram_t::Update() noexcept
 
             for (const auto & fb : _Analysis->_FrequencyBands)
             {
-                if ((fb.Ctr >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
                 assert(msc::InRange(fb.CurValue, 0.0, 1.0));
@@ -798,7 +809,7 @@ void spectogram_t::InitFreqAxis() noexcept
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -809,7 +820,7 @@ void spectogram_t::InitFreqAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
                 }
                 break;
             }
@@ -820,7 +831,7 @@ void spectogram_t::InitFreqAxis() noexcept
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_Pitch * ::exp2(Note / 12.); // Frequency of C0
+                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
 
                 int j = 0;
 
@@ -838,7 +849,7 @@ void spectogram_t::InitFreqAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_Pitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
@@ -907,7 +918,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTa
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void spectogram_t::ReleaseDeviceSpecificResources()
+void spectogram_t::ReleaseDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

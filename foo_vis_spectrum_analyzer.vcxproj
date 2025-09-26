@@ -233,7 +233,6 @@
     <ClInclude Include="Configuration\CMenuListBox.h" />
     <ClInclude Include="Configuration\CNumericEdit.h" />
     <ClInclude Include="Constants.h" />
-    <ClInclude Include="Windows\Convert.h" />
     <ClInclude Include="Windows\Error.h" />
     <ClInclude Include="Windows\Path.h" />
     <ClInclude Include="Visuals\GraphSettings.h" />

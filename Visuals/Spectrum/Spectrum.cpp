@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.19) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.24) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -14,9 +14,17 @@
 #pragma hdrstop
 
 /// <summary>
+/// Destroys this instance.
+/// </summary>
+spectrum_t::~spectrum_t()
+{
+    ReleaseDeviceSpecificResources();
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis)
+void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphSettings = settings;
@@ -33,7 +41,7 @@ void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, 
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void spectrum_t::Move(const D2D1_RECT_F & rect)
+void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetBounds(rect);
 
@@ -66,7 +74,7 @@ void spectrum_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void spectrum_t::Render(ID2D1RenderTarget * renderTarget)
+void spectrum_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
@@ -111,18 +119,21 @@ void spectrum_t::Render(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
 {
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
-    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
+    FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT BarTopThickness  = _BarTopStyle->_Thickness / 2.f;
-    const FLOAT PeakTopThickness = _BarPeakTopStyle->_Thickness / 2.f;
+    // Use the full width of the graph?
+    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = ::floor(t);
 
-    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+    const FLOAT BarWidth = std::max(t, 2.f); // In DIP
+    const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
+
+    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     FLOAT x1 = HOffset;
-    FLOAT x2 = x1 + Bandwidth;
+    FLOAT x2 = x1 + BarWidth;
 
     renderTarget->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
@@ -158,14 +169,14 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
             }
         }
 
-        const bool GreaterThanNyquist = fb.Ctr >= _Analysis->_NyquistFrequency;
+        const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
             if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (_ClientSize.height * fb.MaxValue);
+                Rect.bottom = _ClientSize.height * (FLOAT) fb.MaxValue;
 
                 // Draw the peak indicator area.
                 if (_BarPeakAreaStyle->IsEnabled())
@@ -182,8 +193,8 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the peak indicator top.
                 if (_BarPeakTopStyle->IsEnabled())
                 {
-                    Rect.top    = ::ceil(std::clamp(Rect.bottom - PeakTopThickness, 0.f, _ClientSize.height));
-                    Rect.bottom = ::ceil(std::clamp(Rect.top    + PeakTopThickness, 0.f, _ClientSize.height));
+                    Rect.top    = ::ceil(std::clamp(Rect.bottom - _BarPeakTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height));
+                    Rect.bottom = ::ceil(std::clamp(Rect.top    + _BarPeakTopStyle->_Thickness,       0.f, _ClientSize.height));
 
                     FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
 
@@ -195,7 +206,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
 
             {
                 Rect.top    = 0.f;
-                Rect.bottom = (FLOAT) (_ClientSize.height * fb.CurValue);
+                Rect.bottom = _ClientSize.height * (FLOAT) fb.CurValue;
 
                 // Draw the bar area.
                 if (_BarAreaStyle->IsEnabled())
@@ -212,8 +223,8 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
                 // Draw the bar top.
                 if (_BarTopStyle->IsEnabled())
                 {
-                    Rect.top    = std::clamp(Rect.bottom - BarTopThickness, 0.f, _ClientSize.height);
-                    Rect.bottom = std::clamp(Rect.top    + BarTopThickness, 0.f, _ClientSize.height);
+                    Rect.top    = std::clamp(Rect.bottom - _BarTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height);
+                    Rect.bottom = std::clamp(Rect.top    + _BarTopStyle->_Thickness,       0.f, _ClientSize.height);
 
                     renderTarget->FillRectangle(Rect, _BarTopStyle->_Brush);
                 }
@@ -221,7 +232,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
         }
 
         x1 = x2;
-        x2 = x1 + Bandwidth;
+        x2 = x1 + BarWidth;
     }
 }
 
@@ -229,7 +240,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as a curve.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -301,7 +312,7 @@ void spectrum_t::RenderCurve(ID2D1RenderTarget * renderTarget)
 /// Renders the spectrum analysis as radial bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
+void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept
 {
     if (_Analysis->_FrequencyBands.empty())
         return;
@@ -311,9 +322,6 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
     const FLOAT OuterRadius = (Side * _State->_OuterRadius);// - InnerRadius;
 
     const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
-
-    const FLOAT BarTopThickness  = _BarTopStyle->_Thickness / 2.f;
-    const FLOAT PeakTopThickness = _BarPeakTopStyle->_Thickness / 2.f;
 
     FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
 //  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
@@ -329,91 +337,96 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
-        // Draw the peak indicator area.
-        if (_BarPeakAreaStyle->IsEnabled())
+        const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
+
+        if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
-            const FLOAT r1 = InnerRadius;
-            const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue);
-
-            if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+            // Draw the peak indicator area.
+            if (_BarPeakAreaStyle->IsEnabled())
             {
-                if (_BarPeakAreaStyle->Has(style_t::Features::HorizontalGradient))
+                const FLOAT r1 = InnerRadius;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue);
+
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    const double Value = _BarPeakAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
+                    if (_BarPeakAreaStyle->Has(style_t::Features::HorizontalGradient))
+                    {
+                        const double Value = _BarPeakAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
 
-                    _BarPeakAreaStyle->SetBrushColor(Value);
+                        _BarPeakAreaStyle->SetBrushColor(Value);
+                    }
+
+                    renderTarget->FillGeometry(Path, _BarPeakAreaStyle->_Brush);
+
+                    Path.Release();
                 }
-
-                renderTarget->FillGeometry(Path, _BarPeakAreaStyle->_Brush);
-
-                Path.Release();
             }
-        }
 
-        // Draw the peak indicator top.
-        if (_BarPeakTopStyle->IsEnabled() &&(_State->_PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
-        {
-            const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - PeakTopThickness;
-            const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + PeakTopThickness;
-
-            if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+            // Draw the peak indicator top.
+            if (_BarPeakTopStyle->IsEnabled() &&(_State->_PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
             {
-                if (_BarPeakTopStyle->Has(style_t::Features::HorizontalGradient))
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - _BarPeakTopStyle->_Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + _BarPeakTopStyle->_Thickness;
+
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    const double Value = _BarPeakTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
+                    if (_BarPeakTopStyle->Has(style_t::Features::HorizontalGradient))
+                    {
+                        const double Value = _BarPeakTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
 
-                    _BarPeakTopStyle->SetBrushColor(Value);
+                        _BarPeakTopStyle->SetBrushColor(Value);
+                    }
+
+                    const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
+
+                    _BarPeakTopStyle->_Brush->SetOpacity(Opacity);
+
+                    renderTarget->FillGeometry(Path, _BarPeakTopStyle->_Brush);
+
+                    Path.Release();
                 }
-
-                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
-
-                _BarPeakTopStyle->_Brush->SetOpacity(Opacity);
-
-                renderTarget->FillGeometry(Path, _BarPeakTopStyle->_Brush);
-
-                Path.Release();
             }
-        }
 
-        // Draw the area of the bar.
-        if (_BarAreaStyle->IsEnabled())
-        {
-            const FLOAT r1 = InnerRadius;
-            const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue);
-
-            if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+            // Draw the area of the bar.
+            if (_BarAreaStyle->IsEnabled())
             {
-                if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
+                const FLOAT r1 = InnerRadius;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue);
+
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
+                    if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
+                    {
+                        const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
 
-                    _BarAreaStyle->SetBrushColor(Value);
+                        _BarAreaStyle->SetBrushColor(Value);
+                    }
+
+                    renderTarget->FillGeometry(Path, _BarAreaStyle->_Brush);
+
+                    Path.Release();
                 }
-
-                renderTarget->FillGeometry(Path, _BarAreaStyle->_Brush);
-
-                Path.Release();
             }
-        }
 
-        // Draw the peak indicator top.
-        if (_BarTopStyle->IsEnabled())
-        {
-            const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) - BarTopThickness;
-            const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) + BarTopThickness;
-
-            if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+            // Draw the peak indicator top.
+            if (_BarTopStyle->IsEnabled())
             {
-                if (_BarTopStyle->Has(style_t::Features::HorizontalGradient))
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) - _BarTopStyle->_Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) + _BarTopStyle->_Thickness;
+
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    const double Value = _BarTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
+                    if (_BarTopStyle->Has(style_t::Features::HorizontalGradient))
+                    {
+                        const double Value = _BarTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
 
-                    _BarTopStyle->SetBrushColor(Value);
+                        _BarTopStyle->SetBrushColor(Value);
+                    }
+
+                    renderTarget->FillGeometry(Path, _BarTopStyle->_Brush);
+
+                    Path.Release();
                 }
-
-                renderTarget->FillGeometry(Path, _BarTopStyle->_Brush);
-
-                Path.Release();
             }
         }
 
@@ -428,20 +441,26 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void spectrum_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept
 {
+    // Calculate the x coordinate.
     const double MinScale = ScaleF(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleF(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
+    // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double NyquistScale = std::clamp(ScaleF(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);
 
-    const FLOAT Bandwidth = std::max(::floor(_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
+    FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT HOffset = (_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Near) ? 0.f : ((_GraphSettings->_HorizontalAlignment == HorizontalAlignment::Center) ? (_ClientSize.width - SpectrumWidth) / 2.f : (_ClientSize.width - SpectrumWidth));
+    // Use the full width of the graph?
+    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = ::floor(t);
 
-    const FLOAT x1 = HOffset + (Bandwidth / 2.f);
+    const FLOAT BarWidth = std::max(t, 2.f); // In DIP
+    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
+    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
-    const FLOAT x = x1 + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
+    const FLOAT x = HOffset + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
+    // Draw the line
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     renderTarget->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
@@ -451,7 +470,7 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) 
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
+HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -529,7 +548,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
+HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
@@ -567,7 +586,7 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget)
 /// Creates the geometry points from the amplitudes of the spectrum.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const
+HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
 {
     if (_Analysis->_FrequencyBands.size() < 2)
         return E_FAIL;
@@ -583,7 +602,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
     for (const auto & fb: _Analysis->_FrequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if ((fb.Ctr > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
             break;
 
         double Value = !usePeak ? fb.CurValue : fb.MaxValue;
@@ -721,7 +740,7 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void spectrum_t::ReleaseDeviceSpecificResources()
+void spectrum_t::ReleaseDeviceSpecificResources() noexcept
 {
     _YAxis.ReleaseDeviceSpecificResources();
     _XAxis.ReleaseDeviceSpecificResources();

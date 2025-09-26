@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2025.09.22) P. Stuer **/
+/** $VER: Artwork.cpp (2025.09.24) P. Stuer **/
 
 #include "pch.h"
 #include "Artwork.h"
@@ -11,9 +11,9 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes this instance.
+/// Creates the WIC resources.
 /// </summary>
-HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
+HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcept
 {
     _CriticalSection.Enter();
 
@@ -50,9 +50,9 @@ HRESULT artwork_t::Initialize(const uint8_t * data, size_t size) noexcept
 }
 
 /// <summary>
-/// Initializes this instance.
+/// Creates the WIC resources.
 /// </summary>
-HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
+HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 {
     _CriticalSection.Enter();
 
@@ -86,9 +86,9 @@ HRESULT artwork_t::Initialize(const std::wstring & filePath) noexcept
 }
 
 /// <summary>
-/// Uninitializes this instance.
+/// Releases the WIC resources.
 /// </summary>
-HRESULT artwork_t::Uninitialize() noexcept
+HRESULT artwork_t::ReleaseWICResources() noexcept
 {
     _CriticalSection.Enter();
 
@@ -163,7 +163,8 @@ void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bou
 }
 
 /// <summary>
-/// Realizes this instance.
+/// Creates resources which are bound to a particular D3D device.
+/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
 {
