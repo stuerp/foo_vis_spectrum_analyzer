@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.24) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.27) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -81,38 +81,54 @@ void spectrum_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    if (_State->_VisualizationType != VisualizationType::RadialBars)
+    #pragma warning(disable: 4061)
+    switch (_State->_VisualizationType)
     {
-        _XAxis.Render(renderTarget);
-
-        _YAxis.Render(renderTarget);
-
+        default:
         {
-            SetTransform(renderTarget, _ClientBounds);
+            _XAxis.Render(renderTarget);
 
-            if (_State->_VisualizationType == VisualizationType::Bars)
-                RenderBars(renderTarget);
-            else
-            if (_State->_VisualizationType == VisualizationType::Curve)
-                RenderCurve(renderTarget);
+            _YAxis.Render(renderTarget);
+
+            {
+                SetTransform(renderTarget, _ClientBounds);
+
+                if (_State->_VisualizationType == VisualizationType::Bars)
+                    RenderBars(renderTarget);
+                else
+                if (_State->_VisualizationType == VisualizationType::Curve)
+                    RenderCurve(renderTarget);
   
-            if (_NyquistMarkerStyle->IsEnabled())
-                RenderNyquistFrequencyMarker(renderTarget);
+                if (_NyquistMarkerStyle->IsEnabled())
+                    RenderNyquistFrequencyMarker(renderTarget);
+            }
+            break;
+        }
 
-            ResetTransform(renderTarget);
+        case VisualizationType::RadialBars:
+        {
+            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
+            const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+
+            renderTarget->SetTransform(Translate * FlipV);
+
+            RenderRadialBars(renderTarget);
+            break;
+        }
+
+        case VisualizationType::RadialCurve:
+        {
+            const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
+            const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+
+            renderTarget->SetTransform(Translate * FlipV);
+
+            RenderRadialCurve(renderTarget);
+            break;
         }
     }
-    else
-    {
-        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, _Size.height);
-        const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
 
-        renderTarget->SetTransform(Translate * FlipV);
-
-        RenderRadialBars(renderTarget);
-
-        ResetTransform(renderTarget);
-    }
+    ResetTransform(renderTarget);
 }
 
 /// <summary>
@@ -436,6 +452,78 @@ void spectrum_t::RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept
 }
 
 /// <summary>
+/// Renders the spectrum analysis as a radial curve.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
+{
+    HRESULT hr = S_OK;
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    geometry_points_t Points;
+    CComPtr<ID2D1PathGeometry> Curve;
+
+    if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle->IsEnabled() || _CurvePeakLineStyle->IsEnabled()))
+    {
+        Points.Clear();
+
+        hr = CreateRadialGeometryPointsFromAmplitude(Points, true);
+
+        // Draw the area with the peak values.
+        if (SUCCEEDED(hr) && _CurvePeakAreaStyle->IsEnabled())
+        {
+            hr = CreateCurve(Points, true, &Curve);
+
+            if (SUCCEEDED(hr))
+                renderTarget->FillGeometry(Curve, _CurvePeakAreaStyle->_Brush);
+
+            Curve.Release();
+        }
+
+        // Draw the line with the peak values.
+        if (SUCCEEDED(hr) && _CurvePeakLineStyle->IsEnabled())
+        {
+            hr = CreateCurve(Points, false, &Curve);
+
+            if (SUCCEEDED(hr))
+                renderTarget->DrawGeometry(Curve, _CurvePeakLineStyle->_Brush, _CurvePeakLineStyle->_Thickness);
+
+            Curve.Release();
+        }
+    }
+
+    if (_CurveAreaStyle->IsEnabled() || _CurveLineStyle->IsEnabled())
+    {
+        Points.Clear();
+
+        hr = CreateRadialGeometryPointsFromAmplitude(Points, false);
+
+        // Draw the area with the current values.
+        if (SUCCEEDED(hr) && _CurveAreaStyle->IsEnabled())
+        {
+            hr = CreateCurve(Points, true, &Curve);
+
+            if (SUCCEEDED(hr))
+                renderTarget->FillGeometry(Curve, _CurveAreaStyle->_Brush);
+
+            Curve.Release();
+        }
+
+        // Draw the line with the current values.
+        if (SUCCEEDED(hr) && _CurveLineStyle->IsEnabled())
+        {
+            hr = CreateCurve(Points, false, &Curve);
+
+            if (SUCCEEDED(hr))
+                renderTarget->DrawGeometry(Curve, _CurveLineStyle->_Brush, _CurveLineStyle->_Thickness);
+
+            Curve.Release();
+        }
+    }
+}
+
+/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -488,54 +576,78 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarg
 
     if (SUCCEEDED(hr))
     {
-        if (_State->_VisualizationType == VisualizationType::Bars)
+        #pragma warning(disable: 4062)
+        switch (_State->_VisualizationType)
         {
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarAreaStyle);
+            case VisualizationType::Bars:
+            {
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, L"", &_BarAreaStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTopStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, L"", &_BarTopStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_BarPeakAreaStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, L"", &_BarPeakAreaStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_BarPeakTopStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, L"", &_BarPeakTopStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackgroundStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, renderTarget, _ClientSize, L"", &_DarkBackgroundStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackgroundStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, renderTarget, _ClientSize, L"", &_LightBackgroundStyle);
 
-        }
-        else
-        if (_State->_VisualizationType == VisualizationType::Curve)
-        {
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLineStyle);
+                break;
+            }
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveAreaStyle);
+            case VisualizationType::Curve:
+            {
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, L"", &_CurveLineStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLineStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, L"", &_CurveAreaStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakAreaStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, L"", &_CurvePeakLineStyle);
 
-        }
-        else
-        if (_State->_VisualizationType == VisualizationType::RadialBars)
-        {
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, L"", &_CurvePeakAreaStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarTopStyle);
+                break;
+            }
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakAreaStyle);
+            case VisualizationType::RadialBars:
+            {
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
 
-            if (SUCCEEDED(hr))
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakTopStyle);
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarTopStyle);
+
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakAreaStyle);
+
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakTopStyle);
+
+                break;
+            }
+
+            case VisualizationType::RadialCurve:
+            {
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_CurveLineStyle);
+
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_CurveAreaStyle);
+
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_CurvePeakLineStyle);
+
+                if (SUCCEEDED(hr))
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, renderTarget, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_CurvePeakAreaStyle);
+
+                break;
+            }
         }
     }
 
@@ -625,14 +737,95 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
         points.p1.reserve(n - 1);
         points.p2.reserve(n - 1);
 
-        // Create all the control points.
-        bezier_spline_t::GetControlPoints(points.p0, n, points.p1, points.p2);
+        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
 
+        // Make sure all y-coordinates are positive.
         for (size_t i = 0; i < (n - 1); ++i)
         {
             points.p1[i].y = std::clamp(points.p1[i].y, 0.f, _ClientSize.height);
             points.p2[i].y = std::clamp(points.p2[i].y, 0.f, _ClientSize.height);
         }
+    }
+
+    return !IsFlatLine ? S_OK : E_FAIL;
+}
+
+/// <summary>
+/// Creates the geometry points from the amplitudes of the spectrum.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
+{
+    if (_Analysis->_FrequencyBands.size() < 2)
+        return E_FAIL;
+
+    bool IsFlatLine = true;
+
+    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
+    const FLOAT InnerRadius =  Side * _State->_InnerRadius;
+    const FLOAT OuterRadius = (Side * _State->_OuterRadius);// - InnerRadius;
+
+    const FLOAT MaxHeight = OuterRadius - InnerRadius;
+
+    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
+//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+
+    const FLOAT aStart = a;
+    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+
+    const FLOAT r1 = InnerRadius;
+
+    // Create all the knots.
+    for (const auto & fb: _Analysis->_FrequencyBands)
+    {
+        // Don't render anything above the Nyquist frequency.
+        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+            break;
+
+        const double Value = !usePeak ? fb.CurValue : fb.MaxValue;
+
+        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
+
+        FLOAT Sin, Cos;
+
+        ::D2D1SinCos(a, &Sin, &Cos);
+
+        FLOAT x = (FLOAT) (Cos * r2);
+        FLOAT y = (FLOAT) (Sin * r2);
+
+        points.p0.push_back(D2D1::Point2F(x, y));
+
+        if (y > 0.f)
+            IsFlatLine = false;
+
+        a -=da;
+    }
+
+    // Close the curve.
+    {
+        const double Value = !usePeak ? _Analysis->_FrequencyBands[0].CurValue : _Analysis->_FrequencyBands[0].MaxValue;
+
+        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
+
+        FLOAT Sin, Cos;
+
+        ::D2D1SinCos(aStart, &Sin, &Cos);
+
+        FLOAT x = (FLOAT) (Cos * r2);
+        FLOAT y = (FLOAT) (Sin * r2);
+
+        points.p0.push_back(D2D1::Point2F(x, y));
+    }
+
+    // Create all the control points.
+    const size_t n = points.p0.size();
+
+    if (n > 1)
+    {
+        points.p1.reserve(n - 1);
+        points.p2.reserve(n - 1);
+
+        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
     }
 
     return !IsFlatLine ? S_OK : E_FAIL;

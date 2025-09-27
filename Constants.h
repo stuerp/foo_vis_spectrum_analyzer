@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.09.24) P. Stuer **/
+/** $VER: Constans.h (2025.09.27) P. Stuer **/
 
 #pragma once
 
@@ -282,6 +282,7 @@ enum class VisualizationType
     PeakMeter = 3,
     LevelMeter = 4,
     RadialBars = 5,
+    RadialCurve = 6,
 };
 
 enum class PeakMode

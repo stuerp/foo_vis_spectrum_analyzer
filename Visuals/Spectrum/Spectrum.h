@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.24) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.27) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -55,6 +55,8 @@ private:
     void RenderBars(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
     void RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept;
+    void RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept;
+
     void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
@@ -74,6 +76,7 @@ private:
     };
 
     HRESULT CreateGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
+    HRESULT CreateRadialGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
     HRESULT CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
     HRESULT CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** segment) const noexcept;

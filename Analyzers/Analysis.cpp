@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.09.26) P. Stuer **/
+/** $VER: Analysis.cpp (2025.09.27) P. Stuer **/
 
 #include "pch.h"
 
@@ -55,6 +55,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::Curve:
         case VisualizationType::Spectogram:
         case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
         {
             const audio_sample * Samples = chunk.get_data();
             const size_t SampleCount = chunk.get_sample_count();
@@ -217,6 +218,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         case VisualizationType::Curve:
         case VisualizationType::Spectogram:
         case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
         {
             // Animate the spectrum peak value.
             for (auto & fb : _FrequencyBands)

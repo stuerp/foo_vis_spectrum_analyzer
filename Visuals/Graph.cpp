@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.cpp (2025.09.27) P. Stuer - Implements a graph on which the visual are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -43,6 +43,7 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
             _Visualization = std::make_unique<spectrum_t>();
             break;
 

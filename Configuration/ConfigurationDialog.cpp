@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.09.24) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.09.29) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -1078,7 +1078,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -3430,11 +3430,12 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
-    const bool IsBars       = (_State->_VisualizationType == VisualizationType::Bars);
-    const bool IsSpectogram = (_State->_VisualizationType == VisualizationType::Spectogram);
-    const bool IsPeakMeter  = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter = (_State->_VisualizationType == VisualizationType::LevelMeter);
-    const bool IsRadialBars = (_State->_VisualizationType == VisualizationType::RadialBars);
+    const bool IsBars        = (_State->_VisualizationType == VisualizationType::Bars);
+    const bool IsSpectogram  = (_State->_VisualizationType == VisualizationType::Spectogram);
+    const bool IsPeakMeter   = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter  = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsRadialBars  = (_State->_VisualizationType == VisualizationType::RadialBars);
+    const bool IsRadialCurve = (_State->_VisualizationType == VisualizationType::RadialCurve);
 
     GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
 
@@ -3449,9 +3450,11 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
 
-    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadialBars);
-    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadialBars);
-    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadialBars);
+    const bool IsRadial = IsRadialBars || IsRadialCurve;
+
+    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadial);
+    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
+    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
 
     GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
