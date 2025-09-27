@@ -11,6 +11,8 @@
 
 #include "StyleManager.h"
 
+#include <execution>
+
 #pragma hdrstop
 
 /// <summary>
@@ -464,6 +466,9 @@ void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
     geometry_points_t Points;
     CComPtr<ID2D1PathGeometry> Curve;
 
+    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
+    const FLOAT InnerRadius = Side * _State->_InnerRadius;
+
     if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle->IsEnabled() || _CurvePeakLineStyle->IsEnabled()))
     {
         Points.Clear();
@@ -473,7 +478,7 @@ void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakAreaStyle->IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
 
             if (SUCCEEDED(hr))
                 renderTarget->FillGeometry(Curve, _CurvePeakAreaStyle->_Brush);
@@ -484,7 +489,7 @@ void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
         // Draw the line with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakLineStyle->IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
 
             if (SUCCEEDED(hr))
                 renderTarget->DrawGeometry(Curve, _CurvePeakLineStyle->_Brush, _CurvePeakLineStyle->_Thickness);
@@ -502,7 +507,7 @@ void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && _CurveAreaStyle->IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
 
             if (SUCCEEDED(hr))
                 renderTarget->FillGeometry(Curve, _CurveAreaStyle->_Brush);
@@ -513,7 +518,7 @@ void spectrum_t::RenderRadialCurve(ID2D1RenderTarget * renderTarget) noexcept
         // Draw the line with the current values.
         if (SUCCEEDED(hr) && _CurveLineStyle->IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
 
             if (SUCCEEDED(hr))
                 renderTarget->DrawGeometry(Curve, _CurveLineStyle->_Brush, _CurveLineStyle->_Thickness);
@@ -751,87 +756,6 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
 }
 
 /// <summary>
-/// Creates the geometry points from the amplitudes of the spectrum.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
-{
-    if (_Analysis->_FrequencyBands.size() < 2)
-        return E_FAIL;
-
-    bool IsFlatLine = true;
-
-    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
-    const FLOAT InnerRadius =  Side * _State->_InnerRadius;
-    const FLOAT OuterRadius = (Side * _State->_OuterRadius);// - InnerRadius;
-
-    const FLOAT MaxHeight = OuterRadius - InnerRadius;
-
-    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
-//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
-
-    const FLOAT aStart = a;
-    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
-
-    const FLOAT r1 = InnerRadius;
-
-    // Create all the knots.
-    for (const auto & fb: _Analysis->_FrequencyBands)
-    {
-        // Don't render anything above the Nyquist frequency.
-        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
-            break;
-
-        const double Value = !usePeak ? fb.CurValue : fb.MaxValue;
-
-        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
-
-        FLOAT Sin, Cos;
-
-        ::D2D1SinCos(a, &Sin, &Cos);
-
-        FLOAT x = (FLOAT) (Cos * r2);
-        FLOAT y = (FLOAT) (Sin * r2);
-
-        points.p0.push_back(D2D1::Point2F(x, y));
-
-        if (y > 0.f)
-            IsFlatLine = false;
-
-        a -=da;
-    }
-
-    // Close the curve.
-    {
-        const double Value = !usePeak ? _Analysis->_FrequencyBands[0].CurValue : _Analysis->_FrequencyBands[0].MaxValue;
-
-        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
-
-        FLOAT Sin, Cos;
-
-        ::D2D1SinCos(aStart, &Sin, &Cos);
-
-        FLOAT x = (FLOAT) (Cos * r2);
-        FLOAT y = (FLOAT) (Sin * r2);
-
-        points.p0.push_back(D2D1::Point2F(x, y));
-    }
-
-    // Create all the control points.
-    const size_t n = points.p0.size();
-
-    if (n > 1)
-    {
-        points.p1.reserve(n - 1);
-        points.p2.reserve(n - 1);
-
-        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
-    }
-
-    return !IsFlatLine ? S_OK : E_FAIL;
-}
-
-/// <summary>
 /// Creates a curve from the power values.
 /// </summary>
 HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
@@ -869,6 +793,169 @@ HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2
         Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 
         hr = Sink->Close();
+    }
+
+    return hr;
+}
+
+/// <summary>
+/// Creates the geometry points from the amplitudes of the spectrum.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
+{
+    if (_Analysis->_FrequencyBands.size() < 2)
+        return E_FAIL;
+
+    bool IsFlatLine = true;
+
+    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
+    const FLOAT InnerRadius = Side * _State->_InnerRadius;
+    const FLOAT OuterRadius = Side * _State->_OuterRadius;
+
+    const FLOAT MaxHeight = OuterRadius - InnerRadius;
+
+    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
+//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+
+    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+
+    // Create all the knots.
+    for (const auto & fb: _Analysis->_FrequencyBands)
+    {
+        // Don't render anything above the Nyquist frequency.
+        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+            break;
+
+        const double Value = !usePeak ? fb.CurValue : fb.MaxValue;
+
+        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
+
+        FLOAT Sin, Cos;
+
+        ::D2D1SinCos(a, &Sin, &Cos);
+
+        FLOAT x = (FLOAT) (Cos * r2);
+        FLOAT y = (FLOAT) (Sin * r2);
+
+        points.p0.push_back(D2D1::Point2F(x, y));
+
+        if (y > 0.f)
+            IsFlatLine = false;
+
+        a -=da;
+    }
+
+    if (points.p0.empty())
+        return E_FAIL;
+
+    // Close the curve.
+    points.p0.push_back(points.p0[0]);
+
+    // Create all the control points.
+    const size_t n = points.p0.size();
+
+    if (n > 1)
+    {
+        points.p1.reserve(n - 1);
+        points.p2.reserve(n - 1);
+
+        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
+
+        // Make sure all control points are on or above the inner circle.
+        std::transform(std::execution::par_unseq, points.p1.begin(), points.p1.end(), points.p1.begin(), [InnerRadius](D2D1_POINT_2F p)
+        {
+            const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
+
+            if (d < InnerRadius)
+            {
+                const auto a = (FLOAT) std::atan2(p.y, p.x);
+
+                FLOAT Sin, Cos;
+
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                p.x = (FLOAT) (Cos * InnerRadius);
+                p.y = (FLOAT) (Sin * InnerRadius);
+            }
+
+            return p;
+        });
+
+        std::transform(std::execution::par_unseq, points.p2.begin(), points.p2.end(), points.p2.begin(), [InnerRadius](D2D1_POINT_2F p)
+        {
+            const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
+
+            if (d < InnerRadius)
+            {
+                const auto a = (FLOAT) std::atan2(p.y, p.x);
+
+                FLOAT Sin, Cos;
+
+                ::D2D1SinCos(a, &Sin, &Cos);
+
+                p.x = (FLOAT) (Cos * InnerRadius);
+                p.y = (FLOAT) (Sin * InnerRadius);
+            }
+
+            return p;
+        });
+    }
+
+    return !IsFlatLine ? S_OK : E_FAIL;
+}
+
+/// <summary>
+/// Creates a radial curve from the power values.
+/// </summary>
+HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
+{
+    if (gp.p0.size() < 2)
+        return E_FAIL;
+
+    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+
+    CComPtr<ID2D1GeometrySink> Sink;
+
+    if (SUCCEEDED(hr))
+        hr = (*curve)->Open(&Sink);
+
+    if (SUCCEEDED(hr))
+    {
+        D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
+
+        if (isFilled)
+        {
+            BeginMode = D2D1_FIGURE_BEGIN_FILLED;
+            Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
+        }
+
+        // Add the curve.
+        {
+            Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
+
+            const size_t n = gp.p1.size();
+
+            for (size_t i = 0; i < n; ++i)
+                Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
+
+            if (isFilled)
+                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+            else
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+        }
+
+        // Add the inner circle.
+        {
+            Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
+
+            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+
+            Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+            hr = Sink->Close();
+        }
     }
 
     return hr;
