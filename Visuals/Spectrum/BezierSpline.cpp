@@ -22,15 +22,15 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
         // 3P1 = 2P0 + P3
         firstControlPoints.push_back(D2D1::Point2F
         (
-            (2 * knots[0].x + knots[1].x) / 3,
-            (2 * knots[0].y + knots[1].y) / 3
+            (2.f * knots[0].x + knots[1].x) / 3.f,
+            (2.f * knots[0].y + knots[1].y) / 3.f
         ));
 
         // P2 = 2P1 – P0
         secondControlPoints.push_back(D2D1::Point2F
         (
-            2 * firstControlPoints[0].x - knots[0].x,
-            2 * firstControlPoints[0].y - knots[0].y
+            2.f * firstControlPoints[0].x - knots[0].x,
+            2.f * firstControlPoints[0].y - knots[0].y
         ));
 
         return;
@@ -84,7 +84,7 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
 }
 
 /// <summary>
-/// Solves a tridiagonal system for one of coordinates (x or y) of first Bezier control points.
+/// Solves a tridiagonal system for one of the coordinates (x or y) of first Bezier control points.
 /// </summary>
 std::vector<FLOAT> bezier_spline_t::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
 {
