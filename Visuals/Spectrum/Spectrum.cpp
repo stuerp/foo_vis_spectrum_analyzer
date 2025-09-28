@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.27) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.09.28) P. Stuer **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -745,11 +745,19 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
         bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
 
         // Make sure all y-coordinates are positive.
-        for (size_t i = 0; i < (n - 1); ++i)
+        std::transform(std::execution::par_unseq, points.p1.begin(), points.p1.end(), points.p1.begin(), [this](D2D1_POINT_2F & p)
         {
-            points.p1[i].y = std::clamp(points.p1[i].y, 0.f, _ClientSize.height);
-            points.p2[i].y = std::clamp(points.p2[i].y, 0.f, _ClientSize.height);
-        }
+            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
+
+            return p;
+        });
+
+        std::transform(std::execution::par_unseq, points.p2.begin(), points.p2.end(), points.p2.begin(), [this](D2D1_POINT_2F & p)
+        {
+            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
+
+            return p;
+        });
     }
 
     return !IsFlatLine ? S_OK : E_FAIL;
