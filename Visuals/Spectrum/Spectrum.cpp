@@ -863,7 +863,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
         bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
 
         // Make sure all control points are on or above the inner circle.
-        std::transform(std::execution::par_unseq, points.p1.begin(), points.p1.end(), points.p1.begin(), [InnerRadius](D2D1_POINT_2F p)
+        std::transform(std::execution::par_unseq, points.p1.begin(), points.p1.end(), points.p1.begin(), [InnerRadius](D2D1_POINT_2F & p)
         {
             const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
 
@@ -882,7 +882,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
             return p;
         });
 
-        std::transform(std::execution::par_unseq, points.p2.begin(), points.p2.end(), points.p2.begin(), [InnerRadius](D2D1_POINT_2F p)
+        std::transform(std::execution::par_unseq, points.p2.begin(), points.p2.end(), points.p2.begin(), [InnerRadius](D2D1_POINT_2F & p)
         {
             const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
 

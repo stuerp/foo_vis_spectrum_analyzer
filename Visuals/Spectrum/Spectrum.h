@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.27) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.28) P. Stuer - Represents and renders the spectrum. **/
 
 #pragma once
 
@@ -21,6 +21,7 @@
 
 #include "Chrono.h"
 
+#include <valarray>
 #include <vector>
 #include <string>
 
@@ -64,8 +65,8 @@ private:
     struct geometry_points_t
     {
         std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
-        std::vector<D2D1_POINT_2F> p1;
-        std::vector<D2D1_POINT_2F> p2;
+        std::vector<D2D1_POINT_2F> p1; // First control points
+        std::vector<D2D1_POINT_2F> p2; // Second control points
 
         void Clear()
         {

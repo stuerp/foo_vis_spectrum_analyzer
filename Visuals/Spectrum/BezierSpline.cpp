@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "BezierSpline.h"
 
+#include <valarray>
+
 #pragma hdrstop
 
 /// <summary>
@@ -39,59 +41,60 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
     /* Calculate the first Bezier control points. */
 
     // Right hand side vector
-    std::vector<FLOAT> rhs(n);
+    std::valarray<FLOAT> rhs(n);
 
     // Set right hand side X values
-    for (size_t i = 1; i < n - 1; ++i)
-        rhs[i] = (4.f * knots[i].x) + (2.f * knots[i + 1].x);
+    {
+        rhs[0] = knots[0].x + (2.f * knots[1].x);
 
-    rhs[0    ] = knots[0].x + (2.f * knots[1].x);
-    rhs[n - 1] = ((8.f * knots[n - 1].x) + knots[n].x) / 2.f;
+        for (size_t i = 1; i < n - 1; ++i)
+            rhs[i] = (4.f * knots[i].x) + (2.f * knots[i + 1].x);
 
-    // Get first control points X-values.
-    std::vector<FLOAT> x = GetFirstControlPoints(rhs);
+        rhs[n - 1] = ((8.f * knots[n - 1].x) + knots[n].x) / 2.f;
+    }
+
+    auto x = GetFirstControlPoints(rhs);
 
     // Set right hand side Y values
-    for (size_t i = 1; i < n - 1; ++i)
-        rhs[i] = (4.f * knots[i].y) + (2.f * knots[i + 1].y);
-
-    rhs[0    ] = knots[0].y + (2 * knots[1].y);
-    rhs[n - 1] = ((8.f * knots[n - 1].y) + knots[n].y) / 2.f;
-
-    // Get first control points Y-values.
-    std::vector<FLOAT> y = GetFirstControlPoints(rhs);
-
-    // Fill output arrays.
-    for (size_t i = 0; i < n; ++i)
     {
-        // First control point
-        firstControlPoints.push_back(D2D1::Point2F(x[i], y[i]));
+        rhs[0] = knots[0].y + (2 * knots[1].y);
 
-        // Second control point
-        if (i < n - 1)
-            secondControlPoints.push_back(D2D1::Point2F
-            (
-                2.f * knots[i + 1].x - x[i + 1],
-                2.f * knots[i + 1].y - y[i + 1]
-            ));
-        else
-            secondControlPoints.push_back(D2D1::Point2F
-            (
-                (knots[n].x + x[n - 1]) / 2.f,
-                (knots[n].y + y[n - 1]) / 2.f
-            ));
+        for (size_t i = 1; i < n - 1; ++i)
+            rhs[i] = (4.f * knots[i].y) + (2.f * knots[i + 1].y);
+
+        rhs[n - 1] = ((8.f * knots[n - 1].y) + knots[n].y) / 2.f;
     }
+
+    auto y = GetFirstControlPoints(rhs);
+
+    // Fill the output arrays.
+    for (size_t i = 0; i < n - 1; ++i)
+    {
+        firstControlPoints.push_back(D2D1::Point2F(x[i], y[i]));
+        secondControlPoints.push_back(D2D1::Point2F
+        (
+            2.f * knots[i + 1].x - x[i + 1],
+            2.f * knots[i + 1].y - y[i + 1]
+        ));
+    }
+
+    firstControlPoints.push_back(D2D1::Point2F(x[n - 1], y[n - 1]));
+    secondControlPoints.push_back(D2D1::Point2F
+    (
+        (knots[n].x + x[n - 1]) / 2.f,
+        (knots[n].y + y[n - 1]) / 2.f
+    ));
 }
 
 /// <summary>
 /// Solves a tridiagonal system for one of the coordinates (x or y) of first Bezier control points.
 /// </summary>
-std::vector<FLOAT> bezier_spline_t::GetFirstControlPoints(std::vector<FLOAT> rhs) noexcept
+std::valarray<FLOAT> bezier_spline_t::GetFirstControlPoints(std::valarray<FLOAT> rhs) noexcept
 {
     size_t n = rhs.size();
 
-    std::vector<FLOAT> x(n); // Solution vector.
-    std::vector<FLOAT> t(n); // Temp workspace.
+    std::valarray<FLOAT> x(n); // Solution vector.
+    std::valarray<FLOAT> t(n); // Temp workspace.
 
     FLOAT b = 2.f;
 
