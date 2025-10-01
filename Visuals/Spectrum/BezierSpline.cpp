@@ -1,5 +1,5 @@
 
-/** $VER: BezierSpline.cpp (2025.09.27) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit by Oleg V. Polikarpotchkin **/
+/** $VER: BezierSpline.cpp (2025.09.28) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit by Oleg V. Polikarpotchkin **/
 
 #include "pch.h"
 #include "BezierSpline.h"
@@ -24,15 +24,15 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
         // 3P1 = 2P0 + P3
         firstControlPoints.push_back(D2D1::Point2F
         (
-            (2.f * knots[0].x + knots[1].x) / 3.f,
-            (2.f * knots[0].y + knots[1].y) / 3.f
+            ((2.f * knots[0].x) + knots[1].x) / 3.f,
+            ((2.f * knots[0].y) + knots[1].y) / 3.f
         ));
 
         // P2 = 2P1 – P0
         secondControlPoints.push_back(D2D1::Point2F
         (
-            2.f * firstControlPoints[0].x - knots[0].x,
-            2.f * firstControlPoints[0].y - knots[0].y
+            (2.f * firstControlPoints[0].x) - knots[0].x,
+            (2.f * firstControlPoints[0].y) - knots[0].y
         ));
 
         return;
@@ -73,8 +73,8 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
         firstControlPoints.push_back(D2D1::Point2F(x[i], y[i]));
         secondControlPoints.push_back(D2D1::Point2F
         (
-            2.f * knots[i + 1].x - x[i + 1],
-            2.f * knots[i + 1].y - y[i + 1]
+            (2.f * knots[i + 1].x) - x[i + 1],
+            (2.f * knots[i + 1].y) - y[i + 1]
         ));
     }
 

@@ -1,6 +1,16 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.8.1.0, 2025-09-26
+
+* New: The graph horizontal alignment setting has a new *Fit* option to make the Bar visualization use the complete width of the graph (minus the X-axis when enabled).
+* New: If the artwork can't be retrieved or is not available the stub image will be used.
+* Improved: The tooltip will only show the note name if the note's frequency falls within the frequency range of the spectrum bar.
+* Improved: Going forward older versions of the component will be able to read the configuration and preset files from newer versions in case you want or need to downgrade.
+* Fixed: Artwork not showing up when a track is already playing when switching to fullscreen. (0.8.0.0-beta2 regression)
+* Fixed: Restored compatibility with foobar 1.6.18.
+* Fixed: Spectrum bar top and peak size miscalculation. (0.7.6.2 regression)
+
 v0.8.0.0, 2025-09-22
 
 * New: The album art type that is shown on the background can be selected in the configuration dialog.

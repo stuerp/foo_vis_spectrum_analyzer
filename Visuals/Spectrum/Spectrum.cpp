@@ -994,7 +994,7 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 
         Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
 
-        // Vertical from inner to outer.
+        // Vertical from inner to outer circle.
         x = (FLOAT) (Cos * r2);
         y = (FLOAT) (Sin * r2);
 
@@ -1006,10 +1006,9 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
         x = (FLOAT) (Cos * r2);
         y = (FLOAT) (Sin * r2);
 
-//      Sink->AddLine(D2D1::Point2F(x, y));
         Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
 
-        // Vertical from outer to inner.
+        // Vertical from outer to inner circle.
         x = (FLOAT) (Cos * r1);
         y = (FLOAT) (Sin * r1);
 
