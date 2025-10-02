@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.09.24) P. Stuer **/
+/** $VER: State.h (2025.10.02) P. Stuer **/
 
 #pragma once
 
@@ -257,7 +257,6 @@ public:
     // These parameters will never be serialized.
 
     bool _IsDUI;                                                        // True if the Default User Interface is being used.
-    bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
     uint32_t _SampleRate;
     size_t _BinCount;

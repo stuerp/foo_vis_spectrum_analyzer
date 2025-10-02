@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.24) P. Stuer **/
+/** $VER: State.cpp (2025.10.02) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -249,8 +249,6 @@ void state_t::Reset() noexcept
     _PresetsDirectoryPath = ::wideFromUTF8(Path);
 
     /** Not serialized **/
-
-    _UseToneGenerator = false;
 
     _SampleRate = 0;
 

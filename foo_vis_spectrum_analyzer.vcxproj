@@ -225,7 +225,6 @@
     <ClInclude Include="Visuals\Spectogram\Spectogram.h" />
     <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Event.h" />
-    <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />
@@ -291,7 +290,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="ToneGenerator.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
@@ -381,6 +379,7 @@
     <Image Include="assets\Curve.png" />
     <Image Include="assets\MultipleGraphs.png" />
     <Image Include="assets\Preview.png" />
+    <Image Include="assets\Radial-Bars.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

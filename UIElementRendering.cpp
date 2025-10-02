@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2025.09.22) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.10.02) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -13,7 +13,6 @@
 #include "Gradients.h"
 #include "StyleManager.h"
 
-#include "ToneGenerator.h"
 #include "Log.h"
 
 #pragma hdrstop
@@ -186,27 +185,16 @@ void uielement_t::Process() noexcept
     if (_RenderThread._SampleRate == 0)
         return;
 
-    if (_RenderThread._UseToneGenerator)
-    {
-        if (_ToneGenerator.GetChunk(Chunk, _RenderThread._SampleRate))
-        {
-            for (auto & Iter : _Grid)
-                Iter._Graph->Process(Chunk);
-        }
-    }
-    else
-    {
-        const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
+    const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
 
-        const double WindowSize = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
-        const double Offset     = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
+    const double WindowSize = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
+    const double Offset     = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
 
-        if (_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-        {
-            for (auto & Iter : _Grid)
-                Iter._Graph->Process(Chunk);
-        }
-    }
+    if (!_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
+        return;
+
+    for (auto & Iter : _Grid)
+        Iter._Graph->Process(Chunk);
 
     _RenderThread._PlaybackTime = PlaybackTime;
 }
@@ -231,7 +219,7 @@ void uielement_t::InitializeSampleRateDependentParameters(audio_chunk_impl & chu
 {
     _RenderThread._SampleRate = chunk.get_sample_rate();
 
-    #pragma warning (disable: 4061)
+    #pragma warning(disable: 4061)
 
     switch (_RenderThread._FFTMode)
     {
@@ -248,10 +236,7 @@ void uielement_t::InitializeSampleRateDependentParameters(audio_chunk_impl & chu
             break;
     }
 
-    #pragma warning (default: 4061)
-
-    if (_RenderThread._UseToneGenerator)
-        _ToneGenerator.Initialize(997., 1., 0., _RenderThread._BinCount);
+    #pragma warning(default: 4061)
 }
 
 #pragma region DirectX
