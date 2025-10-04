@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.09.23) P. Stuer **/
+/** $VER: UIElement.cpp (2025.10.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -8,7 +8,6 @@
 #include "DirectX.h"
 #include "StyleManager.h"
 
-#include "ToneGenerator.h"
 #include "Support.h"
 #include "Log.h"
 
