@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2025.09.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2025.10.05) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -370,6 +370,15 @@ private:
             {
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness | style_t::Features::SupportsFont,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f,
+            }
+        },
+
+        // Oscilloscope
+        {
+            VisualElement::SignalLine,
+            {
+                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Solid), 1.f, 1.5f, L"", 0.f,
             }
         },
     };

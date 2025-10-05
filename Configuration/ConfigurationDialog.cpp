@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.09.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.10.05) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -68,7 +68,11 @@ static const WCHAR * const VisualElementNames[] =
     L"Mid/Side Level",
     L"Mid/Side Level Indicator",
     L"Left/Side Axis",
+
+    L"Signal Line",
 };
+
+static_assert((size_t) VisualElement::Count == _countof(VisualElementNames));
 
 /// <summary>
 /// Initializes the dialog.
@@ -1078,7 +1082,7 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve" })
+        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
@@ -1191,8 +1195,6 @@ void ConfigurationDialog::Initialize()
         auto w = (CListBox) GetDlgItem(IDC_STYLES);
 
         w.ResetContent();
-
-        assert((size_t) VisualElement::Count == _countof(VisualElementNames));
 
         for (const auto & x : VisualElementNames)
             w.AddString(x);
@@ -1552,7 +1554,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             for (int Item : Items)
                 Channels |= 1 << Item;
 
-            _State->_GraphSettings[_State->_SelectedGraph]._Channels = Channels;
+            _State->_GraphSettings[_State->_SelectedGraph]._SelectedChannels = Channels;
             break;
         }
 
@@ -3414,7 +3416,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     {
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        uint32_t Channels = gs._Channels;
+        uint32_t Channels = gs._SelectedChannels;
 
         for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {

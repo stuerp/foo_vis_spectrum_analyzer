@@ -18,9 +18,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 <sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
 
-![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+| - | - |
+| ![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot") | ![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot") |
+| <sup>Spectrum analyzer Radial Bars Mode</sup> | <sup>Spectrum analyzer Radial Curve Mode</sup> |
 
-<sup>Spectrum analyzer Radial Bars Mode</sup>
+![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
+
+<sup>Oscilloscope Mode</sup>
 
 ## Features
 
@@ -103,9 +107,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.8.x.x, 2025-xx-xx
+v0.9.0.0-alpha1, 2025-10-05
 
 - New: Radial Curve visualization.
+- New: Oscilloscope visualization.
+- Fixed: Too few samples were taken into account during analysis (frame count vs. sample count). Thanks to TF3RDL for detecting and reporting it.
 
 You can read the full history [here](docs/History.md).
 

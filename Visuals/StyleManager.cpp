@@ -93,9 +93,11 @@ style_t * style_manager_t::GetStyleByIndex(int index) noexcept
         VisualElement::GaugeMidSide,
         VisualElement::GaugeMidSideIndicator,
         VisualElement::LevelMeterAxis,
+
+        VisualElement::SignalLine,
     };
 
-    assert((size_t) VisualElement::Count == _countof(IndexToId));
+    static_assert((size_t) VisualElement::Count == _countof(IndexToId), "Index too small");
 
     index = std::clamp(index, 0, (int) (_countof(IndexToId) - 1));
 

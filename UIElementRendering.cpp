@@ -155,7 +155,7 @@ void uielement_t::Render() noexcept
 }
 
 /// <summary>
-/// Updates the spectrum of all the graphs using the next audio chunk.
+/// Updates the audio data of all the graphs.
 /// </summary>
 void uielement_t::Process() noexcept
 {

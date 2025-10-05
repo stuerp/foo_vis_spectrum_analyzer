@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.h (2025.10.04) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -20,6 +20,7 @@
 #include "Spectogram.h"
 #include "PeakMeter.h"
 #include "LevelMeter.h"
+#include "Oscilloscope.h"
 
 #include "Log.h"
 
@@ -78,12 +79,7 @@ public:
 private:
     std::wstring _Description;
     std::unique_ptr<element_t> _Visualization;
-/*
-    spectrum_t _Spectrum;
-    spectogram_t _Spectogram;
-    peak_meter_t _PeakMeter;
-    level_meter_t _LevelMeter;
-*/
+
     style_t * _BackgroundStyle;
     style_t * _DescriptionTextStyle;
     style_t * _DescriptionBackgroundStyle;

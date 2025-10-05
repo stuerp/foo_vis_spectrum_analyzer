@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.09.27) P. Stuer **/
+/** $VER: Constans.h (2025.10.05) P. Stuer **/
 
 #pragma once
 
@@ -283,6 +283,7 @@ enum class VisualizationType
     LevelMeter = 4,
     RadialBars = 5,
     RadialCurve = 6,
+    Oscilloscope = 7,
 };
 
 enum class PeakMode
@@ -382,7 +383,9 @@ enum class VisualElement : uint32_t
     GaugeLeftRightIndicator     = 30,
     GaugeMidSideIndicator       = 31,
 
-    Count                       = 32
+    SignalLine                  = 32,
+
+    Count                       = 33
 };
 
 enum class ColorSource : uint32_t

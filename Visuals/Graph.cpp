@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.09.27) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.cpp (2025.09.27) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -57,6 +57,10 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
 
         case VisualizationType::LevelMeter:
             _Visualization = std::make_unique<level_meter_t>();
+            break;
+
+        case VisualizationType::Oscilloscope:
+            _Visualization = std::make_unique<oscilloscope_t>();
             break;
     }
 

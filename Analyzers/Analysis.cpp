@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.09.27) P. Stuer **/
+/** $VER: Analysis.cpp (2025.10.05) P. Stuer **/
 
 #include "pch.h"
 
@@ -47,6 +47,18 @@ void analysis_t::Initialize(const state_t * state, const graph_settings_t * sett
 /// </summary>
 void analysis_t::Process(const audio_chunk & chunk) noexcept
 {
+    if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
+        Reset();
+
+    _SampleRate       = chunk.get_sample_rate();
+    _NyquistFrequency = (double) _SampleRate / 2.;
+    _ChannelCount     = chunk.get_channel_count();
+    _ChannelConfig    = chunk.get_channel_config();
+    _ChannelMask      = _ChannelConfig & _GraphSettings->_SelectedChannels;
+
+    if (_ChannelMask == 0)
+        return; // None of the selected channels are present in this chunk.
+
     switch (_State->_VisualizationType)
     {
         default:
@@ -57,85 +69,20 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
         {
-            const audio_sample * Samples = chunk.get_data();
-            const size_t SampleCount = chunk.get_sample_count();
-
-            if ((Samples == nullptr) || (SampleCount == 0))
-                return;
-
-            if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
-                Reset();
-
-            _SampleRate    = chunk.get_sample_rate();
-            _ChannelCount  = chunk.get_channel_count();
-            _ChannelConfig = chunk.get_channel_config();
-
-            _NyquistFrequency = (double) _SampleRate / 2.;
-
-            GetAnalyzer(chunk);
-
-            switch (_State->_Transform)
-            {
-                case Transform::FFT:
-                {
-                    _FFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-                    break;
-                }
-
-                case Transform::CQT:
-                {
-                    _CQTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-                    break;
-                }
-
-                case Transform::SWIFT:
-                {
-                    _SWIFTAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-                    break;
-                }
-
-                case Transform::AnalogStyle:
-                {
-                    _AnalogStyleAnalyzer->AnalyzeSamples(Samples, SampleCount, _GraphSettings->_Channels, _FrequencyBands);
-                    break;
-                }
-            }
-
-            // Filter the spectrum.
-            if (_State->_WeightingType != WeightingType::None)
-                ApplyAcousticWeighting();
-
-            // Smooth the spectrum.
-            switch (_State->_SmoothingMethod)
-            {
-                default:
-
-                case SmoothingMethod::None:
-                {
-                    Normalize();
-                    break;
-                }
-
-                case SmoothingMethod::Average:
-                {
-                    NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
-                    break;
-                }
-
-                case SmoothingMethod::Peak:
-                {
-                    NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
-                    break;
-                }
-            }
-
-            // From here on CurValue is guaranteed to be in the range 0.0 .. 1.0.
+            ProcessSpectrum(chunk);
+            break;
         }
   
         case VisualizationType::PeakMeter:
         case VisualizationType::LevelMeter:
         {
-            GetGaugeValues(chunk);
+            ProcessMeters(chunk);
+            break;
+        }
+
+        case VisualizationType::Oscilloscope:
+        {
+            ProcessOscilloscope(chunk);
             break;
         }
     }
@@ -190,7 +137,7 @@ void analysis_t::Reset()
 
     {
         _RMSTimeElapsed = 0.;
-        _RMSSampleCount = 0;
+        _RMSFrameCount = 0;
 
         _Left  = 0.;
         _Right = 0.;
@@ -213,6 +160,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
     switch (_State->_VisualizationType)
     {
         default:
+            break;
 
         case VisualizationType::Bars:
         case VisualizationType::Curve:
@@ -400,10 +348,84 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             }
             break;
         }
+
+        case VisualizationType::Oscilloscope:
+        {
+            _Chunk.reset();
+            break;
+        }
     }
 }
 
 #pragma region Spectrum
+
+void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
+{
+    const audio_sample * Frames = chunk.get_data();
+    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
+
+    if ((Frames == nullptr) || (FrameCount == 0))
+        return;
+
+    GetAnalyzer(chunk);
+
+    switch (_State->_Transform)
+    {
+        case Transform::FFT:
+        {
+            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case Transform::CQT:
+        {
+            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case Transform::SWIFT:
+        {
+            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case Transform::AnalogStyle:
+        {
+            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+    }
+
+    // Filter the spectrum.
+    if (_State->_WeightingType != WeightingType::None)
+        ApplyAcousticWeighting();
+
+    // Smooth the spectrum.
+    switch (_State->_SmoothingMethod)
+    {
+        default:
+
+        case SmoothingMethod::None:
+        {
+            Normalize();
+            break;
+        }
+
+        case SmoothingMethod::Average:
+        {
+            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+
+        case SmoothingMethod::Peak:
+        {
+            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+    }
+
+    // From here on frequency_band_t::CurValue is guaranteed to be in the range 0.0 .. 1.0.
+}
 
 #pragma region Frequencies
 
@@ -688,22 +710,17 @@ void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 #pragma region Peak Meter
 
 /// <summary>
-/// Gets the values for the peak and the level meter.
+/// Process the chunk data for the peak and the level meter.
 /// </summary>
-void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
+void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
 {
-    const audio_sample * Samples = chunk.get_data();
-    const size_t SampleCount = chunk.get_sample_count();
+    const audio_sample * Frames = chunk.get_data();
+    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
 
-    if ((Samples == nullptr) || (SampleCount == 0))
+    if ((Frames == nullptr) || (FrameCount == 0))
         return;
 
-    uint32_t ChannelMask = chunk.get_channel_config() & _GraphSettings->_Channels;
-
-    if (ChannelMask == 0)
-        return; // None of the selected channels are present in this chunk.
-
-    InitializeGauges(ChannelMask);
+    InitializeGauges(_ChannelMask);
 
     audio_sample BalanceSamples[2] = { };
 
@@ -719,18 +736,18 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
         (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
     };
 
-    const audio_sample * EndOfChunk = Samples + SampleCount;
+    const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
 
-    for (const audio_sample * Sample = Samples; Sample < EndOfChunk; Sample += chunk.get_channel_count())
+    for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
     {
-        const audio_sample * s = Sample;
+        const audio_sample * Sample = Frame;    // First sample of the current frame.
 
         size_t i = 0;
         size_t j = 0;
 
-        uint32_t ChunkChannels = chunk.get_channel_config();
-        uint32_t SelectedChannels = _GraphSettings->_Channels;
-        uint32_t BalanceChannels = ChannelPairs[(size_t) _State->_ChannelPair];
+        uint32_t ChunkChannels    = chunk.get_channel_config();                     // Mask containing the channels in the audio chunk.
+        uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;                      // Mask containing the channels selected by the user for the level measuring.
+        uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user for the balance measuring.
 
         while (ChunkChannels != 0)
         {
@@ -740,16 +757,16 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
                 {
                     auto gv = &_GaugeValues[i++];
 
-                    const double Value = std::abs((double) *s);
+                    const double Value = std::abs((double) *Sample);
 
                     gv->Peak = std::max(Value, gv->Peak);
                     gv->RMSTotal += Value * Value;
                 }
 
                 if ((BalanceChannels & 1) && (j < _countof(BalanceSamples)))
-                    BalanceSamples[j++] = *s;
+                    BalanceSamples[j++] = *Sample;
 
-                s++;
+                Sample++;
             }
 
             ChunkChannels    >>= 1;
@@ -767,11 +784,8 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
         _Side += Side * Side;
     }
 
-    const size_t SamplesPerChannel = SampleCount / chunk.get_channel_count();
-    const double ChunkDuration = chunk.get_duration();
-
-    _RMSSampleCount += SamplesPerChannel;
-    _RMSTimeElapsed += ChunkDuration;
+    _RMSFrameCount  += FrameCount;
+    _RMSTimeElapsed += chunk.get_duration();
 
     // Normalize and smooth the values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
     for (auto & gv : _GaugeValues)
@@ -786,18 +800,18 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
         for (auto & gv : _GaugeValues)
         {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-            gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSSampleCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
+            gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSFrameCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
             // Reset the RMS window values.
             gv.Reset();
         }
 
-        _Left  = std::sqrt(_Left  / (double) _RMSSampleCount);
-        _Right = std::sqrt(_Right / (double) _RMSSampleCount);
+        _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
+        _Right = std::sqrt(_Right / (double) _RMSFrameCount);
 
-        _Mid   = std::sqrt(_Mid   / (double) _RMSSampleCount);
-        _Side  = std::sqrt(_Side  / (double) _RMSSampleCount);
+        _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
+        _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
 
         if (!std::isfinite(_Balance))
             _Balance = 0.5;
@@ -810,7 +824,7 @@ void analysis_t::GetGaugeValues(const audio_chunk & chunk) noexcept
 
         // Reset all window-dependent values.
         _RMSTimeElapsed = 0.;
-        _RMSSampleCount = 0;
+        _RMSFrameCount = 0;
 
         _Left  = 0.;
         _Right = 0.;
@@ -859,3 +873,11 @@ void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
 }
 
 #pragma endregion
+
+/// <summary>
+/// Process the chunk data for the oscilloscope.
+/// </summary>
+void analysis_t::ProcessOscilloscope(const audio_chunk & chunk) noexcept
+{
+    _Chunk.copy(chunk);
+}

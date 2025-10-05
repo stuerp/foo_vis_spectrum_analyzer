@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2025.09.21) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -46,11 +46,11 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
 //  const auto Start = std::chrono::steady_clock::now();
 
-    Add(frameData, frameCount, channels);
+    Add(frameData, frameCount, selectedChannels);
 
     Transform();
 
@@ -82,18 +82,17 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frame
 /// Adds multiple samples to the analyzer buffer.
 /// It assumes that the buffer contains frames of sample data with a reading for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
-void fft_analyzer_t::Add(const audio_sample * frameData, size_t frameCount, uint32_t channels) noexcept
+void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32_t selectedChannels) noexcept
 {
-    if (frameData == nullptr)
+    if (samples == nullptr)
         return;
 
-    // Make sure there are enough samples for all the channels.
-    frameCount -= (frameCount % _ChannelCount);
+    const size_t SampleCount = frameCount * _ChannelCount;
 
     // Merge the samples of all channels into one averaged sample.
-    for (size_t i = 0; i < frameCount; i += _ChannelCount)
+    for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        _Data[_Curr] = AverageSamples(&frameData[i], channels);
+        _Data[_Curr] = AverageSamples(&samples[i], selectedChannels);
 
         _Curr = (_Curr + 1) % _Size;
     }

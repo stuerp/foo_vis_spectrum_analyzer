@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.cpp (2025.09.15) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
 
 #include "pch.h"
 #include "SWIFTAnalyzer.h"
@@ -34,15 +34,17 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
 /// <summary>
 /// Calculates the transform and returns the updated frequency bands.
 /// </summary>
-bool swift_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;
 
+    const size_t SampleCount = frameCount * _ChannelCount;
+
     #pragma loop(hint_parallel(2))
-    for (size_t i = 0; i < sampleCount; i += _ChannelCount)
+    for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&sampleData[i], channels);
+        const audio_sample Sample = AverageSamples(&frames[i], selectedChannels);
 
         size_t k = 0;
 

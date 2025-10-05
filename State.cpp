@@ -782,7 +782,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                 graph_settings_t gs;
 
                 pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
-                reader->read_object_t(gs._Channels, abortHandler);
+                reader->read_object_t(gs._SelectedChannels, abortHandler);
                 reader->read_object_t(gs._FlipHorizontally, abortHandler);
                 reader->read_object_t(gs._FlipVertically, abortHandler);
 
@@ -1117,7 +1117,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
             writer->write_string(Description, abortHandler);
 
-            writer->write_object_t(gs._Channels, abortHandler);
+            writer->write_object_t(gs._SelectedChannels, abortHandler);
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
 

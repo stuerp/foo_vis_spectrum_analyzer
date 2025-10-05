@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2024.02.16) P. Stuer **/
+/** $VER: Analyzer.h (2025.10.05) P. Stuer **/
 
 #pragma once
 
@@ -42,14 +42,14 @@ public:
     /// <summary>
     /// Calculates the average of the specified samples.
     /// </summary>
-    audio_sample AverageSamples(const audio_sample * samples, uint32_t channels) const noexcept
+    audio_sample AverageSamples(const audio_sample * samples, uint32_t selectedChannels) const noexcept
     {
         audio_sample Average = 0.;
         uint32_t n = 0;
 
-        for (uint32_t i = 0; (i < _ChannelCount) && (channels != 0); ++i, ++samples, channels >>= 1)
+        for (uint32_t i = 0; (i < _ChannelCount) && (selectedChannels != 0); ++i, ++samples, selectedChannels >>= 1)
         {
-            if (channels & 1)
+            if (selectedChannels & 1)
             {
                 Average += *samples;
                 n++;
@@ -62,8 +62,8 @@ public:
 protected:
     const state_t * _State;
     uint32_t _SampleRate;
-    uint32_t _ChannelCount;
-    uint32_t _ChannelSetup;
+    uint32_t _ChannelCount; // Number of channels per frame.
+    uint32_t _ChannelSetup; // Mask representing the channels present in the frame.
     const window_function_t & _WindowFunction;
 
     double _NyquistFrequency;
