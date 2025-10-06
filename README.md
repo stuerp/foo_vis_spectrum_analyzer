@@ -18,9 +18,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 <sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
 
-| - | - |
-| ![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot") | ![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot") |
-| <sup>Spectrum analyzer Radial Bars Mode</sup> | <sup>Spectrum analyzer Radial Curve Mode</sup> |
+![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Radial Bars Mode</sup>
+
+![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Radial Curve Mode</sup>
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 

@@ -82,6 +82,13 @@ void oscilloscope_t::Resize() noexcept
 /// </summary>
 void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
+    const audio_sample * Samples = _Analysis->_Chunk.get_data();
+    const size_t SampleCount     = _Analysis->_Chunk.get_sample_count();
+    const uint32_t ChannelCount  = _Analysis->_Chunk.get_channel_count();
+
+    if ((SampleCount == 0) || (ChannelCount == 0))
+        return;
+
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
@@ -89,12 +96,20 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+    FLOAT ChannelHeight = _Size.height / 2.f / (FLOAT) ChannelCount; // Height available to one channel.
+
+    if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
+        ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
+
     // Draw the horizontal grid lines.
     if (_HorizontalGridLineStyle->IsEnabled())
     {
-        for (uint32_t i = 0; i < _Analysis->_ChannelCount; ++i)
+        for (uint32_t i = 0; i < ChannelCount; ++i)
         {
-            const FLOAT y = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) _Analysis->_ChannelCount);
+            FLOAT y = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) ChannelCount);
+
+            if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
+                y = (FLOAT) _Size.height * (((FLOAT) i + 1.0f) / (FLOAT) ChannelCount);
 
             renderTarget->DrawLine(D2D1::Point2F(0.f, y), D2D1::Point2F(_Size.width, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
         }
@@ -113,21 +128,32 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
         if (SUCCEEDED(hr))
         {
-            const audio_sample * Samples = _Analysis->_Chunk.get_data();
-            const size_t SampleCount     = _Analysis->_Chunk.get_sample_count();
-
             const FLOAT ZoomFactor = (FLOAT) 1.f;
 
-            for (uint32_t i = 0; i < _Analysis->_ChannelCount; ++i)
+            for (uint32_t i = 0; i < ChannelCount; ++i)
             {
-                const FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) _Analysis->_ChannelCount);
+                FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) ChannelCount);
+
+                if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
+                    Baseline = (FLOAT) _Size.height * (((FLOAT) i + 1.0f) / (FLOAT) ChannelCount);
 
                 for (t_uint32 j = 0; j < SampleCount; ++j)
                 {
-                    const audio_sample Sample = Samples[(j * _Analysis->_ChannelCount) + i];
+                    audio_sample Amplitude = Samples[(j * ChannelCount) + i];
 
-                    const FLOAT x = (_Size.width * (FLOAT) j) / (FLOAT)(SampleCount - 1);
-                    const FLOAT y = Baseline - (FLOAT)(Sample * ZoomFactor * _Size.height / 2.f / _Analysis->_ChannelCount) + 0.5f;
+                    if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
+                    {
+                        const double dBMax   = _GraphSettings->_AmplitudeHi;
+                        const double dBMin   = _GraphSettings->_AmplitudeLo;
+                        const double dBRange = dBMax - dBMin;
+
+                        double dB = (Amplitude == 0.) ? dBMin : 20.0 * std::log10(std::abs(Amplitude));
+                        dB = std::clamp(dB, dBMin, dBMax);
+                        Amplitude = ((dB - dBMin) / dBRange);
+                    }
+
+                    const FLOAT x = (_Size.width * (FLOAT) j) / (FLOAT) (SampleCount - 1);
+                    const FLOAT y = Baseline - (FLOAT) (Amplitude * ZoomFactor * ChannelHeight);
 
                     if (j == 0)
                         Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
@@ -135,8 +161,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                         Sink->AddLine(D2D1::Point2F(x, y));
                 }
 
-                if ((_Analysis->_ChannelCount > 0) && (SampleCount > 0))
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
             }
 
             hr = Sink->Close();

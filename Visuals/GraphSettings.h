@@ -94,8 +94,8 @@ public:
     bool _YAxisLeft;
     bool _YAxisRight;
 
-    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0
-    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0 dBFS
+    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0 dBFS
     double _AmplitudeStep;
 
     bool _UseAbsolute;                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
