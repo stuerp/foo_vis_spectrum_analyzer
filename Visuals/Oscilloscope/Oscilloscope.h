@@ -32,6 +32,18 @@ public:
 private:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
 
+    struct label_t
+    {
+        std::wstring Text;
+        double Amplitude;
+    };
+
+    std::vector<label_t> _Labels;
+
     style_t * _SignalLineStyle;
     style_t * _HorizontalGridLineStyle;
+    style_t * _VerticalGridLineStyle;
+
+    style_t * _LineStyle;
+    style_t * _TextStyle;
 };

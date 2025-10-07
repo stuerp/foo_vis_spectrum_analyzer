@@ -1,9 +1,10 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.04) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2025.10.07) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
 #include "Oscilloscope.h"
+#include "AmplitudeScaler.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -21,6 +22,11 @@ oscilloscope_t::oscilloscope_t()
     _Size = { };
 
     _SignalLineStyle =  nullptr;
+    _HorizontalGridLineStyle = nullptr;
+    _VerticalGridLineStyle = nullptr;
+
+    _LineStyle = nullptr;
+    _TextStyle = nullptr;
 
     Reset();
 }
@@ -43,6 +49,24 @@ void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settin
     _Analysis = analysis;
 
     ReleaseDeviceSpecificResources();
+
+    // Create the labels.
+    {
+        for (double Amplitude = _GraphSettings->_AmplitudeLo; Amplitude <= _GraphSettings->_AmplitudeHi; Amplitude -= _GraphSettings->_AmplitudeStep)
+        {
+            WCHAR Text[16] = { };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
+
+            const label_t lb =
+            {
+                .Text = Text,
+                .Amplitude = Amplitude
+            };
+
+            _Labels.push_back(lb);
+        }
+    }
 
     // Non-device specific resources
     D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
@@ -82,36 +106,111 @@ void oscilloscope_t::Resize() noexcept
 /// </summary>
 void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
-    const audio_sample * Samples = _Analysis->_Chunk.get_data();
-    const size_t SampleCount     = _Analysis->_Chunk.get_sample_count();
+    const size_t FrameCount      = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount  = _Analysis->_Chunk.get_channel_count();
 
-    if ((SampleCount == 0) || (ChannelCount == 0))
+    if ((FrameCount == 0) || (ChannelCount == 0))
         return;
+
+    const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
     HRESULT hr = CreateDeviceSpecificResources(renderTarget);
 
     if (!SUCCEEDED(hr))
         return;
 
+    FLOAT ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
+    FLOAT YAxisWidth    = _TextStyle->_Width;
+
+    amplitude_scaler_t Scaler;
+
+    switch (_GraphSettings->_YAxisMode)
+    {
+        case YAxisMode::None:
+            Scaler.SetNormalizedMode();
+
+            ChannelHeight /= 2.f;
+            YAxisWidth    = 0.f;
+            break;
+
+        case YAxisMode::Decibels:
+            Scaler.SetDecibelMode(_GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            break;
+
+        case YAxisMode::Linear:
+            Scaler.SetLinearMode(_GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _GraphSettings->_Gamma, _GraphSettings->_UseAbsolute);
+            break;
+    }
+
+    uint32_t YAxisCount = 0;
+
+    if (_GraphSettings->_YAxisLeft)
+        YAxisCount++;
+
+    if (_GraphSettings->_YAxisRight)
+        YAxisCount++;
+
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    FLOAT ChannelHeight = _Size.height / 2.f / (FLOAT) ChannelCount; // Height available to one channel.
+    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
+    _TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-    if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
-        ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
-
-    // Draw the horizontal grid lines.
-    if (_HorizontalGridLineStyle->IsEnabled())
+    // Draw the axis.
+    for (uint32_t i = 0; i < ChannelCount; ++i)
     {
-        for (uint32_t i = 0; i < ChannelCount; ++i)
+        // X-axis
+        if (_HorizontalGridLineStyle->IsEnabled())
         {
-            FLOAT y = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) ChannelCount);
+            const FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f)) / (FLOAT) ChannelCount);
 
-            if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
-                y = (FLOAT) _Size.height * (((FLOAT) i + 1.0f) / (FLOAT) ChannelCount);
+            FLOAT x1 = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft) ? YAxisWidth : 0.f;
+            FLOAT x2 = x1 + (_Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth * YAxisCount : 0.f));
 
-            renderTarget->DrawLine(D2D1::Point2F(0.f, y), D2D1::Point2F(_Size.width, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
+            renderTarget->DrawLine(D2D1::Point2F(x1, Baseline), D2D1::Point2F(x2, Baseline), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
+        }
+
+        // Y-axis
+        if (_GraphSettings->_YAxisMode != YAxisMode::None)
+        {
+            const FLOAT y1 = (((FLOAT) _Size.height / (FLOAT) ChannelCount) * (FLOAT) i);
+            const FLOAT y2 = y1 + ((FLOAT) _Size.height / (FLOAT) ChannelCount);
+
+            if (_VerticalGridLineStyle->IsEnabled())
+            {
+                if (_GraphSettings->_YAxisLeft)
+                    renderTarget->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
+
+                if (_GraphSettings->_YAxisRight)
+                    renderTarget->DrawLine(D2D1::Point2F(_Size.width - YAxisWidth, y1), D2D1::Point2F(_Size.width - YAxisWidth, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
+            }
+
+            if (_TextStyle->IsEnabled())
+            {
+                D2D1_RECT_F r = {  };
+
+                for (const label_t & Iter : _Labels)
+                {
+                    // Draw the label.
+                    r.top    = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., y2 - _TextStyle->_Height, y1);
+                    r.bottom = r.top + _TextStyle->_Height;
+
+                    if (_GraphSettings->_YAxisLeft)
+                    {
+                        r.left  = 0.f;
+                        r.right = YAxisWidth - 2.f;
+
+                        renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+
+                    if (_GraphSettings->_YAxisRight)
+                    {
+                        r.right = _Size.width - 1;
+                        r.left  = r.right - (YAxisWidth - 2.f);
+
+                        renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+                }
+            }
         }
     }
 
@@ -132,33 +231,23 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
             for (uint32_t i = 0; i < ChannelCount; ++i)
             {
-                FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + 0.5f) / (FLOAT) ChannelCount);
+                const FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f)) / (FLOAT) ChannelCount);
 
-                if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
-                    Baseline = (FLOAT) _Size.height * (((FLOAT) i + 1.0f) / (FLOAT) ChannelCount);
+                const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) (FrameCount - 1);
+                FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
 
-                for (t_uint32 j = 0; j < SampleCount; ++j)
+                for (t_uint32 j = 0; j < FrameCount; ++j)
                 {
-                    audio_sample Amplitude = Samples[(j * ChannelCount) + i];
+                    const FLOAT Value = (FLOAT) Scaler(Samples[(j * ChannelCount) + i]);
 
-                    if (_GraphSettings->_YAxisMode == YAxisMode::Decibels)
-                    {
-                        const double dBMax   = _GraphSettings->_AmplitudeHi;
-                        const double dBMin   = _GraphSettings->_AmplitudeLo;
-                        const double dBRange = dBMax - dBMin;
-
-                        double dB = (Amplitude == 0.) ? dBMin : 20.0 * std::log10(std::abs(Amplitude));
-                        dB = std::clamp(dB, dBMin, dBMax);
-                        Amplitude = ((dB - dBMin) / dBRange);
-                    }
-
-                    const FLOAT x = (_Size.width * (FLOAT) j) / (FLOAT) (SampleCount - 1);
-                    const FLOAT y = Baseline - (FLOAT) (Amplitude * ZoomFactor * ChannelHeight);
+                    const FLOAT y = Baseline - (Value * ZoomFactor * ChannelHeight);
 
                     if (j == 0)
                         Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
                     else
                         Sink->AddLine(D2D1::Point2F(x, y));
+
+                    x += dx;
                 }
 
                 Sink->EndFigure(D2D1_FIGURE_END_OPEN);
@@ -188,6 +277,15 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, L"", &_HorizontalGridLineStyle);
 
     if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, Size, L"", &_VerticalGridLineStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_TextStyle);
+
+    if (SUCCEEDED(hr))
         Resize();
 
     return hr;
@@ -198,6 +296,12 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
 /// </summary>
 void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 {
+    if (_VerticalGridLineStyle)
+    {
+        _VerticalGridLineStyle->ReleaseDeviceSpecificResources();
+        _VerticalGridLineStyle = nullptr;
+    }
+
     if (_HorizontalGridLineStyle)
     {
         _HorizontalGridLineStyle->ReleaseDeviceSpecificResources();
@@ -208,5 +312,17 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
     {
         _SignalLineStyle->ReleaseDeviceSpecificResources();
         _SignalLineStyle = nullptr;
+    }
+
+    if (_TextStyle)
+    {
+        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle = nullptr;
+    }
+
+    if (_LineStyle)
+    {
+        _LineStyle->ReleaseDeviceSpecificResources();
+        _LineStyle = nullptr;
     }
 }
