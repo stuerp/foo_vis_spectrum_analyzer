@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2025.09.24) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2025.10.08) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectogram.h"
@@ -295,8 +295,6 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (!Update())
         return;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
     // Draw the offscreen bitmap.
     if (_State->_HorizontalSpectogram)
     {
@@ -334,8 +332,6 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(renderTarget, true);
 
-                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
                 renderTarget->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
 
@@ -344,8 +340,6 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(renderTarget, false);
     
-                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
                 renderTarget->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
         }
@@ -397,8 +391,6 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(renderTarget, true);
 
-                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
                 renderTarget->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
 
@@ -407,8 +399,6 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(renderTarget, false);
     
-                renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
                 renderTarget->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
         }
@@ -465,6 +455,8 @@ void spectogram_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 /// </summary>
 void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) const noexcept
 {
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     if (_State->_HorizontalSpectogram)
     {
         const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle->_Height;
@@ -474,9 +466,11 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
 
         renderTarget->PushAxisAlignedClip({ _BitmapBounds.left, y1, _BitmapBounds.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+        _TimeTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+
         for (const auto & Label : _TimeLabels)
         {
-            const FLOAT x = !_GraphSettings->_FlipHorizontally ? _BitmapBounds.left + Label.X : _BitmapBounds.right - Label.X;
+            const FLOAT x = !_GraphSettings->_FlipHorizontally ? _BitmapBounds.left + Label.X : Label.X + _TimeTextStyle->_Width;
 
             // Draw the tick.
             renderTarget->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
@@ -488,13 +482,11 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
             }
             else
             {
-                Rect.x1 = x - Offset;
-                Rect.x2 = Rect.x1 - _TimeTextStyle->_Width;
+                Rect.x2 = x - Offset;
+                Rect.x1 = Rect.x2 - _TimeTextStyle->_Width;
             }
 
             // Draw the label.
-            _TimeTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
-
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle->_TextFormat, Rect, _TimeTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
@@ -509,12 +501,13 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
 
         renderTarget->PushAxisAlignedClip({ x1, _BitmapBounds.top, x2, _BitmapBounds.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+        _TimeTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+
         for (const auto & Label : _TimeLabels)
         {
             const FLOAT y = !_GraphSettings->_FlipVertically ? _BitmapBounds.top - _TimeTextStyle->_Height + Label.Y : _BitmapBounds.top + Label.Y;
 
             // Draw the tick.
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
             renderTarget->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
             if (!_GraphSettings->_FlipVertically)
@@ -529,9 +522,6 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
             }
 
             // Draw the label.
-            _TimeTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             renderTarget->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle->_TextFormat, Rect, _TimeTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
@@ -544,6 +534,8 @@ void spectogram_t::RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool first) 
 /// </summary>
 void spectogram_t::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept
 {
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     const FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
 
     if (_State->_HorizontalSpectogram)
@@ -556,8 +548,6 @@ void spectogram_t::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) c
         if (Iter.IsHidden)
             continue;
 
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
         _FreqTextStyle->_Brush->SetOpacity(Iter.IsMinor ? Opacity * .5f : Opacity);
 
         if (left)
@@ -565,8 +555,6 @@ void spectogram_t::RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) c
         else
             renderTarget->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _FreqTextStyle->_TextFormat, Iter.Rect2, _FreqTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
     }
-
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     if (left)
         renderTarget->DrawLine({ _BitmapBounds.left, _BitmapBounds.top },    { _BitmapBounds.right, _BitmapBounds.top },    _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
@@ -623,9 +611,9 @@ bool spectogram_t::Update() noexcept
             for (auto & Label : _TimeLabels)
             {
                 if (!_GraphSettings->_FlipHorizontally)
-                    Label.X--; // Scroll to the left.
+                    Label.X--; // Move each label to the left.
                 else
-                    Label.X++; // Scroll to the right.
+                    Label.X++; // Move each label to the right.
             }
         }
 
@@ -633,13 +621,13 @@ bool spectogram_t::Update() noexcept
         {
             if (_State->_ScrollingSpectogram)
             {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? 0.f : _BitmapSize.width });
+                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphSettings->_FlipHorizontally ? _BitmapSize.width : 0.f });
 
                 if (_TimeLabels.back().X + _TimeTextStyle->_Width < 0.f)
                     _TimeLabels.pop_back();
             }
             else
-                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), _GraphSettings->_FlipHorizontally ? _BitmapSize.width - _X : _X });
+                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphSettings->_FlipHorizontally ? _X : _BitmapSize.width - _X });
 
             _TrackTime = _State->_TrackTime;
         }
@@ -682,9 +670,9 @@ bool spectogram_t::Update() noexcept
             for (auto & Label : _TimeLabels)
             {
                 if (!_GraphSettings->_FlipVertically)
-                    Label.Y++; // Scroll to the bottom.
+                    Label.Y++; // Move each label down.
                 else
-                    Label.Y--; // Scroll to the top.
+                    Label.Y--; // Move each label up.
             }
         }
 
