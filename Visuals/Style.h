@@ -88,20 +88,23 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
+    #pragma region Serialized
+
     Features _Flags;
 
-    ColorSource _ColorSource;           // Determines the source of the color
-    D2D1_COLOR_F _CustomColor;          // User-specified color
-    uint32_t _ColorIndex;               // User-specified color index in Windows / DUI / CUI list
-    ColorScheme _ColorScheme;           // User-specified color scheme
-    gradient_stops_t _CustomGradientStops; // User-specified gradient stops
+    ColorSource _ColorSource;               // Determines the source of the color
+    D2D1_COLOR_F _CustomColor;              // User-specified color
+    uint32_t _ColorIndex;                   // User-specified color index in Windows / DUI / CUI list
+    ColorScheme _ColorScheme;               // User-specified color scheme
+    gradient_stops_t _CustomGradientStops;  // User-specified gradient stops
 
-    FLOAT _Opacity;                     // Opacity of the brush or area
-    FLOAT _Thickness;                   // Line thickness
+    FLOAT _Opacity;                         // Opacity of the brush or area
+    FLOAT _Thickness;                       // Line thickness
 
-    // Font-specific
     std::wstring _FontName;
     FLOAT _FontSize;
+
+    #pragma endregion
 
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;

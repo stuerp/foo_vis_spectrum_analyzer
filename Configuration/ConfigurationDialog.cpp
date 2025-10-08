@@ -69,7 +69,7 @@ static const WCHAR * const VisualElementNames[] =
     L"Mid/Side Level Indicator",
     L"Left/Side Axis",
 
-    L"Signal Line",
+    L"Oscilloscope Signal Line",
 };
 
 static_assert((size_t) VisualElement::Count == _countof(VisualElementNames));

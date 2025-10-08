@@ -170,21 +170,24 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             if (Version < 4)
                 pfc::string Name = reader->read_string(abortHandler);
 
-            style_t & style = _Styles[(VisualElement) Id];
+            style_t Style = { };
+
+            if (Id < (uint32_t) VisualElement::Count)
+                Style = _Styles[(VisualElement) Id];
 
             uint64_t Flags;
 
             reader->read_object_t(Flags, abortHandler);
 
             // Add only the non-system flags to the style from the read value.
-            style._Flags = (style._Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
+            Style._Flags = (Style._Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
 
             uint32_t Integer;
 
-            reader->read_object_t(Integer, abortHandler); style._ColorSource = (ColorSource) Integer;
-            reader->read_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
-            reader->read_object_t(style._ColorIndex, abortHandler);
-            reader->read_object_t(Integer, abortHandler); style._ColorScheme = (ColorScheme) Integer;
+            reader->read_object_t(Integer, abortHandler); Style._ColorSource = (ColorSource) Integer;
+            reader->read_object(&Style._CustomColor, sizeof(Style._CustomColor), abortHandler);
+            reader->read_object_t(Style._ColorIndex, abortHandler);
+            reader->read_object_t(Integer, abortHandler); Style._ColorScheme = (ColorScheme) Integer;
 
             gradient_stops_t gs;
 
@@ -198,39 +201,42 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
                 gs.push_back({ Position, Color });
             }
 
-            style._CustomGradientStops = gs;
+            Style._CustomGradientStops = gs;
 
-            reader->read_object_t(style._Opacity, abortHandler);
-            reader->read_object_t(style._Thickness, abortHandler);
+            reader->read_object_t(Style._Opacity, abortHandler);
+            reader->read_object_t(Style._Thickness, abortHandler);
 
             pfc::string FontName = reader->read_string(abortHandler);
             FLOAT FontSize; reader->read_object_t(FontSize, abortHandler);
 
             if (Version > 4)
             {
-                style._FontName = pfc::wideFromUTF8(FontName);
-                style._FontSize = FontSize;
+                Style._FontName = pfc::wideFromUTF8(FontName);
+                Style._FontSize = FontSize;
             }
 
             // Sets the default font settings.
-            if (style.Has(style_t::Features::SupportsFont))
+            if (Style.Has(style_t::Features::SupportsFont))
             {
                 const auto & DefaultStyle = _DefaultStyles[(VisualElement) Id];
 ;
-                if (style._FontName.empty())
-                    style._FontName = DefaultStyle._FontName;
+                if (Style._FontName.empty())
+                    Style._FontName = DefaultStyle._FontName;
 
-                if (style._FontSize < 2.f)
-                    style._FontSize = DefaultStyle._FontSize;
+                if (Style._FontSize < 2.f)
+                    Style._FontSize = DefaultStyle._FontSize;
             }
 
             // 'Activate' the values we just read.
-            if (style._ColorScheme == ColorScheme::Custom)
-                style._CurrentGradientStops = style._CustomGradientStops;
+            if (Style._ColorScheme == ColorScheme::Custom)
+                Style._CurrentGradientStops = Style._CustomGradientStops;
             else
-                style._CurrentGradientStops = GetBuiltInGradientStops(style._ColorScheme);
+                Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
 
-            style.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
+            Style.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
+
+            if (Id < (uint32_t) VisualElement::Count)
+                _Styles[(VisualElement) Id] = Style;
         }
     }
     catch (std::exception & ex)

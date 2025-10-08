@@ -117,8 +117,16 @@ private:
         {
             VisualElement::GraphBackground,
             {
-                style_t::Features::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                /*_Flags               */ style_t::Features::SupportsOpacity,
+                /*_ColorSource         */ ColorSource::Solid,
+                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
+                /*_ColorIndex          */ 0,
+                /*_ColorScheme         */ ColorScheme::Solid,
+                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /*_Opacity             */ 1.f,
+                /*_Thickness           */ 0.f,
+                /*_FontName            */ L"",
+                /*_FontSize            */ 0.f
             }
         },
 
@@ -377,8 +385,16 @@ private:
         {
             VisualElement::SignalLine,
             {
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Solid), 1.f, 1.5f, L"", 0.f,
+                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /*_ColorSource         */ ColorSource::Solid,
+                /*_CustomColor         */ D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f),
+                /*_ColorIndex          */ 0,
+                /*_ColorScheme         */ ColorScheme::Solid,
+                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+                /*_Opacity             */ 1.f,
+                /*_Thickness           */ 1.5f,
+                /*_FontName            */ L"",
+                /*_FontSize            */ 0.f
             }
         },
     };
