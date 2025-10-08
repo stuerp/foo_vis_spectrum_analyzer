@@ -106,6 +106,8 @@ void y_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (!SUCCEEDED(hr))
         return;
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
 
     for (const label_t & Iter : _Labels)

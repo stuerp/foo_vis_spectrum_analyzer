@@ -111,11 +111,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.0.0-alpha1, 2025-10-05
+v0.9.0.0-alpha2, 2025-10-xx
 
-- New: Radial Curve visualization.
-- New: Oscilloscope visualization.
-- Fixed: Too few samples were taken into account during analysis (frame count vs. sample count). Thanks to TF3RDL for detecting and reporting it.
+- Improved: Oscilloscope visualization.
+  - X and Y-axis support
+  - Y-axis none, dBFS and linear dBFS modes.
+  - Only the selected channels are rendered.
 
 You can read the full history [here](docs/History.md).
 

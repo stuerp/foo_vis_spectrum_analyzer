@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.07) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2025.10.08) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -66,6 +66,12 @@ void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settin
 
             _Labels.push_back(lb);
         }
+
+        if (!_Labels.empty())
+        {
+            _Labels.front().IsMin = true;
+            _Labels.back().IsMax  = true;
+        }
     }
 
     // Non-device specific resources
@@ -119,8 +125,8 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    FLOAT ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
-    FLOAT YAxisWidth    = _TextStyle->_Width;
+    const FLOAT ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
+    FLOAT YAxisWidth = _TextStyle->_Width;
 
     amplitude_scaler_t Scaler;
 
@@ -129,8 +135,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         case YAxisMode::None:
             Scaler.SetNormalizedMode();
 
-            ChannelHeight /= 2.f;
-            YAxisWidth    = 0.f;
+            YAxisWidth = 0.f;
             break;
 
         case YAxisMode::Decibels:
@@ -142,15 +147,15 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
             break;
     }
 
-    uint32_t YAxisCount = 0;
+    FLOAT YAxisCount = 0.f;
 
     if (_GraphSettings->_YAxisLeft)
-        YAxisCount++;
+        ++YAxisCount;
 
     if (_GraphSettings->_YAxisRight)
-        YAxisCount++;
+        ++YAxisCount;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
     _TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -158,22 +163,20 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     // Draw the axis.
     for (uint32_t i = 0; i < ChannelCount; ++i)
     {
+        const FLOAT Baseline = ChannelHeight * ((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f));
+
+        const FLOAT x1 =                ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f;
+        const FLOAT x2 = _Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
+
         // X-axis
         if (_HorizontalGridLineStyle->IsEnabled())
-        {
-            const FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f)) / (FLOAT) ChannelCount);
-
-            FLOAT x1 = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft) ? YAxisWidth : 0.f;
-            FLOAT x2 = x1 + (_Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth * YAxisCount : 0.f));
-
             renderTarget->DrawLine(D2D1::Point2F(x1, Baseline), D2D1::Point2F(x2, Baseline), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
-        }
 
         // Y-axis
         if (_GraphSettings->_YAxisMode != YAxisMode::None)
         {
-            const FLOAT y1 = (((FLOAT) _Size.height / (FLOAT) ChannelCount) * (FLOAT) i);
-            const FLOAT y2 = y1 + ((FLOAT) _Size.height / (FLOAT) ChannelCount);
+            const FLOAT y1 = ChannelHeight * (FLOAT) i;
+            const FLOAT y2 = y1 + ChannelHeight;
 
             if (_VerticalGridLineStyle->IsEnabled())
             {
@@ -181,33 +184,38 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                     renderTarget->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
 
                 if (_GraphSettings->_YAxisRight)
-                    renderTarget->DrawLine(D2D1::Point2F(_Size.width - YAxisWidth, y1), D2D1::Point2F(_Size.width - YAxisWidth, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
+                    renderTarget->DrawLine(D2D1::Point2F(x2 + 1.f, y1), D2D1::Point2F(x2 + 1.f, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
             }
 
             if (_TextStyle->IsEnabled())
             {
                 D2D1_RECT_F r = {  };
 
-                for (const label_t & Iter : _Labels)
+                for (const label_t & Label : _Labels)
                 {
+                    const FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
+
                     // Draw the label.
-                    r.top    = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., y2 - _TextStyle->_Height, y1);
+                    r.top    = Label.IsMin ? y - _TextStyle->_Height : (Label.IsMax ? y : y - (_TextStyle->_Height / 2.f));
                     r.bottom = r.top + _TextStyle->_Height;
+
+                    if (_HorizontalGridLineStyle->IsEnabled())
+                        renderTarget->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
 
                     if (_GraphSettings->_YAxisLeft)
                     {
                         r.left  = 0.f;
-                        r.right = YAxisWidth - 2.f;
+                        r.right = x1 - 2.f;
 
-                        renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphSettings->_YAxisRight)
                     {
                         r.right = _Size.width - 1;
-                        r.left  = r.right - (YAxisWidth - 2.f);
+                        r.left  = x2 + 2.f;
 
-                        renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
@@ -215,6 +223,8 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     }
 
     // Draw the signal.
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
     CComPtr<ID2D1PathGeometry> Path;
 
     hr = _Direct2D.Factory->CreatePathGeometry(&Path);
@@ -231,9 +241,9 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
             for (uint32_t i = 0; i < ChannelCount; ++i)
             {
-                const FLOAT Baseline = (FLOAT) _Size.height * (((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f)) / (FLOAT) ChannelCount);
+                const FLOAT Baseline = ChannelHeight * ((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f));
 
-                const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) (FrameCount - 1);
+                const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
                 FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
 
                 for (t_uint32 j = 0; j < FrameCount; ++j)
@@ -285,6 +295,11 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_TextStyle);
 
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
+
     if (SUCCEEDED(hr))
         Resize();
 
@@ -296,6 +311,10 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
 /// </summary>
 void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 {
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
+
     if (_VerticalGridLineStyle)
     {
         _VerticalGridLineStyle->ReleaseDeviceSpecificResources();

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.05) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2025.10.08) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -36,6 +36,9 @@ private:
     {
         std::wstring Text;
         double Amplitude;
+
+        bool IsMin;
+        bool IsMax;
     };
 
     std::vector<label_t> _Labels;
@@ -46,4 +49,8 @@ private:
 
     style_t * _LineStyle;
     style_t * _TextStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 };

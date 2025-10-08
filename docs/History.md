@@ -1,6 +1,12 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.9.0.0-alpha1, 2025-10-05
+
+- New: Radial Curve visualization.
+- New: Oscilloscope visualization.
+- Fixed: Too few samples were taken into account during analysis (frame count vs. sample count). Thanks to TF3RDL for detecting and reporting it.
+
 v0.8.1.0, 2025-09-26
 
 * New: The graph horizontal alignment setting has a new *Fit* option to make the Bar visualization use the complete width of the graph (minus the X-axis when enabled).
