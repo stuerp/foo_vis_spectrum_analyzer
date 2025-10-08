@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2025.09.17) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2025.10.08) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -46,7 +46,7 @@ public:
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
     };
 
-    style_t(Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
+    style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
 
     bool IsEnabled() const noexcept
     {
@@ -55,7 +55,7 @@ public:
 
     bool Has(Features feature) const noexcept
     {
-        return IsSet(_Flags, feature);
+        return IsSet(Flags, feature);
     }
 
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
@@ -88,9 +88,12 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
+    std::wstring Name;
+    VisualizationTypes UsedBy;              // Determines which visualization uses the style.
+
 #pragma region Serialized
 
-    Features _Flags;
+    Features Flags;
 
     ColorSource _ColorSource;               // Determines the source of the color
     D2D1_COLOR_F _CustomColor;              // User-specified color

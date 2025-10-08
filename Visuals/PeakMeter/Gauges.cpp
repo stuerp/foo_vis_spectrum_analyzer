@@ -448,16 +448,18 @@ HRESULT gauge_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 
             rt->Clear();
 
-            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
+            if (LEDSize > 0.f)
             {
                 if (_State->_HorizontalPeakMeter)
                 {
-                    for (FLOAT x = _State->_LEDGap; x < Size.width; x += (_State->_LEDSize + _State->_LEDGap))
+                    for (FLOAT x = _State->_LEDGap; x < Size.width; x += LEDSize)
                         rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, Size.height), Brush);
                 }
                 else
                 {
-                    for (FLOAT y = _State->_LEDGap; y < Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    for (FLOAT y = _State->_LEDGap; y < Size.height; y += LEDSize)
                         rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDSize), Brush);
                 }
             }

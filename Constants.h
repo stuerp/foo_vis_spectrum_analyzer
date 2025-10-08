@@ -286,6 +286,22 @@ enum class VisualizationType
     Oscilloscope = 7,
 };
 
+enum class VisualizationTypes : uint64_t
+{
+    None = 0,
+
+    Bars            = 1 << (int) VisualizationType::Bars,
+    Curve           = 1 << (int) VisualizationType::Curve,
+    Spectogram      = 1 << (int) VisualizationType::Spectogram,
+    PeakMeter       = 1 << (int) VisualizationType::PeakMeter,
+    LevelMeter      = 1 << (int) VisualizationType::LevelMeter,
+    RadialBars      = 1 << (int) VisualizationType::RadialBars,
+    RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
+    Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
+
+    All = ~0
+};
+
 enum class PeakMode
 {
     None = 0,

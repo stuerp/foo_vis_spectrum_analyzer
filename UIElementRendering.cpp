@@ -101,8 +101,8 @@ void uielement_t::ProcessEvents() noexcept
             // Set the default dominant color and gradient for the artwork color scheme.
             _RenderThread._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
 
-            _RenderThread._StyleManager._DominantColor = _RenderThread._ArtworkGradientStops[0].color;
-            _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager._DominantColor);
+            _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
+            _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
             _RenderThread._StyleManager.ReleaseGradientBrushes();
 
             _IsConfigurationChanged = true;
@@ -331,7 +331,7 @@ HRESULT uielement_t::CreateArtworkDependentResources()
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderThread._StyleManager._DominantColor = _RenderThread._ArtworkColors[0];
+        _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_RenderThread._ColorOrder)
@@ -372,8 +372,8 @@ HRESULT uielement_t::CreateArtworkDependentResources()
 
     if (SUCCEEDED(hr))
     {
-        _RenderThread._StyleManager._DominantColor = _RenderThread._ArtworkGradientStops[0].color;
-        _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager._DominantColor);
+        _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
+        _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
         _RenderThread._StyleManager.ReleaseGradientBrushes();
 
         _IsConfigurationChanged = true;

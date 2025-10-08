@@ -25,59 +25,6 @@ static const WCHAR * const ChannelNames[] =
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
 };
 
-// Determines the order in which the styles will be displayed.
-static const WCHAR * const VisualElementNames[] =
-{
-    L"Graph Background",
-    L"Graph Description Text",
-    L"Graph Description Background",
-
-    L"X-axis Text",
-    L"X-axis Line",
-    L"Y-axis Text",
-    L"Y-axis Line",
-
-    L"Horizontal Grid Line",
-    L"Vertical Grid Line",
-
-    L"Bar Area",
-    L"Bar Top",
-    L"Bar Peak Area",
-    L"Bar Peak Top",
-    L"Bar Dark Background",
-    L"Bar Light Background",
-
-    L"Curve Line",
-    L"Curve Area",
-    L"Curve Peak Line",
-    L"Curve Peak Area",
-
-    L"Spectogram",
-
-    L"Peak Meter Background",
-
-    L"Peak Meter Peak Level",
-    L"Peak Meter Peak Level (> 0dB)",
-    L"Peak Meter Peak Level (Max)",
-    L"Peak Meter Peak Level Read Out",
-
-    L"Peak Meter RMS Level",
-    L"Peak Meter RMS Level (> 0dB)",
-    L"Peak Meter RMS Level Read Out",
-
-    L"Nyquist Frequency",
-
-    L"Left/Right Level",
-    L"Left/Right Level Indicator",
-    L"Mid/Side Level",
-    L"Mid/Side Level Indicator",
-    L"Left/Side Axis",
-
-    L"Oscilloscope Signal Line",
-};
-
-static_assert((size_t) VisualElement::Count == _countof(VisualElementNames));
-
 /// <summary>
 /// Initializes the dialog.
 /// </summary>
@@ -114,7 +61,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     {
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
-        const std::map<int, LPCWSTR> Tips =
+        const std::unordered_map<int, LPCWSTR> Tips =
         {
             { IDC_METHOD, L"Method used to transform the samples" },
 
@@ -316,8 +263,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDCANCEL, L"Closes the dialog box and undoes any changes to the configuration." },
         };
 
-        for (const auto & Iter : Tips)
-            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(Iter.first).m_hWnd, nullptr, (LPWSTR) Iter.second));
+        for (const auto & [ID, Text] : Tips)
+            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(ID).m_hWnd, nullptr, (LPWSTR) Text));
 
         _ToolTipControl.SetMaxTipWidth(200);
         ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
@@ -966,9 +913,9 @@ void ConfigurationDialog::Initialize()
     #pragma region Graphs
 
     {
-        _State->_SelectedGraph = 0;
+        _SelectedGraph = 0;
 
-        auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+        auto & gs = _State->_GraphSettings[_SelectedGraph];
 
         {
             SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
@@ -1091,6 +1038,8 @@ void ConfigurationDialog::Initialize()
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);
+
+        InitializeStyles();
     }
 
     {
@@ -1198,19 +1147,6 @@ void ConfigurationDialog::Initialize()
     #pragma endregion
 
     #pragma region Styles
-    {
-        auto w = (CListBox) GetDlgItem(IDC_STYLES);
-
-        w.ResetContent();
-
-        for (const auto & x : VisualElementNames)
-            w.AddString(x);
-
-        _State->_SelectedStyle = (int) VisualElement::GraphBackground;
-
-        w.SetCurSel(_State->_SelectedStyle);
-    }
-
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SOURCE);
 
@@ -1337,7 +1273,7 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
         {
         //  Log::Write(Log::Level::Trace, "%8d: Colors changed.", (int) ::GetTickCount64());
 
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UpdateCurrentColor(style);
             UpdateColorControls();
@@ -1500,7 +1436,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_GRAPH_SETTINGS:
         {
-            _State->_SelectedGraph = (size_t) ((CListBox) w).GetCurSel();
+            _SelectedGraph = (size_t) ((CListBox) w).GetCurSel();
 
             UpdateGraphsPage();
 
@@ -1511,7 +1447,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_HORIZONTAL_ALIGNMENT:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
@@ -1525,7 +1461,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_X_AXIS_MODE:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._XAxisMode = (XAxisMode) SelectedIndex;
 
@@ -1539,7 +1475,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_Y_AXIS_MODE:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._YAxisMode = (YAxisMode) SelectedIndex;
 
@@ -1561,7 +1497,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             for (int Item : Items)
                 Channels |= 1 << Item;
 
-            _State->_GraphSettings[_State->_SelectedGraph]._SelectedChannels = Channels;
+            _State->_GraphSettings[_SelectedGraph]._SelectedChannels = Channels;
             break;
         }
 
@@ -1576,6 +1512,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             _State->_VisualizationType = (VisualizationType) SelectedIndex;
 
             UpdateVisualizationPage();
+            InitializeStyles();
             break;
         }
 
@@ -1605,7 +1542,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_STYLES:
         {
-            _State->_SelectedStyle = ((CListBox) w).GetCurSel();
+            _SelectedStyle = (size_t) ((CListBox) w).GetCurSel();
 
             UpdateStylesPage();
 
@@ -1614,7 +1551,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_COLOR_SOURCE:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_ColorSource = (ColorSource) SelectedIndex;
 
@@ -1625,7 +1562,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_COLOR_INDEX:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_ColorIndex = (uint32_t) SelectedIndex;
 
@@ -1636,7 +1573,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_COLOR_SCHEME:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
@@ -1648,10 +1585,10 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_COLOR_LIST:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             // Show the position of the selected color of the gradient.
-            size_t Index = (size_t) _Colors.GetCurSel();
+            const size_t Index = (size_t) _Colors.GetCurSel();
 
             if (!msc::InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
@@ -1873,7 +1810,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_GRAPH_DESCRIPTION:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._Description = Text;
             break;
@@ -1885,7 +1822,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
             break;
@@ -1893,7 +1830,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeHi = std::clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
             break;
@@ -1901,7 +1838,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
             break;
@@ -1909,7 +1846,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
@@ -2019,7 +1956,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_POSITION:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
@@ -2045,7 +1982,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_OPACITY:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
@@ -2053,7 +1990,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_THICKNESS:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
@@ -2061,7 +1998,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_FONT_NAME:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_FontName = Text;
             break;
@@ -2069,7 +2006,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_FONT_SIZE:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
             break;
@@ -2172,28 +2109,28 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Y axis
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeLo, 0, 1);
             break;
         }
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeHi, 0, 1);
             break;
         }
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeStep, 0, 1);
             break;
         }
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             SetDouble(id, gs._Gamma, 0, 1);
             break;
@@ -2267,13 +2204,13 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Styles
         case IDC_OPACITY:
         {
-            SetInteger(id, (int64_t) (_State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Opacity * 100.f));
+            SetInteger(id, (int64_t) (_State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle])->_Opacity * 100.f));
             break;
         }
 
         case IDC_THICKNESS:
         {
-            SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_Thickness, 0, 1);
+            SetDouble(id, _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle])->_Thickness, 0, 1);
             break;
         }
 
@@ -2284,7 +2221,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_FONT_SIZE:
         {
-            SetDouble(id, _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle)->_FontSize, 0, 1);
+            SetDouble(id, _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle])->_FontSize, 0, 1);
             break;
         }
 
@@ -2361,7 +2298,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_FLIP_HORIZONTALLY:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2369,7 +2306,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_FLIP_VERTICALLY:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2377,7 +2314,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD_GRAPH:
         {
-            graph_settings_t NewGraphSettings = _State->_GraphSettings[_State->_SelectedGraph];
+            graph_settings_t NewGraphSettings = _State->_GraphSettings[_SelectedGraph];
 
             int Index = (int) _State->_GraphSettings.size();
 
@@ -2394,15 +2331,15 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _IsInitializing = false;
 
             ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).SetCurSel(Index);
-            _State->_SelectedGraph = (size_t) Index;
+            _SelectedGraph = (size_t) Index;
             break;
         }
 
         case IDC_REMOVE_GRAPH:
         {
-            _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _State->_SelectedGraph);
+            _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _SelectedGraph);
 
-            _State->_SelectedGraph = std::clamp(_State->_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
+            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
 
             UpdateGraphsPage();
             break;
@@ -2410,7 +2347,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_X_AXIS_TOP:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2418,7 +2355,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_X_AXIS_BOTTOM:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2426,7 +2363,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_Y_AXIS_LEFT:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2434,7 +2371,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_Y_AXIS_RIGHT:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2442,7 +2379,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_USE_ABSOLUTE:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2528,7 +2465,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
@@ -2556,7 +2493,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (_Colors.GetCount() == 1)
                 return;
 
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
@@ -2575,7 +2512,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_REVERSE:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             std::reverse(style->_CurrentGradientStops.begin(), style->_CurrentGradientStops.end());
 
@@ -2592,7 +2529,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_SPREAD:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UpdateGradientStopPositons(style, ~0U);
 
@@ -2602,12 +2539,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_HORIZONTAL_GRADIENT:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style->_Flags, style_t::Features::HorizontalGradient);
+                Set(style->Flags, style_t::Features::HorizontalGradient);
             else
-                UnSet(style->_Flags, style_t::Features::HorizontalGradient);
+                UnSet(style->Flags, style_t::Features::HorizontalGradient);
 
             UpdateStylesPage();
             break;
@@ -2615,18 +2552,18 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_AMPLITUDE_BASED:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style->_Flags, style_t::Features::AmplitudeBasedColor);
+                Set(style->Flags, style_t::Features::AmplitudeBasedColor);
             else
-                UnSet(style->_Flags, style_t::Features::AmplitudeBasedColor);
+                UnSet(style->Flags, style_t::Features::AmplitudeBasedColor);
             break;
         }
 
         case IDC_FONT_NAME_SELECT:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UINT DPI;
 
@@ -2879,7 +2816,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_LO_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gs._AmplitudeHi, 10.);
             SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
@@ -2888,7 +2825,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeHi = ClampNewSpinPosition(nmud, gs._AmplitudeLo, MaxAmplitude, 10.);
             SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
@@ -2897,7 +2834,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_State->_SelectedGraph];
+            auto & gs = _State->_GraphSettings[_SelectedGraph];
 
             gs._AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
             SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
@@ -2948,7 +2885,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_OPACITY_SPIN:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_Opacity = (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.);
             SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
@@ -2957,7 +2894,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_THICKNESS_SPIN:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             style->_Thickness = (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.);
             SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
@@ -2985,7 +2922,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_LIST:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             std::vector<D2D1_COLOR_F> Colors;
 
@@ -3008,7 +2945,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 
         case IDC_COLOR_BUTTON:
         {
-            style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             _Color.GetColor(style->_CustomColor);
 
@@ -3221,14 +3158,17 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
     for (const auto & Page : Pages)
     {    
-        int Mode = (index == PageNumber) ? SW_SHOW : SW_HIDE;
+        const int Mode = (index == PageNumber) ? SW_SHOW : SW_HIDE;
 
         for (size_t i = 0; i < Page.second; ++i)
         {
             auto w = GetDlgItem(Page.first[i]);
 
             if (w.IsWindow())
+            {
                 w.ShowWindow(Mode);
+                w.EnableWindow((Mode == SW_SHOW));
+            }
         }
 
         PageNumber++;
@@ -3359,7 +3299,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         for (const auto & Iter : _State->_GraphSettings)
             w.AddString(Iter._Description.c_str());
 
-        w.SetCurSel((int) _State->_SelectedGraph);
+        w.SetCurSel((int) _SelectedGraph);
     }
 
     if (_State->_VerticalLayout)
@@ -3381,7 +3321,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphSettings.size() > 1);
 
-    const auto & gs = _State->_GraphSettings[(size_t) _State->_SelectedGraph];
+    const auto & gs = _State->_GraphSettings[(size_t) _SelectedGraph];
 
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
@@ -3497,7 +3437,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateStylesPage() noexcept
 {
-    style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+    style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Update the controls based on the color source.
     switch (style->_ColorSource)
@@ -3607,7 +3547,7 @@ void ConfigurationDialog::UpdateColorControls()
 {
 //  Log::Write(Log::Level::Trace, "%8d: Updating color controls.", (int) ::GetTickCount64());
 
-    style_t * style = _State->_StyleManager.GetStyleByIndex(_State->_SelectedStyle);
+    style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Update the Color button.
     _Color.SetColor(style->_CurrentColor);
@@ -3675,7 +3615,7 @@ void ConfigurationDialog::UpdateColorControls()
 /// </summary>
 void ConfigurationDialog::UpdateCurrentColor(style_t * style) const noexcept
 {
-    style->UpdateCurrentColor(_State->_StyleManager._DominantColor, _State->_StyleManager._UserInterfaceColors);
+    style->UpdateCurrentColor(_State->_StyleManager.DominantColor, _State->_StyleManager.UserInterfaceColors);
 }
 
 /// <summary>
@@ -3756,8 +3696,8 @@ void ConfigurationDialog::GetPreset(const std::wstring & presetName) noexcept
 
     PresetManager::Load(_State->_PresetsDirectoryPath, presetName, &NewState);
 
-    NewState._StyleManager._DominantColor       = _State->_StyleManager._DominantColor;
-    NewState._StyleManager._UserInterfaceColors = _State->_StyleManager._UserInterfaceColors;
+    NewState._StyleManager.DominantColor       = _State->_StyleManager.DominantColor;
+    NewState._StyleManager.UserInterfaceColors = _State->_StyleManager.UserInterfaceColors;
 
     NewState._StyleManager.UpdateCurrentColors();
 
@@ -3838,6 +3778,36 @@ void ConfigurationDialog::SetNote(int id, uint32_t noteNumber) noexcept
     ::StringCchPrintfW(Text, _countof(Text), Notes[NoteIndex], Octave);
 
     SetDlgItemTextW(id, Text);
+}
+
+/// <summary>
+/// Fills the styles listbox with the styles used by the current visualization.
+/// </summary>
+void ConfigurationDialog::InitializeStyles()
+{
+    auto w = (CListBox) GetDlgItem(IDC_STYLES);
+
+    w.ResetContent();
+
+    _ActiveStyles.clear();
+
+    const auto User = (VisualizationTypes) ((uint64_t) 1 << (int) _State->_VisualizationType);
+
+    for (const auto & ID : _State->_StyleManager.DisplayOrder)
+    {
+        const auto Style = _State->_StyleManager.GetStyle(ID);
+
+        if ((uint64_t) Style->UsedBy & (uint64_t) User)
+        {
+            _ActiveStyles.push_back(ID);
+
+            w.AddString(Style->Name.c_str());
+        }
+    }
+
+    _SelectedStyle = 0;
+
+    w.SetCurSel((int) _SelectedStyle);
 }
 
 /// <summary>

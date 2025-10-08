@@ -302,8 +302,8 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
                 {
                     PresetManager::Load(_UIThread._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
-                    NewState._StyleManager._DominantColor       = _UIThread._StyleManager._DominantColor;
-                    NewState._StyleManager._UserInterfaceColors = _UIThread._StyleManager._UserInterfaceColors;
+                    NewState._StyleManager.DominantColor       = _UIThread._StyleManager.DominantColor;
+                    NewState._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
 
                     NewState._StyleManager.UpdateCurrentColors();
 
@@ -435,7 +435,7 @@ void uielement_t::OnColorsChanged()
 
     _CriticalSection.Enter();
 
-    _RenderThread._StyleManager._UserInterfaceColors = _UIThread._StyleManager._UserInterfaceColors;
+    _RenderThread._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
 
     ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 

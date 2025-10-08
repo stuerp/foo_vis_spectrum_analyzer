@@ -1241,13 +1241,13 @@ void state_t::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style->_ColorSource = ColorSource::DominantColor;
-            style->_CurrentColor = _StyleManager._DominantColor;
+            style->_CurrentColor = _StyleManager.DominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style->_ColorSource = ColorSource::UserInterface;
-            style->_CurrentColor = _StyleManager._UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style->_CurrentColor = _StyleManager.UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
@@ -1258,7 +1258,7 @@ void state_t::ConvertColorSettings() noexcept
         }
 
         if (_HorizontalGradient_Deprecated)
-            style->_Flags |= style_t::Features::HorizontalGradient;
+            style->Flags |= style_t::Features::HorizontalGradient;
     }
 
     {
@@ -1272,7 +1272,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1294,7 +1294,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1316,7 +1316,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1338,7 +1338,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {

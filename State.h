@@ -263,15 +263,12 @@ public:
     size_t _BinCount;
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
-    gradient_stops_t _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
+    gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
 
-    gradient_stops_t _GradientStops;                                       // The current gradient stops.
+    gradient_stops_t _GradientStops;                                    // The current gradient stops.
 
-    size_t _SelectedGraph;
-    int _SelectedStyle;
-
-    double _PlaybackTime;
-    double _TrackTime;
+    double _PlaybackTime;                                               // Used by spectogram
+    double _TrackTime;                                                  // Used by spectogram
 
     LONG64 _Barrier;
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.

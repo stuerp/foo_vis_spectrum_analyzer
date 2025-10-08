@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.09.18) P. Stuer **/
+/** $VER: Style.cpp (2025.10.08) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -25,7 +25,10 @@ style_t::style_t(const style_t & other)
 /// </summary>
 style_t & style_t::operator=(const style_t & other)
 {
-    _Flags = other._Flags;
+    Name = other.Name;
+    UsedBy = other.UsedBy;
+
+    Flags = other.Flags;
 
     _ColorSource = other._ColorSource;
     _ColorIndex = other._ColorIndex;
@@ -54,9 +57,12 @@ style_t & style_t::operator=(const style_t & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
+style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    _Flags = flags;
+    Name = name;
+    UsedBy = usedBy;
+
+    Flags = flags;
 
     _ColorSource = colorSource;
     _ColorIndex = colorIndex;

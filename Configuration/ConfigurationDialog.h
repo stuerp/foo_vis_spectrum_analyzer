@@ -70,7 +70,22 @@ private:
         return FALSE;
     #endif
     }
+/*
+    void OnMouseMove(UINT flags, CPoint point)
+    {
+        auto Child = ChildWindowFromPoint(point);
 
+        if (Child.IsWindowVisible() && !Child.IsWindowEnabled())
+        {
+            TOOLINFO ti = { sizeof(TOOLINFO) };
+
+            ti.hwnd = m_hWnd;
+            ti.uId = (UINT_PTR) Child.m_hWnd;
+
+            ::SendMessage(_ToolTipControl.m_hWnd, TTM_UPDATE, 0, (LPARAM) &ti);
+        }
+    }
+*/
     void Initialize();
     void Terminate();
 
@@ -109,11 +124,14 @@ private:
     void SetDouble(int id, double value, unsigned width = 0, unsigned precision = 2) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
 
+    void InitializeStyles();
+
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_CLOSE(OnClose)
 
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
+//      MSG_WM_MOUSEMOVE(OnMouseMove)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
@@ -144,6 +162,11 @@ private:
 
 private:
     HWND _hParent;
+
+    std::vector<VisualElement> _ActiveStyles;   // The styles relevant to the current visualization.
+    size_t _SelectedStyle;                      // Index of the selected style in the listbox.
+
+    size_t _SelectedGraph;                      // Index of the selected graph in the listbox.
 
     CToolTipCtrl _ToolTipControl;
 
