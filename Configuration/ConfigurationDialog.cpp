@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.10.05) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.10.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -25,6 +25,7 @@ static const WCHAR * const ChannelNames[] =
     L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
 };
 
+// Determines the order in which the styles will be displayed.
 static const WCHAR * const VisualElementNames[] =
 {
     L"Graph Background",
@@ -32,7 +33,10 @@ static const WCHAR * const VisualElementNames[] =
     L"Graph Description Background",
 
     L"X-axis Text",
+    L"X-axis Line",
     L"Y-axis Text",
+    L"Y-axis Line",
+
     L"Horizontal Grid Line",
     L"Vertical Grid Line",
 

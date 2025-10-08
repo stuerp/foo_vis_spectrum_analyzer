@@ -469,12 +469,64 @@ This page contains settings specific to some of the visualizations.
 
 Determines the type of visualization of a graph:
 
-- Bars: The classic spectrum visualization
-- Curve: The same as bars but with a smoothed curve instead of bars.
-- Spectogram
-- Peak / RMS: Displays the peak and RMS levels of the track.
-- Balance / Correlation: Displays the balance and mid/side correlation of the track.
-- Radial Bars: A variation of the Bars visualization that displays the spectrum in a circle.
+##### Bars
+
+The classic frequency spectrum visualization.
+
+![Screenshot](assets/Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
+
+##### Curve
+
+The same as bars but with a smoothed curve instead of bars.
+
+![Screenshot](assets/Curve.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+##### Spectogram
+
+![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+
+<sup>Horizontal scrolling spectogram visualization</sup>
+
+##### Peak / RMS
+
+Displays the peak and RMS levels of the audio.
+
+##### Balance / Correlation
+
+Displays the balance and mid/side correlation of the audio.
+
+##### Radial Bars
+
+A variation of the Bars visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+
+##### Radial Curve
+
+A variation of the Curve visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
+
+##### Oscilloscope
+
+Shows the shape of the audio signal over time, helping you understand how sound behaves. The X-axis represents the time and the Y-axis represents the amplitude of the signal.
+
+This visualization uses the following settings:
+
+- Graph Y-axis settings and channel selection
+- Styles: X-axis Line, Y-axis Text, Y-axis Line, Horizontal Grid Line and Oscilloscope Signal Line
+
+![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
+
+<sup>Oscilloscope</sup>
+
+![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
+
+<sup>Oscilloscope with Y-axis in dBFS</sup>
 
 #### Peak indicators group
 

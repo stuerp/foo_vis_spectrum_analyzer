@@ -147,7 +147,15 @@ private:
         },
 
         {
-            VisualElement::VerticalGridLine,
+            VisualElement::XAxisText,
+            {
+                style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+            }
+        },
+
+        {
+            VisualElement::XAxisLine,
             {
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
@@ -155,10 +163,18 @@ private:
         },
 
         {
-            VisualElement::XAxisText,
+            VisualElement::YAxisText,
             {
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+            }
+        },
+
+        {
+            VisualElement::YAxisLine,
+            {
+                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -171,10 +187,10 @@ private:
         },
 
         {
-            VisualElement::YAxisText,
+            VisualElement::VerticalGridLine,
             {
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 

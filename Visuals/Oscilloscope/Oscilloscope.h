@@ -44,11 +44,12 @@ private:
     std::vector<label_t> _Labels;
 
     style_t * _SignalLineStyle;
-    style_t * _HorizontalGridLineStyle;
-    style_t * _VerticalGridLineStyle;
 
-    style_t * _LineStyle;
-    style_t * _TextStyle;
+    style_t * _XAxisLineStyle;
+
+    style_t * _YAxisTextStyle;
+    style_t * _YAxisLineStyle;
+    style_t * _HorizontalGridLineStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

@@ -18,6 +18,10 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 <sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
 
+![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+
+<sup>Horizontal scrolling spectogram visualization</sup>
+
 ![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Radial Bars Mode</sup>
@@ -28,7 +32,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
-<sup>Oscilloscope Mode</sup>
+<sup>Oscilloscope Mode with Y-axis in dBFS</sup>
 
 ## Features
 
@@ -113,6 +117,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.9.0.0-alpha2, 2025-10-xx
 
+- New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.
 - Improved: Oscilloscope visualization.
   - X and Y-axis support
   - Y-axis none, dBFS and linear dBFS modes.

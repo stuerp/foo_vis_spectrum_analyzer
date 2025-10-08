@@ -50,6 +50,7 @@ void style_manager_t::Reset() noexcept
 /// </summary>
 style_t * style_manager_t::GetStyleByIndex(int index) noexcept
 {
+    // Keep in sync with ConfigurationDialog::VisualElementNames.
     static const VisualElement IndexToId[] =
     {
         VisualElement::GraphBackground,
@@ -57,7 +58,10 @@ style_t * style_manager_t::GetStyleByIndex(int index) noexcept
         VisualElement::GraphDescriptionBackground,
 
         VisualElement::XAxisText,
+        VisualElement::XAxisLine,
         VisualElement::YAxisText,
+        VisualElement::YAxisLine,
+
         VisualElement::HorizontalGridLine,
         VisualElement::VerticalGridLine,
 
@@ -172,8 +176,9 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
 
             style_t Style = { };
 
+            // Handle unknown styles. This can happen when an older component version reads a preset from a newer one.
             if (Id < (uint32_t) VisualElement::Count)
-                Style = _Styles[(VisualElement) Id];
+                Style = _Styles[(VisualElement) Id];    
 
             uint64_t Flags;
 

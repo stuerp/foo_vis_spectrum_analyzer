@@ -88,7 +88,7 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
-    #pragma region Serialized
+#pragma region Serialized
 
     Features _Flags;
 
@@ -104,7 +104,7 @@ public:
     std::wstring _FontName;
     FLOAT _FontSize;
 
-    #pragma endregion
+#pragma endregion
 
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;

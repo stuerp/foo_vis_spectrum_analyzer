@@ -21,12 +21,13 @@ oscilloscope_t::oscilloscope_t()
     _Bounds = { };
     _Size = { };
 
-    _SignalLineStyle =  nullptr;
-    _HorizontalGridLineStyle = nullptr;
-    _VerticalGridLineStyle = nullptr;
+    _SignalLineStyle = nullptr;
 
-    _LineStyle = nullptr;
-    _TextStyle = nullptr;
+    _XAxisLineStyle = nullptr;
+
+    _YAxisTextStyle = nullptr;
+    _YAxisLineStyle = nullptr;
+    _HorizontalGridLineStyle = nullptr;
 
     Reset();
 }
@@ -128,7 +129,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     const int SelectedChannelCount = std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphSettings->_SelectedChannels);
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
-    FLOAT YAxisWidth = _TextStyle->_Width;
+    FLOAT YAxisWidth = _YAxisTextStyle->_Width;
 
     amplitude_scaler_t Scaler;
 
@@ -159,37 +160,33 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
-    _TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
+    _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
     // Draw the axis.
-    for (uint32_t i = 0; i < ChannelCount; ++i)
+    const FLOAT x1 =                ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f;
+    const FLOAT x2 = _Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
+
+    // Y-axis
+    if (_GraphSettings->_YAxisMode != YAxisMode::None)
     {
-        const FLOAT Baseline = ChannelHeight * ((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f));
+        FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
 
-        const FLOAT x1 =                ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f;
-        const FLOAT x2 = _Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
-
-        // X-axis
-        if (_HorizontalGridLineStyle->IsEnabled())
-            renderTarget->DrawLine(D2D1::Point2F(x1, Baseline), D2D1::Point2F(x2, Baseline), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
-
-        // Y-axis
-        if (_GraphSettings->_YAxisMode != YAxisMode::None)
+        for (uint32_t i = 0; i < ChannelCount; ++i)
         {
             const FLOAT y1 = ChannelHeight * (FLOAT) i;
             const FLOAT y2 = y1 + ChannelHeight;
 
-            if (_VerticalGridLineStyle->IsEnabled())
+            if (_YAxisLineStyle->IsEnabled())
             {
                 if (_GraphSettings->_YAxisLeft)
-                    renderTarget->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
+                    renderTarget->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
 
                 if (_GraphSettings->_YAxisRight)
-                    renderTarget->DrawLine(D2D1::Point2F(x2 + 1.f, y1), D2D1::Point2F(x2 + 1.f, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, nullptr);
+                    renderTarget->DrawLine(D2D1::Point2F(x2 + 1.f, y1), D2D1::Point2F(x2 + 1.f, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
             }
 
-            if (_TextStyle->IsEnabled())
+            if (_YAxisTextStyle->IsEnabled())
             {
                 D2D1_RECT_F r = {  };
 
@@ -198,8 +195,8 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                     const FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     // Draw the label.
-                    r.top    = Label.IsMin ? y - _TextStyle->_Height : (Label.IsMax ? y : y - (_TextStyle->_Height / 2.f));
-                    r.bottom = r.top + _TextStyle->_Height;
+                    r.top    = Label.IsMin ? y - _YAxisTextStyle->_Height : (Label.IsMax ? y : y - (_YAxisTextStyle->_Height / 2.f));
+                    r.bottom = r.top + _YAxisTextStyle->_Height;
 
                     if (_HorizontalGridLineStyle->IsEnabled())
                         renderTarget->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
@@ -209,7 +206,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                         r.left  = 0.f;
                         r.right = x1 - 2.f;
 
-                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphSettings->_YAxisRight)
@@ -217,10 +214,23 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                         r.right = _Size.width - 1.f;
                         r.left  = x2 + 2.f;
 
-                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
+        }
+    }
+
+    // X-axis. Draw them last to prevent them from being overdrawn by the horizontal grid lines.
+    if (_XAxisLineStyle->IsEnabled())
+    {
+        FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
+
+        for (uint32_t i = 0; i < ChannelCount; ++i)
+        {
+            renderTarget->DrawLine(D2D1::Point2F(x1, ChannelBaseline), D2D1::Point2F(x2, ChannelBaseline), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, nullptr);
+
+            ChannelBaseline += ChannelHeight;
         }
     }
 
@@ -244,7 +254,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
             uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
             uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;      // Mask containing the channels selected by the user.
 
-            FLOAT ChannelBaseline = ChannelHeight;
+            FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
 
             for (uint32_t i = 0; i < ChannelCount; ++i)
             {
@@ -297,16 +307,16 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, renderTarget, Size, L"", &_SignalLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, L"", &_HorizontalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, renderTarget, Size, L"", &_XAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, Size, L"", &_VerticalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_YAxisTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, renderTarget, Size, L"", &_YAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_HorizontalGridLineStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
@@ -324,14 +334,28 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * render
 /// </summary>
 void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 {
-#ifdef _DEBUG
-    _DebugBrush.Release();
-#endif
-
-    if (_VerticalGridLineStyle)
+    if (_SignalLineStyle)
     {
-        _VerticalGridLineStyle->ReleaseDeviceSpecificResources();
-        _VerticalGridLineStyle = nullptr;
+        _SignalLineStyle->ReleaseDeviceSpecificResources();
+        _SignalLineStyle = nullptr;
+    }
+
+    if (_XAxisLineStyle)
+    {
+        _XAxisLineStyle->ReleaseDeviceSpecificResources();
+        _XAxisLineStyle = nullptr;
+    }
+
+    if (_YAxisTextStyle)
+    {
+        _YAxisTextStyle->ReleaseDeviceSpecificResources();
+        _YAxisTextStyle = nullptr;
+    }
+
+    if (_YAxisLineStyle)
+    {
+        _YAxisLineStyle->ReleaseDeviceSpecificResources();
+        _YAxisLineStyle = nullptr;
     }
 
     if (_HorizontalGridLineStyle)
@@ -340,21 +364,7 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
         _HorizontalGridLineStyle = nullptr;
     }
 
-    if (_SignalLineStyle)
-    {
-        _SignalLineStyle->ReleaseDeviceSpecificResources();
-        _SignalLineStyle = nullptr;
-    }
-
-    if (_TextStyle)
-    {
-        _TextStyle->ReleaseDeviceSpecificResources();
-        _TextStyle = nullptr;
-    }
-
-    if (_LineStyle)
-    {
-        _LineStyle->ReleaseDeviceSpecificResources();
-        _LineStyle = nullptr;
-    }
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
 }

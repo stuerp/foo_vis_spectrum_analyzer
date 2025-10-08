@@ -346,9 +346,12 @@ enum class VisualElement : uint32_t
     GraphDescriptionBackground  = 14,
 
     XAxisText                   =  2,
-    VerticalGridLine            =  3,
+    XAxisLine                   = 33,
     YAxisText                   =  4,
+    YAxisLine                   = 34,
+
     HorizontalGridLine          =  5,
+    VerticalGridLine            =  3,
 
     BarArea                     =  6,
     BarTop                      = 16,
@@ -385,7 +388,7 @@ enum class VisualElement : uint32_t
 
     SignalLine                  = 32,
 
-    Count                       = 33
+    Count                       = 35
 };
 
 enum class ColorSource : uint32_t
