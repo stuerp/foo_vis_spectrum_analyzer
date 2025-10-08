@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2025.09.24) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2025.10.08) P. Stuer **/
 
 #include "Resources.h"
 
@@ -296,6 +296,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         rtext       "LED gap:"                      IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
         edittext                                    IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        control     "Integral Size",                IDC_LED_INTEGRAL_SIZE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C29, Y_C29, W_C29, H_C29
+
 /*
     groupbox "Bars", IDC_BARS, X_B17, Y_B17, W_B17, H_B17, BS_GROUPBOX, WS_EX_TRANSPARENT
 */

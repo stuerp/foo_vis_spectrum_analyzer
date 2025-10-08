@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.09.28) P. Stuer **/
+/** $VER: Spectrum.cpp (2025.10.08) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -150,6 +150,8 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
 
     const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
+    const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
 
@@ -173,7 +175,12 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _DarkBackgroundStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.bottom = std::ceil(Rect.bottom / LEDSize) * LEDSize;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _DarkBackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
         }
         else
@@ -205,7 +212,12 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _BarPeakAreaStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.bottom = std::ceil(Rect.bottom / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _BarPeakAreaStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the peak indicator top.
@@ -214,7 +226,7 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                     Rect.top    = ::ceil(std::clamp(Rect.bottom - _BarPeakTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height));
                     Rect.bottom = ::ceil(std::clamp(Rect.top    + _BarPeakTopStyle->_Thickness,       0.f, _ClientSize.height));
 
-                    FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
+                    const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
 
                     _BarPeakTopStyle->_Brush->SetOpacity(Opacity);
 
@@ -235,7 +247,12 @@ void spectrum_t::RenderBars(ID2D1RenderTarget * renderTarget) noexcept
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _BarAreaStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.bottom = std::ceil(Rect.bottom / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _BarAreaStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the bar top.
@@ -683,9 +700,11 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 
             rt->Clear();
 
-            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
+            if (LEDSize > 0.f)
             {
-                for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += (_State->_LEDSize + _State->_LEDGap))
+                for (FLOAT y = _State->_LEDGap; y < _ClientSize.height; y += LEDSize)
                     rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
             }
 

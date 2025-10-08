@@ -1,5 +1,5 @@
 
-/** $VER: Gauges.cpp (2025.09.24) P. Stuer - Implements the gauges of the peak meter. **/
+/** $VER: Gauges.cpp (2025.10.08) P. Stuer - Implements the gauges of the peak meter. **/
 
 #include "pch.h"
 
@@ -63,6 +63,8 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
 
+    const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
 #ifdef _DEBUG
@@ -85,7 +87,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             // Draw the peak.
@@ -100,7 +107,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (Peak, 0dBFS)
@@ -115,7 +127,15 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.x1 = std::ceil(Rect.x1 / LEDSize) * LEDSize;
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+                        }
+
                         renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.x1 = OldLeft;
                 }
@@ -153,7 +173,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (RMS, 0dBFS)
@@ -168,7 +193,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.x1 = OldLeft;
                 }
@@ -193,7 +223,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             // Draw the peak.
@@ -208,7 +243,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (Peak, 0dBFS)
@@ -223,7 +263,15 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.y1 = std::ceil(Rect.y1 / LEDSize) * LEDSize;
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+                        }
+
                         renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.y1 = OldTop;
                 }
@@ -261,7 +309,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
                         renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (RMS, 0dBFS)
@@ -276,7 +329,15 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     if (!_State->_LEDMode)
                         renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
                     else
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.y1 = std::ceil(Rect.y1 / LEDSize) * LEDSize;
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+                        }
+
                         renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.y1 = OldTop;
                 }

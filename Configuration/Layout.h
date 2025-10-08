@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.09.24) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2025.10.08) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1268,8 +1268,16 @@
     #define Y_C20    Y_C19
     #pragma endregion
 
+    #pragma region LED integral height
+    // Checkbox
+    #define W_C29    60
+    #define H_C29    H_CBX
+    #define X_C29    X_C12
+    #define Y_C29    Y_C20 + H_C20 + IY
+    #pragma endregion
+
 #define W_B07  W_B13
-#define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + 7
+#define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + IY + H_C29 + 7
 #pragma endregion
 
 #pragma region Bars (Not used yet)

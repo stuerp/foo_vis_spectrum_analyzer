@@ -170,8 +170,6 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     // Y-axis
     if (_GraphSettings->_YAxisMode != YAxisMode::None)
     {
-        FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
-
         for (uint32_t i = 0; i < ChannelCount; ++i)
         {
             const FLOAT y1 = ChannelHeight * (FLOAT) i;

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.10.05) P. Stuer **/
+/** $VER: Resources.h (2025.10.08) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha1"
+#define STR_RELEASE_TAG         "-alpha2"
 
 /** Component specific **/
 
@@ -401,6 +401,7 @@
 #define IDC_LED_SIZE                    7126
 #define IDC_LED_GAP_LBL                 7128
 #define IDC_LED_GAP                     7130
+#define IDC_LED_INTEGRAL_SIZE           7132
 
 // Bars
 

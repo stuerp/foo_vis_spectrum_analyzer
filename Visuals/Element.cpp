@@ -25,7 +25,7 @@ void element_t::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F
         Transform = Transform * FlipV;
     }
 
-    D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(bounds.left, bounds.top);
+    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(bounds.left, bounds.top);
 
     renderTarget->SetTransform(Transform * Translate);
 }

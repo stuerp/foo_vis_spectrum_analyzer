@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2025.09.24) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2025.10.08) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -89,6 +89,8 @@ void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     const FLOAT CenterX = GetWidth()  / 2.f;
     const FLOAT CenterY = GetHeight() / 2.f;
 
+    const FLOAT LEDHeight = _State->_LEDSize + _State->_LEDGap;
+
     if (_State->_HorizontalLevelMeter)
     {
         // Render the gauges.
@@ -102,7 +104,12 @@ void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _LeftRightStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             if (_LeftRightIndicatorStyle->IsEnabled())
@@ -122,7 +129,12 @@ void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _MidSideStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             if (_MidSideIndicatorStyle->IsEnabled())
@@ -180,7 +192,12 @@ void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _LeftRightStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             if (_LeftRightIndicatorStyle->IsEnabled())
@@ -200,7 +217,12 @@ void level_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 if (!_State->_LEDMode)
                     renderTarget->FillRectangle(Rect, _MidSideStyle->_Brush);
                 else
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
+
                     renderTarget->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             if (_MidSideIndicatorStyle->IsEnabled())
@@ -350,16 +372,28 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexc
 
             rt->Clear();
 
-            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
+            if (LEDSize > 0.f)
             {
                 if (_State->_HorizontalLevelMeter)
                 {
-                    for (FLOAT x = _State->_LEDGap; x < Size.width; x += (_State->_LEDSize + _State->_LEDGap))
+                    FLOAT w = Size.width;
+
+                    if (_State->_LEDIntegralSize)
+                        w = std::ceil(w / LEDSize) * LEDSize;
+
+                    for (FLOAT x = ((Size.width - w) / 2.f) + _State->_LEDGap; x < w; x += LEDSize)
                         rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, Size.height), Brush);
                 }
                 else
                 {
-                    for (FLOAT y = _State->_LEDGap; y < Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    FLOAT h = Size.height;
+
+                    if (_State->_LEDIntegralSize)
+                        h = std::ceil(h / LEDSize) * LEDSize;
+
+                    for (FLOAT y = ((Size.height - h) / 2.f) + _State->_LEDGap; y < h; y += LEDSize)
                         rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDSize), Brush);
                 }
             }

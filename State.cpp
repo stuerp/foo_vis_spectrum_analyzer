@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.10.02) P. Stuer **/
+/** $VER: State.cpp (2025.10.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -204,9 +204,12 @@ void state_t::Reset() noexcept
     _DrawBandBackground_Deprecated = true;
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
     _LEDMode = false;
     _LEDSize = 2.f;
     _LEDGap = 2.f;
+    _LEDIntegralSize = false;
+
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
@@ -461,9 +464,12 @@ state_t & state_t::operator=(const state_t & other)
     _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
     _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
     _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
+
     _LEDMode = other._LEDMode;
     _LEDSize = other._LEDSize;
     _LEDGap = other._LEDGap;
+    _LEDIntegralSize = other._LEDIntegralSize;
+
     _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
@@ -898,11 +904,12 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 30)
         {
+            reader->read(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
         }
     }
     catch (exception & ex)
     {
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read DUI configuration: %s", ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read configuration: %s", ex.what());
 
         Reset();
     }
@@ -1207,10 +1214,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         // Version 29, v0.8.0.0
         writer->write(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
+
+        // Version 30, v0.9.0.0-alpha2
+        writer->write(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
     }
     catch (exception & ex)
     {
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write CUI configuration: %s", ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write configuration: %s", ex.what());
     }
 }
 

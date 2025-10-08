@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.10.02) P. Stuer **/
+/** $VER: State.h (2025.10.08) P. Stuer **/
 
 #pragma once
 
@@ -202,6 +202,7 @@ public:
             bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
             FLOAT _LEDSize;                                         // Size of the LED.
             FLOAT _LEDGap;                                          // Gap between the LEDs.
+            bool _LEDIntegralSize;                                   // The LEDs will be rendered with an integral height.
 
         #pragma endregion
 
@@ -342,7 +343,7 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 30; // v0.8.1.0-alpha1
+    const size_t _CurrentVersion = 30; // v0.9.0.0-alpha2
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

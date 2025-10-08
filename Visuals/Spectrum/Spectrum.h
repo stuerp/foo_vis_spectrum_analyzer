@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.28) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.28) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 

@@ -118,10 +118,12 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.9.0.0-alpha2, 2025-10-xx
 
 - New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.
+- New: LEDs have an *Integral Size* setting that will render the LEDs at full block intervals.
 - Improved: Oscilloscope visualization.
   - X and Y-axis support
   - Y-axis none, dBFS and linear dBFS modes.
   - Only the selected channels are rendered.
+- Fixed: Rendering bug in horizontally scrolling spectogram.
 
 You can read the full history [here](docs/History.md).
 

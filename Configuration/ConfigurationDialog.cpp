@@ -200,7 +200,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
             { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
 
-            { IDC_ARTWORK_BACKGROUND, L"Displays artwork on the graph background." },
+            { IDC_ARTWORK_BACKGROUND, L"Renders artwork on the graph background." },
             { IDC_ARTWORK_TYPE, L"Specifies which artwork will be shown on the graph background." },
 
             { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
@@ -253,9 +253,10 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_HOLD_TIME, L"Determines how long the peak values are held before they decay." },
             { IDC_ACCELERATION, L"Determines the accelaration of the peak value decay." },
 
-            { IDC_LED_MODE, L"Display the spectrum bars and peak meters as LEDs." },
+            { IDC_LED_MODE, L"Renders the spectrum bars and peak meters as LEDs." },
             { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
             { IDC_LED_GAP, L"Specifies the gap between the LEDs in pixels." },
+            { IDC_LED_INTEGRAL_SIZE, L"Renders the LEDs as full blocks." },
 
             { IDC_INNER_RADIUS, L"Sets the inner radius as a percentage of the smallest side of the graph area." },
             { IDC_OUTER_RADIUS, L"Sets the outer radius as a percentage of the smallest side of the graph area." },
@@ -1115,6 +1116,8 @@ void ConfigurationDialog::Initialize()
 
         SetDouble(IDC_LED_SIZE, _State->_LEDSize, 0, 0);
         SetDouble(IDC_LED_GAP, _State->_LEDGap, 0, 0);
+
+        SendDlgItemMessageW(IDC_LED_INTEGRAL_SIZE, BM_SETCHECK, _State->_LEDIntegralSize);
     }
 
     #pragma endregion
@@ -2463,6 +2466,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_LED_INTEGRAL_SIZE:
+        {
+            _State->_LEDIntegralSize = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_SCROLLING_SPECTOGRAM:
         {
             _State->_ScrollingSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -3118,6 +3127,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_LED_MODE,
             IDC_LED_SIZE_LBL, IDC_LED_SIZE,
             IDC_LED_GAP_LBL, IDC_LED_GAP,
+            IDC_LED_INTEGRAL_SIZE,
 /*
         IDC_BARS,
 */
@@ -3455,6 +3465,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
     GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_INTEGRAL_SIZE).EnableWindow(HasLEDs);
 
     const bool IsRadial = IsRadialBars || IsRadialCurve;
 
