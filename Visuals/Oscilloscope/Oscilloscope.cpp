@@ -112,8 +112,8 @@ void oscilloscope_t::Resize() noexcept
 /// </summary>
 void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 {
-    const size_t FrameCount      = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount  = _Analysis->_Chunk.get_channel_count();
+    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
+    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
     if ((FrameCount == 0) || (ChannelCount == 0))
         return;
@@ -125,7 +125,9 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    const FLOAT ChannelHeight = _Size.height / (FLOAT) ChannelCount; // Height available to one channel.
+    const int SelectedChannelCount = std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphSettings->_SelectedChannels);
+
+    const FLOAT ChannelHeight = _Size.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
     FLOAT YAxisWidth = _TextStyle->_Width;
 
     amplitude_scaler_t Scaler;
@@ -212,7 +214,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
                     if (_GraphSettings->_YAxisRight)
                     {
-                        r.right = _Size.width - 1;
+                        r.right = _Size.width - 1.f;
                         r.left  = x2 + 2.f;
 
                         renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _TextStyle->_TextFormat, r, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
@@ -239,28 +241,39 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         {
             const FLOAT ZoomFactor = (FLOAT) 1.f;
 
+            uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
+            uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;      // Mask containing the channels selected by the user.
+
+            FLOAT ChannelBaseline = ChannelHeight;
+
             for (uint32_t i = 0; i < ChannelCount; ++i)
             {
-                const FLOAT Baseline = ChannelHeight * ((FLOAT) i + ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f));
-
-                const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
-                FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
-
-                for (t_uint32 j = 0; j < FrameCount; ++j)
+                if ((ChunkChannels & 1) == (SelectedChannels & 1))
                 {
-                    const FLOAT Value = (FLOAT) Scaler(Samples[(j * ChannelCount) + i]);
+                    const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
+                    FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
 
-                    const FLOAT y = Baseline - (Value * ZoomFactor * ChannelHeight);
+                    for (t_uint32 j = 0; j < FrameCount; ++j)
+                    {
+                        const FLOAT Value = (FLOAT) Scaler(Samples[(j * ChannelCount) + i]);
 
-                    if (j == 0)
-                        Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-                    else
-                        Sink->AddLine(D2D1::Point2F(x, y));
+                        const FLOAT y = ChannelBaseline - (Value * ZoomFactor * ChannelHeight);
 
-                    x += dx;
+                        if (j == 0)
+                            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+                        else
+                            Sink->AddLine(D2D1::Point2F(x, y));
+
+                        x += dx;
+                    }
+
+                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                    ChannelBaseline += ChannelHeight;
                 }
 
-                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+                ChunkChannels    >>= 1;
+                SelectedChannels >>= 1;
             }
 
             hr = Sink->Close();

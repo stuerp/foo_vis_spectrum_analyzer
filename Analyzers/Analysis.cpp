@@ -746,7 +746,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
         size_t j = 0;
 
         uint32_t ChunkChannels    = chunk.get_channel_config();                     // Mask containing the channels in the audio chunk.
-        uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;                      // Mask containing the channels selected by the user for the level measuring.
+        uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user for the level measuring.
         uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user for the balance measuring.
 
         while (ChunkChannels != 0)
