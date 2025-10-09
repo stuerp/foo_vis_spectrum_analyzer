@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2025.10.08) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2025.10.09) P. Stuer **/
 
 #include "Resources.h"
 
@@ -302,7 +302,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 /*
     groupbox "Bars", IDC_BARS, X_B17, Y_B17, W_B17, H_B17, BS_GROUPBOX, WS_EX_TRANSPARENT
 */
-    groupbox "Radial Bars", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Radial Bars / Radial Curve", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext       "Inner radius:"                 IDC_INNER_RADIUS_LBL,           X_C30, Y_C30 + 2, W_C30, H_C30
         edittext                                    IDC_INNER_RADIUS,               X_C31, Y_C31, W_C31, H_C31, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

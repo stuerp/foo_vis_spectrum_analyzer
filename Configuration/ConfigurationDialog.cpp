@@ -1663,6 +1663,15 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
 
         GetPreset(PresetName);
 
+        UpdateTransformPage();
+        UpdateFrequenciesPage();
+        UpdateFiltersPage();
+        UpdateCommonPage();
+        UpdateGraphsPage();
+        UpdateVisualizationPage();
+        UpdateStylesPage();
+        UpdatePresetsPage();
+
         GetPresetNames();
     }
     else
@@ -2628,6 +2637,15 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetPreset(PresetName);
 
+            UpdateTransformPage();
+            UpdateFrequenciesPage();
+            UpdateFiltersPage();
+            UpdateCommonPage();
+            UpdateGraphsPage();
+            UpdateVisualizationPage();
+            UpdateStylesPage();
+            UpdatePresetsPage();
+
             GetPresetNames();
             break;
         }
@@ -3165,10 +3183,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             auto w = GetDlgItem(Page.first[i]);
 
             if (w.IsWindow())
-            {
                 w.ShowWindow(Mode);
-                w.EnableWindow((Mode == SW_SHOW));
-            }
         }
 
         PageNumber++;
@@ -3180,65 +3195,96 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateTransformPage() noexcept
 {
-    const bool IsFFT = (_State->_Transform == Transform::FFT);
-    const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    // Transform
-    bool HasParameter = (_State->_WindowFunction == WindowFunction::PowerOfSine)
-                     || (_State->_WindowFunction == WindowFunction::PowerOfCircle)
-                     || (_State->_WindowFunction == WindowFunction::Gauss)
-                     || (_State->_WindowFunction == WindowFunction::Tukey)
-                     || (_State->_WindowFunction == WindowFunction::Kaiser)
-                     || (_State->_WindowFunction == WindowFunction::Poison)
-                     || (_State->_WindowFunction == WindowFunction::HyperbolicSecant);
+    const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
 
-    GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
-    GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
-    GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
+    if (SupportsTransform)
+    {
+        const bool IsFFT = (_State->_Transform == Transform::FFT);
+        const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
 
-    // FFT
-    for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
-        GetDlgItem(Iter).EnableWindow(IsFFT);
+        // Transform
+        bool HasParameter = (_State->_WindowFunction == WindowFunction::PowerOfSine)
+                         || (_State->_WindowFunction == WindowFunction::PowerOfCircle)
+                         || (_State->_WindowFunction == WindowFunction::Gauss)
+                         || (_State->_WindowFunction == WindowFunction::Tukey)
+                         || (_State->_WindowFunction == WindowFunction::Kaiser)
+                         || (_State->_WindowFunction == WindowFunction::Poison)
+                         || (_State->_WindowFunction == WindowFunction::HyperbolicSecant);
 
-    for (const auto & Iter : { IDC_NUM_BINS,  })
-        GetDlgItem(Iter).EnableWindow(IsFFT);
+        GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
+        GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
+        GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
 
-    const bool NotFixed = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
-
-        GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsIIR) && NotFixed);
-
-        #pragma warning (disable: 4061)
-        switch (_State->_FFTMode)
+        // FFT
         {
-            default:
-                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"");
-                break;
+            for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+                GetDlgItem(Iter).EnableWindow(IsFFT);
 
-            case FFTMode::FFTCustom:
-                SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom);
-                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
-                break;
+            for (const auto & Iter : { IDC_NUM_BINS,  })
+                GetDlgItem(Iter).EnableWindow(IsFFT);
 
-            case FFTMode::FFTDuration:
-                SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration);
-                SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
-                break;
+            const bool NotFixed = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
+
+            GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsIIR) && NotFixed);
+
+            #pragma warning (disable: 4061)
+            switch (_State->_FFTMode)
+            {
+                default:
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"");
+                    break;
+
+                case FFTMode::FFTCustom:
+                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom);
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
+                    break;
+
+                case FFTMode::FFTDuration:
+                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration);
+                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
+                    break;
+            }
+            #pragma warning (default: 4061)
         }
-        #pragma warning (default: 4061)
 
-    // Brown-Puckette CQT
-    const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
+        // Brown-Puckette CQT
+        {
+            const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
 
-        for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
-            GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
+            for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
+                GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
 
-    GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
+            GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER).EnableWindow(IsBrownPuckette && HasParameter);
+        }
 
-    // IIR (SWIFT / Analog-style)
-    for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, })
-        GetDlgItem(Iter).EnableWindow(IsIIR);
+        // IIR (SWIFT / Analog-style)
+        {
+            for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, })
+                GetDlgItem(Iter).EnableWindow(IsIIR);
 
-    GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_Transform == Transform::AnalogStyle);
+            GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_Transform == Transform::AnalogStyle);
+        }
+    }
+    else
+    {
+        for (const auto & Iter :
+        {
+            IDC_METHOD,
+            IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
+            IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER,
+            IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD,
+            IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+            IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
+            IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY,
+            IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q, IDC_COMPENSATE_BW, IDC_PREWARPED_Q,
+        })
+            GetDlgItem(Iter).EnableWindow(SupportsTransform);
+    }
 }
 
 /// <summary>
@@ -3246,18 +3292,44 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateFrequenciesPage() noexcept
 {
-    const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
-//  const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
-    GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
-    GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
+    const bool SupportsFrequencies = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
 
-//  GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
-//  GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
+    if (SupportsFrequencies)
+    {
+        const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
+    //  const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
 
-    for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
-        GetDlgItem(Iter).EnableWindow(IsOctaves);
+        GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
+        GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
+        GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
+
+    //  GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
+    //  GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
+
+        for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
+            GetDlgItem(Iter).EnableWindow(IsOctaves);
+    }
+    else
+    {
+        for (const auto & Iter :
+        {
+            IDC_DISTRIBUTION,
+            IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN,
+            IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+            IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+            IDC_PITCH, IDC_PITCH_SPIN,
+            IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+            IDC_SCALING_FUNCTION,
+            IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+            IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+        })
+            GetDlgItem(Iter).EnableWindow(SupportsFrequencies);
+    }
 }
 
 /// <summary>
@@ -3265,7 +3337,15 @@ void ConfigurationDialog::UpdateFrequenciesPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateFiltersPage() noexcept
 {
-    const bool HasFilter = (_State->_WeightingType != WeightingType::None);
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+
+    const bool SupportsFilter = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+
+    GetDlgItem(IDC_ACOUSTIC_FILTER).EnableWindow(SupportsFilter);
+
+    const bool HasFilter = (_State->_WeightingType != WeightingType::None) && SupportsFilter;
 
     for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
         GetDlgItem(Iter).EnableWindow(HasFilter);
@@ -3276,8 +3356,17 @@ void ConfigurationDialog::UpdateFiltersPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateCommonPage() const noexcept
 {
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+
     // Common
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
+
+    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+
+    for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SMOOTHING_FACTOR, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
+        GetDlgItem(ID).EnableWindow(SupportsFFT);
 
     // Artwork
     GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
@@ -3291,6 +3380,8 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateGraphsPage() noexcept
 {
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+
     {
         auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
 
@@ -3326,45 +3417,61 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
     // Layout
-    ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gs._HorizontalAlignment);
+    {
+        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gs._HorizontalAlignment);
 
-    CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
-    CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
+        CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
+        CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
+
+        const bool SupportsLayout = !IsOscilloscope;
+
+        for (const auto ID : { IDC_HORIZONTAL_ALIGNMENT, IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
+            GetDlgItem(ID).EnableWindow(SupportsLayout);
+    }
 
     // X axis
-    ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
+    {
+        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
 
-    CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
-    CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
+        CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
-    GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
-    GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
+        GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
+
+        const bool SupportsXAxis = !IsOscilloscope;
+
+        for (const auto ID : { IDC_X_AXIS_MODE, IDC_X_AXIS_TOP, IDC_X_AXIS_BOTTOM })
+            GetDlgItem(ID).EnableWindow(SupportsXAxis);
+    }
 
     // Y axis
-    ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
+    {
+        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
 
-    CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
-    CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
+        CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
-    SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
-    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gs._AmplitudeLo * 10.));
+        SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gs._AmplitudeLo * 10.));
 
-    SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
-    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gs._AmplitudeHi * 10.));
+        SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gs._AmplitudeHi * 10.));
 
-    SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
-    CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
+        SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
 
-    for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-        GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
+        for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
+            GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
 
-    SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
-    SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
+        SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
 
-    const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
+        const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
             GetDlgItem(Iter).EnableWindow(IsLinear);
+    }
 
     // Channels
     {
@@ -3386,16 +3493,17 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 /// </summary>
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
-    const bool IsBars        = (_State->_VisualizationType == VisualizationType::Bars);
-    const bool IsSpectogram  = (_State->_VisualizationType == VisualizationType::Spectogram);
-    const bool IsPeakMeter   = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter  = (_State->_VisualizationType == VisualizationType::LevelMeter);
-    const bool IsRadialBars  = (_State->_VisualizationType == VisualizationType::RadialBars);
-    const bool IsRadialCurve = (_State->_VisualizationType == VisualizationType::RadialCurve);
+    const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
+    const bool IsSpectogram   = (_State->_VisualizationType == VisualizationType::Spectogram);
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsRadialBars   = (_State->_VisualizationType == VisualizationType::RadialBars);
+    const bool IsRadialCurve  = (_State->_VisualizationType == VisualizationType::RadialCurve);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!IsSpectogram);
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram || IsOscilloscope));
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !IsSpectogram;
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram || IsOscilloscope);
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
