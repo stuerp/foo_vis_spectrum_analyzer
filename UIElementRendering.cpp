@@ -22,7 +22,7 @@
 /// </summary>
 void uielement_t::OnTimer() noexcept
 {
-    if (_IsFrozen || !_IsVisible || ::IsIconic(core_api::get_main_window()))
+    if (_IsFrozen || !_IsVisible || ::IsIconic(m_hWnd)) // ::IsIconic(core_api::get_main_window()))
         return;
 
     LONG64 StateBarrier = ::InterlockedIncrement64(&_RenderThread._Barrier);

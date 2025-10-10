@@ -1,6 +1,17 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.9.0.0-alpha2, 2025-10-09
+
+- New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.
+- New: LED Mode has an *Integral Size* setting that will render the LEDs at full instead of fractional block sizes.
+- New: The configuration dialog will only show the styles that are used by the current visualization.
+- Improved: Oscilloscope visualization.
+  - X and Y-axis support
+  - Y-axis none, dBFS and linear dBFS modes.
+  - Only the selected channels are rendered.
+- Fixed: Rendering bug in horizontally scrolling spectogram.
+
 v0.9.0.0-alpha1, 2025-10-05
 
 - New: Radial Curve visualization.

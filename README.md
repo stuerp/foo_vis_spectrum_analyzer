@@ -115,16 +115,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.0.0-alpha2, 2025-10-xx
+v0.9.0.0-alpha3, 2025-10-10
 
-- New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.
-- New: LED Mode has an *Integral Size* setting that will render the LEDs at full instead of fractional block sizes.
-- New: The configuration dialog will only show the styles that are used by the current visualization.
-- Improved: Oscilloscope visualization.
-  - X and Y-axis support
-  - Y-axis none, dBFS and linear dBFS modes.
-  - Only the selected channels are rendered.
-- Fixed: Rendering bug in horizontally scrolling spectogram.
+- Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
 
 You can read the full history [here](docs/History.md).
 
