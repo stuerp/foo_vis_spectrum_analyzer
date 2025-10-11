@@ -49,25 +49,25 @@ void peak_read_out_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void peak_read_out_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept
+void peak_read_out_t::Render(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr) || !IsVisible())
         return;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     if (_State->_HorizontalPeakMeter)
-        RenderHorizontal(renderTarget, gaugeMetrics);
+        RenderHorizontal(deviceContext, gaugeMetrics);
     else
-        RenderVertical(renderTarget, gaugeMetrics);
+        RenderVertical(deviceContext, gaugeMetrics);
 }
 
 /// <summary>
 /// Render this instance horizontally.
 /// </summary>
-void peak_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
+void peak_read_out_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -95,8 +95,8 @@ void peak_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const g
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
- //         renderTarget->FillRectangle(Rect, _DebugBrush);
-            renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+ //         deviceContext->FillRectangle(Rect, _DebugBrush);
+            deviceContext->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         Rect.top += _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
@@ -106,7 +106,7 @@ void peak_read_out_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const g
 /// <summary>
 /// Render this instance vertically.
 /// </summary>
-void peak_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
+void peak_read_out_t::RenderVertical(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -134,8 +134,8 @@ void peak_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gau
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
-//          renderTarget->FillRectangle(Rect, _DebugBrush);
-            renderTarget->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//          deviceContext->FillRectangle(Rect, _DebugBrush);
+            deviceContext->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         Rect.left += _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
@@ -145,18 +145,18 @@ void peak_read_out_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gau
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
-    D2D1_SIZE_F Size = renderTarget->GetSize();
+    D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevelText, renderTarget, Size, L"+199.9", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevelText, deviceContext, Size, L"+199.9", &_TextStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
 
     return hr;

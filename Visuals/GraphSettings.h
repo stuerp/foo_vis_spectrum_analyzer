@@ -33,7 +33,7 @@ public:
         Initialize();
     }
 
-    double ScaleA(double value) const;
+    double ScaleAmplitude(double value) const;
 
 private:
     void Initialize()

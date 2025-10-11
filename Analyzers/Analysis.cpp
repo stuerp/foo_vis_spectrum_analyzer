@@ -434,8 +434,8 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
 /// </summary>
 void analysis_t::GenerateLinearFrequencyBands()
 {
-    const double MinScale = ScaleF(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleF(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleFrequency(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
     const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
 
@@ -564,31 +564,48 @@ void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
     if (_WindowFunction == nullptr)
         _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
-    if ((_FFTAnalyzer == nullptr) && (_State->_Transform == Transform::FFT))
+    switch (_State->_Transform)
     {
-        if (_BrownPucketteKernel == nullptr)
-            _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+        case Transform::FFT:
+        {
+            if (_FFTAnalyzer == nullptr)
+            {       
+                if (_BrownPucketteKernel == nullptr)
+                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
 
-        _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
-    }
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+            }
+            break;
+        }
 
-    if ((_CQTAnalyzer == nullptr) && (_State->_Transform == Transform::CQT))
-    {
-        _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-    }
+        case Transform::CQT:
+        {
+            if (_CQTAnalyzer == nullptr)
+                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+            break;
+        }
 
-    if ((_SWIFTAnalyzer == nullptr) && (_State->_Transform == Transform::SWIFT))
-    {
-        _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
+        case Transform::SWIFT:
+        {
+            if (_SWIFTAnalyzer == nullptr)
+            {
+                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
 
-        _SWIFTAnalyzer->Initialize(_FrequencyBands);
-    }
+                _SWIFTAnalyzer->Initialize(_FrequencyBands);
+            }
+            break;
+        }
 
-    if ((_AnalogStyleAnalyzer == nullptr) && (_State->_Transform == Transform::AnalogStyle))
-    {
-        _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+        case Transform::AnalogStyle:
+        {
+            if (_AnalogStyleAnalyzer == nullptr)
+            {
+                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
 
-        _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
+                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
+            }
+            break;
+        }
     }
 }
 
@@ -682,7 +699,7 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 void analysis_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(_GraphSettings->ScaleA(fb.NewValue), 0.0, 1.0);
+        fb.CurValue = std::clamp(_GraphSettings->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
 }
 
 /// <summary>
@@ -691,7 +708,7 @@ void analysis_t::Normalize() noexcept
 void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
 }
 
 /// <summary>
@@ -700,7 +717,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleA(fb.NewValue) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
 }
 
 #pragma endregion

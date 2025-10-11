@@ -419,69 +419,69 @@ void peak_meter_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void peak_meter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
 
     // Render the gauge scales.
     {
-        renderTarget->SetTransform(_GaugeScalesTransform);
+        deviceContext->SetTransform(_GaugeScalesTransform);
 
-        _GaugeScales.Render(renderTarget);
+        _GaugeScales.Render(deviceContext);
     }
 
     // Render the gauges.
     {
-        renderTarget->SetTransform(_GaugesTransform);
+        deviceContext->SetTransform(_GaugesTransform);
 
-        _Gauges.Render(renderTarget, _GaugeMetrics);
+        _Gauges.Render(deviceContext, _GaugeMetrics);
     }
 
     // Render the gauge names.
     {
-        renderTarget->SetTransform(_GaugeNamesTransform);
+        deviceContext->SetTransform(_GaugeNamesTransform);
 
-        _GaugeNames.Render(renderTarget, _GaugeMetrics);
+        _GaugeNames.Render(deviceContext, _GaugeMetrics);
     }
 
     // Render the RMS read out.
     {
-        renderTarget->SetTransform(_RMSReadOutTransform);
+        deviceContext->SetTransform(_RMSReadOutTransform);
 
-        _RMSReadOut.Render(renderTarget, _GaugeMetrics);
+        _RMSReadOut.Render(deviceContext, _GaugeMetrics);
     }
 
     // Render the peak read out.
     {
-        renderTarget->SetTransform(_PeakReadOutTransform);
+        deviceContext->SetTransform(_PeakReadOutTransform);
 
-        _PeakReadOut.Render(renderTarget, _GaugeMetrics);
+        _PeakReadOut.Render(deviceContext, _GaugeMetrics);
     }
 
-    ResetTransform(renderTarget);
+    ResetTransform(deviceContext);
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _GaugeNames.CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = _GaugeNames.CreateDeviceSpecificResources(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _RMSReadOut.CreateDeviceSpecificResources(renderTarget);
+        hr = _RMSReadOut.CreateDeviceSpecificResources(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _PeakReadOut.CreateDeviceSpecificResources(renderTarget);
+        hr = _PeakReadOut.CreateDeviceSpecificResources(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _GaugeScales.CreateDeviceSpecificResources(renderTarget);
+        hr = _GaugeScales.CreateDeviceSpecificResources(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _Gauges.CreateDeviceSpecificResources(renderTarget);
+        hr = _Gauges.CreateDeviceSpecificResources(deviceContext);
 
     _IsResized = !_IsResized && _Gauges.GetMetrics(_GaugeMetrics);
 

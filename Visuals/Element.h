@@ -26,7 +26,7 @@ public:
 
     virtual void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept { };
     virtual void Move(const D2D1_RECT_F & rect) noexcept { };
-    virtual void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { };
     virtual void Reset() noexcept { }
 
     virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
@@ -62,8 +62,8 @@ public:
 
     virtual void ReleaseDeviceSpecificResources() noexcept { };
 
-    virtual void SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept;
-    virtual void ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept;
+    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds) const noexcept;
+    virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;

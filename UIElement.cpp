@@ -174,14 +174,78 @@ void uielement_t::OnPaint(CDCHandle hDC)
 /// </summary>
 void uielement_t::OnSize(UINT type, CSize size)
 {
-    if (_RenderTarget == nullptr)
+    if (_DeviceContext == nullptr)
         return;
 
     _CriticalSection.Enter();
 
     D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    _RenderTarget->Resize(Size);
+//  _RenderTarget->Resize(Size);
+
+    // Remove the bitmap from the device context.
+    _DeviceContext->SetTarget(nullptr);
+
+    // Resize the swap chain.
+    HRESULT hr = _SwapChain->ResizeBuffers(0, Size.width, Size.height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+    // Get a surface from the swap chain.
+    {
+        CComPtr<IDXGISurface> Surface;
+
+        if (SUCCEEDED(hr))
+            hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
+
+        // Create a bitmap pointing to the surface.
+        CComPtr<ID2D1Bitmap1> Bitmap;
+
+        if (SUCCEEDED(hr))
+        {
+            const UINT DPI = ::GetDpiForWindow(m_hWnd);
+
+            D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+            (
+                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
+                (FLOAT) DPI, (FLOAT) DPI
+            );
+
+            hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &Bitmap);
+        }
+
+        // Set bitmap back onto device context.
+        if (SUCCEEDED(hr))
+            _DeviceContext->SetTarget(Bitmap);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     Resize();
 
@@ -384,12 +448,12 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 /// </summary>
 void uielement_t::Resize()
 {
-    if (_RenderTarget == nullptr)
+    if (_DeviceContext == nullptr)
         return;
 
     DeleteTrackingToolTip();
 
-    D2D1_SIZE_F SizeF = _RenderTarget->GetSize(); // Gets the size in DPIs.
+    D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
     _FrameCounter.Resize(SizeF.width, SizeF.height);

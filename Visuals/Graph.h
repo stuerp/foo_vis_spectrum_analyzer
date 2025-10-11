@@ -35,11 +35,11 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    void Render(ID2D1DeviceContext * deviceContext) noexcept { };
     void Reset() noexcept;
 
     void Process(const audio_chunk & chunk) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -65,13 +65,13 @@ public:
 
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
-    void RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept;
-    void RenderForeground(ID2D1RenderTarget * renderTarget) noexcept;
-    void RenderDescription(ID2D1RenderTarget * renderTarget) noexcept;
+    void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
+    void RenderForeground(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;
 
 public:
     analysis_t _Analysis;
@@ -83,4 +83,8 @@ private:
     style_t * _BackgroundStyle;
     style_t * _DescriptionTextStyle;
     style_t * _DescriptionBackgroundStyle;
+
+#ifdef _DEBUG
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
 };

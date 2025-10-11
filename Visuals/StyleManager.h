@@ -58,7 +58,7 @@ public:
     }
 
     // Helper
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text, style_t ** style) noexcept
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, style_t ** style) noexcept
     {
         if (*style == nullptr)
         {
@@ -71,11 +71,11 @@ public:
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(renderTarget, size, text);
+        return (*style)->CreateDeviceSpecificResources(deviceContext, size, text);
     }
 
     // Helper for radial bars
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
     {
         if (*style == nullptr)
         {
@@ -88,7 +88,7 @@ public:
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(renderTarget, size, center, offset, rx, ry, rOffset);
+        return (*style)->CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
     }
 
     void ReleaseDeviceSpecificResources() noexcept;

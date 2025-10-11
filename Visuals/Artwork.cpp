@@ -113,7 +113,7 @@ HRESULT artwork_t::ReleaseWICResources() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept
+void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds, const state_t * state) noexcept
 {
     _CriticalSection.Enter();
 
@@ -156,7 +156,7 @@ void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bou
         Rect.right   = Rect.left + Size.width;
         Rect.bottom  = Rect.top  + Size.height;
 
-        renderTarget->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
 
     _CriticalSection.Leave();
@@ -166,7 +166,7 @@ void artwork_t::Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bou
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     _CriticalSection.Enter();
 
@@ -175,7 +175,7 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarge
     // Create a Direct2D bitmap from the WIC bitmap source.
     if ((_FormatConverter != nullptr) && (_Bitmap == nullptr))
     {
-        hr = renderTarget->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+        hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
         if (SUCCEEDED(hr))
             SetStatus(Realized);

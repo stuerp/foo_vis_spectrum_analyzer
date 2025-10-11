@@ -118,6 +118,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.9.0.0-alpha3, 2025-10-10
 
 - Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
+- Changed: Upgraded rendering code from render targets to device contexts.
 
 You can read the full history [here](docs/History.md).
 

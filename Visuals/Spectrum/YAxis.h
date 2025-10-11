@@ -34,10 +34,10 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept;
     void Reset() noexcept { }
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept

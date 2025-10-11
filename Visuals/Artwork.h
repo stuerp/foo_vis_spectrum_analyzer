@@ -37,14 +37,14 @@ public:
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
     HRESULT ReleaseWICResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
 
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
 
-    void Render(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds, const state_t * state) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds, const state_t * state) noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 

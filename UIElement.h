@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.09.25) P. Stuer **/
+/** $VER: UIElement.h (2025.10.11) P. Stuer **/
 
 #pragma once
 
@@ -191,7 +191,10 @@ private:
 
     UINT _DPI;
 
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+    CComPtr<ID3D11Device> _D3DDevice;
+    CComPtr<ID2D1Device> _D2DDevice;
+    CComPtr<IDXGISwapChain> _SwapChain;
+    CComPtr<ID2D1DeviceContext> _DeviceContext;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

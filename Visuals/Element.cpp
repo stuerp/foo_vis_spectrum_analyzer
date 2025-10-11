@@ -11,7 +11,7 @@
 /// <summary>
 /// Sets the coordinate transform of the element.
 /// </summary>
-void element_t::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F & bounds) const noexcept
+void element_t::SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds) const noexcept
 {
     D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
@@ -27,15 +27,15 @@ void element_t::SetTransform(ID2D1RenderTarget * renderTarget, const D2D1_RECT_F
 
     const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(bounds.left, bounds.top);
 
-    renderTarget->SetTransform(Transform * Translate);
+    deviceContext->SetTransform(Transform * Translate);
 }
 
 /// <summary>
 /// Resets the coordinate transform of the element.
 /// </summary>
-void element_t::ResetTransform(ID2D1RenderTarget * renderTarget) const noexcept
+void element_t::ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept
 {
-    renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
 /// <summary>

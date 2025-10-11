@@ -34,19 +34,19 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget) noexcept { };
+    void Render(ID2D1DeviceContext * deviceContext) noexcept { };
     void Reset() noexcept;
 
     void Resize() noexcept;
-    void Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
     bool GetMetrics(gauge_metrics_t & gaugeMetrics) const noexcept;
 
 private:
-    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
 private:
     CComPtr<ID2D1Bitmap> _OpacityMask;

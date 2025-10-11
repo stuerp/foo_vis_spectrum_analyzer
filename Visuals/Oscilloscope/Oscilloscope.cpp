@@ -111,7 +111,7 @@ void oscilloscope_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
@@ -121,7 +121,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
     const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
@@ -158,7 +158,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if (_GraphSettings->_YAxisRight)
         ++YAxisCount;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
     _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -178,10 +178,10 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
             if (_YAxisLineStyle->IsEnabled())
             {
                 if (_GraphSettings->_YAxisLeft)
-                    renderTarget->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
+                    deviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
 
                 if (_GraphSettings->_YAxisRight)
-                    renderTarget->DrawLine(D2D1::Point2F(x2 + 1.f, y1), D2D1::Point2F(x2 + 1.f, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
+                    deviceContext->DrawLine(D2D1::Point2F(x2 + 1.f, y1), D2D1::Point2F(x2 + 1.f, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
             }
 
             if (_YAxisTextStyle->IsEnabled())
@@ -190,21 +190,21 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
                 for (const label_t & Label : _Labels)
                 {
-                    const FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
+                    const FLOAT y = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     // Draw the label.
                     r.top    = Label.IsMin ? y - _YAxisTextStyle->_Height : (Label.IsMax ? y : y - (_YAxisTextStyle->_Height / 2.f));
                     r.bottom = r.top + _YAxisTextStyle->_Height;
 
                     if (_HorizontalGridLineStyle->IsEnabled())
-                        renderTarget->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
+                        deviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, nullptr);
 
                     if (_GraphSettings->_YAxisLeft)
                     {
                         r.left  = 0.f;
                         r.right = x1 - 2.f;
 
-                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        deviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphSettings->_YAxisRight)
@@ -212,7 +212,7 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                         r.right = _Size.width - 1.f;
                         r.left  = x2 + 2.f;
 
-                        renderTarget->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        deviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, r, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
@@ -226,14 +226,14 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 
         for (uint32_t i = 0; i < ChannelCount; ++i)
         {
-            renderTarget->DrawLine(D2D1::Point2F(x1, ChannelBaseline), D2D1::Point2F(x2, ChannelBaseline), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, nullptr);
+            deviceContext->DrawLine(D2D1::Point2F(x1, ChannelBaseline), D2D1::Point2F(x2, ChannelBaseline), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, nullptr);
 
             ChannelBaseline += ChannelHeight;
         }
     }
 
     // Draw the signal.
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     CComPtr<ID2D1PathGeometry> Path;
 
@@ -288,37 +288,37 @@ void oscilloscope_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         }
 
         if (SUCCEEDED(hr))
-            renderTarget->DrawGeometry(Path, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+            deviceContext->DrawGeometry(Path, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
     }
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
-    D2D1_SIZE_F Size = renderTarget->GetSize();
+    D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, renderTarget, Size, L"", &_SignalLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, Size, L"", &_SignalLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, renderTarget, Size, L"", &_XAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, Size, L"", &_XAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_YAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", &_YAxisTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, renderTarget, Size, L"", &_YAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, Size, L"", &_YAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_HorizontalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", &_HorizontalGridLineStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
 
     if (SUCCEEDED(hr))

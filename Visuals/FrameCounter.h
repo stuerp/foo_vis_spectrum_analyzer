@@ -42,12 +42,12 @@ public:
     void Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept;
 
     void NewFrame() noexcept;
-    HRESULT Render(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT Render(ID2D1DeviceContext * deviceContext) noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
     void ReleaseDeviceIndependentResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
 private:
