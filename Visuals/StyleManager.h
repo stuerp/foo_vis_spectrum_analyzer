@@ -388,8 +388,16 @@ private:
             {
                 /* Name                */ L"Spectogram",
                 /* UsedBy              */ VisualizationTypes::Spectogram,
-                style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::SoX, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient,
+                /*_ColorSource         */ ColorSource::Gradient,
+                /*_CustomColor         */ D2D1::ColorF(0),
+                /*_ColorIndex          */ 0,
+                /*_ColorScheme         */ ColorScheme::SoX,
+                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /*_Opacity             */ 1.f,
+                /*_Thickness           */ 0.f,
+                /*_FontName            */ L"",
+                /*_FontSize            */ 0.f
             }
         },
         #pragma endregion

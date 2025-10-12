@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.10.08) P. Stuer **/
+/** $VER: State.h (2025.10.12) P. Stuer **/
 
 #pragma once
 
@@ -235,6 +235,12 @@ public:
 
             ChannelPair _ChannelPair;
             bool _HorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
+
+        #pragma endregion
+
+        #pragma region Level Meter
+
+            bool _XYMode;                                           // Oscilloscope in X-Y mode
 
         #pragma endregion
 

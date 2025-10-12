@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2025.10.11) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.10.12) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -17,6 +17,7 @@
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "d3d11")
+#pragma comment(lib, "dxguid")
 
 #pragma hdrstop
 
@@ -146,7 +147,7 @@ void uielement_t::Render() noexcept
 
         hr = _DeviceContext->EndDraw();
 
-        // Present the swap chain immediately
+        // Present the swap chain immediately.
         if (SUCCEEDED(hr))
             hr = _SwapChain->Present(0, 0);
 
@@ -222,7 +223,7 @@ void uielement_t::Animate() noexcept
 /// <summary>
 /// Initializes the parameters that depend on the sample rate of the chunk.
 /// </summary>
-void uielement_t::InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept
+void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
     _RenderThread._SampleRate = chunk.get_sample_rate();
 
@@ -244,6 +245,14 @@ void uielement_t::InitializeSampleRateDependentParameters(audio_chunk_impl & chu
     }
 
     #pragma warning(default: 4061)
+}
+
+/// <summary>
+/// Handles a timer tick.
+/// </summary>
+void CALLBACK uielement_t::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
+{
+    ((uielement_t *) context)->OnTimer();
 }
 
 #pragma region DirectX
@@ -313,17 +322,17 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
         // Create the Direct2D device and the device context.
         {
-            CComPtr<IDXGIDevice> dxgiDevice;
+            CComPtr<IDXGIDevice> DXGIDevice;
 
             if (SUCCEEDED(hr))
-                hr = _D3DDevice->QueryInterface(&dxgiDevice);
+                hr = _D3DDevice->QueryInterface(&DXGIDevice);
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateDevice(dxgiDevice, &_D2DDevice);
+                hr = _Direct2D.CreateDevice(DXGIDevice);
 
             // Create device context
             if (SUCCEEDED(hr))
-                _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_DeviceContext);
+                _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
         }
 
         // Set the render target.
@@ -463,17 +472,11 @@ void uielement_t::ReleaseDeviceSpecificResources()
     _FrameCounter.ReleaseDeviceSpecificResources();
 
     _DeviceContext.Release();
-    _D2DDevice.Release();
+
+    _Direct2D.ReleaseDevice();
+
     _D3DDevice.Release();
     _SwapChain.Release();
 }
 
 #pragma endregion
-
-/// <summary>
-/// Handles a timer tick.
-/// </summary>
-void CALLBACK uielement_t::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
-{
-    ((uielement_t *) context)->OnTimer();
-}

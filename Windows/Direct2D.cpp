@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.05.03) P. Stuer **/
+/** $VER: Direct2D.cpp (2025.10.12) P. Stuer **/
 
 #include "pch.h"
 #include "Direct2D.h"
@@ -38,9 +38,19 @@ HRESULT Direct2D::Initialize()
 /// <summary>
 /// Terminates this instance.
 /// </summary>
-void Direct2D::Terminate()
+void Direct2D::Terminate() noexcept
 {
     Factory.Release();
+}
+
+HRESULT Direct2D::CreateDevice(IDXGIDevice * dxgiDevice) noexcept
+{
+    return Factory->CreateDevice(dxgiDevice, &Device);
+}
+
+void Direct2D::ReleaseDevice() noexcept
+{
+    Device.Release();
 }
 
 /// <summary>

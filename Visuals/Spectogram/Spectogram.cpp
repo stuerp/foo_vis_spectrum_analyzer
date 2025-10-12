@@ -701,20 +701,20 @@ bool spectogram_t::Update() noexcept
 /// </summary>
 void spectogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
 {
-    const double MinFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double NyquistFrequency = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinFrequency, MaxFrequency);
+    const double NyquistFrequency = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), LoFrequency, HiFrequency);
 
     if (_State->_HorizontalSpectogram)
     {
-        const FLOAT y = msc::Map(NyquistFrequency, MinFrequency, MaxFrequency, 0.f, _BitmapSize.height);
+        const FLOAT y = msc::Map(NyquistFrequency, LoFrequency, HiFrequency, 0.f, _BitmapSize.height);
 
         renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }
     else
     {
-        const FLOAT x = msc::Map(NyquistFrequency, MinFrequency, MaxFrequency, 0.f, _BitmapSize.width);
+        const FLOAT x = msc::Map(NyquistFrequency, LoFrequency, HiFrequency, 0.f, _BitmapSize.width);
 
         renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle->_Brush, _NyquistMarkerStyle->_Thickness, nullptr);
     }

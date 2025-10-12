@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.10.08) P. Stuer **/
+/** $VER: State.cpp (2025.10.12) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -242,6 +242,8 @@ void state_t::Reset() noexcept
 
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
+
+    _XYMode = true;
 
     _StyleManager.Reset();
 
@@ -503,6 +505,9 @@ state_t & state_t::operator=(const state_t & other)
     // Level Meter
     _ChannelPair = other._ChannelPair;
     _HorizontalLevelMeter = other._HorizontalLevelMeter;
+
+    // Oscilloscope
+    _XYMode = other._XYMode;
 
     #pragma endregion
 
@@ -906,6 +911,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
         }
+
+        if (Version >= 31)
+        {
+            reader->read(&_XYMode, sizeof(_XYMode), abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1217,6 +1227,9 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         // Version 30, v0.9.0.0-alpha2
         writer->write(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
+
+        // Version 31, v0.9.0.0-alpha3
+        writer->write(&_XYMode, sizeof(_XYMode), abortHandler);
     }
     catch (exception & ex)
     {

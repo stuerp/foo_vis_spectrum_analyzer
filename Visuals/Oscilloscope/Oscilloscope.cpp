@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2025.10.12) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -23,6 +23,7 @@ oscilloscope_t::oscilloscope_t()
 
     _SignalLineStyle = nullptr;
 
+    _XAxisTextStyle = nullptr;
     _XAxisLineStyle = nullptr;
 
     _YAxisTextStyle = nullptr;
@@ -75,10 +76,7 @@ void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settin
         }
     }
 
-    // Non-device specific resources
-    D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
-
-    _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_SignalStrokeStyle);
+    CreateDeviceIndependentResources();
 }
 
 /// <summary>
@@ -105,6 +103,11 @@ void oscilloscope_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
+    _BackBuffer.Release();
+    _FrontBuffer.Release();
+
+    _CommandList.Release();
+
     _IsResized = false;
 }
 
@@ -112,6 +115,17 @@ void oscilloscope_t::Resize() noexcept
 /// Renders this instance.
 /// </summary>
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_State->_XYMode)
+        RenderXY(deviceContext);
+    else
+        RenderAmplitude(deviceContext);
+}
+
+/// <summary>
+/// Renders the signal.
+/// </summary>
+void oscilloscope_t::RenderAmplitude(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
@@ -293,36 +307,257 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Renders the signal in X-Y mode.
+/// </summary>
+void oscilloscope_t::RenderXY(ID2D1DeviceContext * deviceContext) noexcept
+{
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+
+    if (!SUCCEEDED(hr))
+        return;
+
+    CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
+
+    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
+    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+
+    if ((FrameCount >= 2) || (ChannelCount == 2))
+    {
+        const audio_sample * Samples = _Analysis->_Chunk.get_data();
+
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        CComPtr<ID2D1PathGeometry> Geometry;
+
+        hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
+
+        if (SUCCEEDED(hr))
+        {
+            CComPtr<ID2D1GeometrySink> Sink;
+
+            hr = Geometry->Open(&Sink);
+
+            FLOAT x = (FLOAT) Samples[0];
+            FLOAT y = (FLOAT) Samples[1];
+
+            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+            for (size_t i = 2; i < FrameCount; i += 2)
+            {
+                x = (FLOAT) Samples[i    ];
+                y = (FLOAT) Samples[i + 1];
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+            }
+
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            hr = Sink->Close();
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
+            const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
+
+            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        if (TransformedGeometry != nullptr)
+        {
+            _DeviceContext->SetTarget(_BackBuffer);
+
+            _DeviceContext->BeginDraw();
+
+            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+
+            hr = _DeviceContext->EndDraw();
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        deviceContext->Clear(D2D1::ColorF(0));
+
+        // Draw the back buffer to the window.
+        deviceContext->DrawImage(_CommandList);
+
+        deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+        deviceContext->DrawBitmap(_BackBuffer);
+
+        // Add the phosphor afterglow effect before the next pass.
+        {
+            _DeviceContext->SetTarget(_FrontBuffer);
+            _DeviceContext->BeginDraw();
+
+            _GaussBlurEffect->SetInput(0, _BackBuffer);
+
+            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+            _DeviceContext->DrawImage(_GaussBlurEffect);
+
+            _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+            _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+            hr = _DeviceContext->EndDraw();
+        }
+
+        std::swap(_FrontBuffer, _BackBuffer);
+    }
+}
+
+/// <summary>
+/// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
+/// </summary>
+HRESULT oscilloscope_t::CreateDeviceIndependentResources() noexcept
+{
+    HRESULT hr = S_OK;
+
+    const D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
+
+    if (_SignalStrokeStyle == nullptr)
+        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_SignalStrokeStyle);
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device independent resources.
+/// </summary>
+void oscilloscope_t::ReleaseDeviceIndependentResources() noexcept
+{
+    _SignalStrokeStyle.Release();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
-    D2D1_SIZE_F Size = deviceContext->GetSize();
+    if (SUCCEEDED(hr))
+        Resize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, Size, L"", &_SignalLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", &_SignalLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, Size, L"", &_XAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"0.0", &_XAxisTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", &_XAxisLineStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", &_YAxisTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, Size, L"", &_YAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", &_YAxisLineStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", &_HorizontalGridLineStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", &_VerticalGridLineStyle);
+
+    if (_State->_XYMode)
+    {
+        if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
+            hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+
+        if (SUCCEEDED(hr))
+        {
+            const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
+
+            if (_FrontBuffer == nullptr)
+            {
+                hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
+
+                if (SUCCEEDED(hr))
+                {
+                    _DeviceContext->SetTarget(_FrontBuffer);
+
+                    _DeviceContext->BeginDraw();
+
+                    _DeviceContext->Clear(D2D1::ColorF(0));
+
+                    hr = _DeviceContext->EndDraw();
+
+                    _DeviceContext->SetTarget(nullptr);
+                }
+            }
+
+            if (_BackBuffer == nullptr)
+            {
+                hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
+
+                if (SUCCEEDED(hr))
+                {
+                    _DeviceContext->SetTarget(_BackBuffer);
+
+                    _DeviceContext->BeginDraw();
+
+                    _DeviceContext->Clear(D2D1::ColorF(0));
+
+                    hr = _DeviceContext->EndDraw();
+
+                    _DeviceContext->SetTarget(nullptr);
+                }
+            }
+        }
+
+        if (SUCCEEDED(hr) && (_GaussBlurEffect == nullptr))
+        {
+            hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
+
+            if (SUCCEEDED(hr))
+            {
+                const float BLUR_SIGMA = 3.0f;
+
+                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, BLUR_SIGMA);
+                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+            }
+        }
+
+        if (SUCCEEDED(hr) && (_ColorMatrixEffect == nullptr))
+        {
+            hr = deviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
+
+            if (SUCCEEDED(hr))
+            {
+                const float DECAY_FACTOR = 0.92f; // Higher values for longer persistence
+
+                // Color matrix for uniform decay
+                #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
+                const D2D1_MATRIX_5X4_F DecayMatrix =
+                {
+                    DECAY_FACTOR, 0, 0, 0,
+                    0, DECAY_FACTOR, 0, 0,
+                    0, 0, DECAY_FACTOR, 0,
+                    0, 0, 0, 1,
+                    0, 0, 0, 0
+                };
+
+                _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
+            }
+        }
+
+        if (SUCCEEDED(hr) && (_CommandList == nullptr))
+            hr = CreateGrid();
+    }
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
         deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
-
-    if (SUCCEEDED(hr))
-        Resize();
 
     return hr;
 }
@@ -336,6 +571,12 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
     {
         _SignalLineStyle->ReleaseDeviceSpecificResources();
         _SignalLineStyle = nullptr;
+    }
+
+    if (_XAxisTextStyle)
+    {
+        _XAxisTextStyle->ReleaseDeviceSpecificResources();
+        _XAxisTextStyle = nullptr;
     }
 
     if (_XAxisLineStyle)
@@ -365,4 +606,83 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+
+    _ColorMatrixEffect.Release();
+
+    _GaussBlurEffect.Release();
+
+    _BackBuffer.Release();
+
+    _FrontBuffer.Release();
+
+    _DeviceContext.Release();
+}
+
+/// <summary>
+/// 
+/// </summary>
+HRESULT oscilloscope_t::CreateGrid() noexcept
+{
+    HRESULT hr = S_OK;
+
+    // Create a command list that will store the grid pattern.
+    if (SUCCEEDED(hr))
+        hr = _DeviceContext->CreateCommandList(&_CommandList);
+
+    if (SUCCEEDED(hr))
+    {
+        CComPtr<ID2D1SolidColorBrush> Brush;
+
+        hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(1.f, 1.f, 1.f, 0.4f)), &Brush);
+
+        _DeviceContext->SetTarget(_CommandList);
+
+        _DeviceContext->BeginDraw();
+
+        const FLOAT Side = std::min(_Size.width, _Size.height);
+
+        const FLOAT CenterX = Side / 2.f;
+        const FLOAT CenterY = Side / 2.f;
+
+        const FLOAT OffsetX = (_Size.width  - Side) / 2.f;
+        const FLOAT OffsetY = (_Size.height - Side) / 2.f;
+
+        CComPtr<IDWriteTextLayout> TextLayout;
+
+//      HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
+        _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+
+        for (FLOAT x = 0.f; x < 1.01f; x += .2f)
+        {
+            FLOAT X = OffsetX + CenterX + (x * CenterX);
+
+            _DeviceContext->DrawLine(D2D1::Point2F(X, OffsetY), D2D1::Point2F(X, OffsetY + Side), Brush);
+
+            X = OffsetX + CenterX - (x * CenterX);
+
+            _DeviceContext->DrawLine(D2D1::Point2F(X, OffsetY), D2D1::Point2F(X, OffsetY + Side), Brush);
+
+            D2D1_RECT_F r = { X, 0.f, X + 20.f, 20.f };
+
+            _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, r, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+
+        for (FLOAT y = 0.f; y < 1.01f; y += .2f)
+        {
+            FLOAT Y = OffsetY + CenterY + (y * CenterY);
+
+            _DeviceContext->DrawLine(D2D1::Point2F(OffsetX, Y), D2D1::Point2F(OffsetX + Side, Y), Brush);
+
+            Y = OffsetY + CenterY - (y * CenterY);
+
+            _DeviceContext->DrawLine(D2D1::Point2F(OffsetX, Y), D2D1::Point2F(OffsetX + Side, Y), Brush);
+        }
+
+        hr = _DeviceContext->EndDraw();
+    }
+
+    if (SUCCEEDED(hr))
+        hr = _CommandList->Close();
+
+    return hr;
 }

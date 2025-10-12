@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.10.08) P. Stuer **/
+/** $VER: Resources.h (2025.10.12) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha2"
+#define STR_RELEASE_TAG         "-alpha3"
 
 /** Component specific **/
 
@@ -451,6 +451,12 @@
 #define IDC_CHANNEL_PAIRS               7183
 
 #define IDC_HORIZONTAL_LEVEL_METER      7184
+
+// Oscilloscope
+
+#define IDC_OSCILLOSCOPE                7190
+
+#define IDC_XY_MODE                     7192
 
 #pragma endregion
 

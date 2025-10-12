@@ -150,7 +150,7 @@ private:
     void Process() noexcept;
     void Animate() noexcept;
 
-    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
+    void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
 
     #pragma region DirectX
 
@@ -192,7 +192,6 @@ private:
     UINT _DPI;
 
     CComPtr<ID3D11Device> _D3DDevice;
-    CComPtr<ID2D1Device> _D2DDevice;
     CComPtr<IDXGISwapChain> _SwapChain;
     CComPtr<ID2D1DeviceContext> _DeviceContext;
 

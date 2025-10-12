@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2024.05.03) P. Stuer **/
+/** $VER: Direct2D.h (2025.10.12) P. Stuer **/
 
 #pragma once
 
@@ -21,7 +21,10 @@ public:
     Direct2D() { };
 
     HRESULT Initialize();
-    void Terminate();
+    void Terminate() noexcept;
+
+    HRESULT CreateDevice(IDXGIDevice * dxgiDevice) noexcept;
+    void ReleaseDevice() noexcept;
 
     HRESULT Load(const WCHAR * resourceName, const WCHAR * resourceType, IWICBitmapSource ** source) const noexcept;
     HRESULT Load(const WCHAR * uri, IWICBitmapSource ** source) const noexcept;
@@ -39,6 +42,7 @@ private:
 
 public:
     CComPtr<ID2D1Factory2> Factory;
+    CComPtr<ID2D1Device> Device;
 };
 
 extern Direct2D _Direct2D;

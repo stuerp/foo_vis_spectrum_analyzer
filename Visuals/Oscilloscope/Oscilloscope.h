@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2025.10.12) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -26,8 +26,17 @@ public:
 
     void Resize() noexcept;
 
+    HRESULT CreateDeviceIndependentResources() noexcept;
+    void ReleaseDeviceIndependentResources() noexcept;
+
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
+
+private:
+    void RenderAmplitude(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderXY(ID2D1DeviceContext * deviceContext) noexcept;
+
+    HRESULT CreateGrid() noexcept;
 
 private:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
@@ -45,13 +54,26 @@ private:
 
     style_t * _SignalLineStyle;
 
+    style_t * _XAxisTextStyle;
     style_t * _XAxisLineStyle;
 
     style_t * _YAxisTextStyle;
     style_t * _YAxisLineStyle;
+
     style_t * _HorizontalGridLineStyle;
+    style_t * _VerticalGridLineStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
+
+    CComPtr<ID2D1DeviceContext> _DeviceContext;
+
+    CComPtr<ID2D1Bitmap1> _FrontBuffer;
+    CComPtr<ID2D1Bitmap1> _BackBuffer;
+
+    CComPtr<ID2D1Effect> _GaussBlurEffect;
+    CComPtr<ID2D1Effect> _ColorMatrixEffect;
+
+    CComPtr<ID2D1CommandList> _CommandList;
 };

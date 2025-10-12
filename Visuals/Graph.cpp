@@ -203,10 +203,10 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
     if (_BackgroundStyle->IsEnabled())
         deviceContext->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+    if (!_State->_ShowArtworkOnBackground)
         return;
 
-    if (!_State->_ShowArtworkOnBackground)
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
         return;
 
     if (artwork.Bitmap() == nullptr)
@@ -268,7 +268,6 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {

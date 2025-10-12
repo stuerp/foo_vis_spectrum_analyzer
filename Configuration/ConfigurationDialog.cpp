@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.10.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.10.12) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -220,6 +220,8 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_CHANNEL_PAIRS, L"Determines which left and right channel will be displayed." },
             { IDC_HORIZONTAL_LEVEL_METER, L"Renders the level meter horizontally." },
+
+            { IDC_XY_MODE, L"Enables X-Y mode." },
 
             // Styles
             { IDC_STYLES, L"Selects the visual element that will be styled" },
@@ -1140,6 +1142,14 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
+    }
+
+    #pragma endregion
+
+    #pragma region Oscilloscope
+
+    {
+        SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
     }
 
     #pragma endregion
@@ -2456,6 +2466,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_XY_MODE:
+        {
+            _State->_XYMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -3102,6 +3118,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_LEVEL_METER,
             IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
             IDC_HORIZONTAL_LEVEL_METER,
+
+        IDC_OSCILLOSCOPE,
+            IDC_XY_MODE,
     };
 
     static const int Page6[] =
@@ -3538,6 +3557,8 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter);
     GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter);
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
+
+    GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
 }
 
 /// <summary>
