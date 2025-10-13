@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.10.12) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.10.13) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -61,212 +61,212 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     {
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
-        const std::unordered_map<int, LPCWSTR> Tips =
+        const std::unordered_map<int, const char *> Tips =
         {
-            { IDC_METHOD, L"Method used to transform the samples" },
+            { IDC_METHOD, "Method used to transform the samples" },
 
-            { IDC_WINDOW_FUNCTION, L"Window function applied to the samples" },
-            { IDC_WINDOW_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows" },
-            { IDC_WINDOW_SKEW, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
+            { IDC_WINDOW_FUNCTION, "Window function applied to the samples" },
+            { IDC_WINDOW_PARAMETER, "Parameter used by certain window functions like Gaussian and Kaiser windows" },
+            { IDC_WINDOW_SKEW, "Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
 
-            { IDC_REACTION_ALIGNMENT, L"Controls the delay between the actual playback and the visualization.\n"
+            { IDC_REACTION_ALIGNMENT, "Controls the delay between the actual playback and the visualization.\n"
                                        "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
                                        "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
                                        "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
 
-            { IDC_NUM_BINS, L"Sets the number of bins used by the Fourier transforms" },
-            { IDC_NUM_BINS_PARAMETER, L"Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
+            { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
+            { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
-            { IDC_SUMMATION_METHOD, L"Method used to aggregate FFT coefficients" },
-            { IDC_MAPPING_METHOD, L"Determines how the FFT coefficients are mapped to the frequency bins." },
+            { IDC_SUMMATION_METHOD, "Method used to aggregate FFT coefficients" },
+            { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bins." },
 
-            { IDC_SMOOTH_LOWER_FREQUENCIES, L"When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
-            { IDC_SMOOTH_GAIN_TRANSITION, L"Smooths the frequency slope of the aggregation modes." },
+            { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
+            { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
 
-            { IDC_KERNEL_SIZE, L"Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
+            { IDC_KERNEL_SIZE, "Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
 
             // Brown-Puckette CQT
-            { IDC_BW_OFFSET, L"Offsets the bandwidth of the Brown-Puckette CQT" },
-            { IDC_BW_CAP, L"Minimum Brown-Puckette CQT kernel size" },
-            { IDC_BW_AMOUNT, L"Brown-Puckette CQT kernel size" },
+            { IDC_BW_OFFSET, "Offsets the bandwidth of the Brown-Puckette CQT" },
+            { IDC_BW_CAP, "Minimum Brown-Puckette CQT kernel size" },
+            { IDC_BW_AMOUNT, "Brown-Puckette CQT kernel size" },
 
-            { IDC_GRANULAR_BW, L"When disabled constrains the bandwidth to powers of 2." },
+            { IDC_GRANULAR_BW, "When disabled constrains the bandwidth to powers of 2." },
 
-            { IDC_KERNEL_SHAPE, L"Determines the shape of the Brown-Puckette CQT kernel." },
-            { IDC_KERNEL_SHAPE_PARAMETER, L"Parameter used by certain window functions like Gaussian and Kaiser windows." },
-            { IDC_KERNEL_ASYMMETRY, L"Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
+            { IDC_KERNEL_SHAPE, "Determines the shape of the Brown-Puckette CQT kernel." },
+            { IDC_KERNEL_SHAPE_PARAMETER, "Parameter used by certain window functions like Gaussian and Kaiser windows." },
+            { IDC_KERNEL_ASYMMETRY, "Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples." },
 
             // IIR (SWIFT / Analog-style)
-            { IDC_FBO, L"Determines the order of the filter bank used to calculate the SWIFT and Analog-style transforms." },
-            { IDC_TR, L"Determines the maximum time resolution used by the SWIFT and Analog-style transforms." },
-            { IDC_IIR_BW, L"Determines the bandwidth used by the SWIFT and Analog-style transforms." },
-            { IDC_CONSTANT_Q, L"Uses constant-Q instead of variable-Q in the IIR transforms." },
-            { IDC_COMPENSATE_BW, L"Compensate bandwidth for narrowing on higher order IIR filters banks." },
-            { IDC_PREWARPED_Q, L"Prewarps Q to ensure the actual bandwidth is truly logarithmic at anything closer to the Nyquist frequency." },
+            { IDC_FBO, "Determines the order of the filter bank used to calculate the SWIFT and Analog-style transforms." },
+            { IDC_TR, "Determines the maximum time resolution used by the SWIFT and Analog-style transforms." },
+            { IDC_IIR_BW, "Determines the bandwidth used by the SWIFT and Analog-style transforms." },
+            { IDC_CONSTANT_Q, "Uses constant-Q instead of variable-Q in the IIR transforms." },
+            { IDC_COMPENSATE_BW, "Compensate bandwidth for narrowing on higher order IIR filters banks." },
+            { IDC_PREWARPED_Q, "Prewarps Q to ensure the actual bandwidth is truly logarithmic at anything closer to the Nyquist frequency." },
 
             // Frequencies
-            { IDC_DISTRIBUTION, L"Determines how the frequencies are distributed" },
-            { IDC_NUM_BANDS, L"Determines how many frequency bands are used" },
+            { IDC_DISTRIBUTION, "Determines how the frequencies are distributed" },
+            { IDC_NUM_BANDS, "Determines how many frequency bands are used" },
 
-            { IDC_LO_FREQUENCY, L"Center frequency of the first band" },
-            { IDC_HI_FREQUENCY, L"Center frequency of the last band" },
+            { IDC_LO_FREQUENCY, "Center frequency of the first band" },
+            { IDC_HI_FREQUENCY, "Center frequency of the last band" },
 
-            { IDC_MIN_NOTE, L"Note that determines the center frequency of the first band" },
-            { IDC_MAX_NOTE, L"Note that determines the center frequency of the last band" },
+            { IDC_MIN_NOTE, "Note that determines the center frequency of the first band" },
+            { IDC_MAX_NOTE, "Note that determines the center frequency of the last band" },
 
-            { IDC_BANDS_PER_OCTAVE, L"Number of frequency bands per octave" },
+            { IDC_BANDS_PER_OCTAVE, "Number of frequency bands per octave" },
 
-            { IDC_PITCH, L"Frequency of the tuning pitch" },
-            { IDC_TRANSPOSE, L"Determines how many semitones the frequencies will be transposed." },
+            { IDC_PITCH, "Frequency of the tuning pitch" },
+            { IDC_TRANSPOSE, "Determines how many semitones the frequencies will be transposed." },
 
-            { IDC_SCALING_FUNCTION, L"Determines which function is used to scale the frequencies." },
-            { IDC_SKEW_FACTOR, L"Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean a more linear spectrum." },
-            { IDC_BANDWIDTH, L"Distance between the low and high frequency boundaries for each frequency band" },
+            { IDC_SCALING_FUNCTION, "Determines which function is used to scale the frequencies." },
+            { IDC_SKEW_FACTOR, "Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean a more linear spectrum." },
+            { IDC_BANDWIDTH, "Distance between the low and high frequency boundaries for each frequency band" },
 
-            { IDC_ACOUSTIC_FILTER, L"Selects the Weighting filter type that will be applied." },
+            { IDC_ACOUSTIC_FILTER, "Selects the Weighting filter type that will be applied." },
 
-            { IDC_SLOPE_FN_OFFS, L"Slope function offset expressed in sample rate / FFT size in samples" },
-            { IDC_SLOPE, L"Frequency slope offset" },
-            { IDC_SLOPE_OFFS, L"Frequency slope in dB per octave" },
+            { IDC_SLOPE_FN_OFFS, "Slope function offset expressed in sample rate / FFT size in samples" },
+            { IDC_SLOPE, "Frequency slope offset" },
+            { IDC_SLOPE_OFFS, "Frequency slope in dB per octave" },
 
-            { IDC_EQ_AMT, L"Equalization amount" },
-            { IDC_EQ_DEPTH, L"Equalization offset" },
-            { IDC_EQ_OFFS, L"Equalization depth" },
+            { IDC_EQ_AMT, "Equalization amount" },
+            { IDC_EQ_DEPTH, "Equalization offset" },
+            { IDC_EQ_OFFS, "Equalization depth" },
 
-            { IDC_WT_AMT, L"Weighting amount" },
+            { IDC_WT_AMT, "Weighting amount" },
 
             // Common
-            { IDC_SMOOTHING_METHOD, L"Determines how the spectrum coefficients and the peak meter values are smoothed." },
-            { IDC_SMOOTHING_FACTOR, L"Determines the strength of the smoothing." },
+            { IDC_SMOOTHING_METHOD, "Determines how the spectrum coefficients and the peak meter values are smoothed." },
+            { IDC_SMOOTHING_FACTOR, "Determines the strength of the smoothing." },
 
-            { IDC_SHOW_TOOLTIPS, L"Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
-            { IDC_SUPPRESS_MIRROR_IMAGE, L"Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
+            { IDC_SHOW_TOOLTIPS, "Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
+            { IDC_SUPPRESS_MIRROR_IMAGE, "Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
 
             // Artwork
-            { IDC_NUM_ARTWORK_COLORS, L"Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
-            { IDC_LIGHTNESS_THRESHOLD, L"Determines when a color is considered light. Expressed as a percentage of whiteness." },
-            { IDC_COLOR_ORDER, L"Determines how to sort the colors selected from the artwork." },
+            { IDC_NUM_ARTWORK_COLORS, "Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
+            { IDC_LIGHTNESS_THRESHOLD, "Determines when a color is considered light. Expressed as a percentage of whiteness." },
+            { IDC_COLOR_ORDER, "Determines how to sort the colors selected from the artwork." },
 
-            { IDC_ARTWORK_BACKGROUND, L"Renders artwork on the graph background." },
-            { IDC_ARTWORK_TYPE, L"Specifies which artwork will be shown on the graph background." },
+            { IDC_ARTWORK_BACKGROUND, "Renders artwork on the graph background." },
+            { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background." },
 
-            { IDC_FIT_MODE, L"Determines how over- and undersized artwork is rendered." },
-            { IDC_FIT_WINDOW, L"Use the component window size instead of the client area of the graph to fit the artwork." },
+            { IDC_FIT_MODE, "Determines how over- and undersized artwork is rendered." },
+            { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },
 
-            { IDC_ARTWORK_OPACITY, L"Determines the opacity of the artwork when displayed." },
-            { IDC_FILE_PATH, L"A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
+            { IDC_ARTWORK_OPACITY, "Determines the opacity of the artwork when displayed." },
+            { IDC_FILE_PATH, "A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
-            { IDC_LOG_LEVEL, L"Sets the verbosity of the log information that gets written to the console." },
+            { IDC_LOG_LEVEL, "Sets the verbosity of the log information that gets written to the console." },
 
             // Graphs
-            { IDC_GRAPH_SETTINGS, L"Shows the list of graphs." },
+            { IDC_GRAPH_SETTINGS, "Shows the list of graphs." },
 
-            { IDC_ADD_GRAPH, L"Adds a graph." },
-            { IDC_REMOVE_GRAPH, L"Removes the selected graph." },
+            { IDC_ADD_GRAPH, "Adds a graph." },
+            { IDC_REMOVE_GRAPH, "Removes the selected graph." },
 
-            { IDC_VERTICAL_LAYOUT, L"Enable to stack the graphs vertically instead of horizontally." },
+            { IDC_VERTICAL_LAYOUT, "Enable to stack the graphs vertically instead of horizontally." },
 
-            { IDC_GRAPH_DESCRIPTION, L"Describes the configuration of this graph." },
+            { IDC_GRAPH_DESCRIPTION, "Describes the configuration of this graph." },
 
-            { IDC_HORIZONTAL_ALIGNMENT, L"Determines how the visualization gets horizontally aligned in the graph area." },
-            { IDC_VERTICAL_ALIGNMENT, L"Determines how the visualization gets vertically aligned in the graph area." },
+            { IDC_HORIZONTAL_ALIGNMENT, "Determines how the visualization gets horizontally aligned in the graph area." },
+            { IDC_VERTICAL_ALIGNMENT, "Determines how the visualization gets vertically aligned in the graph area." },
 
-            { IDC_FLIP_HORIZONTALLY, L"Renders the visualization from right to left." },
-            { IDC_FLIP_VERTICALLY, L"Renders the visualization upside down." },
+            { IDC_FLIP_HORIZONTALLY, "Renders the visualization from right to left." },
+            { IDC_FLIP_VERTICALLY, "Renders the visualization upside down." },
 
             // X-axis
-            { IDC_X_AXIS_MODE, L"Determines the type of X-axis." },
-            { IDC_X_AXIS_TOP, L"Enables or disables an X-axis above the visualization." },
-            { IDC_X_AXIS_BOTTOM, L"Enables or disables an X-axis below the visualization." },
+            { IDC_X_AXIS_MODE, "Determines the type of X-axis." },
+            { IDC_X_AXIS_TOP, "Enables or disables an X-axis above the visualization." },
+            { IDC_X_AXIS_BOTTOM, "Enables or disables an X-axis below the visualization." },
 
             // Y-axis
-            { IDC_Y_AXIS_MODE, L"Determines the type of Y-axis." },
-            { IDC_Y_AXIS_LEFT, L"Enables or disables an Y-axis left of the visualization." },
-            { IDC_Y_AXIS_RIGHT, L"Enables or disables an Y-axis right of the visualization." },
+            { IDC_Y_AXIS_MODE, "Determines the type of Y-axis." },
+            { IDC_Y_AXIS_LEFT, "Enables or disables an Y-axis left of the visualization." },
+            { IDC_Y_AXIS_RIGHT, "Enables or disables an Y-axis right of the visualization." },
 
-            { IDC_AMPLITUDE_LO, L"Sets the lowest amplitude to display on the Y-axis." },
-            { IDC_AMPLITUDE_HI, L"Sets the highest amplitude to display on the Y-axis." },
-            { IDC_AMPLITUDE_STEP, L"Sets the amplitude increment." },
+            { IDC_AMPLITUDE_LO, "Sets the lowest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_HI, "Sets the highest amplitude to display on the Y-axis." },
+            { IDC_AMPLITUDE_STEP, "Sets the amplitude increment." },
 
-            { IDC_USE_ABSOLUTE, L"Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
-            { IDC_GAMMA, L"Sets index n of the n-th root calculation." },
+            { IDC_USE_ABSOLUTE, "Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
+            { IDC_GAMMA, "Sets index n of the n-th root calculation." },
 
-            { IDC_CHANNELS, L"Determines which channels are used by the visualization." },
+            { IDC_CHANNELS, "Determines which channels are used by the visualization." },
 
             // Visualization
-            { IDC_VISUALIZATION, L"Selects the type of visualization." },
+            { IDC_VISUALIZATION, "Selects the type of visualization." },
 
-            { IDC_PEAK_MODE, L"Determines how to display the peak values." },
-            { IDC_HOLD_TIME, L"Determines how long the peak values are held before they decay." },
-            { IDC_ACCELERATION, L"Determines the accelaration of the peak value decay." },
+            { IDC_PEAK_MODE, "Determines how to display the peak values." },
+            { IDC_HOLD_TIME, "Determines how long the peak values are held before they decay." },
+            { IDC_ACCELERATION, "Determines the accelaration of the peak value decay." },
 
-            { IDC_LED_MODE, L"Renders the spectrum bars and peak meters as LEDs." },
-            { IDC_LED_SIZE, L"Specifies the size of a LED in pixels." },
-            { IDC_LED_GAP, L"Specifies the gap between the LEDs in pixels." },
-            { IDC_LED_INTEGRAL_SIZE, L"Renders the LEDs as full blocks." },
+            { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
+            { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
+            { IDC_LED_GAP, "Specifies the gap between the LEDs in pixels." },
+            { IDC_LED_INTEGRAL_SIZE, "Renders the LEDs as full blocks." },
 
-            { IDC_INNER_RADIUS, L"Sets the inner radius as a percentage of the smallest side of the graph area." },
-            { IDC_OUTER_RADIUS, L"Sets the outer radius as a percentage of the smallest side of the graph area." },
-            { IDC_ANGULAR_VELOCITY, L"Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
+            { IDC_INNER_RADIUS, "Sets the inner radius as a percentage of the smallest side of the graph area." },
+            { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
+            { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
 
-            { IDC_SCROLLING_SPECTOGRAM, L"Activates scrolling of the spectogram." },
-            { IDC_HORIZONTAL_SPECTOGRAM, L"Renders the spectogram horizontally." },
-            { IDC_SPECTRUM_BAR_METRICS, L"Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
+            { IDC_SCROLLING_SPECTOGRAM, "Activates scrolling of the spectogram." },
+            { IDC_HORIZONTAL_SPECTOGRAM, "Renders the spectogram horizontally." },
+            { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
 
-            { IDC_HORIZONTAL_PEAK_METER, L"Renders the peak meter horizontally." },
-            { IDC_RMS_PLUS_3, L"Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
-            { IDC_RMS_WINDOW, L"Specifies the duration of each RMS measurement." },
-            { IDC_GAUGE_GAP, L"Specifies the gap between the peak meter gauges (in pixels)." },
+            { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
+            { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
+            { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
+            { IDC_GAUGE_GAP, "Specifies the gap between the peak meter gauges (in pixels)." },
 
-            { IDC_CHANNEL_PAIRS, L"Determines which left and right channel will be displayed." },
-            { IDC_HORIZONTAL_LEVEL_METER, L"Renders the level meter horizontally." },
+            { IDC_CHANNEL_PAIRS, "Determines which left and right channel will be displayed." },
+            { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
 
-            { IDC_XY_MODE, L"Enables X-Y mode." },
+            { IDC_XY_MODE, "Enables X-Y mode." },
 
             // Styles
-            { IDC_STYLES, L"Selects the visual element that will be styled" },
+            { IDC_STYLES, "Selects the visual element that will be styled" },
 
-            { IDC_COLOR_SOURCE, L"Determines the source of the color that will be used to render the visual element. Select \"None\" to prevent rendering." },
-            { IDC_COLOR_INDEX, L"Selects the specific Windows, DUI or CUI color to use." },
-            { IDC_COLOR_BUTTON, L"Shows the color that will be used to render the visual element. Click to modify it." },
-            { IDC_COLOR_SCHEME, L"Selects the color scheme used to create a gradient with." },
+            { IDC_COLOR_SOURCE, "Determines the source of the color that will be used to render the visual element. Select \"None\" to prevent rendering." },
+            { IDC_COLOR_INDEX, "Selects the specific Windows, DUI or CUI color to use." },
+            { IDC_COLOR_BUTTON, "Shows the color that will be used to render the visual element. Click to modify it." },
+            { IDC_COLOR_SCHEME, "Selects the color scheme used to create a gradient with." },
 
-            { IDC_GRADIENT, L"Shows the gradient created using the current color list." },
-            { IDC_COLOR_LIST, L"Shows the colors in the current color scheme." },
+            { IDC_GRADIENT, "Shows the gradient created using the current color list." },
+            { IDC_COLOR_LIST, "Shows the colors in the current color scheme." },
 
-            { IDC_ADD, L"Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
-            { IDC_REMOVE, L"Removes the selected color from the list. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
-            { IDC_REVERSE, L"Reverses the list of colors. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
+            { IDC_ADD, "Adds a color to the color list after the selected one. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
+            { IDC_REMOVE, "Removes the selected color from the list. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
+            { IDC_REVERSE, "Reverses the list of colors. A built-in color scheme will automatically be converted to a custom color scheme and that scheme will be activated." },
 
-            { IDC_POSITION, L"Determines the position of the color in the gradient (in % of the total length of the gradient)" },
-            { IDC_SPREAD, L"Evenly spreads the colors of the list in the gradient" },
+            { IDC_POSITION, "Determines the position of the color in the gradient (in % of the total length of the gradient)" },
+            { IDC_SPREAD, "Evenly spreads the colors of the list in the gradient" },
 
-            { IDC_HORIZONTAL_GRADIENT, L"Generates a horizontal instead of a vertical gradient." },
-            { IDC_AMPLITUDE_BASED, L"Determines the color of the bar based on the amplitude when using a horizontal gradient." },
+            { IDC_HORIZONTAL_GRADIENT, "Generates a horizontal instead of a vertical gradient." },
+            { IDC_AMPLITUDE_BASED, "Determines the color of the bar based on the amplitude when using a horizontal gradient." },
 
-            { IDC_OPACITY, L"Determines the opacity of the resulting color brush." },
-            { IDC_THICKNESS, L"Determines the thickness of the resulting color brush when applicable." },
+            { IDC_OPACITY, "Determines the opacity of the resulting color brush." },
+            { IDC_THICKNESS, "Determines the thickness of the resulting color brush when applicable." },
 
-            { IDC_FONT_NAME, L"Determines the opacity of the resulting color brush." },
-            { IDC_FONT_NAME_SELECT, L"Opens a dialog to select a font." },
-            { IDC_FONT_SIZE, L"Determines the size of the font in points." },
+            { IDC_FONT_NAME, "Determines the opacity of the resulting color brush." },
+            { IDC_FONT_NAME_SELECT, "Opens a dialog to select a font." },
+            { IDC_FONT_SIZE, "Determines the size of the font in points." },
 
             // Presets
-            { IDC_PRESETS_ROOT, L"Specifies the location of the preset files." },
-            { IDC_PRESETS_ROOT_SELECT, L"Opens a dialog to select a location." },
-            { IDC_PRESET_NAMES, L"Lists the presets in the current preset location." },
-            { IDC_PRESET_NAME, L"Specifies the name of the preset." },
-            { IDC_PRESET_LOAD, L"Loads and activates the specified preset." },
-            { IDC_PRESET_SAVE, L"Saves the current configuration as a preset." },
-            { IDC_PRESET_DELETE, L"Deletes the specified preset." },
+            { IDC_PRESETS_ROOT, "Specifies the location of the preset files." },
+            { IDC_PRESETS_ROOT_SELECT, "Opens a dialog to select a location." },
+            { IDC_PRESET_NAMES, "Lists the presets in the current preset location." },
+            { IDC_PRESET_NAME, "Specifies the name of the preset." },
+            { IDC_PRESET_LOAD, "Loads and activates the specified preset." },
+            { IDC_PRESET_SAVE, "Saves the current configuration as a preset." },
+            { IDC_PRESET_DELETE, "Deletes the specified preset." },
 
-            { IDC_RESET, L"Resets the configuration to the default values." },
-            { IDOK, L"Closes the dialog box and makes the changes to the configuration final." },
-            { IDCANCEL, L"Closes the dialog box and undoes any changes to the configuration." },
+            { IDC_RESET, "Resets the configuration to the default values." },
+            { IDOK, "Closes the dialog box and makes the changes to the configuration final." },
+            { IDCANCEL, "Closes the dialog box and undoes any changes to the configuration." },
         };
 
         for (const auto & [ID, Text] : Tips)
-            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(ID).m_hWnd, nullptr, (LPWSTR) Text));
+            _ToolTipControl.AddTool(CToolInfo(TTF_IDISHWND | TTF_SUBCLASS, m_hWnd, (UINT_PTR) GetDlgItem(ID).m_hWnd, nullptr, (LPWSTR) msc::UTF8ToWide(Text).c_str()));
 
         _ToolTipControl.SetMaxTipWidth(200);
         ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
@@ -3202,7 +3202,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             auto w = GetDlgItem(Page.first[i]);
 
             if (w.IsWindow())
+            {
                 w.ShowWindow(Mode);
+            }
         }
 
         PageNumber++;
