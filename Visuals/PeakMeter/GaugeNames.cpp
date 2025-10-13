@@ -157,7 +157,7 @@ HRESULT gauge_names_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"LFE", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"LFE", 1.f, &_TextStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))

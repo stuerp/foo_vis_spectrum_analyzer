@@ -152,7 +152,7 @@ HRESULT rms_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevelText, deviceContext, Size, L"+199.9", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevelText, deviceContext, Size, L"+199.9", 1.f, &_TextStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))

@@ -307,10 +307,10 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", &_LineStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999.9k", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999.9k", 1.f, &_TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();

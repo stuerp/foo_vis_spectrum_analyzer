@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.10.08) P. Stuer **/
+/** $VER: Style.cpp (2025.10.13) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -154,7 +154,7 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -178,7 +178,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
-        const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+        const FLOAT FontSize = ToDIPs(_FontSize / scaleFactor); // In DIPs
 
         hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat);
 

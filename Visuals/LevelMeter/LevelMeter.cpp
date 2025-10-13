@@ -282,19 +282,19 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         hr = CreateOpacityMask(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRight, deviceContext, Size, L"", &_LeftRightStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRightIndicator, deviceContext, Size, L"", &_LeftRightIndicatorStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSide, deviceContext, Size, L"", &_MidSideStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSideIndicator, deviceContext, Size, L"", &_MidSideIndicatorStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", &_AxisStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, &_AxisStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))

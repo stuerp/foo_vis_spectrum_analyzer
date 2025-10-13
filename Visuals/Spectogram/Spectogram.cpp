@@ -857,22 +857,22 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, deviceContext, Size, L"", &_SpectogramStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, deviceContext, Size, L"", 1.f, &_SpectogramStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, Size, L"", &_TimeLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, Size, L"", 1.f, &_TimeLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"00:00", &_TimeTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"00:00", 1.f, &_TimeTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, Size, L"", &_FreqLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, Size, L"", 1.f, &_FreqLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, Size, L"99.9fk", &_FreqTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, Size, L"99.9fk", 1.f, &_FreqTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, Size, L"", &_NyquistMarkerStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, Size, L"", 1.f, &_NyquistMarkerStyle);
 
     if (SUCCEEDED(hr))
         Resize();

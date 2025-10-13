@@ -607,22 +607,22 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         {
             case VisualizationType::Bars:
             {
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, L"", &_BarAreaStyle);
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, L"", 1.f, &_BarAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, L"", &_BarTopStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, L"", 1.f, &_BarTopStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, L"", &_BarPeakAreaStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, L"", 1.f, &_BarPeakAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, L"", &_BarPeakTopStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, L"", 1.f, &_BarPeakTopStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, deviceContext, _ClientSize, L"", &_DarkBackgroundStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, deviceContext, _ClientSize, L"", 1.f, &_DarkBackgroundStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, deviceContext, _ClientSize, L"", &_LightBackgroundStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, deviceContext, _ClientSize, L"", 1.f, &_LightBackgroundStyle);
 
                 if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
                     hr = CreateOpacityMask(deviceContext);
@@ -631,16 +631,16 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
             case VisualizationType::Curve:
             {
-                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, deviceContext, _ClientSize, L"", &_CurveLineStyle);
+                hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveLine, deviceContext, _ClientSize, L"", 1.f, &_CurveLineStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, deviceContext, _ClientSize, L"", &_CurveAreaStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurveArea, deviceContext, _ClientSize, L"", 1.f, &_CurveAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, deviceContext, _ClientSize, L"", &_CurvePeakLineStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, deviceContext, _ClientSize, L"", 1.f, &_CurvePeakLineStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, deviceContext, _ClientSize, L"", &_CurvePeakAreaStyle);
+                    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, deviceContext, _ClientSize, L"", 1.f, &_CurvePeakAreaStyle);
 
                 break;
             }
@@ -680,7 +680,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     }
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, _ClientSize, L"", &_NyquistMarkerStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, _ClientSize, L"", 1.f, &_NyquistMarkerStyle);
 
     return hr;
 }

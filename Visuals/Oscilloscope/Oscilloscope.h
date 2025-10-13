@@ -75,5 +75,5 @@ private:
     CComPtr<ID2D1Effect> _GaussBlurEffect;
     CComPtr<ID2D1Effect> _ColorMatrixEffect;
 
-    CComPtr<ID2D1CommandList> _CommandList;
+    CComPtr<ID2D1CommandList> _GridCommandList;
 };

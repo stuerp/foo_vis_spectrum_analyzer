@@ -58,7 +58,7 @@ public:
     }
 
     // Helper
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, style_t ** style) noexcept
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept
     {
         if (*style == nullptr)
         {
@@ -71,7 +71,7 @@ public:
         if ((*style)->_Brush != nullptr)
             return S_OK;
 
-        return (*style)->CreateDeviceSpecificResources(deviceContext, size, text);
+        return (*style)->CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
     }
 
     // Helper for radial bars

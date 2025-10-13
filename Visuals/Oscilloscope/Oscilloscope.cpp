@@ -106,7 +106,7 @@ void oscilloscope_t::Resize() noexcept
     _BackBuffer.Release();
     _FrontBuffer.Release();
 
-    _CommandList.Release();
+    _GridCommandList.Release();
 
     _IsResized = false;
 }
@@ -316,6 +316,11 @@ void oscilloscope_t::RenderXY(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
+    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+
+    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
+    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
+
     CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
@@ -356,14 +361,7 @@ void oscilloscope_t::RenderXY(ID2D1DeviceContext * deviceContext) noexcept
         }
 
         if (SUCCEEDED(hr))
-        {
-            const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
-
-            const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
-            const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
-
             hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
-        }
     }
 
     if (SUCCEEDED(hr))
@@ -384,12 +382,21 @@ void oscilloscope_t::RenderXY(ID2D1DeviceContext * deviceContext) noexcept
     {
         deviceContext->Clear(D2D1::ColorF(0));
 
+        // Draw the grid.
+        {
+            deviceContext->SetTransform(Translate);
+
+            deviceContext->DrawImage(_GridCommandList);
+
+            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        }
+
         // Draw the back buffer to the window.
-        deviceContext->DrawImage(_CommandList);
+        {
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-        deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-        deviceContext->DrawBitmap(_BackBuffer);
+            deviceContext->DrawBitmap(_BackBuffer);
+        }
 
         // Add the phosphor afterglow effect before the next pass.
         {
@@ -447,25 +454,22 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
         Resize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", &_SignalLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", 1.f, &_SignalLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"0.0", &_XAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", 1.f, &_XAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", &_XAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, &_YAxisTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", &_YAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", 1.f, &_YAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", &_YAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_HorizontalGridLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", &_HorizontalGridLineStyle);
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", &_VerticalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_VerticalGridLineStyle);
 
     if (_State->_XYMode)
     {
@@ -550,7 +554,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             }
         }
 
-        if (SUCCEEDED(hr) && (_CommandList == nullptr))
+        if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
             hr = CreateGrid();
     }
 
@@ -571,12 +575,6 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
     {
         _SignalLineStyle->ReleaseDeviceSpecificResources();
         _SignalLineStyle = nullptr;
-    }
-
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->ReleaseDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
     }
 
     if (_XAxisLineStyle)
@@ -627,7 +625,7 @@ HRESULT oscilloscope_t::CreateGrid() noexcept
 
     // Create a command list that will store the grid pattern.
     if (SUCCEEDED(hr))
-        hr = _DeviceContext->CreateCommandList(&_CommandList);
+        hr = _DeviceContext->CreateCommandList(&_GridCommandList);
 
     if (SUCCEEDED(hr))
     {
@@ -635,54 +633,92 @@ HRESULT oscilloscope_t::CreateGrid() noexcept
 
         hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(1.f, 1.f, 1.f, 0.4f)), &Brush);
 
-        _DeviceContext->SetTarget(_CommandList);
+        CComPtr<ID2D1StrokeStyle1> StrokeStyle;
 
-        _DeviceContext->BeginDraw();
+        D2D1_STROKE_STYLE_PROPERTIES1 Properties = D2D1::StrokeStyleProperties1();
 
-        const FLOAT Side = std::min(_Size.width, _Size.height);
+        Properties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        const FLOAT CenterX = Side / 2.f;
-        const FLOAT CenterY = Side / 2.f;
+        _Direct2D.Factory->CreateStrokeStyle(Properties, nullptr, 0, &StrokeStyle);
 
-        const FLOAT OffsetX = (_Size.width  - Side) / 2.f;
-        const FLOAT OffsetY = (_Size.height - Side) / 2.f;
-
-        CComPtr<IDWriteTextLayout> TextLayout;
-
-//      HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
-        _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-
-        for (FLOAT x = 0.f; x < 1.01f; x += .2f)
         {
-            FLOAT X = OffsetX + CenterX + (x * CenterX);
+            const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
 
-            _DeviceContext->DrawLine(D2D1::Point2F(X, OffsetY), D2D1::Point2F(X, OffsetY + Side), Brush);
+            const auto Scale = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
 
-            X = OffsetX + CenterX - (x * CenterX);
+            style_t * TextStyle = nullptr;
 
-            _DeviceContext->DrawLine(D2D1::Point2F(X, OffsetY), D2D1::Point2F(X, OffsetY + Side), Brush);
+            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &TextStyle);
 
-            D2D1_RECT_F r = { X, 0.f, X + 20.f, 20.f };
+            TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-            _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, r, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->SetTarget(_GridCommandList);
+            _DeviceContext->BeginDraw();
+
+            _DeviceContext->SetTransform(Scale);
+
+            for (FLOAT x = 0.f; x <= 1.f; x += .2f)
+            {
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), Brush, 1.f, StrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), Brush, 1.f, StrokeStyle);
+
+                {
+                    WCHAR Text[6] = { };
+
+                    D2D1_RECT_F r = { x - TextStyle->_Width, 0.f, x + TextStyle->_Width, TextStyle->_Height };
+
+                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
+
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                    if (x != 0.f)
+                    {
+                        r = { -x - TextStyle->_Width, 0.f, -x + TextStyle->_Width, TextStyle->_Height };
+
+                        ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -x);
+
+                        _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+                }
+            }
+
+            TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+            for (FLOAT y = 0.f; y < 1.01f; y += .2f)
+            {
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), Brush, 1.f, StrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), Brush, 1.f, StrokeStyle);
+
+                if (y != 0.f)
+                {
+                    WCHAR Text[6] = { };
+
+                    D2D1_RECT_F r = { 0.f, -(y - TextStyle->_Height), TextStyle->_Width, -(y + TextStyle->_Height) };
+
+                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
+
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                    r = { 0.f, (y - TextStyle->_Height), TextStyle->_Width, (y + TextStyle->_Height) };
+
+                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
+
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                }
+            }
+
+            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+            hr = _DeviceContext->EndDraw();
+
+            TextStyle->ReleaseDeviceSpecificResources();
         }
-
-        for (FLOAT y = 0.f; y < 1.01f; y += .2f)
-        {
-            FLOAT Y = OffsetY + CenterY + (y * CenterY);
-
-            _DeviceContext->DrawLine(D2D1::Point2F(OffsetX, Y), D2D1::Point2F(OffsetX + Side, Y), Brush);
-
-            Y = OffsetY + CenterY - (y * CenterY);
-
-            _DeviceContext->DrawLine(D2D1::Point2F(OffsetX, Y), D2D1::Point2F(OffsetX + Side, Y), Brush);
-        }
-
-        hr = _DeviceContext->EndDraw();
     }
 
     if (SUCCEEDED(hr))
-        hr = _CommandList->Close();
+        hr = _GridCommandList->Close();
 
     return hr;
 }

@@ -358,22 +358,22 @@ HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         hr = CreateOpacityMask(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeBackground, deviceContext, _Size, L"", &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevel, deviceContext, _Size, L"", &_PeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevel, deviceContext, _Size, L"", 1.f, &_PeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBPeakLevel, deviceContext, _Size, L"", &_Peak0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBPeakLevel, deviceContext, _Size, L"", 1.f, &_Peak0dBStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMaxPeakLevel, deviceContext, _Size, L"", &_MaxPeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMaxPeakLevel, deviceContext, _Size, L"", 1.f, &_MaxPeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevel, deviceContext, _Size, L"", &_RMSStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevel, deviceContext, _Size, L"", 1.f, &_RMSStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBRMSLevel, deviceContext, _Size, L"", &_RMS0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBRMSLevel, deviceContext, _Size, L"", 1.f, &_RMS0dBStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
