@@ -219,6 +219,7 @@
     <ClInclude Include="Visuals\AmplitudeScaler.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
+    <ClInclude Include="Visuals\Oscilloscope\OscilloscopeXY.h" />
     <ClInclude Include="Visuals\PeakMeter\GaugeNames.h" />
     <ClInclude Include="Visuals\PeakMeter\Gauges.h" />
     <ClInclude Include="Visuals\PeakMeter\GaugeScales.h" />
@@ -312,6 +313,7 @@
     <ClCompile Include="Configuration\PresetManager.cpp" />
     <ClCompile Include="Visuals\LevelMeter\LevelMeter.cpp" />
     <ClCompile Include="Visuals\Oscilloscope\Oscilloscope.cpp" />
+    <ClCompile Include="Visuals\Oscilloscope\OscilloscopeXY.cpp" />
     <ClCompile Include="Visuals\PeakMeter\GaugeNames.cpp" />
     <ClCompile Include="Visuals\PeakMeter\Gauges.cpp" />
     <ClCompile Include="Visuals\PeakMeter\GaugeScales.cpp" />

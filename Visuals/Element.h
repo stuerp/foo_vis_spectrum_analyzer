@@ -60,7 +60,7 @@ public:
         return _Bounds.right;
     }
 
-    virtual void ReleaseDeviceSpecificResources() noexcept { };
+    virtual void DeleteDeviceSpecificResources() noexcept { };
 
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;

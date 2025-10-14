@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.10.05) P. Stuer **/
+/** $VER: Constans.h (2025.10.14) P. Stuer **/
 
 #pragma once
 

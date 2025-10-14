@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.10.08) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2025.10.14) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1457,6 +1457,22 @@
 
 #define W_B14  W_B12
 #define H_B14  11 + H_C51 + IY + H_C52 + 7
+#pragma endregion
+
+#pragma region Oscilloscope
+
+// Groupbox
+#define X_B18   X_B14
+#define Y_B18   Y_B14 + H_B14 + IY
+
+    #define W_C54    60
+    #define H_C54    H_CHB
+    #define X_C54    X_C51
+    #define Y_C54    Y_B18 + 11
+
+#define W_B18  W_B14
+#define H_B18  11 + H_C54 + 7
+
 #pragma endregion
 
 #pragma endregion

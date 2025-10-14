@@ -81,10 +81,48 @@ void style_manager_t::UpdateCurrentColors() noexcept
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_manager_t::ReleaseDeviceSpecificResources() noexcept
+void style_manager_t::DeleteDeviceSpecificResources() noexcept
 {
     for (auto & [ID, Style] : Styles)
         Style.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept
+{
+    if (*style == nullptr)
+    {
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+    }
+
+    if ((*style)->_Brush != nullptr)
+        return S_OK;
+
+    return (*style)->CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
+{
+    if (*style == nullptr)
+    {
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+    }
+
+    if ((*style)->_Brush != nullptr)
+        return S_OK;
+
+    return (*style)->CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
 }
 
 /// <summary>

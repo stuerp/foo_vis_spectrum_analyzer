@@ -243,7 +243,7 @@ void state_t::Reset() noexcept
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
 
-    _XYMode = true;
+    _XYMode = false;
 
     _StyleManager.Reset();
 

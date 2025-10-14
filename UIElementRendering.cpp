@@ -116,7 +116,7 @@ void uielement_t::ProcessEvents() noexcept
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
     {
         _RenderThread._StyleManager.UpdateCurrentColors();
-        _RenderThread._StyleManager.ReleaseDeviceSpecificResources();
+        _RenderThread._StyleManager.DeleteDeviceSpecificResources();
     }
 }
 
@@ -462,7 +462,7 @@ void uielement_t::ReleaseDeviceSpecificResources()
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
-    _RenderThread._StyleManager.ReleaseDeviceSpecificResources();
+    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
 
     for (auto & Iter : _Grid)
         Iter._Graph->ReleaseDeviceSpecificResources();

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.12) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2025.10.14) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -28,7 +28,9 @@ oscilloscope_t::oscilloscope_t()
 
     _YAxisTextStyle = nullptr;
     _YAxisLineStyle = nullptr;
+
     _HorizontalGridLineStyle = nullptr;
+    _VerticalGridLineStyle = nullptr;
 
     Reset();
 }
@@ -38,7 +40,7 @@ oscilloscope_t::oscilloscope_t()
 /// </summary>
 oscilloscope_t::~oscilloscope_t()
 {
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -50,7 +52,7 @@ void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settin
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     // Create the labels.
     {
@@ -103,11 +105,6 @@ void oscilloscope_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
-    _BackBuffer.Release();
-    _FrontBuffer.Release();
-
-    _GridCommandList.Release();
-
     _IsResized = false;
 }
 
@@ -115,17 +112,6 @@ void oscilloscope_t::Resize() noexcept
 /// Renders this instance.
 /// </summary>
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
-{
-    if (_State->_XYMode)
-        RenderXY(deviceContext);
-    else
-        RenderAmplitude(deviceContext);
-}
-
-/// <summary>
-/// Renders the signal.
-/// </summary>
-void oscilloscope_t::RenderAmplitude(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
@@ -249,15 +235,15 @@ void oscilloscope_t::RenderAmplitude(ID2D1DeviceContext * deviceContext) noexcep
     // Draw the signal.
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    CComPtr<ID2D1PathGeometry> Path;
+    CComPtr<ID2D1PathGeometry> Geometry;
 
-    hr = _Direct2D.Factory->CreatePathGeometry(&Path);
+    hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
 
     if (SUCCEEDED(hr))
     {
         CComPtr<ID2D1GeometrySink> Sink;
 
-        hr = Path->Open(&Sink);
+        hr = Geometry->Open(&Sink);
 
         if (SUCCEEDED(hr))
         {
@@ -302,121 +288,7 @@ void oscilloscope_t::RenderAmplitude(ID2D1DeviceContext * deviceContext) noexcep
         }
 
         if (SUCCEEDED(hr))
-            deviceContext->DrawGeometry(Path, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
-    }
-}
-
-/// <summary>
-/// Renders the signal in X-Y mode.
-/// </summary>
-void oscilloscope_t::RenderXY(ID2D1DeviceContext * deviceContext) noexcept
-{
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
-
-    if (!SUCCEEDED(hr))
-        return;
-
-    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
-
-    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
-    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
-
-    CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
-
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
-
-    if ((FrameCount >= 2) || (ChannelCount == 2))
-    {
-        const audio_sample * Samples = _Analysis->_Chunk.get_data();
-
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-        CComPtr<ID2D1PathGeometry> Geometry;
-
-        hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-        if (SUCCEEDED(hr))
-        {
-            CComPtr<ID2D1GeometrySink> Sink;
-
-            hr = Geometry->Open(&Sink);
-
-            FLOAT x = (FLOAT) Samples[0];
-            FLOAT y = (FLOAT) Samples[1];
-
-            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-            for (size_t i = 2; i < FrameCount; i += 2)
-            {
-                x = (FLOAT) Samples[i    ];
-                y = (FLOAT) Samples[i + 1];
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-            }
-
-            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-            hr = Sink->Close();
-        }
-
-        if (SUCCEEDED(hr))
-            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        if (TransformedGeometry != nullptr)
-        {
-            _DeviceContext->SetTarget(_BackBuffer);
-
-            _DeviceContext->BeginDraw();
-
-            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
-
-            hr = _DeviceContext->EndDraw();
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        deviceContext->Clear(D2D1::ColorF(0));
-
-        // Draw the grid.
-        {
-            deviceContext->SetTransform(Translate);
-
-            deviceContext->DrawImage(_GridCommandList);
-
-            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-        }
-
-        // Draw the back buffer to the window.
-        {
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-            deviceContext->DrawBitmap(_BackBuffer);
-        }
-
-        // Add the phosphor afterglow effect before the next pass.
-        {
-            _DeviceContext->SetTarget(_FrontBuffer);
-            _DeviceContext->BeginDraw();
-
-            _GaussBlurEffect->SetInput(0, _BackBuffer);
-
-            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-            _DeviceContext->DrawImage(_GaussBlurEffect);
-
-            _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-            _DeviceContext->DrawImage(_ColorMatrixEffect);
-
-            hr = _DeviceContext->EndDraw();
-        }
-
-        std::swap(_FrontBuffer, _BackBuffer);
+            deviceContext->DrawGeometry(Geometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
     }
 }
 
@@ -438,7 +310,7 @@ HRESULT oscilloscope_t::CreateDeviceIndependentResources() noexcept
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void oscilloscope_t::ReleaseDeviceIndependentResources() noexcept
+void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 {
     _SignalStrokeStyle.Release();
 }
@@ -457,6 +329,9 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", 1.f, &_SignalLineStyle);
 
     if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999", 1.f, &_XAxisTextStyle);
+
+    if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", 1.f, &_XAxisLineStyle);
 
     if (SUCCEEDED(hr))
@@ -471,93 +346,6 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_VerticalGridLineStyle);
 
-    if (_State->_XYMode)
-    {
-        if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
-            hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
-
-        if (SUCCEEDED(hr))
-        {
-            const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
-
-            if (_FrontBuffer == nullptr)
-            {
-                hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
-
-                if (SUCCEEDED(hr))
-                {
-                    _DeviceContext->SetTarget(_FrontBuffer);
-
-                    _DeviceContext->BeginDraw();
-
-                    _DeviceContext->Clear(D2D1::ColorF(0));
-
-                    hr = _DeviceContext->EndDraw();
-
-                    _DeviceContext->SetTarget(nullptr);
-                }
-            }
-
-            if (_BackBuffer == nullptr)
-            {
-                hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
-
-                if (SUCCEEDED(hr))
-                {
-                    _DeviceContext->SetTarget(_BackBuffer);
-
-                    _DeviceContext->BeginDraw();
-
-                    _DeviceContext->Clear(D2D1::ColorF(0));
-
-                    hr = _DeviceContext->EndDraw();
-
-                    _DeviceContext->SetTarget(nullptr);
-                }
-            }
-        }
-
-        if (SUCCEEDED(hr) && (_GaussBlurEffect == nullptr))
-        {
-            hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
-
-            if (SUCCEEDED(hr))
-            {
-                const float BLUR_SIGMA = 3.0f;
-
-                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, BLUR_SIGMA);
-                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-                _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-            }
-        }
-
-        if (SUCCEEDED(hr) && (_ColorMatrixEffect == nullptr))
-        {
-            hr = deviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
-
-            if (SUCCEEDED(hr))
-            {
-                const float DECAY_FACTOR = 0.92f; // Higher values for longer persistence
-
-                // Color matrix for uniform decay
-                #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-                const D2D1_MATRIX_5X4_F DecayMatrix =
-                {
-                    DECAY_FACTOR, 0, 0, 0,
-                    0, DECAY_FACTOR, 0, 0,
-                    0, 0, DECAY_FACTOR, 0,
-                    0, 0, 0, 1,
-                    0, 0, 0, 0
-                };
-
-                _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
-            }
-        }
-
-        if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
-            hr = CreateGrid();
-    }
-
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
         deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
@@ -569,12 +357,18 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
+void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
     if (_SignalLineStyle)
     {
         _SignalLineStyle->DeleteDeviceSpecificResources();
         _SignalLineStyle = nullptr;
+    }
+
+    if (_XAxisTextStyle)
+    {
+        _XAxisTextStyle->DeleteDeviceSpecificResources();
+        _XAxisTextStyle = nullptr;
     }
 
     if (_XAxisLineStyle)
@@ -604,142 +398,4 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
-
-    _ColorMatrixEffect.Release();
-
-    _GaussBlurEffect.Release();
-
-    _BackBuffer.Release();
-
-    _FrontBuffer.Release();
-
-    _DeviceContext.Release();
-}
-
-/// <summary>
-/// Creates a command list to render the grid and the X and Y axis labels.
-/// </summary>
-HRESULT oscilloscope_t::CreateGrid() noexcept
-{
-    HRESULT hr = S_OK;
-
-    // Create a command list that will store the grid pattern.
-    if (SUCCEEDED(hr))
-        hr = _DeviceContext->CreateCommandList(&_GridCommandList);
-
-    CComPtr<ID2D1SolidColorBrush> Brush;
-
-    if (SUCCEEDED(hr))
-        hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(1.f, 1.f, 1.f, 0.4f)), &Brush);
-
-    // Create a brush stroke style that remains fixed during the scaling transformation.
-    CComPtr<ID2D1StrokeStyle1> StrokeStyle;
-
-    D2D1_STROKE_STYLE_PROPERTIES1 Properties = D2D1::StrokeStyleProperties1();
-
-    Properties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
-
-    if (SUCCEEDED(hr))
-        hr = _Direct2D.Factory->CreateStrokeStyle(Properties, nullptr, 0, &StrokeStyle);
-
-    // Create a pre-scaled font to counter the scaling transformation.
-    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
-
-    const auto Scale = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
-
-    style_t * TextStyle = nullptr;
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &TextStyle);
-
-    if (SUCCEEDED(hr))
-    {
-        WCHAR Text[6] = { };
-
-        _DeviceContext->SetTarget(_GridCommandList);
-        _DeviceContext->BeginDraw();
-
-        _DeviceContext->SetTransform(Scale);
-
-        // Draw the center label.
-        hr = TextStyle->MeasureText(L"0.0");
-
-        D2D1_RECT_F TextRect = { 0 - TextStyle->_Width, 0.f, 0 + TextStyle->_Width, TextStyle->_Height };
-
-        TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-
-        _DeviceContext->DrawText(L"0.0", 3, TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-        _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F( 0.f, 1.f), Brush, 1.f, StrokeStyle);
-
-        for (FLOAT x = .2f; x < 1.01f; x += .2f)
-        {
-            // Draw the negative X label.
-            _DeviceContext->DrawLine(D2D1::Point2F(x, -1.f), D2D1::Point2F(x, 1.f), Brush, 1.f, StrokeStyle);
-
-            TextRect = { -x - TextStyle->_Width, 0.f, -x + TextStyle->_Width, TextStyle->_Height };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
-
-            hr = TextStyle->MeasureText(Text);
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            // Draw the positive X label.
-            _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), Brush, 1.f, StrokeStyle);
-
-            TextRect = { x - TextStyle->_Width, 0.f, x + TextStyle->_Width, TextStyle->_Height };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-
-            hr = TextStyle->MeasureText(Text);
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
-
-        TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-        TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-        _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), Brush, 1.f, StrokeStyle);
-
-        for (FLOAT y = .2f; y < 1.01f; y += .2f)
-        {
-            // Draw the negative y label.
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), Brush, 1.f, StrokeStyle);
-
-            TextRect = { 0.f, -(y - TextStyle->_Height), TextStyle->_Width, -(y + TextStyle->_Height) };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
-
-            hr = TextStyle->MeasureText(Text);
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            // Draw the positive y label.
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), Brush, 1.f, StrokeStyle);
-
-            TextRect = { 0.f, (y - TextStyle->_Height), TextStyle->_Width, (y + TextStyle->_Height) };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
-
-        _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        hr = _DeviceContext->EndDraw();
-    }
-
-    if (TextStyle != nullptr)
-        TextStyle->DeleteDeviceSpecificResources();
-
-    if (SUCCEEDED(hr))
-        hr = _GridCommandList->Close();
-
-    return hr;
 }

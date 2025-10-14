@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.14) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2025.10.14) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #pragma once
 
@@ -7,17 +7,17 @@
 
 #include "Element.h"
 
-class oscilloscope_t : public element_t
+class oscilloscope_xy_t : public element_t
 {
 public:
-    oscilloscope_t();
+    oscilloscope_xy_t();
 
-    oscilloscope_t(const oscilloscope_t &) = delete;
-    oscilloscope_t & operator=(const oscilloscope_t &) = delete;
-    oscilloscope_t(oscilloscope_t &&) = delete;
-    oscilloscope_t & operator=(oscilloscope_t &&) = delete;
+    oscilloscope_xy_t(const oscilloscope_xy_t &) = delete;
+    oscilloscope_xy_t & operator=(const oscilloscope_xy_t &) = delete;
+    oscilloscope_xy_t(oscilloscope_xy_t &&) = delete;
+    oscilloscope_xy_t & operator=(oscilloscope_xy_t &&) = delete;
 
-    virtual ~oscilloscope_t();
+    virtual ~oscilloscope_xy_t();
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
@@ -33,18 +33,11 @@ public:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
+    HRESULT CreateGridCommandList() noexcept;
+
+private:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
-
-    struct label_t
-    {
-        std::wstring Text;
-        double Amplitude;
-
-        bool IsMin;
-        bool IsMax;
-    };
-
-    std::vector<label_t> _Labels;
+    CComPtr<ID2D1StrokeStyle1> _GridStrokeStyle;
 
     style_t * _SignalLineStyle;
 
@@ -60,4 +53,14 @@ private:
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
+
+    CComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
+
+    CComPtr<ID2D1Bitmap1> _FrontBuffer;
+    CComPtr<ID2D1Bitmap1> _BackBuffer;
+
+    CComPtr<ID2D1Effect> _GaussBlurEffect;
+    CComPtr<ID2D1Effect> _ColorMatrixEffect;
+
+    CComPtr<ID2D1CommandList> _GridCommandList;
 };

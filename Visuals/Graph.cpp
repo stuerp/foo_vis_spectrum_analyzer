@@ -60,7 +60,10 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
             break;
 
         case VisualizationType::Oscilloscope:
-            _Visualization = std::make_unique<oscilloscope_t>();
+            if (!_State->_XYMode)
+                _Visualization = std::make_unique<oscilloscope_t>();
+            else
+                _Visualization = std::make_unique<oscilloscope_xy_t>();
             break;
     }
 
@@ -294,7 +297,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// </summary>
 void graph_t::ReleaseDeviceSpecificResources() noexcept
 {
-    _Visualization->ReleaseDeviceSpecificResources();
+    _Visualization->DeleteDeviceSpecificResources();
 
     SafeRelease(&_DescriptionBackgroundStyle);
     SafeRelease(&_DescriptionTextStyle);

@@ -80,7 +80,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
         if (_VisualisationStream.is_valid())
         {
-        //  _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+            _VisualisationStream->request_backlog(1.0); // Initialize the backbuffer allowing data requests up to 1s back in time.
             _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
         }
     }
@@ -90,15 +90,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
         return -1;
     }
-/*
-    // Register ourselves with the album art notification manager.
-    {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager_v2::tryGet();
 
-        if (AlbumArtNotificationManager.is_valid())
-            AlbumArtNotificationManager->add(this);
-    }
-*/
     // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing).
     {
         metadb_handle_ptr CurrentTrack;
@@ -129,15 +121,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 void uielement_t::OnDestroy()
 {
     StopTimer();
-/*
-    // Unregister ourselves with the album art notification manager.
-    {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
 
-        if (AlbumArtNotificationManager.is_valid())
-            AlbumArtNotificationManager->remove(this);
-    }
-*/
     _CriticalSection.Enter();
 
     {
@@ -163,7 +147,6 @@ void uielement_t::OnDestroy()
 /// </summary>
 void uielement_t::OnPaint(CDCHandle hDC)
 {
-//  Log::Write(Log::Level::Trace, "%8d: OnPaint", (uint32_t) ::GetTickCount64());
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
@@ -180,8 +163,6 @@ void uielement_t::OnSize(UINT type, CSize size)
     _CriticalSection.Enter();
 
     D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
-
-//  _RenderTarget->Resize(Size);
 
     // Remove the bitmap from the device context.
     _DeviceContext->SetTarget(nullptr);
@@ -217,35 +198,6 @@ void uielement_t::OnSize(UINT type, CSize size)
         if (SUCCEEDED(hr))
             _DeviceContext->SetTarget(Bitmap);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     Resize();
 
@@ -615,7 +567,7 @@ void uielement_t::UpdateState() noexcept
         _RenderThread = _UIThread;
 
         _RenderThread._SampleRate = 0;
-        _RenderThread._StyleManager.ReleaseDeviceSpecificResources();
+        _RenderThread._StyleManager.DeleteDeviceSpecificResources();
 
         // Recreate the resources that depend on the artwork.
         CreateArtworkDependentResources();

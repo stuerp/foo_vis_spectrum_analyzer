@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2025.10.08) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2025.10.14) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -57,41 +57,11 @@ public:
         }
     }
 
-    // Helper
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept
-    {
-        if (*style == nullptr)
-        {
-            *style = GetStyle(visualElement);
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept;
 
-            if (*style == nullptr)
-                return E_FAIL;
-        }
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept;
 
-        if ((*style)->_Brush != nullptr)
-            return S_OK;
-
-        return (*style)->CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
-    }
-
-    // Helper for radial bars
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
-    {
-        if (*style == nullptr)
-        {
-            *style = GetStyle(visualElement);
-
-            if (*style == nullptr)
-                return E_FAIL;
-        }
-
-        if ((*style)->_Brush != nullptr)
-            return S_OK;
-
-        return (*style)->CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
-    }
-
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
 public:
     std::unordered_map<VisualElement, style_t> Styles;
@@ -211,9 +181,17 @@ private:
             VisualElement::XAxisText,
             {
                 /* Name                */ L"X-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
+                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                /*_ColorSource         */ ColorSource::Solid,
+                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+                /*_ColorIndex          */ 0,
+                /*_ColorScheme         */ ColorScheme::Solid,
+                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /*_Opacity             */ 1.f,
+                /*_Thickness           */ 0.f,
+                /*_FontName            */ L"Segoe UI",
+                /*_FontSize            */ 6.f
             }
         },
 
@@ -231,9 +209,17 @@ private:
             VisualElement::YAxisText,
             {
                 /* Name                */ L"Y-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 6.f,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
+                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                /*_ColorSource         */ ColorSource::Solid,
+                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+                /*_ColorIndex          */ 0,
+                /*_ColorScheme         */ ColorScheme::Solid,
+                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /*_Opacity             */ 1.f,
+                /*_Thickness           */ 0.f,
+                /*_FontName            */ L"Segoe UI",
+                /*_FontSize            */ 6.f
             }
         },
 
@@ -261,7 +247,7 @@ private:
             VisualElement::VerticalGridLine,
             {
                 /* Name                */ L"Vertical Grid Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
@@ -285,7 +271,7 @@ private:
                 /* Name                */ L"Bar Area",
                 /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
                 style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -305,7 +291,7 @@ private:
                 /* Name                */ L"Bar Peak Area",
                 /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
                 style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware,
-                ColorSource::None, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f,
+                ColorSource::None, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f,
             }
         },
 
@@ -347,7 +333,7 @@ private:
                 /* Name                */ L"Curve Line",
                 /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f,
             }
         },
 
@@ -357,7 +343,7 @@ private:
                 /* Name                */ L"Curve Area",
                 /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
                 style_t::Features::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .5f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .5f, 0.f, L"", 0.f,
             }
         },
 
@@ -390,7 +376,7 @@ private:
                 /* UsedBy              */ VisualizationTypes::Spectogram,
                 /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient,
                 /*_ColorSource         */ ColorSource::Gradient,
-                /*_CustomColor         */ D2D1::ColorF(0),
+                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
                 /*_ColorIndex          */ 0,
                 /*_ColorScheme         */ ColorScheme::SoX,
                 /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
@@ -419,7 +405,7 @@ private:
                 /* Name                */ L"Peak Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
                 style_t::Features::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -460,7 +446,7 @@ private:
                 /* Name                */ L"RMS Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
                 style_t::Features::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -492,7 +478,7 @@ private:
                 /* Name                */ L"Left/Right Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -512,7 +498,7 @@ private:
                 /* Name                */ L"Mid/Side Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Gradient, D2D1::ColorF(0), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2025.10.09) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2025.10.14) P. Stuer **/
 
 #include "Resources.h"
 
@@ -339,6 +339,10 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         combobox                                    IDC_CHANNEL_PAIRS,              X_C51, Y_C51,     W_C51, H_C51, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control     "Horizontal",                   IDC_HORIZONTAL_LEVEL_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C52, Y_C52, W_C52, H_C52
+
+    groupbox "Oscilloscope", IDC_OSCILLOSCOPE, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        control     "X-Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54, W_C54, H_C54
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

@@ -18,7 +18,7 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi)
 
     typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
 
-    GetDpiForWindow_t GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow");
+    const auto GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow");
 
     if (GetDpiForWindow_ != nullptr)
         dpi = GetDpiForWindow_(hWnd);

@@ -454,9 +454,9 @@
 
 // Oscilloscope
 
-#define IDC_OSCILLOSCOPE                7190
+#define IDC_OSCILLOSCOPE                7200
 
-#define IDC_XY_MODE                     7192
+#define IDC_XY_MODE                     7202
 
 #pragma endregion
 
