@@ -318,31 +318,31 @@ void level_meter_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_AxisStyle)
     {
-        _AxisStyle->ReleaseDeviceSpecificResources();
+        _AxisStyle->DeleteDeviceSpecificResources();
         _AxisStyle = nullptr;
     }
 
     if (_MidSideIndicatorStyle)
     {
-        _MidSideIndicatorStyle->ReleaseDeviceSpecificResources();
+        _MidSideIndicatorStyle->DeleteDeviceSpecificResources();
         _MidSideIndicatorStyle = nullptr;
     }
 
     if (_MidSideStyle)
     {
-        _MidSideStyle->ReleaseDeviceSpecificResources();
+        _MidSideStyle->DeleteDeviceSpecificResources();
         _MidSideStyle = nullptr;
     }
 
     if (_LeftRightIndicatorStyle)
     {
-        _LeftRightIndicatorStyle->ReleaseDeviceSpecificResources();
+        _LeftRightIndicatorStyle->DeleteDeviceSpecificResources();
         _LeftRightIndicatorStyle = nullptr;
     }
 
     if (_LeftRightStyle)
     {
-        _LeftRightStyle->ReleaseDeviceSpecificResources();
+        _LeftRightStyle->DeleteDeviceSpecificResources();
         _LeftRightStyle = nullptr;
     }
 

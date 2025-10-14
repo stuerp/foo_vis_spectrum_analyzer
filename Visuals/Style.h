@@ -62,7 +62,7 @@ public:
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor = 1.f) noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT MeasureText(const std::wstring & text) noexcept;
 

@@ -394,31 +394,31 @@ void gauge_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_RMSStyle)
     {
-        _RMSStyle->ReleaseDeviceSpecificResources();
+        _RMSStyle->DeleteDeviceSpecificResources();
         _RMSStyle = nullptr;
     }
 
     if (_MaxPeakStyle)
     {
-        _MaxPeakStyle->ReleaseDeviceSpecificResources();
+        _MaxPeakStyle->DeleteDeviceSpecificResources();
         _MaxPeakStyle = nullptr;
     }
 
     if (_Peak0dBStyle)
     {
-        _Peak0dBStyle->ReleaseDeviceSpecificResources();
+        _Peak0dBStyle->DeleteDeviceSpecificResources();
         _Peak0dBStyle = nullptr;
     }
 
     if (_PeakStyle)
     {
-        _PeakStyle->ReleaseDeviceSpecificResources();
+        _PeakStyle->DeleteDeviceSpecificResources();
         _PeakStyle = nullptr;
     }
 
     if (_BackgroundStyle)
     {
-        _BackgroundStyle->ReleaseDeviceSpecificResources();
+        _BackgroundStyle->DeleteDeviceSpecificResources();
         _BackgroundStyle = nullptr;
     }
 

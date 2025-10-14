@@ -573,31 +573,31 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 {
     if (_SignalLineStyle)
     {
-        _SignalLineStyle->ReleaseDeviceSpecificResources();
+        _SignalLineStyle->DeleteDeviceSpecificResources();
         _SignalLineStyle = nullptr;
     }
 
     if (_XAxisLineStyle)
     {
-        _XAxisLineStyle->ReleaseDeviceSpecificResources();
+        _XAxisLineStyle->DeleteDeviceSpecificResources();
         _XAxisLineStyle = nullptr;
     }
 
     if (_YAxisTextStyle)
     {
-        _YAxisTextStyle->ReleaseDeviceSpecificResources();
+        _YAxisTextStyle->DeleteDeviceSpecificResources();
         _YAxisTextStyle = nullptr;
     }
 
     if (_YAxisLineStyle)
     {
-        _YAxisLineStyle->ReleaseDeviceSpecificResources();
+        _YAxisLineStyle->DeleteDeviceSpecificResources();
         _YAxisLineStyle = nullptr;
     }
 
     if (_HorizontalGridLineStyle)
     {
-        _HorizontalGridLineStyle->ReleaseDeviceSpecificResources();
+        _HorizontalGridLineStyle->DeleteDeviceSpecificResources();
         _HorizontalGridLineStyle = nullptr;
     }
 
@@ -617,7 +617,7 @@ void oscilloscope_t::ReleaseDeviceSpecificResources() noexcept
 }
 
 /// <summary>
-/// 
+/// Creates a command list to render the grid and the X and Y axis labels.
 /// </summary>
 HRESULT oscilloscope_t::CreateGrid() noexcept
 {
@@ -627,95 +627,116 @@ HRESULT oscilloscope_t::CreateGrid() noexcept
     if (SUCCEEDED(hr))
         hr = _DeviceContext->CreateCommandList(&_GridCommandList);
 
-    if (SUCCEEDED(hr))
-    {
-        CComPtr<ID2D1SolidColorBrush> Brush;
+    CComPtr<ID2D1SolidColorBrush> Brush;
 
+    if (SUCCEEDED(hr))
         hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF(1.f, 1.f, 1.f, 0.4f)), &Brush);
 
-        CComPtr<ID2D1StrokeStyle1> StrokeStyle;
+    // Create a brush stroke style that remains fixed during the scaling transformation.
+    CComPtr<ID2D1StrokeStyle1> StrokeStyle;
 
-        D2D1_STROKE_STYLE_PROPERTIES1 Properties = D2D1::StrokeStyleProperties1();
+    D2D1_STROKE_STYLE_PROPERTIES1 Properties = D2D1::StrokeStyleProperties1();
 
-        Properties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
+    Properties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        _Direct2D.Factory->CreateStrokeStyle(Properties, nullptr, 0, &StrokeStyle);
+    if (SUCCEEDED(hr))
+        hr = _Direct2D.Factory->CreateStrokeStyle(Properties, nullptr, 0, &StrokeStyle);
 
+    // Create a pre-scaled font to counter the scaling transformation.
+    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+
+    const auto Scale = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
+
+    style_t * TextStyle = nullptr;
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &TextStyle);
+
+    if (SUCCEEDED(hr))
+    {
+        WCHAR Text[6] = { };
+
+        _DeviceContext->SetTarget(_GridCommandList);
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetTransform(Scale);
+
+        // Draw the center label.
+        hr = TextStyle->MeasureText(L"0.0");
+
+        D2D1_RECT_F TextRect = { 0 - TextStyle->_Width, 0.f, 0 + TextStyle->_Width, TextStyle->_Height };
+
+        TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+        _DeviceContext->DrawText(L"0.0", 3, TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+        _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F( 0.f, 1.f), Brush, 1.f, StrokeStyle);
+
+        for (FLOAT x = .2f; x < 1.01f; x += .2f)
         {
-            const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+            // Draw the negative X label.
+            _DeviceContext->DrawLine(D2D1::Point2F(x, -1.f), D2D1::Point2F(x, 1.f), Brush, 1.f, StrokeStyle);
 
-            const auto Scale = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
+            TextRect = { -x - TextStyle->_Width, 0.f, -x + TextStyle->_Width, TextStyle->_Height };
 
-            style_t * TextStyle = nullptr;
+            ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
 
-            hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &TextStyle);
+            hr = TextStyle->MeasureText(Text);
 
-            TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            if (SUCCEEDED(hr))
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            _DeviceContext->SetTarget(_GridCommandList);
-            _DeviceContext->BeginDraw();
+            // Draw the positive X label.
+            _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), Brush, 1.f, StrokeStyle);
 
-            _DeviceContext->SetTransform(Scale);
+            TextRect = { x - TextStyle->_Width, 0.f, x + TextStyle->_Width, TextStyle->_Height };
 
-            for (FLOAT x = 0.f; x <= 1.f; x += .2f)
-            {
-                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), Brush, 1.f, StrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), Brush, 1.f, StrokeStyle);
+            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
 
-                {
-                    WCHAR Text[6] = { };
+            hr = TextStyle->MeasureText(Text);
 
-                    D2D1_RECT_F r = { x - TextStyle->_Width, 0.f, x + TextStyle->_Width, TextStyle->_Height };
-
-                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                    if (x != 0.f)
-                    {
-                        r = { -x - TextStyle->_Width, 0.f, -x + TextStyle->_Width, TextStyle->_Height };
-
-                        ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -x);
-
-                        _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    }
-                }
-            }
-
-            TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-
-            for (FLOAT y = 0.f; y < 1.01f; y += .2f)
-            {
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), Brush, 1.f, StrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), Brush, 1.f, StrokeStyle);
-
-                if (y != 0.f)
-                {
-                    WCHAR Text[6] = { };
-
-                    D2D1_RECT_F r = { 0.f, -(y - TextStyle->_Height), TextStyle->_Width, -(y + TextStyle->_Height) };
-
-                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
-
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                    r = { 0.f, (y - TextStyle->_Height), TextStyle->_Width, (y + TextStyle->_Height) };
-
-                    ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
-
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, r, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
-            }
-
-            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-            hr = _DeviceContext->EndDraw();
-
-            TextStyle->ReleaseDeviceSpecificResources();
+            if (SUCCEEDED(hr))
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+
+        TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+
+        _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), Brush, 1.f, StrokeStyle);
+
+        for (FLOAT y = .2f; y < 1.01f; y += .2f)
+        {
+            // Draw the negative y label.
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), Brush, 1.f, StrokeStyle);
+
+            TextRect = { 0.f, -(y - TextStyle->_Height), TextStyle->_Width, -(y + TextStyle->_Height) };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
+
+            hr = TextStyle->MeasureText(Text);
+
+            if (SUCCEEDED(hr))
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            // Draw the positive y label.
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), Brush, 1.f, StrokeStyle);
+
+            TextRect = { 0.f, (y - TextStyle->_Height), TextStyle->_Width, (y + TextStyle->_Height) };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
+
+            if (SUCCEEDED(hr))
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), TextStyle->_TextFormat, TextRect, TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+
+        _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        hr = _DeviceContext->EndDraw();
     }
+
+    if (TextStyle != nullptr)
+        TextStyle->DeleteDeviceSpecificResources();
 
     if (SUCCEEDED(hr))
         hr = _GridCommandList->Close();

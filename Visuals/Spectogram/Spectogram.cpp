@@ -917,37 +917,37 @@ void spectogram_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_NyquistMarkerStyle)
     {
-        _NyquistMarkerStyle->ReleaseDeviceSpecificResources();
+        _NyquistMarkerStyle->DeleteDeviceSpecificResources();
         _NyquistMarkerStyle = nullptr;
     }
 
     if (_FreqTextStyle)
     {
-        _FreqTextStyle->ReleaseDeviceSpecificResources();
+        _FreqTextStyle->DeleteDeviceSpecificResources();
         _FreqTextStyle = nullptr;
     }
 
     if (_FreqLineStyle)
     {
-        _FreqLineStyle->ReleaseDeviceSpecificResources();
+        _FreqLineStyle->DeleteDeviceSpecificResources();
         _FreqLineStyle = nullptr;
     }
 
     if (_TimeTextStyle)
     {
-        _TimeTextStyle->ReleaseDeviceSpecificResources();
+        _TimeTextStyle->DeleteDeviceSpecificResources();
         _TimeTextStyle = nullptr;
     }
 
     if (_TimeLineStyle)
     {
-        _TimeLineStyle->ReleaseDeviceSpecificResources();
+        _TimeLineStyle->DeleteDeviceSpecificResources();
         _TimeLineStyle = nullptr;
     }
 
     if (_SpectogramStyle)
     {
-        _SpectogramStyle->ReleaseDeviceSpecificResources();
+        _SpectogramStyle->DeleteDeviceSpecificResources();
         _SpectogramStyle = nullptr;
     }
 }

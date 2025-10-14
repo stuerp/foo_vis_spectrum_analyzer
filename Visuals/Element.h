@@ -93,7 +93,7 @@ protected:
     {
         if (*style != nullptr)
         {
-            (*style)->ReleaseDeviceSpecificResources();
+            (*style)->DeleteDeviceSpecificResources();
             *style = nullptr;
         }
     }

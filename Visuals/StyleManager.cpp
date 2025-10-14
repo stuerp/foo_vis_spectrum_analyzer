@@ -57,14 +57,14 @@ void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs,
             if (Style._ColorScheme == ColorScheme::Artwork)
             {
                 Style._CurrentGradientStops = gs;
-                Style.ReleaseDeviceSpecificResources();
+                Style.DeleteDeviceSpecificResources();
             }
         }
         else
         if (Style._ColorSource == ColorSource::DominantColor)
         {
             Style._CurrentColor = dominantColor;
-            Style.ReleaseDeviceSpecificResources();
+            Style.DeleteDeviceSpecificResources();
         }
     }
 }
@@ -84,7 +84,7 @@ void style_manager_t::UpdateCurrentColors() noexcept
 void style_manager_t::ReleaseDeviceSpecificResources() noexcept
 {
     for (auto & [ID, Style] : Styles)
-        Style.ReleaseDeviceSpecificResources();
+        Style.DeleteDeviceSpecificResources();
 }
 
 /// <summary>

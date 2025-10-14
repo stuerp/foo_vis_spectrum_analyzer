@@ -173,7 +173,7 @@ void peak_read_out_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_TextStyle)
     {
-        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle->DeleteDeviceSpecificResources();
         _TextStyle = nullptr;
     }
 }

@@ -298,13 +298,13 @@ void gauge_scales_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_LineStyle)
     {
-        _LineStyle->ReleaseDeviceSpecificResources();
+        _LineStyle->DeleteDeviceSpecificResources();
         _LineStyle = nullptr;
     }
 
     if (_TextStyle)
     {
-        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle->DeleteDeviceSpecificResources();
         _TextStyle = nullptr;
     }
 }

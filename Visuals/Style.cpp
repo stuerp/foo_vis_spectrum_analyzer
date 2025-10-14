@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.10.13) P. Stuer **/
+/** $VER: Style.cpp (2025.10.14) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -46,7 +46,7 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     _Width = other._Width;
     _Height = other._Height;
@@ -152,7 +152,6 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor) noexcept
 {
@@ -190,8 +189,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 }
 
 /// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// Creates resources which are bound to a particular D3D device. Specialized version for radial visualizations.
 /// </summary>
 HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
 {
@@ -221,7 +219,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_t::ReleaseDeviceSpecificResources() noexcept
+void style_t::DeleteDeviceSpecificResources() noexcept
 {
     _TextFormat.Release();
     _Brush.Release();
@@ -349,7 +347,7 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stop
 }
 
 /// <summary>
-/// Updates the text width and height.
+/// Updates the text width and height to the actual width and height of the text.
 /// </summary>
 HRESULT style_t::MeasureText(const std::wstring & text) noexcept
 {
