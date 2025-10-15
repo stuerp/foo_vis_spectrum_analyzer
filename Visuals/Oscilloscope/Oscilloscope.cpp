@@ -247,8 +247,6 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         if (SUCCEEDED(hr))
         {
-            const FLOAT ZoomFactor = (FLOAT) 1.f;
-
             uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
             uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;      // Mask containing the channels selected by the user.
 
@@ -268,13 +266,13 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
                         FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
 
-                        FLOAT y = ChannelBaseline - ((FLOAT) Scaler(Samples[ChannelOffset]) * ZoomFactor * ChannelMax);
+                        FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Samples[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
                         Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                         for (size_t j = ChannelCount + ChannelOffset; j < SampleCount; j += ChannelCount)
                         {
-                            y = ChannelBaseline - ((FLOAT) Scaler(Samples[j]) * ZoomFactor * ChannelMax);
+                            y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Samples[j]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
                             Sink->AddLine(D2D1::Point2F(x, y));
 

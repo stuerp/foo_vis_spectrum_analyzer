@@ -2553,6 +2553,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             UpdateVisualizationPage();
             UpdateGraphsPage();
+            InitializeYAxisMode();
             break;
         }
 
@@ -3579,7 +3580,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
 
         for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gs.HasYAxis() && !IsOscilloscope);
+            GetDlgItem(Iter).EnableWindow(gs.HasYAxis() && !(IsOscilloscope && _State->_XYMode));
 
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
         SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
@@ -3587,7 +3588,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !IsOscilloscope);
+            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsOscilloscope && _State->_XYMode));
     }
 
     // Channels
@@ -4048,8 +4049,18 @@ void ConfigurationDialog::InitializeYAxisMode() noexcept
 
     w.ResetContent();
 
-    for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
-        w.AddString(x);
+    if (!((_State->_VisualizationType == VisualizationType::Oscilloscope) && _State->_XYMode))
+    {
+        for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
+            w.AddString(x);
+    }
+    else
+    {
+        for (const auto & x : { L"Off", L"On" })
+            w.AddString(x);
+
+        _State->_GraphSettings[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphSettings[_SelectedGraph]._YAxisMode, 0, 1);
+    }
 
     w.SetCurSel((int) _State->_GraphSettings[_SelectedGraph]._YAxisMode);
 }
