@@ -110,7 +110,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
     CreateToolTipControl();
 
     // Apply the initial configuration.
-    UpdateState();
+    UpdateState(Settings::All);
 
     return 0;
 }
@@ -327,7 +327,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
                     _UIThread = NewState;
 
-                    UpdateState();
+                    UpdateState(Settings::All);
 
                     if (_ConfigurationDialog.IsWindow())
                     {
@@ -474,7 +474,7 @@ void uielement_t::OnColorsChanged()
 /// </summary>
 LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    UpdateState();
+    UpdateState((Settings) wParam);
 
     return 0;
 }
@@ -547,7 +547,7 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState() noexcept
+void uielement_t::UpdateState(Settings settings) noexcept
 {
     {
         DeleteTrackingToolTip();
@@ -632,7 +632,7 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState();
+    UpdateState(Settings::All);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())

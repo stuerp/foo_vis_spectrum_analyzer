@@ -238,9 +238,14 @@ public:
 
         #pragma endregion
 
-        #pragma region Level Meter
+        #pragma region Oscilloscope
 
             bool _XYMode;                                           // Oscilloscope in X-Y mode
+            double _XGain;
+            double _YGain;
+            bool _PhosphorDecay;
+            FLOAT _BlurSigma;
+            FLOAT _DecayFactor;
 
         #pragma endregion
 

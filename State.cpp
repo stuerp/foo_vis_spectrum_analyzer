@@ -244,6 +244,11 @@ void state_t::Reset() noexcept
     _HorizontalLevelMeter = false;
 
     _XYMode = false;
+    _XGain = 1.f;
+    _YGain = 1.f;
+    _PhosphorDecay = true;
+    _BlurSigma = 3.f;
+    _DecayFactor = 0.92f;
 
     _StyleManager.Reset();
 
@@ -508,6 +513,11 @@ state_t & state_t::operator=(const state_t & other)
 
     // Oscilloscope
     _XYMode = other._XYMode;
+    _XGain = other._XGain;
+    _YGain = other._YGain;
+    _PhosphorDecay = other._PhosphorDecay;
+    _BlurSigma = other._BlurSigma;
+    _DecayFactor = other._DecayFactor;
 
     #pragma endregion
 
@@ -911,11 +921,17 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
         }
-
+/*
         if (Version >= 31)
         {
-            reader->read(&_XYMode, sizeof(_XYMode), abortHandler);
-        }
+            reader->read_object_t(_XYMode, abortHandler);
+            reader->read_object_t(_XGain, abortHandler);
+            reader->read_object_t(_YGain, abortHandler);
+
+            reader->read_object_t(_PhosphorDecay, abortHandler);
+            reader->read_object_t(_BlurSigma, abortHandler);
+            reader->read_object_t(_DecayFactor, abortHandler);
+        }*/
     }
     catch (exception & ex)
     {
@@ -1229,7 +1245,12 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
 
         // Version 31, v0.9.0.0-alpha3
-        writer->write(&_XYMode, sizeof(_XYMode), abortHandler);
+        writer->write_object_t(_XYMode, abortHandler);
+        writer->write_object_t(_XGain, abortHandler);
+        writer->write_object_t(_YGain, abortHandler);
+        writer->write_object_t(_PhosphorDecay, abortHandler);
+        writer->write_object_t(_BlurSigma, abortHandler);
+        writer->write_object_t(_DecayFactor, abortHandler);
     }
     catch (exception & ex)
     {

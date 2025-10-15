@@ -105,6 +105,7 @@ protected:
 
     D2D1_RECT_F _Bounds;
     D2D1_SIZE_F _Size;
+    FLOAT _ScaleFactor;
 
     bool _IsResized;
 };

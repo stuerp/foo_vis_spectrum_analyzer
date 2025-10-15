@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.10.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.10.15) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -222,6 +222,11 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
 
             { IDC_XY_MODE, "Enables X-Y mode." },
+            { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
+            { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
+            { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
+            { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blur." },
+            { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values means a faster decay." },
 
             // Styles
             { IDC_STYLES, "Selects the visual element that will be styled" },
@@ -1150,6 +1155,21 @@ void ConfigurationDialog::Initialize()
 
     {
         SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
+
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XGain);
+        }
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YGain);
+        }
+
+        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
+        }
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
+        }
     }
 
     #pragma endregion
@@ -1281,8 +1301,6 @@ LRESULT ConfigurationDialog::OnConfigurationChanged(UINT msg, WPARAM wParam, LPA
 
         case CC_COLORS:
         {
-        //  Log::Write(Log::Level::Trace, "%8d: Colors changed.", (int) ::GetTickCount64());
-
             style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UpdateCurrentColor(style);
@@ -1307,6 +1325,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 {
     if (_State == nullptr)
         return;
+
+    Settings Settings = Settings::All;
 
     auto cb = (CComboBox) w;
 
@@ -1645,7 +1665,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         #pragma endregion
     }
 
-    ConfigurationChanged();
+    ConfigurationChanged(Settings);
 }
 
 /// <summary>
@@ -1695,6 +1715,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 {
     if ((_State == nullptr) || (code != EN_CHANGE) || _IgnoreNotifications)
         return;
+
+    Settings Settings = Settings::All;
 
     WCHAR Text[MAX_PATH];
 
@@ -1951,6 +1973,36 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
+        #pragma region Oscilloscope
+
+        case IDC_X_GAIN:
+        {
+            _State->_XGain = std::clamp(::_wtof(Text), MinXGain, MaxXGain);
+            break;
+        }
+
+        case IDC_Y_GAIN:
+        {
+            _State->_YGain = std::clamp(::_wtof(Text), MinYGain, MaxYGain);
+            break;
+        }
+
+        case IDC_BLUR_SIGMA:
+        {
+            _State->_BlurSigma = std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
+        case IDC_DECAY_FACTOR:
+        {
+            _State->_DecayFactor = std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Styles
@@ -2055,7 +2107,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ConfigurationChanged();
+    ConfigurationChanged(Settings);
 }
 
 /// <summary>
@@ -2065,6 +2117,8 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 {
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
+
+    Settings Settings = Settings::All;
 
     switch (id)
     {
@@ -2220,6 +2274,35 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        // Oscilloscope
+        case IDC_X_GAIN:
+        {
+            SetDouble(id, _State->_XGain, 0, 2);
+            break;
+        }
+
+        case IDC_Y_GAIN:
+        {
+            SetDouble(id, _State->_YGain, 0, 2);
+            break;
+        }
+
+        case IDC_BLUR_SIGMA:
+        {
+            SetDouble(id, _State->_BlurSigma, 0, 2);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
+        case IDC_DECAY_FACTOR:
+        {
+            SetDouble(id, _State->_DecayFactor, 0, 2);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
         // Styles
         case IDC_OPACITY:
         {
@@ -2255,7 +2338,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         #pragma endregion
     }
 
-    return;
+    ConfigurationChanged(Settings);
 }
 
 /// <summary>
@@ -2265,6 +2348,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 {
     if (_State == nullptr)
         return;
+
+    Settings Settings = Settings::All;
 
     switch (id)
     {
@@ -2469,6 +2554,16 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_XY_MODE:
         {
             _State->_XYMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateVisualizationPage();
+            break;
+        }
+
+        case IDC_PHOSPHOR_DECAY:
+        {
+            _State->_PhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateVisualizationPage();
             break;
         }
 
@@ -2720,7 +2815,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         }
     }
 
-    ConfigurationChanged();
+    ConfigurationChanged(Settings);
 }
 
 /// <summary>
@@ -2730,6 +2825,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 {
     if (_State == nullptr)
         return -1;
+
+    Settings Settings = Settings::All;
 
     LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
 
@@ -2936,7 +3033,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         }
     }
 
-    ConfigurationChanged();
+    ConfigurationChanged(Settings);
 
     return 0;
 }
@@ -2948,6 +3045,8 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
 {
     if (_State == nullptr)
         return -1;
+
+    Settings Settings = Settings::All;
 
     switch (nmhd->idFrom)
     {
@@ -2991,7 +3090,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
         }
     }
 
-    ConfigurationChanged();
+    ConfigurationChanged(Settings);
 
     return 0;
 }
@@ -3121,6 +3220,9 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_OSCILLOSCOPE,
             IDC_XY_MODE,
+            IDC_X_GAIN_LBL, IDC_X_GAIN, IDC_Y_GAIN_LBL, IDC_Y_GAIN,
+            IDC_PHOSPHOR_DECAY,
+            IDC_BLUR_SIGMA_LBL, IDC_BLUR_SIGMA, IDC_DECAY_FACTOR_LBL, IDC_DECAY_FACTOR,
     };
 
     static const int Page6[] =
@@ -3561,6 +3663,14 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 
     GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
+
+    GetDlgItem(IDC_X_GAIN).EnableWindow(_State->_XYMode);
+    GetDlgItem(IDC_Y_GAIN).EnableWindow(_State->_XYMode);
+
+    GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
+
+    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(_State->_PhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(_State->_PhosphorDecay);
 }
 
 /// <summary>
@@ -3676,8 +3786,6 @@ void ConfigurationDialog::UpdatePresetsPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateColorControls()
 {
-//  Log::Write(Log::Level::Trace, "%8d: Updating color controls.", (int) ::GetTickCount64());
-
     style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Update the Color button.
@@ -3944,12 +4052,12 @@ void ConfigurationDialog::InitializeStyles()
 /// <summary>
 /// Notifies the main thread update the change.
 /// </summary>
-void ConfigurationDialog::ConfigurationChanged() const noexcept
+void ConfigurationDialog::ConfigurationChanged(Settings settings) const noexcept
 {
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, 0, 0);
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of configuration change (Generic).");
 }

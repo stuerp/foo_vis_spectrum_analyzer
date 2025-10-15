@@ -106,6 +106,8 @@ inline const double MaxWeightingAmount =  1.; // %
 
 
 
+
+
 inline const double MinSmoothingFactor = 0.;
 inline const double MaxSmoothingFactor = 1.;
 
@@ -135,6 +137,22 @@ inline const uint32_t MaxArtworkColors = 16;
 
 inline const double MinLightnessThreshold = 0.;
 inline const double MaxLightnessThreshold = 1.;
+
+
+// Oscilloscope
+inline const double MinXGain =  0.;
+inline const double MaxXGain = 10.;
+
+inline const double MinYGain =  0.;
+inline const double MaxYGain = 10.;
+
+inline const FLOAT MinBlurSigma =  1.;
+inline const FLOAT MaxBlurSigma = 10.;
+
+inline const FLOAT MinDecayFactor = 0.;
+inline const FLOAT MaxDecayFactor = 1.;
+
+
 
 
 
@@ -547,4 +565,15 @@ enum class VerticalTextAlignment : uint32_t
     Top = 0,
     Center = 1,
     Bottom = 2
+};
+
+enum class Settings : uint64_t
+{
+    None = 0,
+
+    PhosphorEffect = 1 << 0,
+
+    Oscilloscope = PhosphorEffect, 
+
+    All = ~0,
 };

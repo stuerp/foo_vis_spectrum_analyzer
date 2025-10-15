@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2025.09.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2025.10.15) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -109,7 +109,7 @@ private:
     void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
 
-    void ConfigurationChanged() const noexcept;
+    void ConfigurationChanged(Settings settings) const noexcept;
 
     void UpdateColorControls();
     void UpdateCurrentColor(style_t * style) const noexcept;

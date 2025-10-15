@@ -1223,7 +1223,7 @@
     #define Y_A54    Y_A53
     #pragma endregion
 
-#define W_B13   143
+#define W_B13   116
 #define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + 7
 #pragma endregion
 
@@ -1373,7 +1373,7 @@
     #define Y_C28    Y_C27 + H_C27 + IY
     #pragma endregion
 
-#define W_B08   W_B13
+#define W_B08   232
 #define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + 7
 #pragma endregion
 
@@ -1465,13 +1465,68 @@
 #define X_B18   X_B14
 #define Y_B18   Y_B14 + H_B14 + IY
 
-    #define W_C54    60
+    // Checkbox: X-Y mode
+    #define W_C54    62
     #define H_C54    H_CHB
-    #define X_C54    X_C51
+    #define X_C54    X_B18 +  5
     #define Y_C54    Y_B18 + 11
 
+    // Label: X gain
+    #define W_C56    34
+    #define H_C56    H_LBL
+    #define X_C56    X_C54 + W_C54 + IX
+    #define Y_C56    Y_C54
+
+    // Textbox: X gain
+    #define W_C58    30
+    #define H_C58    H_CBX
+    #define X_C58    X_C56 + W_C56 + IX
+    #define Y_C58    Y_C56
+
+    // Label: Y gain
+    #define W_C60    48
+    #define H_C60    H_LBL
+    #define X_C60    X_C58 + W_C58 + IX
+    #define Y_C60    Y_C58
+
+    // Textbox: Y gain
+    #define W_C62    30
+    #define H_C62    H_CBX
+    #define X_C62    X_C60 + W_C60 + IX
+    #define Y_C62    Y_C60
+
+    // Checkbox: Phosphor decay effect
+    #define W_C64    62
+    #define H_C64    H_CHB
+    #define X_C64    X_C54
+    #define Y_C64    Y_C62 + H_C62 + IY
+
+    // Label: Blur sigma
+    #define W_C66    34
+    #define H_C66    H_LBL
+    #define X_C66    X_C64 + W_C64 + IX
+    #define Y_C66    Y_C64
+
+    // Textbox: Blur sigma
+    #define W_C68    30
+    #define H_C68    H_CBX
+    #define X_C68    X_C66 + W_C66 + IX
+    #define Y_C68    Y_C66
+
+    // Label: Decay factor
+    #define W_C70    48
+    #define H_C70    H_LBL
+    #define X_C70    X_C68 + W_C68 + IX
+    #define Y_C70    Y_C68
+
+    // Textbox: Decay factor
+    #define W_C72    30
+    #define H_C72    H_CBX
+    #define X_C72    X_C70 + W_C70 + IX
+    #define Y_C72    Y_C70
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C54 + 7
+#define H_B18  11 + H_C54 + IY + H_C68 + IY + 7
 
 #pragma endregion
 

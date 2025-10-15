@@ -213,6 +213,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Component", IDC_COMPONENT, X_K00, Y_K00, W_K00, H_K00, BS_GROUPBOX, WS_EX_TRANSPARENT
+
         rtext           "Log level:"                IDC_LOG_LEVEL_LBL,              X_K01, Y_K01 + 2, W_K01, H_K01
         combobox                                    IDC_LOG_LEVEL,                  X_K02, Y_K02,     W_K02, H_K02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
@@ -342,7 +343,21 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
     groupbox "Oscilloscope", IDC_OSCILLOSCOPE, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "X-Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54, W_C54, H_C54
+        control     "X-Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
+
+        rtext       "X gain:"                       IDC_X_GAIN_LBL,                 X_C56, Y_C56 + 2, W_C56, H_C56
+        edittext                                    IDC_X_GAIN,                     X_C58, Y_C58, W_C58, H_C58, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Y gain:"                       IDC_Y_GAIN_LBL,                 X_C60, Y_C60 + 2, W_C60, H_C60
+        edittext                                    IDC_Y_GAIN,                     X_C62, Y_C62, W_C62, H_C62, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        control     "Phosphor decay effect:"        IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
+
+        rtext       "Blur sigma:"                   IDC_BLUR_SIGMA_LBL,             X_C66, Y_C66 + 2, W_C66, H_C66
+        edittext                                    IDC_BLUR_SIGMA,                 X_C68, Y_C68, W_C68, H_C68, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
+        edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

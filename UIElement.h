@@ -52,7 +52,7 @@ protected:
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     virtual void GetColors() noexcept = 0;
 
-    void UpdateState() noexcept;
+    void UpdateState(Settings settings) noexcept;
 
 private:
     // These methods (must) run on the main foobar2000 UI thread.

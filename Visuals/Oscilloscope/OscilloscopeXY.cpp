@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2025.10.14) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2025.10.15) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -28,7 +28,9 @@ oscilloscope_xy_t::oscilloscope_xy_t()
 
     _YAxisTextStyle = nullptr;
     _YAxisLineStyle = nullptr;
+
     _HorizontalGridLineStyle = nullptr;
+    _VerticalGridLineStyle = nullptr;
 
     Reset();
 }
@@ -79,6 +81,18 @@ void oscilloscope_xy_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
+    if (_XAxisTextStyle)
+    {
+        _XAxisTextStyle->DeleteDeviceSpecificResources();
+        _XAxisTextStyle = nullptr;
+    }
+
+    if (_YAxisTextStyle)
+    {
+        _YAxisTextStyle->DeleteDeviceSpecificResources();
+        _YAxisTextStyle = nullptr;
+    }
+
     _BackBuffer.Release();
     _FrontBuffer.Release();
 
@@ -123,15 +137,15 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             hr = Geometry->Open(&Sink);
 
-            FLOAT x = (FLOAT) Samples[0];
-            FLOAT y = (FLOAT) Samples[1];
+            FLOAT x = (FLOAT) std::clamp(Samples[0] * _State->_XGain, -1., 1.);
+            FLOAT y = (FLOAT) std::clamp(Samples[1] * _State->_YGain, -1., 1.);
 
             Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
             for (size_t i = 2; i < FrameCount; i += 2)
             {
-                x = (FLOAT) Samples[i    ];
-                y = (FLOAT) Samples[i + 1];
+                x = (FLOAT) std::clamp(Samples[i    ] * _State->_XGain, -1., 1.);
+                y = (FLOAT) std::clamp(Samples[i + 1] * _State->_YGain, -1., 1.);
 
                 Sink->AddLine(D2D1::Point2F(x, y));
             }
@@ -177,10 +191,11 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
 
         // Add the phosphor afterglow effect before the next pass.
-        {
-            _DeviceContext->SetTarget(_FrontBuffer);
-            _DeviceContext->BeginDraw();
+        _DeviceContext->SetTarget(_FrontBuffer);
+        _DeviceContext->BeginDraw();
 
+        if (_State->_PhosphorDecay)
+        {
             _GaussBlurEffect->SetInput(0, _BackBuffer);
 
             _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
@@ -190,9 +205,11 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
             _DeviceContext->DrawImage(_ColorMatrixEffect);
-
-            hr = _DeviceContext->EndDraw();
         }
+        else
+            _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
+
+        hr = _DeviceContext->EndDraw();
 
         std::swap(_FrontBuffer, _BackBuffer);
     }
@@ -242,6 +259,8 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
+
+    _ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -305,15 +324,21 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         }
     }
 
+    // The font style is created prescaled to counter the Scale transform in the command list.
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_XAxisTextStyle);
+
+    // The font style is created prescaled to counter the Scale transform in the command list.
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_YAxisTextStyle);
+
     if (SUCCEEDED(hr) && (_GaussBlurEffect == nullptr))
     {
-        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
 
         if (SUCCEEDED(hr))
         {
-            const float BLUR_SIGMA = 3.0f;
-
-            _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, BLUR_SIGMA);
+            _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
             _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
             _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
         }
@@ -321,19 +346,17 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     if (SUCCEEDED(hr) && (_ColorMatrixEffect == nullptr))
     {
-        hr = deviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
 
         if (SUCCEEDED(hr))
         {
-            const float DECAY_FACTOR = 0.92f; // Higher values for longer persistence
-
             // Color matrix for uniform decay
             #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
             const D2D1_MATRIX_5X4_F DecayMatrix =
             {
-                DECAY_FACTOR, 0, 0, 0,
-                0, DECAY_FACTOR, 0, 0,
-                0, 0, DECAY_FACTOR, 0,
+                _State->_DecayFactor, 0, 0, 0,
+                0, _State->_DecayFactor, 0, 0,
+                0, 0, _State->_DecayFactor, 0,
                 0, 0, 0, 1,
                 0, 0, 0, 0
             };
@@ -362,6 +385,12 @@ void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
     {
         _SignalLineStyle->DeleteDeviceSpecificResources();
         _SignalLineStyle = nullptr;
+    }
+
+    if (_XAxisTextStyle)
+    {
+        _XAxisTextStyle->DeleteDeviceSpecificResources();
+        _XAxisTextStyle = nullptr;
     }
 
     if (_XAxisLineStyle)
@@ -410,24 +439,11 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 {
     HRESULT hr = S_OK;
 
-    // Create a command list that will store the grid pattern.
+    const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+
+    // Create a command list that will store the grid pattern and the axes.
     if (SUCCEEDED(hr))
         hr = _DeviceContext->CreateCommandList(&_GridCommandList);
-
-    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
-
-    const auto Scale = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
-
-    // Create a pre-scaled fonts to counter the scaling transformation.
-    style_t * XAxisTextStyle = nullptr;
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &XAxisTextStyle);
-
-    style_t * YAxisTextStyle = nullptr;
-
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", ScaleFactor, &YAxisTextStyle);
 
     if (SUCCEEDED(hr))
     {
@@ -436,16 +452,16 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         _DeviceContext->SetTarget(_GridCommandList);
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->SetTransform(Scale);
+        _DeviceContext->SetTransform(ScaleTransform);
 
         // Draw the X-axis, Y-axis and the center label.
         {
-            const D2D1_RECT_F TextRect = { 0 - XAxisTextStyle->_Width, 0.f, 0 + XAxisTextStyle->_Width, XAxisTextStyle->_Height };
+            const D2D1_RECT_F TextRect = { 0 - _XAxisTextStyle->_Width, 0.f, 0 + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
-            XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-            _DeviceContext->DrawText(L"0.0", 3, XAxisTextStyle->_TextFormat, TextRect, XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
             _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
@@ -459,10 +475,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the negative X label.
             ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
 
-            D2D1_RECT_F TextRect = { -x - XAxisTextStyle->_Width, 0.f, -x + XAxisTextStyle->_Width, XAxisTextStyle->_Height };
+            D2D1_RECT_F TextRect = { -x - _XAxisTextStyle->_Width, 0.f, -x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
             if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), XAxisTextStyle->_TextFormat, TextRect, XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             // Draw the vertical grid line.
             _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
@@ -470,14 +486,14 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the positive X label.
             ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
 
-            TextRect = { x - XAxisTextStyle->_Width, 0.f, x + XAxisTextStyle->_Width, XAxisTextStyle->_Height };
+            TextRect = { x - _XAxisTextStyle->_Width, 0.f, x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
             if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), XAxisTextStyle->_TextFormat, TextRect, XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
-        YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-        YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
         for (FLOAT y = .2f; y < 1.01f; y += .2f)
         {
@@ -487,10 +503,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the negative y label.
             ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
 
-            D2D1_RECT_F TextRect = { 0.f, -(y - YAxisTextStyle->_Height), YAxisTextStyle->_Width, -(y + YAxisTextStyle->_Height) };
+            D2D1_RECT_F TextRect = { 0.f, -(y - _YAxisTextStyle->_Height), _YAxisTextStyle->_Width, -(y + _YAxisTextStyle->_Height) };
 
             if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), YAxisTextStyle->_TextFormat, TextRect, YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             // Draw the horizontal grid line.
             _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
@@ -498,22 +514,16 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the positive y label.
             ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
 
-            TextRect = { 0.f, y - YAxisTextStyle->_Height, YAxisTextStyle->_Width, y + YAxisTextStyle->_Height };
+            TextRect = { 0.f, y - _YAxisTextStyle->_Height, _YAxisTextStyle->_Width, y + _YAxisTextStyle->_Height };
 
             if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), YAxisTextStyle->_TextFormat, TextRect, YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
         hr = _DeviceContext->EndDraw();
     }
-
-    if (YAxisTextStyle != nullptr)
-        YAxisTextStyle->DeleteDeviceSpecificResources();
-
-    if (XAxisTextStyle != nullptr)
-        XAxisTextStyle->DeleteDeviceSpecificResources();
 
     if (SUCCEEDED(hr))
         hr = _GridCommandList->Close();

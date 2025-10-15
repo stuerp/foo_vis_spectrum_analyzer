@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.10.12) P. Stuer **/
+/** $VER: Resources.h (2025.10.14) P. Stuer **/
 
 #pragma once
 
@@ -457,6 +457,18 @@
 #define IDC_OSCILLOSCOPE                7200
 
 #define IDC_XY_MODE                     7202
+
+#define IDC_X_GAIN_LBL                  7204
+#define IDC_X_GAIN                      7206
+#define IDC_Y_GAIN_LBL                  7208
+#define IDC_Y_GAIN                      7210
+
+#define IDC_PHOSPHOR_DECAY              7212
+
+#define IDC_BLUR_SIGMA_LBL              7214
+#define IDC_BLUR_SIGMA                  7216
+#define IDC_DECAY_FACTOR_LBL            7218
+#define IDC_DECAY_FACTOR                7220
 
 #pragma endregion
 
