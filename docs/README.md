@@ -515,6 +515,9 @@ A variation of the Curve visualization that displays the frequency spectrum in a
 
 Shows the shape of the audio signal over time, helping you understand how sound behaves.
 
+> [!Note]
+> The oscilloscope only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
+
 **Time-domain mode**
 
 In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
@@ -522,9 +525,9 @@ In this mode the X-axis represents the time and the Y-axis represents the amplit
 This visualization uses the following settings:
 
 - Graph X-axis and Y-axis settings
-  - Select *None* to prevent the axis from being rendered.
+  - Select *Off* or *None* to prevent the axis from being rendered.
 - Channel selection
-- X and Y signal gain
+- Y signal gain
 - Phosphor effect settings
  
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
@@ -545,8 +548,8 @@ This mode is useful for visualizing the relationship between two signals, such a
 This visualization uses the following settings:
 
 - Graph X-axis and Y-axis settings
-  - Select *None* to prevent the axis from being rendered.
-- Channel pair selection
+  - Select *Off* or *None* to prevent the axis from being rendered.
+- Channel pair selection: Determines which channels will be plotted against each other.
 - X and Y signal gain
 - Phosphor effect settings
 

@@ -111,6 +111,18 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
+    static const uint32_t ChannelPairs[] =
+    {
+        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
+        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
+
+        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
+        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
+
+        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
+        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
+    };
+
     const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
 
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
@@ -121,42 +133,54 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-    if ((FrameCount >= 2) || (ChannelCount == 2))
+    if ((FrameCount >= 2) || (ChannelCount >= 2))
     {
-        const audio_sample * Samples = _Analysis->_Chunk.get_data();
+        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
+        const uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user.
+        const uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user as a channel pair.
 
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
 
-        CComPtr<ID2D1PathGeometry> Geometry;
-
-        hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-        if (SUCCEEDED(hr))
+        if (ChannelMask != 0)
         {
-            CComPtr<ID2D1GeometrySink> Sink;
+            const size_t Channel1 = std::countr_zero(ChannelMask);
+            const size_t Channel2 = 31 - std::countl_zero(ChannelMask);
 
-            hr = Geometry->Open(&Sink);
+            const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-            FLOAT x = (FLOAT) std::clamp(Samples[0] * _State->_XGain, -1., 1.);
-            FLOAT y = (FLOAT) std::clamp(Samples[1] * _State->_YGain, -1., 1.);
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+            CComPtr<ID2D1PathGeometry> Geometry;
 
-            for (size_t i = 2; i < FrameCount; i += 2)
+            hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
+
+            if (SUCCEEDED(hr))
             {
-                x = (FLOAT) std::clamp(Samples[i    ] * _State->_XGain, -1., 1.);
-                y = (FLOAT) std::clamp(Samples[i + 1] * _State->_YGain, -1., 1.);
+                CComPtr<ID2D1GeometrySink> Sink;
 
-                Sink->AddLine(D2D1::Point2F(x, y));
+                hr = Geometry->Open(&Sink);
+
+                FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
+                FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+                {
+                    x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
+                    y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+                }
+
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                hr = Sink->Close();
             }
 
-            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-            hr = Sink->Close();
+            if (SUCCEEDED(hr))
+                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
         }
-
-        if (SUCCEEDED(hr))
-            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
     }
 
     if (SUCCEEDED(hr) && (TransformedGeometry != nullptr))

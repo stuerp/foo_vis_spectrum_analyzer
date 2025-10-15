@@ -63,6 +63,41 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
         const std::unordered_map<int, const char *> Tips =
         {
+            // Visualization page
+            { IDC_VISUALIZATION, "Selects the type of visualization." },
+
+            { IDC_PEAK_MODE, "Determines how to display the peak values." },
+            { IDC_HOLD_TIME, "Determines how long the peak values are held before they decay." },
+            { IDC_ACCELERATION, "Determines the accelaration of the peak value decay." },
+
+            { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
+            { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
+            { IDC_LED_GAP, "Specifies the gap between the LEDs in pixels." },
+            { IDC_LED_INTEGRAL_SIZE, "Renders the LEDs as full blocks." },
+
+            { IDC_INNER_RADIUS, "Sets the inner radius as a percentage of the smallest side of the graph area." },
+            { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
+            { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
+
+            { IDC_SCROLLING_SPECTOGRAM, "Activates scrolling of the spectogram." },
+            { IDC_HORIZONTAL_SPECTOGRAM, "Renders the spectogram horizontally." },
+            { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
+
+            { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
+            { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
+            { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
+            { IDC_GAUGE_GAP, "Specifies the gap between the peak meter gauges (in pixels)." },
+
+            { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
+
+            { IDC_XY_MODE, "Enables X-Y mode." },
+            { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
+            { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
+            { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
+            { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blur." },
+            { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values means a faster decay." },
+
+            // Transform page
             { IDC_METHOD, "Method used to transform the samples" },
 
             { IDC_WINDOW_FUNCTION, "Window function applied to the samples" },
@@ -191,42 +226,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_USE_ABSOLUTE, "Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
             { IDC_GAMMA, "Sets index n of the n-th root calculation." },
 
+            // Channels
             { IDC_CHANNELS, "Determines which channels are used by the visualization." },
-
-            // Visualization
-            { IDC_VISUALIZATION, "Selects the type of visualization." },
-
-            { IDC_PEAK_MODE, "Determines how to display the peak values." },
-            { IDC_HOLD_TIME, "Determines how long the peak values are held before they decay." },
-            { IDC_ACCELERATION, "Determines the accelaration of the peak value decay." },
-
-            { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
-            { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
-            { IDC_LED_GAP, "Specifies the gap between the LEDs in pixels." },
-            { IDC_LED_INTEGRAL_SIZE, "Renders the LEDs as full blocks." },
-
-            { IDC_INNER_RADIUS, "Sets the inner radius as a percentage of the smallest side of the graph area." },
-            { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
-            { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
-
-            { IDC_SCROLLING_SPECTOGRAM, "Activates scrolling of the spectogram." },
-            { IDC_HORIZONTAL_SPECTOGRAM, "Renders the spectogram horizontally." },
-            { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
-
-            { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
-            { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
-            { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
-            { IDC_GAUGE_GAP, "Specifies the gap between the peak meter gauges (in pixels)." },
-
-            { IDC_CHANNEL_PAIRS, "Determines which left and right channel will be displayed." },
-            { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
-
-            { IDC_XY_MODE, "Enables X-Y mode." },
-            { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
-            { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
-            { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
-            { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blur." },
-            { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values means a faster decay." },
+            { IDC_CHANNEL_PAIRS, "Determines which combination of channels will be displayed." },
 
             // Styles
             { IDC_STYLES, "Selects the visual element that will be styled" },
@@ -295,7 +297,7 @@ void ConfigurationDialog::Initialize()
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Transform", L"Frequencies", L"Filters", L"Common", L"Visualization", L"Graphs", L"Styles", L"Presets" })
+        for (const auto & x : { L"Visualization", L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Styles", L"Presets" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -942,26 +944,12 @@ void ConfigurationDialog::Initialize()
 
         // X Axis
         {
-            auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
-
-            w.ResetContent();
-
-            for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
-                w.AddString(x);
-
-            w.SetCurSel((int) gs._XAxisMode);
+            InitializeXAxisMode();
         }
 
         // Y Axis
         {
-            auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
-
-            w.ResetContent();
-
-            for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
-                w.AddString(x);
-
-            w.SetCurSel((int) gs._YAxisMode);
+            InitializeYAxisMode();
         }
 
         {
@@ -1018,6 +1006,7 @@ void ConfigurationDialog::Initialize()
             SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
         }
 
+        // Channels
         {
             assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
             assert(_countof(ChannelNames) == (size_t) Channels::Count);
@@ -1030,7 +1019,17 @@ void ConfigurationDialog::Initialize()
                 w.AddString(x);
         }
 
-        UpdateGraphsPage();
+        // Channel pairs
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+
+            w.ResetContent();
+
+            for (const auto & x : { L"Front Left/Right", L"Back Left/Right", L"Front Center Left/Right", L"Side Left/Right", L"Top Front Left/Right", L"Top Back Left/Right" })
+                w.AddString(x);
+
+            w.SetCurSel((int) _State->_ChannelPair);
+        }
     }
 
     #pragma endregion
@@ -1135,17 +1134,6 @@ void ConfigurationDialog::Initialize()
     #pragma region Level Meter
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
-
-        w.ResetContent();
-
-        for (const auto & x : { L"Front Left/Right", L"Back Left/Right", L"Front Center Left/Right", L"Side Left/Right", L"Top Front Left/Right", L"Top Back Left/Right" })
-            w.AddString(x);
-
-        w.SetCurSel((int) _State->_ChannelPair);
-    }
-
-    {
         SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
     }
 
@@ -1240,7 +1228,6 @@ void ConfigurationDialog::Initialize()
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_FONT_SIZE)); _NumericEdits.push_back(ne);
     }
 
-    UpdateStylesPage();
     #pragma endregion
 
     #pragma region Presets
@@ -1542,6 +1529,15 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             _State->_VisualizationType = (VisualizationType) SelectedIndex;
 
             UpdateVisualizationPage();
+            UpdateTransformPage();
+            UpdateFrequenciesPage();
+            UpdateFiltersPage();
+            UpdateCommonPage();
+            UpdateGraphsPage();
+            UpdateStylesPage();
+
+            InitializeXAxisMode();
+            InitializeYAxisMode();
             InitializeStyles();
             break;
         }
@@ -2556,6 +2552,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             _State->_XYMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateVisualizationPage();
+            UpdateGraphsPage();
             break;
         }
 
@@ -3102,91 +3099,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 {
     static const int Page1[] =
     {
-        // Transform
-        IDC_TRANSFORM_GROUP,
-            IDC_METHOD_LBL, IDC_METHOD,
-            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
-            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
-            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
-            IDC_REACTION_ALIGNMENT_LBL, IDC_REACTION_ALIGNMENT,
-
-        // FFT
-        IDC_FFT_GROUP,
-            IDC_NUM_BINS_LBL, IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER_NAME, IDC_NUM_BINS_PARAMETER, IDC_NUM_BINS_PARAMETER_UNIT,
-            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
-            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
-            IDC_SMOOTH_LOWER_FREQUENCIES,
-            IDC_SMOOTH_GAIN_TRANSITION,
-            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
-
-        // Brown-Puckette CQT
-        IDC_BP_GROUP,
-            IDC_BW_OFFSET_LBL, IDC_BW_OFFSET, IDC_BW_CAP_LBL, IDC_BW_CAP, IDC_BW_AMOUNT_LBL, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
-            IDC_KERNEL_SHAPE_LBL, IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER_LBL, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY_LBL, IDC_KERNEL_ASYMMETRY,
-
-        // IIR (SWIFT / Analog-style)
-        IDC_IIR_GROUP,
-            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_IIR_BW_LBL, IDC_IIR_BW, IDC_CONSTANT_Q, IDC_COMPENSATE_BW, IDC_PREWARPED_Q,
-    };
-
-    static const int Page2[] =
-    {
-        // Frequencies
-        IDC_FREQUENCIES_GROUP,
-            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
-            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
-            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
-            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
-            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
-            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
-            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
-            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
-            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
-            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
-    };
-
-    static const int Page3[] =
-    {
-        // Filters
-        IDC_FILTERS_GROUP,
-            IDC_ACOUSTIC_FILTER_LBL, IDC_ACOUSTIC_FILTER,
-
-            IDC_SLOPE_FN_OFFS_LBL, IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS_SPIN,
-            IDC_SLOPE_LBL, IDC_SLOPE, IDC_SLOPE_SPIN, IDC_SLOPE_UNIT,
-            IDC_SLOPE_OFFS_LBL, IDC_SLOPE_OFFS, IDC_SLOPE_OFFS_SPIN, IDC_SLOPE_OFFS_UNIT,
-
-            IDC_EQ_AMT_LBL, IDC_EQ_AMT, IDC_EQ_AMT_SPIN,
-            IDC_EQ_OFFS_LBL, IDC_EQ_OFFS, IDC_EQ_OFFS_SPIN, IDC_EQ_OFFS_UNIT,
-            IDC_EQ_DEPTH_LBL, IDC_EQ_DEPTH, IDC_EQ_DEPTH_SPIN, IDC_EQ_DEPTH_UNIT,
-
-            IDC_WT_AMT_LBL, IDC_WT_AMT, IDC_WT_AMT_SPIN,
-    };
-
-    static const int Page4[] =
-    {
-        // Common
-        IDC_COMMON,
-            IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
-            IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
-
-        // Artwork
-        IDC_ARTWORK,
-            IDC_ARTWORK_BACKGROUND,
-            IDC_ARTWORK_TYPE_LBL, IDC_ARTWORK_TYPE,
-            IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
-            IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
-            IDC_FILE_PATH_LBL, IDC_FILE_PATH,
-            IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
-            IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
-            IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
-
-        // Component
-        IDC_COMPONENT,
-            IDC_LOG_LEVEL_LBL, IDC_LOG_LEVEL
-    };
-
-    static const int Page5[] =
-    {
         IDC_VISUALIZATION_LBL, IDC_VISUALIZATION,
 
         IDC_PEAK_INDICATORS,
@@ -3215,7 +3127,6 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_GAUGE_GAP_LBL, IDC_GAUGE_GAP,
 
         IDC_LEVEL_METER,
-            IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
             IDC_HORIZONTAL_LEVEL_METER,
 
         IDC_OSCILLOSCOPE,
@@ -3223,6 +3134,91 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_X_GAIN_LBL, IDC_X_GAIN, IDC_Y_GAIN_LBL, IDC_Y_GAIN,
             IDC_PHOSPHOR_DECAY,
             IDC_BLUR_SIGMA_LBL, IDC_BLUR_SIGMA, IDC_DECAY_FACTOR_LBL, IDC_DECAY_FACTOR,
+    };
+
+    static const int Page2[] =
+    {
+        // Transform
+        IDC_TRANSFORM_GROUP,
+            IDC_METHOD_LBL, IDC_METHOD,
+            IDC_WINDOW_FUNCTION_LBL, IDC_WINDOW_FUNCTION,
+            IDC_WINDOW_PARAMETER_LBL, IDC_WINDOW_PARAMETER,
+            IDC_WINDOW_SKEW_LBL, IDC_WINDOW_SKEW,
+            IDC_REACTION_ALIGNMENT_LBL, IDC_REACTION_ALIGNMENT,
+
+        // FFT
+        IDC_FFT_GROUP,
+            IDC_NUM_BINS_LBL, IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER_NAME, IDC_NUM_BINS_PARAMETER, IDC_NUM_BINS_PARAMETER_UNIT,
+            IDC_SUMMATION_METHOD_LBL, IDC_SUMMATION_METHOD,
+            IDC_MAPPING_METHOD_LBL, IDC_MAPPING_METHOD,
+            IDC_SMOOTH_LOWER_FREQUENCIES,
+            IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_KERNEL_SIZE_LBL, IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+
+        // Brown-Puckette CQT
+        IDC_BP_GROUP,
+            IDC_BW_OFFSET_LBL, IDC_BW_OFFSET, IDC_BW_CAP_LBL, IDC_BW_CAP, IDC_BW_AMOUNT_LBL, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
+            IDC_KERNEL_SHAPE_LBL, IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER_LBL, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY_LBL, IDC_KERNEL_ASYMMETRY,
+
+        // IIR (SWIFT / Analog-style)
+        IDC_IIR_GROUP,
+            IDC_FBO_LBL, IDC_FBO, IDC_TR_LBL, IDC_TR, IDC_IIR_BW_LBL, IDC_IIR_BW, IDC_CONSTANT_Q, IDC_COMPENSATE_BW, IDC_PREWARPED_Q,
+    };
+
+    static const int Page3[] =
+    {
+        // Frequencies
+        IDC_FREQUENCIES_GROUP,
+            IDC_DISTRIBUTION_LBL, IDC_DISTRIBUTION,
+            IDC_NUM_BANDS_LBL, IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_RANGE_LBL_1, IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_RANGE_LBL_2, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN, IDC_RANGE_LBL_3,
+            IDC_MIN_NOTE_LBL, IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE_LBL, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
+            IDC_BANDS_PER_OCTAVE_LBL, IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
+            IDC_PITCH_LBL_1, IDC_PITCH, IDC_PITCH_SPIN, IDC_PITCH_LBL_2,
+            IDC_TRANSPOSE_LBL, IDC_TRANSPOSE, IDC_TRANSPOSE_SPIN,
+            IDC_SCALING_FUNCTION_LBL, IDC_SCALING_FUNCTION,
+            IDC_SKEW_FACTOR_LBL, IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN,
+            IDC_BANDWIDTH_LBL, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN,
+    };
+
+    static const int Page4[] =
+    {
+        // Filters
+        IDC_FILTERS_GROUP,
+            IDC_ACOUSTIC_FILTER_LBL, IDC_ACOUSTIC_FILTER,
+
+            IDC_SLOPE_FN_OFFS_LBL, IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS_SPIN,
+            IDC_SLOPE_LBL, IDC_SLOPE, IDC_SLOPE_SPIN, IDC_SLOPE_UNIT,
+            IDC_SLOPE_OFFS_LBL, IDC_SLOPE_OFFS, IDC_SLOPE_OFFS_SPIN, IDC_SLOPE_OFFS_UNIT,
+
+            IDC_EQ_AMT_LBL, IDC_EQ_AMT, IDC_EQ_AMT_SPIN,
+            IDC_EQ_OFFS_LBL, IDC_EQ_OFFS, IDC_EQ_OFFS_SPIN, IDC_EQ_OFFS_UNIT,
+            IDC_EQ_DEPTH_LBL, IDC_EQ_DEPTH, IDC_EQ_DEPTH_SPIN, IDC_EQ_DEPTH_UNIT,
+
+            IDC_WT_AMT_LBL, IDC_WT_AMT, IDC_WT_AMT_SPIN,
+    };
+
+    static const int Page5[] =
+    {
+        // Common
+        IDC_COMMON,
+            IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
+            IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
+
+        // Artwork
+        IDC_ARTWORK,
+            IDC_ARTWORK_BACKGROUND,
+            IDC_ARTWORK_TYPE_LBL, IDC_ARTWORK_TYPE,
+            IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
+            IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
+            IDC_FILE_PATH_LBL, IDC_FILE_PATH,
+            IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
+            IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
+            IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
+
+        // Component
+        IDC_COMPONENT,
+            IDC_LOG_LEVEL_LBL, IDC_LOG_LEVEL
     };
 
     static const int Page6[] =
@@ -3252,7 +3248,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
 
-        IDC_CHANNELS,
+        IDC_CHANNELS_LBL, IDC_CHANNELS,
+        IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
     };
 
     static const int Page7[] =
@@ -3413,7 +3410,7 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
 /// <summary>
 /// Updates the controls of the Frequencies page.
 /// </summary>
-void ConfigurationDialog::UpdateFrequenciesPage() noexcept
+void ConfigurationDialog::UpdateFrequenciesPage() const noexcept
 {
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
@@ -3458,7 +3455,7 @@ void ConfigurationDialog::UpdateFrequenciesPage() noexcept
 /// <summary>
 /// Updates the controls of the Filters page.
 /// </summary>
-void ConfigurationDialog::UpdateFiltersPage() noexcept
+void ConfigurationDialog::UpdateFiltersPage() const noexcept
 {
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
@@ -3503,6 +3500,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
 /// </summary>
 void ConfigurationDialog::UpdateGraphsPage() noexcept
 {
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
     {
@@ -3556,11 +3554,11 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     {
         ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP,    gs._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gs.HasXAxis());
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs.HasXAxis());
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gs.HasXAxis() && !IsOscilloscope);
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs.HasXAxis() && !IsOscilloscope);
 
         const BOOL SupportsXAxis = TRUE;
 
@@ -3609,6 +3607,9 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
             Channels >>= 1;
         }
     }
+
+    GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter || IsOscilloscope);
+    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || (IsOscilloscope && _State->_XYMode));
 }
 
 /// <summary>
@@ -3658,8 +3659,6 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
     SetInteger(IDC_GAUGE_GAP, (int64_t) _State->_GaugeGap);
 
-    GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter);
-    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter);
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 
     GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
@@ -4020,9 +4019,49 @@ void ConfigurationDialog::SetNote(int id, uint32_t noteNumber) noexcept
 }
 
 /// <summary>
+/// Fills the X-axis mode combobox with the modes relevant to the current visualization.
+/// </summary>
+void ConfigurationDialog::InitializeXAxisMode() noexcept
+{
+    auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
+
+    w.ResetContent();
+
+    if (_State->_VisualizationType != VisualizationType::Oscilloscope)
+    {
+        for (const auto & x : { L"None", L"Bands", L"Decades", L"Octaves", L"Notes" })
+            w.AddString(x);
+    }
+    else
+    {
+        for (const auto & x : { L"Off", L"On" })
+            w.AddString(x);
+
+        _State->_GraphSettings[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphSettings[_SelectedGraph]._XAxisMode, 0, 1);
+    }
+
+    w.SetCurSel((int) _State->_GraphSettings[_SelectedGraph]._XAxisMode);
+}
+
+/// <summary>
+/// Fills the y-axis mode combobox with the modes relevant to the current visualization.
+/// </summary>
+void ConfigurationDialog::InitializeYAxisMode() noexcept
+{
+    auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
+
+    w.ResetContent();
+
+    for (const auto & x : { L"None", L"Decibel", L"Linear/n-th root" })
+        w.AddString(x);
+
+    w.SetCurSel((int) _State->_GraphSettings[_SelectedGraph]._YAxisMode);
+}
+
+/// <summary>
 /// Fills the styles listbox with the styles used by the current visualization.
 /// </summary>
-void ConfigurationDialog::InitializeStyles()
+void ConfigurationDialog::InitializeStyles() noexcept
 {
     auto w = (CListBox) GetDlgItem(IDC_STYLES);
 

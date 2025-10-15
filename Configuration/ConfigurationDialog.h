@@ -70,24 +70,11 @@ private:
         return FALSE;
     #endif
     }
-/*
-    void OnMouseMove(UINT flags, CPoint point)
-    {
-        auto Child = ChildWindowFromPoint(point);
 
-        if (Child.IsWindowVisible() && !Child.IsWindowEnabled())
-        {
-            TOOLINFO ti = { sizeof(TOOLINFO) };
-
-            ti.hwnd = m_hWnd;
-            ti.uId = (UINT_PTR) Child.m_hWnd;
-
-            ::SendMessage(_ToolTipControl.m_hWnd, TTM_UPDATE, 0, (LPARAM) &ti);
-        }
-    }
-*/
     void Initialize();
     void Terminate();
+
+    void ConfigurationChanged(Settings settings) const noexcept;
 
     void OnSelectionChanged(UINT, int, CWindow);
     void OnDoubleClick(UINT, int, CWindow);
@@ -100,16 +87,14 @@ private:
 
     void UpdatePages(size_t index) const noexcept;
 
+    void UpdateVisualizationPage() noexcept;
     void UpdateTransformPage() noexcept;
-    void UpdateFrequenciesPage() noexcept;
-    void UpdateFiltersPage() noexcept;
+    void UpdateFrequenciesPage() const noexcept;
+    void UpdateFiltersPage() const noexcept;
     void UpdateCommonPage() const noexcept;
     void UpdateGraphsPage() noexcept;
-    void UpdateVisualizationPage() noexcept;
     void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
-
-    void ConfigurationChanged(Settings settings) const noexcept;
 
     void UpdateColorControls();
     void UpdateCurrentColor(style_t * style) const noexcept;
@@ -124,7 +109,9 @@ private:
     void SetDouble(int id, double value, unsigned width = 0, unsigned precision = 2) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
 
-    void InitializeStyles();
+    void InitializeXAxisMode() noexcept;
+    void InitializeYAxisMode() noexcept;
+    void InitializeStyles() noexcept;
 
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)

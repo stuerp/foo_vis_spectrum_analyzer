@@ -32,7 +32,7 @@ level_meter_t::level_meter_t()
 /// </summary>
 level_meter_t::~level_meter_t()
 {
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -44,7 +44,7 @@ void level_meter_t::Initialize(state_t * state, const graph_settings_t * setting
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -310,7 +310,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void level_meter_t::ReleaseDeviceSpecificResources() noexcept
+void level_meter_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.10.14) P. Stuer **/
+/** $VER: Resources.h (2025.10.15) P. Stuer **/
 
 #pragma once
 
@@ -327,7 +327,11 @@
 #define IDC_FLIP_HORIZONTALLY           5116
 #define IDC_FLIP_VERTICALLY             5118
 
-#define IDC_CHANNELS                    5120
+#define IDC_CHANNELS_LBL                5120
+#define IDC_CHANNELS                    5122
+
+#define IDC_CHANNEL_PAIRS_LBL           5124
+#define IDC_CHANNEL_PAIRS               5126
 
 #pragma endregion
 
@@ -446,9 +450,6 @@
 // Level Meter
 
 #define IDC_LEVEL_METER                 7180
-
-#define IDC_CHANNEL_PAIRS_LBL           7182
-#define IDC_CHANNEL_PAIRS               7183
 
 #define IDC_HORIZONTAL_LEVEL_METER      7184
 

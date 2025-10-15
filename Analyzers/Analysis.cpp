@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.10.05) P. Stuer **/
+/** $VER: Analysis.cpp (2025.10.15) P. Stuer **/
 
 #include "pch.h"
 
@@ -54,6 +54,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
     _NyquistFrequency = (double) _SampleRate / 2.;
     _ChannelCount     = chunk.get_channel_count();
     _ChannelConfig    = chunk.get_channel_config();
+
     _ChannelMask      = _ChannelConfig & _GraphSettings->_SelectedChannels;
 
     if (_ChannelMask == 0)
@@ -741,7 +742,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
 
     audio_sample BalanceSamples[2] = { };
 
-    const uint32_t ChannelPairs[] =
+    static const uint32_t ChannelPairs[] =
     {
         (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
         (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
@@ -891,6 +892,8 @@ void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
 
 #pragma endregion
 
+#pragma region Oscilloscope
+
 /// <summary>
 /// Process the chunk data for the oscilloscope.
 /// </summary>
@@ -898,3 +901,5 @@ void analysis_t::ProcessOscilloscope(const audio_chunk & chunk) noexcept
 {
     _Chunk.copy(chunk);
 }
+
+#pragma endregion
