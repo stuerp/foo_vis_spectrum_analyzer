@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2025.09.24) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2025.10.15) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -36,6 +36,7 @@ public:
     {
         _Bounds = bounds;
         _Size = { std::abs(bounds.right - bounds.left), std::abs(bounds.bottom - bounds.top) };
+        _ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f); // For oscilloscope visualization.
 
         _IsResized = true;
     }

@@ -454,42 +454,54 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 
         _DeviceContext->SetTransform(ScaleTransform);
 
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+
         // Draw the X-axis, Y-axis and the center label.
         {
-            const D2D1_RECT_F TextRect = { 0 - _XAxisTextStyle->_Width, 0.f, 0 + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
+            if (_GraphSettings->HasXAxis() || _GraphSettings->HasYAxis())
+            {
+                const D2D1_RECT_F TextRect = { 0 - _XAxisTextStyle->_Width, 0.f, 0 + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
-            _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-            _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
 
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
-            _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
+            if (_GraphSettings->HasXAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
+
+            if (_GraphSettings->HasYAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
         }
 
         for (FLOAT x = .2f; x < 1.01f; x += .2f)
         {
             // Draw the vertical grid line.
-            _DeviceContext->DrawLine(D2D1::Point2F(x, -1.f), D2D1::Point2F(x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+            if (_VerticalGridLineStyle->IsEnabled())
+            {
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+            }
 
-            // Draw the negative X label.
-            ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
+            if (_GraphSettings->HasXAxis())
+            {
+                // Draw the negative X label.
+                ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
 
-            D2D1_RECT_F TextRect = { -x - _XAxisTextStyle->_Width, 0.f, -x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
+                D2D1_RECT_F TextRect = { -x - _XAxisTextStyle->_Width, 0.f, -x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                if (SUCCEEDED(hr))
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            // Draw the vertical grid line.
-            _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+                // Draw the positive X label.
+                ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
 
-            // Draw the positive X label.
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
+                TextRect = { x - _XAxisTextStyle->_Width, 0.f, x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
 
-            TextRect = { x - _XAxisTextStyle->_Width, 0.f, x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                if (SUCCEEDED(hr))
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
         }
 
         _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);

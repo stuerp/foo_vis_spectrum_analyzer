@@ -513,13 +513,20 @@ A variation of the Curve visualization that displays the frequency spectrum in a
 
 ##### Oscilloscope
 
-Shows the shape of the audio signal over time, helping you understand how sound behaves. The X-axis represents the time and the Y-axis represents the amplitude of the signal.
+Shows the shape of the audio signal over time, helping you understand how sound behaves.
+
+**Time-domain mode**
+
+In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
 
 This visualization uses the following settings:
 
-- Graph Y-axis settings and channel selection
-- Styles: X-axis Line, Y-axis Text, Y-axis Line, Horizontal Grid Line and Oscilloscope Signal Line
-
+- Graph X-axis and Y-axis settings
+  - Select *None* to prevent the axis from being rendered.
+- Channel selection
+- X and Y signal gain
+- Phosphor effect settings
+ 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
 <sup>Oscilloscope</sup>
@@ -527,6 +534,25 @@ This visualization uses the following settings:
 ![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
 
 <sup>Oscilloscope with Y-axis in dBFS</sup>
+
+**X-Y mode**
+
+In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
+and the other the vertical axis (Y), instead of the usual time-based sweep.
+
+This mode is useful for visualizing the relationship between two signals, such as phase differences, frequency ratios, or specific patterns like Lissajous figures.
+
+This visualization uses the following settings:
+
+- Graph X-axis and Y-axis settings
+  - Select *None* to prevent the axis from being rendered.
+- Channel pair selection
+- X and Y signal gain
+- Phosphor effect settings
+
+![Screenshot](assets/Oscilloscope-Lissajous.png?raw=true "Screenshot")
+
+<sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
 
 #### Peak indicators group
 

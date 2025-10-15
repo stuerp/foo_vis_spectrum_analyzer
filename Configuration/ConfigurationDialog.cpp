@@ -3556,13 +3556,13 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     {
         ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_TOP,    gs._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
-        GetDlgItem(IDC_X_AXIS_TOP).EnableWindow(gs._XAxisMode != XAxisMode::None);
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs._XAxisMode != XAxisMode::None);
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gs.HasXAxis());
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs.HasXAxis());
 
-        const bool SupportsXAxis = !IsOscilloscope;
+        const BOOL SupportsXAxis = TRUE;
 
         for (const auto ID : { IDC_X_AXIS_MODE, IDC_X_AXIS_TOP, IDC_X_AXIS_BOTTOM })
             GetDlgItem(ID).EnableWindow(SupportsXAxis);
@@ -3665,7 +3665,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
 
     GetDlgItem(IDC_X_GAIN).EnableWindow(_State->_XYMode);
-    GetDlgItem(IDC_Y_GAIN).EnableWindow(_State->_XYMode);
+    GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both mode.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 

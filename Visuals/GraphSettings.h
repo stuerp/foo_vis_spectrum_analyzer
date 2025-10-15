@@ -35,6 +35,10 @@ public:
 
     double ScaleAmplitude(double value) const;
 
+    /* Code readability shortcuts */
+    bool HasXAxis() const noexcept { return _XAxisMode != XAxisMode::None; }
+    bool HasYAxis() const noexcept { return _YAxisMode != YAxisMode::None; }
+
 private:
     void Initialize()
     {

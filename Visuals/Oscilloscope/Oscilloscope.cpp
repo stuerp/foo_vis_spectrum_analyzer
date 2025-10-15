@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.14) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2025.10.15) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -126,7 +126,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    const int SelectedChannelCount = std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphSettings->_SelectedChannels);
+    const size_t SelectedChannelCount = (size_t) std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphSettings->_SelectedChannels);
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
     FLOAT YAxisWidth = _YAxisTextStyle->_Width;
@@ -164,11 +164,11 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
     // Draw the axis.
-    const FLOAT x1 =                ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f;
-    const FLOAT x2 = _Size.width - (((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
+    const FLOAT x1 =                (_GraphSettings->HasYAxis() && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f;
+    const FLOAT x2 = _Size.width - ((_GraphSettings->HasYAxis() && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
 
     // Y-axis
-    if (_GraphSettings->_YAxisMode != YAxisMode::None)
+    if (_GraphSettings->HasYAxis())
     {
         for (uint32_t i = 0; i < ChannelCount; ++i)
         {
@@ -219,12 +219,12 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 
-    // X-axis. Draw them last to prevent them from being overdrawn by the horizontal grid lines.
-    if (_XAxisLineStyle->IsEnabled())
+    // X-axis
+    if (_GraphSettings->HasXAxis())
     {
-        FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
+        FLOAT ChannelBaseline = ChannelHeight * (_GraphSettings->HasYAxis() ? 1.0f : 0.5f);
 
-        for (uint32_t i = 0; i < ChannelCount; ++i)
+        for (uint32_t i = 0; i < SelectedChannelCount; ++i)
         {
             deviceContext->DrawLine(D2D1::Point2F(x1, ChannelBaseline), D2D1::Point2F(x2, ChannelBaseline), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, nullptr);
 
@@ -252,32 +252,41 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
             uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;      // Mask containing the channels selected by the user.
 
-            FLOAT ChannelBaseline = ChannelHeight * ((_GraphSettings->_YAxisMode == YAxisMode::None) ? 0.5f : 1.0f);
+            const FLOAT ChannelMax = ChannelHeight * (_GraphSettings->HasYAxis() ? 1.0f : 0.5f);
 
-            for (uint32_t i = 0; i < ChannelCount; ++i)
+            FLOAT ChannelBaseline = ChannelMax;
+            size_t ChannelOffset = 0;
+            
+            while ((ChunkChannels != 0) && (SelectedChannels != 0))
             {
-                if ((ChunkChannels & 1) == (SelectedChannels & 1))
+                // Render the signal if the channel is in the chunk and if it has been selected.
+                if (ChunkChannels & 1)
                 {
-                    const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
-                    FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
-
-                    for (t_uint32 j = 0; j < FrameCount; ++j)
+                    if (SelectedChannels & 1)
                     {
-                        const FLOAT Value = (FLOAT) Scaler(Samples[(j * ChannelCount) + i]);
+                        const size_t SampleCount = FrameCount * ChannelCount;
+                        const FLOAT dx = (_Size.width - (YAxisWidth * YAxisCount)) / (FLOAT) FrameCount;
+                        FLOAT x = _GraphSettings->_YAxisLeft ? YAxisWidth : 0.f;
 
-                        const FLOAT y = ChannelBaseline - (Value * ZoomFactor * ChannelHeight);
+                        FLOAT y = ChannelBaseline - ((FLOAT) Scaler(Samples[ChannelOffset]) * ZoomFactor * ChannelMax);
 
-                        if (j == 0)
-                            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-                        else
+                        Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                        for (size_t j = ChannelCount + ChannelOffset; j < SampleCount; j += ChannelCount)
+                        {
+                            y = ChannelBaseline - ((FLOAT) Scaler(Samples[j]) * ZoomFactor * ChannelMax);
+
                             Sink->AddLine(D2D1::Point2F(x, y));
 
-                        x += dx;
+                            x += dx;
+                        }
+
+                        Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                        ChannelBaseline += ChannelHeight;
                     }
 
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-                    ChannelBaseline += ChannelHeight;
+                    ChannelOffset++;
                 }
 
                 ChunkChannels    >>= 1;
