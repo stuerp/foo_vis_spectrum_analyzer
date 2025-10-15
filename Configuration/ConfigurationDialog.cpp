@@ -3660,13 +3660,13 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
     GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_X_GAIN).EnableWindow(_State->_XYMode);
+    GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
     GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both mode.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(_State->_PhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(_State->_PhosphorDecay);
+    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
 }
 
 /// <summary>
