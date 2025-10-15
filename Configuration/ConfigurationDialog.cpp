@@ -3554,23 +3554,19 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
     {
         ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP, gs._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_TOP,    gs._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
 
+        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(TRUE);
         GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gs.HasXAxis() && !IsOscilloscope);
         GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs.HasXAxis() && !IsOscilloscope);
-
-        const BOOL SupportsXAxis = TRUE;
-
-        for (const auto ID : { IDC_X_AXIS_MODE, IDC_X_AXIS_TOP, IDC_X_AXIS_BOTTOM })
-            GetDlgItem(ID).EnableWindow(SupportsXAxis);
     }
 
     // Y axis
     {
         ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
 
-        CheckDlgButton(IDC_Y_AXIS_LEFT, gs._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_LEFT,  gs._YAxisLeft);
         CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
 
         SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
@@ -3583,7 +3579,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
 
         for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gs._YAxisMode != YAxisMode::None);
+            GetDlgItem(Iter).EnableWindow(gs.HasYAxis() && !IsOscilloscope);
 
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
         SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
@@ -3591,7 +3587,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear);
+            GetDlgItem(Iter).EnableWindow(IsLinear && !IsOscilloscope);
     }
 
     // Channels

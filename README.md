@@ -32,7 +32,11 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
-<sup>Oscilloscope Mode with Y-axis in dBFS</sup>
+<sup>Oscilloscope with Y-axis in dBFS</sup>
+
+![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
+
+<sup>Oscilloscope in X-Y mode</sup>
 
 ## Features
 

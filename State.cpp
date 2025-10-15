@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.10.12) P. Stuer **/
+/** $VER: State.cpp (2025.10.15) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -921,7 +921,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
         }
-/*
+
         if (Version >= 31)
         {
             reader->read_object_t(_XYMode, abortHandler);
@@ -931,7 +931,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_PhosphorDecay, abortHandler);
             reader->read_object_t(_BlurSigma, abortHandler);
             reader->read_object_t(_DecayFactor, abortHandler);
-        }*/
+        }
     }
     catch (exception & ex)
     {

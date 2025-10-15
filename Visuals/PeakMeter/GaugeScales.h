@@ -39,7 +39,7 @@ public:
     void Resize() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept
     {

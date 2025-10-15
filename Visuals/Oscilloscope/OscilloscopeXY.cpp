@@ -111,6 +111,12 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
+    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+
+    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
+    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+
     static const uint32_t ChannelPairs[] =
     {
         (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
@@ -123,75 +129,64 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
     };
 
-    const FLOAT ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+    const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
+    const uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user.
+    const uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user as a channel pair.
 
-    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width  / 2.f, _Size.height / 2.f);
-    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(ScaleFactor, ScaleFactor));
+    const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
 
-    CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
-
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
-
-    if ((FrameCount >= 2) || (ChannelCount >= 2))
+    if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
     {
-        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user.
-        const uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user as a channel pair.
+        const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);
+        const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));
 
-        const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
+        const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-        if (ChannelMask != 0)
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        CComPtr<ID2D1PathGeometry> Geometry;
+
+        hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
+
+        if (SUCCEEDED(hr))
         {
-            const size_t Channel1 = std::countr_zero(ChannelMask);
-            const size_t Channel2 = 31 - std::countl_zero(ChannelMask);
+            CComPtr<ID2D1GeometrySink> Sink;
 
-            const audio_sample * Samples = _Analysis->_Chunk.get_data();
+            hr = Geometry->Open(&Sink);
 
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
+            FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
 
-            CComPtr<ID2D1PathGeometry> Geometry;
+            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
-            hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-            if (SUCCEEDED(hr))
+            for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
             {
-                CComPtr<ID2D1GeometrySink> Sink;
+                x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
+                y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
 
-                hr = Geometry->Open(&Sink);
-
-                FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
-                FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
-
-                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-                for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
-                {
-                    x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
-                    y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
-
-                    Sink->AddLine(D2D1::Point2F(x, y));
-                }
-
-                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-                hr = Sink->Close();
+                Sink->AddLine(D2D1::Point2F(x, y));
             }
 
-            if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            hr = Sink->Close();
         }
-    }
 
-    if (SUCCEEDED(hr) && (TransformedGeometry != nullptr))
-    {
-        _DeviceContext->SetTarget(_BackBuffer);
+        CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
-        _DeviceContext->BeginDraw();
+        if (SUCCEEDED(hr))
+            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
 
-        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+        if (SUCCEEDED(hr))
+        {
+            _DeviceContext->SetTarget(_BackBuffer);
 
-        hr = _DeviceContext->EndDraw();
+            _DeviceContext->BeginDraw();
+
+            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+
+            hr = _DeviceContext->EndDraw();
+        }
     }
 
     if (SUCCEEDED(hr))
@@ -482,10 +477,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 
         // Draw the X-axis, Y-axis and the center label.
         {
+            D2D1_RECT_F TextRect = { -1.f, 0.01f, 1.f, 1.f };
+
             if (_GraphSettings->HasXAxis() || _GraphSettings->HasYAxis())
             {
-                const D2D1_RECT_F TextRect = { 0 - _XAxisTextStyle->_Width, 0.f, 0 + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
-
                 _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
@@ -499,6 +494,8 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _GridStrokeStyle);
         }
 
+        _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
         for (FLOAT x = .2f; x < 1.01f; x += .2f)
         {
             // Draw the vertical grid line.
@@ -511,49 +508,52 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             if (_GraphSettings->HasXAxis())
             {
                 // Draw the negative X label.
+                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+
+                D2D1_RECT_F TextRect = { -x + 0.01f, 0.01f, 0.f, 1.f };
+
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
-
-                D2D1_RECT_F TextRect = { -x - _XAxisTextStyle->_Width, 0.f, -x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
-
-                if (SUCCEEDED(hr))
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive X label.
+                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+
+                TextRect = { 0.f, 0.01f, x - 0.01f, 1.f };
+
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-
-                TextRect = { x - _XAxisTextStyle->_Width, 0.f, x + _XAxisTextStyle->_Width, _XAxisTextStyle->_Height };
-
-                if (SUCCEEDED(hr))
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
         _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-        _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
         for (FLOAT y = .2f; y < 1.01f; y += .2f)
         {
             // Draw the horizontal grid line.
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+            if (_HorizontalGridLineStyle->IsEnabled())
+            {
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+            }
 
-            // Draw the negative y label.
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
+            if (_GraphSettings->HasYAxis())
+            {
+                // Draw the negative y label.
+                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-            D2D1_RECT_F TextRect = { 0.f, -(y - _YAxisTextStyle->_Height), _YAxisTextStyle->_Width, -(y + _YAxisTextStyle->_Height) };
+                D2D1_RECT_F TextRect = { 0.01f, y - 0.01f, 1.f, -1.f };
 
-            if (SUCCEEDED(hr))
+                ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -y);
                 _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            // Draw the horizontal grid line.
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+                // Draw the positive y label.
+                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-            // Draw the positive y label.
-            ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", -y);
+                TextRect = { 0.01f, -y + 0.01f, 1.f, 0.f };
 
-            TextRect = { 0.f, y - _YAxisTextStyle->_Height, _YAxisTextStyle->_Width, y + _YAxisTextStyle->_Height };
-
-            if (SUCCEEDED(hr))
+                ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
                 _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
         }
 
         _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());

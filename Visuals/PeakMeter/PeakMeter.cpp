@@ -496,13 +496,13 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// </summary>
 void peak_meter_t::ReleaseDeviceSpecificResources() noexcept
 {
-    _Gauges.ReleaseDeviceSpecificResources();
+    _Gauges.DeleteDeviceSpecificResources();
 
-    _GaugeScales.ReleaseDeviceSpecificResources();
+    _GaugeScales.DeleteDeviceSpecificResources();
 
     _PeakReadOut.ReleaseDeviceSpecificResources();
 
     _RMSReadOut.ReleaseDeviceSpecificResources();
 
-    _GaugeNames.ReleaseDeviceSpecificResources();
+    _GaugeNames.DeleteDeviceSpecificResources();
 }

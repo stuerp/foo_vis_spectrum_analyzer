@@ -18,7 +18,7 @@ void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, con
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -384,9 +384,9 @@ HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the device specific resources.
 /// </summary>
-void gauge_t::ReleaseDeviceSpecificResources() noexcept
+void gauge_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

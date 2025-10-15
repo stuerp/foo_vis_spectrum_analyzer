@@ -553,7 +553,7 @@ This visualization uses the following settings:
 - X and Y signal gain
 - Phosphor effect settings
 
-![Screenshot](assets/Oscilloscope-Lissajous.png?raw=true "Screenshot")
+![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
 <sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
 
