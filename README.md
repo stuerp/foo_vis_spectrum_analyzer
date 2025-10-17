@@ -40,7 +40,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars), Spectogram, Peak Meter and Level Meter visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars), Spectogram, Peak Meter, Level Meter and Oscilloscope visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs

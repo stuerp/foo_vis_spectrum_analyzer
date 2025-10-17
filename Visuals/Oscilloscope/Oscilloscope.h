@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.14) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2025.10.17) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -33,7 +33,12 @@ public:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
+    HRESULT CreateSignalGeometry(const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateAxesCommandList() noexcept;
+
+private:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
+    CComPtr<ID2D1StrokeStyle1> _AxisStrokeStyle;
 
     struct label_t
     {
@@ -60,4 +65,14 @@ private:
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
+
+    CComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
+
+    CComPtr<ID2D1Bitmap1> _FrontBuffer;
+    CComPtr<ID2D1Bitmap1> _BackBuffer;
+
+    CComPtr<ID2D1Effect> _GaussBlurEffect;
+    CComPtr<ID2D1Effect> _ColorMatrixEffect;
+
+    CComPtr<ID2D1CommandList> _AxesCommandList;
 };

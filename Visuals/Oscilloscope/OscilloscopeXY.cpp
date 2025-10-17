@@ -70,6 +70,9 @@ void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void oscilloscope_xy_t::Reset() noexcept
 {
+    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+        return;
+
     _IsResized = true;
 }
 
