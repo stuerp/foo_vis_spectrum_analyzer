@@ -145,8 +145,6 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
         CComPtr<ID2D1PathGeometry> Geometry;
 
         hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
@@ -183,8 +181,9 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         if (SUCCEEDED(hr))
         {
             _DeviceContext->SetTarget(_BackBuffer);
-
             _DeviceContext->BeginDraw();
+
+            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
 
@@ -196,6 +195,8 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the grid.
         {
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
             deviceContext->SetTransform(Translate);
 
             deviceContext->DrawImage(_GridCommandList);
@@ -213,25 +214,27 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
 
         // Add the phosphor afterglow effect before the next pass.
-        _DeviceContext->SetTarget(_FrontBuffer);
-        _DeviceContext->BeginDraw();
-
-        if (_State->_PhosphorDecay)
         {
-            _GaussBlurEffect->SetInput(0, _BackBuffer);
+            _DeviceContext->SetTarget(_FrontBuffer);
+            _DeviceContext->BeginDraw();
 
-            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-            _DeviceContext->DrawImage(_GaussBlurEffect);
+            if (_State->_PhosphorDecay)
+            {
+                _GaussBlurEffect->SetInput(0, _BackBuffer);
 
-            _ColorMatrixEffect->SetInput(0, _BackBuffer);
+                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+                _DeviceContext->DrawImage(_GaussBlurEffect);
 
-            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-            _DeviceContext->DrawImage(_ColorMatrixEffect);
+                _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+                _DeviceContext->DrawImage(_ColorMatrixEffect);
+            }
+            else
+                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
+
+            hr = _DeviceContext->EndDraw();
         }
-        else
-            _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
-
-        hr = _DeviceContext->EndDraw();
 
         std::swap(_FrontBuffer, _BackBuffer);
     }
@@ -282,7 +285,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 {
     HRESULT hr = S_OK;
 
-    _ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f);
+    _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -528,6 +531,9 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
         }
 
+        if (!_GraphSettings->HasXAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+
         _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
         for (FLOAT y = .2f; y < 1.01f; y += .2f)
@@ -558,6 +564,11 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
+
+        if (!_GraphSettings->HasYAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle->_Brush, 1.f, _GridStrokeStyle);
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
         _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 

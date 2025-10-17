@@ -160,38 +160,79 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (_GraphSettings->HasYAxis())
         ++YAxisCount;
 
-    // Draw the axes.
+    const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
+
+    CComPtr<ID2D1PathGeometry> Geometry;
+
+    hr = CreateSignalGeometry(SignalSize, Geometry);
+
+    if (SUCCEEDED(hr))
     {
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        _DeviceContext->SetTarget(_BackBuffer);
+        _DeviceContext->BeginDraw();
 
-        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.0f);
 
-        deviceContext->DrawImage(_AxesCommandList);
+        _DeviceContext->SetTransform(Translate);
+
+        // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+        _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+
+        _DeviceContext->PopAxisAlignedClip();
+
+        _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        hr = _DeviceContext->EndDraw();
     }
 
-    // Draw the signal.
+    if (SUCCEEDED(hr))
     {
-        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
-
-        CComPtr<ID2D1PathGeometry> Geometry;
-
-        hr = CreateSignalGeometry(SignalSize, Geometry);
-
-        if (SUCCEEDED(hr))
+        // Draw the axes.
         {
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.0f);
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-            deviceContext->SetTransform(Translate);
+            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
-            // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-            deviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-            deviceContext->DrawGeometry(Geometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
-
-            deviceContext->PopAxisAlignedClip();
+            deviceContext->DrawImage(_AxesCommandList);
         }
+
+        // Draw the back buffer to the window.
+        {
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+            deviceContext->DrawBitmap(_BackBuffer);
+
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+        }
+
+        // Add the phosphor afterglow effect before the next pass.
+        {
+            _DeviceContext->SetTarget(_FrontBuffer);
+            _DeviceContext->BeginDraw();
+
+            if (_State->_PhosphorDecay)
+            {
+                _GaussBlurEffect->SetInput(0, _BackBuffer);
+
+                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+                _DeviceContext->DrawImage(_GaussBlurEffect);
+
+                _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+                _DeviceContext->DrawImage(_ColorMatrixEffect);
+            }
+            else
+                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
+
+            hr = _DeviceContext->EndDraw();
+        }
+
+        std::swap(_FrontBuffer, _BackBuffer);
     }
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
