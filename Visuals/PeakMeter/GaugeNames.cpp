@@ -16,7 +16,7 @@ void gauge_names_t::Initialize(state_t * state, const graph_settings_t * setting
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -49,9 +49,9 @@ void gauge_names_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void gauge_names_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept
+void gauge_names_t::Render(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
@@ -59,18 +59,18 @@ void gauge_names_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics
     if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
         return;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     if (_State->_HorizontalPeakMeter)
-        RenderHorizontal(renderTarget, gaugeMetrics);
+        RenderHorizontal(deviceContext, gaugeMetrics);
     else
-        RenderVertical(renderTarget, gaugeMetrics);
+        RenderVertical(deviceContext, gaugeMetrics);
 }
 
 /// <summary>
 /// Draws the channel names. Note: Rendered in absolute coordinates! No transformation.
 /// </summary>
-void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
+void gauge_names_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -91,7 +91,7 @@ void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gau
                 Rect.left  = (_GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->_Width) + Offset;
                 Rect.right = _GraphSettings->_FlipHorizontally ? _TextStyle->_Width: GetWidth();
 
-                renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphSettings->_XAxisBottom)
@@ -99,7 +99,7 @@ void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gau
                 Rect.left  = (_GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f) + Offset;
                 Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
 
-                renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
@@ -110,7 +110,7 @@ void gauge_names_t::RenderHorizontal(ID2D1RenderTarget * renderTarget, const gau
 /// <summary>
 /// Draws the channel names.
 /// </summary>
-void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) const noexcept
+void gauge_names_t::RenderVertical(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) const noexcept
 {
     D2D1_RECT_F Rect = { };
 
@@ -131,7 +131,7 @@ void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge
                 Rect.top    = _GraphSettings->_FlipVertically ? GetHeight() - _TextStyle->_Height : 0.f;
                 Rect.bottom = _GraphSettings->_FlipVertically ? GetHeight()                       : _TextStyle->_Height;
 
-                renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphSettings->_XAxisBottom)
@@ -139,7 +139,7 @@ void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge
                 Rect.top    = _GraphSettings->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
                 Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
-                renderTarget->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
@@ -150,27 +150,27 @@ void gauge_names_t::RenderVertical(ID2D1RenderTarget * renderTarget, const gauge
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT gauge_names_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_names_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
-    D2D1_SIZE_F Size = renderTarget->GetSize();
+    D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, Size, L"LFE", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"LFE", 1.f, &_TextStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
 
     return hr;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the device specific resources.
 /// </summary>
-void gauge_names_t::ReleaseDeviceSpecificResources() noexcept
+void gauge_names_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -178,7 +178,7 @@ void gauge_names_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_TextStyle)
     {
-        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle->DeleteDeviceSpecificResources();
         _TextStyle = nullptr;
     }
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.09.15) P. Stuer **/
+/** $VER: Analysis.h (2025.10.05) P. Stuer **/
 
 #pragma once
 
@@ -64,7 +64,7 @@ struct gauge_value_t
 class analysis_t
 {
 public:
-    analysis_t() : _RMSTimeElapsed(), _RMSSampleCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() : _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     analysis_t(const analysis_t &) = delete;
     analysis_t & operator=(const analysis_t &) = delete;
@@ -81,6 +81,8 @@ public:
 
 private:
     // Spectrum
+    void ProcessSpectrum(const audio_chunk & chunk) noexcept;
+
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
@@ -95,8 +97,11 @@ private:
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
     // Peak Meter
+    void ProcessMeters(const audio_chunk & chunk) noexcept;
     void InitializeGauges(uint32_t channelMask) noexcept;
-    void GetGaugeValues(const audio_chunk & chunk) noexcept;
+
+    // Oscilloscope
+    void ProcessOscilloscope(const audio_chunk & chunk) noexcept;
 
     double NormalizeValue(double amplitude) const noexcept
     {
@@ -130,9 +135,12 @@ public:
     const state_t * _State;
     const graph_settings_t * _GraphSettings;
 
+    audio_chunk_impl _Chunk;
+
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelConfig;
+    uint32_t _ChannelMask;
 
     double _NyquistFrequency;
 
@@ -151,7 +159,7 @@ public:
 
     // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
-    size_t _RMSSampleCount; // Number of samples used in the current RMS window.
+    size_t _RMSFrameCount; // Number of samples used in the current RMS window.
 
     // Balance Meter
     double _Left;           // -1.0 .. 1.0

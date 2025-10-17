@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.09.24) P. Stuer **/
+/** $VER: State.h (2025.10.12) P. Stuer **/
 
 #pragma once
 
@@ -202,6 +202,7 @@ public:
             bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
             FLOAT _LEDSize;                                         // Size of the LED.
             FLOAT _LEDGap;                                          // Gap between the LEDs.
+            bool _LEDIntegralSize;                                   // The LEDs will be rendered with an integral height.
 
         #pragma endregion
 
@@ -237,6 +238,17 @@ public:
 
         #pragma endregion
 
+        #pragma region Oscilloscope
+
+            bool _XYMode;                                           // Oscilloscope in X-Y mode
+            double _XGain;
+            double _YGain;
+            bool _PhosphorDecay;
+            FLOAT _BlurSigma;
+            FLOAT _DecayFactor;
+
+        #pragma endregion
+
     #pragma endregion
 
     style_manager_t _StyleManager;
@@ -257,21 +269,17 @@ public:
     // These parameters will never be serialized.
 
     bool _IsDUI;                                                        // True if the Default User Interface is being used.
-    bool _UseToneGenerator;                                             // True if the tone generator is used instead of the visualisation stream the collect audio chunks. Mainly for testing and debugging purposes.
 
     uint32_t _SampleRate;
     size_t _BinCount;
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
-    gradient_stops_t _ArtworkGradientStops;                                // The current gradient stops extracted from the artwork bitmap.
+    gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
 
-    gradient_stops_t _GradientStops;                                       // The current gradient stops.
+    gradient_stops_t _GradientStops;                                    // The current gradient stops.
 
-    size_t _SelectedGraph;
-    int _SelectedStyle;
-
-    double _PlaybackTime;
-    double _TrackTime;
+    double _PlaybackTime;                                               // Used by spectogram
+    double _TrackTime;                                                  // Used by spectogram
 
     LONG64 _Barrier;
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
@@ -343,7 +351,7 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 30; // v0.8.1.0-alpha1
+    const size_t _CurrentVersion = 31; // v0.9.0.0-alpha3
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

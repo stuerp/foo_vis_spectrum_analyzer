@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.09.25) P. Stuer **/
+/** $VER: UIElement.h (2025.10.11) P. Stuer **/
 
 #pragma once
 
@@ -52,7 +52,7 @@ protected:
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     virtual void GetColors() noexcept = 0;
 
-    void UpdateState() noexcept;
+    void UpdateState(Settings settings) noexcept;
 
 private:
     // These methods (must) run on the main foobar2000 UI thread.
@@ -150,7 +150,7 @@ private:
     void Process() noexcept;
     void Animate() noexcept;
 
-    void InitializeSampleRateDependentParameters(audio_chunk_impl & chunk) noexcept;
+    void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
 
     #pragma region DirectX
 
@@ -191,7 +191,9 @@ private:
 
     UINT _DPI;
 
-    CComPtr<ID2D1HwndRenderTarget> _RenderTarget;
+    CComPtr<ID3D11Device> _D3DDevice;
+    CComPtr<IDXGISwapChain> _SwapChain;
+    CComPtr<ID2D1DeviceContext> _DeviceContext;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

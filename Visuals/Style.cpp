@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.09.18) P. Stuer **/
+/** $VER: Style.cpp (2025.10.14) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -25,7 +25,10 @@ style_t::style_t(const style_t & other)
 /// </summary>
 style_t & style_t::operator=(const style_t & other)
 {
-    _Flags = other._Flags;
+    Name = other.Name;
+    UsedBy = other.UsedBy;
+
+    Flags = other.Flags;
 
     _ColorSource = other._ColorSource;
     _ColorIndex = other._ColorIndex;
@@ -43,7 +46,7 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     _Width = other._Width;
     _Height = other._Height;
@@ -54,9 +57,12 @@ style_t & style_t::operator=(const style_t & other)
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
+style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    _Flags = flags;
+    Name = name;
+    UsedBy = usedBy;
+
+    Flags = flags;
 
     _ColorSource = colorSource;
     _ColorIndex = colorIndex;
@@ -146,25 +152,24 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor) noexcept
 {
     HRESULT hr = S_OK;
 
     if (_ColorSource != ColorSource::Gradient)
-        hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
             if (SUCCEEDED(hr))
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateGradientBrush(renderTarget, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
     }
 
     if (_Brush)
@@ -172,7 +177,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
 
     if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
-        const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+        const FLOAT FontSize = ToDIPs(_FontSize) / scaleFactor; // In DIPs
 
         hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat);
 
@@ -184,26 +189,25 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
 }
 
 /// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
+/// Creates resources which are bound to a particular D3D device. Specialized version for radial visualizations.
 /// </summary>
-HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
+HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept
 {
     HRESULT hr = S_OK;
 
     if (_ColorSource != ColorSource::Gradient)
-        hr = renderTarget->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
         if (Has(style_t::Features::HorizontalGradient))
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
             if (SUCCEEDED(hr))
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateRadialGradientBrush(renderTarget, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
     }
 
     if (_Brush)
@@ -215,7 +219,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget,
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_t::ReleaseDeviceSpecificResources() noexcept
+void style_t::DeleteDeviceSpecificResources() noexcept
 {
     _TextFormat.Release();
     _Brush.Release();
@@ -343,7 +347,7 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stop
 }
 
 /// <summary>
-/// Updates the text width and height.
+/// Updates the text width and height to the actual width and height of the text.
 /// </summary>
 HRESULT style_t::MeasureText(const std::wstring & text) noexcept
 {

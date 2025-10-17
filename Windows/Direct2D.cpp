@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2024.05.03) P. Stuer **/
+/** $VER: Direct2D.cpp (2025.10.12) P. Stuer **/
 
 #include "pch.h"
 #include "Direct2D.h"
@@ -38,9 +38,19 @@ HRESULT Direct2D::Initialize()
 /// <summary>
 /// Terminates this instance.
 /// </summary>
-void Direct2D::Terminate()
+void Direct2D::Terminate() noexcept
 {
     Factory.Release();
+}
+
+HRESULT Direct2D::CreateDevice(IDXGIDevice * dxgiDevice) noexcept
+{
+    return Factory->CreateDevice(dxgiDevice, &Device);
+}
+
+void Direct2D::ReleaseDevice() noexcept
+{
+    Device.Release();
 }
 
 /// <summary>
@@ -124,7 +134,7 @@ HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT heigh
 /// <summary>
 /// Gets a Direct2D bitmap from a WIC bitmap source.
 /// </summary>
-HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1RenderTarget * renderTarget, ID2D1Bitmap ** bitmap) const noexcept
+HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, ID2D1Bitmap ** bitmap) const noexcept
 {
     CComPtr<IWICFormatConverter> Converter;
 
@@ -134,7 +144,7 @@ HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1RenderTarget * re
         hr = Converter->Initialize(source, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
 
     if (SUCCEEDED(hr))
-        hr = renderTarget->CreateBitmapFromWicBitmap(Converter, nullptr, bitmap);
+        hr = deviceContext->CreateBitmapFromWicBitmap(Converter, nullptr, bitmap);
 
     return hr;
 }
@@ -183,7 +193,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -198,14 +208,14 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const gr
 
     CComPtr<ID2D1GradientStopCollection> Collection;
 
-    HRESULT hr = renderTarget->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
 
     if (SUCCEEDED(hr))
     {
         D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
         D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
 
-        hr = renderTarget->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection, gradientBrush);
+        hr = deviceContext->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection, gradientBrush);
     }
 
     return hr;
@@ -214,7 +224,7 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1RenderTarget * renderTarget, const gr
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -230,10 +240,10 @@ HRESULT Direct2D::CreateRadialGradientBrush(ID2D1RenderTarget * renderTarget, co
 
     CComPtr<ID2D1GradientStopCollection> Collection;
 
-    HRESULT hr = renderTarget->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
 
     if (SUCCEEDED(hr))
-        hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection, gradientBrush);
+        hr = deviceContext->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection, gradientBrush);
 
     return hr;
 }

@@ -175,13 +175,13 @@ void x_axis_t::Resize() noexcept
     const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
     const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
 
-    const double MinScale = ScaleF(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleF(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
     // Calculate the rectangles of the labels.
     for (label_t & Iter : _Labels)
     {
-        const FLOAT dx = msc::Map(ScaleF(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
+        const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
         const FLOAT x = !_GraphSettings->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 
@@ -264,12 +264,14 @@ void x_axis_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void x_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     FLOAT Opacity = _TextStyle->_Brush->GetOpacity();
 
@@ -279,7 +281,7 @@ void x_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     {
         // Draw the vertical grid line.
         if (_LineStyle->IsEnabled())
-            renderTarget->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_XAxisMode != XAxisMode::None))
@@ -287,10 +289,10 @@ void x_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
             _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphSettings->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
             if (_GraphSettings->_XAxisTop)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphSettings->_XAxisBottom)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 
@@ -303,12 +305,12 @@ void x_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, renderTarget, _Size, L"", &_LineStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, renderTarget, _Size, L"999.9k", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999.9k", 1.f, &_TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();

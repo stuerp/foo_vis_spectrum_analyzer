@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.cpp (2024.02.17) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: CQTAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "CQTAnalyzer.h"
@@ -18,12 +18,14 @@ cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
+    const double SampleCount = (double) (frameCount * _ChannelCount);
+
     for (frequency_band_t & fb : frequencyBands)
     {
-        double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / (double) sampleCount) * _State->_CQTBandwidthOffset;
-        double TLen = std::min(1. / Bandwidth, (double) sampleCount / (double) _SampleRate);
+        double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / SampleCount) * _State->_CQTBandwidthOffset;
+        double TLen = std::min(1. / Bandwidth, (double) SampleCount / (double) _SampleRate);
 
         double DownsampleAmount = std::max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
         double Coeff = 2. * ::cos(2. * M_PI * fb.Ctr / (double) _SampleRate * DownsampleAmount);
@@ -31,7 +33,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t samp
         double f1 = 0.;
         double f2 = 0.;
         double Sine = 0.;
-        double Offset = ::trunc(((double) sampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
+        double Offset = ::trunc((SampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
 
         double LoIdx = Offset;
         double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
@@ -47,7 +49,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t samp
             Norm += w;
 
             // Goertzel transform
-            Sine = (AverageSamples(&sampleData[(size_t)(Idx * DownsampleAmount)], channels) * w) + (Coeff * f1) - f2;
+            Sine = (AverageSamples(&frames[(size_t)(Idx * DownsampleAmount)], selectedChannels) * w) + (Coeff * f1) - f2;
 
             f2 = f1;
             f1 = Sine;

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.09.24) P. Stuer - Implements a graph on which the visual are rendered. **/
+/** $VER: Graph.cpp (2025.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -43,6 +43,7 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
             _Visualization = std::make_unique<spectrum_t>();
             break;
 
@@ -56,6 +57,13 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
 
         case VisualizationType::LevelMeter:
             _Visualization = std::make_unique<level_meter_t>();
+            break;
+
+        case VisualizationType::Oscilloscope:
+            if (!_State->_XYMode)
+                _Visualization = std::make_unique<oscilloscope_t>();
+            else
+                _Visualization = std::make_unique<oscilloscope_xy_t>();
             break;
     }
 
@@ -91,14 +99,14 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void graph_t::Render(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
+void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (SUCCEEDED(hr))
     {
-        RenderBackground(renderTarget, artwork);
-        RenderForeground(renderTarget);
+        RenderBackground(deviceContext, artwork);
+        RenderForeground(deviceContext);
     }
 }
 
@@ -193,40 +201,40 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// <summary>
 /// Renders the background.
 /// </summary>
-void graph_t::RenderBackground(ID2D1RenderTarget * renderTarget, artwork_t & artwork) noexcept
+void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle->IsEnabled())
-        renderTarget->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
-
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
-        return;
+        deviceContext->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
 
     if (!_State->_ShowArtworkOnBackground)
+        return;
+
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
         return;
 
     if (artwork.Bitmap() == nullptr)
         return;
 
-    artwork.Render(renderTarget, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
+    artwork.Render(deviceContext, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
 }
 
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void graph_t::RenderForeground(ID2D1RenderTarget * renderTarget) noexcept
+void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _Visualization->Render(renderTarget);
+    _Visualization->Render(deviceContext);
 
     if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
         return;
 
-    RenderDescription(renderTarget);
+    RenderDescription(deviceContext);
 }
 
 /// <summary>
 /// Renders the description.
 /// </summary>
-void graph_t::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
+void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 {
     if (_Description.empty())
         return;
@@ -254,30 +262,33 @@ void graph_t::RenderDescription(ID2D1RenderTarget * renderTarget) noexcept
         Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
         if (_DescriptionBackgroundStyle->IsEnabled())
-            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
+            deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
 
         if (_DescriptionTextStyle->IsEnabled())
-            renderTarget->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT graph_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, renderTarget, _Size, L"", &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, renderTarget, _Size, L"", &_DescriptionTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, &_DescriptionTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, renderTarget, _Size, L"", &_DescriptionBackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, &_DescriptionBackgroundStyle);
 
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+#endif
     return hr;
 }
 
@@ -286,9 +297,13 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget)
 /// </summary>
 void graph_t::ReleaseDeviceSpecificResources() noexcept
 {
-    _Visualization->ReleaseDeviceSpecificResources();
+    _Visualization->DeleteDeviceSpecificResources();
 
     SafeRelease(&_DescriptionBackgroundStyle);
     SafeRelease(&_DescriptionTextStyle);
     SafeRelease(&_BackgroundStyle);
+
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
 }

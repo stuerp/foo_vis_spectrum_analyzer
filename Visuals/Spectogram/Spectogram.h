@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2025.09.24) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.h (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -35,7 +35,7 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept;
     void Reset() noexcept;
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
@@ -45,13 +45,14 @@ public:
 private:
     bool Update() noexcept;
 
-    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
-    void RenderTimeAxis(ID2D1RenderTarget * renderTarget, bool top) const noexcept;
-    void RenderFreqAxis(ID2D1RenderTarget * renderTarget, bool left) const noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * deviceContext) const noexcept;
+
+    void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
+    void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
 
     void InitFreqAxis() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget);
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext);
 
     void Resize() noexcept;
 

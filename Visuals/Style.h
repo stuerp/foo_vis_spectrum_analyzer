@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2025.09.17) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2025.10.13) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -46,7 +46,7 @@ public:
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
     };
 
-    style_t(Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
+    style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
 
     bool IsEnabled() const noexcept
     {
@@ -55,14 +55,14 @@ public:
 
     bool Has(Features feature) const noexcept
     {
-        return IsSet(_Flags, feature);
+        return IsSet(Flags, feature);
     }
 
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const std::wstring & text) noexcept;
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor = 1.f) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT MeasureText(const std::wstring & text) noexcept;
 
@@ -88,20 +88,26 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
-    Features _Flags;
+    std::wstring Name;
+    VisualizationTypes UsedBy;              // Determines which visualization uses the style.
 
-    ColorSource _ColorSource;           // Determines the source of the color
-    D2D1_COLOR_F _CustomColor;          // User-specified color
-    uint32_t _ColorIndex;               // User-specified color index in Windows / DUI / CUI list
-    ColorScheme _ColorScheme;           // User-specified color scheme
-    gradient_stops_t _CustomGradientStops; // User-specified gradient stops
+#pragma region Serialized
 
-    FLOAT _Opacity;                     // Opacity of the brush or area
-    FLOAT _Thickness;                   // Line thickness
+    Features Flags;
 
-    // Font-specific
+    ColorSource _ColorSource;               // Determines the source of the color
+    D2D1_COLOR_F _CustomColor;              // User-specified color
+    uint32_t _ColorIndex;                   // User-specified color index in Windows / DUI / CUI list
+    ColorScheme _ColorScheme;               // User-specified color scheme
+    gradient_stops_t _CustomGradientStops;  // User-specified gradient stops
+
+    FLOAT _Opacity;                         // Opacity of the brush or area
+    FLOAT _Thickness;                       // Line thickness
+
     std::wstring _FontName;
     FLOAT _FontSize;
+
+#pragma endregion
 
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;

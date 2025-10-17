@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2025.09.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2025.10.15) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -74,6 +74,8 @@ private:
     void Initialize();
     void Terminate();
 
+    void ConfigurationChanged(Settings settings) const noexcept;
+
     void OnSelectionChanged(UINT, int, CWindow);
     void OnDoubleClick(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
@@ -85,16 +87,14 @@ private:
 
     void UpdatePages(size_t index) const noexcept;
 
+    void UpdateVisualizationPage() noexcept;
     void UpdateTransformPage() noexcept;
-    void UpdateFrequenciesPage() noexcept;
-    void UpdateFiltersPage() noexcept;
+    void UpdateFrequenciesPage() const noexcept;
+    void UpdateFiltersPage() const noexcept;
     void UpdateCommonPage() const noexcept;
     void UpdateGraphsPage() noexcept;
-    void UpdateVisualizationPage() noexcept;
     void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
-
-    void ConfigurationChanged() const noexcept;
 
     void UpdateColorControls();
     void UpdateCurrentColor(style_t * style) const noexcept;
@@ -109,11 +109,16 @@ private:
     void SetDouble(int id, double value, unsigned width = 0, unsigned precision = 2) noexcept;
     void SetNote(int id, uint32_t noteNumber) noexcept;
 
+    void InitializeXAxisMode() noexcept;
+    void InitializeYAxisMode() noexcept;
+    void InitializeStyles() noexcept;
+
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_CLOSE(OnClose)
 
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
+//      MSG_WM_MOUSEMOVE(OnMouseMove)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
@@ -144,6 +149,11 @@ private:
 
 private:
     HWND _hParent;
+
+    std::vector<VisualElement> _ActiveStyles;   // The styles relevant to the current visualization.
+    size_t _SelectedStyle;                      // Index of the selected style in the listbox.
+
+    size_t _SelectedGraph;                      // Index of the selected graph in the listbox.
 
     CToolTipCtrl _ToolTipControl;
 

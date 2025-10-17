@@ -31,6 +31,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -44,6 +45,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -91,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -118,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -153,7 +155,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -180,7 +182,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -214,7 +216,10 @@
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\ConfigurationDialog.h" />
+    <ClInclude Include="Visuals\AmplitudeScaler.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
+    <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
+    <ClInclude Include="Visuals\Oscilloscope\OscilloscopeXY.h" />
     <ClInclude Include="Visuals\PeakMeter\GaugeNames.h" />
     <ClInclude Include="Visuals\PeakMeter\Gauges.h" />
     <ClInclude Include="Visuals\PeakMeter\GaugeScales.h" />
@@ -225,7 +230,6 @@
     <ClInclude Include="Visuals\Spectogram\Spectogram.h" />
     <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Event.h" />
-    <ClInclude Include="ToneGenerator.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
     <ClInclude Include="Configuration\CColorListBox.h" />
@@ -291,7 +295,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="ToneGenerator.cpp" />
     <ClCompile Include="Configuration\CColorButton.cpp" />
     <ClCompile Include="Configuration\CColorDialogEx.cpp" />
     <ClCompile Include="Configuration\CColorListBox.cpp" />
@@ -309,6 +312,8 @@
     <ClCompile Include="Visuals\Element.cpp" />
     <ClCompile Include="Configuration\PresetManager.cpp" />
     <ClCompile Include="Visuals\LevelMeter\LevelMeter.cpp" />
+    <ClCompile Include="Visuals\Oscilloscope\Oscilloscope.cpp" />
+    <ClCompile Include="Visuals\Oscilloscope\OscilloscopeXY.cpp" />
     <ClCompile Include="Visuals\PeakMeter\GaugeNames.cpp" />
     <ClCompile Include="Visuals\PeakMeter\Gauges.cpp" />
     <ClCompile Include="Visuals\PeakMeter\GaugeScales.cpp" />
@@ -340,9 +345,6 @@
   <ItemGroup>
     <ProjectReference Include="..\3rdParty\columns_ui_sdk\columns_ui-sdk-public.vcxproj">
       <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\foo_input_signal\foo_input_signal.vcxproj">
-      <Project>{449954a2-c674-418e-a8bb-9b847a0d5cee}</Project>
     </ProjectReference>
     <ProjectReference Include="..\sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">
       <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>
@@ -384,6 +386,7 @@
     <Image Include="assets\Curve.png" />
     <Image Include="assets\MultipleGraphs.png" />
     <Image Include="assets\Preview.png" />
+    <Image Include="assets\Radial-Bars.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

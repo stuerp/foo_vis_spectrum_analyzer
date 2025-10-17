@@ -16,7 +16,7 @@ void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settin
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     _Labels.clear();
 
@@ -77,7 +77,7 @@ void gauge_scales_t::Resize() noexcept
 
         for (Label & Iter : _Labels)
         {
-            FLOAT x = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
+            FLOAT x = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
             // Don't generate any labels outside the bounds.
             if (!msc::InRange(x, 0.f, GetWidth()))
@@ -148,7 +148,7 @@ void gauge_scales_t::Resize() noexcept
 
         for (Label & Iter : _Labels)
         {
-            FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
+            FLOAT y = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
             // Don't generate any labels outside the bounds.
             if (!msc::InRange(y, 0.f, GetHeight()))
@@ -211,9 +211,9 @@ void gauge_scales_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
@@ -221,7 +221,7 @@ void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
         return;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     if (_State->_HorizontalPeakMeter)
     {
@@ -229,7 +229,7 @@ void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         {
             // Draw the vertical grid line.
             if (_LineStyle->IsEnabled())
-                renderTarget->DrawLine(Iter.Point1, Iter.Point2, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+                deviceContext->DrawLine(Iter.Point1, Iter.Point2, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
             // Draw the text.
             if (!Iter.IsHidden && _TextStyle->IsEnabled())
@@ -237,10 +237,10 @@ void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 _TextStyle->SetHorizontalAlignment(Iter._HAlignment);
 
                 if (_GraphSettings->_YAxisLeft)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     
                 if (_GraphSettings->_YAxisRight)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
     }
@@ -250,7 +250,7 @@ void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         {
             // Draw the horizontal grid line.
             if (_LineStyle->IsEnabled())
-                renderTarget->DrawLine(Iter.Point1, Iter.Point2, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+                deviceContext->DrawLine(Iter.Point1, Iter.Point2, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
             // Draw the text.
             if (!Iter.IsHidden && _TextStyle->IsEnabled())
@@ -258,39 +258,39 @@ void gauge_scales_t::Render(ID2D1RenderTarget * renderTarget) noexcept
                 _TextStyle->SetVerticalAlignment(Iter._VAlignment);
 
                 if (_GraphSettings->_YAxisLeft)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 if (_GraphSettings->_YAxisRight)
-                    renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
     }
 }
 
-HRESULT gauge_scales_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_scales_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
-    D2D1_SIZE_F Size = renderTarget->GetSize();
+    D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, Size, L"+999", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, Size, L"+999", 1.f, &_TextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, Size, L"", &_LineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, Size, L"", 1.f, &_LineStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
 
     return hr;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the device specific resources.
 /// </summary>
-void gauge_scales_t::ReleaseDeviceSpecificResources() noexcept
+void gauge_scales_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -298,13 +298,13 @@ void gauge_scales_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_LineStyle)
     {
-        _LineStyle->ReleaseDeviceSpecificResources();
+        _LineStyle->DeleteDeviceSpecificResources();
         _LineStyle = nullptr;
     }
 
     if (_TextStyle)
     {
-        _TextStyle->ReleaseDeviceSpecificResources();
+        _TextStyle->DeleteDeviceSpecificResources();
         _TextStyle = nullptr;
     }
 }

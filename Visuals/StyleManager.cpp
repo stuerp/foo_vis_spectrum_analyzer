@@ -25,8 +25,8 @@ style_manager_t::style_manager_t()
 /// </summary>
 style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 {
-    for (const auto & Iter : other._Styles)
-        _Styles[Iter.first] = Iter.second;
+    for (const auto & [ID, Style] : other.Styles)
+        Styles[ID] = Style;
 
     return *this;
 }
@@ -36,70 +36,13 @@ style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 /// </summary>
 void style_manager_t::Reset() noexcept
 {
-    _Styles = _DefaultStyles;
+    Styles = _DefaultStyles;
 
-    for (auto & Iter : _Styles)
+    for (auto & [ID, Style] : Styles)
     {
-        Iter.second._CurrentColor = Iter.second._CustomColor;
-        Iter.second._CurrentGradientStops = GetBuiltInGradientStops(Iter.second._ColorScheme);
+        Style._CurrentColor         = Style._CustomColor;
+        Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
     }
-}
-
-/// <summary>
-/// Gets the style of the visual element specified by an index.
-/// </summary>
-style_t * style_manager_t::GetStyleByIndex(int index) noexcept
-{
-    static const VisualElement IndexToId[] =
-    {
-        VisualElement::GraphBackground,
-        VisualElement::GraphDescriptionText,
-        VisualElement::GraphDescriptionBackground,
-
-        VisualElement::XAxisText,
-        VisualElement::YAxisText,
-        VisualElement::HorizontalGridLine,
-        VisualElement::VerticalGridLine,
-
-        VisualElement::BarArea,
-        VisualElement::BarTop,
-        VisualElement::BarPeakArea,
-        VisualElement::BarPeakTop,
-        VisualElement::BarDarkBackground,
-        VisualElement::BarLightBackground,
-
-        VisualElement::CurveLine,
-        VisualElement::CurveArea,
-        VisualElement::CurvePeakLine,
-        VisualElement::CurvePeakArea,
-
-        VisualElement::Spectogram,
-
-        VisualElement::GaugeBackground,
-
-        VisualElement::GaugePeakLevel,
-        VisualElement::Gauge0dBPeakLevel,
-        VisualElement::GaugeMaxPeakLevel,
-        VisualElement::GaugePeakLevelText,
-
-        VisualElement::GaugeRMSLevel,
-        VisualElement::Gauge0dBRMSLevel,
-        VisualElement::GaugeRMSLevelText,
-
-        VisualElement::NyquistMarker,
-
-        VisualElement::GaugeLeftRight,
-        VisualElement::GaugeLeftRightIndicator,
-        VisualElement::GaugeMidSide,
-        VisualElement::GaugeMidSideIndicator,
-        VisualElement::LevelMeterAxis,
-    };
-
-    assert((size_t) VisualElement::Count == _countof(IndexToId));
-
-    index = std::clamp(index, 0, (int) (_countof(IndexToId) - 1));
-
-    return GetStyle(IndexToId[(size_t) index]);
 }
 
 /// <summary>
@@ -107,21 +50,21 @@ style_t * style_manager_t::GetStyleByIndex(int index) noexcept
 /// </summary>
 void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept
 {
-    for (auto & Iter : _Styles)
+    for (auto & [ID, Style] : Styles)
     {
-        if (Iter.second._ColorSource == ColorSource::Gradient)
+        if (Style._ColorSource == ColorSource::Gradient)
         {
-            if (Iter.second._ColorScheme == ColorScheme::Artwork)
+            if (Style._ColorScheme == ColorScheme::Artwork)
             {
-                Iter.second._CurrentGradientStops = gs;
-                Iter.second.ReleaseDeviceSpecificResources();
+                Style._CurrentGradientStops = gs;
+                Style.DeleteDeviceSpecificResources();
             }
         }
         else
-        if (Iter.second._ColorSource == ColorSource::DominantColor)
+        if (Style._ColorSource == ColorSource::DominantColor)
         {
-            Iter.second._CurrentColor = dominantColor;
-            Iter.second.ReleaseDeviceSpecificResources();
+            Style._CurrentColor = dominantColor;
+            Style.DeleteDeviceSpecificResources();
         }
     }
 }
@@ -131,17 +74,55 @@ void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs,
 /// </summary>
 void style_manager_t::UpdateCurrentColors() noexcept
 {
-    for (auto & Iter : _Styles)
-        Iter.second.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
+    for (auto & [ID, Style] : Styles)
+        Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
 }
 
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void style_manager_t::ReleaseDeviceSpecificResources() noexcept
+void style_manager_t::DeleteDeviceSpecificResources() noexcept
 {
-    for (auto & Iter : _Styles)
-        Iter.second.ReleaseDeviceSpecificResources();
+    for (auto & [ID, Style] : Styles)
+        Style.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept
+{
+    if (*style == nullptr)
+    {
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+    }
+
+    if ((*style)->_Brush != nullptr)
+        return S_OK;
+
+    return (*style)->CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
+{
+    if (*style == nullptr)
+    {
+        *style = GetStyle(visualElement);
+
+        if (*style == nullptr)
+            return E_FAIL;
+    }
+
+    if ((*style)->_Brush != nullptr)
+        return S_OK;
+
+    return (*style)->CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
 }
 
 /// <summary>
@@ -168,21 +149,25 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             if (Version < 4)
                 pfc::string Name = reader->read_string(abortHandler);
 
-            style_t & style = _Styles[(VisualElement) Id];
+            style_t Style = { };
+
+            // Handle unknown styles. This can happen when an older component version reads a preset from a newer one.
+            if (Id < (uint32_t) VisualElement::Count)
+                Style = Styles[(VisualElement) Id];    
 
             uint64_t Flags;
 
             reader->read_object_t(Flags, abortHandler);
 
             // Add only the non-system flags to the style from the read value.
-            style._Flags = (style._Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
+            Style.Flags = (Style.Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
 
             uint32_t Integer;
 
-            reader->read_object_t(Integer, abortHandler); style._ColorSource = (ColorSource) Integer;
-            reader->read_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
-            reader->read_object_t(style._ColorIndex, abortHandler);
-            reader->read_object_t(Integer, abortHandler); style._ColorScheme = (ColorScheme) Integer;
+            reader->read_object_t(Integer, abortHandler); Style._ColorSource = (ColorSource) Integer;
+            reader->read_object(&Style._CustomColor, sizeof(Style._CustomColor), abortHandler);
+            reader->read_object_t(Style._ColorIndex, abortHandler);
+            reader->read_object_t(Integer, abortHandler); Style._ColorScheme = (ColorScheme) Integer;
 
             gradient_stops_t gs;
 
@@ -196,39 +181,42 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
                 gs.push_back({ Position, Color });
             }
 
-            style._CustomGradientStops = gs;
+            Style._CustomGradientStops = gs;
 
-            reader->read_object_t(style._Opacity, abortHandler);
-            reader->read_object_t(style._Thickness, abortHandler);
+            reader->read_object_t(Style._Opacity, abortHandler);
+            reader->read_object_t(Style._Thickness, abortHandler);
 
             pfc::string FontName = reader->read_string(abortHandler);
             FLOAT FontSize; reader->read_object_t(FontSize, abortHandler);
 
             if (Version > 4)
             {
-                style._FontName = pfc::wideFromUTF8(FontName);
-                style._FontSize = FontSize;
+                Style._FontName = pfc::wideFromUTF8(FontName);
+                Style._FontSize = FontSize;
             }
 
             // Sets the default font settings.
-            if (style.Has(style_t::Features::SupportsFont))
+            if (Style.Has(style_t::Features::SupportsFont))
             {
                 const auto & DefaultStyle = _DefaultStyles[(VisualElement) Id];
 ;
-                if (style._FontName.empty())
-                    style._FontName = DefaultStyle._FontName;
+                if (Style._FontName.empty())
+                    Style._FontName = DefaultStyle._FontName;
 
-                if (style._FontSize < 2.f)
-                    style._FontSize = DefaultStyle._FontSize;
+                if (Style._FontSize < 2.f)
+                    Style._FontSize = DefaultStyle._FontSize;
             }
 
             // 'Activate' the values we just read.
-            if (style._ColorScheme == ColorScheme::Custom)
-                style._CurrentGradientStops = style._CustomGradientStops;
+            if (Style._ColorScheme == ColorScheme::Custom)
+                Style._CurrentGradientStops = Style._CustomGradientStops;
             else
-                style._CurrentGradientStops = GetBuiltInGradientStops(style._ColorScheme);
+                Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
 
-            style.UpdateCurrentColor(_DominantColor, _UserInterfaceColors);
+            Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
+
+            if (Id < (uint32_t) VisualElement::Count)
+                Styles[(VisualElement) Id] = Style;
         }
     }
     catch (std::exception & ex)
@@ -248,11 +236,11 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
     {
         writer->write_object_t(_CurrentVersion, abortHandler);
 
-        size_t Size = _Styles.size();
+        size_t Size = Styles.size();
 
         writer->write_object_t(Size, abortHandler);
 
-        for (const auto & Iter : _Styles)
+        for (const auto & Iter : Styles)
         {
             {
                 uint32_t Id = (uint32_t) Iter.first;
@@ -261,30 +249,30 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
             }
 
             {
-                const style_t & style = Iter.second;
+                const style_t & Style = Iter.second;
 
-                writer->write_object_t((uint64_t) style._Flags, abortHandler);
-                writer->write_object(&style._ColorSource, sizeof(style._ColorSource), abortHandler);
-                writer->write_object(&style._CustomColor, sizeof(style._CustomColor), abortHandler);
-                writer->write_object_t(style._ColorIndex, abortHandler);
-                writer->write_object(&style._ColorScheme, sizeof(style._ColorScheme), abortHandler);
+                writer->write_object_t((uint64_t) Style.Flags, abortHandler);
+                writer->write_object(&Style._ColorSource, sizeof(Style._ColorSource), abortHandler);
+                writer->write_object(&Style._CustomColor, sizeof(Style._CustomColor), abortHandler);
+                writer->write_object_t(Style._ColorIndex, abortHandler);
+                writer->write_object(&Style._ColorScheme, sizeof(Style._ColorScheme), abortHandler);
 
-                Size = style._CustomGradientStops.size();
+                Size = Style._CustomGradientStops.size();
 
                 writer->write_object_t(Size, abortHandler);
 
-                for (const auto & gs : style._CustomGradientStops)
+                for (const auto & gs : Style._CustomGradientStops)
                 {
                     writer->write_object_t(gs.position, abortHandler);
                     writer->write_object(&gs.color, sizeof(gs.color), abortHandler);
                 }
 
-                writer->write_object_t(style._Opacity, abortHandler);
-                writer->write_object_t(style._Thickness, abortHandler);
+                writer->write_object_t(Style._Opacity, abortHandler);
+                writer->write_object_t(Style._Thickness, abortHandler);
 
-                pfc::string FontName = pfc::utf8FromWide(style._FontName.c_str());
+                pfc::string FontName = pfc::utf8FromWide(Style._FontName.c_str());
                 writer->write_string(FontName, abortHandler);
-                writer->write_object_t(style._FontSize, abortHandler);
+                writer->write_object_t(Style._FontSize, abortHandler);
             }
         }
     }

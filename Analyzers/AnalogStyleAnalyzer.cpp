@@ -1,5 +1,5 @@
 
-/** $VER: AnalogStyleAnalyzer.cpp (2024.03.02) P. Stuer - Based on TF3RDL's Analog-style spectrum analyzer, https://codepen.io/TF3RDL/pen/MWLzPoO **/
+/** $VER: AnalogStyleAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's Analog-style spectrum analyzer, https://codepen.io/TF3RDL/pen/MWLzPoO **/
 
 #include "pch.h"
 
@@ -57,15 +57,18 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.NewValue = 0.;
 
+    const audio_sample * Samples = frames;
+    const size_t SampleCount = frameCount * _ChannelCount;
+
     #pragma loop(hint_parallel(2))
-    for (size_t i = 0; i < sampleCount; i += _ChannelCount)
+    for (size_t i = 0; i < SampleCount; i += _ChannelCount, Samples += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&sampleData[i], channels);
+        const audio_sample Sample = AverageSamples(Samples, selectedChannels);
 
         size_t k = 0;
 

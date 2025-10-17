@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.24) P. Stuer - Represents and renders the spectrum. **/
+/** $VER: Spectrum.h (2025.09.28) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -21,6 +21,7 @@
 
 #include "Chrono.h"
 
+#include <valarray>
 #include <vector>
 #include <string>
 
@@ -41,10 +42,10 @@ public:
 
     void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
     void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1RenderTarget * renderTarget) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept;
     void Reset() noexcept { }
 
-    HRESULT CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void ReleaseDeviceSpecificResources() noexcept;
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _ClientBounds; }
@@ -52,18 +53,20 @@ public:
 private:
     void Resize() noexcept;
 
-    void RenderBars(ID2D1RenderTarget * renderTarget) noexcept;
-    void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
-    void RenderRadialBars(ID2D1RenderTarget * renderTarget) noexcept;
-    void RenderNyquistFrequencyMarker(ID2D1RenderTarget * renderTarget) const noexcept;
+    void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept;
 
-    HRESULT CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
+
+    HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
     struct geometry_points_t
     {
         std::vector<D2D1_POINT_2F> p0; // Determines how many knots will be used to calculate control points.
-        std::vector<D2D1_POINT_2F> p1;
-        std::vector<D2D1_POINT_2F> p2;
+        std::vector<D2D1_POINT_2F> p1; // First control points
+        std::vector<D2D1_POINT_2F> p2; // Second control points
 
         void Clear()
         {
@@ -77,6 +80,9 @@ private:
     HRESULT CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
     HRESULT CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** segment) const noexcept;
+
+    HRESULT CreateRadialGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
+    HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
     const FLOAT PaddingX = 1.f;

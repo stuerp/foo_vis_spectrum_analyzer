@@ -1,5 +1,5 @@
 
-/** $VER: Gauges.cpp (2025.09.24) P. Stuer - Implements the gauges of the peak meter. **/
+/** $VER: Gauges.cpp (2025.10.08) P. Stuer - Implements the gauges of the peak meter. **/
 
 #include "pch.h"
 
@@ -18,7 +18,7 @@ void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, con
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -51,9 +51,9 @@ void gauge_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & gaugeMetrics) noexcept
+void gauge_t::Render(ID2D1DeviceContext * deviceContext, const gauge_metrics_t & gaugeMetrics) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
@@ -63,10 +63,12 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
 
     const FLOAT PeakThickness = _MaxPeakStyle->_Thickness / 2.f;
 
-    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+    const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
 #ifdef _DEBUG
-    renderTarget->FillRectangle({ 0.f, 0.f, 16.f, 16.f }, _DebugBrush); // Top/Left indicator
+    deviceContext->FillRectangle({ 0.f, 0.f, 16.f, 16.f }, _DebugBrush); // Top/Left indicator
 #endif
 
     if (_State->_HorizontalPeakMeter)
@@ -83,9 +85,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                 Rect.x2 = GetWidth();
 
                 if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _BackgroundStyle->_Brush);
                 else
-                    renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
+                    deviceContext->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             // Draw the peak.
@@ -98,9 +105,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.x2 = (FLOAT) (PeakRender * GetWidth());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _PeakStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (Peak, 0dBFS)
@@ -113,9 +125,17 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.x1 = (FLOAT) (gaugeMetrics._dBFSZero * GetWidth());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _Peak0dBStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.x1 = std::ceil(Rect.x1 / LEDSize) * LEDSize;
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+                        }
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.x1 = OldLeft;
                 }
@@ -135,7 +155,7 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
 
                     _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
-                    renderTarget->FillRectangle(Rect, _MaxPeakStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _MaxPeakStyle->_Brush);
 
                     Rect.x1 = OldLeft;
                 }
@@ -151,9 +171,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.x2 = (FLOAT) (RMSRender * GetWidth());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _RMSStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (RMS, 0dBFS)
@@ -166,9 +191,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.x1 = (FLOAT) (gaugeMetrics._dBFSZero * GetWidth());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _RMS0dBStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.x2 = std::ceil(Rect.x2 / LEDSize) * LEDSize;
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.x1 = OldLeft;
                 }
@@ -191,9 +221,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                 Rect.y2 = GetHeight();
 
                 if (!_State->_LEDMode)
-                    renderTarget->FillRectangle(Rect, _BackgroundStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _BackgroundStyle->_Brush);
                 else
-                    renderTarget->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                {
+                    if (_State->_LEDIntegralSize)
+                        Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
+                    deviceContext->FillOpacityMask(_OpacityMask, _BackgroundStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                }
             }
 
             // Draw the peak.
@@ -206,9 +241,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.y2 = (FLOAT) (PeakRender * GetHeight());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _PeakStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _PeakStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _PeakStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (Peak, 0dBFS)
@@ -221,9 +261,17 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.y1 = (FLOAT) (gaugeMetrics._dBFSZero * GetHeight());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _Peak0dBStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _Peak0dBStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.y1 = std::ceil(Rect.y1 / LEDSize) * LEDSize;
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+                        }
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _Peak0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.y1 = OldTop;
                 }
@@ -243,7 +291,7 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
 
                     _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
-                    renderTarget->FillRectangle(Rect, _MaxPeakStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _MaxPeakStyle->_Brush);
 
                     Rect.y1 = OldTop;
                 }
@@ -259,9 +307,14 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.y2 = (FLOAT) (RMSRender * GetHeight());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _RMSStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _RMSStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _RMSStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
                 }
 
                 // Draw the foreground (RMS, 0dBFS)
@@ -274,9 +327,17 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
                     Rect.y1 = (FLOAT) (gaugeMetrics._dBFSZero * GetHeight());
 
                     if (!_State->_LEDMode)
-                        renderTarget->FillRectangle(Rect, _RMS0dBStyle->_Brush);
+                        deviceContext->FillRectangle(Rect, _RMS0dBStyle->_Brush);
                     else
-                        renderTarget->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    {
+                        if (_State->_LEDIntegralSize)
+                        {
+                            Rect.y1 = std::ceil(Rect.y1 / LEDSize) * LEDSize;
+                            Rect.y2 = std::ceil(Rect.y2 / LEDSize) * LEDSize;
+                        }
+
+                        deviceContext->FillOpacityMask(_OpacityMask, _RMS0dBStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    }
 
                     Rect.y1 = OldTop;
                 }
@@ -289,43 +350,43 @@ void gauge_t::Render(ID2D1RenderTarget * renderTarget, const gauge_metrics_t & g
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
-        hr = CreateOpacityMask(renderTarget);
+        hr = CreateOpacityMask(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeBackground, renderTarget, _Size, L"", &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevel, renderTarget, _Size, L"", &_PeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugePeakLevel, deviceContext, _Size, L"", 1.f, &_PeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBPeakLevel, renderTarget, _Size, L"", &_Peak0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBPeakLevel, deviceContext, _Size, L"", 1.f, &_Peak0dBStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMaxPeakLevel, renderTarget, _Size, L"", &_MaxPeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMaxPeakLevel, deviceContext, _Size, L"", 1.f, &_MaxPeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevel, renderTarget, _Size, L"", &_RMSStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeRMSLevel, deviceContext, _Size, L"", 1.f, &_RMSStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBRMSLevel, renderTarget, _Size, L"", &_RMS0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Gauge0dBRMSLevel, deviceContext, _Size, L"", 1.f, &_RMS0dBStyle);
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
 #endif
 
     return hr;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the device specific resources.
 /// </summary>
-void gauge_t::ReleaseDeviceSpecificResources() noexcept
+void gauge_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -333,31 +394,31 @@ void gauge_t::ReleaseDeviceSpecificResources() noexcept
 
     if (_RMSStyle)
     {
-        _RMSStyle->ReleaseDeviceSpecificResources();
+        _RMSStyle->DeleteDeviceSpecificResources();
         _RMSStyle = nullptr;
     }
 
     if (_MaxPeakStyle)
     {
-        _MaxPeakStyle->ReleaseDeviceSpecificResources();
+        _MaxPeakStyle->DeleteDeviceSpecificResources();
         _MaxPeakStyle = nullptr;
     }
 
     if (_Peak0dBStyle)
     {
-        _Peak0dBStyle->ReleaseDeviceSpecificResources();
+        _Peak0dBStyle->DeleteDeviceSpecificResources();
         _Peak0dBStyle = nullptr;
     }
 
     if (_PeakStyle)
     {
-        _PeakStyle->ReleaseDeviceSpecificResources();
+        _PeakStyle->DeleteDeviceSpecificResources();
         _PeakStyle = nullptr;
     }
 
     if (_BackgroundStyle)
     {
-        _BackgroundStyle->ReleaseDeviceSpecificResources();
+        _BackgroundStyle->DeleteDeviceSpecificResources();
         _BackgroundStyle = nullptr;
     }
 
@@ -367,13 +428,13 @@ void gauge_t::ReleaseDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT gauge_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT gauge_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    D2D1_SIZE_F Size = renderTarget->GetSize();
+    D2D1_SIZE_F Size = deviceContext->GetSize();
 
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = renderTarget->CreateCompatibleRenderTarget(D2D1::SizeF(Size.width, Size.height), &rt);
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(Size.width, Size.height), &rt);
 
     if (SUCCEEDED(hr))
     {
@@ -387,16 +448,18 @@ HRESULT gauge_t::CreateOpacityMask(ID2D1RenderTarget * renderTarget) noexcept
 
             rt->Clear();
 
-            if ((_State->_LEDSize + _State->_LEDGap) > 0.f)
+            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+
+            if (LEDSize > 0.f)
             {
                 if (_State->_HorizontalPeakMeter)
                 {
-                    for (FLOAT x = _State->_LEDGap; x < Size.width; x += (_State->_LEDSize + _State->_LEDGap))
+                    for (FLOAT x = _State->_LEDGap; x < Size.width; x += LEDSize)
                         rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, Size.height), Brush);
                 }
                 else
                 {
-                    for (FLOAT y = _State->_LEDGap; y < Size.height; y += (_State->_LEDSize + _State->_LEDGap))
+                    for (FLOAT y = _State->_LEDGap; y < Size.height; y += LEDSize)
                         rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDSize), Brush);
                 }
             }

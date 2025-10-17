@@ -64,7 +64,7 @@ void y_axis_t::Resize() noexcept
 
     for (label_t & Iter : _Labels)
     {
-        FLOAT y = msc::Map(_GraphSettings->ScaleA(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
+        FLOAT y = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Bounds.bottom : _Bounds.top, !_FlipVertically ? _Bounds.top : _Bounds.bottom);
 
         // Don't generate any labels outside the bounds.
         if (!msc::InRange(y, _Bounds.top, _Bounds.bottom))
@@ -99,12 +99,14 @@ void y_axis_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void y_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
         return;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
 
@@ -112,16 +114,16 @@ void y_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
     {
         // Draw the horizontal grid line.
         if (_LineStyle->IsEnabled())
-            renderTarget->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_YAxisMode != YAxisMode::None))
         {
             if (_GraphSettings->_YAxisLeft)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphSettings->_YAxisRight)
-                renderTarget->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -132,12 +134,12 @@ void y_axis_t::Render(ID2D1RenderTarget * renderTarget) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, renderTarget, _Size, L"", &_LineStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, renderTarget, _Size, L"+999", &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, &_TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();

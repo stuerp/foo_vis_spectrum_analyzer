@@ -1,5 +1,5 @@
 
-/** $VER: GraphSettings.h (2024.04.22) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphSettings.h (2025.10.05) P. Stuer - Represents the settings of a graph. **/
 
 #pragma once
 
@@ -33,12 +33,16 @@ public:
         Initialize();
     }
 
-    double ScaleA(double value) const;
+    double ScaleAmplitude(double value) const;
+
+    /* Code readability shortcuts */
+    bool HasXAxis() const noexcept { return _XAxisMode != XAxisMode::None; }
+    bool HasYAxis() const noexcept { return _YAxisMode != YAxisMode::None; }
 
 private:
     void Initialize()
     {
-        _Channels = (uint32_t) Channels::ConfigStereo;
+        _SelectedChannels = (uint32_t) Channels::ConfigStereo;
         _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
 
         _HorizontalAlignment = HorizontalAlignment::Center;
@@ -77,7 +81,7 @@ private:
 public:
     std::wstring _Description;
 
-    uint32_t _Channels;
+    uint32_t _SelectedChannels;                 // The channels that should be visualized.
     uint32_t _ChannelPairs;
 
     HorizontalAlignment _HorizontalAlignment;   // Horizonal alignment of a visualization in the graph area.
@@ -94,8 +98,8 @@ public:
     bool _YAxisLeft;
     bool _YAxisRight;
 
-    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0
-    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0 dBFS
+    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0 dBFS
     double _AmplitudeStep;
 
     bool _UseAbsolute;                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.

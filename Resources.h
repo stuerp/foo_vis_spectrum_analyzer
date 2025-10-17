@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.09.25) P. Stuer **/
+/** $VER: Resources.h (2025.10.15) P. Stuer **/
 
 #pragma once
 
@@ -7,16 +7,16 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          8
-#define NUM_FILE_PATCH          1
+#define NUM_FILE_MINOR          9
+#define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       8
-#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_MINOR       9
+#define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         ""
+#define STR_RELEASE_TAG         "-alpha3"
 
 /** Component specific **/
 
@@ -327,7 +327,11 @@
 #define IDC_FLIP_HORIZONTALLY           5116
 #define IDC_FLIP_VERTICALLY             5118
 
-#define IDC_CHANNELS                    5120
+#define IDC_CHANNELS_LBL                5120
+#define IDC_CHANNELS                    5122
+
+#define IDC_CHANNEL_PAIRS_LBL           5124
+#define IDC_CHANNEL_PAIRS               5126
 
 #pragma endregion
 
@@ -401,6 +405,7 @@
 #define IDC_LED_SIZE                    7126
 #define IDC_LED_GAP_LBL                 7128
 #define IDC_LED_GAP                     7130
+#define IDC_LED_INTEGRAL_SIZE           7132
 
 // Bars
 
@@ -446,10 +451,25 @@
 
 #define IDC_LEVEL_METER                 7180
 
-#define IDC_CHANNEL_PAIRS_LBL           7182
-#define IDC_CHANNEL_PAIRS               7183
-
 #define IDC_HORIZONTAL_LEVEL_METER      7184
+
+// Oscilloscope
+
+#define IDC_OSCILLOSCOPE                7200
+
+#define IDC_XY_MODE                     7202
+
+#define IDC_X_GAIN_LBL                  7204
+#define IDC_X_GAIN                      7206
+#define IDC_Y_GAIN_LBL                  7208
+#define IDC_Y_GAIN                      7210
+
+#define IDC_PHOSPHOR_DECAY              7212
+
+#define IDC_BLUR_SIGMA_LBL              7214
+#define IDC_BLUR_SIGMA                  7216
+#define IDC_DECAY_FACTOR_LBL            7218
+#define IDC_DECAY_FACTOR                7220
 
 #pragma endregion
 

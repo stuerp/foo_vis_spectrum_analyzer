@@ -469,12 +469,93 @@ This page contains settings specific to some of the visualizations.
 
 Determines the type of visualization of a graph:
 
-- Bars: The classic spectrum visualization
-- Curve: The same as bars but with a smoothed curve instead of bars.
-- Spectogram
-- Peak / RMS: Displays the peak and RMS levels of the track.
-- Balance / Correlation: Displays the balance and mid/side correlation of the track.
-- Radial Bars: A variation of the Bars visualization that displays the spectrum in a circle.
+##### Bars
+
+The classic frequency spectrum visualization.
+
+![Screenshot](assets/Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
+
+##### Curve
+
+The same as bars but with a smoothed curve instead of bars.
+
+![Screenshot](assets/Curve.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+##### Spectogram
+
+![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+
+<sup>Horizontal scrolling spectogram visualization</sup>
+
+##### Peak / RMS
+
+Displays the peak and RMS levels of the audio.
+
+##### Balance / Correlation
+
+Displays the balance and mid/side correlation of the audio.
+
+##### Radial Bars
+
+A variation of the Bars visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+
+##### Radial Curve
+
+A variation of the Curve visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
+
+##### Oscilloscope
+
+Shows the shape of the audio signal over time, helping you understand how sound behaves.
+
+> [!Note]
+> The oscilloscope only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
+
+**Time-domain mode**
+
+In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
+
+This visualization uses the following settings:
+
+- Graph X-axis and Y-axis settings
+  - Select *Off* or *None* to prevent the axis from being rendered.
+- Channel selection
+- Y signal gain
+- Phosphor effect settings
+ 
+![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
+
+<sup>Oscilloscope</sup>
+
+![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
+
+<sup>Oscilloscope with Y-axis in dBFS</sup>
+
+**X-Y mode**
+
+In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
+and the other the vertical axis (Y), instead of the usual time-based sweep.
+
+This mode is useful for visualizing the relationship between two signals, such as phase differences, frequency ratios, or specific patterns like Lissajous figures.
+
+This visualization uses the following settings:
+
+- Graph X-axis and Y-axis settings
+  - Select *Off* or *None* to prevent the axis from being rendered.
+- Channel pair selection: Determines which channels will be plotted against each other.
+- X and Y signal gain
+- Phosphor effect settings
+
+![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
+
+<sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
 
 #### Peak indicators group
 

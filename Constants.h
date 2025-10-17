@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.09.24) P. Stuer **/
+/** $VER: Constans.h (2025.10.14) P. Stuer **/
 
 #pragma once
 
@@ -106,6 +106,8 @@ inline const double MaxWeightingAmount =  1.; // %
 
 
 
+
+
 inline const double MinSmoothingFactor = 0.;
 inline const double MaxSmoothingFactor = 1.;
 
@@ -135,6 +137,22 @@ inline const uint32_t MaxArtworkColors = 16;
 
 inline const double MinLightnessThreshold = 0.;
 inline const double MaxLightnessThreshold = 1.;
+
+
+// Oscilloscope
+inline const double MinXGain =  0.;
+inline const double MaxXGain = 10.;
+
+inline const double MinYGain =  0.;
+inline const double MaxYGain = 10.;
+
+inline const FLOAT MinBlurSigma =  1.;
+inline const FLOAT MaxBlurSigma = 10.;
+
+inline const FLOAT MinDecayFactor = 0.;
+inline const FLOAT MaxDecayFactor = 1.;
+
+
 
 
 
@@ -282,6 +300,24 @@ enum class VisualizationType
     PeakMeter = 3,
     LevelMeter = 4,
     RadialBars = 5,
+    RadialCurve = 6,
+    Oscilloscope = 7,
+};
+
+enum class VisualizationTypes : uint64_t
+{
+    None = 0,
+
+    Bars            = 1 << (int) VisualizationType::Bars,
+    Curve           = 1 << (int) VisualizationType::Curve,
+    Spectogram      = 1 << (int) VisualizationType::Spectogram,
+    PeakMeter       = 1 << (int) VisualizationType::PeakMeter,
+    LevelMeter      = 1 << (int) VisualizationType::LevelMeter,
+    RadialBars      = 1 << (int) VisualizationType::RadialBars,
+    RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
+    Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
+
+    All = ~0
 };
 
 enum class PeakMode
@@ -344,9 +380,12 @@ enum class VisualElement : uint32_t
     GraphDescriptionBackground  = 14,
 
     XAxisText                   =  2,
-    VerticalGridLine            =  3,
+    XAxisLine                   = 33,
     YAxisText                   =  4,
+    YAxisLine                   = 34,
+
     HorizontalGridLine          =  5,
+    VerticalGridLine            =  3,
 
     BarArea                     =  6,
     BarTop                      = 16,
@@ -381,7 +420,9 @@ enum class VisualElement : uint32_t
     GaugeLeftRightIndicator     = 30,
     GaugeMidSideIndicator       = 31,
 
-    Count                       = 32
+    SignalLine                  = 32,
+
+    Count                       = 35
 };
 
 enum class ColorSource : uint32_t
@@ -524,4 +565,15 @@ enum class VerticalTextAlignment : uint32_t
     Top = 0,
     Center = 1,
     Bottom = 2
+};
+
+enum class Settings : uint64_t
+{
+    None = 0,
+
+    PhosphorEffect = 1 << 0,
+
+    Oscilloscope = PhosphorEffect, 
+
+    All = ~0,
 };

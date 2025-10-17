@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.09.24) P. Stuer **/
+/** $VER: State.cpp (2025.10.15) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -204,9 +204,12 @@ void state_t::Reset() noexcept
     _DrawBandBackground_Deprecated = true;
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
+
     _LEDMode = false;
     _LEDSize = 2.f;
     _LEDGap = 2.f;
+    _LEDIntegralSize = false;
+
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
@@ -240,6 +243,13 @@ void state_t::Reset() noexcept
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
 
+    _XYMode = false;
+    _XGain = 1.f;
+    _YGain = 1.f;
+    _PhosphorDecay = true;
+    _BlurSigma = 3.f;
+    _DecayFactor = 0.92f;
+
     _StyleManager.Reset();
 
     pfc::string Path = core_api::get_profile_path();
@@ -249,8 +259,6 @@ void state_t::Reset() noexcept
     _PresetsDirectoryPath = ::wideFromUTF8(Path);
 
     /** Not serialized **/
-
-    _UseToneGenerator = false;
 
     _SampleRate = 0;
 
@@ -463,9 +471,12 @@ state_t & state_t::operator=(const state_t & other)
     _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
     _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
     _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
+
     _LEDMode = other._LEDMode;
     _LEDSize = other._LEDSize;
     _LEDGap = other._LEDGap;
+    _LEDIntegralSize = other._LEDIntegralSize;
+
     _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
@@ -499,6 +510,14 @@ state_t & state_t::operator=(const state_t & other)
     // Level Meter
     _ChannelPair = other._ChannelPair;
     _HorizontalLevelMeter = other._HorizontalLevelMeter;
+
+    // Oscilloscope
+    _XYMode = other._XYMode;
+    _XGain = other._XGain;
+    _YGain = other._YGain;
+    _PhosphorDecay = other._PhosphorDecay;
+    _BlurSigma = other._BlurSigma;
+    _DecayFactor = other._DecayFactor;
 
     #pragma endregion
 
@@ -784,7 +803,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                 graph_settings_t gs;
 
                 pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
-                reader->read_object_t(gs._Channels, abortHandler);
+                reader->read_object_t(gs._SelectedChannels, abortHandler);
                 reader->read_object_t(gs._FlipHorizontally, abortHandler);
                 reader->read_object_t(gs._FlipVertically, abortHandler);
 
@@ -900,11 +919,23 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 30)
         {
+            reader->read(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
+        }
+
+        if (Version >= 31)
+        {
+            reader->read_object_t(_XYMode, abortHandler);
+            reader->read_object_t(_XGain, abortHandler);
+            reader->read_object_t(_YGain, abortHandler);
+
+            reader->read_object_t(_PhosphorDecay, abortHandler);
+            reader->read_object_t(_BlurSigma, abortHandler);
+            reader->read_object_t(_DecayFactor, abortHandler);
         }
     }
     catch (exception & ex)
     {
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read DUI configuration: %s", ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to read configuration: %s", ex.what());
 
         Reset();
     }
@@ -1119,7 +1150,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
             writer->write_string(Description, abortHandler);
 
-            writer->write_object_t(gs._Channels, abortHandler);
+            writer->write_object_t(gs._SelectedChannels, abortHandler);
             writer->write_object_t(gs._FlipHorizontally, abortHandler);
             writer->write_object_t(gs._FlipVertically, abortHandler);
 
@@ -1209,10 +1240,21 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         // Version 29, v0.8.0.0
         writer->write(&_ArtworkType, sizeof(_ArtworkType), abortHandler);
+
+        // Version 30, v0.9.0.0-alpha2
+        writer->write(&_LEDIntegralSize, sizeof(_LEDIntegralSize), abortHandler);
+
+        // Version 31, v0.9.0.0-alpha3
+        writer->write_object_t(_XYMode, abortHandler);
+        writer->write_object_t(_XGain, abortHandler);
+        writer->write_object_t(_YGain, abortHandler);
+        writer->write_object_t(_PhosphorDecay, abortHandler);
+        writer->write_object_t(_BlurSigma, abortHandler);
+        writer->write_object_t(_DecayFactor, abortHandler);
     }
     catch (exception & ex)
     {
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write CUI configuration: %s", ex.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write configuration: %s", ex.what());
     }
 }
 
@@ -1233,13 +1275,13 @@ void state_t::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style->_ColorSource = ColorSource::DominantColor;
-            style->_CurrentColor = _StyleManager._DominantColor;
+            style->_CurrentColor = _StyleManager.DominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style->_ColorSource = ColorSource::UserInterface;
-            style->_CurrentColor = _StyleManager._UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style->_CurrentColor = _StyleManager.UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
@@ -1250,7 +1292,7 @@ void state_t::ConvertColorSettings() noexcept
         }
 
         if (_HorizontalGradient_Deprecated)
-            style->_Flags |= style_t::Features::HorizontalGradient;
+            style->Flags |= style_t::Features::HorizontalGradient;
     }
 
     {
@@ -1264,7 +1306,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1286,7 +1328,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1308,7 +1350,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
@@ -1330,7 +1372,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager._UserInterfaceColors[0];
+                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {

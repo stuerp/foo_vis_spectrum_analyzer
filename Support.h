@@ -39,7 +39,7 @@ inline static FLOAT ToDIPs(const FLOAT points) noexcept
 /// <summary>
 /// Calculates the scale factor from the specified frequency.
 /// </summary>
-inline double ScaleF(const double f, const ScalingFunction function, const double skewFactor) noexcept
+inline double ScaleFrequency(const double f, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {

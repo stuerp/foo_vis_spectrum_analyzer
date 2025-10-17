@@ -40,9 +40,9 @@ void frame_counter_t::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT frame_counter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(renderTarget);
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     const FLOAT Inset = 4.f;
 
@@ -59,14 +59,14 @@ HRESULT frame_counter_t::Render(ID2D1RenderTarget * renderTarget) noexcept
         {
             _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
-            renderTarget->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
+            deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
         }
 
         // Draw the text.
         {
             _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-            renderTarget->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
@@ -123,12 +123,12 @@ void frame_counter_t::ReleaseDeviceIndependentResources() noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1RenderTarget * renderTarget) noexcept
+HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     if (_Brush != nullptr)
         return S_OK;
 
-    HRESULT hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
+    HRESULT hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
 
     return hr;
 }

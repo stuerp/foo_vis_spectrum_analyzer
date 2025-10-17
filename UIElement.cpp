@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.09.23) P. Stuer **/
+/** $VER: UIElement.cpp (2025.10.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -8,7 +8,6 @@
 #include "DirectX.h"
 #include "StyleManager.h"
 
-#include "ToneGenerator.h"
 #include "Support.h"
 #include "Log.h"
 
@@ -81,7 +80,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
         if (_VisualisationStream.is_valid())
         {
-        //  _VisualisationStream->request_backlog(0.8); // FIXME: What does this do?
+            _VisualisationStream->request_backlog(1.0); // Initialize the backbuffer allowing data requests up to 1s back in time.
             _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
         }
     }
@@ -91,15 +90,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 
         return -1;
     }
-/*
-    // Register ourselves with the album art notification manager.
-    {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager_v2::tryGet();
 
-        if (AlbumArtNotificationManager.is_valid())
-            AlbumArtNotificationManager->add(this);
-    }
-*/
     // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing).
     {
         metadb_handle_ptr CurrentTrack;
@@ -119,7 +110,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
     CreateToolTipControl();
 
     // Apply the initial configuration.
-    UpdateState();
+    UpdateState(Settings::All);
 
     return 0;
 }
@@ -130,15 +121,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 void uielement_t::OnDestroy()
 {
     StopTimer();
-/*
-    // Unregister ourselves with the album art notification manager.
-    {
-        auto AlbumArtNotificationManager = now_playing_album_art_notify_manager::tryGet();
 
-        if (AlbumArtNotificationManager.is_valid())
-            AlbumArtNotificationManager->remove(this);
-    }
-*/
     _CriticalSection.Enter();
 
     {
@@ -164,7 +147,6 @@ void uielement_t::OnDestroy()
 /// </summary>
 void uielement_t::OnPaint(CDCHandle hDC)
 {
-//  Log::Write(Log::Level::Trace, "%8d: OnPaint", (uint32_t) ::GetTickCount64());
     StartTimer();
 
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
@@ -175,14 +157,47 @@ void uielement_t::OnPaint(CDCHandle hDC)
 /// </summary>
 void uielement_t::OnSize(UINT type, CSize size)
 {
-    if (_RenderTarget == nullptr)
+    if (_DeviceContext == nullptr)
         return;
 
     _CriticalSection.Enter();
 
     D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
 
-    _RenderTarget->Resize(Size);
+    // Remove the bitmap from the device context.
+    _DeviceContext->SetTarget(nullptr);
+
+    // Resize the swap chain.
+    HRESULT hr = _SwapChain->ResizeBuffers(0, Size.width, Size.height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+    // Get a surface from the swap chain.
+    {
+        CComPtr<IDXGISurface> Surface;
+
+        if (SUCCEEDED(hr))
+            hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
+
+        // Create a bitmap pointing to the surface.
+        CComPtr<ID2D1Bitmap1> Bitmap;
+
+        if (SUCCEEDED(hr))
+        {
+            const UINT DPI = ::GetDpiForWindow(m_hWnd);
+
+            D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+            (
+                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
+                (FLOAT) DPI, (FLOAT) DPI
+            );
+
+            hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &Bitmap);
+        }
+
+        // Set bitmap back onto device context.
+        if (SUCCEEDED(hr))
+            _DeviceContext->SetTarget(Bitmap);
+    }
 
     Resize();
 
@@ -303,8 +318,8 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
                 {
                     PresetManager::Load(_UIThread._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
-                    NewState._StyleManager._DominantColor       = _UIThread._StyleManager._DominantColor;
-                    NewState._StyleManager._UserInterfaceColors = _UIThread._StyleManager._UserInterfaceColors;
+                    NewState._StyleManager.DominantColor       = _UIThread._StyleManager.DominantColor;
+                    NewState._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
 
                     NewState._StyleManager.UpdateCurrentColors();
 
@@ -312,7 +327,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
                     _UIThread = NewState;
 
-                    UpdateState();
+                    UpdateState(Settings::All);
 
                     if (_ConfigurationDialog.IsWindow())
                     {
@@ -385,12 +400,12 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 /// </summary>
 void uielement_t::Resize()
 {
-    if (_RenderTarget == nullptr)
+    if (_DeviceContext == nullptr)
         return;
 
     DeleteTrackingToolTip();
 
-    D2D1_SIZE_F SizeF = _RenderTarget->GetSize(); // Gets the size in DPIs.
+    D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
     _FrameCounter.Resize(SizeF.width, SizeF.height);
@@ -436,7 +451,7 @@ void uielement_t::OnColorsChanged()
 
     _CriticalSection.Enter();
 
-    _RenderThread._StyleManager._UserInterfaceColors = _UIThread._StyleManager._UserInterfaceColors;
+    _RenderThread._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
 
     ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
@@ -459,7 +474,7 @@ void uielement_t::OnColorsChanged()
 /// </summary>
 LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    UpdateState();
+    UpdateState((Settings) wParam);
 
     return 0;
 }
@@ -532,7 +547,7 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState() noexcept
+void uielement_t::UpdateState(Settings settings) noexcept
 {
     {
         DeleteTrackingToolTip();
@@ -552,7 +567,7 @@ void uielement_t::UpdateState() noexcept
         _RenderThread = _UIThread;
 
         _RenderThread._SampleRate = 0;
-        _RenderThread._StyleManager.ReleaseDeviceSpecificResources();
+        _RenderThread._StyleManager.DeleteDeviceSpecificResources();
 
         // Recreate the resources that depend on the artwork.
         CreateArtworkDependentResources();
@@ -617,7 +632,7 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState();
+    UpdateState(Settings::All);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
