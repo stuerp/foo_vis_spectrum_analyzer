@@ -575,7 +575,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
             FLOAT y1 = 0.f;
             FLOAT y2 = ChannelHeight;
 
-            D2D1_RECT_F TextRect = { 0.f, y1, 1.f, y2 };
+            D2D1_RECT_F TextRect = { };
 
             for (uint32_t i = 0; i < SelectedChannelCount; ++i)
             {
@@ -623,12 +623,39 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
         // X-axis
         if (_GraphSettings->HasXAxis())
         {
+            _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
             FLOAT y = ChannelHeight * (_GraphSettings->HasYAxis() ? 1.0f : 0.5f);
+
+            D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
+
+            const int ChunkDuration = (int) (_Analysis->_Chunk.get_duration() * 1000.); // Convert to milliseconds
+
+            int Time = ChunkDuration / 10;
 
             for (uint32_t i = 0; i < SelectedChannelCount; ++i)
             {
-                if (_XAxisTextStyle->IsEnabled())
+                if (_XAxisLineStyle->IsEnabled())
                     _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, _AxisStrokeStyle);
+
+                if (_XAxisTextStyle->IsEnabled())
+                {
+                    TextRect.bottom = y;
+
+                    FLOAT dx = (x2 - x1) / 10.f;
+
+                    for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
+                    {
+                        WCHAR Text[8] = { };
+
+                        ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
+
+                        _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                        Time += ChunkDuration / 10;
+                    }
+                }
 
                 y += ChannelHeight;
             }

@@ -119,9 +119,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.0.0-alpha3, 2025-10-xx
+v0.9.0.0-alpha3, 2025-10-17
 
-- New: Oscilloscope time-domain mode supports X-axis with time labels.
+- New: Oscilloscope time-domain mode
+  - Supports X-axis with time labels.
+  - Signal gain.
+  - Optional phosphor decay effect with Gauss sigma and color decay factor setting.
 - New: Oscilloscope X-Y mode.
   - Supports X and Y-axis.
   - X and Y signal gain.
@@ -129,7 +132,7 @@ v0.9.0.0-alpha3, 2025-10-xx
 - Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
 - Improved: Various little useability tweaks and fixes in the Configuration dialog.
 - Changed: Upgraded rendering code from render targets to device contexts.
-- Fixed: Delay between playback and visualization
+- Fixed: Delay between playback and visualization. The backbuffer was not initialized.
 - 
 You can read the full history [here](docs/History.md).
 
