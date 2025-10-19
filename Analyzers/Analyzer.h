@@ -40,7 +40,7 @@ public:
     }
 
     /// <summary>
-    /// Calculates the average of the specified samples.
+    /// Calculates the average of the samples of the specified audio frame.
     /// </summary>
     audio_sample AverageSamples(const audio_sample * samples, uint32_t selectedChannels) const noexcept
     {
