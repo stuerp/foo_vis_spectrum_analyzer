@@ -219,7 +219,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 _DeviceContext->DrawImage(_ColorMatrixEffect);
             }
             else
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
+                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f))); // Transparent
 
             hr = _DeviceContext->EndDraw();
         }
