@@ -759,7 +759,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
 
     bool IsFlatLine = true;
 
-    const FLOAT BandWidth = std::max((_ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 1.f);
+    const FLOAT BandWidth = std::max((_ClientSize.width / (FLOAT) (_Analysis->_FrequencyBands.size() - 1)), 1.f);
 
     FLOAT x = BandWidth / 2.f; // Make sure the knots are nicely centered in the band rectangle.
     FLOAT y = 0.f;
@@ -767,11 +767,11 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
     // Create all the knots.
     for (const auto & fb: _Analysis->_FrequencyBands)
     {
-        // Don't render anything above the Nyquist frequency.
-        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
-            break;
+        double Value = 0.;
 
-        double Value = !usePeak ? fb.CurValue : fb.MaxValue;
+        // Don't render anything above the Nyquist frequency.
+        if (!((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage))
+            Value = !usePeak ? fb.CurValue : fb.MaxValue;
 
         y = std::clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
 
