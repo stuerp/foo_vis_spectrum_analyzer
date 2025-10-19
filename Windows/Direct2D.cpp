@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2025.10.12) P. Stuer **/
+/** $VER: Direct2D.cpp (2025.10.19) P. Stuer **/
 
 #include "pch.h"
 #include "Direct2D.h"
@@ -27,7 +27,8 @@ HRESULT Direct2D::Initialize()
     D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 #endif
 
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &Factory);
+//  HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &Factory);
+    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, Options, &Factory);
 
     if (!SUCCEEDED(hr))
         throw msc::win32_exception("Unable to create Direct2D factory.", (DWORD) hr);
