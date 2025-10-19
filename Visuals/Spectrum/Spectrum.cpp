@@ -150,7 +150,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
     // Use the full width of the graph?
     if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
-        t = ::floor(t);
+        t = std::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
@@ -230,8 +230,8 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
                 // Draw the peak indicator top.
                 if (_BarPeakTopStyle->IsEnabled())
                 {
-                    Rect.top    = ::ceil(std::clamp(Rect.bottom - _BarPeakTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height));
-                    Rect.bottom = ::ceil(std::clamp(Rect.top    + _BarPeakTopStyle->_Thickness,       0.f, _ClientSize.height));
+                    Rect.top    = std::ceil(std::clamp(Rect.bottom - _BarPeakTopStyle->_Thickness / 2.f, 0.f, _ClientSize.height));
+                    Rect.bottom = std::ceil(std::clamp(Rect.top    + _BarPeakTopStyle->_Thickness,       0.f, _ClientSize.height));
 
                     const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
 
@@ -559,8 +559,8 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
 void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept
 {
     // Calculate the x coordinate.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State->_ScalingFunction, _State->_SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double NyquistScale = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);

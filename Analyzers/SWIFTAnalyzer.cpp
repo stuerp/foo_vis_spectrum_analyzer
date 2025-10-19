@@ -26,7 +26,7 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
 
     // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one. Pre-calculate rX and rY here since sin and cos functions are pretty slow.
     for (const frequency_band_t & fb : frequencyBands)
-        _Coefs.push_back(swift_coef_t(::cos(fb.Ctr * a), ::sin(fb.Ctr * a), ::exp(-::abs(fb.Hi - fb.Lo) * Factor)));
+        _Coefs.push_back(swift_coef_t(::cos(fb.Center * a), ::sin(fb.Center * a), ::exp(-::abs(fb.Hi - fb.Lo) * Factor)));
 
     return true;
 }

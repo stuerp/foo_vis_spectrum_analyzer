@@ -3320,7 +3320,7 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsTransform = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
 
     if (SupportsTransform)
     {
@@ -3417,7 +3417,7 @@ void ConfigurationDialog::UpdateFrequenciesPage() const noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    const bool SupportsFrequencies = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsFrequencies = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
 
     if (SupportsFrequencies)
     {
@@ -3462,7 +3462,7 @@ void ConfigurationDialog::UpdateFiltersPage() const noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    const bool SupportsFilter = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsFilter = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
 
     GetDlgItem(IDC_ACOUSTIC_FILTER).EnableWindow(SupportsFilter);
 
@@ -3484,7 +3484,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
     // Common
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
 
-    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsFFT = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
 
     for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SMOOTHING_FACTOR, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(ID).EnableWindow(SupportsFFT);
@@ -3622,9 +3622,9 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     const bool IsRadialCurve  = (_State->_VisualizationType == VisualizationType::RadialCurve);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram || IsOscilloscope));
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram && IsOscilloscope));
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram || IsOscilloscope);
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram && IsOscilloscope);
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);

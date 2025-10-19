@@ -454,10 +454,10 @@ void analysis_t::GenerateLinearFrequencyBands()
     for (frequency_band_t & fb: _FrequencyBands)
     {
         fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Ctr = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Center = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
         fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -515,7 +515,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
             C0Frequency * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
 
-        double f = NoteToFrequency(FrequencyToNote(fb.Ctr));
+        double f = NoteToFrequency(FrequencyToNote(fb.Center));
 
         // Pre-calculate the tooltip text and the band background color.
         {
@@ -525,9 +525,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
             if (msc::InRange(f, fb.Lo, fb.Hi))
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Center);
             else
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -552,11 +552,11 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
     for (frequency_band_t & fb : _FrequencyBands)
     {
         fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
-        fb.Ctr = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
+        fb.Center = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
         fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
         ++i;
     }
@@ -627,7 +627,7 @@ void analysis_t::ApplyAcousticWeighting()
     const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
 
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.NewValue *= GetWeight(fb.Ctr + Offset);
+        fb.NewValue *= GetWeight(fb.Center + Offset);
 }
 
 /// <summary>
@@ -768,7 +768,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
             {
                 if ((SelectedChannels & 1) && (i < _GaugeValues.size()))
                 {
-                    auto gv = &_GaugeValues[++i];
+                    auto gv = &_GaugeValues[i++];
 
                     const double Value = std::abs((double) *Sample);
 
@@ -777,7 +777,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
                 }
 
                 if ((BalanceChannels & 1) && (j < _countof(BalanceSamples)))
-                    BalanceSamples[++j] = *Sample;
+                    BalanceSamples[j++] = *Sample;
 
                 Sample++;
             }

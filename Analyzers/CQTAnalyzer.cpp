@@ -27,20 +27,20 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / SampleCount) * _State->_CQTBandwidthOffset;
         double TLen = std::min(1. / Bandwidth, (double) SampleCount / (double) _SampleRate);
 
-        double DownsampleAmount = std::max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
-        double Coeff = 2. * ::cos(2. * M_PI * fb.Ctr / (double) _SampleRate * DownsampleAmount);
+        double DownsampleAmount = std::max(1.0, std::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Center + TLen)));
+        double Coeff = 2. * ::cos(2. * M_PI * fb.Center / (double) _SampleRate * DownsampleAmount);
 
         double f1 = 0.;
         double f2 = 0.;
         double Sine = 0.;
-        double Offset = ::trunc((SampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
+        double Offset = std::trunc((SampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
 
         double LoIdx = Offset;
-        double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
+        double HiIdx = std::trunc(TLen * (double) _SampleRate) + Offset - 1.;
         double Norm = 0.;
 
         #pragma loop(hint_parallel(2))
-        for (double Idx = ::trunc(LoIdx / DownsampleAmount); Idx <= ::trunc(HiIdx / DownsampleAmount); ++Idx)
+        for (double Idx = std::trunc(LoIdx / DownsampleAmount); Idx <= std::trunc(HiIdx / DownsampleAmount); ++Idx)
         {
             double x = ((Idx * DownsampleAmount - LoIdx) / (HiIdx - LoIdx) * 2. - 1.);
 
