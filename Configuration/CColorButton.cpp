@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.cpp (2024.02.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2025.10.19) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 #include "CColorButton.h"
@@ -35,8 +35,8 @@ void CColorButton::Terminate()
     if (!IsWindow())
         return;
 
-    ReleaseDeviceSpecificResources();
-    ReleaseDeviceIndependentResources();
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
 
     UnsubclassWindow(TRUE);
 }
@@ -52,6 +52,8 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 
     Invalidate();
     UpdateWindow();
+
+    EnableWindow(gradientStops.size() > 0);
 }
 
 /// <summary>
@@ -94,24 +96,27 @@ void CColorButton::OnPaint(HDC)
     if (FAILED(hr))
         return;
 
-    _RenderTarget->BeginDraw();
+    if (IsWindowEnabled())
+    {
+        _RenderTarget->BeginDraw();
 
-    CRect cr;
+        CRect cr;
 
-    GetClientRect(&cr);
+        GetClientRect(&cr);
 
-    D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
+        D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
 
-    if (_PatternBrush)
-        _RenderTarget->FillRectangle(Rect, _PatternBrush);
+        if (_PatternBrush)
+            _RenderTarget->FillRectangle(Rect, _PatternBrush);
 
-    if (_Brush)
-        _RenderTarget->FillRectangle(Rect, _Brush);
+        if (_Brush)
+            _RenderTarget->FillRectangle(Rect, _Brush);
 
-    hr = _RenderTarget->EndDraw();
+        hr = _RenderTarget->EndDraw();
 
-    if (hr == D2DERR_RECREATE_TARGET)
-        ReleaseDeviceSpecificResources();
+        if (hr == D2DERR_RECREATE_TARGET)
+            DeleteDeviceSpecificResources();
+    }
 
     ValidateRect(NULL);
 }
@@ -243,12 +248,12 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void CColorButton::ReleaseDeviceSpecificResources()
+void CColorButton::DeleteDeviceSpecificResources()
 {
     _PatternBrush.Release();
     _Brush.Release();
 
-    __super::ReleaseDeviceSpecificResources();
+    __super::DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

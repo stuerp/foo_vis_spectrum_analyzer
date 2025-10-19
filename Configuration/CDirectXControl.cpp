@@ -24,7 +24,7 @@ HRESULT CDirectXControl::CreateDeviceIndependentResources()
 /// <summary>
 /// Deletes the resources which are not bound to any D3D device.
 /// </summary>
-void CDirectXControl::ReleaseDeviceIndependentResources()
+void CDirectXControl::DeleteDeviceIndependentResources()
 {
     _Direct2D.Release();
 }
@@ -64,7 +64,7 @@ HRESULT CDirectXControl::CreateDeviceSpecificResources()
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void CDirectXControl::ReleaseDeviceSpecificResources()
+void CDirectXControl::DeleteDeviceSpecificResources()
 {
     _RenderTarget.Release();
 }

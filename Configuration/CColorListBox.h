@@ -59,23 +59,7 @@ private:
 
         CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
     END_MSG_MAP()
-/*
-private:
-    #pragma region DirectX
 
-    HRESULT CreateDeviceSpecificResources() override;
-    void ReleaseDeviceSpecificResources() override;
-
-    #pragma endregion
-
-private:
-    #pragma region DirectX
-
-    // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _SolidBrush;
-
-    #pragma endregion
-*/
 private:
     std::vector<D2D1_COLOR_F> _Colors;
 };

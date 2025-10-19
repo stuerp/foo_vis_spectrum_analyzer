@@ -30,7 +30,7 @@ public:
     CDirectXControl(CDirectXControl &&) = delete;
     CDirectXControl & operator=(CDirectXControl &&) = delete;
 
-    virtual ~CDirectXControl() { ReleaseDeviceIndependentResources(); }
+    virtual ~CDirectXControl() { DeleteDeviceIndependentResources(); }
 
 protected:
     virtual void OnSize(UINT type, CSize size)
@@ -46,10 +46,10 @@ protected:
     #pragma region DirectX
 
     virtual HRESULT CreateDeviceIndependentResources();
-    virtual void ReleaseDeviceIndependentResources();
+    virtual void DeleteDeviceIndependentResources();
 
     virtual HRESULT CreateDeviceSpecificResources();
-    virtual void ReleaseDeviceSpecificResources();
+    virtual void DeleteDeviceSpecificResources();
 
     #pragma endregion
 

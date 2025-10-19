@@ -3787,9 +3787,10 @@ void ConfigurationDialog::UpdateColorControls()
     // Update the Color button.
     _Color.SetColor(style->_CurrentColor);
 
-    // Update the Gradient box with the selected gradient.
+    // Initialize the gradient stops.
     gradient_stops_t gs;
 
+    if (style->_ColorSource == ColorSource::Gradient)
     {
         ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
@@ -3800,16 +3801,17 @@ void ConfigurationDialog::UpdateColorControls()
             gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
         else
             gs = GetBuiltInGradientStops(style->_ColorScheme);
-
-        // Update the gradient control.
-        _Gradient.SetGradientStops(gs);
     }
 
-    // Update the list of colors.
+    // Update the gradient control.
+    _Gradient.SetGradientStops(gs);
+
+    // Update the color list.
+    std::vector<D2D1_COLOR_F> Colors;
+
+    if (style->_ColorSource == ColorSource::Gradient)
     {
         int SelectedIndex = _Colors.GetCurSel();
-
-        std::vector<D2D1_COLOR_F> Colors;
 
         for (const auto & Iter : gs)
             Colors.push_back(Iter.color);
@@ -3830,6 +3832,8 @@ void ConfigurationDialog::UpdateColorControls()
             _IgnoreNotifications = false;
         }
     }
+    else
+        _Colors.SetColors(Colors);
 
     // Update the state of the buttons.
     bool HasSelection = (_Colors.GetCurSel() != LB_ERR);                // Add and Remove are only enabled when a color is selected.

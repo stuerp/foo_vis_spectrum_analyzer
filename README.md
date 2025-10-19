@@ -121,6 +121,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.9.0.0-alpha4, 2025-10-xx
 
+- Improved; Overall LED rendering fidelity and performance.
 - Fixed: CQT transform did not handle audio with more than 1 channel correctly.
  
 You can read the full history [here](docs/History.md).
