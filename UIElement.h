@@ -160,7 +160,7 @@ private:
     HRESULT CreateArtworkDependentResources();
 
     HRESULT CreateDeviceSpecificResources();
-    void ReleaseDeviceSpecificResources();
+    void DeleteDeviceSpecificResources();
 
     #pragma endregion
 

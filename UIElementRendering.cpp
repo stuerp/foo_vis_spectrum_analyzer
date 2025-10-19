@@ -153,7 +153,7 @@ void uielement_t::Render() noexcept
 
         if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         {
-            ReleaseDeviceSpecificResources();
+            DeleteDeviceSpecificResources();
 
             hr = S_OK;
         }
@@ -329,7 +329,14 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
             // Create device context
             if (SUCCEEDED(hr))
-                _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+                hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+
+            if (SUCCEEDED(hr))
+            {
+                GetDPI(m_hWnd, _DPI);
+
+                _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+            }
         }
 
         // Set the render target.
@@ -454,7 +461,7 @@ HRESULT uielement_t::CreateArtworkDependentResources()
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void uielement_t::ReleaseDeviceSpecificResources()
+void uielement_t::DeleteDeviceSpecificResources()
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2025.09.16) P. Stuer **/
+/** $VER: Support.h (2025.10.20) P. Stuer **/
 
 #pragma once
 
@@ -10,7 +10,8 @@
 
 #include "Constants.h"
 
-HRESULT GetDPI(HWND hWnd, UINT & dpi);
+HRESULT InitializeDpiAwareness() noexcept;
+HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept;
 
 /// <summary>
 /// Converts magnitude to decibel (dB).

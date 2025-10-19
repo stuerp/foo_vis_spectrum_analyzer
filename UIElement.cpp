@@ -133,7 +133,7 @@ void uielement_t::OnDestroy()
 
     _VisualisationStream.release();
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     ReleaseDeviceIndependentResources();
 
@@ -390,7 +390,7 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 {
     _DPI = dpiX;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     return 0;
 }
@@ -525,7 +525,7 @@ void uielement_t::ToggleHardwareRendering() noexcept
 {
     _UIThread._UseHardwareRendering = !_UIThread._UseHardwareRendering;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -676,19 +676,6 @@ void uielement_t::on_playback_time(double time)
 }
 
 #pragma endregion
-
-/*
-#pragma region now_playing_album_art_notify
-
-/// <summary>
-/// Called when album art has finished loading for the now playing track.
-/// </summary>
-void uielement_t::on_album_art(album_art_data::ptr aad)
-{
-}
-
-#pragma endregion
-*/
 
 /// <summary>
 /// Gets the album art from the specified track.
