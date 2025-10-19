@@ -172,10 +172,7 @@ void uielement_t::Process() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!_VisualisationStream->get_absolute_time(PlaybackTime))
-        return;
-
-    if (PlaybackTime == _RenderThread._PlaybackTime)
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._PlaybackTime)))
         return; // Playback is paused.
 
     audio_chunk_impl Chunk;
