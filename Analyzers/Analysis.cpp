@@ -92,7 +92,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void analysis_t::Reset()
+void analysis_t::Reset() noexcept
 {
     if (_AnalogStyleAnalyzer != nullptr)
     {
@@ -136,20 +136,27 @@ void analysis_t::Reset()
         InitializeGauges((uint32_t) Channels::ConfigStereo);
     }
 
-    {
-        _RMSTimeElapsed = 0.;
-        _RMSFrameCount = 0;
+    ResetRMSDependentValues();
 
-        _Left  = 0.;
-        _Right = 0.;
-
-        _Mid  = 0.;
-        _Side = 0.;
-
-        _Balance = 0.5;
-        _Phase   = 0.5;
-    }
+    _Balance = 0.5;
+    _Phase   = 0.5;
 }
+
+/// <summary>
+/// Resets the RMS window dependent values.
+/// </summary>
+void analysis_t::ResetRMSDependentValues() noexcept
+{
+    _RMSTimeElapsed = 0.;
+    _RMSFrameCount = 0;
+
+    _Left  = 0.;
+    _Right = 0.;
+
+    _Mid   = 0.;
+    _Side  = 0.;
+}
+
 
 /// <summary>
 /// Updates the peak values.
@@ -742,18 +749,6 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
 
     audio_sample BalanceSamples[2] = { };
 
-    static const uint32_t ChannelPairs[] =
-    {
-        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
-        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
-
-        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
-        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
-
-        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
-        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
-    };
-
     const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
 
     for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
@@ -767,13 +762,13 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
         uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user for the level measuring.
         uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user for the balance measuring.
 
-        while (ChunkChannels != 0)
+        while ((ChunkChannels & SelectedChannels & BalanceChannels) != 0)
         {
             if (ChunkChannels & 1)
             {
                 if ((SelectedChannels & 1) && (i < _GaugeValues.size()))
                 {
-                    auto gv = &_GaugeValues[i++];
+                    auto gv = &_GaugeValues[++i];
 
                     const double Value = std::abs((double) *Sample);
 
@@ -782,7 +777,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
                 }
 
                 if ((BalanceChannels & 1) && (j < _countof(BalanceSamples)))
-                    BalanceSamples[j++] = *Sample;
+                    BalanceSamples[++j] = *Sample;
 
                 Sample++;
             }
@@ -805,50 +800,50 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
     _RMSFrameCount  += FrameCount;
     _RMSTimeElapsed += chunk.get_duration();
 
-    // Normalize and smooth the values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+    // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
     for (auto & gv : _GaugeValues)
     {
         gv.Peak       = ToDecibel(gv.Peak);
         gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
     }
 
-    // Determine the window-dependent values.
+    // Has the RMS window elapsed yet?
     if (_RMSTimeElapsed > _State->_RMSWindow)
     {
         for (auto & gv : _GaugeValues)
         {
-        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+            // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSFrameCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
-            // Reset the RMS window values.
-            gv.Reset();
+            // Reset the RMS window-dependent values.
+            gv.RMSTotal = 0.;
         }
 
-        _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
-        _Right = std::sqrt(_Right / (double) _RMSFrameCount);
+        // Calculate the phase and balance.
+        {
+            {
+                _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
+                _Right = std::sqrt(_Right / (double) _RMSFrameCount);
 
-        _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
-        _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
+                if (!std::isfinite(_Balance))
+                    _Balance = 0.5;
 
-        if (!std::isfinite(_Balance))
-            _Balance = 0.5;
+                _Balance = SmoothValue(NormalizeLLevelValue((_Right - _Left) / std::max(_Left, _Right)), _Balance);
+            }
 
-        if (!std::isfinite(_Phase))
-            _Phase = 0.5;
+            {
+                _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
+                _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
 
-        _Balance = SmoothValue(NormalizeLRMS((_Right - _Left) / std::max(_Left, _Right)), _Balance);
-        _Phase   = SmoothValue(NormalizeLRMS((_Mid   - _Side) / std::max(_Mid, _Side)), _Phase);
+                if (!std::isfinite(_Phase))
+                    _Phase = 0.5;
 
-        // Reset all window-dependent values.
-        _RMSTimeElapsed = 0.;
-        _RMSFrameCount = 0;
+                _Phase = SmoothValue(NormalizeLLevelValue((_Mid - _Side) / std::max(_Mid, _Side)), _Phase);
+            }
+        }
 
-        _Left  = 0.;
-        _Right = 0.;
-
-        _Mid   = 0.;
-        _Side  = 0.;
+        ResetRMSDependentValues();
     }
 }
 
@@ -877,14 +872,14 @@ void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
         for (uint32_t SelectedChannels = channelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+                _GaugeValues.push_back({ ChannelNames[i], _State->_HoldTime });
         }
 
         _CurrentChannelMask = channelMask;
     }
     else
     {
-        // Reset only the peak level of each gauge.
+        // Reset only the peak level of each gauge to -∞.
         for (auto & gv : _GaugeValues)
             gv.Peak = -std::numeric_limits<double>::infinity();
     }
@@ -903,3 +898,15 @@ void analysis_t::ProcessOscilloscope(const audio_chunk & chunk) noexcept
 }
 
 #pragma endregion
+
+const uint32_t analysis_t::ChannelPairs[6] =
+{
+    (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
+    (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
+
+    (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
+    (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
+
+    (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
+    (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
+};

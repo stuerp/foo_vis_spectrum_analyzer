@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2025.10.15) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2025.10.19) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -120,30 +120,18 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-    static const uint32_t ChannelPairs[] =
-    {
-        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
-        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
-
-        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
-        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
-
-        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
-        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
-    };
-
-    const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-    const uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user.
-    const uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user as a channel pair.
+    const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
+    const uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;                        // Mask containing the channels selected by the user.
+    const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
     const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
 
     if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
     {
-        const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);
-        const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));
-
         const audio_sample * Samples = _Analysis->_Chunk.get_data();
+
+        const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
+        const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
 
         CComPtr<ID2D1PathGeometry> Geometry;
 
