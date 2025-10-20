@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.10.04) P. Stuer **/
+/** $VER: UIElement.cpp (2025.10.20) P. Stuer **/
 
 #include "pch.h"
 
@@ -135,7 +135,7 @@ void uielement_t::OnDestroy()
 
     DeleteDeviceSpecificResources();
 
-    ReleaseDeviceIndependentResources();
+    DeleteDeviceIndependentResources();
 
     _CriticalSection.Leave();
 

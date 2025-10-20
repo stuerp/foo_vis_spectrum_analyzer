@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.10.11) P. Stuer **/
+/** $VER: UIElement.h (2025.10.20) P. Stuer **/
 
 #pragma once
 
@@ -152,17 +152,13 @@ private:
 
     void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
 
-    #pragma region DirectX
-
     HRESULT CreateDeviceIndependentResources();
-    void ReleaseDeviceIndependentResources();
-
-    HRESULT CreateArtworkDependentResources();
+    void DeleteDeviceIndependentResources();
 
     HRESULT CreateDeviceSpecificResources();
     void DeleteDeviceSpecificResources();
 
-    #pragma endregion
+    HRESULT CreateArtworkDependentResources();
 
     #pragma endregion
 

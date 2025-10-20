@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2025.10.12) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.10.20) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -175,31 +175,32 @@ void uielement_t::Process() noexcept
     if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._PlaybackTime)))
         return; // Playback is paused.
 
+    double WindowSize   = 0.;
+    double WIndowOffset = 0.;
+
+    if (_RenderThread._SampleRate != 0)
+    {
+        const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
+
+        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
+        WIndowOffset = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
+    }
+    else
+    {
+        // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
+        WIndowOffset = PlaybackTime;
+        WindowSize = 0.0005; // 0.5 ms
+    }
+
     audio_chunk_impl Chunk;
 
-    // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters.
-    if ((_RenderThread._SampleRate == 0) && _VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, 0.001))
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WIndowOffset, WindowSize))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
-        _RenderThread._PlaybackTime = PlaybackTime;
-
-        return;
+        for (auto & Iter : _Grid)
+            Iter._Graph->Process(Chunk);
     }
-
-    if (_RenderThread._SampleRate == 0)
-        return;
-
-    const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
-
-    const double WindowSize = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
-    const double Offset     = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
-
-    if (!_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-        return;
-
-    for (auto & Iter : _Grid)
-        Iter._Graph->Process(Chunk);
 
     _RenderThread._PlaybackTime = PlaybackTime;
 }
@@ -222,7 +223,12 @@ void uielement_t::Animate() noexcept
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
+    if (_RenderThread._SampleRate == chunk.get_sample_rate())
+        return;
+
     _RenderThread._SampleRate = chunk.get_sample_rate();
+
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME "chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
 
     #pragma warning(disable: 4061)
 
@@ -267,7 +273,7 @@ HRESULT uielement_t::CreateDeviceIndependentResources()
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void uielement_t::ReleaseDeviceIndependentResources()
+void uielement_t::DeleteDeviceIndependentResources()
 {
     _FrameCounter.ReleaseDeviceIndependentResources();
 }
@@ -397,6 +403,31 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 }
 
 /// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void uielement_t::DeleteDeviceSpecificResources()
+{
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
+    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
+
+    for (auto & Iter : _Grid)
+        Iter._Graph->ReleaseDeviceSpecificResources();
+
+    _Artwork.ReleaseDeviceSpecificResources();
+
+    _FrameCounter.ReleaseDeviceSpecificResources();
+
+    _DeviceContext.Release();
+
+    _Direct2D.ReleaseDevice();
+
+    _D3DDevice.Release();
+    _SwapChain.Release();
+}
+
+/// <summary>
 /// Creates the DirectX resources that are dependent on the artwork.
 /// </summary>
 HRESULT uielement_t::CreateArtworkDependentResources()
@@ -456,31 +487,6 @@ HRESULT uielement_t::CreateArtworkDependentResources()
     }
 
     return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void uielement_t::DeleteDeviceSpecificResources()
-{
-#ifdef _DEBUG
-    _DebugBrush.Release();
-#endif
-    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
-
-    for (auto & Iter : _Grid)
-        Iter._Graph->ReleaseDeviceSpecificResources();
-
-    _Artwork.ReleaseDeviceSpecificResources();
-
-    _FrameCounter.ReleaseDeviceSpecificResources();
-
-    _DeviceContext.Release();
-
-    _Direct2D.ReleaseDevice();
-
-    _D3DDevice.Release();
-    _SwapChain.Release();
 }
 
 #pragma endregion
