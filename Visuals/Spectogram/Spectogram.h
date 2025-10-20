@@ -40,7 +40,7 @@ public:
 
     const D2D1_RECT_F & GetClientBounds() const noexcept { return _BitmapBounds; }
 
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
 private:
     bool Update() noexcept;

@@ -689,8 +689,8 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 /// </summary>
 void spectrum_t::DeleteDeviceSpecificResources() noexcept
 {
-    _YAxis.ReleaseDeviceSpecificResources();
-    _XAxis.ReleaseDeviceSpecificResources();
+    _YAxis.DeleteDeviceSpecificResources();
+    _XAxis.DeleteDeviceSpecificResources();
 
     SafeRelease(&_CurveLineStyle);
     SafeRelease(&_CurveAreaStyle);

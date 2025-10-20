@@ -46,7 +46,7 @@ public:
     void Resize() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
 private:
     gauge_metrics_t _GaugeMetrics;

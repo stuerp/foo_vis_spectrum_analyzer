@@ -16,7 +16,7 @@ void rms_read_out_t::Initialize(state_t * state, const graph_settings_t * settin
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -165,7 +165,7 @@ HRESULT rms_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void rms_read_out_t::ReleaseDeviceSpecificResources() noexcept
+void rms_read_out_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

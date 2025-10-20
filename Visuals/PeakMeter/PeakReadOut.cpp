@@ -16,7 +16,7 @@ void peak_read_out_t::Initialize(state_t * state, const graph_settings_t * setti
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -165,7 +165,7 @@ HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void peak_read_out_t::ReleaseDeviceSpecificResources() noexcept
+void peak_read_out_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

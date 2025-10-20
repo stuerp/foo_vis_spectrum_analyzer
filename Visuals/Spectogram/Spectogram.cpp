@@ -28,7 +28,7 @@ spectogram_t::spectogram_t()
 /// </summary>
 spectogram_t::~spectogram_t()
 {
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -40,7 +40,7 @@ void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     InitFreqAxis();
 }
@@ -906,7 +906,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void spectogram_t::ReleaseDeviceSpecificResources() noexcept
+void spectogram_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

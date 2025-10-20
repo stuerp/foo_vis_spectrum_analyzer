@@ -321,7 +321,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void x_axis_t::ReleaseDeviceSpecificResources() noexcept
+void x_axis_t::DeleteDeviceSpecificResources() noexcept
 {
     SafeRelease(&_TextStyle);
     SafeRelease(&_LineStyle);

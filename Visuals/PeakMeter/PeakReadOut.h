@@ -43,7 +43,7 @@ public:
     bool IsVisible() const noexcept { return _TextStyle->IsEnabled(); }
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept
     {

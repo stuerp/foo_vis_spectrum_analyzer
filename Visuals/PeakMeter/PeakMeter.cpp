@@ -28,7 +28,7 @@ peak_meter_t::peak_meter_t()
 /// </summary>
 peak_meter_t::~peak_meter_t()
 {
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -46,7 +46,7 @@ void peak_meter_t::Initialize(state_t * state, const graph_settings_t * settings
     _GraphSettings = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -494,15 +494,15 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void peak_meter_t::ReleaseDeviceSpecificResources() noexcept
+void peak_meter_t::DeleteDeviceSpecificResources() noexcept
 {
     _Gauges.DeleteDeviceSpecificResources();
 
     _GaugeScales.DeleteDeviceSpecificResources();
 
-    _PeakReadOut.ReleaseDeviceSpecificResources();
+    _PeakReadOut.DeleteDeviceSpecificResources();
 
-    _RMSReadOut.ReleaseDeviceSpecificResources();
+    _RMSReadOut.DeleteDeviceSpecificResources();
 
     _GaugeNames.DeleteDeviceSpecificResources();
 }

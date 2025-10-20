@@ -38,7 +38,7 @@ public:
     void Reset() noexcept { }
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextHeight() const noexcept
     {
