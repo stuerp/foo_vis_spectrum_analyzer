@@ -38,7 +38,7 @@ HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
     {
         FLOAT DPIX, DPIY;
 
-        #pragma warning(disable: 4996)
+        #pragma warning(disable: 4996) // 'ID2D1Factory::GetDesktopDpi': Deprecated.
         _Direct2D.Factory->GetDesktopDpi(&DPIX, &DPIY);
         #pragma warning(default: 4996)
 

@@ -85,7 +85,7 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
-        _RenderThread._PlaybackTime = 0.;
+        _RenderThread._LastPlaybackTime = 0.;
         _RenderThread._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
@@ -94,7 +94,7 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
     {
-        _RenderThread._PlaybackTime = 0.;
+        _RenderThread._LastPlaybackTime = 0.;
         _RenderThread._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
@@ -172,7 +172,7 @@ void uielement_t::Process() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._PlaybackTime)))
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._LastPlaybackTime)))
         return; // Playback is paused.
 
     double WindowSize   = 0.;
@@ -182,14 +182,14 @@ void uielement_t::Process() noexcept
     {
         const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
 
-        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
-        WIndowOffset = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
+        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderThread._LastPlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
+        WIndowOffset = IsSlidingWindow ?                _RenderThread._LastPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
     }
     else
     {
         // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
         WIndowOffset = PlaybackTime;
-        WindowSize = 0.0005; // 0.5 ms
+        WindowSize = 0.0005; // 500 μs
     }
 
     audio_chunk_impl Chunk;
@@ -202,7 +202,7 @@ void uielement_t::Process() noexcept
             Iter._Graph->Process(Chunk);
     }
 
-    _RenderThread._PlaybackTime = PlaybackTime;
+    _RenderThread._LastPlaybackTime = PlaybackTime;
 }
 
 /// <summary>
@@ -215,7 +215,7 @@ void uielement_t::Animate() noexcept
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderThread._PlaybackTime == 0.);
+        Iter._Graph->_Analysis.UpdatePeakValues(_RenderThread._LastPlaybackTime == 0.);
 }
 
 /// <summary>
@@ -275,7 +275,7 @@ HRESULT uielement_t::CreateDeviceIndependentResources()
 /// </summary>
 void uielement_t::DeleteDeviceIndependentResources()
 {
-    _FrameCounter.ReleaseDeviceIndependentResources();
+    _FrameCounter.DeleteDeviceIndependentResources();
 }
 
 /// <summary>
@@ -286,7 +286,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 {
     HRESULT hr = S_OK;
 
-    // Create the render target.
+    // Create the device context.
     if (_DeviceContext == nullptr)
     {
         CRect cr;
@@ -323,9 +323,9 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             hr = ::D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, nullptr, 0, D3D11_SDK_VERSION, &scd, &_SwapChain, &_D3DDevice, nullptr, nullptr);
         }
 
-        // Create the Direct2D device and the device context.
+        // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
-            CComPtr<IDXGIDevice> DXGIDevice;
+            CComPtr<IDXGIDevice1> DXGIDevice;
 
             if (SUCCEEDED(hr))
                 hr = _D3DDevice->QueryInterface(&DXGIDevice);
@@ -333,7 +333,6 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             if (SUCCEEDED(hr))
                 hr = _Direct2D.CreateDevice(DXGIDevice);
 
-            // Create device context
             if (SUCCEEDED(hr))
                 hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
 
@@ -343,9 +342,12 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
                 _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
             }
+
+            if (SUCCEEDED(hr))
+                _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
         }
 
-        // Set the render target.
+        // Set up the render target.
         {
             CComPtr<IDXGISurface> Surface;
 
@@ -377,6 +379,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
             _Grid.Resize(SizeF.width, SizeF.height);
+            _FrameCounter.Resize(SizeF.width, SizeF.height);
 
             _RenderThread._StyleManager.ReleaseGradientBrushes();
         }
@@ -417,7 +420,7 @@ void uielement_t::DeleteDeviceSpecificResources()
 
     _Artwork.ReleaseDeviceSpecificResources();
 
-    _FrameCounter.ReleaseDeviceSpecificResources();
+    _FrameCounter.DeleteDeviceSpecificResources();
 
     _DeviceContext.Release();
 

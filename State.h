@@ -50,6 +50,7 @@ public:
     size_t _PageIndex;
 
     size_t _RefreshRateLimit;                                           // Hz
+
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;
     bool _UseAntialiasing;
@@ -278,7 +279,7 @@ public:
 
     gradient_stops_t _GradientStops;                                    // The current gradient stops.
 
-    double _PlaybackTime;                                               // Used by spectogram
+    double _LastPlaybackTime;                                           // Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Used by spectogram
 
     LONG64 _Barrier;

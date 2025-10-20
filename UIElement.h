@@ -186,6 +186,7 @@ private:
     #pragma region Render thread
 
     UINT _DPI;
+    double _DisplayRefreshRate;
 
     CComPtr<ID3D11Device> _D3DDevice;
     CComPtr<IDXGISwapChain> _SwapChain;
@@ -235,5 +236,6 @@ private:
     bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
 
     fb2k::CCoreDarkModeHooks _DarkMode;
+
     #pragma endregion
 };

@@ -45,10 +45,10 @@ public:
     HRESULT Render(ID2D1DeviceContext * deviceContext) noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
-    void ReleaseDeviceIndependentResources() noexcept;
+    void DeleteDeviceIndependentResources() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
 private:
     float GetFPS() const noexcept;

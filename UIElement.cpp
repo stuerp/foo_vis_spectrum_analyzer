@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.10.20) P. Stuer **/
+/** $VER: UIElement.cpp (2025.10.20) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -19,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
 {
 }
 
@@ -229,8 +229,12 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_UIThread._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
-                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
+                RefreshRateLimitMenu.AppendMenu
+                (
+                    (UINT) MF_STRING | ((_UIThread._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
+                    IDM_REFRESH_RATE_LIMIT_20 + i,
+                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz"))
+                );
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
@@ -284,17 +288,17 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
-            _UIThread._RefreshRateLimit = 60;
+            _UIThread._RefreshRateLimit =60;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
-            _UIThread._RefreshRateLimit = 100;
+            _UIThread._RefreshRateLimit =100;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
-            _UIThread._RefreshRateLimit = 200;
+            _UIThread._RefreshRateLimit =200;
             StartTimer();
             break;
 

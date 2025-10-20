@@ -564,7 +564,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
 
-        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = std::clamp<size_t>(_RefreshRateLimit, 20, 200);
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
 
         reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);

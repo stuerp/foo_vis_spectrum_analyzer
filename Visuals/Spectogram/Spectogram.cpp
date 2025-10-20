@@ -419,7 +419,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 
-    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
+    if (_State->_LastPlaybackTime != _PlaybackTime) // Not paused
     {
         if (_State->_HorizontalSpectogram)
         {
@@ -446,7 +446,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
         }
 
-        _PlaybackTime = _State->_PlaybackTime;
+        _PlaybackTime = _State->_LastPlaybackTime;
     }
 }
 
@@ -606,7 +606,7 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
@@ -665,7 +665,7 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {

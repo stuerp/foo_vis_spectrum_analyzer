@@ -95,16 +95,19 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
         CComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectWrite.Factory->CreateTextLayout(Text, _countof(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
 
         if (SUCCEEDED(hr))
         {
             DWRITE_TEXT_METRICS TextMetrics = { };
 
-            TextLayout->GetMetrics(&TextMetrics);
+            hr = TextLayout->GetMetrics(&TextMetrics);
 
-            _TextWidth  = TextMetrics.width;
-            _TextHeight = TextMetrics.height;
+            if (SUCCEEDED(hr))
+            {
+                _TextWidth  = TextMetrics.width;
+                _TextHeight = TextMetrics.height;
+            }
         }
     }
 
@@ -114,7 +117,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void frame_counter_t::ReleaseDeviceIndependentResources() noexcept
+void frame_counter_t::DeleteDeviceIndependentResources() noexcept
 {
     _TextFormat.Release();
 }
@@ -136,7 +139,7 @@ HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void frame_counter_t::ReleaseDeviceSpecificResources() noexcept
+void frame_counter_t::DeleteDeviceSpecificResources() noexcept
 {
     _Brush.Release();
 }
