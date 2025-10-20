@@ -43,16 +43,6 @@ void Direct2D::Terminate() noexcept
     Factory.Release();
 }
 
-HRESULT Direct2D::CreateDevice(_In_ IDXGIDevice * dxgiDevice) noexcept
-{
-    return Factory->CreateDevice(dxgiDevice, &Device);
-}
-
-void Direct2D::ReleaseDevice() noexcept
-{
-    Device.Release();
-}
-
 /// <summary>
 /// Gets the refresh rate of the current display.
 /// </summary>

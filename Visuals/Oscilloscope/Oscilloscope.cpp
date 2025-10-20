@@ -304,7 +304,13 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 #endif
 
     if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
-        hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+    {
+        CComPtr<ID2D1Device> D2DDevice;
+
+        deviceContext->GetDevice(&D2DDevice);
+
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+    }
 
     if (SUCCEEDED(hr))
     {

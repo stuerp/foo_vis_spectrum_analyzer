@@ -28,17 +28,17 @@ public:
 
     virtual ~artwork_t()
     {
-        ReleaseDeviceSpecificResources();
+        DeleteDeviceSpecificResources();
 
-        ReleaseWICResources();
+        DeleteWICResources();
     }
 
     HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
-    HRESULT ReleaseWICResources() noexcept;
+    HRESULT DeleteWICResources() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
 

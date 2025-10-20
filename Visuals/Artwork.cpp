@@ -17,7 +17,7 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 {
     _CriticalSection.Enter();
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     if ((data != nullptr) && (size != 0))
     {
@@ -56,7 +56,7 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 {
     _CriticalSection.Enter();
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     _FilePath = filePath;
     _Raster.clear();
@@ -88,11 +88,11 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 /// <summary>
 /// Releases the WIC resources.
 /// </summary>
-HRESULT artwork_t::ReleaseWICResources() noexcept
+HRESULT artwork_t::DeleteWICResources() noexcept
 {
     _CriticalSection.Enter();
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     _FormatConverter.Release();
     _Frame.Release();
@@ -170,10 +170,10 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 {
     _CriticalSection.Enter();
 
-    HRESULT hr = S_OK;
+    HRESULT hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
 
     // Create a Direct2D bitmap from the WIC bitmap source.
-    if ((_FormatConverter != nullptr) && (_Bitmap == nullptr))
+    if (SUCCEEDED(hr) && (_Bitmap == nullptr))
     {
         hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
@@ -189,7 +189,7 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void artwork_t::ReleaseDeviceSpecificResources() noexcept
+void artwork_t::DeleteDeviceSpecificResources() noexcept
 {
     _CriticalSection.Enter();
 

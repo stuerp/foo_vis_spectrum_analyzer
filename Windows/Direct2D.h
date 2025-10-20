@@ -23,9 +23,6 @@ public:
     HRESULT Initialize();
     void Terminate() noexcept;
 
-    HRESULT CreateDevice(_In_ IDXGIDevice * dxgiDevice) noexcept;
-    void ReleaseDevice() noexcept;
-
     HRESULT GetRefreshRate(_In_ IDXGIDevice1 * dxgiDevice, _Out_ double & refreshRate) const noexcept;
 
     HRESULT Load(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ IWICBitmapSource ** source) const noexcept;
@@ -44,7 +41,6 @@ private:
 
 public:
     CComPtr<ID2D1Factory2> Factory;
-    CComPtr<ID2D1Device> Device;
 };
 
 extern Direct2D _Direct2D;

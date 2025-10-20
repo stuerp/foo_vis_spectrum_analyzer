@@ -295,7 +295,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void graph_t::ReleaseDeviceSpecificResources() noexcept
+void graph_t::DeleteDeviceSpecificResources() noexcept
 {
     _Visualization->DeleteDeviceSpecificResources();
 

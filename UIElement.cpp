@@ -429,7 +429,7 @@ void uielement_t::Resize()
         {
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes();
         }
 
         _CriticalSection.Leave();
@@ -656,7 +656,7 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _Artwork.ReleaseWICResources();
+    _Artwork.DeleteWICResources();
 
     _UIThread._SampleRate = 0;
 

@@ -36,13 +36,22 @@ HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
         dpi = GetDpiForWindow_(hWnd);
     else
     {
-        FLOAT DPIX, DPIY;
+        CComPtr<ID2D1Factory2> D2DFactory;
 
-        #pragma warning(disable: 4996) // 'ID2D1Factory::GetDesktopDpi': Deprecated.
-        _Direct2D.Factory->GetDesktopDpi(&DPIX, &DPIY);
-        #pragma warning(default: 4996)
+        D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 
-        dpi = (UINT) DPIX;
+        HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &D2DFactory);
+
+        if (SUCCEEDED(hr))
+        {
+            FLOAT DPIX, DPIY;
+
+            #pragma warning(disable: 4996) // 'ID2D1Factory::GetDesktopDpi': Deprecated.
+            D2DFactory->GetDesktopDpi(&DPIX, &DPIY);
+            #pragma warning(default: 4996)
+
+            dpi = (UINT) DPIX;
+        }
     }
 
     return S_OK;

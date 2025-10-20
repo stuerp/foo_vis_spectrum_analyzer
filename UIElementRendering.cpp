@@ -107,7 +107,7 @@ void uielement_t::ProcessEvents() noexcept
 
             _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
             _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes();
 
             _IsConfigurationChanged = true;
         }
@@ -331,10 +331,10 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
                 hr = _D3DDevice->QueryInterface(&DXGIDevice);
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.CreateDevice(DXGIDevice);
+                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice);
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+                hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
 
             if (SUCCEEDED(hr))
             {
@@ -381,8 +381,13 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes();
         }
+
+    #ifdef _DEBUG
+        if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush); // Solid red
+    #endif
     }
 
     // Create the background bitmap from the artwork.
@@ -393,14 +398,11 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
         if (SUCCEEDED(hr))
         {
             for (auto & Iter : _Grid)
-                Iter._Graph->ReleaseDeviceSpecificResources();
+                Iter._Graph->DeleteDeviceSpecificResources();
         }
+        else
+            hr = S_OK; // No WIC bitmap loadded because there is no artwork.
     }
-
-#ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush); // Solid red
-#endif
 
     return hr;
 }
@@ -416,15 +418,14 @@ void uielement_t::DeleteDeviceSpecificResources()
     _RenderThread._StyleManager.DeleteDeviceSpecificResources();
 
     for (auto & Iter : _Grid)
-        Iter._Graph->ReleaseDeviceSpecificResources();
+        Iter._Graph->DeleteDeviceSpecificResources();
 
-    _Artwork.ReleaseDeviceSpecificResources();
+    _Artwork.DeleteDeviceSpecificResources();
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
     _DeviceContext.Release();
-
-    _Direct2D.ReleaseDevice();
+    _D2DDevice.Release();
 
     _D3DDevice.Release();
     _SwapChain.Release();
@@ -484,7 +485,7 @@ HRESULT uielement_t::CreateArtworkDependentResources()
     {
         _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
         _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-        _RenderThread._StyleManager.ReleaseGradientBrushes();
+        _RenderThread._StyleManager.DeleteGradientBrushes();
 
         _IsConfigurationChanged = true;
     }

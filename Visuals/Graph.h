@@ -67,7 +67,7 @@ public:
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
 private:
     void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;

@@ -188,6 +188,8 @@ private:
     UINT _DPI;
     double _DisplayRefreshRate;
 
+    // Device-dependent resources
+    CComPtr<ID2D1Device> _D2DDevice;
     CComPtr<ID3D11Device> _D3DDevice;
     CComPtr<IDXGISwapChain> _SwapChain;
     CComPtr<ID2D1DeviceContext> _DeviceContext;
