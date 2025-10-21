@@ -65,6 +65,10 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
             else
                 _Visualization = std::make_unique<oscilloscope_xy_t>();
             break;
+
+        case VisualizationType::Tester:
+            _Visualization = std::make_unique<tester_t>();
+            break;
     }
 
     _Visualization->Initialize(state, settings, &_Analysis);
@@ -103,11 +107,11 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (SUCCEEDED(hr))
-    {
-        RenderBackground(deviceContext, artwork);
-        RenderForeground(deviceContext);
-    }
+    if (FAILED(hr))
+        return;
+
+    RenderBackground(deviceContext, artwork);
+    RenderForeground(deviceContext);
 }
 
 /// <summary>
@@ -205,6 +209,8 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
 {
     if (_BackgroundStyle->IsEnabled())
         deviceContext->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
+    else
+        deviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f));
 
     if (!_State->_ShowArtworkOnBackground)
         return;

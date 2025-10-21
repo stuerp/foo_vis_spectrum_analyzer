@@ -143,8 +143,6 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f)); // Required for alpha transparency. Clear with a fully transparent color.
-
     for (auto & Iter : _Grid)
         Iter._Graph->Render(_DeviceContext, _Artwork);
 

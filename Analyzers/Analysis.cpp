@@ -86,6 +86,11 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             ProcessOscilloscope(chunk);
             break;
         }
+
+        case VisualizationType::Tester:
+        {
+            break;
+        }
     }
 }
 
@@ -360,6 +365,11 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         case VisualizationType::Oscilloscope:
         {
             _Chunk.reset();
+            break;
+        }
+
+        case VisualizationType::Tester:
+        {
             break;
         }
     }

@@ -132,6 +132,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::PeakMeter:
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
+        case VisualizationType::Tester:
 
         default:
             break;

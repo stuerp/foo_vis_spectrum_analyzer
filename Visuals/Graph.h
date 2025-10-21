@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2025.10.14) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2025.10.21) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -22,6 +22,8 @@
 #include "LevelMeter.h"
 #include "Oscilloscope.h"
 #include "OscilloscopeXY.h"
+
+#include "Tester.h"
 
 #include "Log.h"
 

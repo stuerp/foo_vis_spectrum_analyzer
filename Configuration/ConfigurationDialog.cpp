@@ -1036,11 +1036,19 @@ void ConfigurationDialog::Initialize()
 
     #pragma region Visualization
     {
+        const WCHAR * Names[] =
+        {
+            L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
+        #ifdef _DEBUG
+            L"Tester"
+        #endif
+        };
+
         auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
 
         w.ResetContent();
 
-        for (const auto & x : { L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope" })
+        for (const auto & x : Names)
             w.AddString(x);
 
         w.SetCurSel((int) _State->_VisualizationType);

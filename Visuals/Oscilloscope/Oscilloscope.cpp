@@ -298,11 +298,6 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_VerticalGridLineStyle);
 
-#ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-#endif
-
     if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
     {
         CComPtr<ID2D1Device> D2DDevice;
