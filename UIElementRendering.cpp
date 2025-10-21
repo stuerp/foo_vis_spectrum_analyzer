@@ -1,9 +1,10 @@
 
-/** $VER: UIElementRendering.cpp (2025.10.20) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.10.21) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
 
+#include "DirectX.h"
 #include "Direct2D.h"
 #include "DirectWrite.h"
 #include "WIC.h"
@@ -17,7 +18,9 @@
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "d3d11")
+#pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
+#pragma comment(lib, "dcomp.lib")
 
 #pragma hdrstop
 
@@ -46,7 +49,15 @@ void uielement_t::OnTimer() noexcept
         ProcessEvents();
 
         if (IsWindowVisible())
+        {
+            _FrameCounter.NewFrame();
+
+            Process();
+
             Render();
+
+            Animate();
+        }
 
         if (_IsConfigurationChanged)
         {
@@ -127,43 +138,35 @@ void uielement_t::Render() noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
-    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && _Artwork.IsRealized())
-        CreateArtworkDependentResources();
+    if (FAILED(hr))
+        return;
 
+    _DeviceContext->BeginDraw();
+
+    _DeviceContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f)); // Required for alpha transparency. Clear with a fully transparent color.
+
+    for (auto & Iter : _Grid)
+        Iter._Graph->Render(_DeviceContext, _Artwork);
+
+    if (_UIThread._ShowFrameCounter)
+        _FrameCounter.Render(_DeviceContext);
+
+    hr = _DeviceContext->EndDraw();
+
+    // Present the swap chain immediately.
     if (SUCCEEDED(hr))
+        hr = _SwapChain->Present(1, 0);
+
+    if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
     {
-        _FrameCounter.NewFrame();
+        DeleteDeviceSpecificResources();
 
-        Process();
-
-        _DeviceContext->BeginDraw();
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Render(_DeviceContext, _Artwork);
-
-        if (_UIThread._ShowFrameCounter)
-            _FrameCounter.Render(_DeviceContext);
-
-        hr = _DeviceContext->EndDraw();
-
-        // Present the swap chain immediately.
-        if (SUCCEEDED(hr))
-            hr = _SwapChain->Present(0, 0);
-
-        if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
-        {
-            DeleteDeviceSpecificResources();
-
-            hr = S_OK;
-        }
-
-        Animate();
+        hr = S_OK;
     }
 }
 
 /// <summary>
-/// Updates the audio data of all the graphs.
+/// Updates the values of all the graphs.
 /// </summary>
 void uielement_t::Process() noexcept
 {
@@ -206,7 +209,7 @@ void uielement_t::Process() noexcept
 }
 
 /// <summary>
-/// Animates the values.
+/// Updates the peak values of all the graphs.
 /// </summary>
 void uielement_t::Animate() noexcept
 {
@@ -263,9 +266,28 @@ void CALLBACK uielement_t::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID c
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT uielement_t::CreateDeviceIndependentResources()
+HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 {
-    HRESULT hr = _FrameCounter.CreateDeviceIndependentResources();
+    DirectX::Initialize();
+
+    HRESULT hr = S_OK;
+
+    if (SUCCEEDED(hr))
+        hr = ::CreateDXGIFactory(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(&_DXGIFactory));
+
+        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+#ifdef _DEBUG
+        Flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+    if (SUCCEEDED(hr))
+        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
+
+    if (SUCCEEDED(hr))
+        hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(&_DCompositionDevice));
+
+    hr = _FrameCounter.CreateDeviceIndependentResources();
 
     return hr;
 }
@@ -273,16 +295,23 @@ HRESULT uielement_t::CreateDeviceIndependentResources()
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void uielement_t::DeleteDeviceIndependentResources()
+void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
     _FrameCounter.DeleteDeviceIndependentResources();
+
+    _DCompositionDevice.Release();
+    _D3DDeviceContext.Release();
+    _D3DDevice.Release();
+    _DXGIFactory.Release();
+
+    DirectX::Terminate();
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT uielement_t::CreateDeviceSpecificResources()
+HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = S_OK;
 
@@ -293,45 +322,20 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
         GetClientRect(cr);
 
-        const UINT32 Width  = (UINT32) (FLOAT) (cr.right  - cr.left);
-        const UINT32 Height = (UINT32) (FLOAT) (cr.bottom - cr.top);
+        const UINT32 Width  = (UINT) cr.Width();
+        const UINT32 Height = (UINT) cr.Height();
 
         hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
-
-        // Create Direct3D device and swap chain.
-        {
-            UINT CreateDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-        #ifdef _DEBUG
-            CreateDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-        #endif
-
-            D2D1_SIZE_U Size = D2D1::SizeU(Width, Height); // Set the size in pixels.
-
-            DXGI_SWAP_CHAIN_DESC scd = {};
-
-            scd.BufferDesc.Width  = Width;
-            scd.BufferDesc.Height = Height;
-            scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            scd.SampleDesc.Count  = 1;
-            scd.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            scd.BufferCount       = 2;
-            scd.OutputWindow      = m_hWnd;
-            scd.Windowed          = TRUE;
-            scd.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-            hr = ::D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, nullptr, 0, D3D11_SDK_VERSION, &scd, &_SwapChain, &_D3DDevice, nullptr, nullptr);
-        }
 
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
             CComPtr<IDXGIDevice1> DXGIDevice;
 
             if (SUCCEEDED(hr))
-                hr = _D3DDevice->QueryInterface(&DXGIDevice);
+                hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice);
+                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
 
             if (SUCCEEDED(hr))
                 hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
@@ -347,28 +351,48 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
                 _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
         }
 
-        // Set up the render target.
+        if (SUCCEEDED(hr))
         {
-            CComPtr<IDXGISurface> Surface;
+            DXGI_SWAP_CHAIN_DESC1 scd = { };
 
-            // Get a surface from the swap chain.
-            if (SUCCEEDED(hr))
-                hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
+            scd.Width              = Width;
+            scd.Height             = Height;
+            scd.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
+            scd.Scaling            = DXGI_SCALING_STRETCH;
+            scd.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+            scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            scd.BufferCount        = 2;
+            scd.SampleDesc.Count   = 1;
+            scd.SampleDesc.Quality = 0;
+            scd.AlphaMode          = DXGI_ALPHA_MODE_PREMULTIPLIED; // Required for alpha transparency.
+            scd.Flags              = 0;
 
-            const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-            (
-                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)
-            );
-
-            CComPtr<ID2D1Bitmap1> TargetBitmap;
-
-            if (SUCCEEDED(hr))
-                hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &BitmapProperties, &TargetBitmap);
-
-            if (SUCCEEDED(hr))
-                _DeviceContext->SetTarget(TargetBitmap);
+            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
         }
+
+        // Set up DirectComposition.
+        {
+            if (SUCCEEDED(hr))
+                hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+
+            if (SUCCEEDED(hr))
+                hr = _DCompositionDevice->CreateVisual(&_Visual);
+
+            if (SUCCEEDED(hr))
+                hr = _Visual->SetContent(_SwapChain);
+
+            if (SUCCEEDED(hr))
+                hr = _Target->SetRoot(_Visual);
+
+            if (SUCCEEDED(hr))
+                hr = _DCompositionDevice->Commit();
+        }
+
+        if (SUCCEEDED(hr))
+            hr = CreateBackBuffer();
+
+        if (SUCCEEDED(hr))
+            _DeviceContext->SetTarget(_BackBuffer);
 
         if (SUCCEEDED(hr))
         {
@@ -386,7 +410,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
     #ifdef _DEBUG
         if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush); // Solid red
+            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
     #endif
     }
 
@@ -404,13 +428,17 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             hr = S_OK; // No WIC bitmap loadded because there is no artwork.
     }
 
+    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
+    if (SUCCEEDED(hr) && _Artwork.IsRealized())
+        CreateArtworkDependentResources();
+
     return hr;
 }
 
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void uielement_t::DeleteDeviceSpecificResources()
+void uielement_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -424,17 +452,66 @@ void uielement_t::DeleteDeviceSpecificResources()
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
+    _BackBuffer.Release();
+    _Visual.Release();
+    _Target.Release();
+
+    _SwapChain.Release();
     _DeviceContext.Release();
     _D2DDevice.Release();
+}
 
-    _D3DDevice.Release();
-    _SwapChain.Release();
+/// <summary>
+/// Creates the bitmap that will be the target of the device context.
+/// </summary>
+HRESULT uielement_t::CreateBackBuffer() noexcept
+{
+    CComPtr<IDXGISurface> Surface;
+
+    // Get a surface from the swap chain.
+    HRESULT hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
+
+    if (FAILED(hr))
+        return hr;
+
+    // Create a bitmap pointing to the surface.
+    D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+    (
+        D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency.
+        (FLOAT) _DPI, (FLOAT) _DPI
+    );
+
+    hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
+
+    if (FAILED(hr))
+        return hr;
+
+    Surface.Release();
+
+    // Update the DirectComposition visual.
+    if (_Visual && _Target)
+    {
+        hr = _Visual->SetContent(_SwapChain);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _Target->SetRoot(_Visual);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _DCompositionDevice->Commit();
+    }
+
+    return hr;
 }
 
 /// <summary>
 /// Creates the DirectX resources that are dependent on the artwork.
 /// </summary>
-HRESULT uielement_t::CreateArtworkDependentResources()
+HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 {
     // Get the colors from the artwork.
     HRESULT hr = _Artwork.GetColors(_RenderThread._ArtworkColors, _RenderThread._NumArtworkColors, _RenderThread._LightnessThreshold, _RenderThread._TransparencyThreshold);

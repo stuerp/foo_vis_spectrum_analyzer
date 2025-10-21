@@ -77,7 +77,7 @@ void CUIElement::destroy_window()
 
     _Host.release();
 }
-
+/*
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
@@ -98,9 +98,9 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     _IsInitializing = false;
 
-    return 1;
+    return 1; // Prevent GDI from erasing the background. Required for transparency.
 }
-
+*/
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>

@@ -28,7 +28,7 @@ public:
 
     virtual ~CUIElement();
 
-    LRESULT OnEraseBackground(CDCHandle hDC) override final;
+//  LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void ToggleFullScreen() noexcept override final;
 
     // Columns User Interface

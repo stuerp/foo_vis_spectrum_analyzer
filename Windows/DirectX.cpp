@@ -1,9 +1,9 @@
 
-/** $VER: DirectX.cpp (2024.01.30) P. Stuer **/
+/** $VER: DirectX.cpp (2025.10.21) P. Stuer **/
 
 #include "pch.h"
-#include "DirectX.h"
 
+#include "DirectX.h"
 #include "Direct2D.h"
 #include "DirectWrite.h"
 #include "WIC.h"
@@ -15,12 +15,12 @@ int32_t _Count;
 /// <summary>
 /// Initializes DirectX once per component.
 /// </summary>
-void Initialize()
+HRESULT Initialize() noexcept
 {
     ++_Count;
 
     if (_Count > 1)
-        return;
+        return S_OK;
 
     HRESULT hr = _Direct2D.Initialize();
 
@@ -29,12 +29,14 @@ void Initialize()
 
     if (SUCCEEDED(hr))
         hr = _WIC.Initialize();
+
+    return hr;
 }
 
 /// <summary>
 /// Terminates DirectX once per component.
 /// </summary>
-void Terminate()
+void Terminate() noexcept
 {
     --_Count;
 

@@ -897,7 +897,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(0.f,1.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
 #endif
 
     return hr;

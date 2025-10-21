@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.10.20) P. Stuer **/
+/** $VER: UIElement.h (2025.10.21) P. Stuer **/
 
 #pragma once
 
@@ -48,7 +48,6 @@ protected:
         return guid;
     }
 
-    virtual LRESULT OnEraseBackground(CDCHandle dc) = 0;
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     virtual void GetColors() noexcept = 0;
 
@@ -63,6 +62,7 @@ private:
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
     void OnDestroy();
     void OnPaint(CDCHandle dc);
+    LRESULT OnEraseBackground(CDCHandle dc);
     void OnSize(UINT nType, CSize size);
     void OnLButtonDown(UINT nFlags, CPoint point);
     void OnLButtonUp(UINT nFlags, CPoint point);
@@ -152,13 +152,14 @@ private:
 
     void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
 
-    HRESULT CreateDeviceIndependentResources();
-    void DeleteDeviceIndependentResources();
+    HRESULT CreateDeviceIndependentResources() noexcept;
+    void DeleteDeviceIndependentResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources();
-    void DeleteDeviceSpecificResources();
+    HRESULT CreateDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateArtworkDependentResources();
+    HRESULT CreateBackBuffer() noexcept;
+    HRESULT CreateArtworkDependentResources() noexcept;
 
     #pragma endregion
 
@@ -188,14 +189,23 @@ private:
     UINT _DPI;
     double _DisplayRefreshRate;
 
-    // Device-independent resources
+    // Device-independent resources.
+    CComPtr<ID2D1Factory1> _D2DFactory;
+    CComPtr<IDXGIFactory2> _DXGIFactory;
+    CComPtr<IWICImagingFactory2> _WICImagingFactory;
+    CComPtr<IDWriteFactory> _DWriteFactory;
+    CComPtr<IDWriteTextFormat> _TextFormat;
 
-    // Device-dependent resources
-    CComPtr<IDXGISwapChain> _SwapChain;
+    // Device-dependent resources.
     CComPtr<ID3D11Device> _D3DDevice;
-
+    CComPtr<ID3D11DeviceContext> _D3DDeviceContext;
+    CComPtr<IDCompositionDevice> _DCompositionDevice;
+    CComPtr<IDXGISwapChain1> _SwapChain;
     CComPtr<ID2D1Device> _D2DDevice;
     CComPtr<ID2D1DeviceContext> _DeviceContext;
+    CComPtr<IDCompositionVisual>  _Visual;
+    CComPtr<IDCompositionTarget>  _Target;
+    CComPtr<ID2D1Bitmap1> _BackBuffer;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

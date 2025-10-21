@@ -1,10 +1,10 @@
 
-/** $VER: DirectX.h (2024.01.28) P. Stuer **/
+/** $VER: DirectX.h (2025.10.21) P. Stuer **/
 
 #pragma once
 
 namespace DirectX
 {
-    void Initialize();
-    void Terminate();
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
 }

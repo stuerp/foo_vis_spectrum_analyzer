@@ -128,7 +128,7 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
 static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Factory;
 
 #pragma endregion
-
+/*
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
@@ -149,9 +149,9 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 
     _IsInitializing = false;
 
-    return 1;
+    return 1; // Prevent GDI from erasing the background. Required for transparency.
 }
-
+*/
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
