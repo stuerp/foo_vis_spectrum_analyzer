@@ -142,7 +142,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     const FLOAT YAxisWidth = _YAxisTextStyle->_Width;
@@ -227,7 +227,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 _DeviceContext->DrawImage(_ColorMatrixEffect);
             }
             else
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)));
+                _DeviceContext->Clear(); // Required for alpha transparency.
 
             hr = _DeviceContext->EndDraw();
         }
@@ -309,7 +309,11 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 
     if (SUCCEEDED(hr))
     {
-        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
+        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        );
 
         if (_FrontBuffer == nullptr)
         {
@@ -321,7 +325,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 
                 _DeviceContext->BeginDraw();
 
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->Clear(_State->_PhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
                 hr = _DeviceContext->EndDraw();
 
@@ -339,7 +343,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 
                 _DeviceContext->BeginDraw();
 
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->Clear(_State->_PhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
                 hr = _DeviceContext->EndDraw();
 
@@ -378,11 +382,11 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
             const D2D1_MATRIX_5X4_F DecayMatrix =
             {
-                _State->_DecayFactor, 0, 0, 0,
-                0, _State->_DecayFactor, 0, 0,
-                0, 0, _State->_DecayFactor, 0,
-                0, 0, 0, 1,
-                0, 0, 0, 0
+                _State->_DecayFactor, 0, 0, 0,  // Decay red
+                0, _State->_DecayFactor, 0, 0,  // Decay green
+                0, 0, _State->_DecayFactor, 0,  // Decay blue
+                0, 0, 0, 1,                     // Keep alpha
+                0, 0, 0, 0                      // Unused. Translation
             };
 
             _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);

@@ -405,7 +405,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.DeleteGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
         }
 
     #ifdef _DEBUG
@@ -421,16 +421,16 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         if (SUCCEEDED(hr))
         {
+            // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
+//          if (SUCCEEDED(hr) && _(_Artwork.Bitmap() != nullptr))
+                CreateArtworkDependentResources();
+
             for (auto & Iter : _Grid)
                 Iter._Graph->Release();
         }
         else
             hr = S_OK; // No WIC bitmap created because there is no artwork.
     }
-
-    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && _Artwork.IsRealized())
-        CreateArtworkDependentResources();
 
     return hr;
 }
@@ -476,10 +476,10 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
         return hr;
 
     // Create a bitmap pointing to the surface.
-    D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+    const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
     (
         D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency.
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
         (FLOAT) _DPI, (FLOAT) _DPI
     );
 

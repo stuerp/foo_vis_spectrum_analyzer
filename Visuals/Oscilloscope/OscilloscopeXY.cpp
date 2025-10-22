@@ -111,7 +111,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
@@ -121,7 +121,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
     const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-    const uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;                        // Mask containing the channels selected by the user.
+    const uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;                     // Mask containing the channels selected by the user.
     const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
     const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
@@ -133,38 +133,41 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
         const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
 
-        CComPtr<ID2D1PathGeometry> Geometry;
-
-        hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-        if (SUCCEEDED(hr))
-        {
-            CComPtr<ID2D1GeometrySink> Sink;
-
-            hr = Geometry->Open(&Sink);
-
-            FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
-            FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
-
-            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-            for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
-            {
-                x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
-                y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-            }
-
-            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-            hr = Sink->Close();
-        }
-
         CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
-        if (SUCCEEDED(hr))
-            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
+        // Create the geometry for the X-Y plot.
+        {
+            CComPtr<ID2D1PathGeometry> Geometry;
+
+            hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
+
+            if (SUCCEEDED(hr))
+            {
+                CComPtr<ID2D1GeometrySink> Sink;
+
+                hr = Geometry->Open(&Sink);
+
+                FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
+                FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+                {
+                    x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
+                    y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+                }
+
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                hr = Sink->Close();
+            }
+
+            if (SUCCEEDED(hr))
+                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
+        }
 
         if (SUCCEEDED(hr))
         {
@@ -219,7 +222,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 _DeviceContext->DrawImage(_ColorMatrixEffect);
             }
             else
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF(0.f, 0.f, 0.f, 0.f))); // Transparent
+                _DeviceContext->Clear(); // Required for alpha transparency
 
             hr = _DeviceContext->EndDraw();
         }
@@ -304,7 +307,11 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     if (SUCCEEDED(hr))
     {
-        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
+        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        );
 
         if (_FrontBuffer == nullptr)
         {
@@ -316,7 +323,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
                 _DeviceContext->BeginDraw();
 
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->Clear(_State->_PhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
                 hr = _DeviceContext->EndDraw();
 
@@ -334,7 +341,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
                 _DeviceContext->BeginDraw();
 
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->Clear(_State->_PhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
                 hr = _DeviceContext->EndDraw();
 
@@ -373,11 +380,11 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
             #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
             const D2D1_MATRIX_5X4_F DecayMatrix =
             {
-                _State->_DecayFactor, 0, 0, 0,
-                0, _State->_DecayFactor, 0, 0,
-                0, 0, _State->_DecayFactor, 0,
-                0, 0, 0, 1,
-                0, 0, 0, 0
+                _State->_DecayFactor, 0, 0, 0,  // Decay red
+                0, _State->_DecayFactor, 0, 0,  // Decay green
+                0, 0, _State->_DecayFactor, 0,  // Decay blue
+                0, 0, 0, 1,                     // Keep alpha
+                0, 0, 0, 0                      // Unused. Translation
             };
 
             _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);

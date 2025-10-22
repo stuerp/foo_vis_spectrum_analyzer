@@ -153,6 +153,8 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
         colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
     }
 
+    SetStatus(GotColors);
+
     _CriticalSection.Leave();
 
     return hr;
@@ -235,7 +237,7 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
         hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
         if (SUCCEEDED(hr))
-            SetStatus(Realized);
+            SetStatus(GotBitmap);
     }
 
     _CriticalSection.Leave();

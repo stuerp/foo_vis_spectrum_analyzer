@@ -39,7 +39,7 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
-    bool IsRealized() const noexcept { return _Status == Realized; }
+    bool HasBitmap() const noexcept { return _Status == GotBitmap; }
 
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
 
@@ -59,7 +59,9 @@ private:
         Idle = 0,
 
         Initialized,    // A new artwork source has been set.
-        Realized,       // A new bitmap has been generated or the configuration parameters have changed.
+
+        GotBitmap,      // A new bitmap has been generated or the configuration parameters have changed.
+        GotColors,      // Got the colors from the bitmap source.
     };
 
     void SetStatus(Status status) noexcept
