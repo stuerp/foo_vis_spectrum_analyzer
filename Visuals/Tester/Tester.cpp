@@ -17,7 +17,7 @@
 /// </summary>
 tester_t::tester_t()
 {
-    _Bounds = { };
+    _Rect = { };
     _Size = { };
 
     Reset();
@@ -34,10 +34,10 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void tester_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     CreateDeviceIndependentResources();
@@ -48,7 +48,7 @@ void tester_t::Initialize(state_t * state, const graph_settings_t * settings, co
 /// </summary>
 void tester_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -60,6 +60,14 @@ void tester_t::Reset() noexcept
         return;
 
     _IsResized = true;
+}
+
+/// <summary>
+/// Terminates this instance.
+/// </summary>
+void tester_t::Release() noexcept
+{
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>

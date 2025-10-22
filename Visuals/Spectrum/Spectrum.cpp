@@ -26,10 +26,10 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void spectrum_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -45,7 +45,7 @@ void spectrum_t::Initialize(state_t * state, const graph_settings_t * settings, 
 /// </summary>
 void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 
     _OpacityMask.Release();
 }
@@ -58,17 +58,17 @@ void spectrum_t::Resize() noexcept
     if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xt = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
-    const FLOAT xb = ((_GraphSettings->_XAxisMode != XAxisMode::None) && _GraphSettings->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xt = ((_GraphDescription->_XAxisMode != XAxisMode::None) && _GraphDescription->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xb = ((_GraphDescription->_XAxisMode != XAxisMode::None) && _GraphDescription->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
 
-    const FLOAT yl = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
-    const FLOAT yr = ((_GraphSettings->_YAxisMode != YAxisMode::None) && _GraphSettings->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yl = ((_GraphDescription->_YAxisMode != YAxisMode::None) && _GraphDescription->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yr = ((_GraphDescription->_YAxisMode != YAxisMode::None) && _GraphDescription->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
 
-    _XAxis.Move({ _Bounds.left + yl, _Bounds.top,      _Bounds.right - yr, _Bounds.bottom });
-    _YAxis.Move({ _Bounds.left,      _Bounds.top + xt, _Bounds.right,      _Bounds.bottom - xb });
+    _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
+    _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
 
-    _ClientBounds = { _Bounds.left + yl, _Bounds.top + xt, _Bounds.right - yr, _Bounds.bottom - xb };
-    _ClientSize = { _ClientBounds.right - _ClientBounds.left, _ClientBounds.bottom - _ClientBounds.top };
+    _ClientRect = { _Rect.left + yl, _Rect.top + xt, _Rect.right - yr, _Rect.bottom - xb };
+    _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
 
     _IsResized = false;
 }
@@ -92,7 +92,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             _YAxis.Render(deviceContext);
 
-            SetTransform(deviceContext, _ClientBounds);
+            SetTransform(deviceContext, _ClientRect);
 
             if (_State->_VisualizationType == VisualizationType::Bars)
                 RenderBars(deviceContext);
@@ -150,13 +150,13 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
-    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = std::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
@@ -568,12 +568,12 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
-    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = ::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
-    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     const FLOAT x = HOffset + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 

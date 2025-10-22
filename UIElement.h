@@ -170,7 +170,7 @@ protected:
     msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
 
-    RECT _OldBounds;
+    RECT _OldRect;
     bool _IsFullScreen;
     bool _IsVisible;                // True if the component is visible.
     bool _IsInitializing;

@@ -10,10 +10,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void gauge_names_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void gauge_names_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -24,7 +24,7 @@ void gauge_names_t::Initialize(state_t * state, const graph_settings_t * setting
 /// </summary>
 void gauge_names_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -56,7 +56,7 @@ void gauge_names_t::Render(ID2D1DeviceContext * deviceContext, const gauge_metri
     if (!SUCCEEDED(hr))
         return;
 
-    if ((_GraphSettings->_XAxisMode == XAxisMode::None) || (!_GraphSettings->_XAxisTop && !_GraphSettings->_XAxisBottom))
+    if ((_GraphDescription->_XAxisMode == XAxisMode::None) || (!_GraphDescription->_XAxisTop && !_GraphDescription->_XAxisBottom))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -74,9 +74,9 @@ void gauge_names_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const g
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.top = _GraphSettings->_FlipVertically ? _Size.height : 0.f;
+    Rect.top = _GraphDescription->_FlipVertically ? _Size.height : 0.f;
 
-    const FLOAT dy = _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
+    const FLOAT dy = _GraphDescription->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
@@ -86,24 +86,24 @@ void gauge_names_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const g
 
         if (_TextStyle->IsEnabled())
         {
-            if (_GraphSettings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
             {
-                Rect.left  = (_GraphSettings->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->_Width) + Offset;
-                Rect.right = _GraphSettings->_FlipHorizontally ? _TextStyle->_Width: GetWidth();
+                Rect.left  = (_GraphDescription->_FlipHorizontally ? 0.f : GetWidth() - _TextStyle->_Width) + Offset;
+                Rect.right = _GraphDescription->_FlipHorizontally ? _TextStyle->_Width: GetWidth();
 
                 deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_GraphSettings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
             {
-                Rect.left  = (_GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f) + Offset;
-                Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
+                Rect.left  = (_GraphDescription->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f) + Offset;
+                Rect.right = _GraphDescription->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
 
                 deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        Rect.top += _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
+        Rect.top += _GraphDescription->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
     }
 }
 
@@ -114,9 +114,9 @@ void gauge_names_t::RenderVertical(ID2D1DeviceContext * deviceContext, const gau
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.left = _GraphSettings->_FlipHorizontally ? _Size.width: 0.f;
+    Rect.left = _GraphDescription->_FlipHorizontally ? _Size.width: 0.f;
 
-    const FLOAT dx = _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
+    const FLOAT dx = _GraphDescription->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
@@ -126,24 +126,24 @@ void gauge_names_t::RenderVertical(ID2D1DeviceContext * deviceContext, const gau
 
         if (_TextStyle->IsEnabled())
         {
-            if (_GraphSettings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
             {
-                Rect.top    = _GraphSettings->_FlipVertically ? GetHeight() - _TextStyle->_Height : 0.f;
-                Rect.bottom = _GraphSettings->_FlipVertically ? GetHeight()                       : _TextStyle->_Height;
+                Rect.top    = _GraphDescription->_FlipVertically ? GetHeight() - _TextStyle->_Height : 0.f;
+                Rect.bottom = _GraphDescription->_FlipVertically ? GetHeight()                       : _TextStyle->_Height;
 
                 deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_GraphSettings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
             {
-                Rect.top    = _GraphSettings->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
-                Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
+                Rect.top    = _GraphDescription->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
+                Rect.bottom = _GraphDescription->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
                 deviceContext->DrawText(gv.Name.c_str(), (UINT) gv.Name.size(), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        Rect.left += _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
+        Rect.left += _GraphDescription->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
     }
 }
 

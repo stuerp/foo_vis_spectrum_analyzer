@@ -17,10 +17,10 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * state, const graph_settings_t * settings) noexcept
+void analysis_t::Initialize(const state_t * state, const graph_description_t * graphDescription) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = graphDescription;
 
     switch (_State->_FrequencyDistribution)
     {
@@ -43,7 +43,7 @@ void analysis_t::Initialize(const state_t * state, const graph_settings_t * sett
 }
 
 /// <summary>
-/// Processes the audio samples.
+/// Processes an audio chunk.
 /// </summary>
 void analysis_t::Process(const audio_chunk & chunk) noexcept
 {
@@ -51,11 +51,11 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         Reset();
 
     _SampleRate       = chunk.get_sample_rate();
-    _NyquistFrequency = (double) _SampleRate / 2.;
     _ChannelCount     = chunk.get_channel_count();
     _ChannelConfig    = chunk.get_channel_config();
 
-    _ChannelMask      = _ChannelConfig & _GraphSettings->_SelectedChannels;
+    _NyquistFrequency = (double) _SampleRate / 2.;
+    _ChannelMask      = _ChannelConfig & _GraphDescription->_SelectedChannels;
 
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
@@ -148,6 +148,21 @@ void analysis_t::Reset() noexcept
 }
 
 /// <summary>
+/// Resets the peak values.
+/// </summary>
+void analysis_t::ResetPeakValues() noexcept
+{
+    for (frequency_band_t & fb : _FrequencyBands)
+        fb.CurValue = 0.;
+
+    for (gauge_value_t & gv : _GaugeValues)
+    {
+        gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
+        gv.PeakRender = gv.RMSRender = 0.;
+    }
+}
+
+/// <summary>
 /// Resets the RMS window dependent values.
 /// </summary>
 void analysis_t::ResetRMSDependentValues() noexcept
@@ -161,7 +176,6 @@ void analysis_t::ResetRMSDependentValues() noexcept
     _Mid   = 0.;
     _Side  = 0.;
 }
-
 
 /// <summary>
 /// Updates the peak values.
@@ -391,25 +405,25 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
     {
         case Transform::FFT:
         {
-            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::CQT:
         {
-            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::SWIFT:
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::AnalogStyle:
         {
-            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
     }
@@ -717,7 +731,7 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 void analysis_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(_GraphSettings->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
+        fb.CurValue = std::clamp(_GraphDescription->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
 }
 
 /// <summary>
@@ -726,7 +740,7 @@ void analysis_t::Normalize() noexcept
 void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
 }
 
 /// <summary>
@@ -735,7 +749,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
 }
 
 #pragma endregion
@@ -769,7 +783,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
         size_t j = 0;
 
         uint32_t ChunkChannels    = chunk.get_channel_config();                     // Mask containing the channels in the audio chunk.
-        uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user for the level measuring.
+        uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;              // Mask containing the channels selected by the user for the level measuring.
         uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user for the balance measuring.
 
         while ((ChunkChannels & SelectedChannels & BalanceChannels) != 0)

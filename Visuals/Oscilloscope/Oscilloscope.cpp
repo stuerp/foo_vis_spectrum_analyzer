@@ -18,7 +18,7 @@
 /// </summary>
 oscilloscope_t::oscilloscope_t()
 {
-    _Bounds = { };
+    _Rect = { };
     _Size = { };
 
     _SignalLineStyle = nullptr;
@@ -46,17 +46,17 @@ oscilloscope_t::~oscilloscope_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void oscilloscope_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
 
     // Create the labels.
     {
-        for (double Amplitude = _GraphSettings->_AmplitudeLo; Amplitude <= _GraphSettings->_AmplitudeHi; Amplitude -= _GraphSettings->_AmplitudeStep)
+        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= _GraphDescription->_AmplitudeHi; Amplitude -= _GraphDescription->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -86,7 +86,7 @@ void oscilloscope_t::Initialize(state_t * state, const graph_settings_t * settin
 /// </summary>
 void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -150,14 +150,14 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT XOffset = 0.f;
     FLOAT YAxisCount = 0.f;
 
-    if (_GraphSettings->HasYAxis())
+    if (_GraphDescription->HasYAxis())
     {
         XOffset = YAxisWidth;
 
         ++YAxisCount;
     }
 
-    if (_GraphSettings->HasYAxis())
+    if (_GraphDescription->HasYAxis())
         ++YAxisCount;
 
     const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
@@ -463,18 +463,18 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
 {
     amplitude_scaler_t Scaler;
 
-    switch (_GraphSettings->_YAxisMode)
+    switch (_GraphDescription->_YAxisMode)
     {
         case YAxisMode::None:
             Scaler.SetNormalizedMode();
             break;
 
         case YAxisMode::Decibels:
-            Scaler.SetDecibelMode(_GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi);
+            Scaler.SetDecibelMode(_GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi);
             break;
 
         case YAxisMode::Linear:
-            Scaler.SetLinearMode(_GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, _GraphSettings->_Gamma, _GraphSettings->_UseAbsolute);
+            Scaler.SetLinearMode(_GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, _GraphDescription->_Gamma, _GraphDescription->_UseAbsolute);
             break;
     }
 
@@ -484,11 +484,11 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
     const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
     uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
-    uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;      // Mask containing the channels selected by the user.
+    uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;      // Mask containing the channels selected by the user.
 
-    const size_t SelectedChannelCount = (size_t) std::popcount(ChunkChannels & _GraphSettings->_SelectedChannels);
+    const size_t SelectedChannelCount = (size_t) std::popcount(ChunkChannels & _GraphDescription->_SelectedChannels);
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
-    const FLOAT ChannelMax = ChannelHeight * (_GraphSettings->HasYAxis() ? 1.0f : 0.5f);
+    const FLOAT ChannelMax = ChannelHeight * (_GraphDescription->HasYAxis() ? 1.0f : 0.5f);
 
     HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
 
@@ -550,12 +550,12 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
 /// </summary>
 HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
 {
-    const size_t SelectedChannelCount = (size_t) std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphSettings->_SelectedChannels);
+    const size_t SelectedChannelCount = (size_t) std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphDescription->_SelectedChannels);
     const FLOAT ChannelHeight = _Size.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
     const FLOAT YAxisWidth = _YAxisTextStyle->_Width;
 
-    const FLOAT x1 = 0.f         + ((_GraphSettings->HasYAxis() && _GraphSettings->_YAxisLeft)  ? YAxisWidth : 0.f);
-    const FLOAT x2 = _Size.width - ((_GraphSettings->HasYAxis() && _GraphSettings->_YAxisRight) ? YAxisWidth : 0.f);
+    const FLOAT x1 = 0.f         + ((_GraphDescription->HasYAxis() && _GraphDescription->_YAxisLeft)  ? YAxisWidth : 0.f);
+    const FLOAT x2 = _Size.width - ((_GraphDescription->HasYAxis() && _GraphDescription->_YAxisRight) ? YAxisWidth : 0.f);
 
     // Create a command list that will store the grid pattern and the axes.
     HRESULT hr = _DeviceContext->CreateCommandList(&_AxesCommandList);
@@ -568,7 +568,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
         // Y-axis
-        if (_GraphSettings->HasYAxis())
+        if (_GraphDescription->HasYAxis())
         {
             _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -580,17 +580,17 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
 
             for (uint32_t i = 0; i < SelectedChannelCount; ++i)
             {
-                if (_GraphSettings->_YAxisLeft)
+                if (_GraphDescription->_YAxisLeft)
                     _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
 
-                if (_GraphSettings->_YAxisRight)
+                if (_GraphDescription->_YAxisRight)
                     _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle->_Brush, _YAxisLineStyle->_Thickness, nullptr);
 
                 if (_YAxisTextStyle->IsEnabled())
                 {
                     for (const label_t & Label : _Labels)
                     {
-                        const FLOAT y = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
+                        const FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                         if (_HorizontalGridLineStyle->IsEnabled())
                             _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle->_Brush, _HorizontalGridLineStyle->_Thickness, _AxisStrokeStyle);
@@ -598,7 +598,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
                         TextRect.top    = Label.IsMin ? y - _YAxisTextStyle->_Height : (Label.IsMax ? y : y - (_YAxisTextStyle->_Height / 2.f));
                         TextRect.bottom = TextRect.top + _YAxisTextStyle->_Height;
 
-                        if (_GraphSettings->_YAxisLeft)
+                        if (_GraphDescription->_YAxisLeft)
                         {
                             TextRect.left  = 0.f;
                             TextRect.right = YAxisWidth - 2.f;
@@ -606,7 +606,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
                             _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                         }
 
-                        if (_GraphSettings->_YAxisRight)
+                        if (_GraphDescription->_YAxisRight)
                         {
                             TextRect.left  = x2 + 2.f;
                             TextRect.right = _Size.width - 1.f;
@@ -622,12 +622,12 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
         }
 
         // X-axis
-        if (_GraphSettings->HasXAxis())
+        if (_GraphDescription->HasXAxis())
         {
             _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
             _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-            FLOAT y = ChannelHeight * (_GraphSettings->HasYAxis() ? 1.0f : 0.5f);
+            FLOAT y = ChannelHeight * (_GraphDescription->HasYAxis() ? 1.0f : 0.5f);
 
             D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
 

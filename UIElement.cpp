@@ -585,13 +585,13 @@ void uielement_t::UpdateState(Settings settings) noexcept
 
             _Grid.Initialize(_RenderThread._GridRowCount, _RenderThread._GridColumnCount);
 
-            for (const auto & Iter : _RenderThread._GraphSettings)
+            for (const auto & GraphDescription : _RenderThread._GraphDescriptions)
             {
-                auto * g = new graph_t();
+                auto * Graph = new graph_t();
 
-                g->Initialize(&_RenderThread, &Iter, nullptr);
+                Graph->Initialize(&_RenderThread, &GraphDescription, nullptr);
 
-                _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+                _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
             }
         }
     }

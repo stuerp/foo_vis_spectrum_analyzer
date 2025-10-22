@@ -143,6 +143,8 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->BeginDraw();
 
+    _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+
     for (auto & Iter : _Grid)
         Iter._Graph->Render(_DeviceContext, _Artwork);
 
@@ -164,7 +166,7 @@ void uielement_t::Render() noexcept
 }
 
 /// <summary>
-/// Updates the values of all the graphs.
+/// Processes an audio chunk.
 /// </summary>
 void uielement_t::Process() noexcept
 {
@@ -420,10 +422,10 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         if (SUCCEEDED(hr))
         {
             for (auto & Iter : _Grid)
-                Iter._Graph->DeleteDeviceSpecificResources();
+                Iter._Graph->Release();
         }
         else
-            hr = S_OK; // No WIC bitmap loadded because there is no artwork.
+            hr = S_OK; // No WIC bitmap created because there is no artwork.
     }
 
     // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
@@ -441,10 +443,11 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+
     _RenderThread._StyleManager.DeleteDeviceSpecificResources();
 
     for (auto & Iter : _Grid)
-        Iter._Graph->DeleteDeviceSpecificResources();
+        Iter._Graph->Release();
 
     _Artwork.DeleteDeviceSpecificResources();
 

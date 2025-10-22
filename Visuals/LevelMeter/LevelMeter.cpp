@@ -17,7 +17,7 @@
 /// </summary>
 level_meter_t::level_meter_t()
 {
-    _Bounds = { };
+    _Rect = { };
     _Size = { };
 
     _LeftRightStyle =
@@ -38,10 +38,10 @@ level_meter_t::~level_meter_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void level_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -52,7 +52,7 @@ void level_meter_t::Initialize(state_t * state, const graph_settings_t * setting
 /// </summary>
 void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>

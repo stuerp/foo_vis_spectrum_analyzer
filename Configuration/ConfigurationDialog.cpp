@@ -41,19 +41,19 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
     _hParent = dp->_hWnd;
     _State = dp->_State;
 
-    if (IsRectEmpty(&_State->_DialogBounds))
+    if (IsRectEmpty(&_State->_DialogRect))
     {
-        _State->_DialogBounds.right  = W_A00;
-        _State->_DialogBounds.bottom = H_A00;
+        _State->_DialogRect.right  = W_A00;
+        _State->_DialogRect.bottom = H_A00;
 
-        ::MapDialogRect(m_hWnd, &_State->_DialogBounds);
+        ::MapDialogRect(m_hWnd, &_State->_DialogRect);
     }
 
     _OldState = *_State;
 
     Initialize();
 
-    MoveWindow(&_State->_DialogBounds);
+    MoveWindow(&_State->_DialogRect);
 
     _DarkMode.AddDialogWithControls(*this);
 
@@ -924,7 +924,7 @@ void ConfigurationDialog::Initialize()
     {
         _SelectedGraph = 0;
 
-        auto & gs = _State->_GraphSettings[_SelectedGraph];
+        auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
         {
             SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
@@ -1472,7 +1472,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_HORIZONTAL_ALIGNMENT:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
@@ -1486,7 +1486,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_X_AXIS_MODE:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._XAxisMode = (XAxisMode) SelectedIndex;
 
@@ -1500,7 +1500,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_Y_AXIS_MODE:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._YAxisMode = (YAxisMode) SelectedIndex;
 
@@ -1522,7 +1522,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             for (int Item : Items)
                 Channels |= 1 << Item;
 
-            _State->_GraphSettings[_SelectedGraph]._SelectedChannels = Channels;
+            _State->_GraphDescriptions[_SelectedGraph]._SelectedChannels = Channels;
             break;
         }
 
@@ -1855,7 +1855,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_GRAPH_DESCRIPTION:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._Description = Text;
             break;
@@ -1867,7 +1867,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
             break;
@@ -1875,7 +1875,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeHi = std::clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
             break;
@@ -1883,7 +1883,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
             break;
@@ -1891,7 +1891,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
@@ -2186,28 +2186,28 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Y axis
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeLo, 0, 1);
             break;
         }
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeHi, 0, 1);
             break;
         }
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             SetDouble(id, gs._AmplitudeStep, 0, 1);
             break;
         }
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             SetDouble(id, gs._Gamma, 0, 1);
             break;
@@ -2406,7 +2406,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_FLIP_HORIZONTALLY:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2414,7 +2414,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_FLIP_VERTICALLY:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2422,15 +2422,15 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_ADD_GRAPH:
         {
-            graph_settings_t NewGraphSettings = _State->_GraphSettings[_SelectedGraph];
+            graph_description_t NewGraphDescription = _State->_GraphDescriptions[_SelectedGraph];
 
-            int Index = (int) _State->_GraphSettings.size();
+            int Index = (int) _State->_GraphDescriptions.size();
 
             WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
 
-            NewGraphSettings._Description = Description;
+            NewGraphDescription._Description = Description;
 
-            _State->_GraphSettings.insert(_State->_GraphSettings.begin() + (int) Index, NewGraphSettings);
+            _State->_GraphDescriptions.insert(_State->_GraphDescriptions.begin() + (int) Index, NewGraphDescription);
 
             _IsInitializing = true;
 
@@ -2445,9 +2445,9 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_REMOVE_GRAPH:
         {
-            _State->_GraphSettings.erase(_State->_GraphSettings.begin() + (int) _SelectedGraph);
+            _State->_GraphDescriptions.erase(_State->_GraphDescriptions.begin() + (int) _SelectedGraph);
 
-            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphSettings.size() - 1);
+            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphDescriptions.size() - 1);
 
             UpdateGraphsPage();
             break;
@@ -2455,7 +2455,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_X_AXIS_TOP:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2463,7 +2463,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_X_AXIS_BOTTOM:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2471,7 +2471,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_Y_AXIS_LEFT:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2479,7 +2479,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_Y_AXIS_RIGHT:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2487,7 +2487,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_USE_ABSOLUTE:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
@@ -2810,7 +2810,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             if (id == IDCANCEL)
                 *_State = _OldState;
 
-            GetWindowRect(&_State->_DialogBounds);
+            GetWindowRect(&_State->_DialogRect);
 
             Terminate();
 
@@ -2953,7 +2953,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_LO_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gs._AmplitudeHi, 10.);
             SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
@@ -2962,7 +2962,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeHi = ClampNewSpinPosition(nmud, gs._AmplitudeLo, MaxAmplitude, 10.);
             SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
@@ -2971,7 +2971,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
-            auto & gs = _State->_GraphSettings[_SelectedGraph];
+            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
             SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
@@ -3517,7 +3517,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
         w.ResetContent();
 
-        for (const auto & Iter : _State->_GraphSettings)
+        for (const auto & Iter : _State->_GraphDescriptions)
             w.AddString(Iter._Description.c_str());
 
         w.SetCurSel((int) _SelectedGraph);
@@ -3525,24 +3525,24 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     if (_State->_VerticalLayout)
     {
-        _State->_GridRowCount    = (size_t) _State->_GraphSettings.size();
+        _State->_GridRowCount    = (size_t) _State->_GraphDescriptions.size();
         _State->_GridColumnCount = (size_t) 1;
     }
     else
     {
         _State->_GridRowCount    = (size_t) 1;
-        _State->_GridColumnCount = (size_t) _State->_GraphSettings.size();
+        _State->_GridColumnCount = (size_t) _State->_GraphDescriptions.size();
     }
 
-    for (auto & gs : _State->_GraphSettings)
+    for (auto & gs : _State->_GraphDescriptions)
     {
         gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
         gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
     }
 
-    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphSettings.size() > 1);
+    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
 
-    const auto & gs = _State->_GraphSettings[(size_t) _SelectedGraph];
+    const auto & gs = _State->_GraphDescriptions[(size_t) _SelectedGraph];
 
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
 
@@ -4046,10 +4046,10 @@ void ConfigurationDialog::InitializeXAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphSettings[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphSettings[_SelectedGraph]._XAxisMode, 0, 1);
+        _State->_GraphDescriptions[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphSettings[_SelectedGraph]._XAxisMode);
+    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode);
 }
 
 /// <summary>
@@ -4071,10 +4071,10 @@ void ConfigurationDialog::InitializeYAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphSettings[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphSettings[_SelectedGraph]._YAxisMode, 0, 1);
+        _State->_GraphDescriptions[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphSettings[_SelectedGraph]._YAxisMode);
+    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode);
 }
 
 /// <summary>

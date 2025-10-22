@@ -50,7 +50,7 @@ private:
     /// </summary>
     void OnClose()
     {
-        GetWindowRect(&_State->_DialogBounds);
+        GetWindowRect(&_State->_DialogRect);
 
         Terminate();
 

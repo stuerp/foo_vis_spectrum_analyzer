@@ -1,5 +1,5 @@
 
-/** $VER: GraphSettings.h (2025.10.19) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphDescription.h (2025.10.19) P. Stuer - Describes the layout and setting of a graph. **/
 
 #pragma once
 
@@ -18,15 +18,15 @@
 /// Represents the settings of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-struct graph_settings_t
+struct graph_description_t
 {
 public:
-    graph_settings_t()
+    graph_description_t()
     {
         Initialize();
     }
 
-    graph_settings_t(const std::wstring & description)
+    graph_description_t(const std::wstring & description)
     {
         _Description = description;
 

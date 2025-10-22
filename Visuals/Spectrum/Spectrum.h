@@ -40,17 +40,18 @@ public:
 
     virtual ~spectrum_t();
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
-    void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext) noexcept;
-    void Reset() noexcept { }
+    // element_t
+    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
+    void Move(const D2D1_RECT_F & rect) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
+    void Reset() noexcept override final { }
 
+private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    const D2D1_RECT_F & GetClientBounds() const noexcept { return _ClientBounds; }
+    const D2D1_RECT_F & GetClientRect() const noexcept { return _ClientRect; }
 
-private:
     void Resize() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
@@ -90,7 +91,7 @@ private:
     const FLOAT PaddingX = 1.f;
     const FLOAT PaddingY = 1.f;
 
-    D2D1_RECT_F _ClientBounds;
+    D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
 
     x_axis_t _XAxis;

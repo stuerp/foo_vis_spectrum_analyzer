@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2025.09.23) P. Stuer  **/
+/** $VER: Artwork.h (2025.10.22) P. Stuer  **/
 
 #pragma once
 
@@ -33,22 +33,25 @@ public:
         DeleteWICResources();
     }
 
-    HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
-    HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
-    HRESULT DeleteWICResources() noexcept;
-
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void DeleteDeviceSpecificResources() noexcept;
-
-    HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
-
     D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
 
-    void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds, const state_t * state) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
     bool IsRealized() const noexcept { return _Status == Realized; }
+
+    HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
+
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
+
+    HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
+    HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
+    HRESULT DeleteWICResources() noexcept;
+
+private:
+    void AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rect) const noexcept;
 
 private:
     enum Status
@@ -57,7 +60,6 @@ private:
 
         Initialized,    // A new artwork source has been set.
         Realized,       // A new bitmap has been generated or the configuration parameters have changed.
-        GotColors,      // We've gotten the colors from the artwork.
     };
 
     void SetStatus(Status status) noexcept

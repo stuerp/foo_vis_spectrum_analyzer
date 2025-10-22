@@ -1,9 +1,9 @@
 
-/** $VER: GraphSettings.cpp (2024.03.09) P. Stuer **/
+/** $VER: GraphDescription.cpp (2024.03.09) P. Stuer - Describes the layout and setting of a graph. **/
 
 #include "pch.h"
-#include "GraphSettings.h"
 
+#include "GraphDescription.h"
 #include "Support.h"
 
 #pragma hdrstop
@@ -11,7 +11,7 @@
 /// <summary>
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
 /// </summary>
-double graph_settings_t::ScaleAmplitude(double value) const
+double graph_description_t::ScaleAmplitude(double value) const
 {
     switch (_YAxisMode)
     {

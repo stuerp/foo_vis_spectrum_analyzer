@@ -11,21 +11,21 @@
 /// <summary>
 /// Sets the coordinate transform of the element.
 /// </summary>
-void element_t::SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds) const noexcept
+void element_t::SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept
 {
     D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
-    if (_GraphSettings->_FlipHorizontally)
-        Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, bounds.right - bounds.left, 0.f);
+    if (_GraphDescription->_FlipHorizontally)
+        Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, rect.right - rect.left, 0.f);
 
-    if (!_GraphSettings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
+    if (!_GraphDescription->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
     {
-        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, bounds.bottom - bounds.top);
+        const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, rect.bottom - rect.top);
 
         Transform = Transform * FlipV;
     }
 
-    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(bounds.left, bounds.top);
+    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(rect.left, rect.top);
 
     deviceContext->SetTransform(Transform * Translate);
 }

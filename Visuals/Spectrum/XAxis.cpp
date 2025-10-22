@@ -14,10 +14,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     _Labels.clear();
@@ -147,7 +147,7 @@ void x_axis_t::Initialize(state_t * state, const graph_settings_t * settings, co
 /// </summary>
 void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -161,19 +161,19 @@ void x_axis_t::Resize() noexcept
     FLOAT t = _Size.width / (FLOAT) _BandCount;
 
     // Use the full width of the graph?
-    if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = ::floor(t);
 
     // Calculate the position of the labels.
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _BandCount : _Size.width;
-    const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, _Size.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _Size.width - SpectrumWidth);
 
-    const FLOAT x1 = !_GraphSettings->_FlipHorizontally ? _Bounds.left  + HOffset : _Bounds.right - HOffset;
-    const FLOAT x2 = !_GraphSettings->_FlipHorizontally ? _Bounds.right - HOffset : _Bounds.left  + HOffset;
+    const FLOAT x1 = !_GraphDescription->_FlipHorizontally ? _Rect.left  + HOffset : _Rect.right - HOffset;
+    const FLOAT x2 = !_GraphDescription->_FlipHorizontally ? _Rect.right - HOffset : _Rect.left  + HOffset;
 
-    const FLOAT yt = _Bounds.top    + (_GraphSettings->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
-    const FLOAT yb = _Bounds.bottom - (_GraphSettings->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
+    const FLOAT yt = _Rect.top    + (_GraphDescription->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
+    const FLOAT yb = _Rect.bottom - (_GraphDescription->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
 
     const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
@@ -183,7 +183,7 @@ void x_axis_t::Resize() noexcept
     {
         const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
-        const FLOAT x = !_GraphSettings->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
+        const FLOAT x = !_GraphDescription->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 
         Iter.PointT = D2D1_POINT_2F(x, yt);
         Iter.PointB = D2D1_POINT_2F(x, yb);
@@ -199,10 +199,10 @@ void x_axis_t::Resize() noexcept
 
                 TextLayout->GetMetrics(&TextMetrics);
 
-                Iter.RectT = { x - (TextMetrics.width / 2.f), _Bounds.top, x + (TextMetrics.width / 2.f), yt };
+                Iter.RectT = { x - (TextMetrics.width / 2.f), _Rect.top, x + (TextMetrics.width / 2.f), yt };
 
                 // Make sure the label is completely visible.
-                if (!_GraphSettings->_FlipHorizontally)
+                if (!_GraphDescription->_FlipHorizontally)
                 {
                     if (Iter.RectT.left < x1)
                     {
@@ -231,17 +231,17 @@ void x_axis_t::Resize() noexcept
                     }
                 }
 
-                Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Bounds.bottom };
+                Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Rect.bottom };
             }
         }
 
-        // Labels outside the bounds are always hidden.
-        Iter.IsHidden = !msc::InRange(x, _Bounds.left, _Bounds.right);
+        // Labels outside the client rectangle are always hidden.
+        Iter.IsHidden = !msc::InRange(x, _Rect.left, _Rect.right);
     }
 
     if (_Labels.size() > 2)
     {
-        const bool NotesMode = (_GraphSettings->_XAxisMode == XAxisMode::Notes);
+        const bool NotesMode = (_GraphDescription->_XAxisMode == XAxisMode::Notes);
 
         const label_t * LastLabel = nullptr;
 
@@ -284,14 +284,14 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         // Draw the text.
-        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphSettings->_XAxisMode != XAxisMode::None))
+        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphDescription->_XAxisMode != XAxisMode::None))
         {
-            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphSettings->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
+            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphDescription->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
-            if (_GraphSettings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
                 deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_GraphSettings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
                 deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }

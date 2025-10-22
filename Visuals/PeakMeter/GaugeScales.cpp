@@ -10,22 +10,22 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void gauge_scales_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
 
     _Labels.clear();
 
-    if (_GraphSettings->_YAxisMode == YAxisMode::None)
+    if (_GraphDescription->_YAxisMode == YAxisMode::None)
         return;
 
     // Create the labels.
     {
-        for (double Amplitude = _GraphSettings->_AmplitudeLo; Amplitude <= _GraphSettings->_AmplitudeHi; Amplitude -= _GraphSettings->_AmplitudeStep)
+        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= _GraphDescription->_AmplitudeHi; Amplitude -= _GraphDescription->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -43,7 +43,7 @@ void gauge_scales_t::Initialize(state_t * state, const graph_settings_t * settin
 /// </summary>
 void gauge_scales_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -69,17 +69,17 @@ void gauge_scales_t::Resize() noexcept
         // Calculate the position of the labels based on the width.
         D2D1_RECT_F OldRect = {  };
 
-        const FLOAT xMin = !_GraphSettings->_FlipHorizontally ? 0.f : GetWidth();
-        const FLOAT xMax = !_GraphSettings->_FlipHorizontally ? GetWidth() : 0.f;
+        const FLOAT xMin = !_GraphDescription->_FlipHorizontally ? 0.f : GetWidth();
+        const FLOAT xMax = !_GraphDescription->_FlipHorizontally ? GetWidth() : 0.f;
 
-        const FLOAT y1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Height : 0.f;
-        const FLOAT y2 = _GraphSettings->_YAxisRight ? GetHeight() - _TextStyle->_Height : GetHeight();
+        const FLOAT y1 = _GraphDescription->_YAxisLeft  ? _TextStyle->_Height : 0.f;
+        const FLOAT y2 = _GraphDescription->_YAxisRight ? GetHeight() - _TextStyle->_Height : GetHeight();
 
         for (Label & Iter : _Labels)
         {
-            FLOAT x = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
+            FLOAT x = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
 
-            // Don't generate any labels outside the bounds.
+            // Don't generate any labels outside the client rectangle.
             if (!msc::InRange(x, 0.f, GetWidth()))
             {
                 Iter.IsHidden = true;
@@ -93,30 +93,30 @@ void gauge_scales_t::Resize() noexcept
 
             Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
 
-            if (!_GraphSettings->_XAxisBottom)
+            if (!_GraphDescription->_XAxisBottom)
             {
-                if (!_GraphSettings->_FlipHorizontally && (x <= 0.f))
+                if (!_GraphDescription->_FlipHorizontally && (x <= 0.f))
                 {
                     x = 0.f;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
+                if (_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
                     x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
                 }
             }
 
-            if (!_GraphSettings->_XAxisTop)
+            if (!_GraphDescription->_XAxisTop)
             {
-                if (_GraphSettings->_FlipHorizontally && (x <= 0.f))
+                if (_GraphDescription->_FlipHorizontally && (x <= 0.f))
                 {
                     x = 0.f;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
                 }
                 else
-                if (!_GraphSettings->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
+                if (!_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
                 {
                     x = GetWidth() - _TextStyle->_Width;
                     Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
@@ -140,17 +140,17 @@ void gauge_scales_t::Resize() noexcept
         // Calculate the position of the labels based on the height.
         D2D1_RECT_F OldRect = {  };
 
-        const FLOAT x1 = _GraphSettings->_YAxisLeft  ? _TextStyle->_Width : 0.f;
-        const FLOAT x2 = _GraphSettings->_YAxisRight ? GetWidth() - _TextStyle->_Width : GetWidth();
+        const FLOAT x1 = _GraphDescription->_YAxisLeft  ? _TextStyle->_Width : 0.f;
+        const FLOAT x2 = _GraphDescription->_YAxisRight ? GetWidth() - _TextStyle->_Width : GetWidth();
 
-        const FLOAT yMin = !_GraphSettings->_FlipVertically ? GetHeight() : 0.f;
-        const FLOAT yMax = !_GraphSettings->_FlipVertically ? 0.f : GetHeight();
+        const FLOAT yMin = !_GraphDescription->_FlipVertically ? GetHeight() : 0.f;
+        const FLOAT yMax = !_GraphDescription->_FlipVertically ? 0.f : GetHeight();
 
         for (Label & Iter : _Labels)
         {
-            FLOAT y = msc::Map(_GraphSettings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
+            FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., yMin, yMax);
 
-            // Don't generate any labels outside the bounds.
+            // Don't generate any labels outside the client rectangle.
             if (!msc::InRange(y, 0.f, GetHeight()))
             {
                 Iter.IsHidden = true;
@@ -164,30 +164,30 @@ void gauge_scales_t::Resize() noexcept
 
             Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_CENTER;
 
-            if (!_GraphSettings->_XAxisBottom)
+            if (!_GraphDescription->_XAxisBottom)
             {
-                if (_GraphSettings->_FlipVertically && (y <= 0.f))
+                if (_GraphDescription->_FlipVertically && (y <= 0.f))
                 {
                     y = 0.f;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (!_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
+                if (!_GraphDescription->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
                     y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
                 }
             }
 
-            if (!_GraphSettings->_XAxisTop)
+            if (!_GraphDescription->_XAxisTop)
             {
-                if (!_GraphSettings->_FlipVertically && (y <= 0.f))
+                if (!_GraphDescription->_FlipVertically && (y <= 0.f))
                 {
                     y = 0.f;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_NEAR;
                 }
                 else
-                if (_GraphSettings->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
+                if (_GraphDescription->_FlipVertically && ((y + _TextStyle->_Height) > GetHeight()))
                 {
                     y = GetHeight() - _TextStyle->_Height;
                     Iter._VAlignment = DWRITE_PARAGRAPH_ALIGNMENT_FAR;
@@ -218,7 +218,7 @@ void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    if ((_GraphSettings->_YAxisMode == YAxisMode::None) || (!_GraphSettings->_YAxisLeft && !_GraphSettings->_YAxisRight))
+    if ((_GraphDescription->_YAxisMode == YAxisMode::None) || (!_GraphDescription->_YAxisLeft && !_GraphDescription->_YAxisRight))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
@@ -236,10 +236,10 @@ void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _TextStyle->SetHorizontalAlignment(Iter._HAlignment);
 
-                if (_GraphSettings->_YAxisLeft)
+                if (_GraphDescription->_YAxisLeft)
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     
-                if (_GraphSettings->_YAxisRight)
+                if (_GraphDescription->_YAxisRight)
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
@@ -257,10 +257,10 @@ void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _TextStyle->SetVerticalAlignment(Iter._VAlignment);
 
-                if (_GraphSettings->_YAxisLeft)
+                if (_GraphDescription->_YAxisLeft)
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                if (_GraphSettings->_YAxisRight)
+                if (_GraphDescription->_YAxisRight)
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }

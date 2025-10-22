@@ -121,11 +121,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.9.0.0-alpha4, 2025-10-xx
 
+- New: Support for semi and fully transparent Background styles.
 - Improved; Overall LED rendering fidelity and performance.
 - Improved: Spectrum curve stopped at the Nyquist frequency.
 - Improved: Small changes in the main processing loop to support delta-timing.
 - Fixed: CQT transform did not handle audio with more than 1 channel correctly.
-- Fixed: High DPI support for device contexts.
+- Fixed: High DPI support for device contexts. (Regression)
  
 You can read the full history [here](docs/History.md).
 

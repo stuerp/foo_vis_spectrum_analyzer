@@ -72,12 +72,14 @@ public:
 
     virtual ~analysis_t() { Reset(); };
 
-    void Initialize(const state_t * state, const graph_settings_t * settings) noexcept;
+    void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void UpdatePeakValues(bool isStopped) noexcept;
 
     void Reset() noexcept;
+    void ResetPeakValues() noexcept;
     void ResetRMSDependentValues() noexcept;
+
+    void UpdatePeakValues(bool isStopped) noexcept;
 
 private:
     // Spectrum
@@ -105,7 +107,7 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(msc::Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
@@ -133,7 +135,7 @@ private:
 
 public:
     const state_t * _State;
-    const graph_settings_t * _GraphSettings;
+    const graph_description_t * _GraphDescription;
 
     audio_chunk_impl _Chunk;
 
