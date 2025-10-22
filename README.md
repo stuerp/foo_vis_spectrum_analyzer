@@ -119,7 +119,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.0.0-alpha4, 2025-10-xx
+v0.9.0.0-beta1, 2025-10-22
 
 - New: Support for semi and fully transparent Background styles.
 - Improved; Overall LED rendering fidelity and performance.
