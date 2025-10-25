@@ -121,7 +121,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.9.0.0-beta2, 2025-11-xx
 
-- 
+- Fixed: Peak Meter measured only the channels selected by the selected channel pair. (Regression)
  
 You can read the full history [here](docs/History.md).
 
