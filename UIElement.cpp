@@ -159,7 +159,6 @@ LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
     return 1; // Prevent GDI from erasing the background. Required for transparency.
 }
 
-
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
@@ -646,7 +645,27 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
         else
             GetArtworkFromScript(track, fb2k::noAbort);
     }
+/*
+static COLORREF _TheColor = 0x808080 + ((rand() * 0x7F7F7F) % RAND_MAX);
 
+RECT cr;
+
+GetClientRect(&cr);
+
+HDC hDC = ::GetDC(GetParent());
+
+HBRUSH hBrush = ::CreateSolidBrush(_TheColor);
+
+::FillRect(hDC, &cr, hBrush);
+
+WCHAR Text[32];
+::swprintf(Text, _countof(Text), L"Color: %06X", _TheColor);
+::DrawTextW(hDC, Text, ::wcslen(Text), &cr, DT_EDITCONTROL);
+
+::DeleteObject((HGDIOBJ) hBrush);
+
+::ReleaseDC(GetParent(), hDC);
+*/
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackStartedNewTrack);
 }
