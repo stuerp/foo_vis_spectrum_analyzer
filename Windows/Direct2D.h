@@ -32,9 +32,9 @@ public:
 
     HRESULT CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, _Out_ ID2D1Bitmap ** bitmap) const noexcept;
 
-    HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept;
-    HRESULT CreateGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
-    HRESULT CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, _Out_ ID2D1RadialGradientBrush ** gradientBrush) const noexcept;
+    HRESULT CreateGradientStops(_In_ const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept;
+    HRESULT CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_SIZE_F & size, _In_ bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept;
+    HRESULT CreateRadialGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_POINT_2F & center, _In_ const D2D1_POINT_2F & offset, _In_ FLOAT rx, _In_ FLOAT ry, _In_ FLOAT rOffset, _Out_ ID2D1RadialGradientBrush ** gradientBrush) const noexcept;
 
 private:
     static HRESULT GetResource(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ void ** resourceData, _Out_ DWORD * resourceSize);

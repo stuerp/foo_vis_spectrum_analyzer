@@ -220,6 +220,7 @@
     <ClInclude Include="Analyzers\AmplitudeScaler.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
+    <ClInclude Include="Visuals\Oscilloscope\OscilloscopeBase.h" />
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeXY.h" />
     <ClInclude Include="Visuals\PeakMeter\GaugeNames.h" />
     <ClInclude Include="Visuals\PeakMeter\Gauges.h" />
@@ -231,6 +232,7 @@
     <ClInclude Include="Visuals\Spectogram\Spectogram.h" />
     <ClInclude Include="Visuals\Tester\Tester.h" />
     <ClInclude Include="Windows\Chrono.h" />
+    <ClInclude Include="Windows\Direct3D.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
@@ -315,6 +317,7 @@
     <ClCompile Include="Configuration\PresetManager.cpp" />
     <ClCompile Include="Visuals\LevelMeter\LevelMeter.cpp" />
     <ClCompile Include="Visuals\Oscilloscope\Oscilloscope.cpp" />
+    <ClCompile Include="Visuals\Oscilloscope\OscilloscopeBase.cpp" />
     <ClCompile Include="Visuals\Oscilloscope\OscilloscopeXY.cpp" />
     <ClCompile Include="Visuals\PeakMeter\GaugeNames.cpp" />
     <ClCompile Include="Visuals\PeakMeter\Gauges.cpp" />
@@ -328,6 +331,7 @@
     <ClCompile Include="Visuals\Tester\Tester.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
+    <ClCompile Include="Windows\Direct3D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />

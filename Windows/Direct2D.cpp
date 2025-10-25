@@ -9,11 +9,6 @@
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
 
-#ifndef THIS_HINSTANCE
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
-#endif
-
 #pragma hdrstop
 
 /// <summary>
@@ -245,7 +240,7 @@ HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resource
 /// <summary>
 /// Creates a gradient stops vector from a color vector.
 /// </summary>
-HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept
+HRESULT Direct2D::CreateGradientStops(_In_ const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept
 {
     gradientStops.clear();
 
@@ -263,7 +258,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_SIZE_F & size, _In_ bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -294,7 +289,7 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const 
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_POINT_2F & center, _In_ const D2D1_POINT_2F & offset, _In_ FLOAT rx, _In_ FLOAT ry, _In_ FLOAT rOffset, _Out_ ID2D1RadialGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;

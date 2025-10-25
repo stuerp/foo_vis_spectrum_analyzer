@@ -1,13 +1,13 @@
 
-/** $VER: Oscilloscope.h (2025.10.14) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: Oscilloscope.h (2025.10.25) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #pragma once
 
 #include <pch.h>
 
-#include "Element.h"
+#include "OscilloscopeBase.h"
 
-class oscilloscope_xy_t : public element_t
+class oscilloscope_xy_t : public oscilloscope_base_t
 {
 public:
     oscilloscope_xy_t();
@@ -37,31 +37,8 @@ private:
     HRESULT CreateGridCommandList() noexcept;
 
 private:
-    CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
-    CComPtr<ID2D1StrokeStyle1> _GridStrokeStyle;
-
-    style_t * _SignalLineStyle;
-
     style_t * _XAxisTextStyle;
-    style_t * _XAxisLineStyle;
-
     style_t * _YAxisTextStyle;
-    style_t * _YAxisLineStyle;
-
-    style_t * _HorizontalGridLineStyle;
-    style_t * _VerticalGridLineStyle;
-
-#ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-#endif
-
-    CComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
-
-    CComPtr<ID2D1Bitmap1> _FrontBuffer;
-    CComPtr<ID2D1Bitmap1> _BackBuffer;
-
-    CComPtr<ID2D1Effect> _GaussBlurEffect;
-    CComPtr<ID2D1Effect> _ColorMatrixEffect;
 
     CComPtr<ID2D1CommandList> _GridCommandList;
 };
