@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2025.10.05) P. Stuer **/
+/** $VER: Analyzer.h (2025.11.02) P. Stuer **/
 
 #pragma once
 
@@ -34,7 +34,7 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelSetup(channelSetup), _WindowFunction(windowFunction)
+    analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }
@@ -47,12 +47,17 @@ public:
         audio_sample Average = 0.;
         uint32_t n = 0;
 
-        for (uint32_t i = 0; (i < _ChannelCount) && (selectedChannels != 0); ++i, ++samples, selectedChannels >>= 1)
+        for (uint32_t AvailableChannels = _ChannelConfig; (AvailableChannels != 0) && (selectedChannels != 0); AvailableChannels >>= 1, selectedChannels >>= 1)
         {
-            if (selectedChannels & 1)
+            if (AvailableChannels & 1)
             {
-                Average += *samples;
-                n++;
+                if (selectedChannels & 1)
+                {
+                    Average += *samples;
+                    n++;
+                }
+
+                ++samples;
             }
         }
 
@@ -63,7 +68,7 @@ protected:
     const state_t * _State;
     uint32_t _SampleRate;
     uint32_t _ChannelCount; // Number of channels per frame.
-    uint32_t _ChannelSetup; // Mask representing the channels present in the frame.
+    uint32_t _ChannelConfig; // Mask representing the channels present in the frame.
     const window_function_t & _WindowFunction;
 
     double _NyquistFrequency;

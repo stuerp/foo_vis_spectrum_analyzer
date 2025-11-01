@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.9.0.0, 2025-11-01
+
+- Fixed: Regression in level meter rendering of tracks with more than 2 channels.
+
 v0.9.0.0-beta1, 2025-10-22
 
 - New: Support for semi and fully transparent Background styles.
