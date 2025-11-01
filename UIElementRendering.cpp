@@ -231,7 +231,7 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 
     _RenderThread._SampleRate = chunk.get_sample_rate();
 
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME "chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
 
     #pragma warning(disable: 4061)
 

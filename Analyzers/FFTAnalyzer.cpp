@@ -80,7 +80,8 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frame
 
 /// <summary>
 /// Adds multiple samples to the analyzer buffer.
-/// It assumes that the buffer contains frames of sample data with a reading for each channel. E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
+/// It assumes that the buffer contains frames of sample data with a reading for each channel specified in the channel configuration of the chunk.
+/// E.g. for 2 channels: Left(0), Right(0), Left(1), Right(1) ... Left(n), Right(n)
 /// </summary>
 void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32_t selectedChannels) noexcept
 {
@@ -89,7 +90,7 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 
     const size_t SampleCount = frameCount * _ChannelCount;
 
-    // Merge the samples of all channels into one averaged sample.
+    // Merge the samples of all selected channels into one averaged sample.
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
         _Data[_Curr] = AverageSamples(&samples[i], selectedChannels);

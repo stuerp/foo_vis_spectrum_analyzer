@@ -119,33 +119,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.0.0, 2025-11-01
+v0.9.1.0, 2025-11-02
 
-- New: Radial Curve visualization.
-- New: Oscilloscope time-domain mode
-  - Supports X-axis with time labels.
-  - Y-axis none, dBFS and linear dBFS modes.
-  - Only the selected channels are rendered.
-  - Signal gain.
-  - Optional phosphor decay effect with Gauss sigma and color decay factor setting.
-- New: Oscilloscope X-Y mode.
-  - Supports X and Y-axis.
-  - X and Y signal gain.
-  - Optional phosphor decay effect with Gauss sigma and color decay factor setting.
-- New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.
-- New: LED Mode has an *Integral Size* setting that will render the LEDs at full instead of fractional block sizes.
-- New: The configuration dialog will only show the styles that are used by the current visualization.
-- New: Support for semi and fully transparent Background styles.
-- Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
-- Improved: Various little useability tweaks and fixes in the Configuration dialog.
-- Improved; Overall LED rendering fidelity and performance.
-- Improved: Spectrum curve stopped at the Nyquist frequency.
-- Improved: Small changes in the main processing loop to support delta-timing.
-- Changed: Upgraded rendering code from render targets to device contexts.
-- Fixed: Too few samples were taken into account during analysis (frame count vs. sample count). Thanks to TF3RDL for detecting and reporting it.
-- Fixed: Rendering bug in horizontally scrolling spectogram.
-- Fixed: Delay between playback and visualization. The backbuffer was not initialized.
-- Fixed: CQT transform did not handle audio with more than 1 channel correctly.
+- Fixed: Handling of selected channels for FFT-based visualizations.
 
 You can read the full history [here](docs/History.md).
 
@@ -183,7 +159,8 @@ You can read the full history [here](docs/History.md).
 - Home page: [https://github.com/stuerp/foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer)
 - Repository: [https://github.com/stuerp/foo_vis_spectrum_analyzer.git](https://github.com/stuerp/foo_vis_spectrum_analyzer.git)
 - Issue tracker: [https://github.com/stuerp/foo_vis_spectrum_analyzer/issues](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues)
-- Wiki: [https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Spectrum_Analyzer_(foo_vis_spectrum_analyzer)](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Spectrum_Analyzer_(foo_vis_spectrum_analyzer)).
+- Support: [https://hydrogenaudio.org/index.php/topic,125031.0.html](https://hydrogenaudio.org/index.php/topic,125031.0.html).
+
 ## License
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)
