@@ -32,13 +32,14 @@ public:
     x_axis_t(x_axis_t &&) = delete;
     x_axis_t & operator=(x_axis_t &&) = delete;
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
-    void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext) noexcept;
-    void Reset() noexcept { }
+    // element_t
+    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
+    void Move(const D2D1_RECT_F & rect) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
+    void Reset() noexcept override final { }
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextHeight() const noexcept
     {

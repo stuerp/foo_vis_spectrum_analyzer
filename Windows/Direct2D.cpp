@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2025.10.12) P. Stuer **/
+/** $VER: Direct2D.cpp (2025.10.20) P. Stuer **/
 
 #include "pch.h"
 #include "Direct2D.h"
@@ -8,11 +8,6 @@
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")
-
-#ifndef THIS_HINSTANCE
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-#define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
-#endif
 
 #pragma hdrstop
 
@@ -43,20 +38,90 @@ void Direct2D::Terminate() noexcept
     Factory.Release();
 }
 
-HRESULT Direct2D::CreateDevice(IDXGIDevice * dxgiDevice) noexcept
+/// <summary>
+/// Gets the refresh rate of the current display.
+/// </summary>
+HRESULT Direct2D::GetRefreshRate(_In_ IDXGIDevice1 * dxgiDevice, _Out_ double & refreshRate) const noexcept
 {
-    return Factory->CreateDevice(dxgiDevice, &Device);
-}
+    refreshRate = 0.;
 
-void Direct2D::ReleaseDevice() noexcept
-{
-    Device.Release();
+    if (dxgiDevice == nullptr)
+        return E_POINTER;
+
+    CComPtr<IDXGIAdapter> DXGIAdapter;
+
+    HRESULT hr = dxgiDevice->GetAdapter(&DXGIAdapter);
+
+    if (FAILED(hr))
+        return hr;
+
+    CComPtr<IDXGIOutput> DXGIOutput;
+
+    hr = DXGIAdapter->EnumOutputs(0, &DXGIOutput);  // Primary output (index 0)
+
+    if (FAILED(hr))
+        return hr;
+
+    // Get the current desktop resolution for mode matching.
+    DEVMODE DisplaySettings = { .dmSize = sizeof(DEVMODE) };
+
+    if (!::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &DisplaySettings))
+        return HRESULT_FROM_WIN32(::GetLastError());
+
+    const DXGI_MODE_DESC TargetMode =
+    {
+        .Width            = DisplaySettings.dmPelsWidth,
+        .Height           = DisplaySettings.dmPelsHeight,
+        .Format           = DXGI_FORMAT_R8G8B8A8_UNORM,  // Common format
+        .ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
+        .Scaling          = DXGI_MODE_SCALING_UNSPECIFIED
+    };
+
+    // Find the closest matching mode (includes current refresh rate).
+    DXGI_MODE_DESC MatchedMode = { };
+
+    hr = DXGIOutput->FindClosestMatchingMode(&TargetMode, &MatchedMode, nullptr);
+
+    if (SUCCEEDED(hr))
+    {
+        refreshRate = static_cast<double>(MatchedMode.RefreshRate.Numerator) / MatchedMode.RefreshRate.Denominator;
+
+        return hr;
+    }
+
+    // Fallback: Enumerate all modes and return the refresh rate of the first exact resolution match.
+
+    UINT Flags = 0;  // Use 0 for current mode matching
+    UINT ModeCount = 0;
+
+    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, nullptr);
+
+    if (FAILED(hr) || (ModeCount == 0))
+        return hr;
+
+    std::vector<DXGI_MODE_DESC> Modes(ModeCount);
+
+    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, Modes.data());
+
+    if (FAILED(hr))
+        return hr;
+
+    for (const auto & Mode : Modes)
+    {
+        if (Mode.Width == TargetMode.Width && Mode.Height == TargetMode.Height)
+        {
+            refreshRate = static_cast<double>(Mode.RefreshRate.Numerator) / Mode.RefreshRate.Denominator;
+            break;
+        }
+    }
+
+    return hr;
 }
 
 /// <summary>
 /// Loads a bitmap source from the application resources.
 /// </summary>
-HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, IWICBitmapSource ** source) const noexcept
+HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ IWICBitmapSource ** source) const noexcept
 {
     void * Data = nullptr;
     DWORD Size;
@@ -90,7 +155,7 @@ HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, I
 /// <summary>
 /// Loads a bitmap source from the specified file path.
 /// </summary>
-HRESULT Direct2D::Load(const WCHAR * uri, IWICBitmapSource ** source) const noexcept
+HRESULT Direct2D::Load(const WCHAR * uri, _Out_ IWICBitmapSource ** source) const noexcept
 {
     CComPtr <IWICBitmapDecoder> Decoder;
 
@@ -110,7 +175,7 @@ HRESULT Direct2D::Load(const WCHAR * uri, IWICBitmapSource ** source) const noex
 /// <summary>
 /// Gets a scaler that changes the width and the height of the bitmap source.
 /// </summary>
-HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT height, UINT maxWidth, UINT maxHeight, IWICBitmapScaler ** scaler) const noexcept
+HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT height, UINT maxWidth, UINT maxHeight, _Out_ IWICBitmapScaler ** scaler) const noexcept
 {
     HRESULT hr = _WIC.Factory->CreateBitmapScaler(scaler);
 
@@ -134,7 +199,7 @@ HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT heigh
 /// <summary>
 /// Gets a Direct2D bitmap from a WIC bitmap source.
 /// </summary>
-HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, ID2D1Bitmap ** bitmap) const noexcept
+HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, _Out_ ID2D1Bitmap ** bitmap) const noexcept
 {
     CComPtr<IWICFormatConverter> Converter;
 
@@ -152,7 +217,7 @@ HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * d
 /// <summary>
 /// Gets the data and size of a Win32 resource.
 /// </summary>
-HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize)
+HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ void ** resourceData, _Out_ DWORD * resourceSize)
 {
     HRSRC imageResHandle = ::FindResourceW(THIS_HINSTANCE, resourceName, resourceType);
 
@@ -175,7 +240,7 @@ HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resource
 /// <summary>
 /// Creates a gradient stops vector from a color vector.
 /// </summary>
-HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept
+HRESULT Direct2D::CreateGradientStops(_In_ const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept
 {
     gradientStops.clear();
 
@@ -193,7 +258,7 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_SIZE_F & size, _In_ bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -224,7 +289,7 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const 
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_POINT_2F & center, _In_ const D2D1_POINT_2F & offset, _In_ FLOAT rx, _In_ FLOAT ry, _In_ FLOAT rOffset, _Out_ ID2D1RadialGradientBrush ** gradientBrush) const noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
@@ -246,6 +311,6 @@ HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, 
         hr = deviceContext->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection, gradientBrush);
 
     return hr;
-}
+}_Out_ 
 
 Direct2D _Direct2D;

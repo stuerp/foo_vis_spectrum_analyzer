@@ -77,7 +77,7 @@ void CUIElement::destroy_window()
 
     _Host.release();
 }
-
+/*
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
@@ -98,9 +98,9 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 
     _IsInitializing = false;
 
-    return 1;
+    return 1; // Prevent GDI from erasing the background. Required for transparency.
 }
-
+*/
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>
@@ -118,9 +118,9 @@ void CUIElement::ToggleFullScreen() noexcept
 
             if (::GetMonitorInfoW(hMonitor, &mix))
             {
-                GetWindowRect(&_OldBounds);
+                GetWindowRect(&_OldRect);
 
-                CWindow(_hParent).ScreenToClient(&_OldBounds);
+                CWindow(_hParent).ScreenToClient(&_OldRect);
 
                 ShowWindow(SW_HIDE);
                 SetParent(::GetDesktopWindow());
@@ -148,7 +148,7 @@ void CUIElement::ToggleFullScreen() noexcept
 
         ::SetWindowLongPtrW(m_hWnd, GWL_STYLE, (Style & (LONG_PTR) ~WS_POPUP) | (LONG_PTR) WS_CHILD);
 
-        SetWindowPos(NULL, &_OldBounds, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
+        SetWindowPos(NULL, &_OldRect, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
 
         _Host->relinquish_ownership(_hParent);
 

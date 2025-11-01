@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.cpp (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectogram.cpp (2025.10.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectogram.h"
@@ -17,7 +17,7 @@
 /// </summary>
 spectogram_t::spectogram_t()
 {
-    _Bounds = { };
+    _Rect = { };
     _Size = { };
 
     Reset();
@@ -28,19 +28,19 @@ spectogram_t::spectogram_t()
 /// </summary>
 spectogram_t::~spectogram_t()
 {
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void spectogram_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     InitFreqAxis();
 }
@@ -50,7 +50,7 @@ void spectogram_t::Initialize(state_t * state, const graph_settings_t * settings
 /// </summary>
 void spectogram_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
@@ -84,38 +84,38 @@ void spectogram_t::Resize() noexcept
 
     // Resize the offscreen bitmap. Compensate for the axes.
     {
-        _BitmapBounds = _Bounds;
+        _BitmapRect = _Rect;
 
         if (_State->_HorizontalSpectogram)
         {
-            if (_GraphSettings->_XAxisTop)
-                _BitmapBounds.top += _TimeTextStyle->_Height;
+            if (_GraphDescription->_XAxisTop)
+                _BitmapRect.top += _TimeTextStyle->_Height;
 
-            if (_GraphSettings->_XAxisBottom)
-                _BitmapBounds.bottom -= _TimeTextStyle->_Height;
+            if (_GraphDescription->_XAxisBottom)
+                _BitmapRect.bottom -= _TimeTextStyle->_Height;
 
-            if (_GraphSettings->_YAxisLeft)
-                _BitmapBounds.left += _FreqTextStyle->_Width;
+            if (_GraphDescription->_YAxisLeft)
+                _BitmapRect.left += _FreqTextStyle->_Width;
 
-            if (_GraphSettings->_YAxisRight)
-                _BitmapBounds.right -= _FreqTextStyle->_Width;
+            if (_GraphDescription->_YAxisRight)
+                _BitmapRect.right -= _FreqTextStyle->_Width;
         }
         else
         {
-            if (_GraphSettings->_XAxisTop)
-                _BitmapBounds.right -= _TimeTextStyle->_Width;
+            if (_GraphDescription->_XAxisTop)
+                _BitmapRect.right -= _TimeTextStyle->_Width;
 
-            if (_GraphSettings->_XAxisBottom)
-                _BitmapBounds.left += _TimeTextStyle->_Width;
+            if (_GraphDescription->_XAxisBottom)
+                _BitmapRect.left += _TimeTextStyle->_Width;
 
-            if (_GraphSettings->_YAxisLeft)
-                _BitmapBounds.top += _FreqTextStyle->_Height;
+            if (_GraphDescription->_YAxisLeft)
+                _BitmapRect.top += _FreqTextStyle->_Height;
 
-            if (_GraphSettings->_YAxisRight)
-                _BitmapBounds.bottom -= _FreqTextStyle->_Height;
+            if (_GraphDescription->_YAxisRight)
+                _BitmapRect.bottom -= _FreqTextStyle->_Height;
         }
 
-        _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+        _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
     }
 
     const FLOAT Bandwidth = std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
@@ -127,10 +127,10 @@ void spectogram_t::Resize() noexcept
         {
             const FLOAT dx = (_BitmapSize.width - SpectrumWidth) / 2.f;
 
-            _BitmapBounds.left  += dx;
-            _BitmapBounds.right -= dx;
+            _BitmapRect.left  += dx;
+            _BitmapRect.right -= dx;
 
-            _BitmapSize = { _BitmapBounds.right - _BitmapBounds.left, _BitmapBounds.bottom - _BitmapBounds.top };
+            _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
         }
     }
 
@@ -143,13 +143,13 @@ void spectogram_t::Resize() noexcept
 
         if (_State->_HorizontalSpectogram)
         {
-            const FLOAT y1 = (_GraphSettings->_XAxisTop ? _TimeTextStyle->_Height : 0.f) - (_FreqTextStyle->_Height / 2.f);
+            const FLOAT y1 = (_GraphDescription->_XAxisTop ? _TimeTextStyle->_Height : 0.f) - (_FreqTextStyle->_Height / 2.f);
 
             for (auto & Iter : _FreqLabels)
             {
                 const FLOAT y = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
 
-                if (!_GraphSettings->_FlipVertically)
+                if (!_GraphDescription->_FlipVertically)
                 {
                     Rect.y1 = y1 + _BitmapSize.height - y;
                     Rect.y2 = Rect.y1 + _FreqTextStyle->_Height;
@@ -170,12 +170,12 @@ void spectogram_t::Resize() noexcept
                 Iter.Rect2.left  = _Size.width - _FreqTextStyle->_Width + Offset;
                 Iter.Rect2.right = _Size.width;
 
-                Iter.IsHidden = (Rect.y2 < _BitmapBounds.top) || (Rect.y1 > _BitmapBounds.bottom);
+                Iter.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
             }
 
             if (_FreqLabels.size() > 2)
             {
-                #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+                #define NotesMode (_GraphDescription->_XAxisMode == XAxisMode::Notes)
 
                 const FreqLabel * Anchor = &_FreqLabels[0];
 
@@ -220,14 +220,14 @@ void spectogram_t::Resize() noexcept
 
                         TextLayout->GetMetrics(&TextMetrics);
 
-                        if (!_GraphSettings->_FlipHorizontally)
+                        if (!_GraphDescription->_FlipHorizontally)
                         {
-                            Rect.x1 = _BitmapBounds.left + x - (TextMetrics.width / 2.f);
+                            Rect.x1 = _BitmapRect.left + x - (TextMetrics.width / 2.f);
                             Rect.x2 = Rect.x1 + TextMetrics.width;
                         }
                         else
                         {
-                            Rect.x2 = _BitmapBounds.right - x + (TextMetrics.width / 2.f);
+                            Rect.x2 = _BitmapRect.right - x + (TextMetrics.width / 2.f);
                             Rect.x1 = Rect.x2 - TextMetrics.width;
                         }
                     }
@@ -243,12 +243,12 @@ void spectogram_t::Resize() noexcept
                 Iter.Rect2.bottom = _Size.height;
                 Iter.Rect2.top    = Iter.Rect2.bottom - _FreqTextStyle->_Height;
 
-                Iter.IsHidden = (Rect.x2 < _BitmapBounds.left) || (Rect.x1 > _BitmapBounds.right);
+                Iter.IsHidden = (Rect.x2 < _BitmapRect.left) || (Rect.x1 > _BitmapRect.right);
             }
 
             if (_FreqLabels.size() > 2)
             {
-                #define NotesMode (_GraphSettings->_XAxisMode == XAxisMode::Notes)
+                #define NotesMode (_GraphDescription->_XAxisMode == XAxisMode::Notes)
 
                 const FreqLabel * Anchor = &_FreqLabels[0];
 
@@ -298,7 +298,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Draw the offscreen bitmap.
     if (_State->_HorizontalSpectogram)
     {
-        SetTransform(deviceContext, _BitmapBounds);
+        SetTransform(deviceContext, _BitmapRect);
 
         if (_State->_ScrollingSpectogram)
         {
@@ -327,36 +327,36 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         // Draw the Time axis.
         {
-            if (_GraphSettings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
 
-            if (_GraphSettings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
     
-                deviceContext->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
         }
 
         // Draw the Frequency axis.
         if (!_FreqLabels.empty())
         {
-            if (_GraphSettings->_YAxisLeft)
+            if (_GraphDescription->_YAxisLeft)
                 RenderFreqAxis(deviceContext, true);
 
-            if (_GraphSettings->_YAxisRight)
+            if (_GraphDescription->_YAxisRight)
                 RenderFreqAxis(deviceContext, false);
         }
     }
     else
     {
-        SetTransform(deviceContext, _BitmapBounds);
+        SetTransform(deviceContext, _BitmapRect);
 
         if (_State->_ScrollingSpectogram)
         {
@@ -386,32 +386,32 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         // Draw the Time axis.
         {
-            if (_GraphSettings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapBounds.left,  _BitmapBounds.top }, { _BitmapBounds.left,  _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
 
-            if (_GraphSettings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
     
-                deviceContext->DrawLine({ _BitmapBounds.right, _BitmapBounds.top }, { _BitmapBounds.right, _BitmapBounds.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
+                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle->_Brush, _FreqLineStyle->_Thickness);
             }
         }
 
         // Draw the Frequency axis.
         {
-            if (_GraphSettings->_YAxisLeft)
+            if (_GraphDescription->_YAxisLeft)
             {
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, true);
             }
 
-            if (_GraphSettings->_YAxisRight)
+            if (_GraphDescription->_YAxisRight)
             {
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, false);
@@ -419,7 +419,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 
-    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
+    if (_State->_LastPlaybackTime != _PlaybackTime) // Not paused
     {
         if (_State->_HorizontalSpectogram)
         {
@@ -446,7 +446,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
         }
 
-        _PlaybackTime = _State->_PlaybackTime;
+        _PlaybackTime = _State->_LastPlaybackTime;
     }
 }
 
@@ -464,18 +464,18 @@ void spectogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool first
 
         rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
 
-        deviceContext->PushAxisAlignedClip({ _BitmapBounds.left, y1, _BitmapBounds.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        deviceContext->PushAxisAlignedClip({ _BitmapRect.left, y1, _BitmapRect.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _TimeTextStyle->SetHorizontalAlignment(_GraphSettings->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+        _TimeTextStyle->SetHorizontalAlignment(_GraphDescription->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
 
         for (const auto & Label : _TimeLabels)
         {
-            const FLOAT x = !_GraphSettings->_FlipHorizontally ? _BitmapBounds.left + Label.X : Label.X + _TimeTextStyle->_Width;
+            const FLOAT x = !_GraphDescription->_FlipHorizontally ? _BitmapRect.left + Label.X : Label.X + _TimeTextStyle->_Width;
 
             // Draw the tick.
             deviceContext->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
-            if (!_GraphSettings->_FlipHorizontally)
+            if (!_GraphDescription->_FlipHorizontally)
             {
                 Rect.x1 = x + Offset;
                 Rect.x2 = Rect.x1 + _TimeTextStyle->_Width;
@@ -494,23 +494,23 @@ void spectogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool first
     }
     else
     {
-        const FLOAT x1 = first ? _BitmapBounds.right                         : _BitmapBounds.left - _TimeTextStyle->_Width;
-        const FLOAT x2 = first ? _BitmapBounds.right + _TimeTextStyle->_Width : _BitmapBounds.left;
+        const FLOAT x1 = first ? _BitmapRect.right                         : _BitmapRect.left - _TimeTextStyle->_Width;
+        const FLOAT x2 = first ? _BitmapRect.right + _TimeTextStyle->_Width : _BitmapRect.left;
 
         rect_t Rect = { x1, 0.f, x2, 0.f };
 
-        deviceContext->PushAxisAlignedClip({ x1, _BitmapBounds.top, x2, _BitmapBounds.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        deviceContext->PushAxisAlignedClip({ x1, _BitmapRect.top, x2, _BitmapRect.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
         _TimeTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
         for (const auto & Label : _TimeLabels)
         {
-            const FLOAT y = !_GraphSettings->_FlipVertically ? _BitmapBounds.top - _TimeTextStyle->_Height + Label.Y : _BitmapBounds.top + Label.Y;
+            const FLOAT y = !_GraphDescription->_FlipVertically ? _BitmapRect.top - _TimeTextStyle->_Height + Label.Y : _BitmapRect.top + Label.Y;
 
             // Draw the tick.
             deviceContext->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
-            if (!_GraphSettings->_FlipVertically)
+            if (!_GraphDescription->_FlipVertically)
             {
                 Rect.y2 = y;
                 Rect.y1 = Rect.y2 - _TimeTextStyle->_Height;
@@ -557,9 +557,9 @@ void spectogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left)
     }
 
     if (left)
-        deviceContext->DrawLine({ _BitmapBounds.left, _BitmapBounds.top },    { _BitmapBounds.right, _BitmapBounds.top },    _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
+        deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.top },    { _BitmapRect.right, _BitmapRect.top },    _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
     else
-        deviceContext->DrawLine({ _BitmapBounds.left, _BitmapBounds.bottom }, { _BitmapBounds.right, _BitmapBounds.bottom }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
+        deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom }, { _BitmapRect.right, _BitmapRect.bottom }, _TimeLineStyle->_Brush, _TimeLineStyle->_Thickness);
 
     _FreqTextStyle->_Brush->SetOpacity(Opacity);
 }
@@ -606,11 +606,11 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
-                if (!_GraphSettings->_FlipHorizontally)
+                if (!_GraphDescription->_FlipHorizontally)
                     Label.X--; // Move each label to the left.
                 else
                     Label.X++; // Move each label to the right.
@@ -621,13 +621,13 @@ bool spectogram_t::Update() noexcept
         {
             if (_State->_ScrollingSpectogram)
             {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphSettings->_FlipHorizontally ? _BitmapSize.width : 0.f });
+                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphDescription->_FlipHorizontally ? _BitmapSize.width : 0.f });
 
                 if (_TimeLabels.back().X + _TimeTextStyle->_Width < 0.f)
                     _TimeLabels.pop_back();
             }
             else
-                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphSettings->_FlipHorizontally ? _X : _BitmapSize.width - _X });
+                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphDescription->_FlipHorizontally ? _X : _BitmapSize.width - _X });
 
             _TrackTime = _State->_TrackTime;
         }
@@ -665,11 +665,11 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_PlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
-                if (!_GraphSettings->_FlipVertically)
+                if (!_GraphDescription->_FlipVertically)
                     Label.Y++; // Move each label down.
                 else
                     Label.Y--; // Move each label up.
@@ -680,13 +680,13 @@ bool spectogram_t::Update() noexcept
         {
             if (_State->_ScrollingSpectogram)
             {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphSettings->_FlipVertically ? _BitmapBounds.top : _BitmapSize.height });
+                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphDescription->_FlipVertically ? _BitmapRect.top : _BitmapSize.height });
 
                 if (_TimeLabels.back().Y > _BitmapSize.height + _TimeTextStyle->_Height)
                     _TimeLabels.pop_back();
             }
             else
-                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphSettings->_FlipVertically ? _BitmapSize.height - _Y : _Y });
+                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphDescription->_FlipVertically ? _BitmapSize.height - _Y : _Y });
 
             _TrackTime = _State->_TrackTime;
         }
@@ -701,8 +701,8 @@ bool spectogram_t::Update() noexcept
 /// </summary>
 void spectogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
 {
-    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Ctr, _State->_ScalingFunction, _State->_SkewFactor);
-    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Ctr, _State->_ScalingFunction, _State->_SkewFactor);
+    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State->_ScalingFunction, _State->_SkewFactor);
+    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State->_ScalingFunction, _State->_SkewFactor);
 
     const double NyquistFrequency = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), LoFrequency, HiFrequency);
 
@@ -734,14 +734,14 @@ void spectogram_t::InitFreqAxis() noexcept
 
     _BandCount = fb.size();
 
-    _LoFrequency = fb.front().Ctr;
-    _HiFrequency = fb.back().Ctr;
+    _LoFrequency = fb.front().Center;
+    _HiFrequency = fb.back().Center;
 
     // Precalculate the labels.
     {
         WCHAR Text[32] = { };
 
-        switch (_GraphSettings->_XAxisMode)
+        switch (_GraphDescription->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -752,7 +752,7 @@ void spectogram_t::InitFreqAxis() noexcept
             {
                 for (size_t i = 0; i < fb.size(); i += 10)
                 {
-                    double Frequency = fb[i].Ctr;
+                    double Frequency = fb[i].Center;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.f", Frequency);
@@ -897,7 +897,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(0.f,1.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
 #endif
 
     return hr;
@@ -906,7 +906,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void spectogram_t::ReleaseDeviceSpecificResources() noexcept
+void spectogram_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

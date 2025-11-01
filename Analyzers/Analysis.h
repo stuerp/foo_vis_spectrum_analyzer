@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.10.05) P. Stuer **/
+/** $VER: Analysis.h (2025.10.19) P. Stuer **/
 
 #pragma once
 
@@ -27,23 +27,26 @@
 /// </summary>
 struct gauge_value_t
 {
-    gauge_value_t(const WCHAR * name = L"", double peak = -std::numeric_limits<double>::infinity(), double holdTime = 5.) : Name(name), Peak(peak), RMS(), HoldTime(holdTime)
+    gauge_value_t(const WCHAR * name, double holdTime) noexcept : Name(name), HoldTime(holdTime)
     {
-        Reset();
+        RMSTotal = 0.;
 
+        Peak = -std::numeric_limits<double>::infinity();
         PeakRender = 0.;
         MaxPeakRender = 0.;
 
+        RMS = 0.;
         RMSRender = 0.;
     }
 
-    void Reset() noexcept
-    {
-        RMSTotal = 0.;
-    }
-
+    // User settings
     std::wstring Name;
 
+    double HoldTime;        // Time to hold the current max value.
+    double DecaySpeed;      // Speed at which the current max value decays.
+    double Opacity;         // 0.0 .. 1.0
+
+    // Measurements
     double RMSTotal;        // RMS value for the current RMS window.
 
     double Peak;            // in dBFS
@@ -52,10 +55,6 @@ struct gauge_value_t
 
     double RMS;             // in dBFS
     double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-
-    double HoldTime;        // Time to hold the current max value.
-    double DecaySpeed;      // Speed at which the current max value decays.
-    double Opacity;         // 0.0 .. 1.0
 };
 
 /// <summary>
@@ -64,7 +63,7 @@ struct gauge_value_t
 class analysis_t
 {
 public:
-    analysis_t() : _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() noexcept : _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     analysis_t(const analysis_t &) = delete;
     analysis_t & operator=(const analysis_t &) = delete;
@@ -73,11 +72,14 @@ public:
 
     virtual ~analysis_t() { Reset(); };
 
-    void Initialize(const state_t * state, const graph_settings_t * settings) noexcept;
+    void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void UpdatePeakValues(bool isStopped) noexcept;
 
-    void Reset();
+    void Reset() noexcept;
+    void ResetPeakValues() noexcept;
+    void ResetRMSDependentValues() noexcept;
+
+    void UpdatePeakValues(bool isStopped) noexcept;
 
 private:
     // Spectrum
@@ -105,11 +107,11 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(msc::Map(amplitude, _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
-    double NormalizeLRMS(double level) const noexcept
+    double NormalizeLLevelValue(double level) const noexcept
     {
         return msc::Map(level, -1., 1., 0., 1.);
     }
@@ -133,7 +135,7 @@ private:
 
 public:
     const state_t * _State;
-    const graph_settings_t * _GraphSettings;
+    const graph_description_t * _GraphDescription;
 
     audio_chunk_impl _Chunk;
 
@@ -159,7 +161,7 @@ public:
 
     // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
-    size_t _RMSFrameCount; // Number of samples used in the current RMS window.
+    size_t _RMSFrameCount;  // Number of frames used in the current RMS window.
 
     // Balance Meter
     double _Left;           // -1.0 .. 1.0
@@ -170,6 +172,8 @@ public:
 
     double _Balance;        // 0.0 .. 1.0, 0.5 = Center
     double _Phase;          // 0.0 .. 1.0, 0.5 = Center
+
+    static const uint32_t ChannelPairs[6];
 
 private:
     const double Amax = M_SQRT1_2;

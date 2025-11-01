@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2025.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2025.10.22) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -27,10 +27,10 @@ graph_t::~graph_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t *) noexcept
+void graph_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t *) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
 
     _Description = settings->_Description;
 
@@ -65,6 +65,10 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
             else
                 _Visualization = std::make_unique<oscilloscope_xy_t>();
             break;
+
+        case VisualizationType::Tester:
+            _Visualization = std::make_unique<tester_t>();
+            break;
     }
 
     _Visualization->Initialize(state, settings, &_Analysis);
@@ -75,21 +79,21 @@ void graph_t::Initialize(state_t * state, const graph_settings_t * settings, con
 /// </summary>
 void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    const D2D1_RECT_F cr =
+    const D2D1_RECT_F Rect =
     {
-        .left   = rect.left   + _GraphSettings->_LPadding,
-        .top    = rect.top    + _GraphSettings->_TPadding,
-        .right  = rect.right  - _GraphSettings->_RPadding,
-        .bottom = rect.bottom - _GraphSettings->_BPadding
+        .left   = rect.left   + _GraphDescription->_LPadding,
+        .top    = rect.top    + _GraphDescription->_TPadding,
+        .right  = rect.right  - _GraphDescription->_RPadding,
+        .bottom = rect.bottom - _GraphDescription->_BPadding
     };
 
-    SetBounds(cr);
+    SetRect(Rect);
 
-    _Visualization->Move(cr);
+    _Visualization->Move(Rect);
 }
 
 /// <summary>
-/// Process a chunk of audio data.
+/// Processes an audio chunk.
 /// </summary>
 void graph_t::Process(const audio_chunk & chunk) noexcept
 {
@@ -103,11 +107,11 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (SUCCEEDED(hr))
-    {
-        RenderBackground(deviceContext, artwork);
-        RenderForeground(deviceContext);
-    }
+    if (FAILED(hr))
+        return;
+
+    RenderBackground(deviceContext, artwork);
+    RenderForeground(deviceContext);
 }
 
 /// <summary>
@@ -115,16 +119,17 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 /// </summary>
 void graph_t::Reset() noexcept
 {
-    for (frequency_band_t & fb : _Analysis._FrequencyBands)
-        fb.CurValue = 0.;
-
-    for (gauge_value_t & gv : _Analysis._GaugeValues)
-    {
-        gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
-        gv.PeakRender = gv.RMSRender = 0.;
-    }
+    _Analysis.ResetPeakValues();
 
     _Visualization->Reset();
+}
+
+/// <summary>
+/// Releases this instance.
+/// </summary>
+void graph_t::Release() noexcept
+{
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -134,7 +139,7 @@ void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 {
     ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
 
-    ::SetRect(&ti.rect, (int) _Bounds.left, (int) _Bounds.top, (int) _Bounds.right, (int) _Bounds.bottom);
+    ::SetRect(&ti.rect, (int) _Rect.left, (int) _Rect.top, (int) _Rect.right, (int) _Rect.bottom);
 }
 
 /// <summary>
@@ -144,25 +149,25 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const rect_t & Bounds = (const rect_t &) _Visualization->GetClientBounds();
+        const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
-        FLOAT t = Bounds.Width() / (FLOAT) _Analysis._FrequencyBands.size();
+        FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
         // Allow non-integer bar widths?
-        if (_GraphSettings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : Bounds.Width();
-        const FLOAT HOffset = GetHOffset(_GraphSettings->_HorizontalAlignment, Bounds.Width() - SpectrumWidth);
+        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
+        const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
-        const FLOAT x1 = Bounds.x1 + HOffset;
+        const FLOAT x1 = cr.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
 
         if (!msc::InRange(x, x1, x2))
             return false;
 
-        if (_GraphSettings->_FlipHorizontally)
+        if (_GraphDescription->_FlipHorizontally)
             x = (x2 + x1) - x;
 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -170,24 +175,24 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
     else
     if (_State->_VisualizationType == VisualizationType::Spectogram)
     {
-        const D2D1_RECT_F & Bounds = _Visualization->GetClientBounds();
+        const D2D1_RECT_F & cr = _Visualization->GetClientRect();
 
         if (_State->_HorizontalSpectogram)
         {
-            if (!msc::InRange(y, Bounds.top, Bounds.bottom))
+            if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;
 
-            if (!_GraphSettings->_FlipVertically)
-                y = (Bounds.bottom + Bounds.top) - y;
+            if (!_GraphDescription->_FlipVertically)
+                y = (cr.bottom + cr.top) - y;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, Bounds.top, Bounds.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
         else
         {
-            if (!msc::InRange(x, Bounds.left, Bounds.right))
+            if (!msc::InRange(x, cr.left, cr.right))
                 return false;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, Bounds.left, Bounds.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
         }
     }
     else
@@ -204,7 +209,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle->IsEnabled())
-        deviceContext->FillRectangle(_Bounds, _BackgroundStyle->_Brush);
+        deviceContext->FillRectangle(_Rect, _BackgroundStyle->_Brush);
 
     if (!_State->_ShowArtworkOnBackground)
         return;
@@ -215,7 +220,7 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
     if (artwork.Bitmap() == nullptr)
         return;
 
-    artwork.Render(deviceContext, _State->_FitWindow ? _Visualization->GetBounds() : _Visualization->GetClientBounds(), _State);
+    artwork.Render(deviceContext, _State->_FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), _State);
 }
 
 /// <summary>
@@ -254,8 +259,8 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 
         D2D1_RECT_F Rect =
         {
-            .left = _Visualization->GetClientBounds().left + 10.f,
-            .top  = _Visualization->GetClientBounds().top  + 10.f,
+            .left = _Visualization->GetClientRect().left + 10.f,
+            .top  = _Visualization->GetClientRect().top  + 10.f,
         };
 
         Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
@@ -287,7 +292,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
     return hr;
 }
@@ -295,9 +300,9 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void graph_t::ReleaseDeviceSpecificResources() noexcept
+void graph_t::DeleteDeviceSpecificResources() noexcept
 {
-    _Visualization->DeleteDeviceSpecificResources();
+    _Visualization->Release();
 
     SafeRelease(&_DescriptionBackgroundStyle);
     SafeRelease(&_DescriptionTextStyle);

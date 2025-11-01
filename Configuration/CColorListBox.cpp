@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.cpp (2024.02.04) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2025.10.19) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 #include "CColorListBox.h"
@@ -35,8 +35,8 @@ void CColorListBox::Terminate()
     if (!IsWindow())
         return;
 
-    ReleaseDeviceSpecificResources();
-    ReleaseDeviceIndependentResources();
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
 
     UnsubclassWindow(TRUE);
 }
@@ -136,6 +136,8 @@ void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors)
         AddString(nullptr);
 
     InvalidateRect(NULL);
+
+    EnableWindow(colors.size() > 0);
 }
 
 /// <summary>
@@ -171,31 +173,3 @@ void CColorListBox::SendChangedNotification() const noexcept
 
     ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }
-/*
-#pragma region DirectX
-
-/// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
-/// </summary>
-HRESULT CColorListBox::CreateDeviceSpecificResources()
-{
-    HRESULT hr = __super::CreateDeviceSpecificResources();
-
-    if (SUCCEEDED(hr) && (_SolidBrush == nullptr))
-        hr = _RenderTarget->CreateSolidColorBrush(D2D1_COLOR_F(), &_SolidBrush);
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void CColorListBox::ReleaseDeviceSpecificResources()
-{
-    _SolidBrush.Release();
-
-    __super::ReleaseDeviceSpecificResources();
-}
-*/
-#pragma endregion

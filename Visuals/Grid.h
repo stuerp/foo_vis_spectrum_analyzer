@@ -43,7 +43,7 @@ public:
 
     void Resize(FLOAT width, FLOAT height)
     {
-        D2D1_RECT_F Bounds = {  };
+        D2D1_RECT_F Rect = { };
 
         for (size_t i = 0; i < _RowCount; ++i)
         {
@@ -54,15 +54,15 @@ public:
                 FLOAT w = width  * gi._HRatio;
                 FLOAT h = height * gi._VRatio;
 
-                Bounds.left    = Bounds.right;
-                Bounds.right  += w;
-                Bounds.bottom  = Bounds.top + h;
+                Rect.left    = Rect.right;
+                Rect.right  += w;
+                Rect.bottom  = Rect.top + h;
 
-                gi._Graph->Move(Bounds);
+                gi._Graph->Move(Rect);
             }
 
-            Bounds.top = Bounds.bottom;
-            Bounds.right = 0.f;
+            Rect.top = Rect.bottom;
+            Rect.right = 0.f;
         }
     }
 

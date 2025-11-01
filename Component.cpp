@@ -1,5 +1,5 @@
 
-/** $VER: Component.cpp (2025.09.20) P. Stuer **/
+/** $VER: Component.cpp (2025.10.20) P. Stuer **/
 
 #include "pch.h"
 
@@ -8,6 +8,8 @@
 #include "State.h"
 #include "Resources.h"
 #include "Log.h"
+
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -38,6 +40,11 @@ public:
         if (stage == init_stages::after_config_read)
         {
             Log.SetLevel((LogLevel) CfgLogLevel.get());
+        }
+        else
+        if (stage == init_stages::before_ui_init)
+        {
+            InitializeDpiAwareness();
         }
     }
 };

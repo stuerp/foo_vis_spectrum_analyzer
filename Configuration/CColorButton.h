@@ -66,7 +66,7 @@ private:
     #pragma region DirectX
     HRESULT CreateDeviceSpecificResources() override;
     HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-    void ReleaseDeviceSpecificResources() override;
+    void DeleteDeviceSpecificResources() override;
     #pragma endregion
 
 private:

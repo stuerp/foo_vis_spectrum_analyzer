@@ -32,7 +32,7 @@ state_t::state_t()
 /// </summary>
 void state_t::Reset() noexcept
 {
-    _DialogBounds = { };
+    _DialogRect = { };
     _PageIndex = 0;
 
     _RefreshRateLimit = 20;
@@ -187,9 +187,9 @@ void state_t::Reset() noexcept
 
     /** Graphs **/
 
-    _GraphSettings.clear();
+    _GraphDescriptions.clear();
 
-    _GraphSettings.push_back(graph_settings_t(L"Stereo"));
+    _GraphDescriptions.push_back(graph_description_t(L"Stereo"));
 
     _VerticalLayout = false;
 
@@ -271,7 +271,7 @@ void state_t::Reset() noexcept
 /// </summary>
 state_t & state_t::operator=(const state_t & other)
 {
-    _DialogBounds = other._DialogBounds;
+    _DialogRect = other._DialogRect;
     _PageIndex = other._PageIndex;
 
     _RefreshRateLimit = other._RefreshRateLimit;
@@ -454,7 +454,7 @@ state_t & state_t::operator=(const state_t & other)
 
     #pragma region Graphs
 
-    _GraphSettings = other._GraphSettings;
+    _GraphDescriptions = other._GraphDescriptions;
 
     _VerticalLayout = other._VerticalLayout;
 
@@ -562,9 +562,9 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         if (Version > 9999) // Just a version number that seems sane...
             return;
 
-        reader->read(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
+        reader->read(&_DialogRect, sizeof(_DialogRect), abortHandler);
 
-        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler); _RefreshRateLimit = std::clamp<size_t>(_RefreshRateLimit, 20, 200);
+        reader->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
 
         reader->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
@@ -774,7 +774,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         }
 
         if (Version <= 17)
-            ConvertGraphSettings();
+            ConvertGraphDescription();
 
         if (Version >= 17)
         {
@@ -788,19 +788,19 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_GridRowCount, abortHandler);
             reader->read_object_t(_GridColumnCount, abortHandler);
 
-            uint32_t GraphSettingsVersion;
+            uint32_t GraphDescriptionVersion;
 
-            reader->read_object_t(GraphSettingsVersion, abortHandler);
+            reader->read_object_t(GraphDescriptionVersion, abortHandler);
 
             reader->read_object_t(_VerticalLayout, abortHandler);
 
-            _GraphSettings.clear();
+            _GraphDescriptions.clear();
 
             reader->read_object_t(Count, abortHandler);
 
             for (size_t i = 0; i < Count; ++i)
             {
-                graph_settings_t gs;
+                graph_description_t gs;
 
                 pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
                 reader->read_object_t(gs._SelectedChannels, abortHandler);
@@ -825,7 +825,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                 reader->read_object_t(gs._HRatio, abortHandler);
                 reader->read_object_t(gs._VRatio, abortHandler);
 
-                if (GraphSettingsVersion > 1)
+                if (GraphDescriptionVersion > 1)
                 {
                     reader->read_object_t(gs._LPadding, abortHandler);
                     reader->read_object_t(gs._RPadding, abortHandler);
@@ -836,13 +836,13 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                     reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
                 }
 
-                if (GraphSettingsVersion > 2)
+                if (GraphDescriptionVersion > 2)
                 {
                     reader->read_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
                     reader->read_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
                 }
 
-                _GraphSettings.push_back(gs);
+                _GraphDescriptions.push_back(gs);
             }
         }
 
@@ -952,7 +952,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         #pragma region User Interface
 
-        writer->write(&_DialogBounds, sizeof(_DialogBounds), abortHandler);
+        writer->write(&_DialogRect, sizeof(_DialogRect), abortHandler);
 
         writer->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
 
@@ -1139,13 +1139,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_GridRowCount, abortHandler);
         writer->write_object_t(_GridColumnCount, abortHandler);
 
-        writer->write_object_t(graph_settings_t::_CurentVersion, abortHandler);
+        writer->write_object_t(graph_description_t::_CurentVersion, abortHandler);
 
         writer->write_object_t(_VerticalLayout, abortHandler);
 
-        writer->write_object_t(_GraphSettings.size(), abortHandler);
+        writer->write_object_t(_GraphDescriptions.size(), abortHandler);
 
-        for (auto & gs : _GraphSettings)
+        for (auto & gs : _GraphDescriptions)
         {
             pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
             writer->write_string(Description, abortHandler);
@@ -1173,7 +1173,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             writer->write_object_t(gs._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
-            if (graph_settings_t::_CurentVersion > 1)
+            if (graph_description_t::_CurentVersion > 1)
             {
                 writer->write_object_t(gs._LPadding, abortHandler);
                 writer->write_object_t(gs._RPadding, abortHandler);
@@ -1185,7 +1185,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             }
 
             // Version 3, v0.8.0.0-beta2
-            if (graph_settings_t::_CurentVersion > 2)
+            if (graph_description_t::_CurentVersion > 2)
             {
                 writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
                 writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
@@ -1455,9 +1455,9 @@ void state_t::ConvertColorSettings() noexcept
 /// <summary>
 /// One time conversion of the old graph settings.
 /// </summary>
-void state_t::ConvertGraphSettings() noexcept
+void state_t::ConvertGraphDescription() noexcept
 {
-    for (auto & gs : _GraphSettings)
+    for (auto & gs : _GraphDescriptions)
     {
         gs._XAxisMode     = _XAxisMode_Deprecated;
         gs._XAxisTop      = _XAxisTop_Deprecated;

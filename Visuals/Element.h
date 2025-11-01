@@ -10,7 +10,7 @@
 #include <SDKDDKVer.h>
 
 #include "State.h"
-#include "GraphSettings.h"
+#include "GraphDescription.h"
 #include "Analysis.h"
 
 #include "Direct2D.h"
@@ -20,22 +20,25 @@
 class element_t
 {
 public:
-    element_t() : _State(), _GraphSettings(), _IsResized(true) {}
+    element_t() : _State(), _GraphDescription(), _IsResized(true) {}
 
     virtual ~element_t() {}
 
-    virtual void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept { };
-    virtual void Move(const D2D1_RECT_F & rect) noexcept { };
-    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { };
+    virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept { }
+    virtual void Move(const D2D1_RECT_F & rect) noexcept { }
+    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { }
+    virtual void Release() noexcept { }
 
-    virtual const D2D1_RECT_F & GetBounds() const noexcept { return _Bounds; }
-    virtual const D2D1_RECT_F & GetClientBounds() const noexcept { return _Bounds; };
+    virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
+    virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };
 
-    virtual void SetBounds(const D2D1_RECT_F & bounds) noexcept
+    virtual void SetRect(const D2D1_RECT_F & rect) noexcept
     {
-        _Bounds = bounds;
-        _Size = { std::abs(bounds.right - bounds.left), std::abs(bounds.bottom - bounds.top) };
+        _Rect = rect;
+
+        // Derived metrics
+        _Size = { std::abs(rect.right - rect.left), std::abs(rect.bottom - rect.top) };
         _ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f); // For oscilloscope visualization.
 
         _IsResized = true;
@@ -53,17 +56,15 @@ public:
 
     virtual FLOAT GetLeft() const noexcept
     {
-        return _Bounds.left;
+        return _Rect.left;
     }
 
     virtual FLOAT GetRight() const noexcept
     {
-        return _Bounds.right;
+        return _Rect.right;
     }
 
-    virtual void DeleteDeviceSpecificResources() noexcept { };
-
-    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & bounds) const noexcept;
+    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
@@ -101,10 +102,10 @@ protected:
 
 protected:
     state_t * _State;
-    const graph_settings_t * _GraphSettings;
+    const graph_description_t * _GraphDescription;
     const analysis_t * _Analysis;
 
-    D2D1_RECT_F _Bounds;
+    D2D1_RECT_F _Rect;
     D2D1_SIZE_F _Size;
     FLOAT _ScaleFactor;
 

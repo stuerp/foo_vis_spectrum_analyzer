@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2025.10.14) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2025.10.21) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -23,10 +23,12 @@
 #include "Oscilloscope.h"
 #include "OscilloscopeXY.h"
 
+#include "Tester.h"
+
 #include "Log.h"
 
 /// <summary>
-/// Implements a graph on which the visual are rendered.
+/// Implements a graph on which the visualizations are rendered.
 /// </summary>
 class graph_t : public element_t
 {
@@ -34,10 +36,12 @@ public:
     graph_t();
     virtual ~graph_t();
 
-    void Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept;
-    void Move(const D2D1_RECT_F & rect) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext) noexcept { };
-    void Reset() noexcept;
+    // element_t
+    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
+    void Move(const D2D1_RECT_F & rect) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
+    void Reset() noexcept override final;
+    void Release() noexcept override final;
 
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
@@ -45,20 +49,20 @@ public:
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
     /// <summary>
-    /// Returns true if the specified point lies within our bounds.
+    /// Returns true if the specified point lies within our client rectangle.
     /// </summary>
     bool ContainsPoint(const CPoint & pt) const noexcept
     {
-        if ((FLOAT) pt.x < _Bounds.left)
+        if ((FLOAT) pt.x < _Rect.left)
             return false;
 
-        if ((FLOAT) pt.x > _Bounds.right)
+        if ((FLOAT) pt.x > _Rect.right)
             return false;
 
-        if ((FLOAT) pt.y < _Bounds.top)
+        if ((FLOAT) pt.y < _Rect.top)
             return false;
 
-        if ((FLOAT) pt.y > _Bounds.bottom)
+        if ((FLOAT) pt.y > _Rect.bottom)
             return false;
 
         return true;
@@ -66,10 +70,10 @@ public:
 
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void ReleaseDeviceSpecificResources() noexcept;
-
 private:
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
+
     void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
     void RenderForeground(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;

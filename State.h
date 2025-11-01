@@ -13,7 +13,7 @@
 #include "WindowFunctions.h"
 
 #include "StyleManager.h"
-#include "GraphSettings.h"
+#include "GraphDescription.h"
 
 #include "Log.h"
 
@@ -46,10 +46,11 @@ public:
     }
 
 public:
-    RECT _DialogBounds;                                                 // Will be initialized in OnInitDialog()
+    RECT _DialogRect;                                                   // Will be initialized in OnInitDialog()
     size_t _PageIndex;
 
     size_t _RefreshRateLimit;                                           // Hz
+
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;
     bool _UseAntialiasing;
@@ -258,7 +259,7 @@ public:
     size_t _GridRowCount;
     size_t _GridColumnCount;
 
-    std::vector<graph_settings_t> _GraphSettings;
+    std::vector<graph_description_t> _GraphDescriptions;
 
     #pragma endregion
 
@@ -278,7 +279,7 @@ public:
 
     gradient_stops_t _GradientStops;                                    // The current gradient stops.
 
-    double _PlaybackTime;                                               // Used by spectogram
+    double _LastPlaybackTime;                                           // Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Used by spectogram
 
     LONG64 _Barrier;
@@ -290,7 +291,7 @@ public:
 
 private:
     void ConvertColorSettings() noexcept;
-    void ConvertGraphSettings() noexcept;
+    void ConvertGraphDescription() noexcept;
 
 private:
     bool _UseZeroTrigger_Deprecated;

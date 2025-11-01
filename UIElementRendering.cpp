@@ -1,9 +1,10 @@
 
-/** $VER: UIElementRendering.cpp (2025.10.12) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.10.21) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
 
+#include "DirectX.h"
 #include "Direct2D.h"
 #include "DirectWrite.h"
 #include "WIC.h"
@@ -17,7 +18,9 @@
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "d3d11")
+#pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
+#pragma comment(lib, "dcomp.lib")
 
 #pragma hdrstop
 
@@ -46,7 +49,15 @@ void uielement_t::OnTimer() noexcept
         ProcessEvents();
 
         if (IsWindowVisible())
+        {
+            _FrameCounter.NewFrame();
+
+            Process();
+
             Render();
+
+            Animate();
+        }
 
         if (_IsConfigurationChanged)
         {
@@ -85,7 +96,7 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
-        _RenderThread._PlaybackTime = 0.;
+        _RenderThread._LastPlaybackTime = 0.;
         _RenderThread._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
@@ -94,7 +105,7 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
     {
-        _RenderThread._PlaybackTime = 0.;
+        _RenderThread._LastPlaybackTime = 0.;
         _RenderThread._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
@@ -107,7 +118,7 @@ void uielement_t::ProcessEvents() noexcept
 
             _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
             _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes();
 
             _IsConfigurationChanged = true;
         }
@@ -127,43 +138,35 @@ void uielement_t::Render() noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
-    // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-    if (SUCCEEDED(hr) && _Artwork.IsRealized())
-        CreateArtworkDependentResources();
+    if (FAILED(hr))
+        return;
 
+    _DeviceContext->BeginDraw();
+
+    _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+
+    for (auto & Iter : _Grid)
+        Iter._Graph->Render(_DeviceContext, _Artwork);
+
+    if (_UIThread._ShowFrameCounter)
+        _FrameCounter.Render(_DeviceContext);
+
+    hr = _DeviceContext->EndDraw();
+
+    // Present the swap chain immediately.
     if (SUCCEEDED(hr))
+        hr = _SwapChain->Present(1, 0);
+
+    if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
     {
-        _FrameCounter.NewFrame();
+        DeleteDeviceSpecificResources();
 
-        Process();
-
-        _DeviceContext->BeginDraw();
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Render(_DeviceContext, _Artwork);
-
-        if (_UIThread._ShowFrameCounter)
-            _FrameCounter.Render(_DeviceContext);
-
-        hr = _DeviceContext->EndDraw();
-
-        // Present the swap chain immediately.
-        if (SUCCEEDED(hr))
-            hr = _SwapChain->Present(0, 0);
-
-        if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
-        {
-            ReleaseDeviceSpecificResources();
-
-            hr = S_OK;
-        }
-
-        Animate();
+        hr = S_OK;
     }
 }
 
 /// <summary>
-/// Updates the audio data of all the graphs.
+/// Processes an audio chunk.
 /// </summary>
 void uielement_t::Process() noexcept
 {
@@ -172,43 +175,41 @@ void uielement_t::Process() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!_VisualisationStream->get_absolute_time(PlaybackTime))
-        return;
-
-    if (PlaybackTime == _RenderThread._PlaybackTime)
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._LastPlaybackTime)))
         return; // Playback is paused.
+
+    double WindowSize   = 0.;
+    double WIndowOffset = 0.;
+
+    if (_RenderThread._SampleRate != 0)
+    {
+        const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
+
+        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderThread._LastPlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
+        WIndowOffset = IsSlidingWindow ?                _RenderThread._LastPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
+    }
+    else
+    {
+        // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
+        WIndowOffset = PlaybackTime;
+        WindowSize = 0.0005; // 500 μs
+    }
 
     audio_chunk_impl Chunk;
 
-    // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters.
-    if ((_RenderThread._SampleRate == 0) && _VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, 0.001))
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WIndowOffset, WindowSize))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
-        _RenderThread._PlaybackTime = PlaybackTime;
-
-        return;
+        for (auto & Iter : _Grid)
+            Iter._Graph->Process(Chunk);
     }
 
-    if (_RenderThread._SampleRate == 0)
-        return;
-
-    const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
-
-    const double WindowSize = IsSlidingWindow ? PlaybackTime - _RenderThread._PlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
-    const double Offset     = IsSlidingWindow ?                _RenderThread._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
-
-    if (!_VisualisationStream->get_chunk_absolute(Chunk, Offset, WindowSize))
-        return;
-
-    for (auto & Iter : _Grid)
-        Iter._Graph->Process(Chunk);
-
-    _RenderThread._PlaybackTime = PlaybackTime;
+    _RenderThread._LastPlaybackTime = PlaybackTime;
 }
 
 /// <summary>
-/// Animates the values.
+/// Updates the peak values of all the graphs.
 /// </summary>
 void uielement_t::Animate() noexcept
 {
@@ -217,7 +218,7 @@ void uielement_t::Animate() noexcept
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderThread._PlaybackTime == 0.);
+        Iter._Graph->_Analysis.UpdatePeakValues(_RenderThread._LastPlaybackTime == 0.);
 }
 
 /// <summary>
@@ -225,7 +226,12 @@ void uielement_t::Animate() noexcept
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
+    if (_RenderThread._SampleRate == chunk.get_sample_rate())
+        return;
+
     _RenderThread._SampleRate = chunk.get_sample_rate();
+
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME "chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
 
     #pragma warning(disable: 4061)
 
@@ -260,9 +266,28 @@ void CALLBACK uielement_t::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID c
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
-HRESULT uielement_t::CreateDeviceIndependentResources()
+HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 {
-    HRESULT hr = _FrameCounter.CreateDeviceIndependentResources();
+    DirectX::Initialize();
+
+    HRESULT hr = S_OK;
+
+    if (SUCCEEDED(hr))
+        hr = ::CreateDXGIFactory(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(&_DXGIFactory));
+
+        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+#ifdef _DEBUG
+        Flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+    if (SUCCEEDED(hr))
+        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
+
+    if (SUCCEEDED(hr))
+        hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(&_DCompositionDevice));
+
+    hr = _FrameCounter.CreateDeviceIndependentResources();
 
     return hr;
 }
@@ -270,93 +295,104 @@ HRESULT uielement_t::CreateDeviceIndependentResources()
 /// <summary>
 /// Releases the device independent resources.
 /// </summary>
-void uielement_t::ReleaseDeviceIndependentResources()
+void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
-    _FrameCounter.ReleaseDeviceIndependentResources();
+    _FrameCounter.DeleteDeviceIndependentResources();
+
+    _DCompositionDevice.Release();
+    _D3DDeviceContext.Release();
+    _D3DDevice.Release();
+    _DXGIFactory.Release();
+
+    DirectX::Terminate();
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT uielement_t::CreateDeviceSpecificResources()
+HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = S_OK;
 
-    // Create the render target.
+    // Create the device context.
     if (_DeviceContext == nullptr)
     {
         CRect cr;
 
         GetClientRect(cr);
 
-        const UINT32 Width  = (UINT32) (FLOAT) (cr.right  - cr.left);
-        const UINT32 Height = (UINT32) (FLOAT) (cr.bottom - cr.top);
+        const UINT32 Width  = (UINT) cr.Width();
+        const UINT32 Height = (UINT) cr.Height();
 
         hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
 
-        // Create Direct3D device and swap chain.
+        // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
-            UINT CreateDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+            CComPtr<IDXGIDevice1> DXGIDevice;
 
-        #ifdef _DEBUG
-            CreateDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-        #endif
+            if (SUCCEEDED(hr))
+                hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
 
-            D2D1_SIZE_U Size = D2D1::SizeU(Width, Height); // Set the size in pixels.
+            if (SUCCEEDED(hr))
+                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
 
-            DXGI_SWAP_CHAIN_DESC scd = {};
+            if (SUCCEEDED(hr))
+                hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
 
-            scd.BufferDesc.Width  = Width;
-            scd.BufferDesc.Height = Height;
-            scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            scd.SampleDesc.Count  = 1;
-            scd.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            scd.BufferCount       = 2;
-            scd.OutputWindow      = m_hWnd;
-            scd.Windowed          = TRUE;
-            scd.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+            if (SUCCEEDED(hr))
+            {
+                GetDPI(m_hWnd, _DPI);
 
-            hr = ::D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, CreateDeviceFlags, nullptr, 0, D3D11_SDK_VERSION, &scd, &_SwapChain, &_D3DDevice, nullptr, nullptr);
+                _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+            }
+
+            if (SUCCEEDED(hr))
+                _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
         }
 
-        // Create the Direct2D device and the device context.
+        if (SUCCEEDED(hr))
         {
-            CComPtr<IDXGIDevice> DXGIDevice;
+            DXGI_SWAP_CHAIN_DESC1 scd = { };
 
-            if (SUCCEEDED(hr))
-                hr = _D3DDevice->QueryInterface(&DXGIDevice);
+            scd.Width              = Width;
+            scd.Height             = Height;
+            scd.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
+            scd.Scaling            = DXGI_SCALING_STRETCH;
+            scd.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+            scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            scd.BufferCount        = 2;
+            scd.SampleDesc.Count   = 1;
+            scd.SampleDesc.Quality = 0;
+            scd.AlphaMode          = DXGI_ALPHA_MODE_PREMULTIPLIED; // Required for alpha transparency.
+            scd.Flags              = 0;
 
-            if (SUCCEEDED(hr))
-                hr = _Direct2D.CreateDevice(DXGIDevice);
-
-            // Create device context
-            if (SUCCEEDED(hr))
-                _Direct2D.Device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
         }
 
-        // Set the render target.
+        // Set up DirectComposition.
         {
-            CComPtr<IDXGISurface> Surface;
-
-            // Get a surface from the swap chain.
             if (SUCCEEDED(hr))
-                hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
-
-            const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-            (
-                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)
-            );
-
-            CComPtr<ID2D1Bitmap1> TargetBitmap;
+                hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
 
             if (SUCCEEDED(hr))
-                hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &BitmapProperties, &TargetBitmap);
+                hr = _DCompositionDevice->CreateVisual(&_Visual);
 
             if (SUCCEEDED(hr))
-                _DeviceContext->SetTarget(TargetBitmap);
+                hr = _Visual->SetContent(_SwapChain);
+
+            if (SUCCEEDED(hr))
+                hr = _Target->SetRoot(_Visual);
+
+            if (SUCCEEDED(hr))
+                hr = _DCompositionDevice->Commit();
         }
+
+        if (SUCCEEDED(hr))
+            hr = CreateBackBuffer();
+
+        if (SUCCEEDED(hr))
+            _DeviceContext->SetTarget(_BackBuffer);
 
         if (SUCCEEDED(hr))
         {
@@ -367,9 +403,15 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
             const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
             _Grid.Resize(SizeF.width, SizeF.height);
+            _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
         }
+
+    #ifdef _DEBUG
+        if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+    #endif
     }
 
     // Create the background bitmap from the artwork.
@@ -379,15 +421,90 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 
         if (SUCCEEDED(hr))
         {
+            // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
+//          if (SUCCEEDED(hr) && _(_Artwork.Bitmap() != nullptr))
+                CreateArtworkDependentResources();
+
             for (auto & Iter : _Grid)
-                Iter._Graph->ReleaseDeviceSpecificResources();
+                Iter._Graph->Release();
         }
+        else
+            hr = S_OK; // No WIC bitmap created because there is no artwork.
     }
 
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void uielement_t::DeleteDeviceSpecificResources() noexcept
+{
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush); // Solid red
+    _DebugBrush.Release();
 #endif
+
+    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
+
+    for (auto & Iter : _Grid)
+        Iter._Graph->Release();
+
+    _Artwork.DeleteDeviceSpecificResources();
+
+    _FrameCounter.DeleteDeviceSpecificResources();
+
+    _BackBuffer.Release();
+    _Visual.Release();
+    _Target.Release();
+
+    _SwapChain.Release();
+    _DeviceContext.Release();
+    _D2DDevice.Release();
+}
+
+/// <summary>
+/// Creates the bitmap that will be the target of the device context.
+/// </summary>
+HRESULT uielement_t::CreateBackBuffer() noexcept
+{
+    CComPtr<IDXGISurface> Surface;
+
+    // Get a surface from the swap chain.
+    HRESULT hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
+
+    if (FAILED(hr))
+        return hr;
+
+    // Create a bitmap pointing to the surface.
+    const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+    (
+        D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        (FLOAT) _DPI, (FLOAT) _DPI
+    );
+
+    hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
+
+    if (FAILED(hr))
+        return hr;
+
+    Surface.Release();
+
+    // Update the DirectComposition visual.
+    if (_Visual && _Target)
+    {
+        hr = _Visual->SetContent(_SwapChain);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _Target->SetRoot(_Visual);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _DCompositionDevice->Commit();
+    }
 
     return hr;
 }
@@ -395,7 +512,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources()
 /// <summary>
 /// Creates the DirectX resources that are dependent on the artwork.
 /// </summary>
-HRESULT uielement_t::CreateArtworkDependentResources()
+HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 {
     // Get the colors from the artwork.
     HRESULT hr = _Artwork.GetColors(_RenderThread._ArtworkColors, _RenderThread._NumArtworkColors, _RenderThread._LightnessThreshold, _RenderThread._TransparencyThreshold);
@@ -446,37 +563,12 @@ HRESULT uielement_t::CreateArtworkDependentResources()
     {
         _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
         _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-        _RenderThread._StyleManager.ReleaseGradientBrushes();
+        _RenderThread._StyleManager.DeleteGradientBrushes();
 
         _IsConfigurationChanged = true;
     }
 
     return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void uielement_t::ReleaseDeviceSpecificResources()
-{
-#ifdef _DEBUG
-    _DebugBrush.Release();
-#endif
-    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
-
-    for (auto & Iter : _Grid)
-        Iter._Graph->ReleaseDeviceSpecificResources();
-
-    _Artwork.ReleaseDeviceSpecificResources();
-
-    _FrameCounter.ReleaseDeviceSpecificResources();
-
-    _DeviceContext.Release();
-
-    _Direct2D.ReleaseDevice();
-
-    _D3DDevice.Release();
-    _SwapChain.Release();
 }
 
 #pragma endregion

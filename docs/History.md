@@ -1,6 +1,30 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.9.0.0-beta1, 2025-10-22
+
+- New: Support for semi and fully transparent Background styles.
+- Improved; Overall LED rendering fidelity and performance.
+- Improved: Spectrum curve stopped at the Nyquist frequency.
+- Improved: Small changes in the main processing loop to support delta-timing.
+- Fixed: CQT transform did not handle audio with more than 1 channel correctly.
+- Fixed: High DPI support for device contexts. (Regression)
+ 
+v0.9.0.0-alpha3, 2025-10-17
+
+- New: Oscilloscope time-domain mode
+  - Supports X-axis with time labels.
+  - Signal gain.
+  - Optional phosphor decay effect with Gauss sigma and color decay factor setting.
+- New: Oscilloscope X-Y mode.
+  - Supports X and Y-axis.
+  - X and Y signal gain.
+  - Optional phosphor decay effect with Gauss sigma and color decay factor setting.
+- Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
+- Improved: Various little useability tweaks and fixes in the Configuration dialog.
+- Changed: Upgraded rendering code from render targets to device contexts.
+- Fixed: Delay between playback and visualization. The backbuffer was not initialized.
+ 
 v0.9.0.0-alpha2, 2025-10-09
 
 - New: Separate styles for X-axis vs. horizontal grid lines and Y-axis vs. vertical grid lines.

@@ -1,5 +1,5 @@
 
-/** $VER: GraphSettings.h (2025.10.05) P. Stuer - Represents the settings of a graph. **/
+/** $VER: GraphDescription.h (2025.10.19) P. Stuer - Describes the layout and setting of a graph. **/
 
 #pragma once
 
@@ -18,15 +18,15 @@
 /// Represents the settings of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-struct graph_settings_t
+struct graph_description_t
 {
 public:
-    graph_settings_t()
+    graph_description_t()
     {
         Initialize();
     }
 
-    graph_settings_t(const std::wstring & description)
+    graph_description_t(const std::wstring & description)
     {
         _Description = description;
 
@@ -43,7 +43,7 @@ private:
     void Initialize()
     {
         _SelectedChannels = (uint32_t) Channels::ConfigStereo;
-        _ChannelPairs = (uint32_t) ChannelPair::FrontLeftRight;
+        _ChannelPair = (uint32_t) ChannelPair::FrontLeftRight;
 
         _HorizontalAlignment = HorizontalAlignment::Center;
         _VerticalAlignment = VerticalAlignment::Center;
@@ -82,7 +82,7 @@ public:
     std::wstring _Description;
 
     uint32_t _SelectedChannels;                 // The channels that should be visualized.
-    uint32_t _ChannelPairs;
+    uint32_t _ChannelPair;
 
     HorizontalAlignment _HorizontalAlignment;   // Horizonal alignment of a visualization in the graph area.
     VerticalAlignment _VerticalAlignment;       // Horizonal alignment of a visualization in the graph area.

@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2025.09.22) P. Stuer **/
+/** $VER: pch.h (2025.10.20) P. Stuer **/
 
 #pragma once
 
@@ -18,9 +18,12 @@
 #include <d3d11_2.h>
 #include <d2d1_2.h>
 #include <d2d1helper.h>
+#include <dcomp.h>
 #include <dwrite.h>
 
 #include <wincodec.h>
+
+#include <comdef.h> // For _com_error
 
 #include <stdlib.h>
 #include <strsafe.h>

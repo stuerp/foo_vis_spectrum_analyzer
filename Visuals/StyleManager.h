@@ -48,7 +48,7 @@ public:
 
     void UpdateCurrentColors() noexcept;
 
-    void ReleaseGradientBrushes() noexcept
+    void DeleteGradientBrushes() noexcept
     {
         for (auto & [ID, Style] : Styles)
         {

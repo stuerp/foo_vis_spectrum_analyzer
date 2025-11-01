@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.10.14) P. Stuer **/
+/** $VER: Constans.h (2025.10.21) P. Stuer **/
 
 #pragma once
 
@@ -302,6 +302,7 @@ enum class VisualizationType
     RadialBars = 5,
     RadialCurve = 6,
     Oscilloscope = 7,
+    Tester = 8,
 };
 
 enum class VisualizationTypes : uint64_t

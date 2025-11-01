@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.10.15) P. Stuer **/
+/** $VER: Analysis.cpp (2025.10.25) P. Stuer **/
 
 #include "pch.h"
 
@@ -17,10 +17,10 @@ inline double GetAcousticWeight(double x, WeightingType weightingType, double we
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * state, const graph_settings_t * settings) noexcept
+void analysis_t::Initialize(const state_t * state, const graph_description_t * graphDescription) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = graphDescription;
 
     switch (_State->_FrequencyDistribution)
     {
@@ -43,7 +43,7 @@ void analysis_t::Initialize(const state_t * state, const graph_settings_t * sett
 }
 
 /// <summary>
-/// Processes the audio samples.
+/// Processes an audio chunk.
 /// </summary>
 void analysis_t::Process(const audio_chunk & chunk) noexcept
 {
@@ -51,11 +51,11 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         Reset();
 
     _SampleRate       = chunk.get_sample_rate();
-    _NyquistFrequency = (double) _SampleRate / 2.;
     _ChannelCount     = chunk.get_channel_count();
     _ChannelConfig    = chunk.get_channel_config();
 
-    _ChannelMask      = _ChannelConfig & _GraphSettings->_SelectedChannels;
+    _NyquistFrequency = (double) _SampleRate / 2.;
+    _ChannelMask      = _ChannelConfig & _GraphDescription->_SelectedChannels;
 
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
@@ -86,13 +86,18 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             ProcessOscilloscope(chunk);
             break;
         }
+
+        case VisualizationType::Tester:
+        {
+            break;
+        }
     }
 }
 
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void analysis_t::Reset()
+void analysis_t::Reset() noexcept
 {
     if (_AnalogStyleAnalyzer != nullptr)
     {
@@ -136,19 +141,40 @@ void analysis_t::Reset()
         InitializeGauges((uint32_t) Channels::ConfigStereo);
     }
 
+    ResetRMSDependentValues();
+
+    _Balance = 0.5;
+    _Phase   = 0.5;
+}
+
+/// <summary>
+/// Resets the peak values.
+/// </summary>
+void analysis_t::ResetPeakValues() noexcept
+{
+    for (frequency_band_t & fb : _FrequencyBands)
+        fb.CurValue = 0.;
+
+    for (gauge_value_t & gv : _GaugeValues)
     {
-        _RMSTimeElapsed = 0.;
-        _RMSFrameCount = 0;
-
-        _Left  = 0.;
-        _Right = 0.;
-
-        _Mid  = 0.;
-        _Side = 0.;
-
-        _Balance = 0.5;
-        _Phase   = 0.5;
+        gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
+        gv.PeakRender = gv.RMSRender = 0.;
     }
+}
+
+/// <summary>
+/// Resets the RMS window dependent values.
+/// </summary>
+void analysis_t::ResetRMSDependentValues() noexcept
+{
+    _RMSTimeElapsed = 0.;
+    _RMSFrameCount = 0;
+
+    _Left  = 0.;
+    _Right = 0.;
+
+    _Mid   = 0.;
+    _Side  = 0.;
 }
 
 /// <summary>
@@ -355,6 +381,11 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             _Chunk.reset();
             break;
         }
+
+        case VisualizationType::Tester:
+        {
+            break;
+        }
     }
 }
 
@@ -374,25 +405,25 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
     {
         case Transform::FFT:
         {
-            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::CQT:
         {
-            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::SWIFT:
         {
-            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::AnalogStyle:
         {
-            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphSettings->_SelectedChannels, _FrequencyBands);
+            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
     }
@@ -447,10 +478,10 @@ void analysis_t::GenerateLinearFrequencyBands()
     for (frequency_band_t & fb: _FrequencyBands)
     {
         fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Ctr = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Center = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
         fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -508,7 +539,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
             C0Frequency * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
 
-        double f = NoteToFrequency(FrequencyToNote(fb.Ctr));
+        double f = NoteToFrequency(FrequencyToNote(fb.Center));
 
         // Pre-calculate the tooltip text and the band background color.
         {
@@ -518,9 +549,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
             if (msc::InRange(f, fb.Lo, fb.Hi))
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Ctr);
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Center);
             else
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -545,11 +576,11 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
     for (frequency_band_t & fb : _FrequencyBands)
     {
         fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
-        fb.Ctr = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
+        fb.Center = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
         fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Ctr);
+        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 
         ++i;
     }
@@ -620,7 +651,7 @@ void analysis_t::ApplyAcousticWeighting()
     const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
 
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.NewValue *= GetWeight(fb.Ctr + Offset);
+        fb.NewValue *= GetWeight(fb.Center + Offset);
 }
 
 /// <summary>
@@ -700,7 +731,7 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 void analysis_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(_GraphSettings->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
+        fb.CurValue = std::clamp(_GraphDescription->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
 }
 
 /// <summary>
@@ -709,7 +740,7 @@ void analysis_t::Normalize() noexcept
 void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
 }
 
 /// <summary>
@@ -718,7 +749,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphSettings->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
+        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
 }
 
 #pragma endregion
@@ -742,18 +773,6 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
 
     audio_sample BalanceSamples[2] = { };
 
-    static const uint32_t ChannelPairs[] =
-    {
-        (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
-        (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
-
-        (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
-        (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
-
-        (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
-        (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
-    };
-
     const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
 
     for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
@@ -764,10 +783,10 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
         size_t j = 0;
 
         uint32_t ChunkChannels    = chunk.get_channel_config();                     // Mask containing the channels in the audio chunk.
-        uint32_t SelectedChannels = _GraphSettings->_SelectedChannels;              // Mask containing the channels selected by the user for the level measuring.
+        uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;           // Mask containing the channels selected by the user for the level measuring.
         uint32_t BalanceChannels  = ChannelPairs[(size_t) _State->_ChannelPair];    // Mask containing the channels selected by the user for the balance measuring.
 
-        while (ChunkChannels != 0)
+        while ((ChunkChannels & SelectedChannels) != 0)
         {
             if (ChunkChannels & 1)
             {
@@ -805,50 +824,50 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
     _RMSFrameCount  += FrameCount;
     _RMSTimeElapsed += chunk.get_duration();
 
-    // Normalize and smooth the values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+    // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
     for (auto & gv : _GaugeValues)
     {
         gv.Peak       = ToDecibel(gv.Peak);
         gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
     }
 
-    // Determine the window-dependent values.
+    // Has the RMS window elapsed yet?
     if (_RMSTimeElapsed > _State->_RMSWindow)
     {
         for (auto & gv : _GaugeValues)
         {
-        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+            // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSFrameCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
             gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
 
-            // Reset the RMS window values.
-            gv.Reset();
+            // Reset the RMS window-dependent values.
+            gv.RMSTotal = 0.;
         }
 
-        _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
-        _Right = std::sqrt(_Right / (double) _RMSFrameCount);
+        // Calculate the phase and balance.
+        {
+            {
+                _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
+                _Right = std::sqrt(_Right / (double) _RMSFrameCount);
 
-        _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
-        _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
+                if (!std::isfinite(_Balance))
+                    _Balance = 0.5;
 
-        if (!std::isfinite(_Balance))
-            _Balance = 0.5;
+                _Balance = SmoothValue(NormalizeLLevelValue((_Right - _Left) / std::max(_Left, _Right)), _Balance);
+            }
 
-        if (!std::isfinite(_Phase))
-            _Phase = 0.5;
+            {
+                _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
+                _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
 
-        _Balance = SmoothValue(NormalizeLRMS((_Right - _Left) / std::max(_Left, _Right)), _Balance);
-        _Phase   = SmoothValue(NormalizeLRMS((_Mid   - _Side) / std::max(_Mid, _Side)), _Phase);
+                if (!std::isfinite(_Phase))
+                    _Phase = 0.5;
 
-        // Reset all window-dependent values.
-        _RMSTimeElapsed = 0.;
-        _RMSFrameCount = 0;
+                _Phase = SmoothValue(NormalizeLLevelValue((_Mid - _Side) / std::max(_Mid, _Side)), _Phase);
+            }
+        }
 
-        _Left  = 0.;
-        _Right = 0.;
-
-        _Mid   = 0.;
-        _Side  = 0.;
+        ResetRMSDependentValues();
     }
 }
 
@@ -877,14 +896,14 @@ void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
         for (uint32_t SelectedChannels = channelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _GaugeValues.push_back({ ChannelNames[i], -std::numeric_limits<double>::infinity(), _State->_HoldTime });
+                _GaugeValues.push_back({ ChannelNames[i], _State->_HoldTime });
         }
 
         _CurrentChannelMask = channelMask;
     }
     else
     {
-        // Reset only the peak level of each gauge.
+        // Reset only the peak level of each gauge to -∞.
         for (auto & gv : _GaugeValues)
             gv.Peak = -std::numeric_limits<double>::infinity();
     }
@@ -903,3 +922,15 @@ void analysis_t::ProcessOscilloscope(const audio_chunk & chunk) noexcept
 }
 
 #pragma endregion
+
+const uint32_t analysis_t::ChannelPairs[6] =
+{
+    (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
+    (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,
+
+    (uint32_t) Channels::FrontCenterLeft | (uint32_t) Channels::FrontCenterRight,
+    (uint32_t) Channels::SideLeft        | (uint32_t) Channels::SideRight,
+
+    (uint32_t) Channels::TopFrontLeft    | (uint32_t) Channels::TopFrontRight,
+    (uint32_t) Channels::TopBackLeft     | (uint32_t) Channels::TopBackRight,
+};

@@ -1,12 +1,12 @@
 
-/** $VER: UIElement.cpp (2025.10.04) P. Stuer **/
+/** $VER: UIElement.cpp (2025.10.21) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
 #include "UIElement.h"
 
-#include "DirectX.h"
 #include "StyleManager.h"
+#include "Color.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -19,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
 {
 }
 
@@ -56,7 +56,7 @@ CWndClassInfo & uielement_t::GetWndClassInfo()
 /// </summary>
 LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 {
-    DirectX::Initialize();
+    ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT); // Required for alpha transparency
 
     HRESULT hr = CreateDeviceIndependentResources();
 
@@ -133,13 +133,30 @@ void uielement_t::OnDestroy()
 
     _VisualisationStream.release();
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
-    ReleaseDeviceIndependentResources();
+    DeleteDeviceIndependentResources();
 
     _CriticalSection.Leave();
+}
 
-    DirectX::Terminate();
+/// <summary>
+/// Handles the WM_ERASEBKGND message.
+/// </summary>
+LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
+{
+/*
+    RECT cr;
+
+    GetClientRect(&cr);
+
+    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager.UserInterfaceColors[1]);
+
+    ::FillRect(hDC, &cr, hBrush);
+
+    ::DeleteObject((HGDIOBJ) hBrush);
+*/
+    return 1; // Prevent GDI from erasing the background. Required for transparency.
 }
 
 /// <summary>
@@ -157,51 +174,33 @@ void uielement_t::OnPaint(CDCHandle hDC)
 /// </summary>
 void uielement_t::OnSize(UINT type, CSize size)
 {
-    if (_DeviceContext == nullptr)
+    if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
         return;
 
     _CriticalSection.Enter();
 
-    D2D1_SIZE_U Size = D2D1::SizeU((UINT32) size.cx, (UINT32) size.cy);
-
     // Remove the bitmap from the device context.
     _DeviceContext->SetTarget(nullptr);
 
+    // Release the bitmap so that the swap chain can be resized.
+    _BackBuffer.Release();
+
     // Resize the swap chain.
-    HRESULT hr = _SwapChain->ResizeBuffers(0, Size.width, Size.height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+    HRESULT hr = _SwapChain->ResizeBuffers(0, (UINT) size.cx, (UINT) size.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 
-    // Get a surface from the swap chain.
-    {
-        CComPtr<IDXGISurface> Surface;
+    // Recreate the back buffer.
+    if (SUCCEEDED(hr))
+        hr = CreateBackBuffer();
 
-        if (SUCCEEDED(hr))
-            hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
-
-        // Create a bitmap pointing to the surface.
-        CComPtr<ID2D1Bitmap1> Bitmap;
-
-        if (SUCCEEDED(hr))
-        {
-            const UINT DPI = ::GetDpiForWindow(m_hWnd);
-
-            D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
-            (
-                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
-                (FLOAT) DPI, (FLOAT) DPI
-            );
-
-            hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &Bitmap);
-        }
-
-        // Set bitmap back onto device context.
-        if (SUCCEEDED(hr))
-            _DeviceContext->SetTarget(Bitmap);
-    }
+    // Initialize the target buffer of the device context.
+    if (SUCCEEDED(hr))
+        _DeviceContext->SetTarget(_BackBuffer);
 
     Resize();
 
     _CriticalSection.Leave();
+
+//  ::InvalidateRect(m_hWnd, nullptr, FALSE); // Force a repaint.
 }
 
 /// <summary>
@@ -229,8 +228,12 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
-                RefreshRateLimitMenu.AppendMenu((UINT) MF_STRING | ((_UIThread._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0), IDM_REFRESH_RATE_LIMIT_20 + i,
-                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz")));
+                RefreshRateLimitMenu.AppendMenu
+                (
+                    (UINT) MF_STRING | ((_UIThread._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
+                    IDM_REFRESH_RATE_LIMIT_20 + i,
+                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz"))
+                );
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
@@ -284,17 +287,17 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
-            _UIThread._RefreshRateLimit = 60;
+            _UIThread._RefreshRateLimit =60;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
-            _UIThread._RefreshRateLimit = 100;
+            _UIThread._RefreshRateLimit =100;
             StartTimer();
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
-            _UIThread._RefreshRateLimit = 200;
+            _UIThread._RefreshRateLimit =200;
             StartTimer();
             break;
 
@@ -390,7 +393,7 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
 {
     _DPI = dpiX;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 
     return 0;
 }
@@ -425,7 +428,7 @@ void uielement_t::Resize()
         {
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.ReleaseGradientBrushes();
+            _RenderThread._StyleManager.DeleteGradientBrushes();
         }
 
         _CriticalSection.Leave();
@@ -525,7 +528,7 @@ void uielement_t::ToggleHardwareRendering() noexcept
 {
     _UIThread._UseHardwareRendering = !_UIThread._UseHardwareRendering;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -581,13 +584,13 @@ void uielement_t::UpdateState(Settings settings) noexcept
 
             _Grid.Initialize(_RenderThread._GridRowCount, _RenderThread._GridColumnCount);
 
-            for (const auto & Iter : _RenderThread._GraphSettings)
+            for (const auto & GraphDescription : _RenderThread._GraphDescriptions)
             {
-                auto * g = new graph_t();
+                auto * Graph = new graph_t();
 
-                g->Initialize(&_RenderThread, &Iter, nullptr);
+                Graph->Initialize(&_RenderThread, &GraphDescription, nullptr);
 
-                _Grid.push_back({ g, Iter._HRatio, Iter._VRatio });
+                _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
             }
         }
     }
@@ -642,7 +645,27 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
         else
             GetArtworkFromScript(track, fb2k::noAbort);
     }
+/*
+static COLORREF _TheColor = 0x808080 + ((rand() * 0x7F7F7F) % RAND_MAX);
 
+RECT cr;
+
+GetClientRect(&cr);
+
+HDC hDC = ::GetDC(GetParent());
+
+HBRUSH hBrush = ::CreateSolidBrush(_TheColor);
+
+::FillRect(hDC, &cr, hBrush);
+
+WCHAR Text[32];
+::swprintf(Text, _countof(Text), L"Color: %06X", _TheColor);
+::DrawTextW(hDC, Text, ::wcslen(Text), &cr, DT_EDITCONTROL);
+
+::DeleteObject((HGDIOBJ) hBrush);
+
+::ReleaseDC(GetParent(), hDC);
+*/
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackStartedNewTrack);
 }
@@ -652,7 +675,7 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 /// </summary>
 void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 {
-    _Artwork.ReleaseWICResources();
+    _Artwork.DeleteWICResources();
 
     _UIThread._SampleRate = 0;
 
@@ -676,19 +699,6 @@ void uielement_t::on_playback_time(double time)
 }
 
 #pragma endregion
-
-/*
-#pragma region now_playing_album_art_notify
-
-/// <summary>
-/// Called when album art has finished loading for the now playing track.
-/// </summary>
-void uielement_t::on_album_art(album_art_data::ptr aad)
-{
-}
-
-#pragma endregion
-*/
 
 /// <summary>
 /// Gets the album art from the specified track.

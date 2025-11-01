@@ -12,10 +12,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void gauge_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -26,7 +26,7 @@ void gauge_t::Initialize(state_t * state, const graph_settings_t * settings, con
 /// </summary>
 void gauge_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -377,7 +377,7 @@ HRESULT gauge_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
     return hr;
@@ -484,11 +484,11 @@ bool gauge_t::GetMetrics(gauge_metrics_t & gm) const noexcept
     if (n == 0)
         return false;
 
-    gm._dBFSZero = msc::Map(0., _GraphSettings->_AmplitudeLo, _GraphSettings->_AmplitudeHi, 0., 1.);
+    gm._dBFSZero = msc::Map(0., _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.);
 
     gm._TotalBarGap = _State->_GaugeGap * (FLOAT) (n - 1);
     gm._TickSize = 4.f;
-    gm._TotalTickSize = (FLOAT) (_GraphSettings->_YAxisLeft + _GraphSettings->_YAxisRight) * gm._TickSize;
+    gm._TotalTickSize = (FLOAT) (_GraphDescription->_YAxisLeft + _GraphDescription->_YAxisRight) * gm._TickSize;
 
     gm._BarHeight = (GetHeight() - gm._TotalBarGap - gm._TotalTickSize) / n;
     gm._BarWidth  = (GetWidth()  - gm._TotalBarGap - gm._TotalTickSize) / n;

@@ -10,13 +10,13 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_read_out_t::Initialize(state_t * state, const graph_settings_t * settings, const analysis_t * analysis) noexcept
+void peak_read_out_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphSettings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
-    ReleaseDeviceSpecificResources();
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -24,7 +24,7 @@ void peak_read_out_t::Initialize(state_t * state, const graph_settings_t * setti
 /// </summary>
 void peak_read_out_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetBounds(rect);
+    SetRect(rect);
 }
 
 /// <summary>
@@ -71,9 +71,9 @@ void peak_read_out_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.top = _GraphSettings->_FlipVertically ? GetHeight() : 0.f;
+    Rect.top = _GraphDescription->_FlipVertically ? GetHeight() : 0.f;
 
-    const FLOAT dy = _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
+    const FLOAT dy = _GraphDescription->_FlipVertically ? -gaugeMetrics._BarHeight : gaugeMetrics._BarHeight;
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
     _TextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
@@ -85,8 +85,8 @@ void peak_read_out_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const
         // Draw the peak text display.
         if (_TextStyle->IsEnabled())
         {
-            Rect.left  = _GraphSettings->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f;
-            Rect.right = _GraphSettings->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
+            Rect.left  = _GraphDescription->_FlipHorizontally ? GetWidth() - _TextStyle->_Width : 0.f;
+            Rect.right = _GraphDescription->_FlipHorizontally ? GetWidth()                      : _TextStyle->_Width;
 
             WCHAR Text[16];
 
@@ -99,7 +99,7 @@ void peak_read_out_t::RenderHorizontal(ID2D1DeviceContext * deviceContext, const
             deviceContext->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
-        Rect.top += _GraphSettings->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
+        Rect.top += _GraphDescription->_FlipVertically ? -gaugeMetrics._BarHeight - _State->_GaugeGap : gaugeMetrics._BarHeight + _State->_GaugeGap;
     }
 }
 
@@ -110,12 +110,12 @@ void peak_read_out_t::RenderVertical(ID2D1DeviceContext * deviceContext, const g
 {
     D2D1_RECT_F Rect = { };
 
-    Rect.left = _GraphSettings->_FlipHorizontally ? GetWidth(): 0.f;
+    Rect.left = _GraphDescription->_FlipHorizontally ? GetWidth(): 0.f;
 
-    const FLOAT dx = _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
+    const FLOAT dx = _GraphDescription->_FlipHorizontally ? -gaugeMetrics._BarWidth : gaugeMetrics._BarWidth;
 
     _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-    _TextStyle->SetVerticalAlignment(_GraphSettings->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+    _TextStyle->SetVerticalAlignment(_GraphDescription->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
     for (const auto & gv : _Analysis->_GaugeValues)
     {
@@ -124,8 +124,8 @@ void peak_read_out_t::RenderVertical(ID2D1DeviceContext * deviceContext, const g
         if (_TextStyle->IsEnabled())
         {
 
-            Rect.top    = _GraphSettings->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
-            Rect.bottom = _GraphSettings->_FlipVertically ? _TextStyle->_Height : GetHeight();
+            Rect.top    = _GraphDescription->_FlipVertically ? 0.f                 : GetHeight() - _TextStyle->_Height;
+            Rect.bottom = _GraphDescription->_FlipVertically ? _TextStyle->_Height : GetHeight();
 
             WCHAR Text[16];
 
@@ -138,7 +138,7 @@ void peak_read_out_t::RenderVertical(ID2D1DeviceContext * deviceContext, const g
             deviceContext->DrawText(Text, (UINT) ::wcslen(Text), _TextStyle->_TextFormat, Rect, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
-        Rect.left += _GraphSettings->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
+        Rect.left += _GraphDescription->_FlipHorizontally ? -gaugeMetrics._BarWidth - _State->_GaugeGap : gaugeMetrics._BarWidth + _State->_GaugeGap;
     }
 }
 
@@ -156,7 +156,7 @@ HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 
 #ifdef _DEBUG
     if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(1.f,0.f,0.f), &_DebugBrush);
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
     return hr;
@@ -165,7 +165,7 @@ HRESULT peak_read_out_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void peak_read_out_t::ReleaseDeviceSpecificResources() noexcept
+void peak_read_out_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();

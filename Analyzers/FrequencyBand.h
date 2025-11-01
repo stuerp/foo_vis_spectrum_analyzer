@@ -16,9 +16,9 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() : NewValue(), CurValue(), Lo(), Ctr(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t() : NewValue(), CurValue(), Lo(), Center(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
-    frequency_band_t(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Ctr(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Center(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
     frequency_band_t(const frequency_band_t & other)
     {
@@ -26,7 +26,7 @@ struct frequency_band_t
         CurValue = other.CurValue;
 
         Lo  = other.Lo;
-        Ctr = other.Ctr;
+        Center = other.Center;
         Hi  = other.Hi;
 
         MaxValue   = other.MaxValue;
@@ -46,7 +46,7 @@ struct frequency_band_t
     double CurValue;    // 0.0 .. 1.0
 
     double Lo;          // Hz
-    double Ctr;         // Hz
+    double Center;         // Hz
     double Hi;          // Hz
 
     double MaxValue;    // 0.0 .. 1.0, The value of the maximum indicator

@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: CQTAnalyzer.cpp (2025.10.19) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "CQTAnalyzer.h"
@@ -16,46 +16,62 @@ cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 }
 
 /// <summary>
-/// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
+/// Calculates the Constant-Q Transform on the sample data and returns the frequency bands using the Goertzel transform.
 /// </summary>
 bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
-    const double SampleCount = (double) (frameCount * _ChannelCount);
+    const size_t SampleCount  = frameCount * _ChannelCount;
+    const double SampleDuration = (double) _SampleRate / (double) SampleCount;
+
+    const bool UseGranularSamplingPeriod = false;
+    const bool UseGranularBandwidth = true;
 
     for (frequency_band_t & fb : frequencyBands)
     {
-        double Bandwidth = ::fabs(fb.Hi - fb.Lo) + ((double) _SampleRate / SampleCount) * _State->_CQTBandwidthOffset;
-        double TLen = std::min(1. / Bandwidth, (double) SampleCount / (double) _SampleRate);
+        const double Bandwidth  = std::abs(fb.Hi - fb.Lo) + (SampleDuration * _State->_CQTBandwidthOffset);
+        const double TimeLength = std::min(1. / Bandwidth, 1. / SampleDuration);
 
-        double DownsampleAmount = std::max(1.0, ::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Ctr + TLen)));
-        double Coeff = 2. * ::cos(2. * M_PI * fb.Ctr / (double) _SampleRate * DownsampleAmount);
+        double SamplingPeriod = std::max(1., std::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Center + TimeLength)));
+
+        if (!UseGranularSamplingPeriod)
+            SamplingPeriod = std::pow(2., std::trunc(std::log2(SamplingPeriod)));
+
+        const double KTerm = fb.Center * SamplingPeriod;                // Frequency of interest
+        const double Omega = 2. * M_PI * KTerm / (double) _SampleRate;  // ω
+        const double Coeff = 2. * std::cos(Omega);
+
+        double BandSampleCount = TimeLength * (double) _SampleRate * _ChannelCount;
+
+        if (!UseGranularBandwidth)
+            BandSampleCount = std::min(std::trunc(std::pow(2., std::round(std::log2(BandSampleCount)))), (double) SampleCount);
+
+        const double Offset = std::trunc(((double) SampleCount - BandSampleCount) * (0.5 + _State->_CQTAlignment / 2.));
+
+        const double LoIdx = Offset;
+        const double HiIdx = LoIdx + std::trunc(BandSampleCount) - 1.;
 
         double f1 = 0.;
         double f2 = 0.;
-        double Sine = 0.;
-        double Offset = ::trunc((SampleCount - TLen * (double) _SampleRate) * (0.5 + _State->_CQTAlignment / 2.));
 
-        double LoIdx = Offset;
-        double HiIdx = ::trunc(TLen * (double) _SampleRate) + Offset - 1.;
         double Norm = 0.;
 
         #pragma loop(hint_parallel(2))
-        for (double Idx = ::trunc(LoIdx / DownsampleAmount); Idx <= ::trunc(HiIdx / DownsampleAmount); ++Idx)
+        for (double Idx = std::trunc(LoIdx / SamplingPeriod); Idx <= std::trunc(HiIdx / SamplingPeriod); Idx += _ChannelCount)
         {
-            double x = ((Idx * DownsampleAmount - LoIdx) / (HiIdx - LoIdx) * 2. - 1.);
+            const double x = (((Idx * SamplingPeriod) - LoIdx) / (HiIdx - LoIdx) * 2.) - 1.;
+            const double w = _WindowFunction(x);
 
-            double w = _WindowFunction(x);
+            const size_t i = (size_t) (Idx * SamplingPeriod);
+
+            const double s = ((i < SampleCount - _ChannelCount) ? (AverageSamples(&frames[i], selectedChannels) * w) : 0.) + (Coeff * f1) - f2;
 
             Norm += w;
 
-            // Goertzel transform
-            Sine = (AverageSamples(&frames[(size_t)(Idx * DownsampleAmount)], selectedChannels) * w) + (Coeff * f1) - f2;
-
             f2 = f1;
-            f1 = Sine;
+            f1 = s;
         }
 
-        fb.NewValue = ::sqrt((f1 * f1) + (f2 * f2) - Coeff * f1 * f2) / Norm;
+        fb.NewValue = std::sqrt((f1 * f1) + (f2 * f2) - (Coeff * f1 * f2)) / Norm; // Power
     }
 
     return true;

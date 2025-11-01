@@ -22,7 +22,7 @@ public:
     DUIElement(DUIElement &&) = delete;
     DUIElement & operator=(DUIElement &&) = delete;
 
-    LRESULT OnEraseBackground(CDCHandle hDC) override final;
+//  LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void OnContextMenu(CWindow wnd, CPoint position) override final;
 
     void ToggleFullScreen() noexcept override final;

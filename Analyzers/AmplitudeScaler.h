@@ -1,5 +1,5 @@
 
-/** $VER: AmplitudeScaler.h (2025.10.07) P. Stuer  **/
+/** $VER: AmplitudeScaler.h (2025.10.07) P. Stuer - Implements an amplitude scaler as a functor **/
 
 #pragma once
 
@@ -10,7 +10,7 @@
 #include <cmath>
 
 /// <summary>
-/// Implements an amplitude scaler for the oscilloscope.
+/// Implements an amplitude scaler as a functor.
 /// </summary>
 class amplitude_scaler_t
 {
