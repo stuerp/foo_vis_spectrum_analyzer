@@ -56,6 +56,8 @@ void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetRect(rect);
 
+    _IsResized = true;
+
     _Gauges.Move(rect);
     _GaugeNames.Move(rect);
     _GaugeScales.Move(rect);
@@ -84,6 +86,8 @@ void peak_meter_t::Resize() noexcept
 {
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
+
+Log.AtInfo().Write("Peak Meter Resize");
 
     D2D1_RECT_F Rect = _Rect;
 

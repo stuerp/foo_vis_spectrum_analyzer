@@ -119,9 +119,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.1.0, 2025-11-02
+v0.9.2.0, 2025-11-xx
 
-- Fixed: Handling of selected channels for FFT-based visualizations.
+- Fixed: Peak meter LED rendering.
 
 You can read the full history [here](docs/History.md).
 

@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.9.1.0, 2025-11-02
+
+- Fixed: Handling of selected channels for FFT-based visualizations.
+
 v0.9.0.0, 2025-11-01
 
 - Fixed: Regression in level meter rendering of tracks with more than 2 channels.

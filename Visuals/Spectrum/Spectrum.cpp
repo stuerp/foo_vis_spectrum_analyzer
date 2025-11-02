@@ -47,7 +47,7 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetRect(rect);
 
-    _OpacityMask.Release();
+    _OpacityMask.Release(); // Forces the opacity mask to be regenerated.
 }
 
 /// <summary>
@@ -232,7 +232,7 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         else
         {
             if (_State->_LEDIntegralSize)
-                rect.bottom = std::ceil(rect.bottom / LEDSize) * LEDSize;
+                rect.bottom = std::ceilf(rect.bottom / LEDSize) * LEDSize;
 
             deviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -261,7 +261,7 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         }
         else
         {
-            rect.bottom = std::ceil(rect.bottom / LEDSize) * LEDSize;
+            rect.bottom = std::ceilf(rect.bottom / LEDSize) * LEDSize;
 
             if (_State->_LEDIntegralSize)
                 rect.top = std::clamp(rect.bottom - LEDSize, 0.f, _ClientSize.height);
