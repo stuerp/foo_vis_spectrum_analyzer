@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2025.10.20) P. Stuer **/
+/** $VER: pch.h (2025.11.08) P. Stuer **/
 
 #pragma once
 
@@ -32,6 +32,7 @@
 #include <bit>
 #include <cassert>
 #include <cmath>
+#include <ranges>
 #include <string>
 
 #include <libmsc.h>

@@ -70,71 +70,96 @@ void gauge_scales_t::Resize() noexcept
 
     if (_State->_HorizontalPeakMeter)
     {
-        // Calculate the position of the labels based on the width.
-        const FLOAT cx = (_TextStyle->_Width / 2.f);
-
-        const FLOAT xMin = !_GraphDescription->_FlipHorizontally ? 0.f : GetWidth();
-        const FLOAT xMax = !_GraphDescription->_FlipHorizontally ? GetWidth() : 0.f;
-
         const FLOAT y1 = _GraphDescription->_YAxisLeft  ? _TextStyle->_Height : 0.f;
         const FLOAT y2 = _GraphDescription->_YAxisRight ? GetHeight() - _TextStyle->_Height : GetHeight();
 
+        const FLOAT cx = (_TextStyle->_Width / 2.f);
+
+        const FLOAT n = std::ceilf(GetWidth() / LEDSize);
+        const FLOAT dx = !_GraphDescription->_FlipHorizontally ? GetWidth() - (n * LEDSize) : (n * LEDSize) - GetWidth();
+
         for (Label & Iter : _Labels)
         {
-            FLOAT x = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
-
-            // Don't generate any labels outside the client rectangle.
-            if (!msc::InRange(x, 0.f, GetWidth()))
+            if (!_State->_LEDMode)
             {
-                Iter.IsHidden = true;
-                continue;
+                const FLOAT xMin = !_GraphDescription->_FlipHorizontally ? 0.f : GetWidth();
+                const FLOAT xMax = !_GraphDescription->_FlipHorizontally ? GetWidth() : 0.f;
+
+                FLOAT x = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax);
+
+                Iter.Point1 = D2D1_POINT_2F(x, y1);
+                Iter.Point2 = D2D1_POINT_2F(x, y2);
+
+                x -= cx;
+
+                Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
+
+                if (!_GraphDescription->_XAxisBottom)
+                {
+                    if (!_GraphDescription->_FlipHorizontally && (x <= 0.f))
+                    {
+                        x = 0.f;
+                        Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
+                    }
+                    else
+                    if (_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
+                    {
+                        x = GetWidth() - _TextStyle->_Width;
+                        Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
+                    }
+                }
+
+                if (!_GraphDescription->_XAxisTop)
+                {
+                    if (_GraphDescription->_FlipHorizontally && (x <= 0.f))
+                    {
+                        x = 0.f;
+                        Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
+                    }
+                    else
+                    if (!_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
+                    {
+                        x = GetWidth() - _TextStyle->_Width;
+                        Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
+                    }
+                }
+
+                Iter.Rect1 = { x, 0.f,                               x + _TextStyle->_Width, _TextStyle->_Height };
+                Iter.Rect2 = { x, GetHeight() - _TextStyle->_Height, x + _TextStyle->_Width, GetHeight() };
+
+                // Hide overlapping labels except for the first and the last one.
+                Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.Rect1, OldRect);
+
+                if (!Iter.IsHidden)
+                    OldRect = Iter.Rect1;
             }
-
-            Iter.Point1 = D2D1_POINT_2F(x, y1);
-            Iter.Point2 = D2D1_POINT_2F(x, y2);
-
-            x -= cx;
-
-            Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
-
-            if (!_GraphDescription->_XAxisBottom)
+            else
             {
-                if (!_GraphDescription->_FlipHorizontally && (x <= 0.f))
+                const FLOAT xMin = !_GraphDescription->_FlipHorizontally ? 1 : n;
+                const FLOAT xMax = !_GraphDescription->_FlipHorizontally ? n : 1;
+
+                FLOAT x = std::floorf(msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., xMin, xMax)) - 1.f;
+
+                x = dx + (x * LEDSize);
+
+                Iter.Point1 = D2D1_POINT_2F
+                (
+                    x + (!_GraphDescription->_FlipHorizontally ? _State->_LEDGap + (_State->_LEDSize / 2.f) : _State->_LEDGap),
+                    y1
+                );
+                Iter.Point2 = D2D1_POINT_2F(Iter.Point1.x, y2);
+
+                Iter.Rect1 =
                 {
-                    x = 0.f;
-                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
-                }
-                else
-                if (_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
-                {
-                    x = GetWidth() - _TextStyle->_Width;
-                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
-                }
+                    x + (!_GraphDescription->_FlipHorizontally ? _State->_LEDGap : -_State->_LEDGap),
+                    0.f,
+                    x + (!_GraphDescription->_FlipHorizontally ? LEDSize : LEDSize),
+                    _TextStyle->_Height
+                };
+                Iter.Rect2 = { Iter.Rect1.left, GetHeight() - _TextStyle->_Height, Iter.Rect1.right, GetHeight() };
+
+                Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_CENTER;
             }
-
-            if (!_GraphDescription->_XAxisTop)
-            {
-                if (_GraphDescription->_FlipHorizontally && (x <= 0.f))
-                {
-                    x = 0.f;
-                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_LEADING;
-                }
-                else
-                if (!_GraphDescription->_FlipHorizontally && ((x + _TextStyle->_Width) > GetWidth()))
-                {
-                    x = GetWidth() - _TextStyle->_Width;
-                    Iter._HAlignment = DWRITE_TEXT_ALIGNMENT_TRAILING;
-                }
-            }
-
-            Iter.Rect1 = { x, 0.f,                               x + _TextStyle->_Width, _TextStyle->_Height };
-            Iter.Rect2 = { x, GetHeight() - _TextStyle->_Height, x + _TextStyle->_Width, GetHeight() };
-
-            // Hide overlapping labels except for the first and the last one.
-            Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingHorizontally(Iter.Rect1, OldRect);
-
-            if (!Iter.IsHidden)
-                OldRect = Iter.Rect1;
         }
     }
     else
@@ -255,7 +280,10 @@ void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 _TextStyle->SetHorizontalAlignment(Iter._HAlignment);
 
                 if (_GraphDescription->_YAxisLeft)
+                {
+                    deviceContext->FillRectangle(Iter.Rect1, _DebugBrush);
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect1, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                }
                     
                 if (_GraphDescription->_YAxisRight)
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
@@ -282,7 +310,10 @@ void gauge_scales_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 }
 
                 if (_GraphDescription->_YAxisRight)
+                {
+//                  deviceContext->FillRectangle(Iter.Rect2, _DebugBrush);
                     deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.Rect2, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                }
             }
         }
     }

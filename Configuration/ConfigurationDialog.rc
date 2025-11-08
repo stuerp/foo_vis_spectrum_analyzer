@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2025.10.15) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2025.11.08) P. Stuer **/
 
 #include "Resources.h"
 
@@ -42,7 +42,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext       "LED gap:"                      IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
         edittext                                    IDC_LED_GAP,                    X_C20, Y_C20, W_C20, H_C20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control     "Integral Size",                IDC_LED_INTEGRAL_SIZE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C29, Y_C29, W_C29, H_C29
+        control     "Integral size",                IDC_LED_INTEGRAL_SIZE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C29, Y_C29, W_C29, H_C29
 
     groupbox "Radial Bars / Radial Curve", IDC_RADIAL_BARS, X_B15, Y_B15, W_B15, H_B15, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -67,13 +67,18 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control     "RMS +3",                       IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
 
+        control     "Center scale",                 IDC_CENTER_SCALE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C74, Y_C74, W_C74, H_C74
+
         rtext       "RMS Window:"                   IDC_RMS_WINDOW_LBL,             X_C21, Y_C21 + 2, W_C21, H_C21
         edittext                                    IDC_RMS_WINDOW,                 X_C22, Y_C22,     W_C22, H_C22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control     "",                             IDC_RMS_WINDOW_SPIN,            "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext       "s"                             IDC_RMS_WINDOW_UNIT,            X_C23, Y_C23 + 2, W_C23, H_C23
 
-        rtext       "Gauge gap:"                    IDC_GAUGE_GAP_LBL,              X_C25, Y_C25 + 2, W_C25, H_C25
-        edittext                                    IDC_GAUGE_GAP,                  X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Bar gap:"                      IDC_BAR_GAP_LBL,                X_C25, Y_C25 + 2, W_C25, H_C25
+        edittext                                    IDC_BAR_GAP,                    X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Max. bar size:"                IDC_MAX_BAR_SIZE_LBL,           X_C75, Y_C75 + 2, W_C75, H_C75
+        edittext                                    IDC_MAX_BAR_SIZE,               X_C76, Y_C76,     W_C76, H_C76, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Level Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
 

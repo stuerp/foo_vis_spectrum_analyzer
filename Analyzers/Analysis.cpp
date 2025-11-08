@@ -136,9 +136,9 @@ void analysis_t::Reset() noexcept
     }
 
     {
-        _CurrentChannelMask = 0;
+        _MeasuredChannels = 0;
 
-        InitializeGauges((uint32_t) Channels::ConfigStereo);
+        InitializeMeasurements((uint32_t) Channels::ConfigStereo);
     }
 
     ResetRMSDependentValues();
@@ -155,10 +155,10 @@ void analysis_t::ResetPeakValues() noexcept
     for (frequency_band_t & fb : _FrequencyBands)
         fb.CurValue = 0.;
 
-    for (gauge_value_t & gv : _GaugeValues)
+    for (measurement_t & gv : _Measurements)
     {
         gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
-        gv.PeakRender = gv.RMSRender = 0.;
+        gv.PeakNormalized = gv.RMSNormalized = 0.;
     }
 }
 
@@ -275,16 +275,16 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         case VisualizationType::PeakMeter:
         {
             // Animate the smoothed peak and RMS values.
-            for (auto & gv : _GaugeValues)
+            for (auto & gv : _Measurements)
             {
-                if (gv.PeakRender >= gv.MaxPeakRender)
+                if (gv.PeakNormalized >= gv.MaxPeakNormalized)
                 {
                     if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                        gv.HoldTime = (::isfinite(gv.HoldTime) ? gv.HoldTime : 0.) + (gv.PeakRender - gv.MaxPeakRender) * _State->_HoldTime;
+                        gv.HoldTime = (::isfinite(gv.HoldTime) ? gv.HoldTime : 0.) + (gv.PeakNormalized - gv.MaxPeakNormalized) * _State->_HoldTime;
                     else
                         gv.HoldTime = _State->_HoldTime;
 
-                    gv.MaxPeakRender = gv.PeakRender;
+                    gv.MaxPeakNormalized = gv.PeakNormalized;
                     gv.DecaySpeed = 0.;
                     gv.Opacity = 1.;
                 }
@@ -294,7 +294,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                     {
                         if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
                         {
-                            gv.MaxPeakRender += (gv.HoldTime - std::max(gv.HoldTime - 1., 0.)) / _State->_HoldTime;
+                            gv.MaxPeakNormalized += (gv.HoldTime - std::max(gv.HoldTime - 1., 0.)) / _State->_HoldTime;
                         }
 
                         gv.HoldTime--;
@@ -314,19 +314,19 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                             case PeakMode::Classic:
                                 gv.DecaySpeed = Acceleration;
 
-                                gv.MaxPeakRender -= gv.DecaySpeed;
+                                gv.MaxPeakNormalized -= gv.DecaySpeed;
                                 break;
 
                             case PeakMode::Gravity:
                                 gv.DecaySpeed += Acceleration;
 
-                                gv.MaxPeakRender -= gv.DecaySpeed;
+                                gv.MaxPeakNormalized -= gv.DecaySpeed;
                                 break;
 
                             case PeakMode::AIMP:
-                                gv.DecaySpeed = Acceleration * (1. + (int) (gv.MaxPeakRender < 0.5));
+                                gv.DecaySpeed = Acceleration * (1. + (int) (gv.MaxPeakNormalized < 0.5));
 
-                                gv.MaxPeakRender -= gv.DecaySpeed;
+                                gv.MaxPeakNormalized -= gv.DecaySpeed;
                                 break;
 
                             case PeakMode::FadeOut:
@@ -335,18 +335,18 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                                 gv.Opacity -= gv.DecaySpeed;
 
                                 if (gv.Opacity <= 0.)
-                                    gv.MaxPeakRender = gv.PeakRender;
+                                    gv.MaxPeakNormalized = gv.PeakNormalized;
                                 break;
 
                             case PeakMode::FadingAIMP:
-                                gv.DecaySpeed = Acceleration * (1. + (int) (gv.MaxPeakRender < 0.5));
+                                gv.DecaySpeed = Acceleration * (1. + (int) (gv.MaxPeakNormalized < 0.5));
 
-                                gv.MaxPeakRender -= gv.DecaySpeed;
+                                gv.MaxPeakNormalized -= gv.DecaySpeed;
 
                                 gv.Opacity -= gv.DecaySpeed;
 
                                 if (gv.Opacity <= 0.)
-                                    gv.MaxPeakRender = gv.PeakRender;
+                                    gv.MaxPeakNormalized = gv.PeakNormalized;
                                 break;
                         }
                     }
@@ -769,7 +769,7 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
     if ((Frames == nullptr) || (FrameCount == 0))
         return;
 
-    InitializeGauges(_ChannelMask);
+    InitializeMeasurements(_ChannelMask);
 
     audio_sample BalanceSamples[2] = { };
 
@@ -790,9 +790,9 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
         {
             if (ChunkChannels & 1)
             {
-                if ((SelectedChannels & 1) && (i < _GaugeValues.size()))
+                if ((SelectedChannels & 1) && (i < _Measurements.size()))
                 {
-                    auto gv = &_GaugeValues[i++];
+                    auto gv = &_Measurements[i++];
 
                     const double Value = std::abs((double) *Sample);
 
@@ -825,20 +825,20 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
     _RMSTimeElapsed += chunk.get_duration();
 
     // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-    for (auto & gv : _GaugeValues)
+    for (auto & gv : _Measurements)
     {
         gv.Peak       = ToDecibel(gv.Peak);
-        gv.PeakRender = SmoothValue(NormalizeValue(gv.Peak), gv.PeakRender);
+        gv.PeakNormalized = SmoothValue(NormalizeValue(gv.Peak), gv.PeakNormalized);
     }
 
     // Has the RMS window elapsed yet?
     if (_RMSTimeElapsed > _State->_RMSWindow)
     {
-        for (auto & gv : _GaugeValues)
+        for (auto & gv : _Measurements)
         {
             // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             gv.RMS       = ToDecibel(std::sqrt(gv.RMSTotal / (double) _RMSFrameCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
-            gv.RMSRender = SmoothValue(NormalizeValue(gv.RMS), gv.RMSRender);
+            gv.RMSNormalized = SmoothValue(NormalizeValue(gv.RMS), gv.RMSNormalized);
 
             // Reset the RMS window-dependent values.
             gv.RMSTotal = 0.;
@@ -872,13 +872,13 @@ void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
 }
 
 /// <summary>
-/// Initializes the gauges before processing an audio chunk.
+/// Initializes the peak / level measurements before processing an audio chunk.
 /// </summary>
-void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
+void analysis_t::InitializeMeasurements(uint32_t meterChannels) noexcept
 {
-    if (_CurrentChannelMask != channelMask)
+    if (_MeasuredChannels != meterChannels)
     {
-        // The chunk configuration has changed. Recreate the gauges.
+        // The chunk configuration has changed. Recreate the measurements.
         static const WCHAR * ChannelNames[] =
         {
             L"FL", L"FR", L"FC",
@@ -891,20 +891,20 @@ void analysis_t::InitializeGauges(uint32_t channelMask) noexcept
 
         size_t i = 0;
 
-        _GaugeValues.clear();
+        _Measurements.clear();
 
-        for (uint32_t SelectedChannels = channelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
+        for (uint32_t SelectedChannels = meterChannels; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _GaugeValues.push_back({ ChannelNames[i], _State->_HoldTime });
+                _Measurements.push_back({ ChannelNames[i], _State->_HoldTime });
         }
 
-        _CurrentChannelMask = channelMask;
+        _MeasuredChannels = meterChannels;
     }
     else
     {
-        // Reset only the peak level of each gauge to -∞.
-        for (auto & gv : _GaugeValues)
+        // Reset only the peak level of each bar to -∞.
+        for (auto & gv : _Measurements)
             gv.Peak = -std::numeric_limits<double>::infinity();
     }
 }

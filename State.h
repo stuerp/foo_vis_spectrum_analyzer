@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.10.12) P. Stuer **/
+/** $VER: State.h (2025.11.08) P. Stuer **/
 
 #pragma once
 
@@ -203,7 +203,7 @@ public:
             bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
             FLOAT _LEDSize;                                         // Size of the LED.
             FLOAT _LEDGap;                                          // Gap between the LEDs.
-            bool _LEDIntegralSize;                                   // The LEDs will be rendered with an integral height.
+            bool _LEDIntegralSize;                                  // The LEDs will be rendered with an integral height.
 
         #pragma endregion
 
@@ -228,7 +228,9 @@ public:
             bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
             bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
             double _RMSWindow;                                      // Duration of the RMS window, in seconds.
-            FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
+            FLOAT _BarGap;                                          // Gap between the peak meter bar, in pixels.
+            bool _CenterScale;                                      // Render a scale between the bars.
+            FLOAT _MaxBarSize;                                      // Max. bar width / height, in pixels. 0 to disable.
 
         #pragma endregion
 
@@ -352,7 +354,7 @@ private:
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
 private:
-    const size_t _CurrentVersion = 31; // v0.9.0.0-alpha3
+    const size_t _CurrentVersion = 32; // v0.9.2.0-alpha1
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

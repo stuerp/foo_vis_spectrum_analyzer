@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.10.15) P. Stuer **/
+/** $VER: State.cpp (2025.11.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -238,7 +238,9 @@ void state_t::Reset() noexcept
     _HorizontalPeakMeter = false;
     _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
-    _GaugeGap = 1.f; // pixels
+    _BarGap = 1.f; // pixels
+    _CenterScale = false;
+    _MaxBarSize = 0.f; // pixels
 
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
@@ -505,7 +507,9 @@ state_t & state_t::operator=(const state_t & other)
     _HorizontalPeakMeter = other._HorizontalPeakMeter;
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
-    _GaugeGap = other._GaugeGap;
+    _BarGap = other._BarGap;
+    _CenterScale = other._CenterScale;
+    _MaxBarSize = other._MaxBarSize;
 
     // Level Meter
     _ChannelPair = other._ChannelPair;
@@ -891,7 +895,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 26)
         {
-            reader->read_object_t(_GaugeGap, abortHandler);
+            reader->read_object_t(_BarGap, abortHandler);
             reader->read_object_t(_RMSPlus3, abortHandler);
         }
 
@@ -931,6 +935,12 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_PhosphorDecay, abortHandler);
             reader->read_object_t(_BlurSigma, abortHandler);
             reader->read_object_t(_DecayFactor, abortHandler);
+        }
+
+        if (Version >= 32)
+        {
+            reader->read_object_t(_CenterScale, abortHandler);
+            reader->read_object_t(_MaxBarSize, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1224,7 +1234,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_RMSWindow, abortHandler);
 
         // Version 26, v0.7.6.0
-        writer->write_object_t(_GaugeGap, abortHandler);
+        writer->write_object_t(_BarGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
 
         // Version 27, v0.8.0.0-beta1
@@ -1251,6 +1261,10 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_PhosphorDecay, abortHandler);
         writer->write_object_t(_BlurSigma, abortHandler);
         writer->write_object_t(_DecayFactor, abortHandler);
+
+        // Version 32, v0.9.2
+        writer->write_object_t(_CenterScale, abortHandler);
+        writer->write_object_t(_MaxBarSize, abortHandler);
     }
     catch (exception & ex)
     {

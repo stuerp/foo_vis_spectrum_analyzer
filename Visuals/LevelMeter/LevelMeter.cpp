@@ -41,7 +41,7 @@ level_meter_t::~level_meter_t()
 void level_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _Settings = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -93,7 +93,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (_State->_HorizontalLevelMeter)
     {
-        // Render the gauges.
+        // Render the bars.
         {
             FLOAT x = (FLOAT) _Analysis->_Balance * GetWidth();
 
@@ -181,7 +181,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     }
     else
     {
-        // Render the gauges.
+        // Render the bars.
         {
             FLOAT y = (FLOAT) _Analysis->_Balance * GetHeight();
 
@@ -282,16 +282,16 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         hr = CreateOpacityMask(deviceContext);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GaugeMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, &_AxisStyle);

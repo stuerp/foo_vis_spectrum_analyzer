@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.10.15) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.11.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -85,8 +85,10 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
             { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
+            { IDC_CENTER_SCALE, "Renders a scale between the meter bars" },
             { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
-            { IDC_GAUGE_GAP, "Specifies the gap between the peak meter gauges (in pixels)." },
+            { IDC_BAR_GAP, "Specifies the gap between the peak meter bars (in pixels)." },
+            { IDC_MAX_BAR_SIZE, "Specifies the max. size of a meter bar (in pixels). Use 0 to remove constraint." },
 
             { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
 
@@ -1116,6 +1118,7 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
         SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
+        SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_CenterScale);
     }
     {
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
@@ -1134,7 +1137,10 @@ void ConfigurationDialog::Initialize()
         w.SetAccel(_countof(Accel), Accel);
     }
     {
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAUGE_GAP)); _NumericEdits.push_back(ne);
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
+    }
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_MAX_BAR_SIZE)); _NumericEdits.push_back(ne);
     }
 
     #pragma endregion
@@ -1969,9 +1975,15 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_GAUGE_GAP:
+        case IDC_BAR_GAP:
         {
-            _State->_GaugeGap = std::clamp((FLOAT) ::_wtof(Text), MinGaugeGap, MaxGaugeGap);
+            _State->_BarGap = std::clamp((FLOAT) ::_wtof(Text), MinBarGap, MaxBarGap);
+            break;
+        }
+
+        case IDC_MAX_BAR_SIZE:
+        {
+            _State->_MaxBarSize = std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize);
             break;
         }
 
@@ -2272,9 +2284,15 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_GAUGE_GAP:
+        case IDC_BAR_GAP:
         {
-            SetInteger(id, (int64_t) _State->_GaugeGap);
+            SetInteger(id, (int64_t) _State->_BarGap);
+            break;
+        }
+
+        case IDC_MAX_BAR_SIZE:
+        {
+            SetInteger(id, (int64_t) _State->_MaxBarSize);
             break;
         }
 
@@ -2546,6 +2564,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_RMS_PLUS_3:
         {
             _State->_RMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_CENTER_SCALE:
+        {
+            _State->_CenterScale = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -3131,9 +3155,10 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_SCROLLING_SPECTOGRAM, IDC_HORIZONTAL_SPECTOGRAM, IDC_SPECTRUM_BAR_METRICS,
 
         IDC_PEAK_METER,
-            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3,
+            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3, IDC_CENTER_SCALE,
             IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
-            IDC_GAUGE_GAP_LBL, IDC_GAUGE_GAP,
+            IDC_BAR_GAP_LBL, IDC_BAR_GAP,
+            IDC_MAX_BAR_SIZE_LBL, IDC_MAX_BAR_SIZE,
 
         IDC_LEVEL_METER,
             IDC_HORIZONTAL_LEVEL_METER,
@@ -3656,13 +3681,16 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_GAUGE_GAP).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
 
     SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
     ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
 
-    SetInteger(IDC_GAUGE_GAP, (int64_t) _State->_GaugeGap);
+    SetInteger(IDC_BAR_GAP, (int64_t) _State->_BarGap);
+    SetInteger(IDC_MAX_BAR_SIZE, (int64_t) _State->_MaxBarSize);
 
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 

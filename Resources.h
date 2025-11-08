@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.11.02) P. Stuer **/
+/** $VER: Resources.h (2025.11.08) P. Stuer **/
 
 #pragma once
 
@@ -7,16 +7,16 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          9
-#define NUM_FILE_PATCH          1
+#define NUM_FILE_MINOR          10
+#define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       9
-#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_MINOR       10
+#define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         ""
+#define STR_RELEASE_TAG         "-alpha1"
 
 /** Component specific **/
 
@@ -438,20 +438,24 @@
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
 #define IDC_RMS_PLUS_3                  7164
+#define IDC_CENTER_SCALE                7166
 
-#define IDC_RMS_WINDOW_LBL              7166
-#define IDC_RMS_WINDOW                  7167
-#define IDC_RMS_WINDOW_SPIN             7168
-#define IDC_RMS_WINDOW_UNIT             7169
+#define IDC_RMS_WINDOW_LBL              7168
+#define IDC_RMS_WINDOW                  7170
+#define IDC_RMS_WINDOW_SPIN             7172
+#define IDC_RMS_WINDOW_UNIT             7174
 
-#define IDC_GAUGE_GAP_LBL               7170
-#define IDC_GAUGE_GAP                   7171
+#define IDC_BAR_GAP_LBL                 7176
+#define IDC_BAR_GAP                     7178
+
+#define IDC_MAX_BAR_SIZE_LBL            7180
+#define IDC_MAX_BAR_SIZE                7182
 
 // Level Meter
 
-#define IDC_LEVEL_METER                 7180
+#define IDC_LEVEL_METER                 7230
 
-#define IDC_HORIZONTAL_LEVEL_METER      7184
+#define IDC_HORIZONTAL_LEVEL_METER      7232
 
 // Oscilloscope
 

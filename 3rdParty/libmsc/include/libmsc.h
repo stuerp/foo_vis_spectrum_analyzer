@@ -1,5 +1,5 @@
 
-/** $VER: libmsc.h (2025.09.22) P. Stuer - My Support Classes, The "Most Original Name" Winner **/
+/** $VER: libmsc.h (2025.11.05) P. Stuer - My Support Classes, The "Most Original Name" Winner **/
 
 #pragma once
 
@@ -22,6 +22,9 @@ namespace fs = std::filesystem;
 #include "RAII.h"
 #include "Stream.h"
 #include "Support.h"
+
+namespace msc
+{
 
 /// <summary>
 /// A more sane way of representing a rectangle
@@ -49,3 +52,5 @@ struct rect_t
     FLOAT x2;
     FLOAT y2;
 };
+
+}

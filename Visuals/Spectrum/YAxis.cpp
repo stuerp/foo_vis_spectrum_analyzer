@@ -15,19 +15,19 @@
 void y_axis_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _Settings = settings;
     _Analysis = analysis;
 
     _FlipVertically = settings->_FlipVertically;
 
     _Labels.clear();
 
-    if (_GraphDescription->_YAxisMode == YAxisMode::None)
+    if (_Settings->_YAxisMode == YAxisMode::None)
         return;
 
     // Create the labels.
     {
-        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= _GraphDescription->_AmplitudeHi; Amplitude -= _GraphDescription->_AmplitudeStep)
+        for (double Amplitude = _Settings->_AmplitudeLo; Amplitude <= _Settings->_AmplitudeHi; Amplitude -= _Settings->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -56,15 +56,15 @@ void y_axis_t::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xl = _Rect.left  + (_GraphDescription->_YAxisLeft  ? _TextStyle->_Width : 0.f); // Left axis
-    const FLOAT xr = _Rect.right - (_GraphDescription->_YAxisRight ? _TextStyle->_Width : 0.f); // Right axis
+    const FLOAT xl = _Rect.left  + (_Settings->_YAxisLeft  ? _TextStyle->_Width : 0.f); // Left axis
+    const FLOAT xr = _Rect.right - (_Settings->_YAxisRight ? _TextStyle->_Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
 
     for (label_t & Iter : _Labels)
     {
-        FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Rect.bottom : _Rect.top, !_FlipVertically ? _Rect.top : _Rect.bottom);
+        FLOAT y = msc::Map(_Settings->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Rect.bottom : _Rect.top, !_FlipVertically ? _Rect.top : _Rect.bottom);
 
         // Don't generate any labels outside the client rectangle.
         if (!msc::InRange(y, _Rect.top, _Rect.bottom))
@@ -78,10 +78,10 @@ void y_axis_t::Resize() noexcept
 
         y -= (_TextStyle->_Height / 2.f);
 
-        if ((!_GraphDescription->_XAxisTop) && (y <_Rect.top))
+        if ((!_Settings->_XAxisTop) && (y <_Rect.top))
             y = _Rect.top;
 
-        if ((!_GraphDescription->_XAxisBottom) && (y + _TextStyle->_Height > _Rect.bottom))
+        if ((!_Settings->_XAxisBottom) && (y + _TextStyle->_Height > _Rect.bottom))
             y = _Rect.bottom - _TextStyle->_Height;
 
         Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle->_Height };
@@ -117,12 +117,12 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
 
         // Draw the text.
-        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphDescription->_YAxisMode != YAxisMode::None))
+        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_Settings->_YAxisMode != YAxisMode::None))
         {
-            if (_GraphDescription->_YAxisLeft)
+            if (_Settings->_YAxisLeft)
                 deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_GraphDescription->_YAxisRight)
+            if (_Settings->_YAxisRight)
                 deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }

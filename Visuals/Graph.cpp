@@ -30,7 +30,7 @@ graph_t::~graph_t()
 void graph_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t *) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _Settings = settings;
 
     _Description = settings->_Description;
 
@@ -81,10 +81,10 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     const D2D1_RECT_F Rect =
     {
-        .left   = rect.left   + _GraphDescription->_LPadding,
-        .top    = rect.top    + _GraphDescription->_TPadding,
-        .right  = rect.right  - _GraphDescription->_RPadding,
-        .bottom = rect.bottom - _GraphDescription->_BPadding
+        .left   = rect.left   + _Settings->_LPadding,
+        .top    = rect.top    + _Settings->_TPadding,
+        .right  = rect.right  - _Settings->_RPadding,
+        .bottom = rect.bottom - _Settings->_BPadding
     };
 
     SetRect(Rect);
@@ -149,17 +149,17 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
+        const msc::rect_t & cr = (const msc::rect_t &) _Visualization->GetClientRect();
 
         FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
         // Allow non-integer bar widths?
-        if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+        if (_Settings->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
         const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
-        const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, cr.Width() - SpectrumWidth);
+        const FLOAT HOffset = GetHOffset(_Settings->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
@@ -167,7 +167,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (!msc::InRange(x, x1, x2))
             return false;
 
-        if (_GraphDescription->_FlipHorizontally)
+        if (_Settings->_FlipHorizontally)
             x = (x2 + x1) - x;
 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -182,7 +182,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;
 
-            if (!_GraphDescription->_FlipVertically)
+            if (!_Settings->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
             bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);

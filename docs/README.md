@@ -22,7 +22,7 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 
 ## Introduction
 
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectogram and peak meters.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectogram, peak meters or oscilloscope.
 
 ---
 
@@ -600,6 +600,10 @@ The size of the LED light, in pixels.
 
 The size of the gap between the LEDs, in pixels.
 
+`Integral size`
+
+Enable this setting to render the LEDs only as full blocks.
+
 #### Spectogram group
 
 Set the visualization type to **Spectogram** to enable these settings.
@@ -650,7 +654,7 @@ Renders the level meter horizontally when enabled, vertically when not.
 The peak meter will display the instant peak and RMS over time level of the playing track.
 
 > [!Tip]
-> A gauge will be shown for each of the channels in the playing track but only when it is also selected in the Channels list on the Graphs page. F.e. a 7.1 track with only the Front Left and Front Right channel selected will only show 2 gauges. A mono track without the Front Center channel selected will show no gauge.
+> A bar will be shown for each of the channels in the playing track but only when it is also selected in the Channels list on the Graphs page. F.e. a 7.1 track with only the Front Left and Front Right channel selected will only show 2 bars. A mono track without the Front Center channel selected will show no bar.
 
 Set the visualization type to **Peak / RMS** to enable these settings.
 
@@ -662,13 +666,21 @@ Renders the peak meter horizontally when enabled, vertically when not.
 
 Adds 3dB to the RMS value.
 
+`Center scale`
+
+Adds a scale between each bar.
+
 `RMS window`
 
 Specifies the duration of each RMS measurement in seconds.
 
-`Gauge gap`
+`Bar gap`
 
-Specifies the gap between the gauges (in pixels). Defaults to 1 pixel.
+Specifies the gap between the bar (in pixels). Defaults to 1 pixel.
+
+`Max. bar size`
+
+Allows you to constrain the width or height of a bar when the graph is resized. Specify a size in pixels to constrain the bar width or height. Set to 0 to remove the constraint.
 
 ---
 

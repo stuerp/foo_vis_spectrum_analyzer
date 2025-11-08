@@ -15,10 +15,10 @@ void element_t::SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT
 {
     D2D1::Matrix3x2F Transform = D2D1::Matrix3x2F::Identity();
 
-    if (_GraphDescription->_FlipHorizontally)
+    if (_Settings->_FlipHorizontally)
         Transform = D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, rect.right - rect.left, 0.f);
 
-    if (!_GraphDescription->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
+    if (!_Settings->_FlipVertically) // Negate because the GUI assumes the mathematical (bottom-left 0,0) coordinate system.
     {
         const D2D1::Matrix3x2F FlipV = D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, rect.bottom - rect.top);
 

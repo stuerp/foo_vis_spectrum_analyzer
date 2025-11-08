@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.10.21) P. Stuer **/
+/** $VER: Constants.h (2025.11.08) P. Stuer **/
 
 #pragma once
 
@@ -126,8 +126,11 @@ inline const FLOAT MaxLEDGap = 32.f;
 inline const double MinRMSWindow = 0.; // in seconds
 inline const double MaxRMSWindow = 3.; // in seconds
 
-inline const FLOAT MinGaugeGap =   0.; // in pixels
-inline const FLOAT MaxGaugeGap = 100.; // in pixels
+inline const FLOAT MinBarGap =   0.; // in pixels
+inline const FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // in pixels
+
+inline const FLOAT MinBarSize =   0.; // in pixels
+inline const FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // in pixels
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
@@ -402,24 +405,24 @@ enum class VisualElement : uint32_t
 
     Spectogram                  = 18,
 
-    GaugeBackground             = 19,
+    BarBackground             = 19,
 
-    GaugePeakLevel              = 20,
-    Gauge0dBPeakLevel           = 23,
-    GaugeMaxPeakLevel           = 25,
-    GaugePeakLevelText          = 26,
+    BarPeakLevel              = 20,
+    Bar0dBPeakLevel           = 23,
+    BarMaxPeakLevel           = 25,
+    BarPeakLevelText          = 26,
 
-    GaugeRMSLevel               = 21,
-    Gauge0dBRMSLevel            = 24,
-    GaugeRMSLevelText           = 22,
+    BarRMSLevel               = 21,
+    Bar0dBRMSLevel            = 24,
+    BarRMSLevelText           = 22,
 
     NyquistMarker               = 15,
 
-    GaugeLeftRight              = 27,
-    GaugeMidSide                = 28,
+    BarLeftRight              = 27,
+    BarMidSide                = 28,
     LevelMeterAxis              = 29,
-    GaugeLeftRightIndicator     = 30,
-    GaugeMidSideIndicator       = 31,
+    BarLeftRightIndicator     = 30,
+    BarMidSideIndicator       = 31,
 
     SignalLine                  = 32,
 

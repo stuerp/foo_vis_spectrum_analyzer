@@ -20,7 +20,7 @@
 class element_t
 {
 public:
-    element_t() : _State(), _GraphDescription(), _IsResized(true) {}
+    element_t() : _State(), _Settings(), _IsResized(true) {}
 
     virtual ~element_t() {}
 
@@ -102,7 +102,7 @@ protected:
 
 protected:
     state_t * _State;
-    const graph_description_t * _GraphDescription;
+    const graph_description_t * _Settings;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Rect;

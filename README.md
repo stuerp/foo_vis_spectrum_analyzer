@@ -40,7 +40,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars), Spectogram, Peak Meter, Level Meter and Oscilloscope visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectogram, Peak Meter, Level Meter and Oscilloscope visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -49,7 +49,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 - Uses DirectX rendering.
 - Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
 - Supports dark mode.
-- Supports foobar2000 2.0 and later (32-bit and 64-bit version).
+- Supports foobar2000 2.0 and later (32 and 64-bit version).
 
 ## Requirements
 
@@ -119,9 +119,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.2.0, 2025-11-xx
+v0.10.0.0-alpha1, 2025-11-xx
 
-- Fixed: Peak meter LED rendering.
+- Improved: Complete rewrite of Peak meter visualization.
+  - Reduced CPU and GPU load.
+  - Fixed known graphical glitches and inconsistencies.
+  - New: *Center scale* setting to draw scales between the peak meter bars.
+  - New: *Max. Bar Size* setting to constrain the width/height of a meter bar. (Forum feature request)
 
 You can read the full history [here](docs/History.md).
 

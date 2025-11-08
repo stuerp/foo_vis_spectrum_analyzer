@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.10.14) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2025.11.08) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -261,11 +261,16 @@
     #define Y_C16    Y_B12 + 11
 
    // Checkbox: RMS +3
-
     #define W_C24    80
     #define H_C24    H_CHB
     #define X_C24    X_C16
     #define Y_C24    Y_C16 + H_C16 + IY
+
+    // Checkbox: Center Scale
+    #define W_C74    80
+    #define H_C74    H_CHB
+    #define X_C74    X_C16 + W_C16 + IX
+    #define Y_C74    Y_C16 
 
     #pragma region RMS window
     // Label: RMS window
@@ -287,7 +292,7 @@
     #define Y_C23   Y_C22
     #pragma endregion
 
-    // Label: Gauge gap
+    // Label: Bar gap
     #define W_C25   46
     #define H_C25   H_LBL
     #define X_C25   X_C21
@@ -298,6 +303,18 @@
     #define H_C26   H_TBX
     #define X_C26   X_C25 + W_C25 + IX
     #define Y_C26   Y_C25
+
+    // Label: Max. bar size
+    #define W_C75   46
+    #define H_C75   H_LBL
+    #define X_C75   X_C26 + W_C26 + IX
+    #define Y_C75   Y_C25
+
+    // Text Box
+    #define W_C76   34
+    #define H_C76   H_TBX
+    #define X_C76   X_C75 + W_C75 + IX
+    #define Y_C76   Y_C75
 
 #define W_B12  W_B08
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7

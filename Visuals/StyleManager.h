@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2025.10.14) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2025.11.08) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -106,20 +106,20 @@ public:
         VisualElement::Spectogram,
 
         // Peak Meter
-        VisualElement::GaugeBackground,
-        VisualElement::GaugePeakLevel,
-        VisualElement::Gauge0dBPeakLevel,
-        VisualElement::GaugeMaxPeakLevel,
-        VisualElement::GaugePeakLevelText,
-        VisualElement::GaugeRMSLevel,
-        VisualElement::Gauge0dBRMSLevel,
-        VisualElement::GaugeRMSLevelText,
+        VisualElement::BarBackground,
+        VisualElement::BarPeakLevel,
+        VisualElement::Bar0dBPeakLevel,
+        VisualElement::BarMaxPeakLevel,
+        VisualElement::BarPeakLevelText,
+        VisualElement::BarRMSLevel,
+        VisualElement::Bar0dBRMSLevel,
+        VisualElement::BarRMSLevelText,
 
         // Level Meter
-        VisualElement::GaugeLeftRight,
-        VisualElement::GaugeLeftRightIndicator,
-        VisualElement::GaugeMidSide,
-        VisualElement::GaugeMidSideIndicator,
+        VisualElement::BarLeftRight,
+        VisualElement::BarLeftRightIndicator,
+        VisualElement::BarMidSide,
+        VisualElement::BarMidSideIndicator,
         VisualElement::LevelMeterAxis,
 
         // Oscilloscope
@@ -390,9 +390,9 @@ private:
 
         #pragma region Peak Meter
         {
-            VisualElement::GaugeBackground,
+            VisualElement::BarBackground,
             {
-                /* Name                */ L"Gauge Background",
+                /* Name                */ L"Bar Background",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
                 style_t::Features::SupportsOpacity,
                 ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
@@ -400,7 +400,7 @@ private:
         },
 
         {
-            VisualElement::GaugePeakLevel,
+            VisualElement::BarPeakLevel,
             {
                 /* Name                */ L"Peak Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -410,7 +410,7 @@ private:
         },
 
         {
-            VisualElement::Gauge0dBPeakLevel,
+            VisualElement::Bar0dBPeakLevel,
             {
                 /* Name                */ L"Peak Level (> 0dB)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -420,7 +420,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMaxPeakLevel,
+            VisualElement::BarMaxPeakLevel,
             {
                 /* Name                */ L"Peak Level (Max)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -430,7 +430,7 @@ private:
         },
 
         {
-            VisualElement::GaugePeakLevelText,
+            VisualElement::BarPeakLevelText,
             {
                 /* Name                */ L"Peak Level Read Out",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -441,7 +441,7 @@ private:
 
         // RMS
         {
-            VisualElement::GaugeRMSLevel,
+            VisualElement::BarRMSLevel,
             {
                 /* Name                */ L"RMS Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -451,7 +451,7 @@ private:
         },
 
         {
-            VisualElement::Gauge0dBRMSLevel,
+            VisualElement::Bar0dBRMSLevel,
             {
                 /* Name                */ L"RMS Level (> 0dB)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -461,7 +461,7 @@ private:
         },
 
         {
-            VisualElement::GaugeRMSLevelText,
+            VisualElement::BarRMSLevelText,
             {
                 /* Name                */ L"RMS Level Read Out",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -473,7 +473,7 @@ private:
 
         #pragma region Level Meter
         {
-            VisualElement::GaugeLeftRight,
+            VisualElement::BarLeftRight,
             {
                 /* Name                */ L"Left/Right Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -483,7 +483,7 @@ private:
         },
 
         {
-            VisualElement::GaugeLeftRightIndicator,
+            VisualElement::BarLeftRightIndicator,
             {
                 /* Name                */ L"Left/Right Level Indicator",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -493,7 +493,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMidSide,
+            VisualElement::BarMidSide,
             {
                 /* Name                */ L"Mid/Side Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -503,7 +503,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMidSideIndicator,
+            VisualElement::BarMidSideIndicator,
             {
                 /* Name                */ L"Mid/Side Level Indicator",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,

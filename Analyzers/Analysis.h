@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.10.19) P. Stuer **/
+/** $VER: Analysis.h (2025.11.05) P. Stuer **/
 
 #pragma once
 
@@ -23,38 +23,38 @@
 #include "FrequencyBand.h"
 
 /// <summary>
-/// Represents the values of a gauge.
+/// Represents a level meter measurement.
 /// </summary>
-struct gauge_value_t
+struct measurement_t
 {
-    gauge_value_t(const WCHAR * name, double holdTime) noexcept : Name(name), HoldTime(holdTime)
+    measurement_t(const WCHAR * name, double holdTime) noexcept : Name(name), HoldTime(holdTime)
     {
         RMSTotal = 0.;
 
         Peak = -std::numeric_limits<double>::infinity();
-        PeakRender = 0.;
-        MaxPeakRender = 0.;
+        PeakNormalized = 0.;
+        MaxPeakNormalized = 0.;
 
         RMS = 0.;
-        RMSRender = 0.;
+        RMSNormalized = 0.;
     }
 
     // User settings
     std::wstring Name;
 
-    double HoldTime;        // Time to hold the current max value.
-    double DecaySpeed;      // Speed at which the current max value decays.
-    double Opacity;         // 0.0 .. 1.0
+    double HoldTime;            // Time to hold the current max value.
+    double DecaySpeed;          // Speed at which the current max value decays.
+    double Opacity;             // 0.0 .. 1.0
 
     // Measurements
-    double RMSTotal;        // RMS value for the current RMS window.
+    double RMSTotal;            // RMS value for the current RMS window.
 
-    double Peak;            // in dBFS
-    double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double Peak;                // in dBFS
+    double PeakNormalized;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double MaxPeakNormalized;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMS;             // in dBFS
-    double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double RMS;                 // in dBFS
+    double RMSNormalized;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 };
 
 /// <summary>
@@ -100,7 +100,7 @@ private:
 
     // Peak Meter
     void ProcessMeters(const audio_chunk & chunk) noexcept;
-    void InitializeGauges(uint32_t channelMask) noexcept;
+    void InitializeMeasurements(uint32_t channelMask) noexcept;
 
     // Oscilloscope
     void ProcessOscilloscope(const audio_chunk & chunk) noexcept;
@@ -146,9 +146,6 @@ public:
 
     double _NyquistFrequency;
 
-    std::vector<gauge_value_t> _GaugeValues;
-    uint32_t _CurrentChannelMask;
-
     const window_function_t * _WindowFunction;
     const window_function_t * _BrownPucketteKernel;
 
@@ -158,6 +155,10 @@ public:
     analog_style_analyzer_t * _AnalogStyleAnalyzer;
 
     frequency_bands_t _FrequencyBands;
+
+    // Peak meter / Balance Meter
+    std::vector<measurement_t> _Measurements;
+    uint32_t _MeasuredChannels;
 
     // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
