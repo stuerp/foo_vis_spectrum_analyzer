@@ -47,8 +47,8 @@ inline const double MaxIIRBandwidth = 64.;
 // Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
-inline const int MinBands =   2;
-inline const int MaxBands = 512;
+inline const int MinBands =    2;
+inline const int MaxBands = 8192;
 
 inline const double MinFrequency =     1.; // Hz
 inline const double MaxFrequency = 96000.; // Hz

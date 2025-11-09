@@ -126,6 +126,7 @@ v0.10.0.0-alpha1, 2025-11-xx
   - Fixed known graphical glitches and inconsistencies.
   - New: *Center scale* setting to draw scales between the peak meter bars.
   - New: *Max. Bar Size* setting to constrain the width/height of a meter bar. (Forum feature request)
+- Improved: Raised the max. number of frequency bins from 512 to 8192.
 
 You can read the full history [here](docs/History.md).
 
