@@ -87,8 +87,8 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
     if (SUCCEEDED(hr))
     {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);            // Center horizontallly
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);  // Center vertically
+        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
         const WCHAR Text[] = L"999.99 fps";

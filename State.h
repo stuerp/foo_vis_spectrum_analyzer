@@ -49,7 +49,8 @@ public:
     RECT _DialogRect;                                                   // Will be initialized in OnInitDialog()
     size_t _PageIndex;
 
-    size_t _RefreshRateLimit;                                           // Hz
+    int64_t _RefreshRateLimit;                                          // Target FPS in Hz
+    int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
 
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;
@@ -284,7 +285,6 @@ public:
     double _LastPlaybackTime;                                           // Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Used by spectogram
 
-    LONG64 _Barrier;
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
 
     bool _ShowToolTipsNow;

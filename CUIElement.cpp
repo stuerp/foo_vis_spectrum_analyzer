@@ -21,7 +21,7 @@ CUIElement::CUIElement()
 {
     _IsVisible = true; // CUI does send notifications.
 
-    _UIThread._IsDUI = false;
+    _UIState._IsDUI = false;
 
     GetColors();
 }
@@ -167,17 +167,17 @@ void CUIElement::GetColors() noexcept
 {
     cui::colours::helper Helper(pfc::guid_null);
 
-    _UIThread._StyleManager.UserInterfaceColors.clear();
+    _UIState._StyleManager.UserInterfaceColors.clear();
 
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
 static uie::window_factory<CUIElement> _WindowFactory;

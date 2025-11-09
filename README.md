@@ -121,6 +121,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.10.0.0-alpha1, 2025-11-xx
 
+- New: Implemented a high resolution timer.
+  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
 - Improved: Complete rewrite of Peak meter visualization.
   - Reduced CPU and GPU load.
   - Fixed known graphical glitches and inconsistencies.

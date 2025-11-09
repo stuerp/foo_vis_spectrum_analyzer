@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.10.21) P. Stuer **/
+/** $VER: UIElement.h (2025.11.09) P. Stuer **/
 
 #pragma once
 
@@ -91,10 +91,10 @@ private:
 
     #pragma endregion
 
-    void StartTimer() noexcept;
-    void StopTimer() noexcept;
+    void StartRenderer() noexcept;
+    void StopRenderer() noexcept;
 
-    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+    static DWORD WINAPI CallRenderThreadProc(LPVOID context) noexcept;
 
     virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
@@ -143,7 +143,7 @@ private:
     // These methods run on the render thread.
     #pragma region Render thread
 
-    void OnTimer() noexcept;
+    void RenderThreadProc() noexcept;
 
     void ProcessEvents() noexcept;
     void Render() noexcept;
@@ -164,8 +164,8 @@ private:
     #pragma endregion
 
 protected:
-    state_t _UIThread;
-    state_t _RenderThread;
+    state_t _UIState;
+    state_t _RenderState;
 
     msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
@@ -239,7 +239,9 @@ private:
         IDM_PRESET_NAME,
     };
 
-    PTP_TIMER _ThreadPoolTimer;
+    HANDLE _hStopRendering;
+    DWORD _ThreadId;
+    HANDLE _hThread;
 
     CToolTipCtrl _ToolTipControl;
 

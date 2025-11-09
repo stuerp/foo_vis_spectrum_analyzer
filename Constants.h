@@ -575,9 +575,10 @@ enum class Settings : uint64_t
 {
     None = 0,
 
-    PhosphorEffect = 1 << 0,
+    RefreshRate     = 1 << 0,
+    PhosphorEffect  = 1 << 1,
 
-    Oscilloscope = PhosphorEffect, 
+    Oscilloscope = PhosphorEffect,
 
     All = ~0,
 };

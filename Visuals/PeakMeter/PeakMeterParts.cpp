@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2025.11.08) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2025.11.09) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -19,6 +19,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
 {
     __super::SetRect(rect);
 
+    // Precalculate the coordinates of all the parts.
     if (_State->_HorizontalPeakMeter)
     {
         if (_Settings->_FlipHorizontally)
@@ -442,6 +443,7 @@ void scale_t::SetRect(const D2D1_RECT_F & rect) noexcept
     if (_Settings->_YAxisMode == YAxisMode::None)
         return;
 
+    // Precalculate the coordinates of all the parts.
     if (_State->_HorizontalPeakMeter)
     {
         if (_Settings->_FlipHorizontally)

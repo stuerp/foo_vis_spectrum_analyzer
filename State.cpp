@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.11.08) P. Stuer **/
+/** $VER: State.cpp (2025.11.09) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -35,7 +35,8 @@ void state_t::Reset() noexcept
     _DialogRect = { };
     _PageIndex = 0;
 
-    _RefreshRateLimit = 20;
+    _RefreshRateLimit = 20; // Hz
+    _SleepTime = 200; // μs
 
     _UseHardwareRendering = true;
     _UseAntialiasing = true;
@@ -264,7 +265,6 @@ void state_t::Reset() noexcept
 
     _SampleRate = 0;
 
-    _Barrier = 0;
     _ActivePresetName.clear();
 }
 

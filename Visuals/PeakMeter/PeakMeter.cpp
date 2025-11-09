@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2025.11.08) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2025.11.09) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -207,27 +207,30 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT BarWidth = 0.f;
     FLOAT BarHeight = 0.f;
 
-    if (_State->_HorizontalPeakMeter)
+    // Calculate the width / height of a bar and the offset on the graph.
     {
-        BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) BarCount;
+        if (_State->_HorizontalPeakMeter)
+        {
+            BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) BarCount;
 
-        if ((_State->_MaxBarSize != 0.f) && (BarHeight > _State->_MaxBarSize))
-            BarHeight = _State->_MaxBarSize;
+            if ((_State->_MaxBarSize != 0.f) && (BarHeight > _State->_MaxBarSize))
+                BarHeight = _State->_MaxBarSize;
 
-        const FLOAT TotalBarHeight = (BarHeight * (FLOAT) BarCount) + TotalBarGap;
+            const FLOAT TotalBarHeight = (BarHeight * (FLOAT) BarCount) + TotalBarGap;
 
-        Offset = (_Size.height - TotalScaleHeight - TotalBarHeight) / 2.f;
-    }
-    else
-    {
-        BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) BarCount;
+            Offset = (_Size.height - TotalScaleHeight - TotalBarHeight) / 2.f;
+        }
+        else
+        {
+            BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) BarCount;
 
-        if ((_State->_MaxBarSize != 0.f) && (BarWidth > _State->_MaxBarSize))
-            BarWidth = _State->_MaxBarSize;
+            if ((_State->_MaxBarSize != 0.f) && (BarWidth > _State->_MaxBarSize))
+                BarWidth = _State->_MaxBarSize;
 
-        const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) BarCount) + TotalBarGap;
+            const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) BarCount) + TotalBarGap;
 
-        Offset = (_Size.width - TotalScaleWidth - TotalBarWidth) / 2.f;
+            Offset = (_Size.width - TotalScaleWidth - TotalBarWidth) / 2.f;
+        }
     }
 
     // Layout the meter parts.
@@ -274,14 +277,16 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
         {
             auto * Scale = dynamic_cast<scale_t *>(Part);
 
-            if (Scale != nullptr) // Scale
+            // A scale determines its own width.
+            if (Scale != nullptr)
             {
                 Rect.left  = x;
                 Rect.right = x + _ScaleTextStyle->_Width + (Scale->IsCenter() ? 0.f : _TickSize);
 
                 NeedGap = false;
             }
-            else // Bar
+            // A bar's width is determined by the remaining graph area.
+            else
             {
                 if (NeedGap)
                     x += _State->_BarGap;

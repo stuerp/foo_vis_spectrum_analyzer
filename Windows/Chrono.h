@@ -1,5 +1,5 @@
 
-/** $VER: Chrono.h (2024.08.16) P. Stuer - Implements a simple high-resolution chronometer **/
+/** $VER: Chrono.h (2025.11.09) P. Stuer - Implements a simple high-resolution chronometer **/
 
 #pragma once
 
@@ -18,10 +18,10 @@ public:
     /// <summary>
     /// Initializes this instance.
     /// </summary>
-    chrono_t()
+    chrono_t() noexcept
     {
-        if (!::QueryPerformanceFrequency((LARGE_INTEGER *) &_Frequency))
-            _Frequency = 1;
+        if (!::QueryPerformanceFrequency((LARGE_INTEGER *) &Frequency))
+            Frequency = 1;
 
         Reset();
     }
@@ -45,10 +45,56 @@ public:
         if (!::QueryPerformanceCounter((LARGE_INTEGER *) &Current))
             return 0;
 
-        return (double) (Current - _Last) / (double) _Frequency;
+        return TicksToSeconds(Current - _Last);
     }
 
+    /// <summary>
+    /// Gets the current tick count.
+    /// </summary>
+    int64_t Now() const noexcept
+    {
+        LARGE_INTEGER Now = { };
+
+        ::QueryPerformanceCounter(&Now);
+
+        return Now.QuadPart;
+    }
+
+    /// <summary>
+    /// Converts a tick count to seconds.
+    /// </summary>
+    double TicksToSeconds(int64_t ticks) const noexcept
+    {
+        return (double) ticks  / (double) Frequency;
+    }
+
+    /// <summary>
+    /// Converts a tick count to milliseconds.
+    /// </summary>
+    int64_t TicksToMilliseconds(int64_t ticks) const noexcept
+    {
+        return ((ticks * 1'000) + (Frequency - 1)) / Frequency;
+    }
+
+    /// <summary>
+    /// Converts a duration in seconds to ticks.
+    /// </summary>
+    int64_t SecondsToTicks(double seconds)
+    {
+        return (int64_t) (seconds * (double) Frequency);
+    }
+
+    /// <summary>
+    /// Converts a duration in microseconds to ticks.
+    /// </summary>
+    int64_t MicrosecondsToTicks(int64_t microseconds)
+    {
+        return (microseconds * Frequency) / 1'000'000;
+    }
+
+public:
+    int64_t Frequency; // Ticks per second
+
 private:
-    int64_t _Frequency; // Ticks per second
     int64_t _Last; // No. of ticks
 };

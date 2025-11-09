@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2025.10.21) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2025.11.09) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -13,6 +13,7 @@
 #include "Color.h"
 #include "Gradients.h"
 #include "StyleManager.h"
+#include "Chrono.h"
 
 #include "Log.h"
 
@@ -25,63 +26,99 @@
 #pragma hdrstop
 
 /// <summary>
-/// Handles a timer tick.
+/// Render thread procedure.
 /// </summary>
-void uielement_t::OnTimer() noexcept
+void uielement_t::RenderThreadProc() noexcept
 {
-    if (_IsFrozen || !_IsVisible || ::IsIconic(m_hWnd)) // ::IsIconic(core_api::get_main_window()))
-        return;
+    chrono_t Chrono;
 
-    LONG64 StateBarrier = ::InterlockedIncrement64(&_RenderThread._Barrier);
+    const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
 
-    if (StateBarrier != 1)
+    int64_t Now = Chrono.Now();
+
+    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+    int64_t NextFrameTime = Now + MaxFrameTime;
+
+    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._RefreshRateLimit, MaxFrameTime);
+
+    for (;;)
     {
-        // The barrier is down. Prevent reentering.
-        ::InterlockedDecrement64(&_RenderThread._Barrier);
+        if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
+            return;
 
-        return;
-    }
+        Now = Chrono.Now();
 
-    bool HaveColorsChanged = false;
+        const int64_t Elapsed = NextFrameTime - Now;
 
-    if (_CriticalSection.TryEnter())
-    {
-        ProcessEvents();
-
-        if (IsWindowVisible())
+        if (Elapsed > SleepTime)
         {
-            _FrameCounter.NewFrame();
+            const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
 
-            Process();
+            const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
 
-            Render();
+            if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
+                break;
 
-            Animate();
+            continue;
         }
 
-        if (_IsConfigurationChanged)
+        while (Chrono.Now() < NextFrameTime)
         {
-            _UIThread._ArtworkGradientStops = _RenderThread._ArtworkGradientStops;
-
-            _IsConfigurationChanged = false;
-
-            HaveColorsChanged = true;
+            if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
+                return;
         }
 
-        _CriticalSection.Leave();
+        if (!(_IsFrozen || !_IsVisible || ::IsIconic(::GetParent(m_hWnd))))
+        {
+            bool HaveColorsChanged = false;
+
+            if (_CriticalSection.TryEnter())
+            {
+                ProcessEvents();
+
+                if (IsWindowVisible())
+                {
+                    _FrameCounter.NewFrame();
+
+                    Process();
+
+                    Render();
+
+                    Animate();
+                }
+
+                if (_IsConfigurationChanged)
+                {
+                    _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+
+                    _IsConfigurationChanged = false;
+
+                    HaveColorsChanged = true;
+                }
+
+                _CriticalSection.Leave();
+            }
+
+            // Notify the configuration dialog about the changed artwork colors.
+            if (HaveColorsChanged && _ConfigurationDialog.IsWindow())
+            {
+                _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
+
+                Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+
+                HaveColorsChanged = false;
+            }
+        }
+
+        // Determine the presentation time of the next frame.
+        MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+        NextFrameTime += MaxFrameTime;
+
+        const int64_t Latency = Chrono.Now() - NextFrameTime;
+
+        if (Latency > MaxFrameTime * 3)
+            NextFrameTime = Chrono.Now() + MaxFrameTime;
     }
-
-    // Notify the configuration dialog about the changed artwork colors.
-    if (HaveColorsChanged && _ConfigurationDialog.IsWindow())
-    {
-        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
-
-        HaveColorsChanged = false;
-    }
-
-    ::InterlockedDecrement64(&_RenderThread._Barrier);
 }
 
 /// <summary>
@@ -96,8 +133,8 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
-        _RenderThread._LastPlaybackTime = 0.;
-        _RenderThread._TrackTime = 0.;
+        _RenderState._LastPlaybackTime = 0.;
+        _RenderState._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
@@ -105,8 +142,8 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
     {
-        _RenderThread._LastPlaybackTime = 0.;
-        _RenderThread._TrackTime = 0.;
+        _RenderState._LastPlaybackTime = 0.;
+        _RenderState._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
@@ -114,11 +151,11 @@ void uielement_t::ProcessEvents() noexcept
         if (_Artwork.Bitmap() == nullptr)
         {
             // Set the default dominant color and gradient for the artwork color scheme.
-            _RenderThread._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
+            _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
 
-            _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
-            _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-            _RenderThread._StyleManager.DeleteGradientBrushes();
+            _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
+            _RenderState._StyleManager.DeleteGradientBrushes();
 
             _IsConfigurationChanged = true;
         }
@@ -126,9 +163,52 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
     {
-        _RenderThread._StyleManager.UpdateCurrentColors();
-        _RenderThread._StyleManager.DeleteDeviceSpecificResources();
+        _RenderState._StyleManager.UpdateCurrentColors();
+        _RenderState._StyleManager.DeleteDeviceSpecificResources();
     }
+}
+
+/// <summary>
+/// Processes an audio chunk.
+/// </summary>
+void uielement_t::Process() noexcept
+{
+    if (!_VisualisationStream.is_valid())
+        return;
+
+    double PlaybackTime; // in seconds
+
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._LastPlaybackTime)))
+        return; // Playback is paused.
+
+    double WindowSize   = 0.;
+    double WIndowOffset = 0.;
+
+    if (_RenderState._SampleRate != 0)
+    {
+        const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
+
+        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderState._LastPlaybackTime : (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
+        WIndowOffset = IsSlidingWindow ?                _RenderState._LastPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+    }
+    else
+    {
+        // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
+        WIndowOffset = PlaybackTime;
+        WindowSize = 0.0005; // 500 μs
+    }
+
+    audio_chunk_impl Chunk;
+
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WIndowOffset, WindowSize))
+    {
+        InitializeSampleRateDependentParameters(Chunk);
+
+        for (auto & Iter : _Grid)
+            Iter._Graph->Process(Chunk);
+    }
+
+    _RenderState._LastPlaybackTime = PlaybackTime;
 }
 
 /// <summary>
@@ -148,14 +228,14 @@ void uielement_t::Render() noexcept
     for (auto & Iter : _Grid)
         Iter._Graph->Render(_DeviceContext, _Artwork);
 
-    if (_UIThread._ShowFrameCounter)
+    if (_UIState._ShowFrameCounter)
         _FrameCounter.Render(_DeviceContext);
 
     hr = _DeviceContext->EndDraw();
 
     // Present the swap chain immediately.
     if (SUCCEEDED(hr))
-        hr = _SwapChain->Present(1, 0);
+        hr = _SwapChain->Present(0, 0);
 
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
     {
@@ -166,59 +246,16 @@ void uielement_t::Render() noexcept
 }
 
 /// <summary>
-/// Processes an audio chunk.
-/// </summary>
-void uielement_t::Process() noexcept
-{
-    if (!_VisualisationStream.is_valid())
-        return;
-
-    double PlaybackTime; // in seconds
-
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderThread._LastPlaybackTime)))
-        return; // Playback is paused.
-
-    double WindowSize   = 0.;
-    double WIndowOffset = 0.;
-
-    if (_RenderThread._SampleRate != 0)
-    {
-        const bool IsSlidingWindow = (_RenderThread._Transform == Transform::SWIFT) || (_RenderThread._Transform == Transform::AnalogStyle);
-
-        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderThread._LastPlaybackTime : (double) _RenderThread._BinCount / (double) _RenderThread._SampleRate;
-        WIndowOffset = IsSlidingWindow ?                _RenderThread._LastPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderThread._ReactionAlignment));
-    }
-    else
-    {
-        // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
-        WIndowOffset = PlaybackTime;
-        WindowSize = 0.0005; // 500 μs
-    }
-
-    audio_chunk_impl Chunk;
-
-    if (_VisualisationStream->get_chunk_absolute(Chunk, WIndowOffset, WindowSize))
-    {
-        InitializeSampleRateDependentParameters(Chunk);
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Process(Chunk);
-    }
-
-    _RenderThread._LastPlaybackTime = PlaybackTime;
-}
-
-/// <summary>
 /// Updates the peak values of all the graphs.
 /// </summary>
 void uielement_t::Animate() noexcept
 {
-    if (_UIThread._PeakMode == PeakMode::None)
+    if (_UIState._PeakMode == PeakMode::None)
         return;
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderThread._LastPlaybackTime == 0.);
+        Iter._Graph->_Analysis.UpdatePeakValues(_RenderState._LastPlaybackTime == 0.);
 }
 
 /// <summary>
@@ -226,27 +263,27 @@ void uielement_t::Animate() noexcept
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
-    if (_RenderThread._SampleRate == chunk.get_sample_rate())
+    if (_RenderState._SampleRate == chunk.get_sample_rate())
         return;
 
-    _RenderThread._SampleRate = chunk.get_sample_rate();
+    _RenderState._SampleRate = chunk.get_sample_rate();
 
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
 
     #pragma warning(disable: 4061)
 
-    switch (_RenderThread._FFTMode)
+    switch (_RenderState._FFTMode)
     {
         default:
-            _RenderThread._BinCount = (size_t) (64. * ::exp2((long) _RenderThread._FFTMode));
+            _RenderState._BinCount = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _RenderThread._BinCount = (_RenderThread._FFTCustom > 0) ? (size_t) _RenderThread._FFTCustom : 64;
+            _RenderState._BinCount = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _RenderThread._BinCount = (_RenderThread._FFTDuration > 0.) ? (size_t) (((double) _RenderThread._SampleRate * _RenderThread._FFTDuration) / 1000.) : 64;
+            _RenderState._BinCount = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
             break;
     }
 
@@ -254,11 +291,13 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 }
 
 /// <summary>
-/// Handles a timer tick.
+/// Render thread procedure.
 /// </summary>
-void CALLBACK uielement_t::TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept
+DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
 {
-    ((uielement_t *) context)->OnTimer();
+    ((uielement_t *) context)->RenderThreadProc();
+
+    return 0;
 }
 
 #pragma region DirectX
@@ -405,7 +444,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
+            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
         }
 
     #ifdef _DEBUG
@@ -444,7 +483,7 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     _DebugBrush.Release();
 #endif
 
-    _RenderThread._StyleManager.DeleteDeviceSpecificResources();
+    _RenderState._StyleManager.DeleteDeviceSpecificResources();
 
     for (auto & Iter : _Grid)
         Iter._Graph->Release();
@@ -515,41 +554,41 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
 HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 {
     // Get the colors from the artwork.
-    HRESULT hr = _Artwork.GetColors(_RenderThread._ArtworkColors, _RenderThread._NumArtworkColors, _RenderThread._LightnessThreshold, _RenderThread._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(_RenderState._ArtworkColors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
 
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkColors[0];
+        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_RenderThread._ColorOrder)
+        switch (_RenderState._ColorOrder)
         {
             case ColorOrder::None:
                 break;
 
             case ColorOrder::HueAscending:
-                color_t::SortColorsByHue(_RenderThread._ArtworkColors, true);
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::HueDescending:
-                color_t::SortColorsByHue(_RenderThread._ArtworkColors, false);
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::SaturationAscending:
-                color_t::SortColorsBySaturation(_RenderThread._ArtworkColors, true);
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::SaturationDescending:
-                color_t::SortColorsBySaturation(_RenderThread._ArtworkColors, false);
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, false);
                 break;
 
             case ColorOrder::LightnessAscending:
-                color_t::SortColorsByLightness(_RenderThread._ArtworkColors, true);
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, true);
                 break;
 
             case ColorOrder::LightnessDescending:
-                color_t::SortColorsByLightness(_RenderThread._ArtworkColors, false);
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, false);
                 break;
         }
         #pragma warning(default: 4061)
@@ -557,13 +596,13 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
     // Create the gradient stops.
     if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(_RenderThread._ArtworkColors, _RenderThread._ArtworkGradientStops);
+        hr = _Direct2D.CreateGradientStops(_RenderState._ArtworkColors, _RenderState._ArtworkGradientStops);
 
     if (SUCCEEDED(hr))
     {
-        _RenderThread._StyleManager.DominantColor = _RenderThread._ArtworkGradientStops[0].color;
-        _RenderThread._StyleManager.SetArtworkDependentParameters(_RenderThread._ArtworkGradientStops, _RenderThread._StyleManager.DominantColor);
-        _RenderThread._StyleManager.DeleteGradientBrushes();
+        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
+        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
+        _RenderState._StyleManager.DeleteGradientBrushes();
 
         _IsConfigurationChanged = true;
     }

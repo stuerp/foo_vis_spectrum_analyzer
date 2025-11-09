@@ -16,7 +16,7 @@
 /// </summary>
 DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
-    _UIThread._IsDUI = true;
+    _UIState._IsDUI = true;
 
     GetColors();
 
@@ -87,7 +87,7 @@ void DUIElement::set_configuration(ui_element_config::ptr data)
 {
     ui_element_config_parser Parser(data);
 
-    _UIThread.Read(&Parser.m_stream, Parser.get_remaining());
+    _UIState.Read(&Parser.m_stream, Parser.get_remaining());
 }
 
 /// <summary>
@@ -97,7 +97,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 {
     ui_element_config_builder Builder;
 
-    _UIThread.Write(&Builder.m_stream);
+    _UIState.Write(&Builder.m_stream);
 
     return Builder.finish(g_get_guid());
 }
@@ -176,11 +176,11 @@ void DUIElement::ToggleFullScreen() noexcept
 /// </summary>
 void DUIElement::GetColors() noexcept
 {
-    _UIThread._StyleManager.UserInterfaceColors.clear();
+    _UIState._StyleManager.UserInterfaceColors.clear();
 
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
-    _UIThread._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
+    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
 }
