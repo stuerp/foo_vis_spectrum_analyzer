@@ -6,13 +6,21 @@
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
-![Screenshot](assets/Bars.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Bars Mode with gradient colors</sup>
 
-![Screenshot](assets/Curve.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-LED-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer LED Bars Mode with gradient colors</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
 
 ![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
 
@@ -123,6 +131,7 @@ v0.10.0.0-alpha1, 2025-11-xx
 
 - New: Implemented a high resolution timer.
   - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
+- New: All / None button in configuration dialog to quickly select all or no channels.
 - Improved: Complete rewrite of Peak meter visualization.
   - Reduced CPU and GPU load.
   - Fixed known graphical glitches and inconsistencies.

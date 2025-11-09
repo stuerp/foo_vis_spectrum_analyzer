@@ -330,8 +330,11 @@
 #define IDC_CHANNELS_LBL                5120
 #define IDC_CHANNELS                    5122
 
-#define IDC_CHANNEL_PAIRS_LBL           5124
-#define IDC_CHANNEL_PAIRS               5126
+#define IDC_ALL_CHANNELS                5124
+#define IDC_NO_CHANNELS                 5126
+
+#define IDC_CHANNEL_PAIRS_LBL           5128
+#define IDC_CHANNEL_PAIRS               5130
 
 #pragma endregion
 

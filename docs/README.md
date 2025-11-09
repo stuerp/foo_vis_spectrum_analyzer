@@ -473,17 +473,25 @@ Determines the type of visualization of a graph:
 
 The classic frequency spectrum visualization.
 
-![Screenshot](assets/Bars.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Bars Mode with gradient colors</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-LED-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer LED Bars Mode with gradient colors</sup>
 
 ##### Curve
 
 The same as bars but with a smoothed curve instead of bars.
 
-![Screenshot](assets/Curve.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
 
 ##### Spectogram
 
@@ -518,7 +526,7 @@ Shows the shape of the audio signal over time, helping you understand how sound 
 > [!Note]
 > The oscilloscope only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
 
-**Time-domain mode**
+###### Time-domain mode
 
 In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
 
@@ -529,7 +537,7 @@ This visualization uses the following settings:
 - Channel selection
 - Y signal gain
 - Phosphor effect settings
- 
+
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
 <sup>Oscilloscope</sup>
@@ -538,7 +546,7 @@ This visualization uses the following settings:
 
 <sup>Oscilloscope with Y-axis in dBFS</sup>
 
-**X-Y mode**
+###### X-Y mode
 
 In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
 and the other the vertical axis (Y), instead of the usual time-based sweep.
@@ -783,6 +791,18 @@ Allows you to select the audio channels that will be used to participate in the 
 
 > [!Tip]
 > Most users will enable only the **Left** and the **Right** channel. Therefor no information will be shown in the graph when a mono track is played. Also enable the **Front Center** channel to remedy this situation.
+
+`All`
+
+Selects all channels in the `Channels` list.
+
+`None`
+
+Deselects all channels in the `Channels` list.
+
+`Channel pair`
+
+Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Level Meter](#balance--correlation) and the [Oscilloscope](#oscilloscope).
 
 ---
 

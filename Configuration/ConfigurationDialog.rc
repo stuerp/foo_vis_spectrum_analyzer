@@ -360,6 +360,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     ltext       "Channels:",                        IDC_CHANNELS_LBL,               X_G28, Y_G28 + 2, W_G28, H_G28
     listbox IDC_CHANNELS, X_G29, Y_G29, W_G29, H_G29, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 
+    pushbutton  "All",                              IDC_ALL_CHANNELS,               X_G52, Y_G52, W_G52, H_G52
+    pushbutton  "None",                             IDC_NO_CHANNELS,                X_G53, Y_G53, W_G53, H_G53
+
     ltext       "Channel pairs:",                   IDC_CHANNEL_PAIRS_LBL,          X_C50, Y_C50 + 2, W_C50, H_C50
     combobox                                        IDC_CHANNEL_PAIRS,              X_C51, Y_C51,     W_C51, H_C51, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 

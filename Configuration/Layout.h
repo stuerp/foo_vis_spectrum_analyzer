@@ -1548,11 +1548,23 @@
 #define X_G29   X_G28
 #define Y_G29   Y_G28 + H_G28 + IY
 
+// Button: All Channels
+#define W_G52   30
+#define H_G52   H_BTN
+#define X_G52   X_G29
+#define Y_G52   Y_G29 + H_G29 + IY
+
+// Button: No Channels
+#define W_G53   30
+#define H_G53   H_BTN
+#define X_G53   X_G29 + W_G29 - W_G53
+#define Y_G53   Y_G52
+
 // Label: Channel Pairs
 #define W_C50    46
 #define H_C50    H_LBL
-#define X_C50    X_G29
-#define Y_C50    Y_G29 + H_G29 + IY
+#define X_C50    X_G52
+#define Y_C50    Y_G52 + H_G52 + IY
 
 // Combobox: Channel Pairs
 #define W_C51    76

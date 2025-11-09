@@ -113,6 +113,8 @@ private:
     void InitializeYAxisMode() noexcept;
     void InitializeStyles() noexcept;
 
+    void UpdateSelectedChannels() noexcept;
+
     BEGIN_MSG_MAP_EX(ConfigurationDialog)
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_CLOSE(OnClose)

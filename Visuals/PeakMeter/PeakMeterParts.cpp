@@ -411,6 +411,9 @@ void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) c
 /// </summary>
 void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
 {
+    if ((_DeviceContext == nullptr) || (style == nullptr))
+        MessageBoxW(HWND_DESKTOP, L"Panic", L"foo_vis_spectrum_analyzer", MB_OK | MB_ICONERROR);
+
 //  _DeviceContext->DrawRectangle(rect, _DebugBrush);
 
     if (_State->_LEDMode)

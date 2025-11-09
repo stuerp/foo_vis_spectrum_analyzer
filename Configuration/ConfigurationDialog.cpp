@@ -230,6 +230,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             // Channels
             { IDC_CHANNELS, "Determines which channels are used by the visualization." },
+            { IDC_ALL_CHANNELS, "Selects all channels." },
+            { IDC_NO_CHANNELS, "Deselects all channels." },
+
             { IDC_CHANNEL_PAIRS, "Determines which combination of channels will be displayed." },
 
             // Styles
@@ -1516,19 +1519,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         case IDC_CHANNELS:
         {
-            auto lb = (CListBox) GetDlgItem(id);
-
-            int Count = lb.GetSelCount();
-            std::vector<int> Items((size_t) Count);
-
-            lb.GetSelItems(Count, Items.data());
-
-            uint32_t Channels = 0;
-
-            for (int Item : Items)
-                Channels |= 1 << Item;
-
-            _State->_GraphDescriptions[_SelectedGraph]._SelectedChannels = Channels;
+            UpdateSelectedChannels();
             break;
         }
 
@@ -2819,6 +2810,26 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         #pragma endregion
 
+        case IDC_ALL_CHANNELS:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+
+            lb.SelItemRange(TRUE, 0, 0xFFFF);
+
+            UpdateSelectedChannels();
+            break;
+        }
+
+        case IDC_NO_CHANNELS:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+
+            lb.SelItemRange(FALSE, 0, 0xFFFF);
+
+            UpdateSelectedChannels();
+            break;
+        }
+
         case IDC_RESET:
         {
             _State->Reset();
@@ -3282,7 +3293,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_USE_ABSOLUTE,
             IDC_GAMMA_LBL, IDC_GAMMA,
 
-        IDC_CHANNELS_LBL, IDC_CHANNELS,
+        IDC_CHANNELS_LBL, IDC_CHANNELS, IDC_ALL_CHANNELS, IDC_NO_CHANNELS,
         IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
     };
 
@@ -4133,6 +4144,26 @@ void ConfigurationDialog::InitializeStyles() noexcept
     _SelectedStyle = 0;
 
     w.SetCurSel((int) _SelectedStyle);
+}
+
+/// <summary>
+/// Updates the Selected Channels setting.
+/// </summary>
+void ConfigurationDialog::UpdateSelectedChannels() noexcept
+{
+    auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+
+    int Count = lb.GetSelCount();
+    std::vector<int> Items((size_t) Count);
+
+    lb.GetSelItems(Count, Items.data());
+
+    uint32_t Channels = 0;
+
+    for (int Item : Items)
+        Channels |= 1 << Item;
+
+    _State->_GraphDescriptions[_SelectedGraph]._SelectedChannels = Channels;
 }
 
 /// <summary>
