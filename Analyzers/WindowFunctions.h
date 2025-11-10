@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2024.03.09) P. Stuer **/
+/** $VER: WindowFunctions.h (2025.11.10) P. Stuer **/
 
 #pragma once
 
@@ -70,7 +70,7 @@ public:
         x = (_Skew > 0.) ? ((x / 2. - 0.5) / (1. - (x / 2. - 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. + 1.:
                            ((x / 2. + 0.5) / (1. + (x / 2. + 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. - 1.;
 
-        return (_Truncate && (::fabs(x) >  1.)) ? 0. : x;
+        return (_Truncate && (std::fabs(x) >  1.)) ? 0. : x;
     }
 
     static window_function_t * Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
@@ -112,8 +112,8 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::cos(x * M_PI_2), 2.);
-    //  return 0.5 * (1. - ::cos(x * 2. * M_PI));
+    //  return std::pow(std::cos(x * M_PI_2), 2.);
+        return 0.5 * (1. - std::cos(x * 2. * M_PI));
     }
 };
 
@@ -131,9 +131,9 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.53836 - (0.46164 * ::cos(x * M_PI_2));
-    //  return 0.54      + (0.46 * ::cos(x * M_PI));
-    //  return (25./46.) + (0.46 * ::cos(x * M_PI));
+        return 0.53836   - (0.46164 * std::cos(x * M_PI_2));
+    //  return 0.54      + (0.46    * std::cos(x * M_PI));
+    //  return (25./46.) + (0.46    * std::cos(x * M_PI));
     }
 };
 
@@ -151,7 +151,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.42 + (0.5 * ::cos(x * M_PI)) + (0.08 * ::cos(2. * x * M_PI));
+        return 0.42 + (0.5 * std::cos(x * M_PI)) + (0.08 * std::cos(2. * x * M_PI));
     }
 };
 
@@ -169,7 +169,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.355768 + (0.487396 * ::cos(x * M_PI)) + (0.144232 * ::cos(2. * x * M_PI)) + (0.012604 * ::cos(3. * x * M_PI));
+        return 0.355768 + (0.487396 * std::cos(x * M_PI)) + (0.144232 * std::cos(2. * x * M_PI)) + (0.012604 * std::cos(3. * x * M_PI));
     }
 };
 
@@ -187,7 +187,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.21557895 + (0.41663158 * ::cos(x * M_PI)) + (0.277263158 * ::cos(2. * x * M_PI)) + (0.083578947 * ::cos(3. * x * M_PI)) + (0.006947368 * ::cos(4. * x * M_PI));
+        return 0.21557895 + (0.41663158 * std::cos(x * M_PI)) + (0.277263158 * std::cos(2. * x * M_PI)) + (0.083578947 * std::cos(3. * x * M_PI)) + (0.006947368 * std::cos(4. * x * M_PI));
     }
 };
 
@@ -205,7 +205,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. - ::fabs(x);
+        return 1. - std::fabs(x);
     }
 };
 
@@ -223,7 +223,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) > 0.5) ? (-2. * ::pow((-1. + ::fabs(x)), 3.)) : (1. - 24. * ::pow(::fabs(x / 2.), 2.) + 48. * ::pow(::fabs(x / 2.), 3.));
+        return (std::fabs(x) > 0.5) ? (-2. * std::pow((-1. + std::fabs(x)), 3.)) : (1. - 24. * std::pow(std::fabs(x / 2.), 2.) + 48. * std::pow(std::fabs(x / 2.), 3.));
     }
 };
 
@@ -241,7 +241,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(1. - (x * x), _Power);
+        return std::pow(1. - (x * x), _Power);
     }
 
 private:
@@ -262,7 +262,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::cos(x * M_PI_2), _Power);
+        return std::pow(std::cos(x * M_PI_2), _Power);
     }
 
 private:
@@ -283,7 +283,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::sqrt(1. - (x * x)), _Power);
+        return std::pow(std::sqrt(1. - (x * x)), _Power);
     }
 
 private:
@@ -304,7 +304,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::exp(-(_Sigma * _Sigma) * (x * x));
+        return std::exp(-(_Sigma * _Sigma) * (x * x));
     }
 
 private:
@@ -325,7 +325,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) <= 1. - _Parameter) ? 1 : (x > 0. ? ::pow(-::sin((x - 1.) * M_PI / _Parameter / 2.), 2.) : ::pow(::sin((x + 1.) * M_PI / _Parameter / 2.), 2.));
+        return (std::fabs(x) <= 1. - _Parameter) ? 1 : (x > 0. ? std::pow(-::sin((x - 1.) * M_PI / _Parameter / 2.), 2.) : std::pow(std::sin((x + 1.) * M_PI / _Parameter / 2.), 2.));
     }
 
 private:
@@ -346,7 +346,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::cosh(::sqrt(1. - (x * x)) * _AlphaSquared) / ::cosh(_AlphaSquared);
+        return std::cosh(std::sqrt(1. - (x * x)) * _AlphaSquared) / std::cosh(_AlphaSquared);
     }
 
 private:
@@ -367,7 +367,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::exp(-::fabs(x * _ParameterSquared));
+        return std::exp(-::fabs(x * _ParameterSquared));
     }
 
 private:
@@ -388,7 +388,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. / ::cosh(x * _ParameterSquared);
+        return 1. / std::cosh(x * _ParameterSquared);
     }
 
 private:
@@ -409,7 +409,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) <= 0.5) ? -::pow((x * M_SQRT2), 2.) + 1. : ::pow(::fabs(x * M_SQRT2) - M_SQRT2, 2.);
+        return (std::fabs(x) <= 0.5) ? -::pow((x * M_SQRT2), 2.) + 1. : std::pow(std::fabs(x * M_SQRT2) - M_SQRT2, 2.);
     }
 };
 
@@ -427,7 +427,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::sin(M_PI_2 * ::pow(::cos(x * M_PI_2), 2.));
+        return std::sin(M_PI_2 * std::pow(std::cos(x * M_PI_2), 2.));
     }
 };
 
@@ -445,7 +445,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. - ::sin(M_PI_2 * ::pow(::sin(x * M_PI_2), 2.));
+        return 1. - std::sin(M_PI_2 * std::pow(std::sin(x * M_PI_2), 2.));
     }
 };
 
@@ -455,7 +455,7 @@ public:
 class Galss : public window_function_t
 {
 public:
-    Galss(double skew, bool truncate) : window_function_t(skew, truncate) { _Denominator = ::pow(::tanh(M_SQRT2), 2.); }
+    Galss(double skew, bool truncate) : window_function_t(skew, truncate) { _Denominator = std::pow(std::tanh(M_SQRT2), 2.); }
 
     virtual ~Galss() { }
 
@@ -463,7 +463,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(((1. - 1. /(x + 2.)) * (1. - 1. / (-x + 2.))) * 4., 2.) * -(::tanh(M_SQRT2 * (-x + 1.)) * ::tanh(M_SQRT2 * (-x - 1.))) / _Denominator;
+        return std::pow(((1. - 1. /(x + 2.)) * (1. - 1. / (-x + 2.))) * 4., 2.) * -(std::tanh(M_SQRT2 * (-x + 1.)) * std::tanh(M_SQRT2 * (-x - 1.))) / _Denominator;
     }
 
 private:

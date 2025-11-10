@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.11.10) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -15,11 +15,6 @@
 /// </summary>
 fft_analyzer_t::~fft_analyzer_t()
 {
-    if (_Data)
-    {
-        delete[] _Data;
-        _Data = nullptr;
-    }
 }
 
 /// <summary>
@@ -30,14 +25,6 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
     _FFTSize = fftSize;
 
     _FFT.Initialize(_FFTSize);
-
-    // Create the ring buffer for the samples.
-    _Size = _FFTSize;
-    _Data = new audio_sample[_Size];
-
-    ::memset(_Data, 0, sizeof(audio_sample) * _Size);
-
-    _Curr = 0;
 
     _TimeData.resize(_FFTSize);
     _FreqData.resize(_FFTSize);
@@ -92,11 +79,7 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 
     // Merge the samples of all selected channels into one averaged sample.
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
-    {
-        _Data[_Curr] = AverageSamples(&samples[i], selectedChannels);
-
-        _Curr = (_Curr + 1) % _Size;
-    }
+        _InputRing.push_back(AverageSamples(&samples[i], selectedChannels));
 }
 
 /// <summary>
@@ -104,57 +87,49 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 /// </summary>
 void fft_analyzer_t::Transform() noexcept
 {
+    const size_t HopSize = _FFTSize / 4; // 75% Overlap-Add (OLA)
+
     double Norm = 0.;
 
     // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
+    while (_InputRing.size() >= _FFTSize)
     {
-        size_t i = _Curr;
-        size_t j = 0;
+        auto it = _InputRing.begin();
 
-        for (auto & Iter : _TimeData)
+        for (size_t i = 0; i < _FFTSize; ++i, ++it)
         {
-            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(i, (size_t) 0, _FFTSize, -1., 1.));
 
-            Iter = std::complex<double>(_Data[i] * WindowFactor, 0.);
-
-            i = (i + 1) % _Size;
+            _TimeData[i] = std::complex<double>(*it * WindowFactor, 0.);
 
             Norm += WindowFactor;
-            j++;
         }
-    }
 
-    // Normalize the Time domain data.
-    {
-        const double Factor = (double) _FFTSize / Norm / M_SQRT2;
-
-#ifdef oldcode
-        for (std::complex<double> & Iter : _TimeData)
-            Iter *= Factor;
-#else
-        std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
+        // Normalize the Time domain data.
         {
-            return x * Factor;
-        });
-#endif
-    }
+            const double Factor = (double) _FFTSize / Norm / M_SQRT2;
 
-    // Transform the data from the Time domain to the Frequency domain.
-    _FFT.Transform(_TimeData, _FreqData);
+            std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
+            {
+                return x * Factor;
+            });
+        }
 
-    // Normalize the Frequency domain data.
-    {
-        const double Factor = 2. / (double) _FFTSize;
+        // Transform the data from the Time domain to the Frequency domain.
+        _FFT.Transform(_TimeData, _FreqData);
 
-#ifdef oldcode
-        for (std::complex<double> & Iter : _FreqData)
-            Iter *= Factor;
-#else
-        std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
+        // Normalize the Frequency domain data.
         {
-            return x * Factor;
-        });
-#endif
+            const double Factor = 2. / (double) _FFTSize;
+
+            std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
+            {
+                return x * Factor;
+            });
+        }
+
+        // Remove the processed samples; Keep the overlap.
+        _InputRing.erase(_InputRing.begin(), _InputRing.begin() + (int64_t) HopSize);
     }
 }
 
@@ -175,10 +150,10 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
         const double LoHz = HzToFFTIndex(std::min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
         const double HiHz = HzToFFTIndex(std::max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
 
-        const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(LoHz) + 1. : ::ceil(LoHz));
-              int HiIdx = (int) (_State->_SmoothLowerFrequencies ? ::round(HiHz) - 1. : ::floor(HiHz));
+        const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(LoHz) + 1. : std::ceil(LoHz));
+              int HiIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(HiHz) - 1. : std::floor(HiHz));
 
-        const double BandGain = UseBandGain ? ::hypot(1, ::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+        const double BandGain = UseBandGain ? std::hypot(1, std::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
         if (LoIdx <= HiIdx)
         {
@@ -233,13 +208,13 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
             if (IsMedian)
                 Value = Median(Values);
 
-            fb.NewValue = (IsRMS ? ::sqrt(Value) : Value) * BandGain;
+            fb.NewValue = (IsRMS ? std::sqrt(Value) : Value) * BandGain;
         }
         else
         {
             const double Value = fb.Center * (double) _FreqData.size() / sampleRate;
 
-            fb.NewValue = ::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
+            fb.NewValue = std::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
         }
     }
 }
@@ -262,13 +237,13 @@ void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands
 
         const double OverflowCompensation = std::max(0., MaxBin - MinBin - (double) _FreqData.size());
 
-        for (double i = ::floor(MidBin); i >= ::floor(MinBin + OverflowCompensation); --i)
-            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
+        for (double i = std::floor(MidBin); i >= std::floor(MinBin + OverflowCompensation); --i)
+            Sum += std::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
 
-        for (double i = ::ceil(MidBin); i <= ::ceil(MaxBin - OverflowCompensation); ++i)
-            Sum += ::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
+        for (double i = std::ceil(MidBin); i <= std::ceil(MaxBin - OverflowCompensation); ++i)
+            Sum += std::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
-        fb.NewValue = ::sqrt(Sum);
+        fb.NewValue = std::sqrt(Sum);
     }
 }
 
@@ -287,15 +262,15 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_
 
         const double Center      = fb.Center * HzToBin;
 
-        const double Bandwidth    = ::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
+        const double Bandwidth    = std::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
         const double tlen         = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
-        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : std::min(::trunc(::pow(2., ::round(::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
+        const double actualLength = _State->_UseGranularBandwidth ? tlen * sampleRate : std::min(std::trunc(std::pow(2., std::round(std::log2(tlen * sampleRate)))), (double) _FreqData.size() / _State->_BandwidthCap);
         const double flen         = std::min(_State->_BandwidthAmount * (double) _FreqData.size() / actualLength, (double) _FreqData.size());
 
-        const double Start        = ::ceil (Center - flen / 2.);
-        const double End          = ::floor(Center + flen / 2.);
+        const double Start        = std::ceil (Center - flen / 2.);
+        const double End          = std::floor(Center + flen / 2.);
 
-        if (::isfinite(Start) && ::isfinite(End))
+        if (std::isfinite(Start) && std::isfinite(End))
         {
             for (int32_t i = (int32_t ) Start; i <= (int32_t ) End; ++i)
             {
@@ -311,7 +286,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_
             }
         }
 
-        fb.NewValue = ::hypot(re, im);
+        fb.NewValue = std::hypot(re, im);
     }
 }
 
@@ -325,10 +300,10 @@ double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoef
 
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
-        const double Pos = ::floor(value) + i;
-        const double Twiddle = value - Pos; // -Pos + ::round(Pos) + i
+        const double Pos = std::floor(value) + i;
+        const double Twiddle = value - Pos; // -Pos + std::round(Pos) + i
 
-        double w = (::fabs(Twiddle) <= 0.) ? 1. : ::sin(Twiddle * M_PI) / (Twiddle * M_PI) * ::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
+        double w = (std::fabs(Twiddle) <= 0.) ? 1. : std::sin(Twiddle * M_PI) / (Twiddle * M_PI) * std::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
 
         w *= (-1 + msc::Wrap(i, 2) * 2);
 
@@ -338,7 +313,7 @@ double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoef
         im += fftCoeffs[CoefIdx].imag() * w;
     }
 
-    return ::hypot(re, im);
+    return std::hypot(re, im);
 }
 
 /// <summary>

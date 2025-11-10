@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2025.09.15) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2025.11.10) P. Stuer **/
 
 #pragma once
 
@@ -10,6 +10,8 @@
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
 #include <Windows.h>
+
+#include <deque>
 
 #include "Analyzer.h"
 #include "FrequencyBand.h"
@@ -90,10 +92,7 @@ private:
     fft_t _FFT;
     size_t _FFTSize;
 
-    // Wrap-around sample buffer
-    audio_sample * _Data;
-    size_t _Size;
-    size_t _Curr;
+    std::deque<audio_sample> _InputRing;
 
     std::vector<std::complex<double>> _TimeData;
     std::vector<std::complex<double>> _FreqData;
