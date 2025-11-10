@@ -169,7 +169,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
             {
                 size_t CoefIdx = msc::Wrap((size_t) Idx, _FreqData.size());
 
-                double Coef = std::abs(_FreqData[CoefIdx]);
+                const double Coef = std::abs(_FreqData[CoefIdx]);
 
                 switch (_State->_SummationMethod)
                 {
@@ -232,7 +232,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands
         double Sum = 0.;
 
         const double MinBin = std::min(fb.Lo, fb.Hi) * Scale;
-        const double MidBin = fb.Center                 * Scale;
+        const double MidBin = fb.Center              * Scale;
         const double MaxBin = std::max(fb.Lo, fb.Hi) * Scale;
 
         const double OverflowCompensation = std::max(0., MaxBin - MinBin - (double) _FreqData.size());
@@ -329,7 +329,7 @@ double fft_analyzer_t::Median(std::vector<double> & data) const noexcept
 
     std::sort(data.begin(), data.end());
 
-    size_t Mid = data.size() / 2;
+    const size_t Mid = data.size() / 2;
 
     return (data.size() % 2) ? data[Mid] : (data[Mid - 1] + data[Mid]) / 2.;
 }
