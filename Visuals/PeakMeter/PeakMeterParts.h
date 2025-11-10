@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2025.11.08) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2025.11.10) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -68,6 +68,22 @@ public:
     void Unbind() noexcept
     {
         _DeviceContext.Release();
+
+        _BackgroundStyle = nullptr;
+
+        _PeakStyle = nullptr;
+        _Peak0dBStyle = nullptr;
+        _MaxPeakStyle = nullptr;
+        _PeakTextStyle = nullptr;
+
+        _RMSStyle = nullptr;
+        _RMS0dBStyle = nullptr;
+        _RMSTextStyle = nullptr;
+
+        _NameStyle = nullptr;
+
+        _ScaleTextStyle = nullptr;
+        _ScaleLineStyle = nullptr;
 
         _DebugBrush.Release();
 

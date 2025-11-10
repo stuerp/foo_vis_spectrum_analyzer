@@ -57,8 +57,6 @@ void peak_meter_t::Reset() noexcept
 {
     _RenderedChannels = 0;
     _IsResized = true;
-
-    _ResourcesCreated = false;
 }
 
 /// <summary>
@@ -309,9 +307,6 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_ResourcesCreated && (_RenderedChannels == _Analysis->_MeasuredChannels))
-        return S_OK;
-
     HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr))
@@ -355,21 +350,16 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && (_RenderedChannels != _Analysis->_MeasuredChannels))
     {
-        if (_RenderedChannels != _Analysis->_MeasuredChannels)
-        {
-            DeleteParts();
+        DeleteParts();
 
-            CreateParts();
+        CreateParts();
 
-            MeasureParts(deviceContext);
+        MeasureParts(deviceContext);
 
-            _RenderedChannels = _Analysis->_MeasuredChannels;
-        }
+        _RenderedChannels = _Analysis->_MeasuredChannels;
     }
-
-    _ResourcesCreated = SUCCEEDED(hr);
 
     return hr;
 }
@@ -384,13 +374,27 @@ void peak_meter_t::DeleteDeviceSpecificResources() noexcept
 
     DeleteParts();
 
-#ifdef _DEBUG
-    _DebugBrush.Release();
-#endif
+    SafeRelease(&_BackgroundStyle);
+
+    SafeRelease(&_PeakStyle);
+    SafeRelease(&_Peak0dBStyle);
+    SafeRelease(&_MaxPeakStyle);
+    SafeRelease(&_PeakTextStyle);
+
+    SafeRelease(&_RMSStyle);
+    SafeRelease(&_RMS0dBStyle);
+    SafeRelease(&_RMSTextStyle);
+
+    SafeRelease(&_NameStyle);
+
+    SafeRelease(&_ScaleTextStyle);
+    SafeRelease(&_ScaleLineStyle);
 
     _OpacityMask.Release();
 
-    _ResourcesCreated = false;
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
 }
 
 /// <summary>

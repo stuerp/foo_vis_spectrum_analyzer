@@ -74,7 +74,5 @@ private:
 
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 
-    bool _ResourcesCreated;
-
     std::vector<part_t *> _Parts;
 };
