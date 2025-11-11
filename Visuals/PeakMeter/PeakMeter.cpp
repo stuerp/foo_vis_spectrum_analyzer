@@ -66,10 +66,10 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+
     if (!SUCCEEDED(hr))
         return;
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
     for (auto Part : _Parts)
         Part->Render();
@@ -410,11 +410,13 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
     {
         CComPtr<ID2D1SolidColorBrush> Brush;
 
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush);
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush); // Black parts will be masked out.
 
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
+
+            rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
             rt->Clear();
 
@@ -424,12 +426,12 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
             {
                 if (_State->_HorizontalPeakMeter)
                 {
-                    for (FLOAT x = _Settings->_FlipHorizontally ? _State->_LEDGap : 0.f; x < _Size.width; x += LEDSize)
+                    for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
                         rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, _Size.height), Brush);
                 }
                 else
                 {
-                    for (FLOAT y = _Settings->_FlipVertically ? _State->_LEDGap : 0.f; y < _Size.height; y += LEDSize)
+                    for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
                         rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDSize), Brush);
                 }
             }

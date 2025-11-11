@@ -130,6 +130,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.10.0.0-alpha2, 2025-11-xx
 
 - Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
+- Fixed: SWIFT optimization bug.
 
 You can read the full history [here](docs/History.md).
 

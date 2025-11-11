@@ -77,7 +77,7 @@ bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameC
 
             // CurValue now contains the last calculated value.
             frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
-            k++;
+            ++k;
         }
     }
 

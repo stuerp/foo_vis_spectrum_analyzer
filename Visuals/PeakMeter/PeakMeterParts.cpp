@@ -228,21 +228,18 @@ void bar_t::Render() const noexcept
                 DrawHorizontalRectangle(Rect, _Peak0dBStyle);
             }
         }
-
         // Draw the foreground (Peak Top).
         if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
         {
             const FLOAT x = (FLOAT) _Measurement->MaxPeakNormalized * _Size.width;
 
+            Rect.left  = _Rect.left + x;
+            Rect.right = _Rect.left + x;
+
             if (!_State->_LEDMode)
             {
-                Rect.left  = _Rect.left + x - _MaxPeakStyle->_Thickness / 2.f;
-                Rect.right = _Rect.left + x + _MaxPeakStyle->_Thickness / 2.f;
-            }
-            else
-            {
-                Rect.left  = _Rect.left + x;
-                Rect.right = _Rect.left + x + _LEDSize;
+                Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
+                Rect.right += _MaxPeakStyle->_Thickness / 2.f;
             }
 
             const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
@@ -300,15 +297,13 @@ void bar_t::Render() const noexcept
         {
             const FLOAT y = (FLOAT) _Measurement->MaxPeakNormalized * _Size.height;
 
+            Rect.top    = _Rect.top + y;
+            Rect.bottom = _Rect.top + y;
+
             if (!_State->_LEDMode)
             {
-                Rect.top    = _Rect.top + y - _MaxPeakStyle->_Thickness / 2.f;
-                Rect.bottom = _Rect.top + y + _MaxPeakStyle->_Thickness / 2.f;
-            }
-            else
-            {
-                Rect.top    = _Rect.top + y;
-                Rect.bottom = _Rect.top + y + _LEDSize;
+                Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
+                Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
             }
 
             const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
@@ -388,17 +383,21 @@ void bar_t::Render() const noexcept
 /// </summary>
 void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
 {
+//  _DeviceContext->DrawRectangle(rect, _DebugBrush);
+
     if (_State->_LEDMode)
     {
         if (_State->_LEDIntegralSize)
         {
-            rect.left  = std::ceilf(rect.left  / _LEDSize) * _LEDSize;
-            rect.right = std::ceilf(rect.right / _LEDSize) * _LEDSize;
+            rect.left  = std::max(_Rect.left,  _Rect.left + std::floorf((rect.left  - _Rect.left) / _LEDSize) * _LEDSize);
+            rect.right = std::min(_Rect.right, _Rect.left + std::ceilf ((rect.right - _Rect.left) / _LEDSize) * _LEDSize);
         }
+
+        const D2D1_RECT_F Src = { 0.f, _Rect.top, rect.right - rect.left, _Rect.bottom };
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, _Rect, _Rect);
+        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
@@ -417,13 +416,16 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
     {
         if (_State->_LEDIntegralSize)
         {
-            rect.top    = std::ceilf(rect.top    / _LEDSize) * _LEDSize;
-            rect.bottom = std::ceilf(rect.bottom / _LEDSize) * _LEDSize;
+            rect.top    = std::max(_Rect.top,    _Rect.top + std::floorf((rect.top    - _Rect.top) / _LEDSize) * _LEDSize);
+            rect.bottom = std::min(_Rect.bottom, _Rect.top + std::ceilf ((rect.bottom - _Rect.top) / _LEDSize) * _LEDSize);
+
         }
+
+        const D2D1_RECT_F Src = { _Rect.left, 0.f, _Rect.right, rect.bottom - rect.top };
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, _Rect, _Rect);
+        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
