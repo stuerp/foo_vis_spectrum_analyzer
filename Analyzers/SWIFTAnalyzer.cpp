@@ -20,13 +20,24 @@ swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, u
 /// </summary>
 bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noexcept
 {
-    const double Factor = 4. * _State->_IIRBandwidth / (double) _SampleRate - 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
+    const double Constant1 = 4. * _State->_IIRBandwidth / (double) _SampleRate;
+    const double Constant2 = 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
     const double a = M_PI * 2. / (double) _SampleRate;
 
-    // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one. Pre-calculate rX and rY here since sin and cos functions are pretty slow.
+    _Coefs.clear();
+
+    // Note: x and y are used instead of real and imaginary numbers since vector rotation is the equivalent of the complex one.
+    // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
     for (const frequency_band_t & fb : frequencyBands)
-        _Coefs.push_back(swift_coef_t(::cos(fb.Center * a), ::sin(fb.Center * a), ::exp(-::abs(fb.Hi - fb.Lo) * Factor)));
+    {
+        _Coefs.push_back(swift_coef_t
+        (
+            ::cos(fb.Center * a),
+            ::sin(fb.Center * a),
+            ::exp(-::abs(fb.Hi - fb.Lo) * Constant1 - Constant2)
+        ));
+    }
 
     return true;
 }
@@ -41,7 +52,6 @@ bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameC
 
     const size_t SampleCount = frameCount * _ChannelCount;
 
-    #pragma loop(hint_parallel(2))
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
         const audio_sample Sample = AverageSamples(&frames[i], selectedChannels);
