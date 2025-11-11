@@ -206,7 +206,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_GRAPH_DESCRIPTION, "Describes the configuration of this graph." },
 
             { IDC_HORIZONTAL_ALIGNMENT, "Determines how the visualization gets horizontally aligned in the graph area." },
-            { IDC_VERTICAL_ALIGNMENT, "Determines how the visualization gets vertically aligned in the graph area." },
+//          { IDC_VERTICAL_ALIGNMENT, "Determines how the visualization gets vertically aligned in the graph area." },
 
             { IDC_FLIP_HORIZONTALLY, "Renders the visualization from right to left." },
             { IDC_FLIP_VERTICALLY, "Renders the visualization upside down." },

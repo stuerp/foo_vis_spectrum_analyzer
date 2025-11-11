@@ -43,13 +43,15 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
+/*
         if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
             return;
-
+*/
         Now = Chrono.Now();
 
         const int64_t Elapsed = NextFrameTime - Now;
 
+        // Coarse delay
         if (Elapsed > SleepTime)
         {
             const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
@@ -57,11 +59,12 @@ void uielement_t::RenderThreadProc() noexcept
             const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
 
             if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
-                break;
+                return;
 
             continue;
         }
 
+        // Fine delay (Ugly busy wait)
         while (Chrono.Now() < NextFrameTime)
         {
             if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)

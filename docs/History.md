@@ -1,6 +1,19 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha1, 2025-11-10
+
+- New: Implemented a high resolution timer.
+  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
+- New: All / None button in configuration dialog to quickly select all or no channels.
+- Improved: Complete rewrite of Peak meter visualization.
+  - Reduced CPU and GPU load.
+  - Fixed known graphical glitches and inconsistencies.
+  - New: *Center scale* setting to draw scales between the peak meter bars.
+  - New: *Max. bar size* setting to constrain the width/height of a meter bar. (Forum feature request)
+- Improved: Raised the max. number of frequency bins from 512 to 8192.
+- Improved: Added Overlap-Add (OLA) to the FFT analyzer.
+
 v0.9.1.0, 2025-11-02
 
 - Fixed: Handling of selected channels for FFT-based visualizations.

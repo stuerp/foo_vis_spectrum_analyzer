@@ -127,18 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha1, 2025-11-10
+v0.10.0.0-alpha2, 2025-11-xx
 
-- New: Implemented a high resolution timer.
-  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
-- New: All / None button in configuration dialog to quickly select all or no channels.
-- Improved: Complete rewrite of Peak meter visualization.
-  - Reduced CPU and GPU load.
-  - Fixed known graphical glitches and inconsistencies.
-  - New: *Center scale* setting to draw scales between the peak meter bars.
-  - New: *Max. Bar Size* setting to constrain the width/height of a meter bar. (Forum feature request)
-- Improved: Raised the max. number of frequency bins from 512 to 8192.
-- Improved: Added Overlap-Add (OLA) to the FFT analyzer.
+- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
 
 You can read the full history [here](docs/History.md).
 
