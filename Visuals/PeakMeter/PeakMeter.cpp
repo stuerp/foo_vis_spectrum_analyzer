@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2025.11.09) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2025.11.12) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -66,10 +66,12 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
-
     if (!SUCCEEDED(hr))
         return;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
+
+//  deviceContext->DrawRectangle(_Rect, _DebugBrush);
 
     for (auto Part : _Parts)
         Part->Render();
@@ -81,7 +83,12 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 void peak_meter_t::CreateParts() noexcept
 {
     if (_Settings->_YAxisLeft)
-        _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_TRAILING, _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+        _Parts.push_back(new scale_t
+        (
+            _State, _Settings,
+            _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
+            _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+        ));
 
     bool IsFirstBar = true;
 
@@ -141,7 +148,12 @@ void peak_meter_t::CreateParts() noexcept
     }
 
     if (_Settings->_YAxisRight)
-        _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_LEADING, _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+        _Parts.push_back(new scale_t
+        (
+            _State, _Settings,
+            _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
+            _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+        ));
 }
 
 /// <summary>
@@ -408,6 +420,8 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
 
     if (SUCCEEDED(hr))
     {
+        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
         CComPtr<ID2D1SolidColorBrush> Brush;
 
         hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush); // Black parts will be masked out.
@@ -415,8 +429,6 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
-
-            rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
             rt->Clear();
 

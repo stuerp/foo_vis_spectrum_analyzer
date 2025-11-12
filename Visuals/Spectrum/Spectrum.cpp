@@ -706,6 +706,8 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
 
     if (SUCCEEDED(hr))
     {
+        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
         CComPtr<ID2D1SolidColorBrush> Brush;
 
         hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush);
@@ -713,8 +715,6 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
         if (SUCCEEDED(hr))
         {
             rt->BeginDraw();
-
-            rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
             rt->Clear();
 
