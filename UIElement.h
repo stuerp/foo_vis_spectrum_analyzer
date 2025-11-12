@@ -111,6 +111,7 @@ private:
 
     void on_album_art(album_art_data::ptr data);
 
+    bool GetArtwork(const metadb_handle_ptr & track) noexcept;
     bool GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
     bool GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
 

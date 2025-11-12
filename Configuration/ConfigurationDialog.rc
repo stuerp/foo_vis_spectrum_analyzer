@@ -36,7 +36,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
 
         control     "Enabled",                      IDC_LED_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C12, Y_C12, W_C12, H_C12
 
-        rtext       "LED size:"                     IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
+        rtext       "LED light:"                    IDC_LED_SIZE_LBL,               X_C17, Y_C17 + 2, W_C17, H_C17
         edittext                                    IDC_LED_SIZE,                   X_C18, Y_C18, W_C18, H_C18, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext       "LED gap:"                      IDC_LED_GAP_LBL,                X_C19, Y_C19 + 2, W_C19, H_C19
@@ -199,7 +199,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         edittext                                    IDC_BANDS_PER_OCTAVE,           X_A56, Y_A56, W_A56, H_A56, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
         control         "",                         IDC_BANDS_PER_OCTAVE_SPIN,      "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
-        rtext           "Pitch:"                    IDC_PITCH_LBL_1,                X_A29, Y_A29 + 2, W_A29, H_A29
+        rtext           "Tuning pitch:"             IDC_PITCH_LBL_1,                X_A29, Y_A29 + 2, W_A29, H_A29
         edittext                                    IDC_PITCH,                      X_A30, Y_A30, W_A30, H_A30, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_PITCH_SPIN,                 "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "Hz",                       IDC_PITCH_LBL_2,                X_A64, Y_A64 + 2, W_A64, H_A64

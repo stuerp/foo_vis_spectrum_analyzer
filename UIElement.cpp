@@ -96,14 +96,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
         metadb_handle_ptr CurrentTrack;
 
         if (playback_control::get()->get_now_playing(CurrentTrack))
-        {
-            GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
-
-            if (_UIState._ArtworkFilePath.empty())
-                GetArtworkFromTrack(CurrentTrack, fb2k::noAbort);
-            else
-                GetArtworkFromScript(CurrentTrack, fb2k::noAbort);
-        }
+            GetArtwork(CurrentTrack);
     }
 
     // Create the tooltip control.
@@ -282,27 +275,27 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
         case IDM_REFRESH_RATE_LIMIT_20:
             _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 20;
+            _RenderState._RefreshRateLimit = 20; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_30:
             _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 30;
+            _RenderState._RefreshRateLimit = 30; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
             _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 60;
+            _RenderState._RefreshRateLimit = 60; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
             _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 100;
+            _RenderState._RefreshRateLimit = 100; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
             _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 200;
+            _RenderState._RefreshRateLimit = 200; // Near-atomic
             break;
 
         case IDM_CONFIGURE:
@@ -355,14 +348,14 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 /// </summary>
 void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 {
-    if (_RenderState._ShowToolTipsAlways)
+    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
 
     _ToolTipControl.Activate(true);
 
     DeleteTrackingToolTip();
 
-    _RenderState._ShowToolTipsNow = true;
+    _UIState._ShowToolTipsNow = true;
 
     OnMouseMove(flags, point);
 }
@@ -372,14 +365,14 @@ void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 /// </summary>
 void uielement_t::OnLButtonUp(UINT flags, CPoint point)
 {
-    if (_RenderState._ShowToolTipsAlways)
+    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
 
     _ToolTipControl.Activate(false);
 
     DeleteTrackingToolTip();
 
-    _RenderState._ShowToolTipsNow = false;
+    _UIState._ShowToolTipsNow = false;
 }
 
 /// <summary>
@@ -427,15 +420,15 @@ void uielement_t::Resize()
             _ToolTipControl.DelTool(&ti);
         }
 
-        _CriticalSection.Enter();
-
         {
+            _CriticalSection.Enter();
+
             _Grid.Resize(SizeF.width, SizeF.height);
 
             _RenderState._StyleManager.DeleteGradientBrushes();
-        }
 
-        _CriticalSection.Leave();
+            _CriticalSection.Leave();
+        }
 
         for (auto & Iter : _Grid)
         {
@@ -456,16 +449,18 @@ void uielement_t::OnColorsChanged()
 
     _UIState._StyleManager.UpdateCurrentColors();
 
-    _CriticalSection.Enter();
+    {
+        _CriticalSection.Enter();
 
-    _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
+        _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
 
-    ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
-    // Notify the render thread.
-    _Event.Raise(event_t::UserInterfaceColorsChanged);
+        // Notify the render thread.
+        _Event.Raise(event_t::UserInterfaceColorsChanged);
 
-    _CriticalSection.Leave();
+        _CriticalSection.Leave();
+    }
 
     // Notify the configuration dialog.
     if (_ConfigurationDialog.IsWindow())
@@ -644,12 +639,7 @@ void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
-    {
-        if (_UIState._ArtworkFilePath.empty())
-            GetArtworkFromTrack(track, fb2k::noAbort);
-        else
-            GetArtworkFromScript(track, fb2k::noAbort);
-    }
+        GetArtwork(track);
 
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackStartedNewTrack);
@@ -680,13 +670,24 @@ void uielement_t::on_playback_pause(bool)
 /// </summary>
 void uielement_t::on_playback_time(double time)
 {
-    _RenderState._TrackTime = time;
+    _RenderState._TrackTime = time; // Near-atomic
 }
 
 #pragma endregion
 
 /// <summary>
-/// Gets the album art from the specified track.
+/// Gets the artwork for the specified track.
+/// </summary>
+bool uielement_t::GetArtwork(const metadb_handle_ptr & track) noexcept
+{
+    if (_UIState._ArtworkFilePath.empty())
+        return GetArtworkFromTrack(track, fb2k::noAbort);
+    else
+        return GetArtworkFromScript(track, fb2k::noAbort);
+}
+
+/// <summary>
+/// Gets the artwork for the specified track.
 /// </summary>
 bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {
@@ -728,7 +729,7 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
 }
 
 /// <summary>
-/// Gets the artwork from a script.
+/// Gets the artwork for the specified track from a script.
 /// </summary>
 bool uielement_t::GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {

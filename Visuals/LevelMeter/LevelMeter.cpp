@@ -89,7 +89,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT CenterX = GetWidth()  / 2.f;
     const FLOAT CenterY = GetHeight() / 2.f;
 
-    const FLOAT LEDHeight = _State->_LEDSize + _State->_LEDGap;
+    const FLOAT LEDHeight = _State->_LEDLight + _State->_LEDGap;
 
     if (_State->_HorizontalLevelMeter)
     {
@@ -372,7 +372,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 
             rt->Clear();
 
-            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
 
             if (LEDSize > 0.f)
             {
@@ -384,7 +384,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
                         w = std::ceil(w / LEDSize) * LEDSize;
 
                     for (FLOAT x = ((Size.width - w) / 2.f) + _State->_LEDGap; x < w; x += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, Size.height), Brush);
+                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, Size.height), Brush);
                 }
                 else
                 {
@@ -394,7 +394,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
                         h = std::ceil(h / LEDSize) * LEDSize;
 
                     for (FLOAT y = ((Size.height - h) / 2.f) + _State->_LEDGap; y < h; y += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDSize), Brush);
+                        rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDLight), Brush);
                 }
             }
 

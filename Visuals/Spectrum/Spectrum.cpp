@@ -216,7 +216,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept
 {
-    const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
 
     // Draw the bar area.
     if (areaStyle->IsEnabled())
@@ -731,12 +731,12 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
 
             rt->Clear();
 
-            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
 
             if (LEDSize > 0.f)
             {
                 for (FLOAT y = 0.f; y < _ClientSize.height; y += LEDSize)
-                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDSize), Brush);
+                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush);
             }
 
             hr = rt->EndDraw();

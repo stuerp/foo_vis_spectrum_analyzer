@@ -420,19 +420,19 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
 
             rt->Clear();
 
-            const FLOAT LEDSize = _State->_LEDSize + _State->_LEDGap;
+            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
 
             if (LEDSize > 0.f)
             {
                 if (_State->_HorizontalPeakMeter)
                 {
                     for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDSize, _Size.height), Brush);
+                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush);
                 }
                 else
                 {
                     for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDSize), Brush);
+                        rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush);
                 }
             }
 

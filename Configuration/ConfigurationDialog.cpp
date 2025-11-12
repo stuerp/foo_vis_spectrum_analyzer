@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.11.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2025.11.12) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -309,6 +309,148 @@ void ConfigurationDialog::Initialize()
 
         UpdatePages(_State->_PageIndex);
     }
+    #pragma endregion
+
+    #pragma region Visualization
+    {
+        const WCHAR * Names[] =
+        {
+            L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
+        #ifdef _DEBUG
+            L"Tester"
+        #endif
+        };
+
+        auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
+
+        w.ResetContent();
+
+        for (const auto & x : Names)
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_VisualizationType);
+
+        InitializeStyles();
+    }
+
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_PeakMode);
+    }
+
+    {
+        SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
+        SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
+    }
+
+    #pragma region LEDs
+
+    {
+        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _State->_LEDMode);
+
+        SetDouble(IDC_LED_SIZE, _State->_LEDLight, 0, 0);
+        SetDouble(IDC_LED_GAP, _State->_LEDGap, 0, 0);
+
+        SendDlgItemMessageW(IDC_LED_INTEGRAL_SIZE, BM_SETCHECK, _State->_LEDIntegralSize);
+    }
+
+    #pragma endregion
+
+    #pragma region Radial Bars
+
+    {
+        SetDouble(IDC_INNER_RADIUS, _State->_InnerRadius * 100., 0, 1);
+        SetDouble(IDC_OUTER_RADIUS, _State->_OuterRadius * 100., 0, 1);
+        SetDouble(IDC_ANGULAR_VELOCITY, _State->_AngularVelocity, 0, 1);
+    }
+
+    #pragma endregion
+
+    #pragma region Spectogram
+
+    {
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
+    }
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTOGRAM, BM_SETCHECK, _State->_HorizontalSpectogram);
+    }
+
+    {
+        SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
+    }
+
+    #pragma endregion
+
+    #pragma region Peak Meter
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
+        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
+        SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_CenterScale);
+    }
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
+
+        UDACCEL Accel[] =
+        {
+            { 1,  100 }, // 100ms
+            { 2,  500 }, // 500ms
+            { 3, 1000 }, // 1s
+        };
+
+        w.SetRange32((int) (MinRMSWindow * 1000.f), (int) (MaxRMSWindow * 1000.f));
+        w.SetPos32(0);
+        w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
+    }
+    {
+        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_MAX_BAR_SIZE)); _NumericEdits.push_back(ne);
+    }
+
+    #pragma endregion
+
+    #pragma region Level Meter
+
+    {
+        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
+    }
+
+    #pragma endregion
+
+    #pragma region Oscilloscope
+
+    {
+        SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
+
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XGain);
+        }
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YGain);
+        }
+
+        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
+        }
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
+        }
+    }
+
+    #pragma endregion
+
     #pragma endregion
 
     #pragma region Transform
@@ -1039,148 +1181,6 @@ void ConfigurationDialog::Initialize()
 
     #pragma endregion
 
-    #pragma region Visualization
-    {
-        const WCHAR * Names[] =
-        {
-            L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
-        #ifdef _DEBUG
-            L"Tester"
-        #endif
-        };
-
-        auto w = (CComboBox) GetDlgItem(IDC_VISUALIZATION);
-
-        w.ResetContent();
-
-        for (const auto & x : Names)
-            w.AddString(x);
-
-        w.SetCurSel((int) _State->_VisualizationType);
-
-        InitializeStyles();
-    }
-
-    {
-        auto w = (CComboBox) GetDlgItem(IDC_PEAK_MODE);
-
-        w.ResetContent();
-
-        for (const auto & x : { L"None", L"Classic", L"Gravity", L"AIMP", L"Fade Out", L"Fading AIMP" })
-            w.AddString(x);
-
-        w.SetCurSel((int) _State->_PeakMode);
-    }
-
-    {
-        SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
-        SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
-    }
-
-    #pragma region LEDs
-
-    {
-        SendDlgItemMessageW(IDC_LED_MODE, BM_SETCHECK, _State->_LEDMode);
-
-        SetDouble(IDC_LED_SIZE, _State->_LEDSize, 0, 0);
-        SetDouble(IDC_LED_GAP, _State->_LEDGap, 0, 0);
-
-        SendDlgItemMessageW(IDC_LED_INTEGRAL_SIZE, BM_SETCHECK, _State->_LEDIntegralSize);
-    }
-
-    #pragma endregion
-
-    #pragma region Radial Bars
-
-    {
-        SetDouble(IDC_INNER_RADIUS, _State->_InnerRadius * 100., 0, 1);
-        SetDouble(IDC_OUTER_RADIUS, _State->_OuterRadius * 100., 0, 1);
-        SetDouble(IDC_ANGULAR_VELOCITY, _State->_AngularVelocity, 0, 1);
-    }
-
-    #pragma endregion
-
-    #pragma region Spectogram
-
-    {
-        SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
-    }
-
-    {
-        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTOGRAM, BM_SETCHECK, _State->_HorizontalSpectogram);
-    }
-
-    {
-        SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
-    }
-
-    #pragma endregion
-
-    #pragma region Peak Meter
-
-    {
-        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
-        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
-        SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_CenterScale);
-    }
-    {
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
-
-        auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
-
-        UDACCEL Accel[] =
-        {
-            { 1,  100 }, // 100ms
-            { 2,  500 }, // 500ms
-            { 3, 1000 }, // 1s
-        };
-
-        w.SetRange32((int) (MinRMSWindow * 1000.f), (int) (MaxRMSWindow * 1000.f));
-        w.SetPos32(0);
-        w.SetAccel(_countof(Accel), Accel);
-    }
-    {
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
-    }
-    {
-        CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_MAX_BAR_SIZE)); _NumericEdits.push_back(ne);
-    }
-
-    #pragma endregion
-
-    #pragma region Level Meter
-
-    {
-        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
-    }
-
-    #pragma endregion
-
-    #pragma region Oscilloscope
-
-    {
-        SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
-
-        {
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XGain);
-        }
-        {
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YGain);
-        }
-
-        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
-        {
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
-        }
-        {
-            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
-        }
-    }
-
-    #pragma endregion
-
-    #pragma endregion
-
     #pragma region Styles
     {
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SOURCE);
@@ -1255,12 +1255,12 @@ void ConfigurationDialog::Initialize()
     }
     #pragma endregion
 
+    UpdateVisualizationPage();
     UpdateTransformPage();
     UpdateFrequenciesPage();
     UpdateFiltersPage();
     UpdateCommonPage();
     UpdateGraphsPage();
-    UpdateVisualizationPage();
     UpdateStylesPage();
     UpdatePresetsPage();
 }
@@ -1330,7 +1330,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
     if (_State == nullptr)
         return;
 
-    Settings Settings = Settings::All;
+    Settings ChangedSettings = Settings::All;
 
     auto cb = (CComboBox) w;
 
@@ -1348,6 +1348,48 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             _State->_PageIndex = Selection;
             return;
         }
+        #pragma endregion
+
+        #pragma region Visualization Page
+
+        case IDC_VISUALIZATION:
+        {
+            _State->_VisualizationType = (VisualizationType) SelectedIndex;
+
+            UpdateVisualizationPage();
+            UpdateTransformPage();
+            UpdateFrequenciesPage();
+            UpdateFiltersPage();
+            UpdateCommonPage();
+            UpdateGraphsPage();
+            UpdateStylesPage();
+
+            InitializeXAxisMode();
+            InitializeYAxisMode();
+            InitializeStyles();
+            break;
+        }
+
+        #pragma region Bars
+
+        case IDC_PEAK_MODE:
+        {
+            _State->_PeakMode = (PeakMode) SelectedIndex;
+
+            UpdateVisualizationPage();
+            break;
+        }
+
+        #pragma endregion
+
+        case IDC_CHANNEL_PAIRS:
+        {
+            _State->_ChannelPair = (ChannelPair) SelectedIndex;
+
+            UpdateVisualizationPage();
+            break;
+        }
+
         #pragma endregion
 
         #pragma region Transform Page
@@ -1527,48 +1569,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
         #pragma endregion
 
-        #pragma region Visualization Page
-
-        case IDC_VISUALIZATION:
-        {
-            _State->_VisualizationType = (VisualizationType) SelectedIndex;
-
-            UpdateVisualizationPage();
-            UpdateTransformPage();
-            UpdateFrequenciesPage();
-            UpdateFiltersPage();
-            UpdateCommonPage();
-            UpdateGraphsPage();
-            UpdateStylesPage();
-
-            InitializeXAxisMode();
-            InitializeYAxisMode();
-            InitializeStyles();
-            break;
-        }
-
-        #pragma region Bars
-
-        case IDC_PEAK_MODE:
-        {
-            _State->_PeakMode = (PeakMode) SelectedIndex;
-
-            UpdateVisualizationPage();
-            break;
-        }
-
-        #pragma endregion
-
-        case IDC_CHANNEL_PAIRS:
-        {
-            _State->_ChannelPair = (ChannelPair) SelectedIndex;
-
-            UpdateVisualizationPage();
-            break;
-        }
-
-        #pragma endregion
-
         #pragma region Styles
 
         case IDC_STYLES:
@@ -1666,7 +1666,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         #pragma endregion
     }
 
-    ConfigurationChanged(Settings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -1725,6 +1725,124 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
+        #pragma region Visualization
+
+        #pragma region Peak indicator
+
+        case IDC_SMOOTHING_FACTOR:
+        {
+            _State->_SmoothingFactor = std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            break;
+        }
+
+        case IDC_HOLD_TIME:
+        {
+            _State->_HoldTime = std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            break;
+        }
+
+        case IDC_ACCELERATION:
+        {
+            _State->_Acceleration = std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region LEDs
+
+        case IDC_LED_SIZE:
+        {
+            _State->_LEDLight = std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            break;
+        }
+
+        case IDC_LED_GAP:
+        {
+            _State->_LEDGap = std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Radial Bars
+
+        case IDC_INNER_RADIUS:
+        {
+            _State->_InnerRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            break;
+        }
+
+        case IDC_OUTER_RADIUS:
+        {
+            _State->_OuterRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            break;
+        }
+
+        case IDC_ANGULAR_VELOCITY:
+        {
+            _State->_AngularVelocity = (FLOAT) std::clamp(::_wtof(Text), -360., 360.);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Peak Meter
+
+        case IDC_RMS_WINDOW:
+        {
+            _State->_RMSWindow = std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            break;
+        }
+
+        case IDC_BAR_GAP:
+        {
+            _State->_BarGap = std::clamp((FLOAT) ::_wtof(Text), MinBarGap, MaxBarGap);
+            break;
+        }
+
+        case IDC_MAX_BAR_SIZE:
+        {
+            _State->_MaxBarSize = std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Oscilloscope
+
+        case IDC_X_GAIN:
+        {
+            _State->_XGain = std::clamp(::_wtof(Text), MinXGain, MaxXGain);
+            break;
+        }
+
+        case IDC_Y_GAIN:
+        {
+            _State->_YGain = std::clamp(::_wtof(Text), MinYGain, MaxYGain);
+            break;
+        }
+
+        case IDC_BLUR_SIGMA:
+        {
+            _State->_BlurSigma = std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
+        case IDC_DECAY_FACTOR:
+        {
+            _State->_DecayFactor = std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor);
+
+            Settings = Settings::PhosphorEffect;
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma endregion
+
         #pragma region FFT
 
         case IDC_NUM_BINS_PARAMETER:
@@ -1891,122 +2009,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
             gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
-            break;
-        }
-
-        #pragma endregion
-
-        #pragma region Visualization
-
-        #pragma region Peak indicator
-
-        case IDC_SMOOTHING_FACTOR:
-        {
-            _State->_SmoothingFactor = std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
-            break;
-        }
-
-        case IDC_HOLD_TIME:
-        {
-            _State->_HoldTime = std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
-            break;
-        }
-
-        case IDC_ACCELERATION:
-        {
-            _State->_Acceleration = std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
-            break;
-        }
-
-        #pragma endregion
-
-        #pragma region LEDs
-
-        case IDC_LED_SIZE:
-        {
-            _State->_LEDSize = std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
-            break;
-        }
-
-        case IDC_LED_GAP:
-        {
-            _State->_LEDGap = std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
-            break;
-        }
-
-        #pragma endregion
-
-        #pragma region Radial Bars
-
-        case IDC_INNER_RADIUS:
-        {
-            _State->_InnerRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
-            break;
-        }
-
-        case IDC_OUTER_RADIUS:
-        {
-            _State->_OuterRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
-            break;
-        }
-
-        case IDC_ANGULAR_VELOCITY:
-        {
-            _State->_AngularVelocity = (FLOAT) std::clamp(::_wtof(Text), -360., 360.);
-            break;
-        }
-
-        #pragma endregion
-
-        #pragma region Peak Meter
-
-        case IDC_RMS_WINDOW:
-        {
-            _State->_RMSWindow = std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
-            break;
-        }
-
-        case IDC_BAR_GAP:
-        {
-            _State->_BarGap = std::clamp((FLOAT) ::_wtof(Text), MinBarGap, MaxBarGap);
-            break;
-        }
-
-        case IDC_MAX_BAR_SIZE:
-        {
-            _State->_MaxBarSize = std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize);
-            break;
-        }
-
-        #pragma endregion
-
-        #pragma region Oscilloscope
-
-        case IDC_X_GAIN:
-        {
-            _State->_XGain = std::clamp(::_wtof(Text), MinXGain, MaxXGain);
-            break;
-        }
-
-        case IDC_Y_GAIN:
-        {
-            _State->_YGain = std::clamp(::_wtof(Text), MinYGain, MaxYGain);
-            break;
-        }
-
-        case IDC_BLUR_SIGMA:
-        {
-            _State->_BlurSigma = std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma);
-
-            Settings = Settings::PhosphorEffect;
-            break;
-        }
-
-        case IDC_DECAY_FACTOR:
-        {
-            _State->_DecayFactor = std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor);
-
-            Settings = Settings::PhosphorEffect;
             break;
         }
 
@@ -2239,7 +2241,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // LEDs
         case IDC_LED_SIZE:
         {
-            SetDouble(id, _State->_LEDSize, 0, 0);
+            SetDouble(id, _State->_LEDLight, 0, 0);
             break;
         }
 
@@ -2517,6 +2519,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_LED_MODE:
         {
             _State->_LEDMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateVisualizationPage();
             break;
         }
 
@@ -2769,12 +2773,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             GetPreset(PresetName);
 
+            UpdateVisualizationPage();
             UpdateTransformPage();
             UpdateFrequenciesPage();
             UpdateFiltersPage();
             UpdateCommonPage();
             UpdateGraphsPage();
-            UpdateVisualizationPage();
             UpdateStylesPage();
             UpdatePresetsPage();
 
@@ -3356,6 +3360,70 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 }
 
 /// <summary>
+/// Updates the controls of the Visualization page.
+/// </summary>
+void ConfigurationDialog::UpdateVisualizationPage() noexcept
+{
+    const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
+    const bool IsSpectogram   = (_State->_VisualizationType == VisualizationType::Spectogram);
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsRadialBars   = (_State->_VisualizationType == VisualizationType::RadialBars);
+    const bool IsRadialCurve  = (_State->_VisualizationType == VisualizationType::RadialCurve);
+    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram && IsOscilloscope));
+
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram && IsOscilloscope);
+
+    GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
+    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
+
+    const bool HasLEDs = IsBars || IsPeakMeter || IsLevelMeter;
+ 
+    GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
+
+    GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs && _State->_LEDMode);
+    GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs && _State->_LEDMode);
+    GetDlgItem(IDC_LED_INTEGRAL_SIZE).EnableWindow(HasLEDs && _State->_LEDMode);
+
+    const bool IsRadial = IsRadialBars || IsRadialCurve;
+
+    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadial);
+    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
+    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
+
+    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
+    GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectogram && !_State->_HorizontalSpectogram);
+
+    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
+
+    SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
+    ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
+
+    SetInteger(IDC_BAR_GAP, (int64_t) _State->_BarGap);
+    SetInteger(IDC_MAX_BAR_SIZE, (int64_t) _State->_MaxBarSize);
+
+    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
+
+    GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
+
+    GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
+    GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both modes.
+
+    GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
+
+    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
+}
+
+/// <summary>
 /// Updates the controls of the Transform page.
 /// </summary>
 void ConfigurationDialog::UpdateTransformPage() noexcept
@@ -3525,15 +3593,16 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    // Common
-    GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
-
     const bool SupportsFFT = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
 
     for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SMOOTHING_FACTOR, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(ID).EnableWindow(SupportsFFT);
 
+    // Smoothing
+    GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
+
     // Artwork
+    GetDlgItem(IDC_ARTWORK_TYPE).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FIT_WINDOW).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
@@ -3651,69 +3720,6 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter || IsOscilloscope);
     GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || (IsOscilloscope && _State->_XYMode));
-}
-
-/// <summary>
-/// Updates the controls of the Visualization page.
-/// </summary>
-void ConfigurationDialog::UpdateVisualizationPage() noexcept
-{
-    const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
-    const bool IsSpectogram   = (_State->_VisualizationType == VisualizationType::Spectogram);
-    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
-    const bool IsRadialBars   = (_State->_VisualizationType == VisualizationType::RadialBars);
-    const bool IsRadialCurve  = (_State->_VisualizationType == VisualizationType::RadialCurve);
-    const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
-
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram && IsOscilloscope));
-
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram && IsOscilloscope);
-
-    GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
-
-    const bool HasLEDs = IsBars || IsPeakMeter || IsLevelMeter;
- 
-    GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
-    GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs);
-    GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs);
-    GetDlgItem(IDC_LED_INTEGRAL_SIZE).EnableWindow(HasLEDs);
-
-    const bool IsRadial = IsRadialBars || IsRadialCurve;
-
-    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadial);
-    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
-    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
-
-    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
-    GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectogram && !_State->_HorizontalSpectogram);
-
-    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
-
-    SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
-    ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
-
-    SetInteger(IDC_BAR_GAP, (int64_t) _State->_BarGap);
-    SetInteger(IDC_MAX_BAR_SIZE, (int64_t) _State->_MaxBarSize);
-
-    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
-
-    GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
-
-    GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both mode.
-
-    GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
-
-    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
 }
 
 /// <summary>
@@ -4167,7 +4173,7 @@ void ConfigurationDialog::UpdateSelectedChannels() noexcept
 }
 
 /// <summary>
-/// Notifies the main thread update the change.
+/// Notifies the UI thread of the changed settings.
 /// </summary>
 void ConfigurationDialog::ConfigurationChanged(Settings settings) const noexcept
 {
@@ -4176,5 +4182,5 @@ void ConfigurationDialog::ConfigurationChanged(Settings settings) const noexcept
 
     ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of configuration change (Generic).");
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of configuration change (%08X).", (uint32_t) settings);
 }

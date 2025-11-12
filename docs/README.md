@@ -293,7 +293,7 @@ Available when selecting the ''Octaves'' distribution. Select a range between th
 
 Number of bands per octave ranging from 1 to 48.
 
-`Pitch`
+`Tuning pitch`
 
 Frequency of the tuning pitch (A4 = 440.0Hz). Valid values are 1Hz to 96000Hz.
 
@@ -600,7 +600,7 @@ Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlatio
 
 Display the spectrum bars and peak meters as LEDs.
 
-`LED size`
+`LED light`
 
 The size of the LED light, in pixels.
 

@@ -169,7 +169,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
 
-    _LEDSize = _State->_LEDSize + _State->_LEDGap;
+    _LEDSize = _State->_LEDLight + _State->_LEDGap;
 }
 /*
 /// <summary>
