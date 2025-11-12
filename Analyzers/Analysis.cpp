@@ -455,7 +455,10 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
             break;
         }
     }
-
+/*
+    for (auto & fb : _FrequencyBands)
+        fb.CurValue = .5f;
+*/
     // From here on frequency_band_t::CurValue is guaranteed to be in the range 0.0 .. 1.0.
 }
 

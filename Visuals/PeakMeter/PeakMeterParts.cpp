@@ -418,7 +418,6 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
         {
             rect.top    = std::max(_Rect.top,    _Rect.top + std::floorf((rect.top    - _Rect.top) / _LEDSize) * _LEDSize);
             rect.bottom = std::min(_Rect.bottom, _Rect.top + std::ceilf ((rect.bottom - _Rect.top) / _LEDSize) * _LEDSize);
-
         }
 
         const D2D1_RECT_F Src = { _Rect.left, 0.f, _Rect.right, rect.bottom - rect.top };
