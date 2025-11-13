@@ -409,12 +409,6 @@ void part_t::CreateAxis() noexcept
                 Label->IsHidden = true;
         }
     }
-
-    // Remove the hidden labels for performance reasons.
-    _Labels.erase(std::remove_if(_Labels.begin(), _Labels.end(), [](label_t x)
-    {
-        return x.IsHidden;
-    }), _Labels.end());
 }
 
 /// <summary>
@@ -452,11 +446,33 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void bar_t::Render() const noexcept
 {
-    _DeviceContext->SetTransform(_Transform);
-
 //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
 
     D2D1_RECT_F Rect = _Rect;
+
+    _DeviceContext->SetTransform(_Transform);
+
+    // Draw the background.
+    if (_BackgroundStyle->IsEnabled())
+    {
+        DrawVerticalRectangle(Rect, _BackgroundStyle);
+    }
+
+    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    // Draw tick lines.
+    if (_State->_HorizontalPeakMeter)
+    {
+        for (const label_t & Label : _Labels)
+            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+    }
+    else
+    {
+        for (const label_t & Label : _Labels)
+            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+    }
+
+    _DeviceContext->SetTransform(_Transform);
 
     if (_State->_HorizontalPeakMeter)
     {
@@ -522,12 +538,6 @@ void bar_t::Render() const noexcept
     }
     else
     {
-        // Draw the background.
-        if (_BackgroundStyle->IsEnabled())
-        {
-            DrawVerticalRectangle(Rect, _BackgroundStyle);
-        }
-
         // Draw the foreground (Peak).
         if (_PeakStyle->IsEnabled())
         {
@@ -586,18 +596,6 @@ void bar_t::Render() const noexcept
     }
 
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-    // Draw tick lines.
-    if (_State->_HorizontalPeakMeter)
-    {
-        for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
-    }
-    else
-    {
-        for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
-    }
 
     // Draw the text.
     {
@@ -721,7 +719,8 @@ void scale_t::Render() const noexcept
     {
 //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
-        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        if (!Label.IsHidden)
+            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         if (!IsCenter())
             _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
