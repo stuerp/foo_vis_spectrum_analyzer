@@ -37,7 +37,7 @@ public:
     virtual void SetRect(const D2D1_RECT_F & rect) noexcept;
 
     virtual void Bind(ID2D1DeviceContext * deviceContext, style_t * backgroundStyle, style_t * peakStyle, style_t * peak0dBStyle, style_t * maxPeakStyle, style_t * peakTextStyle, style_t * rmsStyle, style_t * rms0dBStyle, style_t * rmsTextStyle, style_t * nameStyle, style_t * scaleTextStyle, style_t * scaleLineStyle, ID2D1SolidColorBrush * debugBrush, ID2D1Bitmap * opacityMask) noexcept;
-    void Unbind() noexcept;
+    virtual void Unbind() noexcept;
 
     virtual void Render() const noexcept = 0;
 
@@ -95,6 +95,8 @@ protected:
     style_t * _ScaleTextStyle;
     style_t * _ScaleLineStyle;
 
+    CComPtr<IDWriteTextLayout> _NameTextLayout;
+
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
     CComPtr<ID2D1Bitmap> _OpacityMask;
 };
@@ -117,10 +119,14 @@ public:
     bar_t(bar_t &&) = delete;
     bar_t & operator=(bar_t &&) = delete;
 
+    void Unbind() noexcept override final;
+
     void SetRect(const D2D1_RECT_F & rect) noexcept override final;
     void Render() const noexcept override final;
 
 private:
+    HRESULT CreateTickLinesCommandList() noexcept;
+
     void DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
     void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
 
@@ -131,6 +137,8 @@ private:
     D2D1_MATRIX_3X2_F _Transform;
 
     FLOAT _LEDSize;
+
+    CComPtr<ID2D1CommandList> _TickLinesCommandList;
 };
 
 /// <summary>
@@ -150,6 +158,8 @@ public:
     scale_t(scale_t &&) = delete;
     scale_t & operator=(scale_t &&) = delete;
 
+    virtual void Unbind() noexcept override final;
+
     void SetRect(const D2D1_RECT_F & rect) noexcept override final;
     void Render() const noexcept override final;
 
@@ -157,4 +167,10 @@ public:
     virtual FLOAT Height() const noexcept { return _Size.height; }
 
     bool IsCenter() const noexcept { return (_TextAlignment == DWRITE_TEXT_ALIGNMENT_CENTER) && (_ParagraphAlignment == DWRITE_PARAGRAPH_ALIGNMENT_CENTER); } // True if this scale is drawn between the bars.
+
+private:
+    HRESULT CreateAxisCommandList() noexcept;
+
+private:
+    CComPtr<ID2D1CommandList> _AxisCommandList;
 };

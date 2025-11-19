@@ -221,7 +221,7 @@ void uielement_t::Render() noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
-    if (FAILED(hr))
+    if (!SUCCEEDED(hr))
         return;
 
     _DeviceContext->BeginDraw();
@@ -241,11 +241,7 @@ void uielement_t::Render() noexcept
         hr = _SwapChain->Present(0, 0);
 
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
-    {
         DeleteDeviceSpecificResources();
-
-        hr = S_OK;
-    }
 }
 
 /// <summary>

@@ -83,12 +83,14 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 void peak_meter_t::CreateParts() noexcept
 {
     if (_Settings->_YAxisLeft)
+    {
         _Parts.push_back(new scale_t
         (
             _State, _Settings,
             _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
             _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
+    }
 
     bool IsFirstBar = true;
 
@@ -148,12 +150,14 @@ void peak_meter_t::CreateParts() noexcept
     }
 
     if (_Settings->_YAxisRight)
+    {
         _Parts.push_back(new scale_t
         (
             _State, _Settings,
             _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
             _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
+    }
 }
 
 /// <summary>

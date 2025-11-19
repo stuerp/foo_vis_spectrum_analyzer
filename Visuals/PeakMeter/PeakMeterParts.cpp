@@ -412,6 +412,17 @@ void part_t::CreateAxis() noexcept
 }
 
 /// <summary>
+/// Unbinds the Direct2D resources from this instance.
+/// </summary>
+void bar_t::Unbind() noexcept
+{
+    _TickLinesCommandList.Release();
+    _NameTextLayout.Release();
+
+    __super::Unbind();
+}
+
+/// <summary>
 /// Initializes the boundaries of this instance and prepares the transform.
 /// </summary>
 void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
@@ -439,6 +450,17 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
     }
 
     _LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+    if (_NameTextLayout == nullptr)
+    {
+        const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
+        const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
+
+        _DirectWrite.Factory->CreateTextLayout(_Measurement->Name.c_str(), (UINT32) _Measurement->Name.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
+    }
+
+    if (_TickLinesCommandList == nullptr)
+        CreateTickLinesCommandList();
 }
 
 /// <summary>
@@ -450,17 +472,9 @@ void bar_t::Render() const noexcept
 
     D2D1_RECT_F Rect = _Rect;
 
-    _DeviceContext->SetTransform(_Transform);
-
-    // Draw the background.
-    if (_BackgroundStyle->IsEnabled())
-    {
-        DrawVerticalRectangle(Rect, _BackgroundStyle);
-    }
-
-    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
     // Draw tick lines.
+    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+/*
     if (_State->_HorizontalPeakMeter)
     {
         for (const label_t & Label : _Labels)
@@ -471,7 +485,10 @@ void bar_t::Render() const noexcept
         for (const label_t & Label : _Labels)
             _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
     }
+*/
+    _DeviceContext->DrawImage(_TickLinesCommandList);
 
+    // Draw the bars.
     _DeviceContext->SetTransform(_Transform);
 
     if (_State->_HorizontalPeakMeter)
@@ -538,6 +555,12 @@ void bar_t::Render() const noexcept
     }
     else
     {
+        // Draw the background.
+        if (_BackgroundStyle->IsEnabled())
+        {
+            DrawVerticalRectangle(Rect, _BackgroundStyle);
+        }
+
         // Draw the foreground (Peak).
         if (_PeakStyle->IsEnabled())
         {
@@ -607,13 +630,15 @@ void bar_t::Render() const noexcept
             if (_Settings->_XAxisTop)
             {
 //              _DeviceContext->DrawRectangle(_TopNameRect, _DebugBrush);
-                _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_Settings->_XAxisBottom)
             {
 //              _DeviceContext->DrawRectangle(_BottomNameRect, _DebugBrush);
-                _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_BottomNameRect.left, _BottomNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
@@ -639,6 +664,55 @@ void bar_t::Render() const noexcept
             _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, _RMSRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
+}
+
+/// <summary>
+/// Creates a command list that renders the tick lines.
+/// </summary>
+HRESULT bar_t::CreateTickLinesCommandList() noexcept
+{
+    // BeginDraw() was already called by the graph. End drawing on the old target.
+    HRESULT hr = _DeviceContext->EndDraw();
+
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    CComPtr<ID2D1Image> OldTarget;
+
+    _DeviceContext->GetTarget(&OldTarget);
+
+    hr = _DeviceContext->CreateCommandList(&_TickLinesCommandList);
+
+    if (SUCCEEDED(hr))
+    {
+        _DeviceContext->SetTarget(_TickLinesCommandList);
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+
+        if (_State->_HorizontalPeakMeter)
+        {
+            for (const label_t & Label : _Labels)
+                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+        }
+        else
+        {
+            for (const label_t & Label : _Labels)
+                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+        }
+
+        hr = _DeviceContext->EndDraw();
+    }
+
+    if (SUCCEEDED(hr))
+        hr = _TickLinesCommandList->Close();
+
+    // Resume drawing on the old target.
+    _DeviceContext->SetTarget(OldTarget);
+
+    _DeviceContext->BeginDraw();
+
+    return hr;
 }
 
 /// <summary>
@@ -696,11 +770,24 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 }
 
 /// <summary>
+/// Unbinds the Direct2D resources from this instance.
+/// </summary>
+void scale_t::Unbind() noexcept
+{
+    _AxisCommandList.Release();
+
+    __super::Unbind();
+}
+
+/// <summary>
 /// Initializes the boundaries of this instance and prepares the transform.
 /// </summary>
 void scale_t::SetRect(const D2D1_RECT_F & rect) noexcept
 {
     __super::SetRect(rect);
+
+    if (_AxisCommandList == nullptr)
+        CreateAxisCommandList();
 }
 
 /// <summary>
@@ -708,6 +795,10 @@ void scale_t::SetRect(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void scale_t::Render() const noexcept
 {
+    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    _DeviceContext->DrawImage(_AxisCommandList);
+/*
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
 //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
@@ -725,4 +816,59 @@ void scale_t::Render() const noexcept
         if (!IsCenter())
             _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
     }
+*/
+}
+
+/// <summary>
+/// Creates a command list that renders the axis.
+/// </summary>
+HRESULT scale_t::CreateAxisCommandList() noexcept
+{
+    // BeginDraw() was already called by the graph. End drawing on the old target.
+    HRESULT hr = _DeviceContext->EndDraw();
+
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    CComPtr<ID2D1Image> OldTarget;
+
+    _DeviceContext->GetTarget(&OldTarget);
+
+    hr = _DeviceContext->CreateCommandList(&_AxisCommandList);
+
+    if (SUCCEEDED(hr))
+    {
+        _DeviceContext->SetTarget(_AxisCommandList);
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+
+    //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
+
+        _ScaleTextStyle->SetHorizontalAlignment(_TextAlignment);
+        _ScaleTextStyle->SetVerticalAlignment(_ParagraphAlignment);
+
+        for (const label_t & Label : _Labels)
+        {
+    //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
+
+            if (!Label.IsHidden)
+                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+            if (!IsCenter())
+                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+        }
+
+        hr = _DeviceContext->EndDraw();
+    }
+
+    if (SUCCEEDED(hr))
+        hr = _AxisCommandList->Close();
+
+    // Resume drawing on the old target.
+    _DeviceContext->SetTarget(OldTarget);
+
+    _DeviceContext->BeginDraw();
+
+    return hr;
 }
