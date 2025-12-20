@@ -1,6 +1,15 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha2, 2025-12-20
+
+- Improved: Peak meter
+  - Removal of overlapping labels.
+  - Axis lines added again.
+- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
+- Fixed: SWIFT optimization bug.
+- Fixed: Lanczos interpolation bug.
+
 v0.10.0.0-alpha1, 2025-11-10
 
 - New: Implemented a high resolution timer.

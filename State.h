@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.11.12) P. Stuer **/
+/** $VER: State.h (2025.12.20) P. Stuer **/
 
 #pragma once
 
@@ -49,7 +49,12 @@ public:
     RECT _DialogRect;                                                   // Will be initialized in OnInitDialog()
     size_t _PageIndex;                                                  // Index of the active configuration dialog page
 
+#ifdef _WIN64
     int64_t _RefreshRateLimit;                                          // Target FPS in Hz
+#else
+    int32_t _RefreshRateLimit;                                          // Target FPS in Hz
+#endif
+
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
 
     bool _ShowFrameCounter;

@@ -127,14 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha2, 2025-12-20
+v0.10.0.0-alpha3, 2025-12-20
 
-- Improved: Peak meter
-  - Removal of overlapping labels.
-  - Axis lines added again.
-- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
-- Fixed: SWIFT optimization bug.
-- Fixed: Lanczos interpolation bug.
+- Fixed: 32-bit backwards compatibility with settings.
 
 You can read the full history [here](docs/History.md).
 
