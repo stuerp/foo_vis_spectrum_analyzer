@@ -216,7 +216,7 @@
 
 #pragma endregion
 
-#pragma region Spectogram
+#pragma region Spectrogram
 // Groupbox
 #define X_B08   X_B13 + W_B13 + IX
 #define Y_B08   Y_B13

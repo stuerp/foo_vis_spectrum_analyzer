@@ -216,10 +216,10 @@ public:
 
         #pragma endregion
 
-        #pragma region Spectogram
+        #pragma region Spectrogram
 
-            bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
-            bool _HorizontalSpectogram;                             // True if the spectogram should be rendered horizontally.
+            bool _ScrollingSpectrogram;                             // True if the spectrogram needs to scroll.
+            bool _HorizontalSpectrogram;                            // True if the spectrogram should be rendered horizontally.
             bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
 
         #pragma endregion
@@ -296,8 +296,8 @@ public:
 
     size_t _BinCount;                                                   // Spectrum
 
-    double _LastPlaybackTime;                                           // Spectogram: Timestamp of the last rendered audio chunk.
-    double _TrackTime;                                                  // Spectogram
+    double _LastPlaybackTime;                                           // Spectrogram: Timestamp of the last rendered audio chunk.
+    double _TrackTime;                                                  // Spectrogram
 
     #pragma endregion
 

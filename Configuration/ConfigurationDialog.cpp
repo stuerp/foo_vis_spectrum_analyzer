@@ -79,9 +79,9 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
             { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
 
-            { IDC_SCROLLING_SPECTOGRAM, "Activates scrolling of the spectogram." },
-            { IDC_HORIZONTAL_SPECTOGRAM, "Renders the spectogram horizontally." },
-            { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectogram with a spectrum bar visualization." },
+            { IDC_SCROLLING_SPECTROGRAM, "Activates scrolling of the spectrogram." },
+            { IDC_HORIZONTAL_SPECTROGRAM, "Renders the spectrogram horizontally." },
+            { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectrogram with a spectrum bar visualization." },
 
             { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
             { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
@@ -315,7 +315,7 @@ void ConfigurationDialog::Initialize()
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -372,14 +372,14 @@ void ConfigurationDialog::Initialize()
 
     #pragma endregion
 
-    #pragma region Spectogram
+    #pragma region Spectrogram
 
     {
-        SendDlgItemMessageW(IDC_SCROLLING_SPECTOGRAM, BM_SETCHECK, _State->_ScrollingSpectogram);
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_ScrollingSpectrogram);
     }
 
     {
-        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTOGRAM, BM_SETCHECK, _State->_HorizontalSpectogram);
+        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_HorizontalSpectrogram);
     }
 
     {
@@ -2530,15 +2530,15 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
-        case IDC_SCROLLING_SPECTOGRAM:
+        case IDC_SCROLLING_SPECTROGRAM:
         {
-            _State->_ScrollingSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_ScrollingSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
-        case IDC_HORIZONTAL_SPECTOGRAM:
+        case IDC_HORIZONTAL_SPECTROGRAM:
         {
-            _State->_HorizontalSpectogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HorizontalSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateVisualizationPage();
             break;
@@ -3166,8 +3166,8 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_OUTER_RADIUS_LBL, IDC_OUTER_RADIUS,
             IDC_ANGULAR_VELOCITY_LBL, IDC_ANGULAR_VELOCITY,
 
-        IDC_SPECTOGRAM,
-            IDC_SCROLLING_SPECTOGRAM, IDC_HORIZONTAL_SPECTOGRAM, IDC_SPECTRUM_BAR_METRICS,
+        IDC_SPECTROGRAM,
+            IDC_SCROLLING_SPECTROGRAM, IDC_HORIZONTAL_SPECTROGRAM, IDC_SPECTRUM_BAR_METRICS,
 
         IDC_PEAK_METER,
             IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3, IDC_CENTER_SCALE,
@@ -3365,16 +3365,16 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 void ConfigurationDialog::UpdateVisualizationPage() noexcept
 {
     const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
-    const bool IsSpectogram   = (_State->_VisualizationType == VisualizationType::Spectogram);
+    const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsRadialBars   = (_State->_VisualizationType == VisualizationType::RadialBars);
     const bool IsRadialCurve  = (_State->_VisualizationType == VisualizationType::RadialCurve);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectogram && IsOscilloscope));
+    GetDlgItem(IDC_PEAK_MODE).EnableWindow(!(IsSpectrogram && IsOscilloscope));
 
-    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectogram && IsOscilloscope);
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None) && !(IsSpectrogram && IsOscilloscope);
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks);
     GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks);
@@ -3393,9 +3393,9 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
     GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
 
-    GetDlgItem(IDC_SCROLLING_SPECTOGRAM).EnableWindow(IsSpectogram);
-    GetDlgItem(IDC_HORIZONTAL_SPECTOGRAM).EnableWindow(IsSpectogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectogram && !_State->_HorizontalSpectogram);
+    GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_HorizontalSpectrogram);
 
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);

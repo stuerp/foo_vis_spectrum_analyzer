@@ -17,7 +17,7 @@
 #include "Element.h"
 
 #include "Spectrum.h"
-#include "Spectogram.h"
+#include "Spectrogram.h"
 #include "PeakMeter.h"
 #include "LevelMeter.h"
 #include "Oscilloscope.h"

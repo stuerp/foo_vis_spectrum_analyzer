@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2025.11.10) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2025.12.20) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -25,6 +25,11 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
     _FFTSize = fftSize;
 
     _FFT.Initialize(_FFTSize);
+
+    // Create the ring buffer for the samples.
+    _InputRing.resize(_FFTSize);
+    std::memset(_InputRing.data(), 0, sizeof(audio_sample) * _InputRing.size());
+    _Head = _Tail = 0;
 
     _TimeData.resize(_FFTSize);
     _FreqData.resize(_FFTSize);
@@ -78,8 +83,14 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
     const size_t SampleCount = frameCount * _ChannelCount;
 
     // Merge the samples of all selected channels into one averaged sample.
+    audio_sample * p = _InputRing.data();
+
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
-        _InputRing.push_back(AverageSamples(&samples[i], selectedChannels));
+    {
+        p[_Tail] = AverageSamples(&samples[i], selectedChannels);
+
+        _Tail = (_Tail + 1) % _InputRing.size();
+    }
 }
 
 /// <summary>
@@ -87,49 +98,59 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 /// </summary>
 void fft_analyzer_t::Transform() noexcept
 {
-    const size_t HopSize = _FFTSize / 4; // 75% Overlap-Add (OLA)
-
     double Norm = 0.;
 
     // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
-    while (_InputRing.size() >= _FFTSize)
     {
-        auto it = _InputRing.begin();
+        size_t & i = _Head;
+        size_t j = 0;
 
-        for (size_t i = 0; i < _FFTSize; ++i, ++it)
+        const audio_sample * p = _InputRing.data();
+
+        for (auto & Iter : _TimeData)
         {
-            const double WindowFactor = _WindowFunction(msc::Map(i, (size_t) 0, _FFTSize, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize - 1, -1., 1.));
 
-            _TimeData[i] = std::complex<double>(*it * WindowFactor, 0.);
+            Iter = std::complex<double>(p[i] * WindowFactor, 0.);
+
+            i = (i + 1) % _InputRing.size();
 
             Norm += WindowFactor;
+            j++;
         }
+    }
 
-        // Normalize the Time domain data.
+    // Normalize the Time domain data.
+    {
+        const double Factor = (double) _FFTSize / Norm; // * M_SQRT2;
+
+#ifdef oldcode
+        for (std::complex<double> & Iter : _TimeData)
+            Iter *= Factor;
+#else
+        std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
         {
-            const double Factor = (double) _FFTSize / Norm / M_SQRT2;
+            return x * Factor;
+        });
+#endif
+    }
 
-            std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
-            {
-                return x * Factor;
-            });
-        }
+    // Transform the data from the Time domain to the Frequency domain.
+    _FFT.Transform(_TimeData, _FreqData);
 
-        // Transform the data from the Time domain to the Frequency domain.
-        _FFT.Transform(_TimeData, _FreqData);
+    // Normalize the Frequency domain data.
+    {
+        const double Factor = 2. / (double) _FFTSize;
 
-        // Normalize the Frequency domain data.
+#ifdef oldcode
+        for (std::complex<double> & Iter : _FreqData)
+            Iter *= Factor;
+#else
+        std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
         {
-            const double Factor = 2. / (double) _FFTSize;
-
-            std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
-            {
-                return x * Factor;
-            });
-        }
-
-        // Remove the processed samples; Keep the overlap.
-        _InputRing.erase(_InputRing.begin(), _InputRing.begin() + (int64_t) HopSize);
+            return x * Factor;
+        });
+#endif
     }
 }
 
@@ -147,17 +168,17 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
 
     for (frequency_band_t & fb : freqBands)
     {
-        const double LoHz = HzToFFTIndex(std::min(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
-        const double HiHz = HzToFFTIndex(std::max(fb.Hi, fb.Lo), _FreqData.size(), sampleRate);
+        const double LoHz = HzToBinIndex(fb.Lo, _FreqData.size() - 1, sampleRate);
+        const double HiHz = HzToBinIndex(fb.Hi, _FreqData.size() - 1, sampleRate);
 
         const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(LoHz) + 1. : std::ceil(LoHz));
               int HiIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(HiHz) - 1. : std::floor(HiHz));
 
-        const double BandGain = UseBandGain ? std::hypot(1, std::pow(((fb.Hi - fb.Lo) * (double) _FreqData.size() / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+        const double BandGain = UseBandGain ? std::hypot(1, std::pow(((fb.Hi - fb.Lo) * (double) (_FreqData.size() - 1) / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
 
         if (LoIdx <= HiIdx)
         {
-            HiIdx -= std::max(HiIdx - LoIdx - (int) _FreqData.size(), 0);
+            HiIdx -= std::max(HiIdx - LoIdx - (int) (_FreqData.size() - 1), 0);
 
             double Value = (_State->_SummationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -167,36 +188,36 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
 
             for (int Idx = LoIdx; Idx <= HiIdx; ++Idx)
             {
-                size_t CoefIdx = msc::Wrap((size_t) Idx, _FreqData.size());
+                const size_t BinIdx = msc::Wrap((size_t) Idx, _FreqData.size());
 
-                const double Coef = std::abs(_FreqData[CoefIdx]);
+                const double Magnitude = std::abs(_FreqData[BinIdx]);
 
                 switch (_State->_SummationMethod)
                 {
                     case SummationMethod::Minimum:
-                        Value = std::min(Coef, Value);
+                        Value = std::min(Magnitude, Value);
                         break;
 
                     case SummationMethod::Maximum:
-                        Value = std::max(Coef, Value);
+                        Value = std::max(Magnitude, Value);
                         break;
 
                     case SummationMethod::Sum:
                     case SummationMethod::Average:
-                        Value += Coef;
+                        Value += Magnitude;
                         break;
 
                     case SummationMethod::RMS:
                     case SummationMethod::RMSSum:
-                        Value += Coef * Coef;
+                        Value += Magnitude * Magnitude;
                         break;
 
                     case SummationMethod::Median:
-                        Values.push_back(Coef);
+                        Values.push_back(Magnitude);
                         break;
 
                     default:
-                        Value = Coef;
+                        Value = Magnitude;
                 }
 
                 ++Count;
@@ -212,9 +233,9 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
         }
         else
         {
-            const double Value = fb.Center * (double) _FreqData.size() / sampleRate;
+            const double Index = HzToBinIndex(fb.Center, _FreqData.size() - 1, sampleRate);
 
-            fb.NewValue = std::fabs(Lanzcos(_FreqData, Value, _State->_KernelSize)) * BandGain;
+            fb.NewValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
         }
     }
 }
@@ -291,29 +312,30 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_
 }
 
 /// <summary>
-/// Applies a Lanzcos kernel to the specified value.
+/// Uses a Lanczos kernel to determine the interpolated magnitude at a fractional index.
 /// </summary>
-double fft_analyzer_t::Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept
+double fft_analyzer_t::Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double index, int kernelSize) const noexcept
 {
-    double re = 0.;
-    double im = 0.;
+    std::complex<double> Sum = 0.;
 
     for (int i = -kernelSize + 1; i <= kernelSize; ++i)
     {
-        const double Pos = std::floor(value) + i;
-        const double Twiddle = value - Pos; // -Pos + std::round(Pos) + i
+        const double Index = std::floor(index) + i;
+        const double x = (index - Index) * M_PI;
 
-        double w = (std::fabs(Twiddle) <= 0.) ? 1. : std::sin(Twiddle * M_PI) / (Twiddle * M_PI) * std::sin(Twiddle * M_PI / kernelSize) / (Twiddle * M_PI / kernelSize);
+        double Weight = (std::fabs(x) > 0.) ? std::sin(x) / (x) * std::sin(x / kernelSize) / (x / kernelSize) : 0.;
 
-        w *= (-1 + msc::Wrap(i, 2) * 2);
+        // Flip the sign of the weight for even indexes (non-standard for Lanczos).
 
-        const size_t CoefIdx = msc::Wrap((size_t) Pos, fftCoeffs.size());
+        if ((i & 1) == 0)
+            Weight = -Weight;
 
-        re += fftCoeffs[CoefIdx].real() * w;
-        im += fftCoeffs[CoefIdx].imag() * w;
+        const size_t CoefIdx = msc::Wrap((size_t) Index, fftCoeffs.size());
+
+        Sum += fftCoeffs[CoefIdx] * Weight;
     }
 
-    return std::hypot(re, im);
+    return std::abs(Sum);
 }
 
 /// <summary>

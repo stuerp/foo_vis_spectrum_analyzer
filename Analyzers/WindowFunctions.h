@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2025.11.10) P. Stuer **/
+/** $VER: WindowFunctions.h (2025.12.14) P. Stuer **/
 
 #pragma once
 
@@ -67,8 +67,9 @@ public:
 
     virtual double operator () (double x) const
     {
-        x = (_Skew > 0.) ? ((x / 2. - 0.5) / (1. - (x / 2. - 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. + 1.:
-                           ((x / 2. + 0.5) / (1. + (x / 2. + 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. - 1.;
+        if (_Skew != 0.)
+            x = (_Skew > 0.) ? ((x / 2. - 0.5) / (1. - (x / 2. - 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. + 1.:
+                               ((x / 2. + 0.5) / (1. + (x / 2. + 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. - 1.;
 
         return (_Truncate && (std::fabs(x) >  1.)) ? 0. : x;
     }
@@ -77,7 +78,7 @@ public:
 
 private:
     double _Skew;
-    bool _Truncate;
+    bool _Truncate; // True when the input value of the function should be truncated to 0 if it is outside the range of [-1, 1]
 
     double _SkewSquared;
 };
@@ -99,7 +100,7 @@ public:
 };
 
 /// <summary>
-/// Implements the Hann (cosine squared, raised cosine) window function.
+/// Implements the Hann (cosine squared) window function.
 /// </summary>
 class Hann : public window_function_t
 {
@@ -112,13 +113,15 @@ public:
     {
         x = __super::operator()(x);
 
-    //  return std::pow(std::cos(x * M_PI_2), 2.);
-        return 0.5 * (1. - std::cos(x * 2. * M_PI));
+        const double y = std::cos(x * M_PI_2);
+
+        return y * y;
+    //  return 0.5 * (1. - std::cos(x * 2. * M_PI));
     }
 };
 
 /// <summary>
-/// Implements the Hamming window function.
+/// Implements the Hamming (raised cosine) window function.
 /// </summary>
 class Hamming : public window_function_t
 {
@@ -409,7 +412,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (std::fabs(x) <= 0.5) ? -::pow((x * M_SQRT2), 2.) + 1. : std::pow(std::fabs(x * M_SQRT2) - M_SQRT2, 2.);
+        return (std::fabs(x) <= 0.5) ? -std::pow((x * M_SQRT2), 2.) + 1. : std::pow(std::fabs(x * M_SQRT2) - M_SQRT2, 2.);
     }
 };
 
@@ -427,7 +430,9 @@ public:
     {
         x = __super::operator()(x);
 
-        return std::sin(M_PI_2 * std::pow(std::cos(x * M_PI_2), 2.));
+        const double y = std::cos(x * M_PI_2);
+
+        return std::sin(M_PI_2 * y * y);
     }
 };
 

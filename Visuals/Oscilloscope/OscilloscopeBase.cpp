@@ -19,8 +19,10 @@
 oscilloscope_base_t::oscilloscope_base_t()
 {
     _SignalLineStyle = nullptr;
+
     _XAxisLineStyle = nullptr;
     _YAxisLineStyle = nullptr;
+
     _HorizontalGridLineStyle = nullptr;
     _VerticalGridLineStyle = nullptr;
 }

@@ -66,7 +66,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
 
         case VisualizationType::Bars:
         case VisualizationType::Curve:
-        case VisualizationType::Spectogram:
+        case VisualizationType::Spectrogram:
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
         {
@@ -191,7 +191,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 
         case VisualizationType::Bars:
         case VisualizationType::Curve:
-        case VisualizationType::Spectogram:
+        case VisualizationType::Spectrogram:
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
         {
@@ -480,9 +480,9 @@ void analysis_t::GenerateLinearFrequencyBands()
 
     for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo     = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
         fb.Center = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi     = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
 

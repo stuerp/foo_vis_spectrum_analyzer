@@ -128,7 +128,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             break;
         }
 
-        case VisualizationType::Spectogram:
+        case VisualizationType::Spectrogram:
         case VisualizationType::PeakMeter:
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:

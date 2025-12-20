@@ -47,8 +47,8 @@ void graph_t::Initialize(state_t * state, const graph_description_t * settings, 
             _Visualization = std::make_unique<spectrum_t>();
             break;
 
-        case VisualizationType::Spectogram:
-            _Visualization = std::make_unique<spectogram_t>();
+        case VisualizationType::Spectrogram:
+            _Visualization = std::make_unique<spectrogram_t>();
             break;
 
         case VisualizationType::PeakMeter:
@@ -173,11 +173,11 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
-    if (_State->_VisualizationType == VisualizationType::Spectogram)
+    if (_State->_VisualizationType == VisualizationType::Spectrogram)
     {
         const D2D1_RECT_F & cr = _Visualization->GetClientRect();
 
-        if (_State->_HorizontalSpectogram)
+        if (_State->_HorizontalSpectrogram)
         {
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;

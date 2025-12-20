@@ -55,7 +55,7 @@ v0.9.0.0-alpha2, 2025-10-09
   - X and Y-axis support
   - Y-axis none, dBFS and linear dBFS modes.
   - Only the selected channels are rendered.
-- Fixed: Rendering bug in horizontally scrolling spectogram.
+- Fixed: Rendering bug in horizontally scrolling spectrogram.
 
 v0.9.0.0-alpha1, 2025-10-05
 
@@ -106,8 +106,8 @@ v0.8.0.0-beta1, 2024-05-01
 
 * New: Left/Right and Mid/Side level meter.
   * The left/right channel pair is selectable.
-* Spectogram
-  * New: Vertical scrolling and static spectogram. A special setting is available to align the spectogram with a spectrum bars visualization over or under the spectogram.
+* Spectrogram
+  * New: Vertical scrolling and static spectrogram. A special setting is available to align the spectrogram with a spectrum bars visualization over or under the spectrogram.
   * Improved: Overall polishing and removal of glitches.
 * Added: Separate peak and RMS level read outs to the peak meter.
 * Fixed: An old color bug in the owner-drawn menu list.
@@ -167,10 +167,10 @@ v0.7.5.1, 2024-04-06
 
 v0.7.5.0, 2024-04-04
 
-* New: Spectogram visualization.
+* New: Spectrogram visualization.
   * Static or scrolling
 * New: Peak Meter visualization.
-* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
+* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectrogram visualization.
 * New: The context menu can be used to load a preset.
 * New: Artwork Fit mode. Defaults to "Fit Big".
 * Improved: Double-clicking a preset activates it.

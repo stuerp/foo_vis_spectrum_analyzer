@@ -1,5 +1,5 @@
 
-/** $VER: Spectogram.h (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -21,17 +21,17 @@
 
 #include <deque>
 
-class spectogram_t : public element_t
+class spectrogram_t : public element_t
 {
 public:
-    spectogram_t();
+    spectrogram_t();
 
-    spectogram_t(const spectogram_t &) = delete;
-    spectogram_t & operator=(const spectogram_t &) = delete;
-    spectogram_t(spectogram_t &&) = delete;
-    spectogram_t & operator=(spectogram_t &&) = delete;
+    spectrogram_t(const spectrogram_t &) = delete;
+    spectrogram_t & operator=(const spectrogram_t &) = delete;
+    spectrogram_t(spectrogram_t &&) = delete;
+    spectrogram_t & operator=(spectrogram_t &&) = delete;
 
-    virtual ~spectogram_t();
+    virtual ~spectrogram_t();
 
     // element_t
     void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
@@ -111,7 +111,7 @@ private:
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
-    style_t * _SpectogramStyle;
+    style_t * _SpectrogramStyle;
 
     style_t * _TimeLineStyle;
     style_t * _TimeTextStyle;

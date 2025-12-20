@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2025.11.12) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2025.12.20) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -451,16 +451,18 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
 
     _LEDSize = _State->_LEDLight + _State->_LEDGap;
 
+    HRESULT hr = S_OK;
+
     if (_NameTextLayout == nullptr)
     {
         const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
         const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
 
-        _DirectWrite.Factory->CreateTextLayout(_Measurement->Name.c_str(), (UINT32) _Measurement->Name.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->Name.c_str(), (UINT32) _Measurement->Name.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
     }
 
-    if (_TickLinesCommandList == nullptr)
-        CreateTickLinesCommandList();
+    if (SUCCEEDED(hr) && (_TickLinesCommandList == nullptr))
+        hr = CreateTickLinesCommandList();
 }
 
 /// <summary>
@@ -486,7 +488,8 @@ void bar_t::Render() const noexcept
             _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
     }
 */
-    _DeviceContext->DrawImage(_TickLinesCommandList);
+    if (_TickLinesCommandList != nullptr)
+        _DeviceContext->DrawImage(_TickLinesCommandList);
 
     // Draw the bars.
     _DeviceContext->SetTransform(_Transform);
@@ -621,6 +624,7 @@ void bar_t::Render() const noexcept
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // Draw the text.
+    if (_NameTextLayout != nullptr)
     {
         WCHAR Text[16];
 

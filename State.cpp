@@ -230,9 +230,9 @@ void state_t::Reset() noexcept
     _UseCustomPeakLineColor_Deprecated = false;
     _AreaOpacity_Deprecated = 0.5f;
 
-    // Spectogram
-    _ScrollingSpectogram = true;
-    _HorizontalSpectogram = true;
+    // Spectrogram
+    _ScrollingSpectrogram = true;
+    _HorizontalSpectrogram = true;
     _UseSpectrumBarMetrics = false;
 
     // Peak Meter
@@ -498,9 +498,9 @@ state_t & state_t::operator=(const state_t & other) noexcept
 //  _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
 //  _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
 
-    // Spectogram
-    _ScrollingSpectogram = other._ScrollingSpectogram;
-    _HorizontalSpectogram = other._HorizontalSpectogram;
+    // Spectrogram
+    _ScrollingSpectrogram = other._ScrollingSpectrogram;
+    _HorizontalSpectrogram = other._HorizontalSpectrogram;
     _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
 
     // Peak Meter
@@ -868,7 +868,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 21)
         {
-            reader->read_object_t(_ScrollingSpectogram, abortHandler);
+            reader->read_object_t(_ScrollingSpectrogram, abortHandler);
         }
 
         if (Version >= 22)
@@ -904,7 +904,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
 
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
-            reader->read_object_t(_HorizontalSpectogram, abortHandler);
+            reader->read_object_t(_HorizontalSpectrogram, abortHandler);
             reader->read_object_t(_UseSpectrumBarMetrics, abortHandler);
         }
 
@@ -1217,7 +1217,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         }
 
         // Version 21, v0.7.5.0-beta1
-        writer->write_object_t(_ScrollingSpectogram, abortHandler);
+        writer->write_object_t(_ScrollingSpectrogram, abortHandler);
 
         // Version 22, v0.7.5.0-beta2
         writer->write_object_t(_HorizontalPeakMeter, abortHandler);
@@ -1239,7 +1239,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         // Version 27, v0.8.0.0-beta1
         writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
         writer->write_object_t(_HorizontalLevelMeter, abortHandler);
-        writer->write_object_t(_HorizontalSpectogram, abortHandler);
+        writer->write_object_t(_HorizontalSpectrogram, abortHandler);
         writer->write_object_t(_UseSpectrumBarMetrics, abortHandler);
 
         // Version 28, v0.8.0.0-beta2

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2025.11.10) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2025.12.14) P. Stuer **/
 
 #pragma once
 
@@ -10,8 +10,6 @@
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
 #include <Windows.h>
-
-#include <deque>
 
 #include "Analyzer.h"
 #include "FrequencyBand.h"
@@ -45,7 +43,7 @@ private:
     void AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
     void AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
 
-    double Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
+    double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;
 
     /// <summary>
@@ -75,7 +73,7 @@ private:
     /// <summary>
     /// Gets the index of the coefficient corresponding to the specified frequency.
     /// </summary>
-    double HzToFFTIndex(double frequency, size_t bufferSize, uint32_t sampleRate) const noexcept
+    double HzToBinIndex(double frequency, size_t bufferSize, uint32_t sampleRate) const noexcept
     {
         return frequency * (double) bufferSize / sampleRate;
     }
@@ -92,7 +90,10 @@ private:
     fft_t _FFT;
     size_t _FFTSize;
 
-    std::deque<audio_sample> _InputRing;
+    // Wrap-around sample buffer
+    std::vector<audio_sample> _InputRing;
+    size_t _Head;
+    size_t _Tail;
 
     std::vector<std::complex<double>> _TimeData;
     std::vector<std::complex<double>> _FreqData;

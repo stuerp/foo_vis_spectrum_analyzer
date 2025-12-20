@@ -22,7 +22,7 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 
 ## Introduction
 
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectogram, peak meters or oscilloscope.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters or oscilloscope.
 
 ---
 
@@ -493,11 +493,11 @@ The same as bars but with a smoothed curve instead of bars.
 
 <sup>Spectrum analyzer wit mirrored Curve Mode</sup>
 
-##### Spectogram
+##### Spectrogram
 
-![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
 
-<sup>Horizontal scrolling spectogram visualization</sup>
+<sup>Horizontal scrolling spectrogram visualization</sup>
 
 ##### Peak / RMS
 
@@ -612,17 +612,17 @@ The size of the gap between the LEDs, in pixels.
 
 Enable this setting to render the LEDs only as full blocks.
 
-#### Spectogram group
+#### Spectrogram group
 
-Set the visualization type to **Spectogram** to enable these settings.
+Set the visualization type to **Spectrogram** to enable these settings.
 
 `Scrolling`
 
-Activates scrolling of the spectogram.
+Activates scrolling of the spectrogram.
 
 `Horizontal`
 
-Renders the spectogram horizontally when enabled, vertically when not.
+Renders the spectrogram horizontally when enabled, vertically when not.
 
 `Use spectrum bar metrics`
 
@@ -846,7 +846,7 @@ Specifies the color scheme used to render the element.
 - foobar2000 Dark Mode
 - Fire
 - Rainbow
-- SoX: A list of colors emulating the spectogram colors used by SoX.
+- SoX: A list of colors emulating the spectrogram colors used by SoX.
 
 `Color list`
 

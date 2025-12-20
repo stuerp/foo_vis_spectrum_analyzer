@@ -131,7 +131,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (FAILED(hr))
+    if (!SUCCEEDED(hr))
         return;
 
     const FLOAT YAxisWidth = _YAxisTextStyle->_Width;

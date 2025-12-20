@@ -26,9 +26,9 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 <sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
 
-![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
 
-<sup>Horizontal scrolling spectogram visualization</sup>
+<sup>Horizontal scrolling spectrogram visualization</sup>
 
 ![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
 
@@ -48,7 +48,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectogram, Peak Meter, Level Meter and Oscilloscope visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter and Oscilloscope visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -127,13 +127,14 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha2, 2025-11-xx
+v0.10.0.0-alpha2, 2025-12-20
 
 - Improved: Peak meter
   - Removal of overlapping labels.
   - Axis lines added again.
 - Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
 - Fixed: SWIFT optimization bug.
+- Fixed: Lanczos interpolation bug.
 
 You can read the full history [here](docs/History.md).
 

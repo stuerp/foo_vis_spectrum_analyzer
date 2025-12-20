@@ -102,8 +102,8 @@ public:
         VisualElement::CurvePeakLine,
         VisualElement::CurvePeakArea,
 
-        // Spectogram
-        VisualElement::Spectogram,
+        // Spectrogram
+        VisualElement::Spectrogram,
 
         // Peak Meter
         VisualElement::BarBackground,
@@ -181,7 +181,7 @@ private:
             VisualElement::XAxisText,
             {
                 /* Name                */ L"X-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
                 /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
                 /*_ColorSource         */ ColorSource::Solid,
                 /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
@@ -209,7 +209,7 @@ private:
             VisualElement::YAxisText,
             {
                 /* Name                */ L"Y-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
                 /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
                 /*_ColorSource         */ ColorSource::Solid,
                 /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
@@ -237,7 +237,7 @@ private:
             VisualElement::HorizontalGridLine,
             {
                 /* Name                */ L"Horizontal Grid Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
@@ -247,7 +247,7 @@ private:
             VisualElement::VerticalGridLine,
             {
                 /* Name                */ L"Vertical Grid Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
@@ -257,7 +257,7 @@ private:
             VisualElement::NyquistMarker,
             {
                 /* Name                */ L"Nyquist Frequency Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram,
                 style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
                 ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
@@ -368,12 +368,12 @@ private:
         },
         #pragma endregion
 
-        #pragma region Spectogram
+        #pragma region Spectrogram
         {
-            VisualElement::Spectogram,
+            VisualElement::Spectrogram,
             {
-                /* Name                */ L"Spectogram",
-                /* UsedBy              */ VisualizationTypes::Spectogram,
+                /* Name                */ L"Spectrogram",
+                /* UsedBy              */ VisualizationTypes::Spectrogram,
                 /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient,
                 /*_ColorSource         */ ColorSource::Gradient,
                 /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),

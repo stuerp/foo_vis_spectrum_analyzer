@@ -1,8 +1,8 @@
 
-/** $VER: Spectogram.cpp (2025.10.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2025.10.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
-#include "Spectogram.h"
+#include "Spectrogram.h"
 
 #include "Support.h"
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-spectogram_t::spectogram_t()
+spectrogram_t::spectrogram_t()
 {
     _Rect = { };
     _Size = { };
@@ -26,7 +26,7 @@ spectogram_t::spectogram_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-spectogram_t::~spectogram_t()
+spectrogram_t::~spectrogram_t()
 {
     DeleteDeviceSpecificResources();
 }
@@ -34,7 +34,7 @@ spectogram_t::~spectogram_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectogram_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void spectrogram_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
     _Settings = settings;
@@ -48,7 +48,7 @@ void spectogram_t::Initialize(state_t * state, const graph_description_t * setti
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void spectogram_t::Move(const D2D1_RECT_F & rect) noexcept
+void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetRect(rect);
 
@@ -59,7 +59,7 @@ void spectogram_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void spectogram_t::Reset() noexcept
+void spectrogram_t::Reset() noexcept
 {
     _X = 0.f;
     _Y = 0.f;
@@ -77,7 +77,7 @@ void spectogram_t::Reset() noexcept
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void spectogram_t::Resize() noexcept
+void spectrogram_t::Resize() noexcept
 {
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
@@ -86,7 +86,7 @@ void spectogram_t::Resize() noexcept
     {
         _BitmapRect = _Rect;
 
-        if (_State->_HorizontalSpectogram)
+        if (_State->_HorizontalSpectrogram)
         {
             if (_Settings->_XAxisTop)
                 _BitmapRect.top += _TimeTextStyle->_Height;
@@ -123,7 +123,7 @@ void spectogram_t::Resize() noexcept
 
     // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
     {
-        if (_State->_UseSpectrumBarMetrics && !_State->_HorizontalSpectogram)
+        if (_State->_UseSpectrumBarMetrics && !_State->_HorizontalSpectrogram)
         {
             const FLOAT dx = (_BitmapSize.width - SpectrumWidth) / 2.f;
 
@@ -141,7 +141,7 @@ void spectogram_t::Resize() noexcept
 
         msc::rect_t Rect = { };
 
-        if (_State->_HorizontalSpectogram)
+        if (_State->_HorizontalSpectrogram)
         {
             const FLOAT y1 = (_Settings->_XAxisTop ? _TimeTextStyle->_Height : 0.f) - (_FreqTextStyle->_Height / 2.f);
 
@@ -282,9 +282,9 @@ void spectogram_t::Resize() noexcept
 }
 
 /// <summary>
-/// Renders the spectrum analysis as a spectogram.
+/// Renders the spectrum analysis as a Spectrogram.
 /// </summary>
-void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -296,17 +296,17 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         return;
 
     // Draw the offscreen bitmap.
-    if (_State->_HorizontalSpectogram)
+    if (_State->_HorizontalSpectrogram)
     {
         SetTransform(deviceContext, _BitmapRect);
 
-        if (_State->_ScrollingSpectogram)
+        if (_State->_ScrollingSpectrogram)
         {
             // Render the new lines.
             D2D1_RECT_F Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
             Src.right = Src.left;
             Src.left  = 0.f;
@@ -314,13 +314,13 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             Dst.left  = Dst.right;
             Dst.right = _BitmapSize.width;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
         }
         else
         {
             D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
 
         ResetTransform(deviceContext);
@@ -358,13 +358,13 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         SetTransform(deviceContext, _BitmapRect);
 
-        if (_State->_ScrollingSpectogram)
+        if (_State->_ScrollingSpectrogram)
         {
             // Render the new lines.
             D2D1_RECT_F Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
 
             // Render the old lines.
             Src.bottom = Src.top;
@@ -373,13 +373,13 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             Dst.top    = Dst.bottom;
             Dst.bottom = _BitmapSize.height;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
         }
         else
         {
             D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
 
         ResetTransform(deviceContext);
@@ -421,7 +421,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (_State->_LastPlaybackTime != _PlaybackTime) // Not paused
     {
-        if (_State->_HorizontalSpectogram)
+        if (_State->_HorizontalSpectrogram)
         {
             _X++;
 
@@ -429,7 +429,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _X = 0.f;
 
-                if (!_State->_ScrollingSpectogram)
+                if (!_State->_ScrollingSpectrogram)
                     _TimeLabels.clear();
             }
         }
@@ -441,7 +441,7 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _Y = 0.f;
 
-                if (!_State->_ScrollingSpectogram)
+                if (!_State->_ScrollingSpectrogram)
                     _TimeLabels.clear();
             }
         }
@@ -453,11 +453,11 @@ void spectogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
-void spectogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool first) const noexcept
+void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool first) const noexcept
 {
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    if (_State->_HorizontalSpectogram)
+    if (_State->_HorizontalSpectrogram)
     {
         const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle->_Height;
         const FLOAT y2 = first ? _TimeTextStyle->_Height : _Size.height;
@@ -532,13 +532,13 @@ void spectogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool first
 /// <summary>
 /// Renders a Y-axis (Frequency)
 /// </summary>
-void spectogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept
+void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept
 {
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     const FLOAT Opacity = _FreqTextStyle->_Brush->GetOpacity();
 
-    if (_State->_HorizontalSpectogram)
+    if (_State->_HorizontalSpectrogram)
         _FreqTextStyle->SetHorizontalAlignment(left? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
     else
         _FreqTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -567,16 +567,16 @@ void spectogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left)
 /// <summary>
 /// Updates this instance.
 /// </summary>
-bool spectogram_t::Update() noexcept
+bool spectrogram_t::Update() noexcept
 {
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
 
     _BitmapRenderTarget->BeginDraw();
 
-    if (_State->_HorizontalSpectogram)
+    if (_State->_HorizontalSpectrogram)
     {
-        // Draw the next spectogram line.
+        // Draw the next Spectrogram line.
         {
             const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) _BandCount;
 
@@ -590,9 +590,9 @@ bool spectogram_t::Update() noexcept
 
                 assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
-                _SpectogramStyle->SetBrushColor(fb.CurValue);
+                _SpectrogramStyle->SetBrushColor(fb.CurValue);
 
-                _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectogramStyle->_Brush);
+                _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle->_Brush);
 
                 y1  = y2;
                 y2 += Bandwidth;
@@ -606,7 +606,7 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectrogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
@@ -619,7 +619,7 @@ bool spectogram_t::Update() noexcept
 
         if (_TrackTime != _State->_TrackTime) // in seconds
         {
-            if (_State->_ScrollingSpectogram)
+            if (_State->_ScrollingSpectrogram)
             {
                 _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_Settings->_FlipHorizontally ? _BitmapSize.width : 0.f });
 
@@ -634,7 +634,7 @@ bool spectogram_t::Update() noexcept
     }
     else
     {
-        // Draw the next spectogram line.
+        // Draw the next Spectrogram line.
         {
             const FLOAT Bandwidth = _State->_UseSpectrumBarMetrics ? std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f) : _BitmapSize.width / (FLOAT) _BandCount;
             const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
@@ -649,9 +649,9 @@ bool spectogram_t::Update() noexcept
 
                 assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
-                _SpectogramStyle->SetBrushColor(fb.CurValue);
+                _SpectrogramStyle->SetBrushColor(fb.CurValue);
 
-                _BitmapRenderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectogramStyle->_Brush);
+                _BitmapRenderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle->_Brush);
 
                 x1  = x2;
                 x2 += Bandwidth;
@@ -665,7 +665,7 @@ bool spectogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectogram && (_State->_LastPlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectrogram && (_State->_LastPlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
@@ -678,7 +678,7 @@ bool spectogram_t::Update() noexcept
 
         if (_TrackTime != _State->_TrackTime) // in seconds
         {
-            if (_State->_ScrollingSpectogram)
+            if (_State->_ScrollingSpectrogram)
             {
                 _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_Settings->_FlipVertically ? _BitmapRect.top : _BitmapSize.height });
 
@@ -699,14 +699,14 @@ bool spectogram_t::Update() noexcept
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
-void spectogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
+void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
 {
     const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State->_ScalingFunction, _State->_SkewFactor);
     const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State->_ScalingFunction, _State->_SkewFactor);
 
     const double NyquistFrequency = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), LoFrequency, HiFrequency);
 
-    if (_State->_HorizontalSpectogram)
+    if (_State->_HorizontalSpectrogram)
     {
         const FLOAT y = msc::Map(NyquistFrequency, LoFrequency, HiFrequency, 0.f, _BitmapSize.height);
 
@@ -723,7 +723,7 @@ void spectogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * render
 /// <summary>
 /// Initializes the Y-axis.
 /// </summary>
-void spectogram_t::InitFreqAxis() noexcept
+void spectrogram_t::InitFreqAxis() noexcept
 {
     _FreqLabels.clear();
 
@@ -850,14 +850,14 @@ void spectogram_t::InitFreqAxis() noexcept
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext)
+HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext)
 {
     HRESULT hr = S_OK;
 
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectogram, deviceContext, Size, L"", 1.f, &_SpectogramStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectrogram, deviceContext, Size, L"", 1.f, &_SpectrogramStyle);
 
     if (SUCCEEDED(hr))
         hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, Size, L"", 1.f, &_TimeLineStyle);
@@ -906,7 +906,7 @@ HRESULT spectogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void spectogram_t::DeleteDeviceSpecificResources() noexcept
+void spectrogram_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
     _DebugBrush.Release();
@@ -945,9 +945,9 @@ void spectogram_t::DeleteDeviceSpecificResources() noexcept
         _TimeLineStyle = nullptr;
     }
 
-    if (_SpectogramStyle)
+    if (_SpectrogramStyle)
     {
-        _SpectogramStyle->DeleteDeviceSpecificResources();
-        _SpectogramStyle = nullptr;
+        _SpectrogramStyle->DeleteDeviceSpecificResources();
+        _SpectrogramStyle = nullptr;
     }
 }

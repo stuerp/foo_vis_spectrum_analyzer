@@ -299,7 +299,7 @@ enum class VisualizationType
 {
     Bars = 0,
     Curve = 1,
-    Spectogram = 2,
+    Spectrogram = 2,
     PeakMeter = 3,
     LevelMeter = 4,
     RadialBars = 5,
@@ -314,7 +314,7 @@ enum class VisualizationTypes : uint64_t
 
     Bars            = 1 << (int) VisualizationType::Bars,
     Curve           = 1 << (int) VisualizationType::Curve,
-    Spectogram      = 1 << (int) VisualizationType::Spectogram,
+    Spectrogram     = 1 << (int) VisualizationType::Spectrogram,
     PeakMeter       = 1 << (int) VisualizationType::PeakMeter,
     LevelMeter      = 1 << (int) VisualizationType::LevelMeter,
     RadialBars      = 1 << (int) VisualizationType::RadialBars,
@@ -403,26 +403,26 @@ enum class VisualElement : uint32_t
     CurvePeakLine               = 12,
     CurvePeakArea               = 13,
 
-    Spectogram                  = 18,
+    Spectrogram                 = 18,
 
-    BarBackground             = 19,
+    BarBackground               = 19,
 
-    BarPeakLevel              = 20,
-    Bar0dBPeakLevel           = 23,
-    BarMaxPeakLevel           = 25,
-    BarPeakLevelText          = 26,
+    BarPeakLevel                = 20,
+    Bar0dBPeakLevel             = 23,
+    BarMaxPeakLevel             = 25,
+    BarPeakLevelText            = 26,
 
-    BarRMSLevel               = 21,
-    Bar0dBRMSLevel            = 24,
-    BarRMSLevelText           = 22,
+    BarRMSLevel                 = 21,
+    Bar0dBRMSLevel              = 24,
+    BarRMSLevelText             = 22,
 
     NyquistMarker               = 15,
 
-    BarLeftRight              = 27,
-    BarMidSide                = 28,
+    BarLeftRight                = 27,
+    BarMidSide                  = 28,
     LevelMeterAxis              = 29,
-    BarLeftRightIndicator     = 30,
-    BarMidSideIndicator       = 31,
+    BarLeftRightIndicator       = 30,
+    BarMidSideIndicator         = 31,
 
     SignalLine                  = 32,
 
