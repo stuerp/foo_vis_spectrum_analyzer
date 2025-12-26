@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2025.12.20) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2025.12.26) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -530,6 +530,14 @@ void bar_t::Render() const noexcept
                 Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
                 Rect.right += _MaxPeakStyle->_Thickness / 2.f;
             }
+            else
+            {
+                if (!_State->_LEDIntegralSize)
+                {
+                    Rect.top    -= _LEDSize / 2.f;
+                    Rect.bottom += _LEDSize / 2.f;
+                }
+            }
 
             const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
 
@@ -593,6 +601,14 @@ void bar_t::Render() const noexcept
             {
                 Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
                 Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
+            }
+            else
+            {
+                if (!_State->_LEDIntegralSize)
+                {
+                    Rect.top    -= _LEDSize / 2.f;
+                    Rect.bottom += _LEDSize / 2.f;
+                }
             }
 
             const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;

@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha3, 2025-12-20
+
+- Fixed: 32-bit backwards compatibility with settings.
+
 v0.10.0.0-alpha2, 2025-12-20
 
 - Improved: Peak meter

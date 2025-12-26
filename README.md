@@ -127,9 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha3, 2025-12-20
+v0.10.0.0-alpha4, 2026-01-xx
 
-- Fixed: 32-bit backwards compatibility with settings.
+- Fixed: Render code for the peak meter Top LED. (Regression)
 
 You can read the full history [here](docs/History.md).
 
