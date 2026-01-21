@@ -393,6 +393,10 @@ Enable the check box to see a tooltip with the center frequency and when appropr
 
 Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered.
 
+`Visualize during pause`
+
+Enable this option to continue visualization when playback is paused.
+
 #### Artwork group
 
 Some visualizations can use artwork to display on the background or to use as a source for a color list. The artwork can come from the playing track or from file location.
