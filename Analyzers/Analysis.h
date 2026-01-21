@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.11.05) P. Stuer **/
+/** $VER: Analysis.h (2026.01.21) P. Stuer **/
 
 #pragma once
 
@@ -76,7 +76,7 @@ public:
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
-    void ResetPeakValues() noexcept;
+    void ResetMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
     void UpdatePeakValues(bool isStopped) noexcept;

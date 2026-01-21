@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.10.21) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.01.21) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -661,8 +661,10 @@ void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 /// <summary>
 /// Playback paused/resumed.
 /// </summary>
-void uielement_t::on_playback_pause(bool)
+void uielement_t::on_playback_pause(bool state)
 {
+    // Notify the render thread.
+    _Event.Raise(state ? event_t::PlaybackPaused : event_t::PlaybackResumed);
 }
 
 /// <summary>

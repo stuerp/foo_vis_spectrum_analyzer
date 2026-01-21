@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2025.10.22) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.01.21) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectrogram.h"
@@ -295,6 +295,8 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!Update())
         return;
 
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     // Draw the offscreen bitmap.
     if (_State->_HorizontalSpectrogram)
     {
@@ -306,7 +308,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             D2D1_RECT_F Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
             Src.right = Src.left;
             Src.left  = 0.f;
@@ -314,13 +316,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             Dst.left  = Dst.right;
             Dst.right = _BitmapSize.width;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
         }
         else
         {
             D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
         }
 
         ResetTransform(deviceContext);
@@ -364,7 +366,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             D2D1_RECT_F Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
             D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
             // Render the old lines.
             Src.bottom = Src.top;
@@ -373,13 +375,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             Dst.top    = Dst.bottom;
             Dst.bottom = _BitmapSize.height;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, &Src);
+            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
         }
         else
         {
             D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
         }
 
         ResetTransform(deviceContext);
@@ -576,7 +578,7 @@ bool spectrogram_t::Update() noexcept
 
     if (_State->_HorizontalSpectrogram)
     {
-        // Draw the next Spectrogram line.
+        // Draw the next spectrogram line.
         {
             const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) _BandCount;
 
@@ -587,8 +589,6 @@ bool spectrogram_t::Update() noexcept
             {
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
-
-                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectrogramStyle->SetBrushColor(fb.CurValue);
 

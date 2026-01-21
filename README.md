@@ -129,6 +129,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.10.0.0-alpha4, 2026-01-xx
 
+- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
 - Fixed: Render code for the peak meter Top LED. (Regression)
 
 You can read the full history [here](docs/History.md).

@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2025.11.09) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.01.21) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -83,7 +83,7 @@ void uielement_t::RenderThreadProc() noexcept
                 {
                     _FrameCounter.NewFrame();
 
-                    Process();
+                    ProcessAudio();
 
                     Render();
 
@@ -134,23 +134,34 @@ void uielement_t::ProcessEvents() noexcept
     if (Flags == 0)
         return;
 
-    if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
+    if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackStartedNewTrack))
     {
         _RenderState._LastPlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
+
+        _RenderState._IsPaused = false;
+    }
+
+    if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
+    {
+        for (auto & Iter : _Grid)
+            Iter._Graph->Reset();
+
+        if (!_RenderState._VisualizeDuringPause)
+            _RenderState._IsPaused = true;
+    }
+    else
+    if (event_t::IsRaised(Flags, event_t::PlaybackResumed))
+    {
+        if (!_RenderState._VisualizeDuringPause)
+            _RenderState._IsPaused = false;
     }
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
     {
-        _RenderState._LastPlaybackTime = 0.;
-        _RenderState._TrackTime = 0.;
-
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
-
         if (_Artwork.Bitmap() == nullptr)
         {
             // Set the default dominant color and gradient for the artwork color scheme.
@@ -174,14 +185,14 @@ void uielement_t::ProcessEvents() noexcept
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
-void uielement_t::Process() noexcept
+void uielement_t::ProcessAudio() noexcept
 {
     if (!_VisualisationStream.is_valid())
         return;
 
     double PlaybackTime; // in seconds
 
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._LastPlaybackTime)))
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._LastPlaybackTime)) || _RenderState._IsPaused)
         return; // Playback is paused.
 
     double WindowSize   = 0.;

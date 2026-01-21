@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.12.20) P. Stuer **/
+/** $VER: State.h (2026.01.21) P. Stuer **/
 
 #pragma once
 
@@ -166,6 +166,7 @@ public:
 
         bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
+        bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
 
         SmoothingMethod _SmoothingMethod;
         double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
@@ -304,6 +305,8 @@ public:
     double _LastPlaybackTime;                                           // Spectrogram: Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram
 
+    bool _IsPaused;                                                     // Playback has been paused.
+
     #pragma endregion
 
     #pragma endregion
@@ -372,7 +375,7 @@ private:
     #pragma endregion
 
 private:
-    const size_t _CurrentVersion = 32; // v0.9.2.0-alpha1
+    const size_t _CurrentVersion = 33; // v0.10.0.0-alpha4
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

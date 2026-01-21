@@ -148,7 +148,7 @@ private:
 
     void ProcessEvents() noexcept;
     void Render() noexcept;
-    void Process() noexcept;
+    void ProcessAudio() noexcept;
     void Animate() noexcept;
 
     void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.11.08) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2026.01.21) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1123,9 +1123,9 @@
     #pragma region Tool tips
 
     // Checkbox
-    #define W_A87    90
+    #define W_A87    86
     #define H_A87    H_CHB
-    #define X_A87    X_A38
+    #define X_A87    X_A17
     #define Y_A87    Y_A38 + H_A38 + IY
 
     #pragma endregion
@@ -1133,10 +1133,20 @@
     #pragma region Suppress mirror image
 
     // Checkbox
-    #define W_G19    90
+    #define W_G19    86
     #define H_G19    H_CHB
     #define X_G19    X_A87
     #define Y_G19    Y_A87 + H_A87 + IY
+
+    #pragma endregion
+
+    #pragma region Visualize during pause
+
+    // Checkbox
+    #define W_A95    86
+    #define H_A95    H_CHB
+    #define X_A95    X_A87 + W_A87 + IX
+    #define Y_A95    Y_A87
 
     #pragma endregion
 

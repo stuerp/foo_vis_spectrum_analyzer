@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2025.09.17) P. Stuer **/
+/** $VER: Support.h (2026.01.21) P. Stuer **/
 
 #pragma once
 
@@ -32,7 +32,7 @@ inline static T InRange(T value, T minValue, T maxValue)
 }
 
 /// <summary>
-/// Wraps around a value.
+/// Constrains the specified value to the range [0 .. max - 1], wrapping around values that are larger than the maximum value.
 /// </summary>
 template<class T>
 inline static T Wrap(T value, T max)

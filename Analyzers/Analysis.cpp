@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2025.10.25) P. Stuer **/
+/** $VER: Analysis.cpp (2026.01.21) P. Stuer **/
 
 #include "pch.h"
 
@@ -148,9 +148,9 @@ void analysis_t::Reset() noexcept
 }
 
 /// <summary>
-/// Resets the peak values.
+/// Resets the measurements.
 /// </summary>
-void analysis_t::ResetPeakValues() noexcept
+void analysis_t::ResetMeasurements() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
         fb.CurValue = 0.;

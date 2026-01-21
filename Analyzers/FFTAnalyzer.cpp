@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2025.12.20) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.01.21) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -168,17 +168,17 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
 
     for (frequency_band_t & fb : freqBands)
     {
-        const double LoHz = HzToBinIndex(fb.Lo, _FreqData.size() - 1, sampleRate);
-        const double HiHz = HzToBinIndex(fb.Hi, _FreqData.size() - 1, sampleRate);
-
-        const int LoIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(LoHz) + 1. : std::ceil(LoHz));
-              int HiIdx = (int) (_State->_SmoothLowerFrequencies ? std::round(HiHz) - 1. : std::floor(HiHz));
-
         const double BandGain = UseBandGain ? std::hypot(1, std::pow(((fb.Hi - fb.Lo) * (double) (_FreqData.size() - 1) / (double) sampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
+
+        double LoIdx = HzToBinIndex(fb.Lo, _FreqData.size(), sampleRate);
+        double HiIdx = HzToBinIndex(fb.Hi, _FreqData.size(), sampleRate);
+
+        LoIdx = (_State->_SmoothLowerFrequencies ? std::round(LoIdx) + 1. : std::ceil(LoIdx));
+        HiIdx = (_State->_SmoothLowerFrequencies ? std::round(HiIdx) - 1. : std::floor(HiIdx));
 
         if (LoIdx <= HiIdx)
         {
-            HiIdx -= std::max(HiIdx - LoIdx - (int) (_FreqData.size() - 1), 0);
+            HiIdx -= std::max(HiIdx - LoIdx - (double) _FreqData.size(), 0.);
 
             double Value = (_State->_SummationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
 
@@ -186,7 +186,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
 
             int Count = 0;
 
-            for (int Idx = LoIdx; Idx <= HiIdx; ++Idx)
+            for (auto Idx = LoIdx; Idx <= HiIdx; ++Idx)
             {
                 const size_t BinIdx = msc::Wrap((size_t) Idx, _FreqData.size());
 
@@ -233,7 +233,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
         }
         else
         {
-            const double Index = HzToBinIndex(fb.Center, _FreqData.size() - 1, sampleRate);
+            const double Index = HzToBinIndex(fb.Center, _FreqData.size(), sampleRate);
 
             fb.NewValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
         }

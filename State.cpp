@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.11.12) P. Stuer **/
+/** $VER: State.cpp (2026.01.21) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -170,6 +170,7 @@ void state_t::Reset() noexcept
 
     _ShowToolTipsAlways = true;
     _SuppressMirrorImage = true;
+    _VisualizeDuringPause = true;
 
     // Artwork
     _NumArtworkColors = 10;
@@ -434,6 +435,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _ShowToolTipsAlways = other._ShowToolTipsAlways;
         _SuppressMirrorImage = other._SuppressMirrorImage;
+        _VisualizeDuringPause = other._VisualizeDuringPause;
 
         // Artwork
         _NumArtworkColors = other._NumArtworkColors;
@@ -941,6 +943,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_CenterScale, abortHandler);
             reader->read_object_t(_MaxBarSize, abortHandler);
         }
+
+        if (Version >= 33)
+        {
+            reader->read_object_t(_VisualizeDuringPause, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1264,6 +1271,10 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         // Version 32, v0.9.2
         writer->write_object_t(_CenterScale, abortHandler);
         writer->write_object_t(_MaxBarSize, abortHandler);
+
+        // Version 33, v0.10.0-alpha4
+        writer->write_object_t(_VisualizeDuringPause, abortHandler);
+
     }
     catch (exception & ex)
     {

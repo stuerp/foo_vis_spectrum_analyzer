@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2025.11.12) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.01.21) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -178,6 +178,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
             { IDC_SHOW_TOOLTIPS, "Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
             { IDC_SUPPRESS_MIRROR_IMAGE, "Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
+            { IDC_VISUALIZE_DURING_PAUSE, "Continue visualization when playback is paused." },
 
             // Artwork
             { IDC_NUM_ARTWORK_COLORS, "Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
@@ -954,6 +955,7 @@ void ConfigurationDialog::Initialize()
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTipsAlways);
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
+        SendDlgItemMessageW(IDC_VISUALIZE_DURING_PAUSE, BM_SETCHECK, _State->_VisualizeDuringPause);
     }
     #pragma endregion
 
@@ -2516,6 +2518,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        case IDC_VISUALIZE_DURING_PAUSE:
+        {
+            _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_LED_MODE:
         {
             _State->_LEDMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -3252,7 +3260,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         // Common
         IDC_COMMON,
             IDC_SMOOTHING_METHOD, IDC_SMOOTHING_METHOD_LBL, IDC_SMOOTHING_FACTOR, IDC_SMOOTHING_FACTOR_LBL,
-            IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE,
+            IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE, IDC_VISUALIZE_DURING_PAUSE,
 
         // Artwork
         IDC_ARTWORK,

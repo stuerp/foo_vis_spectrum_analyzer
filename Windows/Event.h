@@ -1,5 +1,5 @@
 
-/**$VER: Event.h (2024.03.12) P. Stuer - Implements a very simple thread-safe event class. **/
+/**$VER: Event.h (2026.01.21) P. Stuer - Implements a very simple thread-safe event class. **/
 
 #pragma once
 
@@ -27,8 +27,10 @@ public:
 
         PlaybackStartedNewTrack = 1,
         PlaybackStopped = 2,
+        PlaybackPaused = 4,
+        PlaybackResumed = 8,
 
-        UserInterfaceColorsChanged = 4,
+        UserInterfaceColorsChanged = 16,
     };
 
     /// <summary>
@@ -60,7 +62,7 @@ public:
     /// </summary>
     static bool IsRaised(event_t::Flags value, event_t::Flags mask) noexcept
     {
-        return (value & mask) == mask;
+        return (value & mask) != 0;
     }
 
 private:
