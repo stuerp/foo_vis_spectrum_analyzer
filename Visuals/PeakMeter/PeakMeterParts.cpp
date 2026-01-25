@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2025.12.26) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.01.25) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -21,7 +21,7 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
     // Precalculate the coordinates of all the parts.
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         FLOAT & x1 = _Rect.left;
         FLOAT & x2 = _Rect.right;
@@ -201,7 +201,7 @@ void part_t::CreateAxis() noexcept
 
     const double Epsilon = 1.e-3;
 
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         const FLOAT xMin = (!_Settings->_FlipHorizontally ? _Rect.left  : _Rect.right);
         const FLOAT xMax = (!_Settings->_FlipHorizontally ? _Rect.right : _Rect.left);
@@ -416,7 +416,7 @@ void part_t::CreateAxis() noexcept
 /// </summary>
 void bar_t::Unbind() noexcept
 {
-    _TickLinesCommandList.Release();
+    _ScaleLinesCommandList.Release();
     _NameTextLayout.Release();
 
     __super::Unbind();
@@ -438,7 +438,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
     if (_Settings->_FlipHorizontally)
         _Transform = D2D1::Matrix3x2F::Scale(-1.0f, 1.0f, Center);
 
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         if (_Settings->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
@@ -461,8 +461,8 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
         hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->Name.c_str(), (UINT32) _Measurement->Name.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
     }
 
-    if (SUCCEEDED(hr) && (_TickLinesCommandList == nullptr))
-        hr = CreateTickLinesCommandList();
+    if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)
+        hr = CreateScaleLinesCommandList();
 }
 
 /// <summary>
@@ -488,13 +488,13 @@ void bar_t::Render() const noexcept
             _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
     }
 */
-    if (_TickLinesCommandList != nullptr)
-        _DeviceContext->DrawImage(_TickLinesCommandList);
+    if (_ScaleLinesCommandList != nullptr)
+        _DeviceContext->DrawImage(_ScaleLinesCommandList);
 
     // Draw the bars.
     _DeviceContext->SetTransform(_Transform);
 
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         // Draw the background.
         if (_BackgroundStyle->IsEnabled())
@@ -687,9 +687,9 @@ void bar_t::Render() const noexcept
 }
 
 /// <summary>
-/// Creates a command list that renders the tick lines.
+/// Creates a command list that renders the scale lines (The lines between labels that cover the bar area).
 /// </summary>
-HRESULT bar_t::CreateTickLinesCommandList() noexcept
+HRESULT bar_t::CreateScaleLinesCommandList() noexcept
 {
     // BeginDraw() was already called by the graph. End drawing on the old target.
     HRESULT hr = _DeviceContext->EndDraw();
@@ -701,16 +701,16 @@ HRESULT bar_t::CreateTickLinesCommandList() noexcept
 
     _DeviceContext->GetTarget(&OldTarget);
 
-    hr = _DeviceContext->CreateCommandList(&_TickLinesCommandList);
+    hr = _DeviceContext->CreateCommandList(&_ScaleLinesCommandList);
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_TickLinesCommandList);
+        _DeviceContext->SetTarget(_ScaleLinesCommandList);
         _DeviceContext->BeginDraw();
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
-        if (_State->_HorizontalPeakMeter)
+        if (_State->_IsHorizontalPeakMeter)
         {
             for (const label_t & Label : _Labels)
                 _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
@@ -725,7 +725,7 @@ HRESULT bar_t::CreateTickLinesCommandList() noexcept
     }
 
     if (SUCCEEDED(hr))
-        hr = _TickLinesCommandList->Close();
+        hr = _ScaleLinesCommandList->Close();
 
     // Resume drawing on the old target.
     _DeviceContext->SetTarget(OldTarget);
@@ -876,7 +876,7 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
                 _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
             if (!IsCenter())
-                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness); // Draw the tick.
         }
 
         hr = _DeviceContext->EndDraw();

@@ -125,7 +125,7 @@ public:
     void Render() const noexcept override final;
 
 private:
-    HRESULT CreateTickLinesCommandList() noexcept;
+    HRESULT CreateScaleLinesCommandList() noexcept;
 
     void DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
     void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
@@ -138,7 +138,7 @@ private:
 
     FLOAT _LEDSize;
 
-    CComPtr<ID2D1CommandList> _TickLinesCommandList;
+    CComPtr<ID2D1CommandList> _ScaleLinesCommandList;
 };
 
 /// <summary>

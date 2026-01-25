@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2025.11.12) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.01.25) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -87,20 +87,20 @@ void peak_meter_t::CreateParts() noexcept
         _Parts.push_back(new scale_t
         (
             _State, _Settings,
-            _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
-            _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
+            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
     }
 
     bool IsFirstBar = true;
 
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         if (_Settings->_FlipVertically)
         {
             for (auto Measurement = _Analysis->_Measurements.rbegin(); Measurement != _Analysis->_Measurements.rend(); ++Measurement)
             {
-                if (_State->_CenterScale && !IsFirstBar)
+                if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
                 _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
@@ -112,7 +112,7 @@ void peak_meter_t::CreateParts() noexcept
         {
             for (auto Measurement = _Analysis->_Measurements.begin(); Measurement != _Analysis->_Measurements.end(); ++Measurement)
             {
-                if (_State->_CenterScale && !IsFirstBar)
+                if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
                 _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
@@ -127,7 +127,7 @@ void peak_meter_t::CreateParts() noexcept
         {
             for (auto Measurement = _Analysis->_Measurements.rbegin(); Measurement != _Analysis->_Measurements.rend(); ++Measurement)
             {
-                if (_State->_CenterScale && !IsFirstBar)
+                if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
                 _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
@@ -139,7 +139,7 @@ void peak_meter_t::CreateParts() noexcept
         {
             for (auto Measurement = _Analysis->_Measurements.begin(); Measurement != _Analysis->_Measurements.end(); ++Measurement)
             {
-                if (_State->_CenterScale && !IsFirstBar)
+                if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
                 _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
@@ -154,8 +154,8 @@ void peak_meter_t::CreateParts() noexcept
         _Parts.push_back(new scale_t
         (
             _State, _Settings,
-            _State->_HorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
-            _State->_HorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
+            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
     }
 }
@@ -206,7 +206,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         if (Scale != nullptr)
         {
-            if (_State->_HorizontalPeakMeter)
+            if (_State->_IsHorizontalPeakMeter)
                 TotalScaleHeight += _ScaleTextStyle->_Height + (Scale->IsCenter() ? 0.f : _TickSize);
             else
                 TotalScaleWidth  += _ScaleTextStyle->_Width  + (Scale->IsCenter() ? 0.f : _TickSize);
@@ -215,7 +215,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             ++BarCount;
     }
 
-    const FLOAT TotalBarGap = _State->_CenterScale ? 0.f : _State->_BarGap * (FLOAT) (BarCount - 1);
+    const FLOAT TotalBarGap = _State->_HasCenterScale ? 0.f : _State->_BarGap * (FLOAT) (BarCount - 1);
 
     FLOAT Offset = 0.f;
     FLOAT BarWidth = 0.f;
@@ -223,7 +223,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
     // Calculate the width / height of a bar and the offset on the graph.
     {
-        if (_State->_HorizontalPeakMeter)
+        if (_State->_IsHorizontalPeakMeter)
         {
             BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) BarCount;
 
@@ -250,7 +250,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     // Layout the meter parts.
     bool NeedGap = false;
 
-    if (_State->_HorizontalPeakMeter)
+    if (_State->_IsHorizontalPeakMeter)
     {
         D2D1_RECT_F Rect = { 0.f, 0.f, _Size.width, 0.f };
         FLOAT y = Offset;
@@ -440,7 +440,7 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
 
             if (LEDSize > 0.f)
             {
-                if (_State->_HorizontalPeakMeter)
+                if (_State->_IsHorizontalPeakMeter)
                 {
                     for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
                         rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush);

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.01.21) P. Stuer **/
+/** $VER: Resources.h (2026.01.25) P. Stuer **/
 
 #pragma once
 
@@ -443,17 +443,18 @@
 #define IDC_HORIZONTAL_PEAK_METER       7162
 #define IDC_RMS_PLUS_3                  7164
 #define IDC_CENTER_SCALE                7166
+#define IDC_SCALE_LINES                 7168
 
-#define IDC_RMS_WINDOW_LBL              7168
-#define IDC_RMS_WINDOW                  7170
-#define IDC_RMS_WINDOW_SPIN             7172
-#define IDC_RMS_WINDOW_UNIT             7174
+#define IDC_RMS_WINDOW_LBL              7170
+#define IDC_RMS_WINDOW                  7172
+#define IDC_RMS_WINDOW_SPIN             7174
+#define IDC_RMS_WINDOW_UNIT             7176
 
-#define IDC_BAR_GAP_LBL                 7176
-#define IDC_BAR_GAP                     7178
+#define IDC_BAR_GAP_LBL                 7178
+#define IDC_BAR_GAP                     7180
 
-#define IDC_MAX_BAR_SIZE_LBL            7180
-#define IDC_MAX_BAR_SIZE                7182
+#define IDC_MAX_BAR_SIZE_LBL            7182
+#define IDC_MAX_BAR_SIZE                7184
 
 // Level Meter
 

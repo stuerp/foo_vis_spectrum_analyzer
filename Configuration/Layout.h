@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2026.01.21) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2026.01.25) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -266,11 +266,17 @@
     #define X_C24    X_C16
     #define Y_C24    Y_C16 + H_C16 + IY
 
-    // Checkbox: Center Scale
+    // Checkbox: Center scale
     #define W_C74    80
     #define H_C74    H_CHB
     #define X_C74    X_C16 + W_C16 + IX
     #define Y_C74    Y_C16 
+
+    // Checkbox: Scale lines
+    #define W_C77    80
+    #define H_C77    H_CHB
+    #define X_C77    X_C74
+    #define Y_C77    Y_C74 + H_C74 + IY 
 
     #pragma region RMS window
     // Label: RMS window
@@ -1553,7 +1559,7 @@
 #define Y_G28    Y_G24
 
 // ListBox: Channels
-#define W_G29    70
+#define W_G29    80
 #define H_G29   160
 #define X_G29   X_G28
 #define Y_G29   Y_G28 + H_G28 + IY

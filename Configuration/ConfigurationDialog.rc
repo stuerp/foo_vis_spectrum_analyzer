@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2026.01.21) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2026.01.25) P. Stuer **/
 
 #include "Resources.h"
 
@@ -64,10 +64,10 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "Horizontal",                   IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
-
         control     "RMS +3",                       IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
 
         control     "Center scale",                 IDC_CENTER_SCALE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C74, Y_C74, W_C74, H_C74
+        control     "Scale lines",                  IDC_SCALE_LINES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C77, Y_C77, W_C77, H_C77
 
         rtext       "RMS Window:"                   IDC_RMS_WINDOW_LBL,             X_C21, Y_C21 + 2, W_C21, H_C21
         edittext                                    IDC_RMS_WINDOW,                 X_C22, Y_C22,     W_C22, H_C22, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

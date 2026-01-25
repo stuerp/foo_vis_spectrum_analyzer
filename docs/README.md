@@ -682,6 +682,13 @@ Adds 3dB to the RMS value.
 
 Adds a scale between each bar.
 
+`Scale lines`
+
+Draws a scale line on the bar area when enabled.
+
+> [!Tip]
+> When using LED mode the scale lines can appear in the gap between the LEDs causing an inconsitent look. Disable this option to stop drawing the lines.
+
 `RMS window`
 
 Specifies the duration of each RMS measurement in seconds.
@@ -935,13 +942,39 @@ Deletes the currently selected preset.
 ## FAQs
 
 **Q:** Why does the fullscreen version of the component not respect my settings when using DUI?
+
 **A:** In DUI the fullscreen version of the component is a completely new instance with its own settings. You have to configure it separately.
+
+**Q:** What do the letters of the channel names mean?
+
+**A:**
+
+|Abbr|Description|
+|----|-----------|
+|FL|Front Left|
+|FR|Front Right|
+|FC|Front Center|
+|LFE|Low-Frequence Effects|
+|BL|Back Left|
+|BR|Back Right|
+|FCL|Front Center Left|
+|FCR|Front Center Right|
+|BC|Back Center|
+|SL|Side Left|
+|SR|Side Right|
+|TC|Top Center|
+|TFL|Top Front Left|
+|TFC|Top Front Center|
+|TFR|Top Front Right|
+|TBL|Top Back Left|
+|TBC|Top Back Center|
+|TBR|Top Back Right|
 
 ---
 
 ## Reference Material
 
-This chapter contains a lot of reference material I consulted during the development of foo_vis_spectrum_analyzer.
+This chapter contains some reference material I consulted during the development of foo_vis_spectrum_analyzer.
 
 ### foobar2000
 

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.01.21) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.01.25) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -18,11 +18,16 @@
 // Display names for the audio_chunk channel bits.
 static const WCHAR * const ChannelNames[] =
 {
-    L"Front Left", L"Front Right", L"Front Center",
-    L"Low Frequency", L"Back Left", L"Back Right",
+    L"Front Left", L"Front Right",
+    L"Front Center",
+    L"Low Frequency Effects",
+    L"Back Left", L"Back Right",
     L"Front Left of Center", L"Front Right of Center",
-    L"Back Center", L"Side Left", L"Side Right", L"Top Center", L"Front Left Height", L"Front Center Height", L"Front Right Height",
-    L"Rear Left Height", L"Rear Center Height", L"Rear Right Height",
+    L"Back Center",
+    L"Side Left", L"Side Right",
+    L"Top Center",
+    L"Top Front Left", L"Top Front Center", L"Top Front Right",
+    L"Top Back Left", L"Top Back Center", L"Top Back Right",
 };
 
 /// <summary>
@@ -86,6 +91,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
             { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
             { IDC_CENTER_SCALE, "Renders a scale between the meter bars" },
+            { IDC_SCALE_LINES, "Renders a scale line on the background of the meter bars" },
             { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
             { IDC_BAR_GAP, "Specifies the gap between the peak meter bars (in pixels)." },
             { IDC_MAX_BAR_SIZE, "Specifies the max. size of a meter bar (in pixels). Use 0 to remove constraint." },
@@ -392,9 +398,10 @@ void ConfigurationDialog::Initialize()
     #pragma region Peak Meter
 
     {
-        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_HorizontalPeakMeter);
+        SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_IsHorizontalPeakMeter);
         SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
-        SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_CenterScale);
+        SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_HasCenterScale);
+        SendDlgItemMessageW(IDC_SCALE_LINES, BM_SETCHECK, _State->_HasScaleLines);
     }
     {
         CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
@@ -2560,7 +2567,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_HORIZONTAL_PEAK_METER:
         {
-            _State->_HorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsHorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2572,7 +2579,13 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_CENTER_SCALE:
         {
-            _State->_CenterScale = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HasCenterScale = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SCALE_LINES:
+        {
+            _State->_HasScaleLines = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -3178,7 +3191,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_SCROLLING_SPECTROGRAM, IDC_HORIZONTAL_SPECTROGRAM, IDC_SPECTRUM_BAR_METRICS,
 
         IDC_PEAK_METER,
-            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3, IDC_CENTER_SCALE,
+            IDC_HORIZONTAL_PEAK_METER, IDC_RMS_PLUS_3, IDC_CENTER_SCALE, IDC_SCALE_LINES,
             IDC_RMS_WINDOW_LBL, IDC_RMS_WINDOW, IDC_RMS_WINDOW_SPIN, IDC_RMS_WINDOW_UNIT,
             IDC_BAR_GAP_LBL, IDC_BAR_GAP,
             IDC_MAX_BAR_SIZE_LBL, IDC_MAX_BAR_SIZE,
@@ -3408,6 +3421,8 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_SCALE_LINES).EnableWindow(IsPeakMeter);
+
     GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);

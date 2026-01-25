@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.01.21) P. Stuer **/
+/** $VER: State.cpp (2026.01.25) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -237,11 +237,12 @@ void state_t::Reset() noexcept
     _UseSpectrumBarMetrics = false;
 
     // Peak Meter
-    _HorizontalPeakMeter = false;
+    _IsHorizontalPeakMeter = false;
     _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
     _BarGap = 1.f; // pixels
-    _CenterScale = false;
+    _HasCenterScale = false;
+    _HasScaleLines = true;
     _MaxBarSize = 0.f; // pixels
 
     _ChannelPair = ChannelPair::FrontLeftRight;
@@ -506,11 +507,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
 
     // Peak Meter
-    _HorizontalPeakMeter = other._HorizontalPeakMeter;
+    _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
     _BarGap = other._BarGap;
-    _CenterScale = other._CenterScale;
+    _HasCenterScale = other._HasCenterScale;
+    _HasScaleLines = other._HasScaleLines;
     _MaxBarSize = other._MaxBarSize;
 
     // Level Meter
@@ -875,7 +877,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 22)
         {
-            reader->read_object_t(_HorizontalPeakMeter, abortHandler);
+            reader->read_object_t(_IsHorizontalPeakMeter, abortHandler);
         }
 
         if (Version >= 23)
@@ -940,13 +942,14 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 32)
         {
-            reader->read_object_t(_CenterScale, abortHandler);
+            reader->read_object_t(_HasCenterScale, abortHandler);
             reader->read_object_t(_MaxBarSize, abortHandler);
         }
 
         if (Version >= 33)
         {
             reader->read_object_t(_VisualizeDuringPause, abortHandler);
+            reader->read_object_t(_HasScaleLines, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1227,7 +1230,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_ScrollingSpectrogram, abortHandler);
 
         // Version 22, v0.7.5.0-beta2
-        writer->write_object_t(_HorizontalPeakMeter, abortHandler);
+        writer->write_object_t(_IsHorizontalPeakMeter, abortHandler);
 
         // Version 23, v0.7.5.0-beta3
         writer->write_object_t(_LEDLight, abortHandler);
@@ -1269,11 +1272,12 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_DecayFactor, abortHandler);
 
         // Version 32, v0.9.2
-        writer->write_object_t(_CenterScale, abortHandler);
+        writer->write_object_t(_HasCenterScale, abortHandler);
         writer->write_object_t(_MaxBarSize, abortHandler);
 
         // Version 33, v0.10.0-alpha4
         writer->write_object_t(_VisualizeDuringPause, abortHandler);
+        writer->write_object_t(_HasScaleLines, abortHandler);
 
     }
     catch (exception & ex)
