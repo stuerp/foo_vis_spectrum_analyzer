@@ -191,7 +191,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
             if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
                 RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.MaxValue, fb.Opacity);
 
-            if (fb.CurValue > 0.f)
+            if (fb.CurValue > 0.)
                 RenderBar(deviceContext, Rect, _BarAreaStyle, _BarTopStyle, fb.CurValue, fb.Opacity);
         }
 

@@ -260,6 +260,12 @@ void uielement_t::Render() noexcept
 /// </summary>
 void uielement_t::Animate() noexcept
 {
+    if (_RenderState._IsPaused)
+    {
+        for (auto & Iter : _Grid)
+            Iter._Graph->_Analysis.UpdateCurrentValues();
+    }
+
     if (_UIState._PeakMode == PeakMode::None)
         return;
 

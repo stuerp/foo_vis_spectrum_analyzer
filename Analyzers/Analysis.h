@@ -79,6 +79,7 @@ public:
     void ResetMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
+    void UpdateCurrentValues() noexcept;
     void UpdatePeakValues(bool isStopped) noexcept;
 
 private:

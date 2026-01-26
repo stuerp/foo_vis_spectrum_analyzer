@@ -42,8 +42,8 @@ struct frequency_band_t
 
     virtual ~frequency_band_t() { }
 
-    double NewValue;    // 0.0 .. 1.0
-    double CurValue;    // 0.0 .. 1.0
+    double NewValue;    // [0, 1]
+    double CurValue;    // [0, 1]
 
     double Lo;          // Hz
     double Center;         // Hz

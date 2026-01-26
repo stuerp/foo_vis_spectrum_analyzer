@@ -152,9 +152,6 @@ void analysis_t::Reset() noexcept
 /// </summary>
 void analysis_t::ResetMeasurements() noexcept
 {
-    for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = 0.;
-
     for (measurement_t & gv : _Measurements)
     {
         gv.Peak = gv.RMS = -std::numeric_limits<double>::infinity();
@@ -175,6 +172,15 @@ void analysis_t::ResetRMSDependentValues() noexcept
 
     _Mid   = 0.;
     _Side  = 0.;
+}
+
+/// <summary>
+/// Updates the peak values.
+/// </summary>
+void analysis_t::UpdateCurrentValues() noexcept
+{
+    for (auto & fb : _FrequencyBands)
+        fb.CurValue = 0.;
 }
 
 /// <summary>
@@ -457,9 +463,9 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
     }
 /*
     for (auto & fb : _FrequencyBands)
-        fb.CurValue = .5f;
+        fb.CurValue = .5;
 */
-    // From here on frequency_band_t::CurValue is guaranteed to be in the range 0.0 .. 1.0.
+    // From here on frequency_band_t::CurValue is guaranteed to be in the range [0, 1].
 }
 
 #pragma region Frequencies

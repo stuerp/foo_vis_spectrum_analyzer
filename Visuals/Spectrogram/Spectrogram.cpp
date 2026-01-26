@@ -295,12 +295,12 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    // Update the offscreen bitmap.
-    if (!Update())
-        return;
-
     // Don't render when playback is paused. This flag is only set when visualiszation during pause is disabled.
     if (_State->_IsPaused)
+        return;
+
+    // Update the offscreen bitmap.
+    if (!Update())
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -654,8 +654,6 @@ bool spectrogram_t::Update() noexcept
             {
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
-
-                assert(msc::InRange(fb.CurValue, 0.0, 1.0));
 
                 _SpectrogramStyle->SetBrushColor(fb.CurValue);
 
