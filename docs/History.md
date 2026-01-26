@@ -1,6 +1,12 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha4, 2026-01-25
+
+- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
+- New: `Scale lines` option. Enable to draw scale lines on the bar area of a peak meter. (Default: Enabled)
+- Fixed: Render code for the peak meter Top LED. (Regression)
+
 v0.10.0.0-alpha3, 2025-12-20
 
 - Fixed: 32-bit backwards compatibility with settings.

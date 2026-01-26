@@ -61,6 +61,9 @@ void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void spectrogram_t::Reset() noexcept
 {
+/*
+console::print("Reset");
+
     _X = 0.f;
     _Y = 0.f;
     _PlaybackTime = -1.;
@@ -72,6 +75,7 @@ void spectrogram_t::Reset() noexcept
     _BitmapRenderTarget.Release();
 
     _IsResized = true;
+*/
 }
 
 /// <summary>
@@ -293,6 +297,10 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     // Update the offscreen bitmap.
     if (!Update())
+        return;
+
+    // Don't render when playback is paused. This flag is only set when visualiszation during pause is disabled.
+    if (_State->_IsPaused)
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);

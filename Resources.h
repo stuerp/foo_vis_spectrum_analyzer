@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha4"
+#define STR_RELEASE_TAG         "-alpha5"
 
 /** Component specific **/
 
@@ -25,7 +25,7 @@
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
-#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2025 P. Stuer. All rights reserved."
+#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2026 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
 #define STR_COMPONENT_COMMENT       "\n" \

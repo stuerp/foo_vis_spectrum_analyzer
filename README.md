@@ -127,11 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha4, 2026-01-xx
+v0.10.0.0-alpha5, 2026-0x-xx
 
-- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
-- New: `Scale lines` option. Enable to draw scale lines on the bar area of a peak meter. (Default: Enabled)
-- Fixed: Render code for the peak meter Top LED. (Regression)
+- Improved: Spectogram honors the new `Visualize on pause` setting.
 
 You can read the full history [here](docs/History.md).
 
