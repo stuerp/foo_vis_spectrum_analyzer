@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.02.04) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.02.08) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -124,15 +124,10 @@ void fft_analyzer_t::Transform() noexcept
     {
         const double Factor = (double) _FFTSize / Norm; // * M_SQRT2;
 
-#ifdef oldcode
-        for (std::complex<double> & Iter : _TimeData)
-            Iter *= Factor;
-#else
         std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
         {
             return x * Factor;
         });
-#endif
     }
 
     // Transform the data from the Time domain to the Frequency domain.
@@ -142,15 +137,10 @@ void fft_analyzer_t::Transform() noexcept
     {
         const double Factor = 2. / (double) _FFTSize;
 
-#ifdef oldcode
-        for (std::complex<double> & Iter : _FreqData)
-            Iter *= Factor;
-#else
         std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
         {
             return x * Factor;
         });
-#endif
     }
 }
 
