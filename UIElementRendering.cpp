@@ -136,7 +136,7 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackStartedNewTrack))
     {
-        _RenderState._LastPlaybackTime = 0.;
+        _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
         for (auto & Iter : _Grid)
@@ -192,29 +192,29 @@ void uielement_t::ProcessAudio() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._LastPlaybackTime)) || _RenderState._IsPaused)
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)) || _RenderState._IsPaused)
         return; // Playback is paused.
 
     double WindowSize   = 0.;
-    double WIndowOffset = 0.;
+    double WindowOffset = 0.;
 
     if (_RenderState._SampleRate != 0)
     {
         const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
 
-        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderState._LastPlaybackTime : (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
-        WIndowOffset = IsSlidingWindow ?                _RenderState._LastPlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderState._PlaybackTime : (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
+        WindowOffset = IsSlidingWindow ?                _RenderState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
     }
     else
     {
         // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
-        WIndowOffset = PlaybackTime;
+        WindowOffset = PlaybackTime;
         WindowSize = 0.0005; // 500 μs
     }
 
     audio_chunk_impl Chunk;
 
-    if (_VisualisationStream->get_chunk_absolute(Chunk, WIndowOffset, WindowSize))
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
@@ -222,7 +222,7 @@ void uielement_t::ProcessAudio() noexcept
             Iter._Graph->Process(Chunk);
     }
 
-    _RenderState._LastPlaybackTime = PlaybackTime;
+    _RenderState._PlaybackTime = PlaybackTime;
 }
 
 /// <summary>
@@ -271,7 +271,7 @@ void uielement_t::Animate() noexcept
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
     for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderState._LastPlaybackTime == 0.);
+        Iter._Graph->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
 }
 
 /// <summary>

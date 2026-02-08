@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.01.21) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.02.04) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -229,13 +229,13 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
             if (IsMedian)
                 Value = Median(Values);
 
-            fb.NewValue = (IsRMS ? std::sqrt(Value) : Value) * BandGain;
+            fb.RawValue = (IsRMS ? std::sqrt(Value) : Value) * BandGain;
         }
         else
         {
             const double Index = HzToBinIndex(fb.Center, _FreqData.size(), sampleRate);
 
-            fb.NewValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
+            fb.RawValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
         }
     }
 }
@@ -264,7 +264,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands
         for (double i = std::ceil(MidBin); i <= std::ceil(MaxBin - OverflowCompensation); ++i)
             Sum += std::pow(std::abs(_FreqData[msc::Wrap((size_t) i, _FreqData.size())]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
 
-        fb.NewValue = std::sqrt(Sum);
+        fb.RawValue = std::sqrt(Sum);
     }
 }
 
@@ -307,7 +307,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_
             }
         }
 
-        fb.NewValue = std::hypot(re, im);
+        fb.RawValue = std::hypot(re, im);
     }
 }
 

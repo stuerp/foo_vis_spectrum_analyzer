@@ -60,7 +60,7 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
-        fb.NewValue = 0.;
+        fb.RawValue = 0.;
 
     const audio_sample * Samples = frames;
     const size_t SampleCount = frameCount * _ChannelCount;
@@ -87,7 +87,7 @@ bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t
                 Value = Coef.Out[j - 1];
             }
 
-            frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, ::abs(Value));
+            frequencyBands[k].RawValue = std::max(frequencyBands[k].RawValue, ::abs(Value));
             ++k;
         }
     }

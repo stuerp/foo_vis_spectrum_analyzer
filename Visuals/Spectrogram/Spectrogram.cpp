@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.01.21) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.02.08) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectrogram.h"
@@ -429,7 +429,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 
-    if (_State->_LastPlaybackTime != _PlaybackTime) // Not paused
+    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
     {
         if (_State->_HorizontalSpectrogram)
         {
@@ -456,7 +456,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
         }
 
-        _PlaybackTime = _State->_LastPlaybackTime;
+        _PlaybackTime = _State->_PlaybackTime;
     }
 }
 
@@ -598,7 +598,7 @@ bool spectrogram_t::Update() noexcept
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                _SpectrogramStyle->SetBrushColor(fb.CurValue);
+                _SpectrogramStyle->SetBrushColor(fb.Value);
 
                 _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle->_Brush);
 
@@ -614,7 +614,7 @@ bool spectrogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectrogram && (_State->_LastPlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {
@@ -655,7 +655,7 @@ bool spectrogram_t::Update() noexcept
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
 
-                _SpectrogramStyle->SetBrushColor(fb.CurValue);
+                _SpectrogramStyle->SetBrushColor(fb.Value);
 
                 _BitmapRenderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle->_Brush);
 
@@ -671,7 +671,7 @@ bool spectrogram_t::Update() noexcept
         _BitmapRenderTarget->EndDraw();
 
         // Update the time axis.
-        if (_State->_ScrollingSpectrogram && (_State->_LastPlaybackTime != _PlaybackTime))
+        if (_State->_ScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
         {
             for (auto & Label : _TimeLabels)
             {

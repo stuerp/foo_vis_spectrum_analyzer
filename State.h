@@ -304,7 +304,7 @@ public:
 
     size_t _BinCount;                                                   // Spectrum
 
-    double _LastPlaybackTime;                                           // Spectrogram: Timestamp of the last rendered audio chunk.
+    double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram
 
     bool _IsPaused;                                                     // Playback has been paused.

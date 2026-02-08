@@ -48,7 +48,7 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
 bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
-        fb.NewValue = 0.;
+        fb.RawValue = 0.;
 
     const size_t SampleCount = frameCount * _ChannelCount;
 
@@ -76,13 +76,13 @@ bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameC
             }
 
             // CurValue now contains the last calculated value.
-            frequencyBands[k].NewValue = std::max(frequencyBands[k].NewValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
+            frequencyBands[k].RawValue = std::max(frequencyBands[k].RawValue, (CurValue.x * CurValue.x) + (CurValue.y * CurValue.y));
             ++k;
         }
     }
 
     for (auto & fb : frequencyBands)
-        fb.NewValue = ::sqrt(fb.NewValue);
+        fb.RawValue = ::sqrt(fb.RawValue);
 
     return true;
 }

@@ -191,8 +191,8 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
             if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
                 RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.MaxValue, fb.Opacity);
 
-            if (fb.CurValue > 0.)
-                RenderBar(deviceContext, Rect, _BarAreaStyle, _BarTopStyle, fb.CurValue, fb.Opacity);
+            if (fb.Value > 0.)
+                RenderBar(deviceContext, Rect, _BarAreaStyle, _BarTopStyle, fb.Value, fb.Opacity);
         }
 
         x1 = x2;
@@ -378,7 +378,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 {
                     if (_BarPeakAreaStyle->Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarPeakAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
+                        const double Value = _BarPeakAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
 
                         _BarPeakAreaStyle->SetBrushColor(Value);
                     }
@@ -418,13 +418,13 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
             if (_BarAreaStyle->IsEnabled())
             {
                 const FLOAT r1 = InnerRadius;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue);
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value);
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
                     if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.CurValue : ((double) i / n);
+                        const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
 
                         _BarAreaStyle->SetBrushColor(Value);
                     }
@@ -438,8 +438,8 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
             // Draw the peak indicator top.
             if (_BarTopStyle->IsEnabled())
             {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) - _BarTopStyle->_Thickness / 2.f;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.CurValue) + _BarTopStyle->_Thickness;
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle->_Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle->_Thickness;
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
@@ -759,7 +759,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
 
         // Don't render anything above the Nyquist frequency.
         if (!((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage))
-            Value = !usePeak ? fb.CurValue : fb.MaxValue;
+            Value = !usePeak ? fb.Value : fb.MaxValue;
 
         y = std::clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
 
@@ -872,7 +872,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
         if ((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
             break;
 
-        const double Value = !usePeak ? fb.CurValue : fb.MaxValue;
+        const double Value = !usePeak ? fb.Value : fb.MaxValue;
 
         const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
 

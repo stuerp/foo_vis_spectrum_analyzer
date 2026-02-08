@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.01.21) P. Stuer **/
+/** $VER: Analysis.cpp (2026.02.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -50,6 +50,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
     if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
         Reset();
 
+    _FrameCount       = chunk.get_sample_count();
     _SampleRate       = chunk.get_sample_rate();
     _ChannelCount     = chunk.get_channel_count();
     _ChannelConfig    = chunk.get_channel_config();
@@ -180,7 +181,7 @@ void analysis_t::ResetRMSDependentValues() noexcept
 void analysis_t::UpdateCurrentValues() noexcept
 {
     for (auto & fb : _FrequencyBands)
-        fb.CurValue = 0.;
+        fb.Value = 0.;
 }
 
 /// <summary>
@@ -204,14 +205,14 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             // Animate the spectrum peak value.
             for (auto & fb : _FrequencyBands)
             {
-                if (fb.CurValue >= fb.MaxValue)
+                if (fb.Value >= fb.MaxValue)
                 {
                     if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
-                        fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (fb.CurValue - fb.MaxValue) * _State->_HoldTime;
+                        fb.HoldTime = (::isfinite(fb.HoldTime) ? fb.HoldTime : 0.) + (fb.Value - fb.MaxValue) * _State->_HoldTime;
                     else
                         fb.HoldTime = _State->_HoldTime;
 
-                    fb.MaxValue = fb.CurValue;
+                    fb.MaxValue = fb.Value;
                     fb.DecaySpeed = 0.;
                     fb.Opacity = 1.;
                 }
@@ -257,7 +258,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                                 fb.Opacity -= fb.DecaySpeed;
 
                                 if (fb.Opacity <= 0.)
-                                    fb.MaxValue = fb.CurValue;
+                                    fb.MaxValue = fb.Value;
                                 break;
 
                             case PeakMode::FadingAIMP:
@@ -267,7 +268,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                                 fb.Opacity -= fb.DecaySpeed;
 
                                 if (fb.Opacity <= 0.)
-                                    fb.MaxValue = fb.CurValue;
+                                    fb.MaxValue = fb.Value;
                                 break;
                         }
                     }
@@ -466,6 +467,19 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
         fb.CurValue = .5;
 */
     // From here on frequency_band_t::CurValue is guaranteed to be in the range [0, 1].
+/*
+{
+    static size_t i = 0;
+
+    for (auto & fb : _FrequencyBands)
+        fb.Value = .0;
+
+    _FrequencyBands[i++].Value = 1.;
+
+    if (i == _FrequencyBands.size())
+        i = 0;
+}
+*/
 }
 
 #pragma region Frequencies
@@ -660,7 +674,7 @@ void analysis_t::ApplyAcousticWeighting()
     const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
 
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.NewValue *= GetWeight(fb.Center + Offset);
+        fb.RawValue *= GetWeight(fb.Center + Offset);
 }
 
 /// <summary>
@@ -740,7 +754,7 @@ double GetAcousticWeight(double x, WeightingType weightType, double weightAmount
 void analysis_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(_GraphDescription->ScaleAmplitude(fb.NewValue), 0.0, 1.0);
+        fb.Value = std::clamp(_GraphDescription->ScaleAmplitude(fb.RawValue), 0.0, 1.0);
 }
 
 /// <summary>
@@ -749,7 +763,7 @@ void analysis_t::Normalize() noexcept
 void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp((fb.CurValue * factor) + (::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
+        fb.Value = std::clamp((fb.Value * factor) + (::isfinite(fb.RawValue) ? _GraphDescription->ScaleAmplitude(fb.RawValue) * (1.0 - factor) : 0.0), 0.0, 1.0);
 }
 
 /// <summary>
@@ -758,7 +772,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.CurValue = std::clamp(std::max(fb.CurValue * factor, ::isfinite(fb.NewValue) ? _GraphDescription->ScaleAmplitude(fb.NewValue) : 0.0), 0.0, 1.0);
+        fb.Value = std::clamp(std::max(fb.Value * factor, ::isfinite(fb.RawValue) ? _GraphDescription->ScaleAmplitude(fb.RawValue) : 0.0), 0.0, 1.0);
 }
 
 #pragma endregion

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.01.21) P. Stuer **/
+/** $VER: Analysis.h (2026.02.04) P. Stuer **/
 
 #pragma once
 
@@ -138,8 +138,9 @@ public:
     const state_t * _State;
     const graph_description_t * _GraphDescription;
 
-    audio_chunk_impl _Chunk;
+    audio_chunk_impl _Chunk;    // Only used by oscilloscope
 
+    uint32_t _FrameCount;
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelConfig;
@@ -166,18 +167,18 @@ public:
     size_t _RMSFrameCount;  // Number of frames used in the current RMS window.
 
     // Balance Meter
-    double _Left;           // -1.0 .. 1.0
-    double _Right;          // -1.0 .. 1.0
+    double _Left;           // [-1, 1]
+    double _Right;          // [-1, 1]
 
-    double _Mid;            // -1.0 .. 1.0
-    double _Side;           // -1.0 .. 1.0
+    double _Mid;            // [-1, 1]
+    double _Side;           // [-1, 1]
 
-    double _Balance;        // 0.0 .. 1.0, 0.5 = Center
-    double _Phase;          // 0.0 .. 1.0, 0.5 = Center
+    double _Balance;        // [0, 1], 0.5 = Center
+    double _Phase;          // [0, 1], 0.5 = Center
 
     static const uint32_t ChannelPairs[6];
 
 private:
     const double Amax = M_SQRT1_2;
-    const double dBCorrection = -20. * ::log10(Amax); // 3.01 dB;
+    const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 };

@@ -199,7 +199,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (Has(style_t::Features::HorizontalGradient))
+        if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
             hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -242,9 +242,7 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 
     const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
-    D2D1_COLOR_F Color = _AmplitudeMap[Index];
-
-    ColorBrush->SetColor(Color);
+    ColorBrush->SetColor(_AmplitudeMap[Index]);
 
     ColorBrush->Release();
 
