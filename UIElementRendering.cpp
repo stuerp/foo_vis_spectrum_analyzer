@@ -195,21 +195,29 @@ void uielement_t::ProcessAudio() noexcept
     if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)) || _RenderState._IsPaused)
         return; // Playback is paused.
 
-    double WindowSize   = 0.;
-    double WindowOffset = 0.;
+    double WindowSize;
+    double WindowOffset;
 
-    if (_RenderState._SampleRate != 0)
+    const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
+
+    if (!IsSlidingWindow)
     {
-        const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
-
-        WindowSize   = IsSlidingWindow ? PlaybackTime - _RenderState._PlaybackTime : (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
-        WindowOffset = IsSlidingWindow ?                _RenderState._PlaybackTime : PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+        if (_RenderState._SampleRate != 0)
+        {
+            WindowSize   = (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
+            WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+        }
+        else
+        {
+            // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
+            WindowSize   = 0.0005; // 500 μs
+            WindowOffset = PlaybackTime;
+        }
     }
     else
     {
-        // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
-        WindowOffset = PlaybackTime;
-        WindowSize = 0.0005; // 500 μs
+        WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
+        WindowOffset = _RenderState._PlaybackTime;
     }
 
     audio_chunk_impl Chunk;
