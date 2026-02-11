@@ -101,7 +101,7 @@ void fft_analyzer_t::Transform() noexcept
 
     // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
     {
-        size_t i = msc::Wrap(_Next - _FFTSize, _InputRing.size());
+        size_t i = (_Next - _FFTSize) % _InputRing.size();
         size_t j = 0;
 
         const audio_sample * const p = _InputRing.data();
