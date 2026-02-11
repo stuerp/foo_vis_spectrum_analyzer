@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2025.12.14) P. Stuer **/
+/** $VER: WindowFunctions.h (2026.02.11) P. Stuer **/
 
 #pragma once
 
@@ -31,7 +31,7 @@ enum class WindowFunction
     PowerOfSine,
     PowerOfCircle,
 
-    Gauss,
+    Gaussian,
     Tukey,              // Tapered cosine
     Kaiser,
     Poison,             // Exponential
@@ -85,6 +85,7 @@ private:
 
 /// <summary>
 /// Implements the boxcar (rectangular, Dirichlet) window function.
+/// Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage.
 /// </summary>
 class Boxcar : public window_function_t
 {
@@ -100,7 +101,8 @@ public:
 };
 
 /// <summary>
-/// Implements the Hann (cosine squared) window function.
+/// Implements the Hann (Hanning, cosine squared) window function.
+/// Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose.
 /// </summary>
 class Hann : public window_function_t
 {
@@ -116,12 +118,14 @@ public:
         const double y = std::cos(x * M_PI_2);
 
         return y * y;
-    //  return 0.5 * (1. - std::cos(x * 2. * M_PI));
+
+//      return 0.5 * (1. - std::cos(x * 2. * M_PI));
     }
 };
 
 /// <summary>
 /// Implements the Hamming (raised cosine) window function.
+/// Slightly narrower main lobe than Hann, sidelobes ~43 dB. Use when you want a little more frequency resolution.
 /// </summary>
 class Hamming : public window_function_t
 {
@@ -134,14 +138,15 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.53836   - (0.46164 * std::cos(x * M_PI_2));
-    //  return 0.54      + (0.46    * std::cos(x * M_PI));
-    //  return (25./46.) + (0.46    * std::cos(x * M_PI));
+        return 0.53836   - (0.46164 * std::cos(x * 2. * M_PI));
+    //  return 0.54      + (0.46    * std::cos(x * 2. * M_PI));
+    //  return (25./46.) + (0.46    * std::cos(x * 2. * M_PI));
     }
 };
 
 /// <summary>
 /// Implements the Blackman window function.
+/// Sidelobes ~58 dB. Use when a high dynamic range is needed.
 /// </summary>
 class Blackman : public window_function_t
 {
@@ -154,7 +159,8 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.42 + (0.5 * std::cos(x * M_PI)) + (0.08 * std::cos(2. * x * M_PI));
+        return 0.42 + (0.5 * std::cos(x * M_PI)) + (0.08 * std::cos(x * 2. * M_PI));
+//      return 0.42 - (0.5 * std::cos(x * 2. * M_PI)) + (0.08 * std::cos(x * 4. * M_PI));
     }
 };
 
@@ -294,14 +300,15 @@ private:
 };
 
 /// <summary>
-/// Implements the Gauss window function.
+/// Implements the Gaussian window function.
+/// No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window.
 /// </summary>
-class Gauss : public window_function_t
+class Gaussian : public window_function_t
 {
 public:
-    Gauss(double skew, bool truncate, double sigma) : window_function_t(skew, truncate), _Sigma(sigma) { }
+    Gaussian(double skew, bool truncate, double sigma) : window_function_t(skew, truncate), _Sigma(sigma) { }
 
-    virtual ~Gauss() { }
+    virtual ~Gaussian() { }
 
     virtual double operator () (double x) const override
     {
@@ -521,8 +528,8 @@ inline window_function_t * window_function_t::Create(WindowFunction windowFuncti
             return new PowerOfSine(windowSkew, truncate, windowParameter);
 
         // Adjustable windows
-        case WindowFunction::Gauss:
-            return new Gauss(windowSkew, truncate, windowParameter);
+        case WindowFunction::Gaussian:
+            return new Gaussian(windowSkew, truncate, windowParameter);
 
         case WindowFunction::Tukey:
             return new Tukey(windowSkew, truncate, windowParameter);

@@ -536,11 +536,11 @@ void ConfigurationDialog::Initialize()
 
         const WCHAR * Labels[] =
         {
-            L"Boxcar",
+            L"Rectangular (Boxcar)",
             L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
             L"Bartlett", L"Parzen",
             L"Welch", L"Power-of-sine", L"Power-of-circle",
-            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
+            L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
             L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
         };
 
@@ -3479,7 +3479,7 @@ void ConfigurationDialog::UpdateTransformPage() noexcept
         // Transform
         bool HasParameter = (_State->_WindowFunction == WindowFunction::PowerOfSine)
                          || (_State->_WindowFunction == WindowFunction::PowerOfCircle)
-                         || (_State->_WindowFunction == WindowFunction::Gauss)
+                         || (_State->_WindowFunction == WindowFunction::Gaussian)
                          || (_State->_WindowFunction == WindowFunction::Tukey)
                          || (_State->_WindowFunction == WindowFunction::Kaiser)
                          || (_State->_WindowFunction == WindowFunction::Poison)
