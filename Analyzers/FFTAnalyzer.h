@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2025.12.14) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.02.08) P. Stuer **/
 
 #pragma once
 
@@ -92,8 +92,7 @@ private:
 
     // Wrap-around sample buffer
     std::vector<audio_sample> _InputRing;
-    size_t _Head;
-    size_t _Tail;
+    size_t _Next;   // Index of the next input sample
 
     std::vector<std::complex<double>> _TimeData;
     std::vector<std::complex<double>> _FreqData;

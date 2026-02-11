@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.02.04) P. Stuer **/
+/** $VER: Analysis.h (2026.02.11) P. Stuer **/
 
 #pragma once
 
@@ -140,7 +140,7 @@ public:
 
     audio_chunk_impl _Chunk;    // Only used by oscilloscope
 
-    uint32_t _FrameCount;
+    size_t _FrameCount;
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelConfig;

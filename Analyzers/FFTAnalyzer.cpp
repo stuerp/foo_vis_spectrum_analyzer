@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.02.08) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.02.11) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 #include "FFTAnalyzer.h"
@@ -27,9 +27,8 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
     _FFT.Initialize(_FFTSize);
 
     // Create the ring buffer for the samples.
-    _InputRing.resize(_FFTSize);
-    std::memset(_InputRing.data(), 0, sizeof(audio_sample) * _InputRing.size());
-    _Head = _Tail = 0;
+    _InputRing.resize(_FFTSize, 0.);
+    _Next = 0;
 
     _TimeData.resize(_FFTSize);
     _FreqData.resize(_FFTSize);
@@ -83,13 +82,13 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
     const size_t SampleCount = frameCount * _ChannelCount;
 
     // Merge the samples of all selected channels into one averaged sample.
-    audio_sample * p = _InputRing.data();
+    audio_sample * const p = _InputRing.data();
 
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        p[_Tail] = AverageSamples(&samples[i], selectedChannels);
+        p[_Next] = AverageSamples(&samples[i], selectedChannels);
 
-        _Tail = (_Tail + 1) % _InputRing.size();
+        _Next = (_Next + 1) % _InputRing.size();
     }
 }
 
@@ -102,10 +101,10 @@ void fft_analyzer_t::Transform() noexcept
 
     // Fill the FFT buffer from the sample ring buffer with Time domain data, apply the windowing function and determine the norm.
     {
-        size_t & i = _Head;
+        size_t i = msc::Wrap(_Next - _FFTSize, _InputRing.size());
         size_t j = 0;
 
-        const audio_sample * p = _InputRing.data();
+        const audio_sample * const p = _InputRing.data();
 
         for (auto & Iter : _TimeData)
         {
