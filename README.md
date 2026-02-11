@@ -130,6 +130,8 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.10.0.0-alpha5, 2026-0x-xx
 
 - Improved: Spectogram honors the new `Visualize on pause` setting.
+- Improved: Started tweaking the interaction between the configuration dialog and the renderer.
+- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
 
 You can read the full history [here](docs/History.md).
 

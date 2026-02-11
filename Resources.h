@@ -293,8 +293,8 @@
 #define IDC_COLOR_ORDER_LBL             6114
 #define IDC_COLOR_ORDER                 6116
 
-#define IDC_FILE_PATH_LBL               6120
-#define IDC_FILE_PATH                   6122
+#define IDC_ARTWORK_FILE_PATH_LBL               6120
+#define IDC_ARTWORK_FILE_PATH                   6122
 
 #pragma endregion
 

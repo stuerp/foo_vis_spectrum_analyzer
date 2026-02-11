@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.rc (2026.01.25) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2026.02.11) P. Stuer **/
 
 #include "Resources.h"
 
@@ -297,8 +297,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         control         "",                         IDC_ARTWORK_OPACITY_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "%"                         IDC_ARTWORK_OPACITY_LBL_2,      X_G05, Y_G05 + 2, W_G05, H_G05
 
-        rtext           "Artwork file path:"        IDC_FILE_PATH_LBL,              X_G13, Y_G13 + 2, W_G13, H_G13
-        edittext                                    IDC_FILE_PATH,                  X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Artwork file path:"        IDC_ARTWORK_FILE_PATH_LBL,      X_G13, Y_G13 + 2, W_G13, H_G13
+        edittext                                    IDC_ARTWORK_FILE_PATH,          X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Component", IDC_COMPONENT, X_K00, Y_K00, W_K00, H_K00, BS_GROUPBOX, WS_EX_TRANSPARENT
 

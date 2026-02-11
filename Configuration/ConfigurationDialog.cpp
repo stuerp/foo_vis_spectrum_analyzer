@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.01.25) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.02.11) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -198,7 +198,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },
 
             { IDC_ARTWORK_OPACITY, "Determines the opacity of the artwork when displayed." },
-            { IDC_FILE_PATH, "A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
+            { IDC_ARTWORK_FILE_PATH, "A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
             { IDC_LOG_LEVEL, "Sets the verbosity of the log information that gets written to the console." },
 
@@ -1053,7 +1053,7 @@ void ConfigurationDialog::Initialize()
         w.SetCurSel((int) _State->_ArtworkType);
     }
     {
-        GetDlgItem(IDC_FILE_PATH).SetWindowTextW(_State->_ArtworkFilePath.c_str());
+        GetDlgItem(IDC_ARTWORK_FILE_PATH).SetWindowTextW(_State->_ArtworkFilePath.c_str());
     }
     #pragma endregion
 
@@ -1339,7 +1339,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
     if (_State == nullptr)
         return;
 
-    Settings ChangedSettings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
     auto cb = (CComboBox) w;
 
@@ -1348,6 +1348,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
     switch (id)
     {
         #pragma region Menu
+
         case IDC_MENULIST:
         {
             size_t Selection = (size_t) _MenuList.GetCurSel();
@@ -1355,8 +1356,10 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             UpdatePages(Selection);
 
             _State->_PageIndex = Selection;
+
             return;
         }
+
         #pragma endregion
 
         #pragma region Visualization Page
@@ -1512,7 +1515,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             CfgLogLevel = (int64_t) SelectedIndex;
 
             Log.SetLevel((LogLevel) CfgLogLevel.get());
-            break;
+
+            return;
         }
 
         #pragma endregion
@@ -1584,7 +1588,11 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         {
             _SelectedStyle = (size_t) ((CListBox) w).GetCurSel();
 
+            _IsInitializing = true;
+
             UpdateStylesPage();
+
+            _IsInitializing = false;
 
             return;
         }
@@ -1596,7 +1604,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             style->_ColorSource = (ColorSource) SelectedIndex;
 
             UpdateStylesPage();
-
             break;
         }
 
@@ -1607,7 +1614,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             style->_ColorIndex = (uint32_t) SelectedIndex;
 
             UpdateStylesPage();
-
             break;
         }
 
@@ -1617,9 +1623,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
-            UpdateColorControls();
+//          UpdateColorControls();
             UpdateStylesPage();
-
             break;
         }
 
@@ -1633,21 +1638,22 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             if (!msc::InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-                t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
-                SetInteger(IDC_POSITION, Position);
+            const t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
+
+            SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
-            bool HasSelection = (Index != (size_t) LB_ERR);
-            bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
-            bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
+            const bool HasSelection = (Index != (size_t) LB_ERR);
+            const bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
+            const bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
-                GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-                GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+            GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+            GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-                GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+            GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
-                GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
-                GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+            GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+            GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
             return;
         }
@@ -1675,7 +1681,8 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         #pragma endregion
     }
 
-    ConfigurationChanged(ChangedSettings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -1726,7 +1733,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || (code != EN_CHANGE) || _IgnoreNotifications)
         return;
 
-    Settings Settings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
     WCHAR Text[MAX_PATH];
 
@@ -1823,12 +1830,16 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_X_GAIN:
         {
             _State->_XGain = std::clamp(::_wtof(Text), MinXGain, MaxXGain);
+
+            ChangedSettings = Settings::Oscilloscope;
             break;
         }
 
         case IDC_Y_GAIN:
         {
             _State->_YGain = std::clamp(::_wtof(Text), MinYGain, MaxYGain);
+
+            ChangedSettings = Settings::Oscilloscope;
             break;
         }
 
@@ -1836,7 +1847,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             _State->_BlurSigma = std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma);
 
-            Settings = Settings::PhosphorEffect;
+            ChangedSettings = Settings::PhosphorEffect;
             break;
         }
 
@@ -1844,7 +1855,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             _State->_DecayFactor = std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor);
 
-            Settings = Settings::PhosphorEffect;
+            ChangedSettings = Settings::PhosphorEffect;
             break;
         }
 
@@ -1955,7 +1966,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma endregion
 
-        #pragma region Artwork Image
+        #pragma region Artwork
 
         case IDC_ARTWORK_OPACITY:
         {
@@ -1963,11 +1974,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Script
-
-        case IDC_FILE_PATH:
+        case IDC_ARTWORK_FILE_PATH:
         {
             _State->_ArtworkFilePath = Text;
             break;
@@ -2055,7 +2062,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             int Position = std::clamp(::_wtoi(Text), 0, 100);
 
             if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
-                break;
+                return;
 
             style->_CurrentGradientStops[SelectedIndex].position = (FLOAT) Position / 100.f;
 
@@ -2110,12 +2117,14 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _State->_PresetsDirectoryPath = Text;
 
             GetPresetNames();
+
             return;
         }
 
         case IDC_PRESET_NAME:
         {
             UpdatePresetsPage();
+
             return;
         }
 
@@ -2125,7 +2134,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
     }
 
-    ConfigurationChanged(Settings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2136,7 +2146,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    Settings Settings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
     switch (id)
     {
@@ -2315,7 +2325,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_BlurSigma, 0, 2);
 
-            Settings = Settings::PhosphorEffect;
+            ChangedSettings = Settings::PhosphorEffect;
             break;
         }
 
@@ -2323,7 +2333,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_DecayFactor, 0, 2);
 
-            Settings = Settings::PhosphorEffect;
+            ChangedSettings = Settings::PhosphorEffect;
             break;
         }
 
@@ -2362,7 +2372,8 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         #pragma endregion
     }
 
-    ConfigurationChanged(Settings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2373,7 +2384,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
     if (_State == nullptr)
         return;
 
-    Settings Settings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
     switch (id)
     {
@@ -2881,7 +2892,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         }
     }
 
-    ConfigurationChanged(Settings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2892,9 +2904,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
     if (_State == nullptr)
         return -1;
 
-    Settings Settings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
-    LPNMUPDOWN nmud = (LPNMUPDOWN) nmhd;
+    auto nmud = (LPNMUPDOWN) nmhd;
 
     switch (nmhd->idFrom)
     {
@@ -3099,7 +3111,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         }
     }
 
-    ConfigurationChanged(Settings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 
     return 0;
 }
@@ -3112,7 +3125,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
     if (_State == nullptr)
         return -1;
 
-    Settings Settings = Settings::All;
+    auto ChangedSettings = Settings::All;
 
     switch (nmhd->idFrom)
     {
@@ -3156,7 +3169,8 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
         }
     }
 
-    ConfigurationChanged(Settings);
+    if (ChangedSettings != Settings::None)
+        ConfigurationChanged(ChangedSettings);
 
     return 0;
 }
@@ -3281,7 +3295,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
             IDC_ARTWORK_TYPE_LBL, IDC_ARTWORK_TYPE,
             IDC_FIT_MODE_LBL, IDC_FIT_MODE, IDC_FIT_WINDOW,
             IDC_ARTWORK_OPACITY_LBL, IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN, IDC_ARTWORK_OPACITY_LBL_2,
-            IDC_FILE_PATH_LBL, IDC_FILE_PATH,
+            IDC_ARTWORK_FILE_PATH_LBL, IDC_ARTWORK_FILE_PATH,
             IDC_NUM_ARTWORK_COLORS_LBL, IDC_NUM_ARTWORK_COLORS, IDC_NUM_ARTWORK_COLORS_SPIN,
             IDC_LIGHTNESS_THRESHOLD_LBL, IDC_LIGHTNESS_THRESHOLD, IDC_LIGHTNESS_THRESHOLD_SPIN, IDC_LIGHTNESS_THRESHOLD_LBL_2,
             IDC_COLOR_ORDER_LBL, IDC_COLOR_ORDER,
@@ -3629,7 +3643,7 @@ void ConfigurationDialog::UpdateCommonPage() const noexcept
     GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_FIT_WINDOW).EnableWindow(_State->_ShowArtworkOnBackground);
     GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
-    GetDlgItem(IDC_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
+    GetDlgItem(IDC_ARTWORK_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
 }
 
 /// <summary>
