@@ -536,9 +536,9 @@ void ConfigurationDialog::Initialize()
 
         const WCHAR * Labels[] =
         {
-            L"Rectangular (Boxcar)",
+            L"Box Car (Rectangular)",
             L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
-            L"Bartlett", L"Parzen",
+            L"Bartlett (Triangular)", L"Parzen",
             L"Welch", L"Power-of-sine", L"Power-of-circle",
             L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
             L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
@@ -583,11 +583,11 @@ void ConfigurationDialog::Initialize()
 
         const WCHAR * Labels[] =
         {
-            L"Boxcar",
+            L"Box Car (Rectangular)",
             L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
-            L"Bartlett", L"Parzen",
+            L"Bartlett (Triangular)", L"Parzen",
             L"Welch", L"Power-of-sine", L"Power-of-circle",
-            L"Gauss", L"Tukey", L"Kaiser", L"Poison",
+            L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
             L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
         };
 

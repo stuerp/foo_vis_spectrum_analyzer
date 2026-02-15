@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.01.21) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.02.15) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -24,6 +24,8 @@
 #pragma comment(lib, "dcomp.lib")
 
 #pragma hdrstop
+
+static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024);
 
 /// <summary>
 /// Render thread procedure.
@@ -223,6 +225,7 @@ void uielement_t::ProcessAudio() noexcept
     audio_chunk_impl Chunk;
 
     if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
+//  if (GetAudioChunk(Chunk, 44100, _RenderState._BinCount))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
@@ -635,3 +638,43 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 }
 
 #pragma endregion
+
+/// <summary>
+/// Gets an initialized audio chunk.
+/// </summary>
+bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount)
+{
+    audio_sample * Samples = new audio_sample[frameCount];
+
+    if (Samples == nullptr)
+        return false;
+
+    // Generate samples using a window function.
+    for (uint32_t i = 0; i < frameCount; ++i)
+    {
+    /** Hann
+        const double x = (double) i / (double) (frameCount - 1);
+
+        Samples[i] = 0.5 * (1. + (audio_sample) std::cos(x * M_PI));
+    **/
+    /** Hamming
+        const double x = 2.0 * M_PI * (double) i / (double) (frameCount - 1);
+
+        Samples[i] = 0.54 - 0.46 * (audio_sample) std::cos(x);
+    **/
+    /** Bartlett
+        Samples[i] = 1. - (double) i / (double) (frameCount - 1);
+     **/
+        const double Frequency = 440.0;
+
+        const double t = (double) i / (double) sampleRate;
+
+        Samples[i] = (audio_sample) std::sin(2.0 * M_PI * Frequency * t);
+    }
+    
+    chunk = audio_chunk_impl(Samples, frameCount, 1, sampleRate);
+    
+    delete[] Samples;
+    
+    return true;
+}

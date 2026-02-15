@@ -16,7 +16,7 @@ using namespace std;
 
 enum class WindowFunction
 {
-    Boxcar = 0,         // Rectangular
+    BoxCar = 0,         // Rectangular
 
     Hann,               // Cosine-squared
     Hamming,            // Raied cosine
@@ -84,15 +84,15 @@ private:
 };
 
 /// <summary>
-/// Implements the boxcar (rectangular, Dirichlet) window function.
+/// Implements the Box Car (rectangular, Dirichlet) window function.
 /// Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage.
 /// </summary>
-class Boxcar : public window_function_t
+class BoxCar : public window_function_t
 {
 public:
-    Boxcar(double skew, bool truncate) : window_function_t(skew, truncate) { }
+    BoxCar(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
-    virtual ~Boxcar() { }
+    virtual ~BoxCar() { }
 
     virtual double operator () (double) const override
     {
@@ -101,7 +101,7 @@ public:
 };
 
 /// <summary>
-/// Implements the Hann (Hanning, cosine squared) window function.
+/// Implements the Hann (Hanning, cosine squared, raised cosine) window function.
 /// Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose.
 /// </summary>
 class Hann : public window_function_t
@@ -115,10 +115,12 @@ public:
     {
         x = __super::operator()(x);
 
+        return 0.5 * (1. + std::cos(x * M_PI));
+/*
         const double y = std::cos(x * M_PI_2);
 
         return y * y;
-
+*/
 //      return 0.5 * (1. - std::cos(x * 2. * M_PI));
     }
 };
@@ -139,8 +141,8 @@ public:
         x = __super::operator()(x);
 
         return 0.53836   - (0.46164 * std::cos(x * 2. * M_PI));
-    //  return 0.54      + (0.46    * std::cos(x * 2. * M_PI));
-    //  return (25./46.) + (0.46    * std::cos(x * 2. * M_PI));
+    //  return 0.54      + (0.46    * std::cos(x * M_PI));
+    //  return (25./46.) + (0.46    * std::cos(x * M_PI));
     }
 };
 
@@ -201,7 +203,7 @@ public:
 };
 
 /// <summary>
-/// Implements the Bartlett window function.
+/// Implements the Bartlett (Triangular) window function.
 /// </summary>
 class Bartlett : public window_function_t
 {
@@ -491,8 +493,8 @@ inline window_function_t * window_function_t::Create(WindowFunction windowFuncti
     {
         default:
 
-        case WindowFunction::Boxcar:
-            return new Boxcar(windowSkew, truncate);
+        case WindowFunction::BoxCar:
+            return new BoxCar(windowSkew, truncate);
 
         // Cosine-sum windows
         case WindowFunction::Hann:
