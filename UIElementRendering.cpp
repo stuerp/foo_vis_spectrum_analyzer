@@ -152,14 +152,12 @@ void uielement_t::ProcessEvents() noexcept
         for (auto & Iter : _Grid)
             Iter._Graph->Reset();
 
-        if (!_RenderState._VisualizeDuringPause)
-            _RenderState._IsPaused = true;
+        _RenderState._IsPaused = true;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackResumed))
     {
-        if (!_RenderState._VisualizeDuringPause)
-            _RenderState._IsPaused = false;
+        _RenderState._IsPaused = false;
     }
 
     if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
@@ -241,6 +239,9 @@ void uielement_t::ProcessAudio() noexcept
 /// </summary>
 void uielement_t::Render() noexcept
 {
+    if (_RenderState._IsPaused && _RenderState._VisualizeDuringPause)
+        return;
+
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (!SUCCEEDED(hr))

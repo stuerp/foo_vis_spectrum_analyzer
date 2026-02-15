@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2025.10.25) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.02.15) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -106,11 +106,11 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
     const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
 
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
+    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                         // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
     const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-    const uint32_t SelectedChannels = _Settings->_SelectedChannels;                     // Mask containing the channels selected by the user.
+    const uint32_t SelectedChannels = _Settings->_SelectedChannels;                             // Mask containing the channels selected by the user.
     const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
     const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
@@ -173,7 +173,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (SUCCEEDED(hr))
     {
-        // Draw the grid.
+        // Draw the grid to the window.
         {
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2025.10.25) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.02.15) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -180,7 +180,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (SUCCEEDED(hr))
     {
-        // Draw the axes.
+        // Draw the axes to the window.
         {
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 

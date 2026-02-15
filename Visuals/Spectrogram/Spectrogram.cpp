@@ -295,8 +295,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    // Don't render when playback is paused. This flag is only set when visualiszation during pause is disabled.
-    if (_State->_IsPaused)
+    if (_State->_IsPaused && !_State->_VisualizeDuringPause)
         return;
 
     // Update the offscreen bitmap.
