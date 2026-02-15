@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.01.21) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.02.15) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -119,6 +119,9 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 /// </summary>
 void graph_t::Reset() noexcept
 {
+    for (auto & fb : _Analysis._FrequencyBands)
+        fb.Value = 0.;
+
     _Analysis.ResetMeasurements();
 
     _Visualization->Reset();
