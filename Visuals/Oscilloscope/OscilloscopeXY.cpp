@@ -105,6 +105,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
     const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+    const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                         // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
@@ -161,7 +162,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
+                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Rotate * Scale * Translate, &TransformedGeometry);
         }
 
         if (SUCCEEDED(hr))
@@ -183,7 +184,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            deviceContext->SetTransform(Translate);
+            deviceContext->SetTransform(Rotate * Translate);
 
             deviceContext->DrawImage(_GridCommandList);
 

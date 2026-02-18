@@ -251,6 +251,7 @@ void state_t::Reset() noexcept
     _XYMode = false;
     _XGain = 1.f;
     _YGain = 1.f;
+    _Rotation = 0.f;
     _PhosphorDecay = true;
     _BlurSigma = 3.f;
     _DecayFactor = 0.92f;
@@ -523,6 +524,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _XYMode = other._XYMode;
     _XGain = other._XGain;
     _YGain = other._YGain;
+    _Rotation = other._Rotation;
     _PhosphorDecay = other._PhosphorDecay;
     _BlurSigma = other._BlurSigma;
     _DecayFactor = other._DecayFactor;
@@ -956,6 +958,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_VisualizeDuringPause, abortHandler);
             reader->read_object_t(_HasScaleLines, abortHandler);
         }
+
+        if (Version >= 34)
+        {
+            reader->read_object_t(_Rotation, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1289,6 +1296,9 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         // Version 33, v0.10.0-alpha4
         writer->write_object_t(_VisualizeDuringPause, abortHandler);
         writer->write_object_t(_HasScaleLines, abortHandler);
+
+        // Version 34, v0.10.0-alpha5
+        writer->write_object_t(_Rotation, abortHandler);
     }
     catch (exception & ex)
     {

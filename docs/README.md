@@ -562,6 +562,7 @@ This visualization uses the following settings:
 - Graph X-axis and Y-axis settings
   - Select *Off* or *None* to prevent the axis from being rendered.
 - Channel pair selection: Determines which channels will be plotted against each other.
+- Swap channels to determine which channel uses the X axis and which one uses the Y axis. 
 - X and Y signal gain
 - Phosphor effect settings
 
@@ -569,7 +570,7 @@ This visualization uses the following settings:
 
 <sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
 
-#### Peak indicators group
+#### Peak Indicators group
 
 Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
 
@@ -616,23 +617,9 @@ The size of the gap between the LEDs, in pixels.
 
 Enable this setting to render the LEDs only as full blocks.
 
-#### Spectrogram group
+#### Radial Bars / Radial Curve group
 
-Set the visualization type to **Spectrogram** to enable these settings.
-
-`Scrolling`
-
-Activates scrolling of the spectrogram.
-
-`Horizontal`
-
-Renders the spectrogram horizontally when enabled, vertically when not.
-
-`Use spectrum bar metrics`
-
-#### Radial Bars group
-
-Set the visualization type to **Radial Bars** to enable these settings.
+Set the visualization type to **Radial Bars** or  **Radial Curve** to enable these settings.
 
 `Inner radius`
 
@@ -649,17 +636,19 @@ Sets the outer radius as a percentage of the smallest side of the graph.
 
 Sets the angular velocity of the rotation in degrees per second. Use positive values for clockwise rotation; negative values for anti-clockwise rotation.
 
-#### Level Meter group
+#### Spectrogram group
 
-Set the visualization type to **Balance / Correlation** to enable these settings.
+Set the visualization type to **Spectrogram** to enable these settings.
 
-`Channel pairs`
+`Scrolling`
 
-Allows you to select the channel pair that will be visualized.
+Activates scrolling of the spectrogram.
 
 `Horizontal`
 
-Renders the level meter horizontally when enabled, vertically when not.
+Renders the spectrogram horizontally when enabled, vertically when not.
+
+`Use spectrum bar metrics`
 
 #### Peak Meter group
 
@@ -700,6 +689,44 @@ Specifies the gap between the bar (in pixels). Defaults to 1 pixel.
 `Max. bar size`
 
 Allows you to constrain the width or height of a bar when the graph is resized. Specify a size in pixels to constrain the bar width or height. Set to 0 to remove the constraint.
+
+#### Level Meter group
+
+Set the visualization type to **Balance / Correlation** to enable these settings.
+
+`Horizontal`
+
+Renders the level meter horizontally when enabled, vertically when not.
+
+#### Oscilloscope group
+
+`X-Y mode`
+
+Enables X/Y-mode. Select a channel pair, typically Left/Right. The Left signal will be plotted on the X-axis; the Right signal will be plotted on the Y-axis.
+
+`X-gain`
+
+Specifies the gain applied to the X signal.
+
+`Y-gain`
+
+Specifies the gain applied to the Y signal.
+
+`Rotation`
+
+Specifies the rotation angle in degrees of the signal when displayed by an X/Y oscilloscope. Valid range is -180 to +180 degrees.
+
+`Phosphor decay`
+
+Enables a phosphor decay effect simulation of analog oscilloscopes.
+
+`Blur sigma`
+
+Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring.
+
+`Decay factor`
+
+Specifies the color fade speed. Lower values cause a faster decay.
 
 ---
 
@@ -814,6 +841,10 @@ Deselects all channels in the `Channels` list.
 `Channel pair`
 
 Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Level Meter](#balance--correlation) and the [Oscilloscope](#oscilloscope).
+
+`Swap channels`
+
+Enable to swap the interpretation of a channel pair by visualisations that support it e.g. the [Oscilloscope](#oscilloscope) in X/Y mode.
 
 ---
 

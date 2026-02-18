@@ -94,6 +94,9 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
         rtext       "Y gain:"                       IDC_Y_GAIN_LBL,                 X_C60, Y_C60 + 2, W_C60, H_C60
         edittext                                    IDC_Y_GAIN,                     X_C62, Y_C62, W_C62, H_C62, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
+        rtext       "Rotation:"                     IDC_ROTATION_LBL,               X_C78, Y_C78 + 2, W_C78, H_C78
+        edittext                                    IDC_ROTATION,                   X_C79, Y_C79, W_C79, H_C79, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
         control     "Phosphor decay effect:"        IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
 
         rtext       "Blur sigma:"                   IDC_BLUR_SIGMA_LBL,             X_C66, Y_C66 + 2, W_C66, H_C66
@@ -365,7 +368,7 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     pushbutton  "All",                              IDC_ALL_CHANNELS,               X_G52, Y_G52, W_G52, H_G52
     pushbutton  "None",                             IDC_NO_CHANNELS,                X_G53, Y_G53, W_G53, H_G53
 
-    ltext       "Channel pairs:",                   IDC_CHANNEL_PAIRS_LBL,          X_C50, Y_C50 + 2, W_C50, H_C50
+    ltext       "Channel pair:",                    IDC_CHANNEL_PAIRS_LBL,          X_C50, Y_C50 + 2, W_C50, H_C50
     combobox                                        IDC_CHANNEL_PAIRS,              X_C51, Y_C51,     W_C51, H_C51, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     control     "Swap channels",                    IDC_SWAP_CHANNELS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C53, Y_C53, W_C53, H_C53

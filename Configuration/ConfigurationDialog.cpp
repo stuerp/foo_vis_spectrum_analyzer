@@ -42,6 +42,19 @@ const WCHAR * WindowFunctionNames[] =
 };
 
 /// <summary>
+/// Set the value of a property. Returns true if the property value actually changed.
+/// </summary>
+template <class T> bool SetProperty(T & propertyValue, T newValue)
+{
+    if (propertyValue == newValue)
+        return false;
+
+    propertyValue = newValue;
+
+    return true;
+}
+
+/// <summary>
 /// Initializes the dialog.
 /// </summary>
 BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
@@ -112,9 +125,10 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_XY_MODE, "Enables X-Y mode." },
             { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
             { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
+            { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
             { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
-            { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blur." },
-            { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values means a faster decay." },
+            { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring." },
+            { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
 
             // Transform page
             { IDC_METHOD, "Method used to transform the samples" },
@@ -458,6 +472,9 @@ void ConfigurationDialog::Initialize()
         }
         {
             CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YGain);
+        }
+        {
+            CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
         }
 
         SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
@@ -1731,6 +1748,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = Settings::All;
+    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     WCHAR Text[MAX_PATH];
 
@@ -1740,93 +1758,103 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
     {
         #pragma region Visualization
 
-        #pragma region Peak indicator
-
+        // Peak indicator
         case IDC_SMOOTHING_FACTOR:
         {
-            _State->_SmoothingFactor = std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor);
+            if (!SetProperty(_State->_SmoothingFactor, std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor)))
+                return;
+
             break;
         }
 
         case IDC_HOLD_TIME:
         {
-            _State->_HoldTime = std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime);
+            if (!SetProperty(_State->_HoldTime, std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime)))
+                return;
+
             break;
         }
 
         case IDC_ACCELERATION:
         {
-            _State->_Acceleration = std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration);
+            if (!SetProperty(_State->_Acceleration, std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration)))
+                return;
+
             break;
         }
 
-        #pragma endregion
-
-        #pragma region LEDs
-
+        // LEDs
         case IDC_LED_SIZE:
         {
-            _State->_LEDLight = std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize);
+            if (!SetProperty(_State->_LEDLight, std::clamp((FLOAT) ::_wtof(Text), MinLEDSize, MaxLEDSize)))
+                return;
+
             break;
         }
 
         case IDC_LED_GAP:
         {
-            _State->_LEDGap = std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap);
+            if (!SetProperty(_State->_LEDGap, std::clamp((FLOAT) ::_wtof(Text), MinLEDGap, MaxLEDGap)))
+                return;
+
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Radial Bars
-
+        // Radial Bars
         case IDC_INNER_RADIUS:
         {
-            _State->_InnerRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            if (!SetProperty(_State->_InnerRadius, (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f))
+                return;
+
             break;
         }
 
         case IDC_OUTER_RADIUS:
         {
-            _State->_OuterRadius = (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f;
+            if (!SetProperty(_State->_OuterRadius, (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f))
+                return;
+
             break;
         }
 
         case IDC_ANGULAR_VELOCITY:
         {
-            _State->_AngularVelocity = (FLOAT) std::clamp(::_wtof(Text), -360., 360.);
+            if (!SetProperty(_State->_AngularVelocity, (FLOAT) std::clamp(::_wtof(Text), -360., 360.)))
+                return;
+
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Peak Meter
-
+        // Peak Meter
         case IDC_RMS_WINDOW:
         {
-            _State->_RMSWindow = std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow);
+            if (!SetProperty(_State->_RMSWindow, std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow)))
+                return;
+
             break;
         }
 
         case IDC_BAR_GAP:
         {
-            _State->_BarGap = std::clamp((FLOAT) ::_wtof(Text), MinBarGap, MaxBarGap);
+            if (!SetProperty(_State->_BarGap, std::clamp((FLOAT) ::_wtof(Text), MinBarGap, MaxBarGap)))
+                return;
+
             break;
         }
 
         case IDC_MAX_BAR_SIZE:
         {
-            _State->_MaxBarSize = std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize);
+            if (!SetProperty(_State->_MaxBarSize, std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize)))
+                return;
+
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Oscilloscope
-
+        // Oscilloscope
         case IDC_X_GAIN:
         {
-            _State->_XGain = std::clamp(::_wtof(Text), MinXGain, MaxXGain);
+            if (!SetProperty(_State->_XGain, std::clamp(::_wtof(Text), MinXGain, MaxXGain)))
+                return;
 
             ChangedSettings = Settings::Oscilloscope;
             break;
@@ -1834,7 +1862,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_Y_GAIN:
         {
-            _State->_YGain = std::clamp(::_wtof(Text), MinYGain, MaxYGain);
+            if (!SetProperty(_State->_YGain, std::clamp(::_wtof(Text), MinYGain, MaxYGain)))
+                return;
+            
+            ChangedSettings = Settings::Oscilloscope;
+            break;
+        }
+
+        case IDC_ROTATION:
+        {
+            if (!SetProperty(_State->_Rotation, std::clamp((FLOAT) ::_wtof(Text), MinRotation, MaxRotation)))
+                return;
 
             ChangedSettings = Settings::Oscilloscope;
             break;
@@ -1842,7 +1880,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_BLUR_SIGMA:
         {
-            _State->_BlurSigma = std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma);
+            if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
+                return;
 
             ChangedSettings = Settings::PhosphorEffect;
             break;
@@ -1850,13 +1889,12 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_DECAY_FACTOR:
         {
-            _State->_DecayFactor = std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor);
+            if (!SetProperty(_State->_DecayFactor, std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor)))
+                return;
 
             ChangedSettings = Settings::PhosphorEffect;
             break;
         }
-
-        #pragma endregion
 
         #pragma endregion
 
@@ -1870,8 +1908,17 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
                 default:
                     break;
 
-                case FFTMode::FFTCustom: { _State->_FFTCustom = (size_t) std::clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize); break; }
-                case FFTMode::FFTDuration: { _State->_FFTDuration= std::clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration); break; }
+                case FFTMode::FFTCustom:
+                {
+                    _State->_FFTCustom = (size_t) std::clamp(::_wtoi(Text), MinFFTSize, MaxFFTSize);
+                    break;
+                }
+
+                case FFTMode::FFTDuration:
+                {
+                    _State->_FFTDuration= std::clamp(::_wtof(Text), MinFFTDuration, MaxFFTDuration);
+                    break;
+                }
             }
             #pragma warning (default: 4061)
             break;
@@ -1921,7 +1968,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_NUM_BANDS:
         {
-            _State->_BandCount = (size_t) std::clamp(::_wtoi(Text), MinBands, MaxBands);
+            if (!SetProperty(_State->_BandCount, (size_t) std::clamp(::_wtoi(Text), MinBands, MaxBands)))
+                return;
+
             break;
         }
 
@@ -1967,7 +2016,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_ARTWORK_OPACITY:
         {
-            _State->_ArtworkOpacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity);
+            if (!SetProperty(_State->_ArtworkOpacity, (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity)))
+                return;
+
             break;
         }
 
@@ -1983,9 +2034,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_GRAPH_DESCRIPTION:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._Description = Text;
+            gd._Description = Text;
             break;
         }
 
@@ -1995,33 +2044,25 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gs._AmplitudeHi);
+            gd._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gd._AmplitudeHi);
             break;
         }
 
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeHi = std::clamp(::_wtof(Text), gs._AmplitudeLo, MaxAmplitude);
+            gd._AmplitudeHi = std::clamp(::_wtof(Text), gd._AmplitudeLo, MaxAmplitude);
             break;
         }
 
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
+            gd._AmplitudeStep = std::clamp(::_wtof(Text), MinAmplitudeStep, MaxAmplitudeStep);
             break;
         }
 
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
+            gd._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
 
@@ -2029,8 +2070,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #pragma region Styles
 
-        #pragma region Artwork Colors
-
+        // Artwork Colors
         case IDC_NUM_ARTWORK_COLORS:
         {
             _State->_NumArtworkColors = std::clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
@@ -2043,10 +2083,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Color Scheme
-
+        // Color Scheme
         case IDC_POSITION:
         {
             style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
@@ -2070,8 +2107,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             _Gradient.SetGradientStops(style->_CurrentGradientStops);
             break;
         }
-
-        #pragma endregion
 
         case IDC_OPACITY:
         {
@@ -2104,8 +2139,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
             break;
         }
-
-        #pragma endregion
 
         #pragma region Presets
 
@@ -2309,12 +2342,24 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_X_GAIN:
         {
             SetDouble(id, _State->_XGain, 0, 2);
+
+            ChangedSettings = Settings::Oscilloscope;
             break;
         }
 
         case IDC_Y_GAIN:
         {
             SetDouble(id, _State->_YGain, 0, 2);
+
+            ChangedSettings = Settings::Oscilloscope;
+            break;
+        }
+
+        case IDC_ROTATION:
+        {
+            SetDouble(id, _State->_Rotation, 0, 2);
+
+            ChangedSettings = Settings::Oscilloscope;
             break;
         }
 
@@ -3201,6 +3246,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
         IDC_OSCILLOSCOPE,
             IDC_XY_MODE,
             IDC_X_GAIN_LBL, IDC_X_GAIN, IDC_Y_GAIN_LBL, IDC_Y_GAIN,
+            IDC_ROTATION_LBL, IDC_ROTATION,
             IDC_PHOSPHOR_DECAY,
             IDC_BLUR_SIGMA_LBL, IDC_BLUR_SIGMA, IDC_DECAY_FACTOR_LBL, IDC_DECAY_FACTOR,
     };
@@ -3439,6 +3485,7 @@ void ConfigurationDialog::UpdateVisualizationPage() noexcept
 
     GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
     GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both modes.
+    GetDlgItem(IDC_ROTATION).EnableWindow(IsOscilloscope && _State->_XYMode);
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 

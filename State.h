@@ -255,6 +255,7 @@ public:
             bool _XYMode;                                           // Oscilloscope in X-Y mode
             double _XGain;
             double _YGain;
+            FLOAT _Rotation;
             bool _PhosphorDecay;
             FLOAT _BlurSigma;
             FLOAT _DecayFactor;

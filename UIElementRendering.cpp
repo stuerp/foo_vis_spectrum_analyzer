@@ -303,15 +303,15 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
     switch (_RenderState._FFTMode)
     {
         default:
-            _RenderState._BinCount = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
+            _UIState._BinCount = _RenderState._BinCount = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _RenderState._BinCount = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
+            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _RenderState._BinCount = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
+            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
             break;
     }
 

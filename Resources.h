@@ -475,12 +475,15 @@
 #define IDC_Y_GAIN_LBL                  7208
 #define IDC_Y_GAIN                      7210
 
-#define IDC_PHOSPHOR_DECAY              7212
+#define IDC_ROTATION_LBL                7212
+#define IDC_ROTATION                    7214
 
-#define IDC_BLUR_SIGMA_LBL              7214
-#define IDC_BLUR_SIGMA                  7216
-#define IDC_DECAY_FACTOR_LBL            7218
-#define IDC_DECAY_FACTOR                7220
+#define IDC_PHOSPHOR_DECAY              7216
+
+#define IDC_BLUR_SIGMA_LBL              7218
+#define IDC_BLUR_SIGMA                  7220
+#define IDC_DECAY_FACTOR_LBL            7222
+#define IDC_DECAY_FACTOR                7224
 
 #pragma endregion
 

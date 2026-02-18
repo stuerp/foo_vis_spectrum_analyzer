@@ -250,6 +250,7 @@
 #pragma endregion
 
 #pragma region Peak Meter
+
 // Groupbox
 #define X_B12   X_B08
 #define Y_B12   Y_B08 + H_B08 + IY
@@ -324,6 +325,7 @@
 
 #define W_B12  W_B08
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
+
 #pragma endregion
 
 #pragma region Level Meter
@@ -363,7 +365,7 @@
 
     // Textbox: X gain
     #define W_C58    30
-    #define H_C58    H_CBX
+    #define H_C58    H_TBX
     #define X_C58    X_C56 + W_C56 + IX
     #define Y_C58    Y_C56
 
@@ -375,15 +377,27 @@
 
     // Textbox: Y gain
     #define W_C62    30
-    #define H_C62    H_CBX
+    #define H_C62    H_TBX
     #define X_C62    X_C60 + W_C60 + IX
     #define Y_C62    Y_C60
+
+    // Label: Rotation
+    #define W_C78    34
+    #define H_C78    H_LBL
+    #define X_C78    X_C56
+    #define Y_C78    Y_C62 + H_C62 + IY
+
+    // Textbox: Rotation
+    #define W_C79    30
+    #define H_C79    H_TBX
+    #define X_C79    X_C78 + W_C78 + IX
+    #define Y_C79    Y_C78
 
     // Checkbox: Phosphor decay effect
     #define W_C64    62
     #define H_C64    H_CHB
     #define X_C64    X_C54
-    #define Y_C64    Y_C62 + H_C62 + IY
+    #define Y_C64    Y_C79 + H_C79 + IY
 
     // Label: Blur sigma
     #define W_C66    34
@@ -393,7 +407,7 @@
 
     // Textbox: Blur sigma
     #define W_C68    30
-    #define H_C68    H_CBX
+    #define H_C68    H_TBX
     #define X_C68    X_C66 + W_C66 + IX
     #define Y_C68    Y_C66
 
@@ -405,12 +419,12 @@
 
     // Textbox: Decay factor
     #define W_C72    30
-    #define H_C72    H_CBX
+    #define H_C72    H_TBX
     #define X_C72    X_C70 + W_C70 + IX
     #define Y_C72    Y_C70
 
 #define W_B18  W_B14
-#define H_B18  11 + H_C54 + IY + H_C68 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + 7
 
 #pragma endregion
 

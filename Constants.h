@@ -149,11 +149,14 @@ inline const double MaxXGain = 10.;
 inline const double MinYGain =  0.;
 inline const double MaxYGain = 10.;
 
-inline const FLOAT MinBlurSigma =  1.;
-inline const FLOAT MaxBlurSigma = 10.;
+inline const FLOAT MinRotation = -180.f;
+inline const FLOAT MaxRotation =  180.f;
 
-inline const FLOAT MinDecayFactor = 0.;
-inline const FLOAT MaxDecayFactor = 1.;
+inline const FLOAT MinBlurSigma =  1.f;
+inline const FLOAT MaxBlurSigma = 10.f;
+
+inline const FLOAT MinDecayFactor = 0.f;
+inline const FLOAT MaxDecayFactor = 1.f;
 
 
 

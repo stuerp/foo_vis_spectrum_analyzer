@@ -385,7 +385,8 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 
         case VisualizationType::Oscilloscope:
         {
-            _Chunk.reset();
+            if (isStopped)
+                _Chunk.reset();
             break;
         }
 
