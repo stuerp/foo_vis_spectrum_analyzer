@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.01.25) P. Stuer **/
+/** $VER: State.cpp (2026.02.18) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -807,49 +807,54 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
             for (size_t i = 0; i < Count; ++i)
             {
-                graph_description_t gs;
+                graph_description_t gd;
 
-                pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
-                reader->read_object_t(gs._SelectedChannels, abortHandler);
-                reader->read_object_t(gs._FlipHorizontally, abortHandler);
-                reader->read_object_t(gs._FlipVertically, abortHandler);
+                pfc::string Description; reader->read_string(Description, abortHandler); gd._Description = pfc::wideFromUTF8(Description);
+                reader->read_object_t(gd._SelectedChannels, abortHandler);
+                reader->read_object_t(gd._FlipHorizontally, abortHandler);
+                reader->read_object_t(gd._FlipVertically, abortHandler);
 
-                reader->read_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
-                reader->read_object_t(gs._XAxisTop, abortHandler);
-                reader->read_object_t(gs._XAxisBottom, abortHandler);
+                reader->read_object(&gd._XAxisMode, sizeof(gd._XAxisMode), abortHandler);
+                reader->read_object_t(gd._XAxisTop, abortHandler);
+                reader->read_object_t(gd._XAxisBottom, abortHandler);
 
-                reader->read_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
-                reader->read_object_t(gs._YAxisLeft, abortHandler);
-                reader->read_object_t(gs._YAxisRight, abortHandler);
+                reader->read_object(&gd._YAxisMode, sizeof(gd._YAxisMode), abortHandler);
+                reader->read_object_t(gd._YAxisLeft, abortHandler);
+                reader->read_object_t(gd._YAxisRight, abortHandler);
 
-                reader->read_object_t(gs._AmplitudeLo, abortHandler);
-                reader->read_object_t(gs._AmplitudeHi, abortHandler);
-                reader->read_object_t(gs._AmplitudeStep, abortHandler);
+                reader->read_object_t(gd._AmplitudeLo, abortHandler);
+                reader->read_object_t(gd._AmplitudeHi, abortHandler);
+                reader->read_object_t(gd._AmplitudeStep, abortHandler);
 
-                reader->read_object_t(gs._UseAbsolute, abortHandler);
-                reader->read_object_t(gs._Gamma, abortHandler);
+                reader->read_object_t(gd._UseAbsolute, abortHandler);
+                reader->read_object_t(gd._Gamma, abortHandler);
 
-                reader->read_object_t(gs._HRatio, abortHandler);
-                reader->read_object_t(gs._VRatio, abortHandler);
+                reader->read_object_t(gd._HRatio, abortHandler);
+                reader->read_object_t(gd._VRatio, abortHandler);
 
                 if (GraphDescriptionVersion > 1)
                 {
-                    reader->read_object_t(gs._LPadding, abortHandler);
-                    reader->read_object_t(gs._RPadding, abortHandler);
-                    reader->read_object_t(gs._TPadding, abortHandler);
-                    reader->read_object_t(gs._BPadding, abortHandler);
+                    reader->read_object_t(gd._LPadding, abortHandler);
+                    reader->read_object_t(gd._RPadding, abortHandler);
+                    reader->read_object_t(gd._TPadding, abortHandler);
+                    reader->read_object_t(gd._BPadding, abortHandler);
 
-                    reader->read_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
-                    reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                    reader->read_object(&gd._HAlignment, sizeof(gd._HAlignment), abortHandler);
+                    reader->read_object(&gd._VAlignment, sizeof(gd._VAlignment), abortHandler);
                 }
 
                 if (GraphDescriptionVersion > 2)
                 {
-                    reader->read_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
-                    reader->read_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                    reader->read_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler);
+                    reader->read_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
                 }
 
-                _GraphDescriptions.push_back(gs);
+                if (GraphDescriptionVersion > 3) // v0.10.0.0-alpha5
+                {
+                    reader->read_object_t(gd._SwapChannels, abortHandler);
+                }
+
+                _GraphDescriptions.push_back(gd);
             }
         }
 
@@ -1164,50 +1169,56 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         writer->write_object_t(_GraphDescriptions.size(), abortHandler);
 
-        for (auto & gs : _GraphDescriptions)
+        for (auto & gd : _GraphDescriptions)
         {
-            pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
+            pfc::string Description = pfc::utf8FromWide(gd._Description.c_str());
             writer->write_string(Description, abortHandler);
 
-            writer->write_object_t(gs._SelectedChannels, abortHandler);
-            writer->write_object_t(gs._FlipHorizontally, abortHandler);
-            writer->write_object_t(gs._FlipVertically, abortHandler);
+            writer->write_object_t(gd._SelectedChannels, abortHandler);
+            writer->write_object_t(gd._FlipHorizontally, abortHandler);
+            writer->write_object_t(gd._FlipVertically, abortHandler);
 
-            writer->write_object (&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
-            writer->write_object_t(gs._XAxisTop, abortHandler);
-            writer->write_object_t(gs._XAxisBottom, abortHandler);
+            writer->write_object (&gd._XAxisMode, sizeof(gd._XAxisMode), abortHandler);
+            writer->write_object_t(gd._XAxisTop, abortHandler);
+            writer->write_object_t(gd._XAxisBottom, abortHandler);
 
-            writer->write_object (&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
-            writer->write_object_t(gs._YAxisLeft, abortHandler);
-            writer->write_object_t(gs._YAxisRight, abortHandler);
+            writer->write_object (&gd._YAxisMode, sizeof(gd._YAxisMode), abortHandler);
+            writer->write_object_t(gd._YAxisLeft, abortHandler);
+            writer->write_object_t(gd._YAxisRight, abortHandler);
 
-            writer->write_object_t(gs._AmplitudeLo, abortHandler);
-            writer->write_object_t(gs._AmplitudeHi, abortHandler);
-            writer->write_object_t(gs._AmplitudeStep, abortHandler);
+            writer->write_object_t(gd._AmplitudeLo, abortHandler);
+            writer->write_object_t(gd._AmplitudeHi, abortHandler);
+            writer->write_object_t(gd._AmplitudeStep, abortHandler);
 
-            writer->write_object_t(gs._UseAbsolute, abortHandler);
-            writer->write_object_t(gs._Gamma, abortHandler);
+            writer->write_object_t(gd._UseAbsolute, abortHandler);
+            writer->write_object_t(gd._Gamma, abortHandler);
 
-            writer->write_object_t(gs._HRatio, abortHandler);
-            writer->write_object_t(gs._VRatio, abortHandler);
+            writer->write_object_t(gd._HRatio, abortHandler);
+            writer->write_object_t(gd._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
             if (graph_description_t::_CurentVersion > 1)
             {
-                writer->write_object_t(gs._LPadding, abortHandler);
-                writer->write_object_t(gs._RPadding, abortHandler);
-                writer->write_object_t(gs._TPadding, abortHandler);
-                writer->write_object_t(gs._BPadding, abortHandler);
+                writer->write_object_t(gd._LPadding, abortHandler);
+                writer->write_object_t(gd._RPadding, abortHandler);
+                writer->write_object_t(gd._TPadding, abortHandler);
+                writer->write_object_t(gd._BPadding, abortHandler);
 
-                writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
-                writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                writer->write_object(&gd._HAlignment, sizeof(gd._HAlignment), abortHandler);
+                writer->write_object(&gd._VAlignment, sizeof(gd._VAlignment), abortHandler);
             }
 
             // Version 3, v0.8.0.0-beta2
             if (graph_description_t::_CurentVersion > 2)
             {
-                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
-                writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                writer->write_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
+                writer->write_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
+            }
+
+            // Version 4, v0.10.0-alpha5
+            if (graph_description_t::_CurentVersion > 2)
+            {
+                writer->write_object_t(gd._SwapChannels, abortHandler);
             }
         }
 
@@ -1278,7 +1289,6 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         // Version 33, v0.10.0-alpha4
         writer->write_object_t(_VisualizeDuringPause, abortHandler);
         writer->write_object_t(_HasScaleLines, abortHandler);
-
     }
     catch (exception & ex)
     {

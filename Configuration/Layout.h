@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2026.01.25) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2026.02.18) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -1577,16 +1577,22 @@
 #define Y_G53   Y_G52
 
 // Label: Channel Pairs
-#define W_C50    46
-#define H_C50    H_LBL
-#define X_C50    X_G52
-#define Y_C50    Y_G52 + H_G52 + IY
+#define W_C50   46
+#define H_C50   H_LBL
+#define X_C50   X_G52
+#define Y_C50   Y_G52 + H_G52 + IY
 
 // Combobox: Channel Pairs
-#define W_C51    76
-#define H_C51    H_CBX
-#define X_C51    X_C50
-#define Y_C51    Y_C50 + H_C50 + IY
+#define W_C51   76
+#define H_C51   H_CBX
+#define X_C51   X_C50
+#define Y_C51   Y_C50 + H_C50 + IY
+
+// Checkbox: Swap channels
+#define W_C53   60
+#define H_C53   H_CBX
+#define X_C53   X_C51
+#define Y_C53   Y_C51 + H_C51 + IY
 
 #pragma endregion
 

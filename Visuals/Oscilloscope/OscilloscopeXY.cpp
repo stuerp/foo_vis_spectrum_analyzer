@@ -139,12 +139,18 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
                 FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
 
+                if (_Settings->_SwapChannels)
+                    std::swap(x, y);
+
                 Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                 for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
                 {
                     x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
                     y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
+
+                    if (_Settings->_SwapChannels)
+                        std::swap(x, y);
 
                     Sink->AddLine(D2D1::Point2F(x, y));
                 }

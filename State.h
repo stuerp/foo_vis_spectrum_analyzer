@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.01.25) P. Stuer **/
+/** $VER: State.h (2026.02.18) P. Stuer **/
 
 #pragma once
 
@@ -377,7 +377,7 @@ private:
     #pragma endregion
 
 private:
-    const size_t _CurrentVersion = 33; // v0.10.0.0-alpha4
+    const size_t _CurrentVersion = 34; // v0.10.0.0-alpha5
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

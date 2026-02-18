@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.02.11) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.02.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 #include "ConfigurationDialog.h"
@@ -28,6 +28,17 @@ static const WCHAR * const ChannelNames[] =
     L"Top Center",
     L"Top Front Left", L"Top Front Center", L"Top Front Right",
     L"Top Back Left", L"Top Back Center", L"Top Back Right",
+};
+
+// Display names for the window function / kernel drop list.
+const WCHAR * WindowFunctionNames[] =
+{
+    L"Box Car (Rectangular)",
+    L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
+    L"Bartlett (Triangular)", L"Parzen",
+    L"Welch", L"Power-of-sine", L"Power-of-circle",
+    L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
+    L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
 };
 
 /// <summary>
@@ -241,6 +252,7 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
             { IDC_NO_CHANNELS, "Deselects all channels." },
 
             { IDC_CHANNEL_PAIRS, "Determines which combination of channels will be displayed." },
+            { IDC_SWAP_CHANNELS, "Swaps the channels of a channel pair during visualisation e.g. the X and Y axis of an oscilloscope." },
 
             // Styles
             { IDC_STYLES, "Selects the visual element that will be styled" },
@@ -534,20 +546,10 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] =
-        {
-            L"Box Car (Rectangular)",
-            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
-            L"Bartlett (Triangular)", L"Parzen",
-            L"Welch", L"Power-of-sine", L"Power-of-circle",
-            L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
-            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
-        };
+        assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
 
-        assert(((size_t) WindowFunction::Count == _countof(Labels)));
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
+            w.AddString(WindowFunctionNames[i]);
 
         w.SetCurSel((int) _State->_WindowFunction);
     }
@@ -581,20 +583,10 @@ void ConfigurationDialog::Initialize()
 
         w.ResetContent();
 
-        const WCHAR * Labels[] =
-        {
-            L"Box Car (Rectangular)",
-            L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
-            L"Bartlett (Triangular)", L"Parzen",
-            L"Welch", L"Power-of-sine", L"Power-of-circle",
-            L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
-            L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
-        };
+        assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
 
-        assert(((size_t) WindowFunction::Count == _countof(Labels)));
-
-        for (size_t i = 0; i < _countof(Labels); ++i)
-            w.AddString(Labels[i]);
+        for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
+            w.AddString(WindowFunctionNames[i]);
 
         w.SetCurSel((int) _State->_KernelShape);
     }
@@ -1080,7 +1072,7 @@ void ConfigurationDialog::Initialize()
     {
         _SelectedGraph = 0;
 
-        auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+        auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
         {
             SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
@@ -1095,7 +1087,7 @@ void ConfigurationDialog::Initialize()
             for (const auto & x : { L"Near", L"Center", L"Far", L"Fit" })
                 w.AddString(x);
 
-            w.SetCurSel((int) gs._HorizontalAlignment);
+            w.SetCurSel((int) gd._HorizontalAlignment);
         }
 
         // X Axis
@@ -1125,8 +1117,8 @@ void ConfigurationDialog::Initialize()
                 w.SetAccel(_countof(Accel), Accel);
                 w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
 
-                SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo);
-                w.SetPos32((int) (gs._AmplitudeLo * 10.));
+                SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo);
+                w.SetPos32((int) (gd._AmplitudeLo * 10.));
             }
 
             {
@@ -1137,8 +1129,8 @@ void ConfigurationDialog::Initialize()
                 w.SetAccel(_countof(Accel), Accel);
                 w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
 
-                SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi);
-                w.SetPos32((int) (gs._AmplitudeHi * 10.));
+                SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi);
+                w.SetPos32((int) (gd._AmplitudeHi * 10.));
             }
 
             {
@@ -1149,17 +1141,17 @@ void ConfigurationDialog::Initialize()
                 w.SetAccel(_countof(Accel), Accel);
                 w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
 
-                SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
-                w.SetPos32((int) (gs._AmplitudeStep * 10.));
+                SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
+                w.SetPos32((int) (gd._AmplitudeStep * 10.));
             }
         }
 
         // Used by the Linear/n-th root y-axis mode.
         {
-            SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
+            SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
 
             CNumericEdit * ne = new CNumericEdit(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
-            SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
+            SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
         }
 
         // Channels
@@ -1185,6 +1177,11 @@ void ConfigurationDialog::Initialize()
                 w.AddString(x);
 
             w.SetCurSel((int) _State->_ChannelPair);
+        }
+
+        // Swap channels of a channel pair
+        {
+            SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
         }
     }
 
@@ -2385,6 +2382,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         return;
 
     auto ChangedSettings = Settings::All;
+    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     switch (id)
     {
@@ -2437,17 +2435,13 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_FLIP_HORIZONTALLY:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_FLIP_VERTICALLY:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2486,41 +2480,31 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
         case IDC_X_AXIS_TOP:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_X_AXIS_BOTTOM:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_LEFT:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_RIGHT:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_USE_ABSOLUTE:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            gd._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2613,6 +2597,12 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             UpdateVisualizationPage();
             UpdateGraphsPage();
             InitializeYAxisMode();
+            break;
+        }
+
+        case IDC_SWAP_CHANNELS:
+        {
+            gd._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2905,6 +2895,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         return -1;
 
     auto ChangedSettings = Settings::All;
+    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     auto nmud = (LPNMUPDOWN) nmhd;
 
@@ -3025,28 +3016,22 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         case IDC_AMPLITUDE_LO_SPIN:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gs._AmplitudeHi, 10.);
-            SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
+            gd._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gd._AmplitudeHi, 10.);
+            SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_HI_SPIN:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeHi = ClampNewSpinPosition(nmud, gs._AmplitudeLo, MaxAmplitude, 10.);
-            SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
+            gd._AmplitudeHi = ClampNewSpinPosition(nmud, gd._AmplitudeLo, MaxAmplitude, 10.);
+            SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_STEP_SPIN:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            gs._AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
-            SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
+            gd._AmplitudeStep = ClampNewSpinPosition(nmud, MinAmplitudeStep, MaxAmplitudeStep, 10.);
+            SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
             break;
         }
 
@@ -3334,6 +3319,7 @@ void ConfigurationDialog::UpdatePages(size_t index) const noexcept
 
         IDC_CHANNELS_LBL, IDC_CHANNELS, IDC_ALL_CHANNELS, IDC_NO_CHANNELS,
         IDC_CHANNEL_PAIRS_LBL, IDC_CHANNEL_PAIRS,
+        IDC_SWAP_CHANNELS,
     };
 
     static const int Page7[] =
@@ -3653,6 +3639,7 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 {
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsOscilloscopeXY = IsOscilloscope && _State->_XYMode;
 
     {
         auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
@@ -3684,16 +3671,16 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
 
-    const auto & gs = _State->_GraphDescriptions[(size_t) _SelectedGraph];
+    const auto & gd = _State->_GraphDescriptions[(size_t) _SelectedGraph];
 
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gs._Description.c_str());
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gd._Description.c_str());
 
     // Layout
     {
-        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gs._HorizontalAlignment);
+        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gd._HorizontalAlignment);
 
-        CheckDlgButton(IDC_FLIP_HORIZONTALLY, gs._FlipHorizontally);
-        CheckDlgButton(IDC_FLIP_VERTICALLY, gs._FlipVertically);
+        CheckDlgButton(IDC_FLIP_HORIZONTALLY, gd._FlipHorizontally);
+        CheckDlgButton(IDC_FLIP_VERTICALLY, gd._FlipVertically);
 
         const bool SupportsLayout = !IsOscilloscope;
 
@@ -3703,49 +3690,49 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
 
     // X axis
     {
-        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gs._XAxisMode);
+        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gd._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP,    gs._XAxisTop);
-        CheckDlgButton(IDC_X_AXIS_BOTTOM, gs._XAxisBottom);
+        CheckDlgButton(IDC_X_AXIS_TOP,    gd._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_BOTTOM, gd._XAxisBottom);
 
         GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(TRUE);
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gs.HasXAxis() && !IsOscilloscope);
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gs.HasXAxis() && !IsOscilloscope);
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !IsOscilloscope);
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gd.HasXAxis() && !IsOscilloscope);
     }
 
     // Y axis
     {
-        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gs._YAxisMode);
+        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gd._YAxisMode);
 
-        CheckDlgButton(IDC_Y_AXIS_LEFT,  gs._YAxisLeft);
-        CheckDlgButton(IDC_Y_AXIS_RIGHT, gs._YAxisRight);
+        CheckDlgButton(IDC_Y_AXIS_LEFT,  gd._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_RIGHT, gd._YAxisRight);
 
-        SetDouble(IDC_AMPLITUDE_LO, gs._AmplitudeLo, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gs._AmplitudeLo * 10.));
+        SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gd._AmplitudeLo * 10.));
 
-        SetDouble(IDC_AMPLITUDE_HI, gs._AmplitudeHi, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gs._AmplitudeHi * 10.));
+        SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gd._AmplitudeHi * 10.));
 
-        SetDouble(IDC_AMPLITUDE_STEP, gs._AmplitudeStep, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gs._AmplitudeStep * 10.));
+        SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gd._AmplitudeStep * 10.));
 
         for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gs.HasYAxis() && !(IsOscilloscope && _State->_XYMode));
+            GetDlgItem(Iter).EnableWindow(gd.HasYAxis() && !IsOscilloscopeXY);
 
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gs._UseAbsolute);
-        SetDouble(IDC_GAMMA, gs._Gamma, 0, 1);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
+        SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
 
-        const bool IsLinear = (gs._YAxisMode == YAxisMode::Linear);
+        const bool IsLinear = (gd._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsOscilloscope && _State->_XYMode));
+            GetDlgItem(Iter).EnableWindow(IsLinear && !IsOscilloscopeXY);
     }
 
     // Channels
     {
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        uint32_t Channels = gs._SelectedChannels;
+        uint32_t Channels = gd._SelectedChannels;
 
         for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {
@@ -3755,8 +3742,12 @@ void ConfigurationDialog::UpdateGraphsPage() noexcept
         }
     }
 
+
     GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter || IsOscilloscope);
-    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || (IsOscilloscope && _State->_XYMode));
+    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || IsOscilloscopeXY);
+
+    SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
+    GetDlgItem(IDC_SWAP_CHANNELS).EnableWindow(IsOscilloscopeXY);
 }
 
 /// <summary>

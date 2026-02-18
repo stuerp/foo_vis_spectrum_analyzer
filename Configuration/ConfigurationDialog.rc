@@ -368,6 +368,8 @@ style DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_OVERLAPPEDWINDOW | WS_CLIPCHILD
     ltext       "Channel pairs:",                   IDC_CHANNEL_PAIRS_LBL,          X_C50, Y_C50 + 2, W_C50, H_C50
     combobox                                        IDC_CHANNEL_PAIRS,              X_C51, Y_C51,     W_C51, H_C51, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
+    control     "Swap channels",                    IDC_SWAP_CHANNELS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C53, Y_C53, W_C53, H_C53
+
     // Styles
     listbox IDC_STYLES, X_I01, Y_I01, W_I01, H_I01, LBS_HASSTRINGS | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 
