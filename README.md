@@ -127,7 +127,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha5, 2026-0x-xx
+v0.10.0.0-alpha5, 2026-02-18
 
 - Added: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
 - Added: `Rotation` option to rotate the X/Y oscilloscope.
