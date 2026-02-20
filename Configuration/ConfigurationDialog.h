@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2025.10.15) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2026.02.20) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include <sdk/coreDarkMode.h>
 #include <sdk/cfg_var.h>
 
+#include "DialogParameters.h"
 #include "Resources.h"
 #include "State.h"
 
@@ -18,14 +19,8 @@
 
 #include "StyleManager.h"
 
-struct DialogParameters
-{
-    HWND _hWnd;
-    state_t * _State;
-};
-
 /// <summary>
-/// Implements the modeless Options dialog.
+/// Implements the modeless configuration dialog.
 /// </summary>
 class ConfigurationDialog : public CDialogImpl<ConfigurationDialog>, public CDialogResize<ConfigurationDialog>
 {
@@ -39,10 +34,9 @@ public:
 
     virtual ~ConfigurationDialog() { }
 
-    enum { IDD = IDD_CONFIGURATION };
-
 private:
     #pragma region CDialogImpl
+
     BOOL OnInitDialog(CWindow w, LPARAM lParam);
 
     /// <summary>
@@ -120,7 +114,6 @@ private:
         MSG_WM_CLOSE(OnClose)
 
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
-//      MSG_WM_MOUSEMOVE(OnMouseMove)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
@@ -148,6 +141,9 @@ private:
     END_DLGRESIZE_MAP()
 
     #pragma endregion
+
+public:
+    enum { IDD = IDD_CONFIGURATION };
 
 private:
     HWND _hParent;

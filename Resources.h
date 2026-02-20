@@ -558,3 +558,22 @@
 
 #define IDC_ALPHA_SLIDER                 800
 #define IDC_ALPHA_VALUE                  801
+
+
+
+
+
+
+
+
+
+
+#define IDD_MAIN_DIALOG                 100
+#define IDD_VISUALIZATION_PAGE                101
+#define IDD_TRANSFORM_PAGE                102
+#define IDC_BUTTON_SWITCH               1001
+#define IDCANCEL                        2       // Standard cancel
+#define IDC_EDIT1                       1002
+#define IDC_BUTTON_PAGE1                1003
+#define IDC_COMBO1                      1004
+#define IDC_BUTTON_PAGE2                1005

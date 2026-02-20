@@ -28,7 +28,6 @@
 #define X_D01   DX
 #define Y_D01   DY
 
-
 /** Page: Visualization **/
 
 #pragma region Visualization
