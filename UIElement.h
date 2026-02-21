@@ -7,7 +7,6 @@
 
 #include "State.h"
 #include "ConfigurationDialog.h"
-#include "NewConfigurationDialog.h"
 #include "Event.h"
 
 #include "Grid.h"
@@ -171,7 +170,6 @@ protected:
 
     msc::critical_section_t _CriticalSection;
     ConfigurationDialog _ConfigurationDialog;
-    configuration_dialog_t _NewConfigurationDialog;
 
     RECT _OldRect;
     bool _IsFullScreen;

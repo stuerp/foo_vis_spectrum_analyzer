@@ -2,8 +2,8 @@
 /** $VER: ConfigurationDialog.cpp (2026.02.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
-
 #include "ConfigurationDialog.h"
+
 #include "Gradients.h"
 #include "Layout.h"
 #include "CColorDialogEx.h"
@@ -65,22 +65,20 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
     DlgResize_Init(true, true, WS_CLIPCHILDREN);
 
+    DialogParameters * dp = (DialogParameters *) lParam;
+
+    _hParent = dp->_hWnd;
+    _State = dp->_State;
+
+    if (IsRectEmpty(&_State->_DialogRect))
     {
-        auto dp = (const dialog_parameters_t *) lParam;
+        _State->_DialogRect.right  = W_A00;
+        _State->_DialogRect.bottom = H_A00;
 
-        _hParent = dp->_hWnd;
-        _State = dp->_State;
-
-        if (IsRectEmpty(&_State->_DialogRect))
-        {
-            _State->_DialogRect.right  = W_A00;
-            _State->_DialogRect.bottom = H_A00;
-
-            ::MapDialogRect(m_hWnd, &_State->_DialogRect);
-        }
-
-        _OldState = *_State;
+        ::MapDialogRect(m_hWnd, &_State->_DialogRect);
     }
+
+    _OldState = *_State;
 
     Initialize();
 

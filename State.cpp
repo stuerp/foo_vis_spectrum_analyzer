@@ -558,8 +558,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
 /// </summary>
 void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
-    Reset();
-
     size_t Version;
 
     if (size < sizeof(Version))

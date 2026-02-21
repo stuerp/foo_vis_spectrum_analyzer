@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha5, 2026-02-18
+
+- Added: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
+- Added: `Rotation` option to rotate the X/Y oscilloscope.
+- Improved: Spectogram honors the new `Visualize on pause` setting.
+- Improved: Started tweaking the interaction between the configuration dialog and the renderer.
+- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
+
 v0.10.0.0-alpha4, 2026-01-25
 
 - New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)

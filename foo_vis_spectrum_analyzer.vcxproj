@@ -305,20 +305,8 @@
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\SampleAverager.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
-    <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\ConfigurationDialog.h" />
     <ClInclude Include="Analyzers\AmplitudeScaler.h" />
-    <ClInclude Include="Configuration\DialogParameters.h" />
-    <ClInclude Include="Configuration\FiltersPage.h" />
-    <ClInclude Include="Configuration\FrequenciesPage.h" />
-    <ClInclude Include="Configuration\GraphsPage.h" />
-    <ClInclude Include="Configuration\NewConfigurationDialog.h" />
-    <ClInclude Include="Configuration\Page.h" />
-    <ClInclude Include="Configuration\PresetsPage.h" />
-    <ClInclude Include="Configuration\StylesPage.h" />
-    <ClInclude Include="Configuration\TransformPage.h" />
-    <ClInclude Include="Configuration\VisualizationPage.h" />
-    <ClInclude Include="Configuration\VisualizationPageLayout.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeBase.h" />
@@ -386,10 +374,6 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\ConfigurationDialog.cpp" />
-    <ClCompile Include="Configuration\NewConfigurationDialog.cpp" />
-    <ClCompile Include="Configuration\Page.cpp" />
-    <ClCompile Include="Configuration\TransformPage.cpp" />
-    <ClCompile Include="Configuration\VisualizationPage.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
@@ -473,8 +457,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Configuration\ConfigurationDialog.rc" />
-    <ResourceCompile Include="Configuration\NewConfigurationDialog.rc" />
-    <ResourceCompile Include="Configuration\VisualizationPage.rc" />
     <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <ItemGroup>

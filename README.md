@@ -127,13 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha5, 2026-02-18
+v0.10.0.0-alpha6, 2026-02-21
 
-- Added: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
-- Added: `Rotation` option to rotate the X/Y oscilloscope.
-- Improved: Spectogram honors the new `Visualize on pause` setting.
-- Improved: Started tweaking the interaction between the configuration dialog and the renderer.
-- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
+- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
 
 You can read the full history [here](docs/History.md).
 

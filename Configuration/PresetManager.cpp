@@ -1,5 +1,5 @@
 
-/** $VER: PresetManager.cpp (2025.09.22) P. Stuer **/
+/** $VER: PresetManager.cpp (2026.02.21) P. Stuer **/
 
 #include "pch.h"
 #include "PresetManager.h"
@@ -17,12 +17,12 @@ namespace fio = foobar2000_io;
 /// <summary>
 /// Loads a state object from a file.
 /// </summary>
-bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName, state_t * state) noexcept
+bool PresetManager::Load(const path_t & rootPath, const std::wstring & presetName, state_t * state) noexcept
 {
-    Path PresetPath;
+    path_t PresetPath;
 
-    Path::AddExtension(presetName, L"fvsa", PresetPath);
-    Path::Combine(rootPath, PresetPath, PresetPath);
+    path_t::AddExtension(presetName, L"fvsa", PresetPath);
+    path_t::Combine(rootPath, PresetPath, PresetPath);
 
     try
     {
@@ -50,6 +50,8 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
 
         state_t NewState;
 
+        NewState._PresetsDirectoryPath = rootPath.c_str();
+
         NewState.Read(Reader, Size, fb2k::noAbort, true);
 
         *state = NewState;
@@ -67,12 +69,12 @@ bool PresetManager::Load(const Path & rootPath, const std::wstring & presetName,
 /// <summary>
 /// Saves a state object to a file.
 /// </summary>
-bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName, const state_t * state) noexcept
+bool PresetManager::Save(const path_t & rootPath, const std::wstring & presetName, const state_t * state) noexcept
 {
-    Path PresetPath;
+    path_t PresetPath;
 
-    Path::AddExtension(presetName, L"fvsa", PresetPath);
-    Path::Combine(rootPath, PresetPath, PresetPath);
+    path_t::AddExtension(presetName, L"fvsa", PresetPath);
+    path_t::Combine(rootPath, PresetPath, PresetPath);
 
     try
     {
@@ -100,12 +102,12 @@ bool PresetManager::Save(const Path & rootPath, const std::wstring & presetName,
 /// <summary>
 /// Deletes the specified preset.
 /// </summary>
-bool PresetManager::Delete(const Path & rootPath, const std::wstring & presetName) noexcept
+bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetName) noexcept
 {
-    Path PresetPath;
+    path_t PresetPath;
 
-    Path::AddExtension(presetName, L"fvsa", PresetPath);
-    Path::Combine(rootPath, PresetPath, PresetPath);
+    path_t::AddExtension(presetName, L"fvsa", PresetPath);
+    path_t::Combine(rootPath, PresetPath, PresetPath);
 
     const BOOL Success = ::DeleteFileW(PresetPath);
 
@@ -124,11 +126,11 @@ bool PresetManager::Delete(const Path & rootPath, const std::wstring & presetNam
 /// <summary>
 /// Gets the names of the preset files.
 /// </summary>
-bool PresetManager::GetPresetNames(const Path & rootPath, std::vector<std::wstring> & presetNames) noexcept
+bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wstring> & presetNames) noexcept
 {
-    Path SearchPath = rootPath;
+    path_t SearchPath = rootPath;
 
-    HRESULT hr = Path::Combine(SearchPath, L"*.fvsa", SearchPath);
+    HRESULT hr = path_t::Combine(SearchPath, L"*.fvsa", SearchPath);
 
     if (!SUCCEEDED(hr))
         return false;
