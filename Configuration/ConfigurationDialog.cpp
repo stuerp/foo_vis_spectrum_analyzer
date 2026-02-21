@@ -2,8 +2,8 @@
 /** $VER: ConfigurationDialog.cpp (2026.02.18) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
-#include "ConfigurationDialog.h"
 
+#include "ConfigurationDialog.h"
 #include "Gradients.h"
 #include "Layout.h"
 #include "CColorDialogEx.h"
@@ -31,7 +31,7 @@ static const WCHAR * const ChannelNames[] =
 };
 
 // Display names for the window function / kernel drop list.
-const WCHAR * WindowFunctionNames[] =
+static const WCHAR * WindowFunctionNames[] =
 {
     L"Box Car (Rectangular)",
     L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
@@ -65,20 +65,22 @@ BOOL ConfigurationDialog::OnInitDialog(CWindow w, LPARAM lParam)
 
     DlgResize_Init(true, true, WS_CLIPCHILDREN);
 
-    DialogParameters * dp = (DialogParameters *) lParam;
-
-    _hParent = dp->_hWnd;
-    _State = dp->_State;
-
-    if (IsRectEmpty(&_State->_DialogRect))
     {
-        _State->_DialogRect.right  = W_A00;
-        _State->_DialogRect.bottom = H_A00;
+        auto dp = (const dialog_parameters_t *) lParam;
 
-        ::MapDialogRect(m_hWnd, &_State->_DialogRect);
+        _hParent = dp->_hWnd;
+        _State = dp->_State;
+
+        if (IsRectEmpty(&_State->_DialogRect))
+        {
+            _State->_DialogRect.right  = W_A00;
+            _State->_DialogRect.bottom = H_A00;
+
+            ::MapDialogRect(m_hWnd, &_State->_DialogRect);
+        }
+
+        _OldState = *_State;
     }
-
-    _OldState = *_State;
 
     Initialize();
 
@@ -956,6 +958,7 @@ void ConfigurationDialog::Initialize()
     #pragma endregion
 
     #pragma region Common
+
     {
         auto w = (CComboBox) GetDlgItem(IDC_SMOOTHING_METHOD);
 
@@ -968,11 +971,13 @@ void ConfigurationDialog::Initialize()
 
         SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 2);
     }
+
     {
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTipsAlways);
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
         SendDlgItemMessageW(IDC_VISUALIZE_DURING_PAUSE, BM_SETCHECK, _State->_VisualizeDuringPause);
     }
+
     #pragma endregion
 
     #pragma region Artwork
@@ -1361,6 +1366,9 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
     switch (id)
     {
+        default:
+            return;
+
         #pragma region Menu
 
         case IDC_MENULIST:
@@ -1480,14 +1488,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
             break;
         }
 
-        case IDC_SMOOTHING_METHOD:
-        {
-            _State->_SmoothingMethod = (SmoothingMethod) SelectedIndex;
-
-            UpdateCommonPage();
-            break;
-        }
-
         #pragma endregion
 
         #pragma region Filters Page
@@ -1503,6 +1503,14 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         #pragma endregion
 
         #pragma region Common
+
+        case IDC_SMOOTHING_METHOD:
+        {
+            _State->_SmoothingMethod = (SmoothingMethod) SelectedIndex;
+
+            UpdateCommonPage();
+            break;
+        }
 
         case IDC_COLOR_ORDER:
         {
@@ -1637,7 +1645,6 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
 
             style->_ColorScheme = (ColorScheme) SelectedIndex;
 
-//          UpdateColorControls();
             UpdateStylesPage();
             break;
         }
@@ -1756,6 +1763,9 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
 
     switch (id)
     {
+        default:
+            return;
+
         #pragma region Visualization
 
         // Peak indicator
@@ -2038,8 +2048,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma endregion
-
         #pragma region Y axis
 
         case IDC_AMPLITUDE_LO:
@@ -2065,6 +2073,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             gd._Gamma = std::clamp(::_wtof(Text), MinGamma, MaxGamma);
             break;
         }
+
+        #pragma endregion
 
         #pragma endregion
 
@@ -2140,6 +2150,8 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        #pragma endregion
+
         #pragma region Presets
 
         case IDC_PRESETS_ROOT:
@@ -2159,9 +2171,6 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         }
 
         #pragma endregion
-
-        default:
-            return;
     }
 
     if (ChangedSettings != Settings::None)
@@ -2237,6 +2246,8 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Artwork Image
         case IDC_ARTWORK_OPACITY:       { SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f)); break; }
 
+        #pragma region Graphs
+
         // Y axis
         case IDC_AMPLITUDE_LO:
         {
@@ -2266,6 +2277,8 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetDouble(id, gs._Gamma, 0, 1);
             break;
         }
+
+        #pragma endregion
 
         // Spectrum smoothing
         case IDC_SMOOTHING_FACTOR:
@@ -2427,12 +2440,31 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         return;
 
     auto ChangedSettings = Settings::All;
+
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     switch (id)
     {
         default:
             return;
+
+        case IDC_SMOOTH_LOWER_FREQUENCIES:
+        {
+            _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SMOOTH_GAIN_TRANSITION:
+        {
+            _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_GRANULAR_BW:
+        {
+            _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
 
         case IDC_CONSTANT_Q:
         {
@@ -2449,107 +2481,6 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         case IDC_PREWARPED_Q:
         {
             _State->_PreWarpQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_GRANULAR_BW:
-        {
-            _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_SMOOTH_LOWER_FREQUENCIES:
-        {
-            _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_SMOOTH_GAIN_TRANSITION:
-        {
-            _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_VERTICAL_LAYOUT:
-        {
-            _State->_VerticalLayout = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-
-            UpdateGraphsPage();
-            break;
-        }
-
-        case IDC_FLIP_HORIZONTALLY:
-        {
-            gd._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_FLIP_VERTICALLY:
-        {
-            gd._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_ADD_GRAPH:
-        {
-            graph_description_t NewGraphDescription = _State->_GraphDescriptions[_SelectedGraph];
-
-            int Index = (int) _State->_GraphDescriptions.size();
-
-            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
-
-            NewGraphDescription._Description = Description;
-
-            _State->_GraphDescriptions.insert(_State->_GraphDescriptions.begin() + (int) Index, NewGraphDescription);
-
-            _IsInitializing = true;
-
-            UpdateGraphsPage();
-
-            _IsInitializing = false;
-
-            ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).SetCurSel(Index);
-            _SelectedGraph = (size_t) Index;
-            break;
-        }
-
-        case IDC_REMOVE_GRAPH:
-        {
-            _State->_GraphDescriptions.erase(_State->_GraphDescriptions.begin() + (int) _SelectedGraph);
-
-            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphDescriptions.size() - 1);
-
-            UpdateGraphsPage();
-            break;
-        }
-
-        case IDC_X_AXIS_TOP:
-        {
-            gd._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_X_AXIS_BOTTOM:
-        {
-            gd._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_Y_AXIS_LEFT:
-        {
-            gd._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_Y_AXIS_RIGHT:
-        {
-            gd._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_USE_ABSOLUTE:
-        {
-            gd._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -2674,6 +2605,115 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             UpdateCommonPage();
             break;
         }
+
+        #pragma region Graphs
+
+        case IDC_ADD_GRAPH:
+        {
+            graph_description_t NewGraphDescription = _State->_GraphDescriptions[_SelectedGraph];
+
+            int Index = (int) _State->_GraphDescriptions.size();
+
+            WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
+
+            NewGraphDescription._Description = Description;
+
+            _State->_GraphDescriptions.insert(_State->_GraphDescriptions.begin() + (int) Index, NewGraphDescription);
+
+            _IsInitializing = true;
+
+            UpdateGraphsPage();
+
+            _IsInitializing = false;
+
+            ((CListBox) GetDlgItem(IDC_GRAPH_SETTINGS)).SetCurSel(Index);
+            _SelectedGraph = (size_t) Index;
+            break;
+        }
+
+        case IDC_REMOVE_GRAPH:
+        {
+            _State->_GraphDescriptions.erase(_State->_GraphDescriptions.begin() + (int) _SelectedGraph);
+
+            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphDescriptions.size() - 1);
+
+            UpdateGraphsPage();
+            break;
+        }
+
+        case IDC_VERTICAL_LAYOUT:
+        {
+            _State->_VerticalLayout = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateGraphsPage();
+            break;
+        }
+
+        case IDC_FLIP_HORIZONTALLY:
+        {
+            gd._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_FLIP_VERTICALLY:
+        {
+            gd._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_X_AXIS_TOP:
+        {
+            gd._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_X_AXIS_BOTTOM:
+        {
+            gd._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_LEFT:
+        {
+            gd._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_Y_AXIS_RIGHT:
+        {
+            gd._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_USE_ABSOLUTE:
+        {
+            gd._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_ALL_CHANNELS:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+
+            lb.SelItemRange(TRUE, 0, 0xFFFF);
+
+            UpdateSelectedChannels();
+            break;
+        }
+
+        case IDC_NO_CHANNELS:
+        {
+            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+
+            lb.SelItemRange(FALSE, 0, 0xFFFF);
+
+            UpdateSelectedChannels();
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Styles
 
         case IDC_ADD:
         {
@@ -2813,6 +2853,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        #pragma endregion
+
         #pragma region Presets
 
         case IDC_PRESETS_ROOT_SELECT:
@@ -2880,26 +2922,6 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         }
 
         #pragma endregion
-
-        case IDC_ALL_CHANNELS:
-        {
-            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
-
-            lb.SelItemRange(TRUE, 0, 0xFFFF);
-
-            UpdateSelectedChannels();
-            break;
-        }
-
-        case IDC_NO_CHANNELS:
-        {
-            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
-
-            lb.SelItemRange(FALSE, 0, 0xFFFF);
-
-            UpdateSelectedChannels();
-            break;
-        }
 
         case IDC_RESET:
         {
@@ -3009,7 +3031,22 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
-        // Filters
+        case IDC_SKEW_FACTOR_SPIN:
+        {
+            _State->_SkewFactor = ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.);
+            SetDouble(IDC_SKEW_FACTOR, _State->_SkewFactor);
+            break;
+        }
+
+        case IDC_BANDWIDTH_SPIN:
+        {
+            _State->_Bandwidth = ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.);
+            SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
+            break;
+        }
+
+        #pragma region Filters
+
         case IDC_SLOPE_FN_OFFS_SPIN:
         {
             _State->_SlopeFunctionOffset = ClampNewSpinPosition(nmud, MinSlopeFunctionOffset, MaxSlopeFunctionOffset, 100.);
@@ -3059,6 +3096,10 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
+        #pragma endregion
+
+        #pragma region Graphs
+
         case IDC_AMPLITUDE_LO_SPIN:
         {
             gd._AmplitudeLo = ClampNewSpinPosition(nmud, MinAmplitude, gd._AmplitudeHi, 10.);
@@ -3080,20 +3121,9 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             break;
         }
 
-        case IDC_SKEW_FACTOR_SPIN:
-        {
-            _State->_SkewFactor = ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.);
-            SetDouble(IDC_SKEW_FACTOR, _State->_SkewFactor);
-            break;
-        }
+        #pragma endregion
 
-        case IDC_BANDWIDTH_SPIN:
-        {
-            _State->_Bandwidth = ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.);
-            SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
-            break;
-        }
-
+        // Artwork
         case IDC_NUM_ARTWORK_COLORS_SPIN:
         {
             _State->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
@@ -3908,7 +3938,7 @@ void ConfigurationDialog::UpdatePresetsPage() const noexcept
 /// <summary>
 /// Updates the color controls with the current configuration.
 /// </summary>
-void ConfigurationDialog::UpdateColorControls()
+void ConfigurationDialog::UpdateColorControls() noexcept
 {
     style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 

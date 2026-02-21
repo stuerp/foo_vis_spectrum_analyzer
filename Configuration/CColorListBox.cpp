@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.cpp (2025.10.19) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2026.02.21) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 #include "CColorListBox.h"
@@ -15,13 +15,16 @@
 /// <summary>
 /// Initializes the control.
 /// </summary>
-void CColorListBox::Initialize(HWND hWnd)
+void CColorListBox::Initialize(HWND hWnd) noexcept
 {
+    if (_IsSubclassed)
+        return;
+
     ATLASSERT(::IsWindow(hWnd));
 
     __super::_hWnd = hWnd;
 
-    SubclassWindow(hWnd);
+    _IsSubclassed = SubclassWindow(hWnd);
 
     CreateDeviceIndependentResources();
 }
@@ -30,21 +33,22 @@ void CColorListBox::Initialize(HWND hWnd)
 /// Terminates the control.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void CColorListBox::Terminate()
+void CColorListBox::Terminate() noexcept
 {
-    if (!IsWindow())
+    if (!IsWindow() || !_IsSubclassed)
         return;
 
     DeleteDeviceSpecificResources();
     DeleteDeviceIndependentResources();
 
     UnsubclassWindow(TRUE);
+    _IsSubclassed = false;
 }
 
 /// <summary>
 /// Draws an item.
 /// </summary>
-void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
+void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
 {
     HDC hDC = dis->hDC;
 
@@ -110,7 +114,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis)
 /// <summary>
 /// Measures the size of an item.
 /// </summary>
-void CColorListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+void CColorListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcept
 {
     lpMeasureItemStruct->itemHeight = 20;
 }
@@ -118,7 +122,7 @@ void CColorListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 /// <summary>
 /// Gets the colors.
 /// </summary>
-void CColorListBox::GetColors(std::vector<D2D1_COLOR_F> & colors) const
+void CColorListBox::GetColors(std::vector<D2D1_COLOR_F> & colors) const noexcept
 {
     colors = _Colors;
 }
@@ -126,7 +130,7 @@ void CColorListBox::GetColors(std::vector<D2D1_COLOR_F> & colors) const
 /// <summary>
 /// Sets the colors.
 /// </summary>
-void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors)
+void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     _Colors = colors;
 
@@ -143,9 +147,9 @@ void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors)
 /// <summary>
 /// Handles a double-click on an item.
 /// </summary>
-LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
+LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 {
-    int Index = GetCurSel();
+    const int Index = GetCurSel();
 
     if (Index == LB_ERR)
         return 0;
@@ -169,7 +173,7 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled)
 /// </summary>
 void CColorListBox::SendChangedNotification() const noexcept
 {
-    NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
+    const NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
 
     ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
 }

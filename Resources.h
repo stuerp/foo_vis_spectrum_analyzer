@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha6"
+#define STR_RELEASE_TAG         "-alpha7"
 
 /** Component specific **/
 
@@ -34,7 +34,6 @@
                                     "- SWIFT, Sliding Windowed Infinite Fourier Transform (https://codepen.io/TF3RDL/pen/JjBzjeY)\n" \
                                     "- Analog-style spectrum analyzer and sliding DFT visualization using AudioWorklet (https://codepen.io/TF3RDL/pen/MWLzPoO)"
 #define STR_COMPONENT_URL           "https://github.com/stuerp/" STR_COMPONENT_BASENAME
-
 
 /** Generic **/
 
@@ -558,3 +557,17 @@
 
 #define IDC_ALPHA_SLIDER                 800
 #define IDC_ALPHA_VALUE                  801
+
+
+
+
+#define IDD_MAIN_DIALOG                 100
+
+#define IDD_VISUALIZATION_PAGE          101
+#define IDD_TRANSFORM_PAGE              102
+#define IDD_FREQUENCIES_PAGE            103
+#define IDD_FILTERS_PAGE                104
+#define IDD_COMMON_PAGE                 105
+#define IDD_GRAPHS_PAGE                 106
+#define IDD_STYLES_PAGE                 107
+#define IDD_PRESETS_PAGE                108

@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2026.02.18) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2026.02.20) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -27,7 +27,6 @@
 #define H_D01   H_A00 - DY - DY
 #define X_D01   DX
 #define Y_D01   DY
-
 
 /** Page: Visualization **/
 
@@ -433,6 +432,7 @@
 /** Page: Transform **/
 
 #pragma region Transform
+
 // Groupbox
 #define X_B05   X_D01 + W_D01 + IX
 #define Y_B05   Y_D01
@@ -502,7 +502,7 @@
     #define H_C08    H_CBX
     #define X_C08    X_C07 + W_C07 + IX
     #define Y_C08    Y_C07
-
+/*
     #pragma region Channels
     // Button
     #define W_A88    82
@@ -510,9 +510,9 @@
     #define X_A88    X_C08
     #define Y_A88    Y_C08 + H_C08 + IY
     #pragma endregion
-
+*/
 #define W_B05   178
-#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 + IY + H_A88 + 7
+#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 /*+ IY + H_A88*/ + 7
 #pragma endregion
 
 #pragma region FFT

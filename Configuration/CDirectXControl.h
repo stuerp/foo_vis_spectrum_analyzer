@@ -1,5 +1,5 @@
 
-/** $VER: CDirectXControl.h (2024.03.09) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.h (2026.02.21) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #pragma once
 
@@ -23,14 +23,17 @@
 class CDirectXControl
 {
 public:
-    CDirectXControl() { };
+    CDirectXControl() : _hWnd(), _IsSubclassed(false) { };
 
     CDirectXControl(const CDirectXControl &) = delete;
     CDirectXControl & operator=(const CDirectXControl &) = delete;
     CDirectXControl(CDirectXControl &&) = delete;
     CDirectXControl & operator=(CDirectXControl &&) = delete;
 
-    virtual ~CDirectXControl() { DeleteDeviceIndependentResources(); }
+    virtual ~CDirectXControl() noexcept
+    {
+        DeleteDeviceIndependentResources();
+    }
 
 protected:
     virtual void OnSize(UINT type, CSize size)
@@ -55,6 +58,7 @@ protected:
 
 protected:
     HWND _hWnd;
+    bool _IsSubclassed;
 
     // Device-independent resources
     CComPtr<ID2D1Factory2> _Direct2D;

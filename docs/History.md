@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-alpha6, 2026-02-21
+
+- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
+
 v0.10.0.0-alpha5, 2026-02-18
 
 - Added: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.

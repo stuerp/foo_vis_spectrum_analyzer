@@ -1,5 +1,5 @@
 
-/** $VER: CMenuListBox.h (2024.03.09) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: CMenuListBox.h (2026.02.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #pragma once
 
@@ -26,25 +26,25 @@
 class CMenuListBox : public COwnerDrawnListBox<CMenuListBox>
 {
 public:
-    CMenuListBox() { }
+    CMenuListBox() : _IsSubclassed(false) { }
 
     CMenuListBox(const CMenuListBox &) = delete;
     CMenuListBox & operator=(const CMenuListBox &) = delete;
     CMenuListBox(CMenuListBox &&) = delete;
     CMenuListBox & operator=(CMenuListBox &&) = delete;
 
-    virtual ~CMenuListBox() { }
+    virtual ~CMenuListBox() noexcept { }
 
-    void Initialize(HWND hWnd);
-    void Terminate();
+    void Initialize(HWND hWnd) noexcept;
+    void Terminate() noexcept;
 
-    void DrawItem(LPDRAWITEMSTRUCT dis);
-    void MeasureItem(LPMEASUREITEMSTRUCT mis);
+    void DrawItem(LPDRAWITEMSTRUCT dis) noexcept;
+    void MeasureItem(LPMEASUREITEMSTRUCT mis) noexcept;
 
     BEGIN_MSG_MAP(CMenuListBox)
         CHAIN_MSG_MAP(COwnerDrawnListBox<CMenuListBox>)
     END_MSG_MAP()
 
 private:
-    bool _DarkMode;
+    bool _IsSubclassed;
 };

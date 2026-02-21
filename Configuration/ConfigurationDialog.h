@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2025.10.15) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2026.02.20) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include <sdk/coreDarkMode.h>
 #include <sdk/cfg_var.h>
 
+#include "DialogParameters.h"
 #include "Resources.h"
 #include "State.h"
 
@@ -18,14 +19,8 @@
 
 #include "StyleManager.h"
 
-struct DialogParameters
-{
-    HWND _hWnd;
-    state_t * _State;
-};
-
 /// <summary>
-/// Implements the modeless Options dialog.
+/// Implements the modeless configuration dialog.
 /// </summary>
 class ConfigurationDialog : public CDialogImpl<ConfigurationDialog>, public CDialogResize<ConfigurationDialog>
 {
@@ -39,10 +34,9 @@ public:
 
     virtual ~ConfigurationDialog() { }
 
-    enum { IDD = IDD_CONFIGURATION };
-
 private:
     #pragma region CDialogImpl
+
     BOOL OnInitDialog(CWindow w, LPARAM lParam);
 
     /// <summary>
@@ -77,10 +71,10 @@ private:
     void ConfigurationChanged(Settings settings) const noexcept;
 
     void OnSelectionChanged(UINT, int, CWindow);
-    void OnDoubleClick(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept;
     void OnButtonClick(UINT, int, CWindow);
+    void OnDoubleClick(UINT, int, CWindow);
 
     LRESULT OnDeltaPos(LPNMHDR nmhd);
     LRESULT OnChanged(LPNMHDR nmhd);
@@ -96,9 +90,10 @@ private:
     void UpdateStylesPage() noexcept;
     void UpdatePresetsPage() const noexcept;
 
-    void UpdateColorControls();
+    void UpdateColorControls() noexcept;
     void UpdateCurrentColor(style_t * style) const noexcept;
     void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
+
     void GetPresetNames() noexcept;
     void GetPreset(const std::wstring & presetName) noexcept;
 
@@ -120,15 +115,14 @@ private:
         MSG_WM_CLOSE(OnClose)
 
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
-//      MSG_WM_MOUSEMOVE(OnMouseMove)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
-        COMMAND_CODE_HANDLER_EX(LBN_DBLCLK, OnDoubleClick)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
         COMMAND_CODE_HANDLER_EX(EN_KILLFOCUS, OnEditLostFocus)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, OnButtonClick)
+        COMMAND_CODE_HANDLER_EX(LBN_DBLCLK, OnDoubleClick)
 
         NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
@@ -148,6 +142,9 @@ private:
     END_DLGRESIZE_MAP()
 
     #pragma endregion
+
+public:
+    enum { IDD = IDD_CONFIGURATION };
 
 private:
     HWND _hParent;

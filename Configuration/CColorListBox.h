@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.h (2024.03.09) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.h (2026.02.21) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #pragma once
 
@@ -36,19 +36,19 @@ public:
     CColorListBox(CColorListBox &&) = delete;
     CColorListBox & operator=(CColorListBox &&) = delete;
 
-    virtual ~CColorListBox() { }
+    virtual ~CColorListBox() noexcept { }
 
-    void Initialize(HWND hWnd);
-    void Terminate();
+    void Initialize(HWND hWnd) noexcept;
+    void Terminate() noexcept;
 
-    void GetColors(std::vector<D2D1_COLOR_F> & colors) const;
-    void SetColors(const std::vector<D2D1_COLOR_F> & colors);
+    void GetColors(std::vector<D2D1_COLOR_F> & colors) const noexcept;
+    void SetColors(const std::vector<D2D1_COLOR_F> & colors) noexcept;
 
-    void DrawItem(LPDRAWITEMSTRUCT dis);
-    void MeasureItem(LPMEASUREITEMSTRUCT mis);
+    void DrawItem(LPDRAWITEMSTRUCT dis) noexcept;
+    void MeasureItem(LPMEASUREITEMSTRUCT mis) noexcept;
 
 private:
-    LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled);
+    LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept;
 
     void SendChangedNotification() const noexcept;
 

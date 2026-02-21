@@ -127,9 +127,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha6, 2026-02-21
+v0.10.0.0-alpha7, 2026-02-xx
 
-- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
+-
 
 You can read the full history [here](docs/History.md).
 

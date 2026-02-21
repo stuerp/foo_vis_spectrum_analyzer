@@ -14,11 +14,14 @@
 /// </summary>
 void CColorButton::Initialize(HWND hWnd)
 {
+    if (_IsSubclassed)
+        return;
+
     ATLASSERT(::IsWindow(hWnd));
 
     __super::_hWnd = hWnd;
 
-    SubclassWindow(hWnd);
+    _IsSubclassed = SubclassWindow(hWnd);
 
     CreateDeviceIndependentResources();
 
@@ -39,6 +42,7 @@ void CColorButton::Terminate()
     DeleteDeviceIndependentResources();
 
     UnsubclassWindow(TRUE);
+    _IsSubclassed = false;
 }
 
 /// <summary>
@@ -50,10 +54,10 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 
     _Brush.Release();
 
+    EnableWindow(gradientStops.size() > 0);
+
     Invalidate();
     UpdateWindow();
-
-    EnableWindow(gradientStops.size() > 0);
 }
 
 /// <summary>
