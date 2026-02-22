@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.25) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.02.22) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@ public:
     oscilloscope_t(oscilloscope_t &&) = delete;
     oscilloscope_t & operator=(oscilloscope_t &&) = delete;
 
-    virtual ~oscilloscope_t();
+    virtual ~oscilloscope_t() noexcept;
 
     // element_t
     void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
@@ -51,6 +51,8 @@ private:
 
     style_t * _XAxisTextStyle;
     style_t * _YAxisTextStyle;
+
+    double _ChunkDuration;
 
     CComPtr<ID2D1CommandList> _AxesCommandList;
 };

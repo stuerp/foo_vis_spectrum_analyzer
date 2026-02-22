@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.02.15) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.02.22) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -27,7 +27,7 @@ oscilloscope_xy_t::oscilloscope_xy_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-oscilloscope_xy_t::~oscilloscope_xy_t()
+oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }

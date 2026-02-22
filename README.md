@@ -130,6 +130,12 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.10.0.0-alpha7, 2026-02-xx
 
 - Changed: The gradient stops are no longer reset when editing a color of the gradient.
+- Improved: Completely refactored the configuration dialog.
+  - It became too complex to maintain.
+  - Faster interaction with the render thread.
+- Fixed: Oscilloscope did not implement all of the Y-axis settings.
+- Fixed: Oscilloscope did not render the chunk duration correctly.
+- Fixed: Oscilloscope did not render the vertical grid line correctly.
 
 You can read the full history [here](docs/History.md).
 

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.02.15) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.02.22) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -21,13 +21,15 @@ oscilloscope_t::oscilloscope_t()
     _XAxisTextStyle = nullptr;
     _YAxisTextStyle = nullptr;
 
+    _ChunkDuration = 0.;
+
     Reset();
 }
 
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-oscilloscope_t::~oscilloscope_t()
+oscilloscope_t::~oscilloscope_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -129,6 +131,9 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if ((FrameCount == 0) || (ChannelCount == 0))
         return;
 
+    if (_ChunkDuration != _Analysis->_Chunk.get_duration())
+        _AxesCommandList.Release();
+
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
@@ -139,14 +144,14 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT XOffset = 0.f;
     FLOAT YAxisCount = 0.f;
 
-    if (_Settings->HasYAxis())
+    if (_Settings->HasYAxis() && _Settings->_YAxisLeft)
     {
         XOffset = YAxisWidth;
 
         ++YAxisCount;
     }
 
-    if (_Settings->HasYAxis())
+    if (_Settings->HasYAxis() && _Settings->_YAxisRight)
         ++YAxisCount;
 
     const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
@@ -467,14 +472,19 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
 
             FLOAT y = ChannelHeight * (_Settings->HasYAxis() ? 1.0f : 0.5f);
 
+            FLOAT y1 = 0;
+            FLOAT y2 = ChannelHeight;
+
             D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
 
-            const int ChunkDuration = (int) (_Analysis->_Chunk.get_duration() * 1000.); // Convert to milliseconds
+            _ChunkDuration = _Analysis->_Chunk.get_duration();
 
-            int Time = ChunkDuration / 10;
+            const int dt = (int) (_ChunkDuration * 100.); // Convert to 10-milliseconds units
 
             for (uint32_t i = 0; i < SelectedChannelCount; ++i)
             {
+                int Time = dt;
+
                 if (_XAxisLineStyle->IsEnabled())
                     _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle->_Brush, _XAxisLineStyle->_Thickness, _AxisStrokeStyle);
 
@@ -482,21 +492,27 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
                 {
                     TextRect.bottom = y;
 
-                    FLOAT dx = (x2 - x1) / 10.f;
+                    const FLOAT dx = (x2 - x1) / 10.f;
 
                     for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
                     {
+                        if (_VerticalGridLineStyle->IsEnabled())
+                            _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle->_Brush, _VerticalGridLineStyle->_Thickness, _AxisStrokeStyle);
+
                         WCHAR Text[8] = { };
 
                         ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
 
                         _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                        Time += ChunkDuration / 10;
+                        Time += dt;
                     }
                 }
 
                 y += ChannelHeight;
+
+                y1 += ChannelHeight;
+                y2 += ChannelHeight;
             }
         }
 

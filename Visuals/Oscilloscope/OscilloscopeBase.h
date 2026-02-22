@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2025.10.25) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.02.22) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@ public:
     oscilloscope_base_t(oscilloscope_base_t &&) = delete;
     oscilloscope_base_t & operator=(oscilloscope_base_t &&) = delete;
 
-    virtual ~oscilloscope_base_t();
+    virtual ~oscilloscope_base_t() noexcept;
 
     // element_t
     virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept = 0;
