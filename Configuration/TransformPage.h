@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: TransformPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     transform_page_t(transform_page_t &&) = delete;
     transform_page_t & operator=(transform_page_t &&) = delete;
 
-    virtual ~transform_page_t() { }
+    virtual ~transform_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

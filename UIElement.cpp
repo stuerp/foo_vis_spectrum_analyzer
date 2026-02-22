@@ -348,13 +348,6 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 /// </summary>
 void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 {
-{
-    dialog_parameters_t dp = { m_hWnd, &_UIState };
-
-    if (_NewConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
-        _NewConfigurationDialog.ShowWindow(SW_SHOW);
-}
-
    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
 

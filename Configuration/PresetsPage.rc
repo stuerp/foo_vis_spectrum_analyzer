@@ -10,7 +10,7 @@
 language LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 
-IDD_PRESETS_PAGE dialogex 0, 0, 0, 0
+IDD_PRESETS_PAGE dialogex 0, 0, W_J00, H_J00
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 {

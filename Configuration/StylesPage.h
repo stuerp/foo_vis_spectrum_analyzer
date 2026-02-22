@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #include "Resources.h"
 #include "State.h"
 
-class styles_page_t : public page_t
+class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
 public:
     styles_page_t(int id) : page_t(id) { }
@@ -22,7 +22,7 @@ public:
     styles_page_t(styles_page_t &&) = delete;
     styles_page_t & operator=(styles_page_t &&) = delete;
 
-    virtual ~styles_page_t() { }
+    virtual ~styles_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 
@@ -33,6 +33,34 @@ public:
     void OnDoubleClick(UINT code, int id, CWindow) noexcept final;
 
     LRESULT OnChanged(LPNMHDR nmhd) noexcept override final;
+
+    BEGIN_MSG_MAP(styles_page_t)
+        CHAIN_MSG_MAP(page_t)
+        CHAIN_MSG_MAP(CDialogResize<styles_page_t>)
+    END_MSG_MAP()
+
+    BEGIN_DLGRESIZE_MAP(styles_page_t)
+        DLGRESIZE_CONTROL(IDC_STYLES, DLSZ_SIZE_Y)
+
+        DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
+        DLGRESIZE_CONTROL(IDC_COLOR_LIST, DLSZ_SIZE_Y | DLSZ_REPAINT)
+
+        DLGRESIZE_CONTROL(IDC_OPACITY_LBL, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_OPACITY, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_OPACITY_SPIN, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_OPACITY_UNIT, DLSZ_MOVE_Y)
+
+        DLGRESIZE_CONTROL(IDC_THICKNESS_LBL, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_THICKNESS, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_THICKNESS_SPIN, DLSZ_MOVE_Y)
+
+        DLGRESIZE_CONTROL(IDC_FONT_NAME_LBL, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_FONT_NAME, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_FONT_NAME_SELECT, DLSZ_MOVE_Y)
+
+        DLGRESIZE_CONTROL(IDC_FONT_SIZE_LBL, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_FONT_SIZE, DLSZ_MOVE_Y)
+    END_DLGRESIZE_MAP()
 
 private:
     void InitializeControls() noexcept;

@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.02.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.02.22) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
@@ -72,6 +72,18 @@ LRESULT configuration_dialog_t::OnSize(UINT msg, WPARAM wParam, LPARAM lParam, B
 }
 
 /// <summary>
+/// Returns a brush that the system uses to draw the dialog background. For layout debugging purposes.
+/// </summary>
+HBRUSH configuration_dialog_t::OnCtlColorDlg(HDC, HWND) const noexcept
+{
+#ifdef _DEBUG
+    return ::CreateSolidBrush(RGB(240, 240, 240));
+#else
+    return FALSE;
+#endif
+}
+
+/// <summary>
 /// Handles an update of the selected item of a combo box.
 /// </summary>
 void configuration_dialog_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w) noexcept
@@ -107,7 +119,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
             _State->Reset();
             CfgLogLevel = (int64_t) DefaultCfgLogLevel;
 
-            Terminate();
+            TerminateControls();
             InitializeControls();
             break;
         }
@@ -120,7 +132,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             GetWindowRect(&_State->_DialogRect);
 
-            Terminate(); // Don't call from WM_DESTROY handler.
+            TerminateControls(); // Don't call from WM_DESTROY handler.
             DestroyWindow();
 
             _State = nullptr;
@@ -224,7 +236,7 @@ void configuration_dialog_t::InitializeControls() noexcept
 /// Terminates the controls of the dialog.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void configuration_dialog_t::Terminate() noexcept
+void configuration_dialog_t::TerminateControls() noexcept
 {
     // Delete the tooltip control.
     {

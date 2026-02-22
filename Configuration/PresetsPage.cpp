@@ -1,5 +1,5 @@
 
-/** $VER: PresetsPage.cpp (2026.02.21) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: PresetsPage.cpp (2026.02.22) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -15,6 +15,8 @@
 BOOL presets_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
+
+    DlgResize_Init(false, true);
 
     const std::unordered_map<int, const char *> Tips =
     {

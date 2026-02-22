@@ -2,9 +2,11 @@
 /** $VER: CColorButton.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
+
 #include "CColorButton.h"
 #include "CColorDialogEx.h"
 
+#include "Theme.h"
 #include "Color.h"
 
 #pragma hdrstop
@@ -103,27 +105,29 @@ void CColorButton::OnPaint(HDC) noexcept
     if (FAILED(hr))
         return;
 
+    CRect cr;
+
+    GetClientRect(&cr);
+
+    D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
+
+    _RenderTarget->BeginDraw();
+
     if (IsWindowEnabled())
     {
-        _RenderTarget->BeginDraw();
-
-        CRect cr;
-
-        GetClientRect(&cr);
-
-        D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
-
         if (_PatternBrush)
             _RenderTarget->FillRectangle(Rect, _PatternBrush);
 
         if (_Brush)
             _RenderTarget->FillRectangle(Rect, _Brush);
-
-        hr = _RenderTarget->EndDraw();
-
-        if (hr == D2DERR_RECREATE_TARGET)
-            DeleteDeviceSpecificResources();
     }
+    else
+        _RenderTarget->FillRectangle(Rect, _BackgroundBrush);
+
+    hr = _RenderTarget->EndDraw();
+
+    if (hr == D2DERR_RECREATE_TARGET)
+        DeleteDeviceSpecificResources();
 
     ValidateRect(NULL);
 }
@@ -166,6 +170,13 @@ void CColorButton::SendChangedNotification() const noexcept
 HRESULT CColorButton::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = __super::CreateDeviceSpecificResources();
+
+    if (SUCCEEDED(hr) && (_BackgroundBrush == nullptr))
+    {
+        COLORREF Color = _Theme.GetSysColor(COLOR_BTNFACE);
+
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(Color), &_BackgroundBrush);
+    }
 
     if (SUCCEEDED(hr) && (_Brush == nullptr))
     {
@@ -210,6 +221,7 @@ void CColorButton::DeleteDeviceSpecificResources() noexcept
 {
     _PatternBrush.Release();
     _Brush.Release();
+    _BackgroundBrush.Release();
 
     __super::DeleteDeviceSpecificResources();
 }

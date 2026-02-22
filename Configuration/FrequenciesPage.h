@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: FrequenciesPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     frequencies_page_t(frequencies_page_t &&) = delete;
     frequencies_page_t & operator=(frequencies_page_t &&) = delete;
 
-    virtual ~frequencies_page_t() { }
+    virtual ~frequencies_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

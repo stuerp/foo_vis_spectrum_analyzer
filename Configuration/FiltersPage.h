@@ -1,5 +1,5 @@
 
-/** $VER: FiltersPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: FiltersPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     filters_page_t(filters_page_t &&) = delete;
     filters_page_t & operator=(filters_page_t &&) = delete;
 
-    virtual ~filters_page_t() { }
+    virtual ~filters_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

@@ -1,27 +1,14 @@
 
-/** $VER: PresetsPageLayout.h (2026.02.20) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: PresetsPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
-#define H_LBL        8 // Label
+#include "NewConfigurationDialogLayout.h"
 
-#define W_BTN       50 // Button
-#define H_BTN       14 // Button
+#define W_J00    W_A00 - IX - W_D01 - IX - IX
+#define H_J00    H_A00 - IY - IY - H_BTN - IY
 
-#define H_TBX       14 // Edit box
-#define H_CBX       14 // Combo box
-#define H_CHB       10 // Check box
-
-#define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      309 // Dialog height (in dialog units)
-
-#define DX           7
-#define DY           7
-
-#define IX           4 // Spacing between two related controls
-#define IY           4
-
-// Label: Directory
+// Label: Location
 #define W_J01   34
 #define H_J01   H_LBL
 #define X_J01   0
@@ -41,11 +28,11 @@
 
 // List Box
 #define W_J04   W_J02
-#define H_J04   200
+#define H_J04   231
 #define X_J04   X_J02
 #define Y_J04   Y_J02 + H_J02 + IY
 
-// Label: File Name
+// Label: Name
 #define W_J05   W_J01
 #define H_J05   H_LBL
 #define X_J05   X_J01

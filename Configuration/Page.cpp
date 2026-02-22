@@ -10,8 +10,6 @@
 /// </summary>
 BOOL page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
-    DlgResize_Init(false, true);
-
     auto dp = (const dialog_parameters_t *) lParam;
 
     _hParent = dp->_hWnd;
@@ -50,7 +48,7 @@ void page_t::OnShowWindow(BOOL isBeingShown, INT status) noexcept
 HBRUSH page_t::OnCtlColorDlg(HDC, HWND) const noexcept
 {
 #ifdef _DEBUG
-    return ::CreateSolidBrush(RGB(250, 250, 250));
+    return ::CreateSolidBrush(RGB(248, 248, 248));
 #else
     return FALSE;
 #endif
@@ -68,7 +66,7 @@ void page_t::OnDestroy() noexcept
 /// </summary>
 LRESULT page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-    SetMsgHandled(TRUE);
+//  SetMsgHandled(TRUE);
 
     return 0;
 }

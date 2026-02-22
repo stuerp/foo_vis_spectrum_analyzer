@@ -2,13 +2,13 @@
 /** $VER: CColorListBox.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
-#include "CColorListBox.h"
 
+#include "CColorListBox.h"
 #include "CColorDialogEx.h"
 
 #include "Theme.h"
-#include "Support.h"
 #include "Color.h"
+#include "Support.h"
 
 #pragma hdrstop
 

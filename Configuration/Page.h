@@ -16,7 +16,7 @@
 #include "CColorButton.h"
 #include "CColorListBox.h"
 
-class page_t : public CDialogImpl<page_t>, public CDialogResize<page_t>
+class page_t : public CDialogImpl<page_t>
 {
 public:
     page_t(int id) : IDD(id), _hParent(), _State(), _IsInitializing(false), _IgnoreNotifications(false)
@@ -73,7 +73,7 @@ private:
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_SHOWWINDOW(OnShowWindow)
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
-        MSG_WM_DESTROY(OnDestroy)
+//      MSG_WM_DESTROY(OnDestroy)
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
@@ -85,12 +85,7 @@ private:
         NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
 
         REFLECT_NOTIFICATIONS() // Required for CColorListBox
-
-        CHAIN_MSG_MAP(CDialogResize<page_t>)
     END_MSG_MAP()
-
-    BEGIN_DLGRESIZE_MAP(page_t)
-    END_DLGRESIZE_MAP()
 
 public:
     int IDD;

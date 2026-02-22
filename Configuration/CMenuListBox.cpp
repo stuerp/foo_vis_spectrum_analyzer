@@ -82,7 +82,7 @@ void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
         {
             CString Text;
 
-            this->GetText((int) dis->itemID, Text);
+            GetText((int) dis->itemID, Text);
 
             ::InflateRect(&ri, -4, -4);
 

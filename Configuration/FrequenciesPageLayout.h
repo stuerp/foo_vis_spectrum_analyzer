@@ -1,25 +1,9 @@
 
-/** $VER: FrequenciesPageLayout.h (2026.02.20) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: FrequenciesPageLayout.h (2026.02.2) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
-#define H_LBL        8 // Label
-
-#define W_BTN       50 // Button
-#define H_BTN       14 // Button
-
-#define H_TBX       14 // Edit box
-#define H_CBX       14 // Combo box
-#define H_CHB       10 // Check box
-
-#define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      309 // Dialog height (in dialog units)
-
-#define DX           7
-#define DY           7
-
-#define IX           4 // Spacing between two related controls
-#define IY           4
+#include "NewConfigurationDialogLayout.h"
 
 // Groupbox
 #define X_B01   0

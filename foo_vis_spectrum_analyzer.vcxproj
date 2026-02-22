@@ -317,6 +317,7 @@
     <ClInclude Include="Configuration\GraphsPage.h" />
     <ClInclude Include="Configuration\GraphsPageLayout.h" />
     <ClInclude Include="Configuration\NewConfigurationDialog.h" />
+    <ClInclude Include="Configuration\NewConfigurationDialogLayout.h" />
     <ClInclude Include="Configuration\Page.h" />
     <ClInclude Include="Configuration\PresetsPage.h" />
     <ClInclude Include="Configuration\PresetsPageLayout.h" />

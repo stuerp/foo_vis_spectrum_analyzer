@@ -1,5 +1,5 @@
 
-/** $VER: PresetsPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: PresetsPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #include "Resources.h"
 #include "State.h"
 
-class presets_page_t : public page_t
+class presets_page_t : public CDialogResize<presets_page_t>, public page_t
 {
 public:
     presets_page_t(int id) : page_t(id) { }
@@ -22,7 +22,7 @@ public:
     presets_page_t(presets_page_t &&) = delete;
     presets_page_t & operator=(presets_page_t &&) = delete;
 
-    virtual ~presets_page_t() { }
+    virtual ~presets_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 
@@ -31,6 +31,22 @@ public:
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept override final;
     void OnButtonClick(UINT, int, CWindow) noexcept override final;
     void OnDoubleClick(UINT, int, CWindow) noexcept override final;
+
+    BEGIN_MSG_MAP(presets_page_t)
+        CHAIN_MSG_MAP(page_t)
+        CHAIN_MSG_MAP(CDialogResize<presets_page_t>)
+    END_MSG_MAP()
+
+    BEGIN_DLGRESIZE_MAP(presets_page_t)
+        DLGRESIZE_CONTROL(IDC_PRESET_NAMES, DLSZ_SIZE_Y)
+
+        DLGRESIZE_CONTROL(IDC_PRESET_NAME_LBL, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_PRESET_NAME, DLSZ_MOVE_Y)
+
+        DLGRESIZE_CONTROL(IDC_PRESET_LOAD, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_PRESET_SAVE, DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_PRESET_DELETE, DLSZ_MOVE_Y)
+    END_DLGRESIZE_MAP()
 
 private:
     void InitializeControls() noexcept override;

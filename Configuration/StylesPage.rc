@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.rc (2026.02.21) P. Stuer **/
+/** $VER: StylesPage.rc (2026.02.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -10,7 +10,7 @@
 language LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 
-IDD_STYLES_PAGE dialogex 0, 0, 0, 0
+IDD_STYLES_PAGE dialogex 0, 0, W_I00, H_I00
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 {
@@ -41,8 +41,8 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03,     W_F03, H_F03
 
-    control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
-    control         "Amplitude-based",          IDC_AMPLITUDE_BASED, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C14, Y_C14, W_C14, H_C14
+    control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
+    control         "Amplitude-based",          IDC_AMPLITUDE_BASED,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C14, Y_C14, W_C14, H_C14
 
     rtext           "Opacity:"                  IDC_OPACITY_LBL,                X_I08, Y_I08 + 2, W_I08, H_I08
     edittext                                    IDC_OPACITY,                    X_I09, Y_I09,     W_I09, H_I09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

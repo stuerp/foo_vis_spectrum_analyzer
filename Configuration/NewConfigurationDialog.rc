@@ -1,11 +1,11 @@
 
-/** $VER: ConfigurationDialog.rc (2026.02.20) P. Stuer **/
+/** $VER: ConfigurationDialog.rc (2026.02.22) P. Stuer **/
 
 #include "Resources.h"
 
 #include <winres.h>
 
-#include "Layout.h"
+#include "NewConfigurationDialogLayout.h"
 
 language LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)

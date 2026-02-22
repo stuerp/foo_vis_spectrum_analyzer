@@ -1,34 +1,16 @@
 
-/** $VER: StylesPageLayout.h (2026.02.20) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: StylesPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
-#define H_LBL        8 // Label
+#include "NewConfigurationDialogLayout.h"
 
-#define W_BTN       50 // Button
-#define H_BTN       14 // Button
-
-#define H_TBX       14 // Edit box
-#define H_CBX       14 // Combo box
-#define H_CHB       10 // Check box
-
-#define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      309 // Dialog height (in dialog units)
-
-#define DX           7
-#define DY           7
-
-#define IX           4 // Spacing between two related controls
-#define IY           4
-
-#define W_D01   60
-#define H_D01   H_A00 - DY - DY
-#define X_D01   0
-#define Y_D01   0
+#define W_I00    W_A00 - IX - W_D01 - IX - IX
+#define H_I00    H_A00 - IY - IY - H_BTN - IY
 
 // Listbox
 #define W_I01    112
-#define H_I01    H_D01
+#define H_I01    H_I00
 #define X_I01    0
 #define Y_I01    0
 
@@ -132,13 +114,13 @@
 #define Y_F03   Y_F01 + H_F01 + IY
 
 // Checkbox: Horizontal gradient
-#define W_C13    80
+#define W_C13    70
 #define H_C13    H_CHB
 #define X_C13    X_F03
 #define Y_C13    Y_F03 + H_F03 + IY
 
 // Checkbox: Amplitude-based
-#define W_C14    80
+#define W_C14    64
 #define H_C14    H_CHB
 #define X_C14    X_C13 + W_C13 + IX
 #define Y_C14    Y_C13

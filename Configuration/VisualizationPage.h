@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.h (2026.02.20) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: VisualizationPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     visualization_page_t(visualization_page_t &&) = delete;
     visualization_page_t & operator=(visualization_page_t &&) = delete;
 
-    virtual ~visualization_page_t() { }
+    virtual ~visualization_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

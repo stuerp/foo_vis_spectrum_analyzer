@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2026.02.20) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2026.02.22) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -46,18 +46,7 @@ public:
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept;
 
     LRESULT OnSize(UINT msg, WPARAM wParam, LPARAM lParam, BOOL & isHandled) noexcept;
-
-    /// <summary>
-    /// Returns a brush that the system uses to draw the dialog background. For layout debugging purposes.
-    /// </summary>
-    HBRUSH OnCtlColorDlg(HDC, HWND) const noexcept
-    {
-    #ifdef _DEBUG
-        return ::CreateSolidBrush(RGB(250, 250, 250));
-    #else
-        return FALSE;
-    #endif
-    }
+    HBRUSH OnCtlColorDlg(HDC, HWND) const noexcept;
 
     void OnSelectionChanged(UINT, int, CWindow) noexcept;
     void OnButtonClick(UINT, int, CWindow) noexcept;
@@ -88,8 +77,9 @@ public:
         DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
 
+private:
     void InitializeControls() noexcept;
-    void Terminate() noexcept;
+    void TerminateControls() noexcept;
 
     void ConfigurationChanged(Settings settings) const noexcept;
 

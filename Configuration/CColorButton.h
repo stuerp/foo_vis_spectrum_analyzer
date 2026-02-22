@@ -70,6 +70,7 @@ private:
 
 private:
     // Device-specific resources
+    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
     CComPtr<ID2D1Brush> _Brush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
 

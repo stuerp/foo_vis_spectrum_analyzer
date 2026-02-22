@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: CommonPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     common_page_t(common_page_t &&) = delete;
     common_page_t & operator=(common_page_t &&) = delete;
 
-    virtual ~common_page_t() { }
+    virtual ~common_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.h (2026.02.21) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: GraphsPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@ public:
     graphs_page_t(graphs_page_t &&) = delete;
     graphs_page_t & operator=(graphs_page_t &&) = delete;
 
-    virtual ~graphs_page_t() { }
+    virtual ~graphs_page_t() noexcept { }
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 

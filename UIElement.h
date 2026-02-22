@@ -170,7 +170,8 @@ protected:
     state_t _RenderState;
 
     msc::critical_section_t _CriticalSection;
-    ConfigurationDialog _ConfigurationDialog;
+//  ConfigurationDialog _ConfigurationDialog;
+    configuration_dialog_t _ConfigurationDialog;
     configuration_dialog_t _NewConfigurationDialog;
 
     RECT _OldRect;
