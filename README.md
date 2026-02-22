@@ -129,7 +129,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.10.0.0-alpha7, 2026-02-xx
 
--
+- Changed: The gradient stops are no longer reset when editing a color of the gradient.
 
 You can read the full history [here](docs/History.md).
 

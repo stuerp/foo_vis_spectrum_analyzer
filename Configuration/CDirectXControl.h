@@ -1,5 +1,5 @@
 
-/** $VER: CDirectXControl.h (2026.02.21) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.h (2026.02.22) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #pragma once
 
@@ -36,7 +36,7 @@ public:
     }
 
 protected:
-    virtual void OnSize(UINT type, CSize size)
+    virtual void OnSize(UINT type, CSize size) noexcept
     {
         if (_RenderTarget == nullptr)
             return;
@@ -48,11 +48,11 @@ protected:
 
     #pragma region DirectX
 
-    virtual HRESULT CreateDeviceIndependentResources();
-    virtual void DeleteDeviceIndependentResources();
+    virtual HRESULT CreateDeviceIndependentResources() noexcept;
+    virtual void DeleteDeviceIndependentResources() noexcept;
 
-    virtual HRESULT CreateDeviceSpecificResources();
-    virtual void DeleteDeviceSpecificResources();
+    virtual HRESULT CreateDeviceSpecificResources() noexcept;
+    virtual void DeleteDeviceSpecificResources() noexcept;
 
     #pragma endregion
 

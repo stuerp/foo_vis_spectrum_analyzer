@@ -158,8 +158,9 @@ private:
 
     state_t * _State;
     state_t _OldState;
-    bool _IsInitializing;
-    bool _IgnoreNotifications;
+
+    bool _IsInitializing;                       // True of the dialog is initializing a lot of controls and the UI thread should not be notified of the changes.
+    bool _IgnoreNotifications;                  // True if the notifications of the controls should be ignored.
 
     CMenuListBox _MenuList;
 

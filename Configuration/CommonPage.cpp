@@ -276,8 +276,7 @@ void common_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -314,8 +313,7 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -351,8 +349,7 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -394,8 +391,7 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 
     return 0;
 }

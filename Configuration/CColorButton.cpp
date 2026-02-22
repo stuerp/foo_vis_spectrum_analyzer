@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.cpp (2025.10.19) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 #include "CColorButton.h"
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes the control.
 /// </summary>
-void CColorButton::Initialize(HWND hWnd)
+void CColorButton::Initialize(HWND hWnd) noexcept
 {
     if (_IsSubclassed)
         return;
@@ -22,6 +22,9 @@ void CColorButton::Initialize(HWND hWnd)
     __super::_hWnd = hWnd;
 
     _IsSubclassed = SubclassWindow(hWnd);
+
+    if (!_IsSubclassed)
+        return;
 
     CreateDeviceIndependentResources();
 
@@ -33,9 +36,9 @@ void CColorButton::Initialize(HWND hWnd)
 /// Terminates the control.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void CColorButton::Terminate()
+void CColorButton::Terminate() noexcept
 {
-    if (!IsWindow())
+    if (!IsWindow() || !_IsSubclassed)
         return;
 
     DeleteDeviceSpecificResources();
@@ -48,7 +51,7 @@ void CColorButton::Terminate()
 /// <summary>
 /// Sets the color scheme.
 /// </summary>
-void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
+void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
 {
     _GradientStops = gradientStops;
 
@@ -63,7 +66,7 @@ void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & grad
 /// <summary>
 /// Sets the color.
 /// </summary>
-void CColorButton::SetColor(COLORREF color)
+void CColorButton::SetColor(COLORREF color) noexcept
 {
     SetColor(color_t::ToD2D1_COLOR_F(color));
 }
@@ -71,7 +74,7 @@ void CColorButton::SetColor(COLORREF color)
 /// <summary>
 /// Sets the color.
 /// </summary>
-void CColorButton::SetColor(const D2D1_COLOR_F & color)
+void CColorButton::SetColor(const D2D1_COLOR_F & color) noexcept
 {
     _Color = color;
     _GradientStops.clear();
@@ -85,7 +88,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
 /// <summary>
 /// Gets the color.
 /// </summary>
-void CColorButton::GetColor(D2D1_COLOR_F & color) const
+void CColorButton::GetColor(D2D1_COLOR_F & color) const noexcept
 {
     color = _Color;
 }
@@ -93,7 +96,7 @@ void CColorButton::GetColor(D2D1_COLOR_F & color) const
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void CColorButton::OnPaint(HDC)
+void CColorButton::OnPaint(HDC) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
@@ -128,7 +131,7 @@ void CColorButton::OnPaint(HDC)
 /// <summary>
 /// Handles the WM_LBUTTONDBLCLK message.
 /// </summary>
-LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
+LRESULT CColorButton::OnLButtonDown(UINT, CPoint) noexcept
 {
     if (!_GradientStops.empty())
         return 1;
@@ -145,7 +148,7 @@ LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
 }
 
 /// <summary>
-/// Sends a notification that the content has changed.
+/// Sends a notification to the parent that the content has changed.
 /// </summary>
 void CColorButton::SendChangedNotification() const noexcept
 {
@@ -160,7 +163,7 @@ void CColorButton::SendChangedNotification() const noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CColorButton::CreateDeviceSpecificResources()
+HRESULT CColorButton::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = __super::CreateDeviceSpecificResources();
 
@@ -201,9 +204,20 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
 }
 
 /// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void CColorButton::DeleteDeviceSpecificResources() noexcept
+{
+    _PatternBrush.Release();
+    _Brush.Release();
+
+    __super::DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates a pattern brush for rendering the background.
 /// </summary>
-HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
+HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget) noexcept
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
@@ -247,17 +261,6 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
     }
 
     return hr;
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void CColorButton::DeleteDeviceSpecificResources()
-{
-    _PatternBrush.Release();
-    _Brush.Release();
-
-    __super::DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

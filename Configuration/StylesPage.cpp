@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.02.21) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.02.22) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -328,8 +328,7 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -422,8 +421,7 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -465,8 +463,7 @@ void styles_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -624,8 +621,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -666,10 +662,16 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
                 return 0;
 
             style->_ColorScheme = ColorScheme::Custom;
-            _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
 
             if (style->_ColorSource == ColorSource::Gradient)
+            {
+                for (size_t i = 0; i < Colors.size(); ++i)
+                    style->_CustomGradientStops[i].color = Colors[i];
+
                 style->_CurrentGradientStops = style->_CustomGradientStops;
+            }
+            else
+                _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
 
             // Update the controls.
             ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
@@ -691,8 +693,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 
     return 0;
 }

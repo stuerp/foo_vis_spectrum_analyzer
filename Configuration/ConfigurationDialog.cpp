@@ -1702,8 +1702,7 @@ void ConfigurationDialog::OnSelectionChanged(UINT notificationCode, int id, CWin
         #pragma endregion
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2173,8 +2172,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma endregion
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2427,8 +2425,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         #pragma endregion
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2448,59 +2445,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         default:
             return;
 
-        case IDC_SMOOTH_LOWER_FREQUENCIES:
-        {
-            _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_SMOOTH_GAIN_TRANSITION:
-        {
-            _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_GRANULAR_BW:
-        {
-            _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_CONSTANT_Q:
-        {
-            _State->_ConstantQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_COMPENSATE_BW:
-        {
-            _State->_CompensateBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_PREWARPED_Q:
-        {
-            _State->_PreWarpQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_SHOW_TOOLTIPS:
-        {
-            _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_SUPPRESS_MIRROR_IMAGE:
-        {
-            _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
-
-        case IDC_VISUALIZE_DURING_PAUSE:
-        {
-            _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-            break;
-        }
+        #pragma region Visualization
 
         case IDC_LED_MODE:
         {
@@ -2590,6 +2535,68 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             break;
         }
 
+        #pragma endregion
+
+        #pragma region Transform
+
+        case IDC_SMOOTH_LOWER_FREQUENCIES:
+        {
+            _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SMOOTH_GAIN_TRANSITION:
+        {
+            _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_GRANULAR_BW:
+        {
+            _State->_UseGranularBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_CONSTANT_Q:
+        {
+            _State->_ConstantQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_COMPENSATE_BW:
+        {
+            _State->_CompensateBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_PREWARPED_Q:
+        {
+            _State->_PreWarpQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Common
+
+        case IDC_SHOW_TOOLTIPS:
+        {
+            _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SUPPRESS_MIRROR_IMAGE:
+        {
+            _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_VISUALIZE_DURING_PAUSE:
+        {
+            _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_ARTWORK_BACKGROUND:
         {
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -2605,6 +2612,8 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             UpdateCommonPage();
             break;
         }
+
+        #pragma endregion
 
         #pragma region Graphs
 
@@ -2949,8 +2958,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -2962,8 +2970,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         return -1;
 
     auto ChangedSettings = Settings::All;
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
+    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
     auto nmud = (LPNMUPDOWN) nmhd;
 
     switch (nmhd->idFrom)
@@ -2971,9 +2979,33 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         default:
             return -1;
 
+        #pragma region Visualization
+
+        case IDC_RMS_WINDOW_SPIN:
+        {
+            _State->_RMSWindow = ClampNewSpinPosition(nmud, MinRMSWindow, MaxRMSWindow, 1000.);
+            SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Transform
+
         case IDC_KERNEL_SIZE_SPIN:
         {
             _State->_KernelSize = ClampNewSpinPosition(nmud, MinKernelSize, MaxKernelSize);
+            break;
+        }
+
+        #pragma endregion
+
+        #pragma region Frequencies
+
+        case IDC_NUM_BANDS_SPIN:
+        {
+            _State->_BandCount = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
+            SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
             break;
         }
 
@@ -2988,13 +3020,6 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
         {
             _State->_HiFrequency = std::max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_LoFrequency);
             SetDouble(IDC_HI_FREQUENCY, _State->_HiFrequency);
-            break;
-        }
-
-        case IDC_NUM_BANDS_SPIN:
-        {
-            _State->_BandCount = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
-            SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
             break;
         }
 
@@ -3044,6 +3069,8 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
             break;
         }
+
+        #pragma endregion
 
         #pragma region Filters
 
@@ -3098,6 +3125,31 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         #pragma endregion
 
+        #pragma region Artwork
+
+        case IDC_NUM_ARTWORK_COLORS_SPIN:
+        {
+            _State->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
+            SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
+            break;
+        }
+
+        case IDC_LIGHTNESS_THRESHOLD_SPIN:
+        {
+            _State->_LightnessThreshold = (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.);
+            SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
+            break;
+        }
+
+        case IDC_ARTWORK_OPACITY_SPIN:
+        {
+            _State->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
+            SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
+            break;
+        }
+
+        #pragma endregion
+
         #pragma region Graphs
 
         case IDC_AMPLITUDE_LO_SPIN:
@@ -3123,34 +3175,7 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
 
         #pragma endregion
 
-        // Artwork
-        case IDC_NUM_ARTWORK_COLORS_SPIN:
-        {
-            _State->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
-            SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
-            break;
-        }
-
-        case IDC_LIGHTNESS_THRESHOLD_SPIN:
-        {
-            _State->_LightnessThreshold = (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.);
-            SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
-            break;
-        }
-
-        case IDC_ARTWORK_OPACITY_SPIN:
-        {
-            _State->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
-            SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
-            break;
-        }
-
-        case IDC_RMS_WINDOW_SPIN:
-        {
-            _State->_RMSWindow = ClampNewSpinPosition(nmud, MinRMSWindow, MaxRMSWindow, 1000.);
-            SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
-            break;
-        }
+        #pragma region Styles
 
         case IDC_OPACITY_SPIN:
         {
@@ -3169,10 +3194,11 @@ LRESULT ConfigurationDialog::OnDeltaPos(LPNMHDR nmhd)
             SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
             break;
         }
+
+        #pragma endregion
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 
     return 0;
 }
@@ -3229,8 +3255,7 @@ LRESULT ConfigurationDialog::OnChanged(LPNMHDR nmhd)
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 
     return 0;
 }

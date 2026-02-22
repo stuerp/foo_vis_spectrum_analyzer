@@ -323,8 +323,7 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -485,8 +484,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -610,8 +608,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -714,6 +711,5 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }

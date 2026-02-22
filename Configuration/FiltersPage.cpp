@@ -246,8 +246,7 @@ void filters_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -280,8 +279,7 @@ void filters_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_WT_AMT:        { ON_EDIT_CHANGE_DOUBLE(WeightingAmount, IDC_WT_AMT); break; }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -308,8 +306,7 @@ void filters_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_WT_AMT:        { SetDouble(id, _State->_WeightingAmount); break; }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 }
 
 /// <summary>
@@ -379,8 +376,7 @@ LRESULT filters_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    if (ChangedSettings != Settings::None)
-        ConfigurationChanged(ChangedSettings);
+    ConfigurationChanged(ChangedSettings);
 
     return 0;
 }

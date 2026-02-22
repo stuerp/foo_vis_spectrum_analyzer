@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.cpp (2026.02.21) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorListBox.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 #include "CColorListBox.h"
@@ -25,6 +25,9 @@ void CColorListBox::Initialize(HWND hWnd) noexcept
     __super::_hWnd = hWnd;
 
     _IsSubclassed = SubclassWindow(hWnd);
+
+    if (!_IsSubclassed)
+        return;
 
     CreateDeviceIndependentResources();
 }
@@ -169,7 +172,7 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 }
 
 /// <summary>
-/// Sends a notification that the content has changed.
+/// Sends a notification to the parent that the content has changed.
 /// </summary>
 void CColorListBox::SendChangedNotification() const noexcept
 {
