@@ -137,6 +137,8 @@ void styles_page_t::InitializeControls() noexcept
 /// </summary>
 void styles_page_t::UpdateControls() noexcept
 {
+    _IgnoreNotifications = true;
+
     style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Update the controls based on the color source.
@@ -224,6 +226,10 @@ void styles_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsFont));
 
     UpdateColorControls();
+
+    _IgnoreNotifications = false;
+
+    ConfigurationChanged(Settings::All);
 }
 
 /// <summary>

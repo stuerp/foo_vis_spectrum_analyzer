@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "NewConfigurationDialogLayout.h"
+#include "ConfigurationDialogLayout.h"
 
 #define W_I00    W_A00 - IX - W_D01 - IX - IX
 #define H_I00    H_A00 - IY - IY - H_BTN - IY

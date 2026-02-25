@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.02.11) P. Stuer **/
+/** $VER: Analysis.h (2026.02.25) P. Stuer **/
 
 #pragma once
 
@@ -63,14 +63,14 @@ struct measurement_t
 class analysis_t
 {
 public:
-    analysis_t() noexcept : _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() noexcept : _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     analysis_t(const analysis_t &) = delete;
     analysis_t & operator=(const analysis_t &) = delete;
     analysis_t(analysis_t &&) = delete;
     analysis_t & operator=(analysis_t &&) = delete;
 
-    virtual ~analysis_t() { Reset(); };
+    virtual ~analysis_t() noexcept { Reset(); };
 
     void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
@@ -84,13 +84,11 @@ public:
 
 private:
     // Spectrum
-    void ProcessSpectrum(const audio_chunk & chunk) noexcept;
+    void SpectrumProcessing(const audio_chunk & chunk) noexcept;
 
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
-
-    void GetAnalyzer(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -99,12 +97,13 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
-    // Peak Meter
-    void ProcessMeters(const audio_chunk & chunk) noexcept;
+    // Peak Meter / Level Meter
+    void MeterProcessing(const audio_chunk & chunk) noexcept;
+
     void InitializeMeasurements(uint32_t channelMask) noexcept;
 
     // Oscilloscope
-    void ProcessOscilloscope(const audio_chunk & chunk) noexcept;
+    void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
 
     double NormalizeValue(double amplitude) const noexcept
     {
@@ -140,7 +139,6 @@ public:
 
     audio_chunk_impl _Chunk;    // Only used by oscilloscope
 
-    size_t _FrameCount;
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
     uint32_t _ChannelConfig;

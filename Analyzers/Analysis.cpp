@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.02.04) P. Stuer **/
+/** $VER: Analysis.cpp (2026.02.25) P. Stuer **/
 
 #include "pch.h"
 
@@ -43,63 +43,14 @@ void analysis_t::Initialize(const state_t * state, const graph_description_t * g
 }
 
 /// <summary>
-/// Processes an audio chunk.
-/// </summary>
-void analysis_t::Process(const audio_chunk & chunk) noexcept
-{
-    if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
-        Reset();
-
-    _FrameCount       = chunk.get_sample_count();
-    _SampleRate       = chunk.get_sample_rate();
-    _ChannelCount     = chunk.get_channel_count();
-    _ChannelConfig    = chunk.get_channel_config();
-
-    _NyquistFrequency = (double) _SampleRate / 2.;
-    _ChannelMask      = _ChannelConfig & _GraphDescription->_SelectedChannels;
-
-    if (_ChannelMask == 0)
-        return; // None of the selected channels are present in this chunk.
-
-    switch (_State->_VisualizationType)
-    {
-        default:
-
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::Spectrogram:
-        case VisualizationType::RadialBars:
-        case VisualizationType::RadialCurve:
-        {
-            ProcessSpectrum(chunk);
-            break;
-        }
-  
-        case VisualizationType::PeakMeter:
-        case VisualizationType::LevelMeter:
-        {
-            ProcessMeters(chunk);
-            break;
-        }
-
-        case VisualizationType::Oscilloscope:
-        {
-            ProcessOscilloscope(chunk);
-            break;
-        }
-
-        case VisualizationType::Tester:
-        {
-            break;
-        }
-    }
-}
-
-/// <summary>
 /// Resets this instance.
 /// </summary>
 void analysis_t::Reset() noexcept
 {
+    _SampleRate    = 0;
+    _ChannelCount  = 0;
+    _ChannelConfig = 0;
+
     if (_AnalogStyleAnalyzer != nullptr)
     {
         delete _AnalogStyleAnalyzer;
@@ -146,6 +97,58 @@ void analysis_t::Reset() noexcept
 
     _Balance = 0.5;
     _Phase   = 0.5;
+}
+
+/// <summary>
+/// Processes an audio chunk.
+/// </summary>
+void analysis_t::Process(const audio_chunk & chunk) noexcept
+{
+    if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
+        Reset();
+
+    _SampleRate       = chunk.get_sample_rate();
+    _ChannelCount     = chunk.get_channel_count();
+    _ChannelConfig    = chunk.get_channel_config();
+
+    _NyquistFrequency = (double) _SampleRate / 2.;
+    _ChannelMask      = _ChannelConfig & _GraphDescription->_SelectedChannels;
+
+    if (_ChannelMask == 0)
+        return; // None of the selected channels are present in this chunk.
+
+    switch (_State->_VisualizationType)
+    {
+        default:
+
+        case VisualizationType::Bars:
+        case VisualizationType::Curve:
+        case VisualizationType::Spectrogram:
+        case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
+        {
+            SpectrumProcessing(chunk);
+            break;
+        }
+  
+        case VisualizationType::PeakMeter:
+        case VisualizationType::LevelMeter:
+        {
+            MeterProcessing(chunk);
+            break;
+        }
+
+        case VisualizationType::Oscilloscope:
+        {
+            OscilloscopeProcessing(chunk);
+            break;
+        }
+
+        case VisualizationType::Tester:
+        {
+            break;
+        }
+    }
 }
 
 /// <summary>
@@ -399,7 +402,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 
 #pragma region Spectrum
 
-void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
+void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
@@ -407,30 +410,56 @@ void analysis_t::ProcessSpectrum(const audio_chunk & chunk) noexcept
     if ((Frames == nullptr) || (FrameCount == 0))
         return;
 
-    GetAnalyzer(chunk);
+    if (_WindowFunction == nullptr)
+        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
     switch (_State->_Transform)
     {
         case Transform::FFT:
         {
+            if (_FFTAnalyzer == nullptr)
+            {       
+                if (_BrownPucketteKernel == nullptr)
+                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+            }
+
             _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::CQT:
         {
+            if (_CQTAnalyzer == nullptr)
+                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
             _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::SWIFT:
         {
+            if (_SWIFTAnalyzer == nullptr)
+            {
+                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
+
+                _SWIFTAnalyzer->Initialize(_FrequencyBands);
+            }
+
             _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
 
         case Transform::AnalogStyle:
         {
+            if (_AnalogStyleAnalyzer == nullptr)
+            {
+                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
+            }
+
             _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphDescription->_SelectedChannels, _FrequencyBands);
             break;
         }
@@ -609,59 +638,6 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 
 #pragma endregion
 
-/// <summary>
-/// Gets an analyzer and its supporting objects, if any.
-/// </summary>
-void analysis_t::GetAnalyzer(const audio_chunk & chunk) noexcept
-{
-    if (_WindowFunction == nullptr)
-        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
-
-    switch (_State->_Transform)
-    {
-        case Transform::FFT:
-        {
-            if (_FFTAnalyzer == nullptr)
-            {       
-                if (_BrownPucketteKernel == nullptr)
-                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
-
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
-            }
-            break;
-        }
-
-        case Transform::CQT:
-        {
-            if (_CQTAnalyzer == nullptr)
-                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-            break;
-        }
-
-        case Transform::SWIFT:
-        {
-            if (_SWIFTAnalyzer == nullptr)
-            {
-                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
-
-                _SWIFTAnalyzer->Initialize(_FrequencyBands);
-            }
-            break;
-        }
-
-        case Transform::AnalogStyle:
-        {
-            if (_AnalogStyleAnalyzer == nullptr)
-            {
-                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
-            }
-            break;
-        }
-    }
-}
-
 #pragma region Acoustic Weighting
 
 /// <summary>
@@ -782,7 +758,7 @@ void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 /// <summary>
 /// Process the chunk data for the peak and the level meter.
 /// </summary>
-void analysis_t::ProcessMeters(const audio_chunk & chunk) noexcept
+void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
@@ -937,7 +913,7 @@ void analysis_t::InitializeMeasurements(uint32_t meterChannels) noexcept
 /// <summary>
 /// Process the chunk data for the oscilloscope.
 /// </summary>
-void analysis_t::ProcessOscilloscope(const audio_chunk & chunk) noexcept
+void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
     _Chunk.copy(chunk);
 }

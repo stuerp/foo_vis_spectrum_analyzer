@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.02.21) P. Stuer **/
+/** $VER: Resources.h (2026.02.25) P. Stuer **/
 
 #pragma once
 
@@ -65,7 +65,18 @@
 
 /** State **/
 
-#define IDD_CONFIGURATION               1000
+#define IDD_MAIN_DIALOG                 1000
+
+#define IDD_VISUALIZATION_PAGE          1001
+#define IDD_TRANSFORM_PAGE              1002
+#define IDD_FREQUENCIES_PAGE            1003
+#define IDD_FILTERS_PAGE                1004
+#define IDD_COMMON_PAGE                 1005
+#define IDD_GRAPHS_PAGE                 1006
+#define IDD_STYLES_PAGE                 1007
+#define IDD_PRESETS_PAGE                1008
+
+#define IDD_CONFIGURATION               1099
 
 // Menu List
 
@@ -557,17 +568,3 @@
 
 #define IDC_ALPHA_SLIDER                 800
 #define IDC_ALPHA_VALUE                  801
-
-
-
-
-#define IDD_MAIN_DIALOG                 100
-
-#define IDD_VISUALIZATION_PAGE          101
-#define IDD_TRANSFORM_PAGE              102
-#define IDD_FREQUENCIES_PAGE            103
-#define IDD_FILTERS_PAGE                104
-#define IDD_COMMON_PAGE                 105
-#define IDD_GRAPHS_PAGE                 106
-#define IDD_STYLES_PAGE                 107
-#define IDD_PRESETS_PAGE                108

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "NewConfigurationDialogLayout.h"
+#include "ConfigurationDialogLayout.h"
 
 // Groupbox
 #define X_B04   0

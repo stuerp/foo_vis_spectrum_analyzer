@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "NewConfigurationDialogLayout.h"
+#include "ConfigurationDialogLayout.h"
 
 // ListBox: Graphs Settings
 #define W_G20    70

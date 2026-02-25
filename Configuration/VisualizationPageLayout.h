@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "NewConfigurationDialogLayout.h"
+#include "ConfigurationDialogLayout.h"
 
 // Label
 #define W_E01    24
