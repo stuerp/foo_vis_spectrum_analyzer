@@ -134,8 +134,9 @@ v0.10.0.0-alpha7, 2026-02-xx
   - It became too complex to maintain.
   - Faster interaction with the render thread.
 - Fixed: Oscilloscope did not implement all of the Y-axis settings.
-- Fixed: Oscilloscope did not render the chunk duration correctly.
-- Fixed: Oscilloscope did not render the vertical grid line correctly.
+- Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
+- Fixed: Oscilloscope did not render the vertical grid lines correctly.
+- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
 
 You can read the full history [here](docs/History.md).
 

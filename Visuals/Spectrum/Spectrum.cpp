@@ -205,12 +205,12 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept
 {
+    rect.top    = 0.f;
+    rect.bottom = _ClientSize.height * (FLOAT) value;
+
     // Draw the bar area.
     if (areaStyle->IsEnabled())
     {
-        rect.top    = 0.f;
-        rect.bottom = _ClientSize.height * (FLOAT) value;
-
         if (_BarAreaStyle->IsAmplitudeBased())
             _BarAreaStyle->SetBrushColor(value);
 
