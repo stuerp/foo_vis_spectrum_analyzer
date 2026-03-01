@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.02.25) P. Stuer **/
+/** $VER: Resources.h (2026.03.01) P. Stuer **/
 
 #pragma once
 
@@ -8,12 +8,12 @@
 
 #define NUM_FILE_MAJOR          0
 #define NUM_FILE_MINOR          10
-#define NUM_FILE_PATCH          0
+#define NUM_FILE_PATCH          1
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
 #define NUM_PRODUCT_MINOR       10
-#define NUM_PRODUCT_PATCH       0
+#define NUM_PRODUCT_PATCH       1
 #define NUM_PRODUCT_PRERELEASE  0
 
 #define STR_RELEASE_TAG         "-alpha7"

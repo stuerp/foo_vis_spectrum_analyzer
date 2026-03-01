@@ -5,6 +5,8 @@
 
 #include "Page.h"
 
+#include "Theme.h"
+
 /// <summary>
 /// Initialize the dialog.
 /// </summary>
@@ -15,6 +17,8 @@ BOOL page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
     _hParent = dp->_hWnd;
     _State = dp->_State;
 
+    _Theme.Initialize(_DarkMode);
+
     // Create the tooltip control.
     _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
@@ -23,6 +27,8 @@ BOOL page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         _ToolTipControl.SetMaxTipWidth(200);
         ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
     }
+
+    _DarkMode.AddDialogWithControls(*this);
 
     return TRUE;
 }
