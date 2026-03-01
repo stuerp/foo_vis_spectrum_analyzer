@@ -127,7 +127,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha7, 2026-03-xx
+v0.10.0.0-alpha7, 2026-03-01
 
 - Improved: Completely refactored the configuration dialog.
   - It became too complex to maintain.
