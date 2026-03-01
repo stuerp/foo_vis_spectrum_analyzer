@@ -53,7 +53,7 @@ private:
     void UpdateControls() noexcept override;
     void TerminateControls() noexcept override { };
 
-    void GetPresetNames() noexcept;
+    void FillPresetListBox() noexcept;
     void GetPreset(const std::wstring & presetName) noexcept;
 
 private:

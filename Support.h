@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2025.10.20) P. Stuer **/
+/** $VER: Support.h (2026.03.01) P. Stuer **/
 
 #pragma once
 
@@ -12,6 +12,7 @@
 
 HRESULT InitializeDpiAwareness() noexcept;
 HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept;
+HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::string & result) noexcept;
 
 /// <summary>
 /// Converts magnitude to decibel (dB).

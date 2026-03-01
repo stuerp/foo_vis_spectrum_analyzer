@@ -1,13 +1,13 @@
 
-/** $VER: PresetsPage.cpp (2026.02.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: PresetsPage.cpp (2026.03.01) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "PresetsPage.h"
+#include "PresetManager.h"
+
 #include "Support.h"
 #include "Log.h"
-
-#include "PresetManager.h"
 
 /// <summary>
 /// Initializes the page.
@@ -43,7 +43,7 @@ void presets_page_t::InitializeControls() noexcept
     {
         SetDlgItemTextW(IDC_PRESETS_ROOT, _State->_PresetsDirectoryPath.c_str());
 
-        GetPresetNames();
+        FillPresetListBox();
     }
 
     UpdateControls();
@@ -104,7 +104,7 @@ void presets_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             _State->_PresetsDirectoryPath = Text;
 
-            GetPresetNames();
+            FillPresetListBox();
 
             return;
         }
@@ -127,7 +127,7 @@ void presets_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         return;
 
     if (id == IDC_PRESETS_ROOT)
-        GetPresetNames();
+        FillPresetListBox();
 }
 
 /// <summary>
@@ -155,7 +155,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
                 SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(DirectoryPath));
 
-                GetPresetNames();
+                FillPresetListBox();
             }
             break;
         }
@@ -167,7 +167,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
             GetPreset(PresetName);
-            GetPresetNames();
+            FillPresetListBox();
 
             _IsInitializing = true;
 
@@ -187,7 +187,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             PresetManager::Save(_State->_PresetsDirectoryPath, PresetName, _State);
 
-            GetPresetNames();
+            FillPresetListBox();
             break;
         }
 
@@ -199,7 +199,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             PresetManager::Delete(_State->_PresetsDirectoryPath, PresetName);
 
-            GetPresetNames();
+            FillPresetListBox();
             break;
         }
     }
@@ -227,7 +227,7 @@ void presets_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
         SetDlgItemTextW(IDC_PRESET_NAME, PresetName.c_str());
 
         GetPreset(PresetName);
-        GetPresetNames();
+        FillPresetListBox();
 
         UpdateControls();
 
@@ -240,12 +240,8 @@ void presets_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
 /// <summary>
 /// Updates the preset file list box.
 /// </summary>
-void presets_page_t::GetPresetNames() noexcept
+void presets_page_t::FillPresetListBox() noexcept
 {
-    // Make sure the path exists before proceding.
-    if (::GetFileAttributesW(_State->_PresetsDirectoryPath.c_str()) == INVALID_FILE_ATTRIBUTES)
-        return;
-
     _PresetNames.clear();
 
     auto w = (CListBox) GetDlgItem(IDC_PRESET_NAMES);

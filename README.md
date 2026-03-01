@@ -127,11 +127,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha7, 2026-02-xx
+v0.10.0.0-alpha7, 2026-03-xx
 
 - Improved: Completely refactored the configuration dialog.
   - It became too complex to maintain.
   - Faster interaction with the render thread.
+- Improved: The preset location supports `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
 - Fixed: The gradient stops are no longer reset when editing a color of the gradient.
 - Fixed: Oscilloscope did not implement all of the Y-axis settings.
 - Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.

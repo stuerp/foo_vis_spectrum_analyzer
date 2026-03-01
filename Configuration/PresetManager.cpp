@@ -1,14 +1,16 @@
 
-/** $VER: PresetManager.cpp (2026.02.21) P. Stuer **/
+/** $VER: PresetManager.cpp (2026.03.01) P. Stuer - Manages the component presets. **/
 
 #include "pch.h"
+
 #include "PresetManager.h"
+
+#include "Resources.h"
+#include "Support.h"
+#include "Log.h"
 
 #include <Path.h>
 #include <Error.h>
-
-#include "Resources.h"
-#include "Log.h"
 
 namespace fio = foobar2000_io;
 
@@ -19,10 +21,7 @@ namespace fio = foobar2000_io;
 /// </summary>
 bool PresetManager::Load(const path_t & rootPath, const std::wstring & presetName, state_t * state) noexcept
 {
-    path_t PresetPath;
-
-    path_t::AddExtension(presetName, L"fvsa", PresetPath);
-    path_t::Combine(rootPath, PresetPath, PresetPath);
+    const path_t PresetPath = CreatePresetPath(rootPath, presetName);
 
     try
     {
@@ -50,9 +49,11 @@ bool PresetManager::Load(const path_t & rootPath, const std::wstring & presetNam
 
         state_t NewState;
 
-        NewState._PresetsDirectoryPath = rootPath.c_str();
+        NewState._PresetsDirectoryPath = PresetPath.c_str();
 
         NewState.Read(Reader, Size, fb2k::noAbort, true);
+
+        NewState._PresetsDirectoryPath = rootPath.c_str();
 
         *state = NewState;
 
@@ -71,10 +72,7 @@ bool PresetManager::Load(const path_t & rootPath, const std::wstring & presetNam
 /// </summary>
 bool PresetManager::Save(const path_t & rootPath, const std::wstring & presetName, const state_t * state) noexcept
 {
-    path_t PresetPath;
-
-    path_t::AddExtension(presetName, L"fvsa", PresetPath);
-    path_t::Combine(rootPath, PresetPath, PresetPath);
+    const path_t PresetPath = CreatePresetPath(rootPath, presetName);
 
     try
     {
@@ -104,10 +102,7 @@ bool PresetManager::Save(const path_t & rootPath, const std::wstring & presetNam
 /// </summary>
 bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetName) noexcept
 {
-    path_t PresetPath;
-
-    path_t::AddExtension(presetName, L"fvsa", PresetPath);
-    path_t::Combine(rootPath, PresetPath, PresetPath);
+    const path_t PresetPath = CreatePresetPath(rootPath, presetName);
 
     const BOOL Success = ::DeleteFileW(PresetPath);
 
@@ -128,7 +123,24 @@ bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetN
 /// </summary>
 bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wstring> & presetNames) noexcept
 {
-    path_t SearchPath = rootPath;
+    std::wstring PresetsDirectoryPath;
+
+    {
+        pfc::string Result;
+
+        HRESULT hResult = EvaluateTitleFormatScript(rootPath, Result);
+
+        if (!SUCCEEDED(hResult))
+            return false;
+
+        PresetsDirectoryPath = msc::UTF8ToWide(Result.c_str());
+
+        // Make sure the path exists before proceding.
+        if (::GetFileAttributesW(PresetsDirectoryPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+            return false;
+    }
+
+    path_t SearchPath = PresetsDirectoryPath;
 
     HRESULT hr = path_t::Combine(SearchPath, L"*.fvsa", SearchPath);
 
@@ -151,4 +163,23 @@ bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wst
     }
 
     return true;
+}
+
+/// <summary>
+/// Creates the full path of a preset.
+/// </summary>
+path_t PresetManager::CreatePresetPath(const path_t & rootPath, const std::wstring & presetName) noexcept
+{
+    pfc::string Result;
+
+    HRESULT hResult = EvaluateTitleFormatScript(rootPath, Result);
+
+    const path_t RootPath = SUCCEEDED(hResult) ? msc::UTF8ToWide(Result.c_str()) : rootPath.c_str();
+
+    path_t PresetPath;
+
+    path_t::AddExtension(presetName, L"fvsa", PresetPath);
+    path_t::Combine(RootPath, PresetPath, PresetPath);
+
+    return PresetPath;
 }

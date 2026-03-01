@@ -1,5 +1,5 @@
 
-/** $VER: PresetManager.h (2024.03.09) P. Stuer - Represents a preset of the component. **/
+/** $VER: PresetManager.h (2026.03.01) P. Stuer - Manages the component presets. **/
 
 #pragma once
 
@@ -26,6 +26,9 @@ public:
     static bool Delete(const path_t & rootPath, const std::wstring & presetName) noexcept;
 
     static bool GetPresetNames(const path_t & rootPath, std::vector<std::wstring> & FileNames) noexcept;
+
+private:
+    static path_t CreatePresetPath(const path_t & rootPath, const std::wstring & presetName) noexcept;
 
 private:
     static const uint32_t Magic = MakeFOURCC('F','V','S','A');

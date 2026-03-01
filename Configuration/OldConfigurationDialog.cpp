@@ -1279,7 +1279,7 @@ void ConfigurationDialog::Initialize()
     {
         SetDlgItemTextW(IDC_PRESETS_ROOT, _State->_PresetsDirectoryPath.c_str());
 
-        GetPresetNames();
+        FillPresetListBox();
     }
     #pragma endregion
 
@@ -1739,7 +1739,7 @@ void ConfigurationDialog::OnDoubleClick(UINT code, int id, CWindow)
         UpdateStylesPage();
         UpdatePresetsPage();
 
-        GetPresetNames();
+        FillPresetListBox();
     }
     else
         SetMsgHandled(FALSE);
@@ -2157,7 +2157,7 @@ void ConfigurationDialog::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             _State->_PresetsDirectoryPath = Text;
 
-            GetPresetNames();
+            FillPresetListBox();
 
             return;
         }
@@ -2418,7 +2418,7 @@ void ConfigurationDialog::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_PRESETS_ROOT:
         {
-            GetPresetNames();
+            FillPresetListBox();
             break;
         }
 
@@ -2878,7 +2878,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
                 SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(DirectoryPath));
 
-                GetPresetNames();
+                FillPresetListBox();
             }
             break;
         }
@@ -2900,7 +2900,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
             UpdateStylesPage();
             UpdatePresetsPage();
 
-            GetPresetNames();
+            FillPresetListBox();
             break;
         }
 
@@ -2912,7 +2912,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             PresetManager::Save(_State->_PresetsDirectoryPath, PresetName, _State);
 
-            GetPresetNames();
+            FillPresetListBox();
 
             return;
         }
@@ -2925,7 +2925,7 @@ void ConfigurationDialog::OnButtonClick(UINT, int id, CWindow)
 
             PresetManager::Delete(_State->_PresetsDirectoryPath, PresetName);
 
-            GetPresetNames();
+            FillPresetListBox();
 
             return;
         }
@@ -4078,14 +4078,8 @@ void ConfigurationDialog::UpdateGradientStopPositons(style_t * style, size_t ind
 /// <summary>
 /// Updates the preset file list box.
 /// </summary>
-void ConfigurationDialog::GetPresetNames() noexcept
+void ConfigurationDialog::FillPresetListBox() noexcept
 {
-    // Make sure the path exists before proceding.
-    if (::GetFileAttributesW(_State->_PresetsDirectoryPath.c_str()) == INVALID_FILE_ATTRIBUTES)
-        return;
-
-    _PresetNames.clear();
-
     auto w = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
 
     w.ResetContent();

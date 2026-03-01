@@ -609,6 +609,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
     #pragma endregion
 
     #pragma region Frequencies
+
         reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
         reader->read(&_BandCount, sizeof(_BandCount), abortHandler);
@@ -625,6 +626,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
         reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
         reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+
     #pragma endregion
 
     #pragma region Rendering

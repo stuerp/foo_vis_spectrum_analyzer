@@ -307,7 +307,6 @@
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
-    <ClInclude Include="Configuration\OldConfigurationDialog.h" />
     <ClInclude Include="Analyzers\AmplitudeScaler.h" />
     <ClInclude Include="Configuration\DialogParameters.h" />
     <ClInclude Include="Configuration\FiltersPage.h" />
@@ -327,6 +326,7 @@
     <ClInclude Include="Configuration\TransformPageLayout.h" />
     <ClInclude Include="Configuration\VisualizationPage.h" />
     <ClInclude Include="Configuration\VisualizationPageLayout.h" />
+    <ClInclude Include="CustomTitleFormatHook.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeBase.h" />
@@ -394,7 +394,6 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\CommonPage.cpp" />
-    <ClCompile Include="Configuration\OldConfigurationDialog.cpp" />
     <ClCompile Include="Configuration\FiltersPage.cpp" />
     <ClCompile Include="Configuration\FrequenciesPage.cpp" />
     <ClCompile Include="Configuration\GraphsPage.cpp" />
@@ -488,7 +487,6 @@
   <ItemGroup>
     <ResourceCompile Include="Configuration\CColorDialogEx.rc" />
     <ResourceCompile Include="Configuration\CommonPage.rc" />
-    <ResourceCompile Include="Configuration\OldConfigurationDialog.rc" />
     <ResourceCompile Include="Configuration\FiltersPage.rc" />
     <ResourceCompile Include="Configuration\FrequenciesPage.rc" />
     <ResourceCompile Include="Configuration\GraphsPage.rc" />
@@ -514,9 +512,7 @@
   <ItemGroup>
     <Image Include="assets\Bars.png" />
     <Image Include="assets\Curve.png" />
-    <Image Include="assets\MultipleGraphs.png" />
     <Image Include="assets\Preview.png" />
-    <Image Include="assets\Radial-Bars.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

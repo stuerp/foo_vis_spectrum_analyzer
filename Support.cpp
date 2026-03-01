@@ -1,8 +1,10 @@
 
-/** $VER: Support.cpp (2025.10.20) P. Stuer **/
+/** $VER: Support.cpp (2026.03.01) P. Stuer **/
 
 #include "pch.h"
+
 #include "Support.h"
+#include "CustomTitleformatHook.h"
 
 #include "Direct2D.h"
 #include "SafeModuleHandle.h"
@@ -10,6 +12,9 @@
 #include <shellscalingapi.h>
 
 #pragma comment(lib, "shcore")
+
+//#include <pfc/string_conv.h>
+//#include <pfc/string-conv-lite.h>
 
 #pragma hdrstop
 
@@ -52,7 +57,25 @@ HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
 
             dpi = (UINT) DPIX;
         }
+        else
+            dpi = 72;
     }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Evaluates a foobar2000 Title Format script.
+/// </summary>
+HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::string & result) noexcept
+{
+    service_ptr_t<titleformat_object> tfo;
+
+    static_api_ptr_t<titleformat_compiler>()->compile_safe_ex(tfo, pfc::utf8FromWide(script.c_str()));
+
+    custom_titleformat_hook_t Hook;
+
+    tfo->run(&Hook, result, nullptr);
 
     return S_OK;
 }
