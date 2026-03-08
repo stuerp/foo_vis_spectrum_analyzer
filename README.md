@@ -127,17 +127,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha7, 2026-03-01
+v0.10.0.0-alpha8, 2026-03-xx
 
-- Improved: Completely refactored the configuration dialog.
-  - It became too complex to maintain.
-  - Faster interaction with the render thread.
-- Improved: The preset location supports `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
-- Fixed: The gradient stops are no longer reset when editing a color of the gradient.
-- Fixed: Oscilloscope did not implement all of the Y-axis settings.
-- Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
-- Fixed: Oscilloscope did not render the vertical grid lines correctly.
-- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
+- Fixed: Some missing event handlers in the new Configuration dialog. (Regression)
+- Fixed: Some Configuration dialog notifications in 32-bit version. (Regression)
 
 You can read the full history [here](docs/History.md).
 

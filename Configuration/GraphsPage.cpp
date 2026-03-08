@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.02.21) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -340,7 +340,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -356,8 +356,6 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
             return;
         }
 
-        #pragma region Layout
-
         case IDC_HORIZONTAL_ALIGNMENT:
         {
             auto & gs = _State->_GraphDescriptions[_SelectedGraph];
@@ -368,10 +366,6 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
             break;
         }
 
-        #pragma endregion
-
-        #pragma region X axis
-
         case IDC_X_AXIS_MODE:
         {
             auto & gs = _State->_GraphDescriptions[_SelectedGraph];
@@ -381,10 +375,6 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
             UpdateControls();
             break;
         }
-
-        #pragma endregion
-
-        #pragma region Y axis
 
         case IDC_Y_AXIS_MODE:
         {
@@ -419,7 +409,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     auto ChangedSettings = Settings::All;
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -434,8 +424,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma region Y axis
-
+        // Y axis
         case IDC_AMPLITUDE_LO:
         {
             gd._AmplitudeLo = std::clamp(::_wtof(Text), MinAmplitude, gd._AmplitudeHi);
@@ -631,6 +620,12 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             lb.SelItemRange(FALSE, 0, 0xFFFF);
 
             UpdateSelectedChannels();
+            break;
+        }
+
+        case IDC_SWAP_CHANNELS:
+        {
+            gd._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
     }

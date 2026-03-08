@@ -72,7 +72,26 @@ void page_t::OnDestroy() noexcept
 /// </summary>
 LRESULT page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-//  SetMsgHandled(TRUE);
+    switch (wParam)
+    {
+        case CC_PRESET_LOADED:
+        {
+            _IsInitializing = true;
+
+            InitializeControls();
+
+            _IsInitializing = false;
+            break;
+        }
+
+        case CC_COLORS:
+        {
+            _Theme.Initialize(_DarkMode);
+
+            ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
+            break;
+        }
+    }
 
     return 0;
 }

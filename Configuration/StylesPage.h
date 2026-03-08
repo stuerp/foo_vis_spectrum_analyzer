@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
 public:
-    styles_page_t(int id) : page_t(id) { }
+    styles_page_t(int id) : page_t(id), _SelectedStyle() { }
 
     styles_page_t(const styles_page_t &) = delete;
     styles_page_t & operator=(const styles_page_t &) = delete;
@@ -30,9 +30,12 @@ public:
     void OnEditChange(UINT, int, CWindow) noexcept override final;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept override final;
     void OnButtonClick(UINT, int, CWindow) noexcept override final;
-    void OnDoubleClick(UINT code, int id, CWindow) noexcept final;
+    void OnDoubleClick(UINT code, int id, CWindow) noexcept override final;
 
+    LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept final;
     LRESULT OnChanged(LPNMHDR nmhd) noexcept override final;
+
+    LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept override final;
 
     BEGIN_MSG_MAP(styles_page_t)
         CHAIN_MSG_MAP(page_t)

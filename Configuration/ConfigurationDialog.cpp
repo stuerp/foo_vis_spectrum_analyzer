@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.02.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.03.08) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
@@ -150,7 +150,8 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
 /// </summary>
 LRESULT configuration_dialog_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-    _Pages[_State->_PageIndex]->OnConfigurationChanged(msg, wParam, lParam);
+    for (auto & Page : _Pages)
+        Page->OnConfigurationChanged(msg, wParam, lParam);
 
     SetMsgHandled(TRUE);
 

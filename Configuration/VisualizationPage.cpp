@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.02.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -287,7 +287,7 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
 
     auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -302,8 +302,6 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             break;
         }
 
-        #pragma region Bars
-
         case IDC_PEAK_MODE:
         {
             _State->_PeakMode = (PeakMode) SelectedIndex;
@@ -311,8 +309,6 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             UpdateControls();
             break;
         }
-
-        #pragma endregion
 
         case IDC_CHANNEL_PAIRS:
         {
@@ -336,7 +332,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -346,14 +342,6 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             return;
 
         // Peak indicator
-        case IDC_SMOOTHING_FACTOR:
-        {
-            if (!SetProperty(_State->_SmoothingFactor, std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor)))
-                return;
-
-            break;
-        }
-
         case IDC_HOLD_TIME:
         {
             if (!SetProperty(_State->_HoldTime, std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime)))
@@ -712,4 +700,36 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     }
 
     ConfigurationChanged(ChangedSettings);
+}
+
+/// <summary>
+/// Handles a notification from an UpDown control.
+/// </summary>
+LRESULT visualization_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
+{
+    if (_State == nullptr)
+        return -1;
+
+    auto ChangedSettings = Settings::All;
+
+    auto nmud = (LPNMUPDOWN) nmhd;
+
+    switch (nmhd->idFrom)
+    {
+        default:
+            return -1;
+
+        case IDC_RMS_WINDOW_SPIN:
+        {
+            if (!SetProperty(_State->_RMSWindow, ClampNewSpinPosition(nmud, MinRMSWindow, MaxRMSWindow, 1000.)))
+                return -1;
+
+            SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
+            break;
+        }
+    }
+
+    ConfigurationChanged(ChangedSettings);
+
+    return 0;
 }

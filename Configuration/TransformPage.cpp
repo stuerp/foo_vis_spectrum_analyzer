@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.02.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -80,7 +80,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 /// </summary>
 void transform_page_t::InitializeControls() noexcept
 {
-    #pragma region Transform
+    // Transform
     {
         auto w = (CComboBox) GetDlgItem(IDC_METHOD);
 
@@ -91,9 +91,8 @@ void transform_page_t::InitializeControls() noexcept
 
         w.SetCurSel((int) _State->_Transform);
     }
-    #pragma endregion
 
-    #pragma region FFT
+    // FFT
     {
         auto w = (CComboBox) GetDlgItem(IDC_NUM_BINS);
 
@@ -113,6 +112,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.SetCurSel((int) _State->_FFTMode);
     }
+
     {
         auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
 
@@ -123,6 +123,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.SetCurSel((int) _State->_SummationMethod);
     }
+
     {
         auto w = (CComboBox) GetDlgItem(IDC_MAPPING_METHOD);
 
@@ -133,10 +134,12 @@ void transform_page_t::InitializeControls() noexcept
 
         w.SetCurSel((int) _State->_MappingMethod);
     }
+
     {
         SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _State->_SmoothLowerFrequencies);
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _State->_SmoothGainTransition);
     }
+
     {
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SIZE)); _NumericEdits.push_back(ne); SetInteger(IDC_KERNEL_SIZE, (int64_t) _State->_KernelSize);
 
@@ -145,9 +148,9 @@ void transform_page_t::InitializeControls() noexcept
         w.SetRange32(MinKernelSize, MaxKernelSize);
         w.SetPos32(_State->_KernelSize);
     }
-    #pragma endregion
 
-    #pragma region Window Function
+
+    // Window Function
     {
         auto w = (CComboBox) GetDlgItem(IDC_WINDOW_FUNCTION);
 
@@ -169,10 +172,9 @@ void transform_page_t::InitializeControls() noexcept
     {
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_REACTION_ALIGNMENT)); _NumericEdits.push_back(ne); SetDouble(IDC_REACTION_ALIGNMENT, _State->_ReactionAlignment);
     }
-    #pragma endregion
 
-    #pragma region Brown-Puckette Kernel
 
+    // Brown-Puckette Kernel
     {
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BW_OFFSET)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_OFFSET, _State->_BandwidthOffset);
     }
@@ -204,10 +206,8 @@ void transform_page_t::InitializeControls() noexcept
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_KERNEL_ASYMMETRY)); _NumericEdits.push_back(ne); SetDouble(IDC_KERNEL_ASYMMETRY, _State->_KernelAsymmetry);
     }
 
-    #pragma endregion
 
-    #pragma region IIR (SWIFT / Analog-style)
-
+    // IIR (SWIFT / Analog-style)
     {
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FBO)); _NumericEdits.push_back(ne); SetInteger(IDC_FBO, (int64_t) _State->_FilterBankOrder);
     }
@@ -223,8 +223,6 @@ void transform_page_t::InitializeControls() noexcept
     SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
     SendDlgItemMessageW(IDC_COMPENSATE_BW, BM_SETCHECK, _State->_CompensateBW);
     SendDlgItemMessageW(IDC_PREWARPED_Q, BM_SETCHECK, _State->_PreWarpQ);
-
-    #pragma endregion
 
     UpdateControls();
 }
@@ -351,7 +349,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
     auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -389,6 +387,12 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
             UpdateControls();
             break;
         }
+
+        case IDC_SUMMATION_METHOD:
+        {
+            _State->_SummationMethod = (SummationMethod) SelectedIndex;
+            break;
+        }
     }
 
     ConfigurationChanged(ChangedSettings);
@@ -404,7 +408,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -413,8 +417,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        #pragma region FFT
-
+        // FFT
         case IDC_NUM_BINS_PARAMETER:
         {
             #pragma warning (disable: 4061)
@@ -463,10 +466,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma endregion
-
-        #pragma region Brown-Puckette CQT
-
+        // Brown-Puckette CQT
         case IDC_BW_OFFSET:
         {
             _State->_BandwidthOffset = std::clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset);
@@ -497,10 +497,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        #pragma endregion
-
-        #pragma region SWIFT / Analog-style
-
+        // SWIFT / Analog-style
         case IDC_FBO:
         {
             _State->_FilterBankOrder = std::clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
@@ -518,8 +515,6 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             _State->_IIRBandwidth = std::clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
             break;
         }
-
-        #pragma endregion
     }
 
     ConfigurationChanged(ChangedSettings);
@@ -702,7 +697,9 @@ LRESULT transform_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_KERNEL_SIZE_SPIN:
         {
-            _State->_KernelSize = ClampNewSpinPosition(nmud, MinKernelSize, MaxKernelSize);
+            if (!SetProperty(_State->_KernelSize, ClampNewSpinPosition(nmud, MinKernelSize, MaxKernelSize)))
+                return -1;
+
             break;
         }
     }

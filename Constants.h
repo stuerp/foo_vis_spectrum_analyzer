@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2025.11.08) P. Stuer **/
+/** $VER: Constants.h (2026.03.08) P. Stuer **/
 
 #pragma once
 
@@ -574,7 +574,7 @@ enum class VerticalTextAlignment : uint32_t
     Bottom = 2
 };
 
-enum class Settings : uint64_t
+enum class Settings : uint32_t
 {
     None = 0,
 
@@ -583,5 +583,10 @@ enum class Settings : uint64_t
 
     Oscilloscope = PhosphorEffect,
 
-    All = ~0,
+    All = ~0u,
 };
+
+inline bool operator==(Settings a, Settings b)
+{
+    return (size_t) a == (size_t) b;
+}

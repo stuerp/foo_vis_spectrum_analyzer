@@ -329,6 +329,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
                     UpdateState(Settings::All);
 
+                    // Notify the configuration dialog.
                     if (_ConfigurationDialog.IsWindow())
                     {
                         _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
@@ -462,17 +463,17 @@ void uielement_t::OnColorsChanged()
         _CriticalSection.Leave();
     }
 
-    // Notify the configuration dialog.
+    // Notify the configuration dialog about the changed UI colors.
     if (_ConfigurationDialog.IsWindow())
     {
-        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS);
+        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors changed).");
+        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors).");
     }
 }
 
 /// <summary>
-/// Handles the UM_CONFIGURATION_CHANGED message.
+/// Handles the UM_CONFIGURATION_CHANGED message from the configuration dialog.
 /// </summary>
 LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {

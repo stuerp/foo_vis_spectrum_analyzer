@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: CommonPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -29,6 +29,7 @@ public:
     void OnSelectionChanged(UINT, int, CWindow) noexcept override final;
     void OnEditChange(UINT, int, CWindow) noexcept override final;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept override final;
+    void OnButtonClick(UINT, int id, CWindow) noexcept override final;
 
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
 

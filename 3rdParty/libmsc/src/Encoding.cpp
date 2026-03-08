@@ -208,7 +208,7 @@ bool IsUTF8(const char * text, size_t size) noexcept
 /// <summary>
 /// Returns true if the specified text is ASCII encoded.
 /// </summary>
-bool IsASCII(const char * text) noexcept
+static bool IsASCII(const char * text) noexcept
 {
     while (*text)
     {
@@ -299,7 +299,7 @@ bool GetCodePageFromEncoding(const std::string & encoding, uint32_t & codePage) 
 
     Key.resize(encoding.size());
 
-    std::transform(encoding.begin(), encoding.end(), Key.begin(), ::tolower);
+    std::transform(encoding.begin(), encoding.end(), Key.begin(), [](char c){ return (char) std::tolower(c); });
 
     auto Item = EncodingToCodePage.find(Key);
 

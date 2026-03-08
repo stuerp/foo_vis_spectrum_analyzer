@@ -1,5 +1,5 @@
 
-/** $VER: FiltersPage.cpp (2026.02.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FiltersPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -230,7 +230,7 @@ void filters_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w
 
     const auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -259,7 +259,7 @@ void filters_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -328,49 +328,63 @@ LRESULT filters_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_SLOPE_FN_OFFS_SPIN:
         {
-            _State->_SlopeFunctionOffset = ClampNewSpinPosition(nmud, MinSlopeFunctionOffset, MaxSlopeFunctionOffset, 100.);
+            if (!SetProperty(_State->_SlopeFunctionOffset, ClampNewSpinPosition(nmud, MinSlopeFunctionOffset, MaxSlopeFunctionOffset, 100.)))
+                return -1;
+
             SetDouble(IDC_SLOPE_FN_OFFS, _State->_SlopeFunctionOffset);
             break;
         }
 
         case IDC_SLOPE_SPIN:
         {
-            _State->_Slope = ClampNewSpinPosition(nmud, MinSlope, MaxSlope, 100.);
+            if (!SetProperty(_State->_Slope, ClampNewSpinPosition(nmud, MinSlope, MaxSlope, 100.)))
+                return -1;
+
             SetDouble(IDC_SLOPE, _State->_Slope);
             break;
         }
 
         case IDC_SLOPE_OFFS_SPIN:
         {
-            _State->_SlopeOffset = ClampNewSpinPosition(nmud, MinSlopeOffset, MaxSlopeOffset, 100.);
+            if (!SetProperty(_State->_SlopeOffset, ClampNewSpinPosition(nmud, MinSlopeOffset, MaxSlopeOffset, 100.)))
+                return -1;
+
             SetDouble(IDC_SLOPE_OFFS, _State->_SlopeOffset);
             break;
         }
 
         case IDC_EQ_AMT_SPIN:
         {
-            _State->_EqualizeAmount = ClampNewSpinPosition(nmud, MinEqualizeAmount, MaxEqualizeAmount, 100.);
+            if (!SetProperty(_State->_EqualizeAmount, ClampNewSpinPosition(nmud, MinEqualizeAmount, MaxEqualizeAmount, 100.)))
+                return -1;
+
             SetDouble(IDC_EQ_AMT, _State->_EqualizeAmount);
             break;
         }
 
         case IDC_EQ_OFFS_SPIN:
         {
-            _State->_EqualizeOffset = ClampNewSpinPosition(nmud, MinEqualizeOffset, MaxEqualizeOffset, 100.);
+            if (!SetProperty(_State->_EqualizeOffset, ClampNewSpinPosition(nmud, MinEqualizeOffset, MaxEqualizeOffset, 100.)))
+                return -1;
+
             SetDouble(IDC_EQ_OFFS, _State->_EqualizeOffset);
             break;
         }
 
         case IDC_EQ_DEPTH_SPIN:
         {
-            _State->_EqualizeDepth = ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.); 
+            if (!SetProperty(_State->_EqualizeDepth, ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.)))
+                return -1;
+
             SetDouble(IDC_EQ_DEPTH, _State->_EqualizeDepth);
             break;
         }
 
         case IDC_WT_AMT_SPIN:
         {
-            _State->_WeightingAmount = ClampNewSpinPosition(nmud, MinWeightingAmount, MaxWeightingAmount, 100.);
+            if (!SetProperty(_State->_WeightingAmount, ClampNewSpinPosition(nmud, MinWeightingAmount, MaxWeightingAmount, 100.)))
+                return -1;
+
             SetDouble(IDC_WT_AMT, _State->_WeightingAmount);
             break;
         }

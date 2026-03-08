@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.cpp (2026.02.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FrequenciesPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -286,7 +286,7 @@ void frequencies_page_t::OnSelectionChanged(UINT notificationCode, int id, CWind
 
     const auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -304,12 +304,6 @@ void frequencies_page_t::OnSelectionChanged(UINT notificationCode, int id, CWind
         case IDC_SCALING_FUNCTION:
         {
             _State->_ScalingFunction = (ScalingFunction) SelectedIndex;
-            break;
-        }
-
-        case IDC_SUMMATION_METHOD:
-        {
-            _State->_SummationMethod = (SummationMethod) SelectedIndex;
             break;
         }
 
@@ -334,7 +328,7 @@ void frequencies_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -445,68 +439,88 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_NUM_BANDS_SPIN:
         {
-            _State->_BandCount = (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands);
+            if (!SetProperty(_State->_BandCount, (size_t) ClampNewSpinPosition(nmud, MinBands, MaxBands)))
+                return -1;
+
             SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
             break;
         }
 
         case IDC_LO_FREQUENCY_SPIN:
         {
-            _State->_LoFrequency = std::min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_HiFrequency);
+            if (!SetProperty(_State->_LoFrequency, std::min(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_HiFrequency)))
+                return -1;
+
             SetDouble(IDC_LO_FREQUENCY, _State->_LoFrequency);
             break;
         }
 
         case IDC_HI_FREQUENCY_SPIN:
         {
-            _State->_HiFrequency = std::max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_LoFrequency);
+            if (!SetProperty(_State->_HiFrequency, std::max(ClampNewSpinPosition(nmud, MinFrequency, MaxFrequency, 100.), _State->_LoFrequency)))
+                return -1;
+
             SetDouble(IDC_HI_FREQUENCY, _State->_HiFrequency);
             break;
         }
 
         case IDC_MIN_NOTE_SPIN:
         {
-            _State->_MinNote = std::min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MaxNote);
+            if (!SetProperty(_State->_MinNote, std::min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MaxNote)))
+                return -1;
+
             SetNote(IDC_MIN_NOTE, _State->_MinNote);
             break;
         }
 
         case IDC_MAX_NOTE_SPIN:
         {
-            _State->_MaxNote = std::max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MinNote);
+            if (!SetProperty(_State->_MaxNote, std::max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MinNote)))
+                return -1;
+
             SetNote(IDC_MAX_NOTE, _State->_MaxNote);
             break;
         }
 
         case IDC_BANDS_PER_OCTAVE_SPIN:
         {
-            _State->_BandsPerOctave = (uint32_t) ClampNewSpinPosition(nmud, MinBandsPerOctave, MaxBandsPerOctave);
+            if (!SetProperty(_State->_BandsPerOctave, (uint32_t) ClampNewSpinPosition(nmud, MinBandsPerOctave, MaxBandsPerOctave)))
+                return -1;
+
             break;
         }
 
         case IDC_PITCH_SPIN:
         {
-            _State->_TuningPitch = ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.);
+            if (!SetProperty(_State->_TuningPitch, ClampNewSpinPosition(nmud, MinPitch, MaxPitch, 100.)))
+                return -1;
+
             SetDouble(IDC_PITCH, _State->_TuningPitch);
             break;
         }
 
         case IDC_TRANSPOSE_SPIN:
         {
-            _State->_Transpose = ClampNewSpinPosition(nmud, MinTranspose, MaxTranspose);
+            if (!SetProperty(_State->_Transpose, ClampNewSpinPosition(nmud, MinTranspose, MaxTranspose)))
+                return -1;
+
             break;
         }
 
         case IDC_SKEW_FACTOR_SPIN:
         {
-            _State->_SkewFactor = ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.);
+            if (!SetProperty(_State->_SkewFactor, ClampNewSpinPosition(nmud, MinSkewFactor, MaxSkewFactor, 100.)))
+                return -1;
+
             SetDouble(IDC_SKEW_FACTOR, _State->_SkewFactor);
             break;
         }
 
         case IDC_BANDWIDTH_SPIN:
         {
-            _State->_Bandwidth = ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.);
+            if (!SetProperty(_State->_Bandwidth, ClampNewSpinPosition(nmud, MinBandwidth, MaxBandwidth, 10.)))
+                return -1;
+
             SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
             break;
         }

@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.02.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -190,20 +190,26 @@ void common_page_t::UpdateControls() noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
 
-    const bool SupportsFFT = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
+    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
 
-    for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SMOOTHING_FACTOR, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
+    for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(ID).EnableWindow(SupportsFFT);
 
     // Smoothing
-    GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(_State->_SmoothingMethod != SmoothingMethod::None);
+    GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
 
     // Artwork
-    GetDlgItem(IDC_ARTWORK_TYPE).EnableWindow(_State->_ShowArtworkOnBackground);
-    GetDlgItem(IDC_FIT_MODE).EnableWindow(_State->_ShowArtworkOnBackground);
-    GetDlgItem(IDC_FIT_WINDOW).EnableWindow(_State->_ShowArtworkOnBackground);
-    GetDlgItem(IDC_ARTWORK_OPACITY).EnableWindow(_State->_ShowArtworkOnBackground);
-    GetDlgItem(IDC_ARTWORK_FILE_PATH).EnableWindow(_State->_ShowArtworkOnBackground);
+    GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsFFT);
+
+    const bool SupportsArtworkOnBackground = SupportsFFT && _State->_ShowArtworkOnBackground;
+
+    for (const auto ID :
+    {
+        IDC_FIT_MODE, IDC_FIT_WINDOW,
+        IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN,
+        IDC_ARTWORK_FILE_PATH
+    })
+        GetDlgItem(ID).EnableWindow(SupportsArtworkOnBackground);
 }
 
 /// <summary>
@@ -230,7 +236,7 @@ void common_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     const auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -289,7 +295,7 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -298,6 +304,33 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         default:
             return;
 
+        // Spectrum Smoothing
+        case IDC_SMOOTHING_FACTOR:
+        {
+            if (!SetProperty(_State->_SmoothingFactor, std::clamp(::_wtof(Text), MinSmoothingFactor, MaxSmoothingFactor)))
+                return;
+
+            break;
+        }
+
+        // Artwork
+        case IDC_NUM_ARTWORK_COLORS:
+        {
+            if (!SetProperty(_State->_NumArtworkColors, std::clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors)))
+                return;
+
+            break;
+        }
+
+        case IDC_LIGHTNESS_THRESHOLD:
+        {
+            if (!SetProperty(_State->_LightnessThreshold, (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold)))
+                return;
+
+            break;
+        }
+
+        // Artwork Background
         case IDC_ARTWORK_OPACITY:
         {
             if (!SetProperty(_State->_ArtworkOpacity, (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinArtworkOpacity, MaxArtworkOpacity)))
@@ -331,7 +364,14 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        // Artwork Colors
+        // Spectrum smoothing
+        case IDC_SMOOTHING_FACTOR:
+        {
+            SetDouble(id, _State->_SmoothingFactor, 0, 2);
+            break;
+        }
+
+        // Artwork
         case IDC_NUM_ARTWORK_COLORS:
         {
             SetInteger(id, _State->_NumArtworkColors); break;
@@ -342,10 +382,61 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             SetInteger(id, (int64_t) (_State->_LightnessThreshold * 100.f)); break;
         }
 
-        // Artwork Image
+        // Artwork Background
         case IDC_ARTWORK_OPACITY:
         {
             SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f)); break;
+        }
+    }
+
+    ConfigurationChanged(ChangedSettings);
+}
+
+/// <summary>
+/// Handles the notification when a button is clicked.
+/// </summary>
+void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
+{
+    if (_State == nullptr)
+        return;
+
+    auto ChangedSettings = Settings::All;
+
+    switch (id)
+    {
+        default:
+            return;
+
+        case IDC_SHOW_TOOLTIPS:
+        {
+            _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SUPPRESS_MIRROR_IMAGE:
+        {
+            _State->_SuppressMirrorImage = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_VISUALIZE_DURING_PAUSE:
+        {
+            _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_ARTWORK_BACKGROUND:
+        {
+            _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+            break;
+        }
+
+        case IDC_FIT_WINDOW:
+        {
+            _State->_FitWindow = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
         }
     }
 
@@ -371,21 +462,27 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_NUM_ARTWORK_COLORS_SPIN:
         {
-            _State->_NumArtworkColors = (size_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors);
+            if (!SetProperty(_State->_NumArtworkColors, (uint32_t) ClampNewSpinPosition(nmud, MinArtworkColors, MaxArtworkColors)))
+                return -1;
+
             SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
             break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD_SPIN:
         {
-            _State->_LightnessThreshold = (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.);
+            if (!SetProperty(_State->_LightnessThreshold, (FLOAT) ClampNewSpinPosition(nmud, MinLightnessThreshold, MaxLightnessThreshold, 100.)))
+                return -1;
+
             SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
             break;
         }
 
         case IDC_ARTWORK_OPACITY_SPIN:
         {
-            _State->_ArtworkOpacity = (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.);
+            if (!SetProperty(_State->_ArtworkOpacity, (FLOAT) ClampNewSpinPosition(nmud, MinArtworkOpacity, MaxArtworkOpacity, 100.)))
+                return -1;
+
             SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
             break;
         }

@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.02.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -17,7 +17,7 @@ BOOL styles_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    DlgResize_Init(false, true);
+    DlgResize_Init(false, true); // This page has resizable controls.
 
     const std::unordered_map<int, const char *> Tips =
     {
@@ -255,7 +255,7 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     auto cb = (CComboBox) w;
 
-    int SelectedIndex = cb.GetCurSel();
+    const int SelectedIndex = cb.GetCurSel();
 
     switch (id)
     {
@@ -349,7 +349,7 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
     auto ChangedSettings = Settings::All;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -357,19 +357,6 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     {
         default:
             return;
-
-        // Artwork Colors
-        case IDC_NUM_ARTWORK_COLORS:
-        {
-            _State->_NumArtworkColors = std::clamp((uint32_t) ::_wtoi(Text), MinArtworkColors, MaxArtworkColors);
-            break;
-        }
-
-        case IDC_LIGHTNESS_THRESHOLD:
-        {
-            _State->_LightnessThreshold = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinLightnessThreshold, MaxLightnessThreshold);
-            break;
-        }
 
         // Color Scheme
         case IDC_POSITION:
@@ -644,6 +631,51 @@ void styles_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
 }
 
 /// <summary>
+/// Handles a notification from an UpDown control.
+/// </summary>
+LRESULT styles_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
+{
+    if (_State == nullptr)
+        return -1;
+
+    auto ChangedSettings = Settings::All;
+
+    auto nmud = (LPNMUPDOWN) nmhd;
+
+    switch (nmhd->idFrom)
+    {
+        default:
+            return -1;
+
+        case IDC_OPACITY_SPIN:
+        {
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
+
+            if (!SetProperty(style->_Opacity, (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.)))
+                return -1;
+
+            SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
+            break;
+        }
+
+        case IDC_THICKNESS_SPIN:
+        {
+            style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
+
+            if (!SetProperty(style->_Thickness, (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.)))
+                return -1;
+
+            SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
+            break;
+        }
+    }
+
+    ConfigurationChanged(ChangedSettings);
+
+    return 0;
+}
+
+/// <summary>
 /// Handles a Change notification from the custom controls.
 /// </summary>
 LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
@@ -849,4 +881,27 @@ void styles_page_t::UpdateGradientStopPositons(style_t * style, size_t index) co
     // Save the current result as custom gradient stops.
     style->_ColorScheme = ColorScheme::Custom;
     style->_CustomGradientStops = gs;
+}
+
+/// <summary>
+/// Handles the UM_CONFIGURATION_CHANGED message.
+/// </summary>
+LRESULT styles_page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+{
+    __super::OnConfigurationChanged(msg, wParam, lParam);
+
+    switch (wParam)
+    {
+        case CC_COLORS:
+        {
+            _IsInitializing = true;
+
+            InitializeControls();
+
+            _IsInitializing = false;
+            break;
+        }
+    }
+
+    return 0;
 }

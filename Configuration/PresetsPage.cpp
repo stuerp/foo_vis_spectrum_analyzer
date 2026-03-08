@@ -16,7 +16,7 @@ BOOL presets_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    DlgResize_Init(false, true);
+    DlgResize_Init(false, true); // This page has resizable controls.
 
     const std::unordered_map<int, const char *> Tips =
     {
@@ -54,13 +54,15 @@ void presets_page_t::InitializeControls() noexcept
 /// </summary>
 void presets_page_t::UpdateControls() noexcept
 {
-    WCHAR PresetName[MAX_PATH];
+    WCHAR PresetName[MAX_PATH] = { };
 
     GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
-    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(PresetName[0] != '\0');
-    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(PresetName[0] != '\0');
-    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(PresetName[0] != '\0');
+    const bool HasName = PresetName[0] != '\0';
+
+    GetDlgItem(IDC_PRESET_LOAD).  EnableWindow(HasName);
+    GetDlgItem(IDC_PRESET_SAVE).  EnableWindow(HasName);
+    GetDlgItem(IDC_PRESET_DELETE).EnableWindow(HasName);
 }
 
 /// <summary>
@@ -73,7 +75,7 @@ void presets_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w
 
     auto lb = (CListBox) GetDlgItem(IDC_PRESET_NAMES);
 
-    int SelectedIndex = lb.GetCurSel();
+    const int SelectedIndex = lb.GetCurSel();
 
     if (!msc::InRange(SelectedIndex, 0, (int) _PresetNames.size() - 1))
         return;
@@ -91,7 +93,7 @@ void presets_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    WCHAR Text[MAX_PATH];
+    WCHAR Text[MAX_PATH] = { };
 
     GetDlgItemTextW(id, Text, _countof(Text));
 
@@ -162,7 +164,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_PRESET_LOAD:
         {
-            WCHAR PresetName[MAX_PATH];
+            WCHAR PresetName[MAX_PATH] = { };
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
@@ -181,7 +183,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_PRESET_SAVE:
         {
-            WCHAR PresetName[MAX_PATH];
+            WCHAR PresetName[MAX_PATH] = { };
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
@@ -193,7 +195,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_PRESET_DELETE:
         {
-            WCHAR PresetName[MAX_PATH];
+            WCHAR PresetName[MAX_PATH] = { };
 
             GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
 
