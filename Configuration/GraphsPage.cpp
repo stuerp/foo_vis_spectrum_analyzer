@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.03.11) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -86,6 +86,7 @@ void graphs_page_t::InitializeControls() noexcept
 
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
+    // Vertical Layout
     {
         SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
     }
@@ -206,7 +207,12 @@ void graphs_page_t::UpdateControls() noexcept
 {
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+//  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
+
     const bool IsOscilloscopeXY = IsOscilloscope && _State->_XYMode;
+
+    /* Graph Descriptions */
 
     {
         auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
@@ -238,8 +244,17 @@ void graphs_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
 
+    /* Vertical Layout **/
+
+    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter);
+
+    GetDlgItem(IDC_VERTICAL_LAYOUT).EnableWindow(SupportsVerticalLayout);
+
+    /* Graph settings */
+
     const auto & gd = _State->_GraphDescriptions[(size_t) _SelectedGraph];
 
+    // Description
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gd._Description.c_str());
 
     // Layout
@@ -249,9 +264,12 @@ void graphs_page_t::UpdateControls() noexcept
         CheckDlgButton(IDC_FLIP_HORIZONTALLY, gd._FlipHorizontally);
         CheckDlgButton(IDC_FLIP_VERTICALLY, gd._FlipVertically);
 
-        const bool SupportsLayout = !IsOscilloscope;
+        // Enable / Disable the required controls.
+        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!IsOscilloscope);
 
-        for (const auto ID : { IDC_HORIZONTAL_ALIGNMENT, IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
+        const bool SupportsLayout = !(IsOscilloscope || IsBitMeter);
+
+        for (const auto ID : { IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
             GetDlgItem(ID).EnableWindow(SupportsLayout);
     }
 
@@ -262,8 +280,10 @@ void graphs_page_t::UpdateControls() noexcept
         CheckDlgButton(IDC_X_AXIS_TOP,    gd._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, gd._XAxisBottom);
 
-        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(TRUE);
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !IsOscilloscope);
+        // Enable / Disable the required controls.
+        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!IsBitMeter);
+
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !(IsOscilloscope || IsBitMeter));
         GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gd.HasXAxis() && !IsOscilloscope);
     }
 
@@ -283,16 +303,22 @@ void graphs_page_t::UpdateControls() noexcept
         SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
         CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gd._AmplitudeStep * 10.));
 
-        for (const auto & Iter : { IDC_Y_AXIS_LEFT, IDC_Y_AXIS_RIGHT, IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gd.HasYAxis() && !IsOscilloscopeXY);
-
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
         SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
+
+        // Enable / Disable the required controls.
+        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!IsBitMeter);
+
+        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY));
+        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY || IsBitMeter));
+
+        for (const auto & Iter : { IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
+            GetDlgItem(Iter).EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY || IsBitMeter));
 
         const bool IsLinear = (gd._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !IsOscilloscopeXY);
+            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsOscilloscopeXY || IsBitMeter));
     }
 
     // Channels
@@ -309,6 +335,7 @@ void graphs_page_t::UpdateControls() noexcept
         }
     }
 
+    // Channel Pairs
     GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter || IsOscilloscope);
     GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || IsOscilloscopeXY);
 

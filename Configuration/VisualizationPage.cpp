@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.03.10) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -69,7 +69,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -207,6 +207,9 @@ void visualization_page_t::UpdateControls() noexcept
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+//  const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+
+//  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
     const bool HasPeaks = (IsBars || IsCurve || IsRadialBars || IsRadialCurve);
 

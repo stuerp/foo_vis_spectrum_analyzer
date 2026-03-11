@@ -286,16 +286,13 @@ void spectrogram_t::Resize() noexcept
 }
 
 /// <summary>
-/// Renders the spectrum analysis as a Spectrogram.
+/// Renders the spectrum analysis as a spectrogram.
 /// </summary>
 void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
-        return;
-
-    if (_State->_IsPaused && !_State->_VisualizeDuringPause)
         return;
 
     // Update the offscreen bitmap.
@@ -307,32 +304,35 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Draw the offscreen bitmap.
     if (_State->_HorizontalSpectrogram)
     {
-        SetTransform(deviceContext, _BitmapRect);
-
-        if (_State->_ScrollingSpectrogram)
+        if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
-            // Render the new lines.
-            D2D1_RECT_F Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
-            D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
+            SetTransform(deviceContext, _BitmapRect);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+            if (_State->_ScrollingSpectrogram)
+            {
+                // Render the new lines.
+                D2D1_RECT_F Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
+                D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
-            Src.right = Src.left;
-            Src.left  = 0.f;
+                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
-            Dst.left  = Dst.right;
-            Dst.right = _BitmapSize.width;
+                Src.right = Src.left;
+                Src.left  = 0.f;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                Dst.left  = Dst.right;
+                Dst.right = _BitmapSize.width;
+
+                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+            }
+            else
+            {
+                D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+
+                deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            }
+
+            ResetTransform(deviceContext);
         }
-        else
-        {
-            D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
-
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-        }
-
-        ResetTransform(deviceContext);
 
         // Draw the Time axis.
         {
@@ -365,33 +365,36 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     }
     else
     {
-        SetTransform(deviceContext, _BitmapRect);
-
-        if (_State->_ScrollingSpectrogram)
+        if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
-            // Render the new lines.
-            D2D1_RECT_F Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
-            D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
+            SetTransform(deviceContext, _BitmapRect);
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+            if (_State->_ScrollingSpectrogram)
+            {
+                // Render the new lines.
+                D2D1_RECT_F Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
+                D2D1_RECT_F Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
 
-            // Render the old lines.
-            Src.bottom = Src.top;
-            Src.top    = 0.f;
+                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
-            Dst.top    = Dst.bottom;
-            Dst.bottom = _BitmapSize.height;
+                // Render the old lines.
+                Src.bottom = Src.top;
+                Src.top    = 0.f;
 
-            deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                Dst.top    = Dst.bottom;
+                Dst.bottom = _BitmapSize.height;
+
+                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+            }
+            else
+            {
+                D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+
+                deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            }
+
+            ResetTransform(deviceContext);
         }
-        else
-        {
-            D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
-
-            deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle->_Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-        }
-
-        ResetTransform(deviceContext);
 
         // Draw the Time axis.
         {

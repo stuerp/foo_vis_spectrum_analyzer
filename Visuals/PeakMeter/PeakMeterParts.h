@@ -107,7 +107,7 @@ protected:
 class bar_t : public part_t
 {
 public:
-    bar_t(const state_t * state, const graph_description_t * settings, const measurement_t * measurement) noexcept : part_t(state, settings)
+    bar_t(const state_t * state, const graph_description_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
     {
         _Measurement = measurement;
 
@@ -131,7 +131,7 @@ private:
     void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
 
 private:
-    const measurement_t * _Measurement;
+    const peak_measurement_t * _Measurement;
     double _dBFSZeroNormalized;
 
     D2D1_MATRIX_3X2_F _Transform;

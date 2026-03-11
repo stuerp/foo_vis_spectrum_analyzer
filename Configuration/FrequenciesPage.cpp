@@ -225,8 +225,10 @@ void frequencies_page_t::UpdateControls() noexcept
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+    const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool SupportsFrequencies = !(IsPeakMeter && IsLevelMeter && IsOscilloscope);
+    const bool SupportsFrequencies = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     if (SupportsFrequencies)
     {

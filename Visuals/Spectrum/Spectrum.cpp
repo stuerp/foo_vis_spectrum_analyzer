@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2025.10.19) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.03.11) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -132,6 +132,8 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::PeakMeter:
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
+        case VisualizationType::BitMeter:
+
         case VisualizationType::Tester:
 
         default:
@@ -184,15 +186,18 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
                 RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
         }
 
-        const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
-
-        if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
+        if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
-            if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
-                RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.MaxValue, fb.Opacity);
+            const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
-            if (fb.Value > 0.)
-                RenderBar(deviceContext, Rect, _BarAreaStyle, _BarTopStyle, fb.Value, fb.Opacity);
+            if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
+            {
+                if ((_State->_PeakMode != PeakMode::None) && (fb.MaxValue > 0.))
+                    RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.MaxValue, fb.Opacity);
+
+                if (fb.Value > 0.)
+                    RenderBar(deviceContext, Rect, _BarAreaStyle, _BarTopStyle, fb.Value, fb.Opacity);
+            }
         }
 
         x1 = x2;
@@ -269,6 +274,9 @@ void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F &
 /// </summary>
 void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_IsPaused && !_State->_VisualizeDuringPause)
+        return;
+
     HRESULT hr = S_OK;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -341,6 +349,9 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_IsPaused && !_State->_VisualizeDuringPause)
+        return;
+
     if (_Analysis->_FrequencyBands.empty())
         return;
 
@@ -468,6 +479,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_IsPaused && !_State->_VisualizeDuringPause)
+        return;
+
     HRESULT hr = S_OK;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);

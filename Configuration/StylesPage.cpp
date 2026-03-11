@@ -137,6 +137,9 @@ void styles_page_t::InitializeControls() noexcept
 /// </summary>
 void styles_page_t::UpdateControls() noexcept
 {
+    if (_ActiveStyles.empty())
+        return;
+
     _IgnoreNotifications = true;
 
     style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
@@ -196,7 +199,8 @@ void styles_page_t::UpdateControls() noexcept
         }
     }
 
-    UpdateCurrentColor(style);
+    // Updates the current color based on the color source.
+    style->UpdateCurrentColor(_State->_StyleManager.DominantColor, _State->_StyleManager.UserInterfaceColors);
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
@@ -228,8 +232,6 @@ void styles_page_t::UpdateControls() noexcept
     UpdateColorControls();
 
     _IgnoreNotifications = false;
-
-    ConfigurationChanged(Settings::All);
 }
 
 /// <summary>
@@ -831,21 +833,13 @@ void styles_page_t::UpdateColorControls() noexcept
     const bool HasMoreThanOneColor = (gs.size() > 1);                         // Remove and Reverse are only enabled when there is more than 1 color.
     const bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
 
-        GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
-        GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+    GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
+    GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 
-        GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
+    GetDlgItem(IDC_REVERSE).EnableWindow(HasMoreThanOneColor && !UseArtwork);
 
-        GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
-        GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
-}
-
-/// <summary>
-/// Updates the current color based on the color source.
-/// </summary>
-void styles_page_t::UpdateCurrentColor(style_t * style) const noexcept
-{
-    style->UpdateCurrentColor(_State->_StyleManager.DominantColor, _State->_StyleManager.UserInterfaceColors);
+    GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
+    GetDlgItem(IDC_SPREAD).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
 }
 
 /// <summary>
@@ -896,7 +890,7 @@ LRESULT styles_page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lP
         {
             _IsInitializing = true;
 
-            InitializeControls();
+            UpdateControls();
 
             _IsInitializing = false;
             break;

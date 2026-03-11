@@ -235,15 +235,16 @@ void transform_page_t::UpdateControls() noexcept
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool SupportsTransform = !(IsPeakMeter && IsLevelMeter && IsOscilloscope && IsTester);
+    const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
+
+    const bool IsFFT = (_State->_Transform == Transform::FFT);
+    const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
 
     if (SupportsTransform)
     {
-        const bool IsFFT = (_State->_Transform == Transform::FFT);
-        const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
-
         // Transform
         bool HasParameter = (_State->_WindowFunction == WindowFunction::PowerOfSine)
                          || (_State->_WindowFunction == WindowFunction::PowerOfCircle)
@@ -265,28 +266,6 @@ void transform_page_t::UpdateControls() noexcept
             for (const auto & Iter : { IDC_NUM_BINS,  })
                 GetDlgItem(Iter).EnableWindow(IsFFT);
 
-            const bool NotFixed = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
-
-            GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsIIR) && NotFixed);
-
-            #pragma warning (disable: 4061)
-            switch (_State->_FFTMode)
-            {
-                default:
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"");
-                    break;
-
-                case FFTMode::FFTCustom:
-                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom);
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
-                    break;
-
-                case FFTMode::FFTDuration:
-                    SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration);
-                    SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
-                    break;
-            }
-            #pragma warning (default: 4061)
         }
 
         // Brown-Puckette CQT
@@ -313,7 +292,7 @@ void transform_page_t::UpdateControls() noexcept
         {
             IDC_METHOD,
             IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
-            IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER,
+//          IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER,
             IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
@@ -323,6 +302,29 @@ void transform_page_t::UpdateControls() noexcept
         })
             GetDlgItem(Iter).EnableWindow(SupportsTransform);
     }
+
+    const bool IsVariableSize = (_State->_FFTMode == FFTMode::FFTCustom) || (_State->_FFTMode == FFTMode::FFTDuration);
+
+    GetDlgItem(IDC_NUM_BINS_PARAMETER).EnableWindow((IsFFT || IsIIR) && IsVariableSize);
+
+    #pragma warning (disable: 4061)
+    switch (_State->_FFTMode)
+    {
+        default:
+            SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"");
+            break;
+
+        case FFTMode::FFTCustom:
+            SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTCustom);
+            SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"samples");
+            break;
+
+        case FFTMode::FFTDuration:
+            SetInteger(IDC_NUM_BINS_PARAMETER, (int64_t) _State->_FFTDuration);
+            SetDlgItemTextW(IDC_NUM_BINS_PARAMETER_UNIT, L"ms");
+            break;
+    }
+    #pragma warning (default: 4061)
 }
 
 /// <summary>

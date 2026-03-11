@@ -30,7 +30,7 @@ public:
     peak_meter_t(peak_meter_t &&) = delete;
     peak_meter_t & operator=(peak_meter_t &&) = delete;
 
-    virtual ~peak_meter_t();
+    virtual ~peak_meter_t() noexcept;
 
     // element_t
     void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;

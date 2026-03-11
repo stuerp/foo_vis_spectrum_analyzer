@@ -40,7 +40,7 @@ struct frequency_band_t
         GradientColor     = other.GradientColor;
     }
 
-    virtual ~frequency_band_t() { }
+    virtual ~frequency_band_t() noexcept { }
 
     double RawValue;    // [0, 1]
     double Value;    // [0, 1]

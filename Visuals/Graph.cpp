@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.02.15) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.03.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -66,7 +66,12 @@ void graph_t::Initialize(state_t * state, const graph_description_t * settings, 
                 _Visualization = std::make_unique<oscilloscope_xy_t>();
             break;
 
+        case VisualizationType::BitMeter:
+            _Visualization = std::make_unique<bit_meter_t>();
+            break;
+
         case VisualizationType::Tester:
+        default:
             _Visualization = std::make_unique<tester_t>();
             break;
     }
@@ -119,10 +124,7 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 /// </summary>
 void graph_t::Reset() noexcept
 {
-    for (auto & fb : _Analysis._FrequencyBands)
-        fb.Value = 0.;
-
-    _Analysis.ResetMeasurements();
+    _Analysis.Reset();
 
     _Visualization->Reset();
 }
@@ -217,7 +219,7 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
     if (!_State->_ShowArtworkOnBackground)
         return;
 
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter) || (_State->_VisualizationType == VisualizationType::Oscilloscope))
         return;
 
     if (artwork.Bitmap() == nullptr)

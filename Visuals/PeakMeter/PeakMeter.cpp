@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.01.25) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.03.11) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -21,7 +21,7 @@ peak_meter_t::peak_meter_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-peak_meter_t::~peak_meter_t()
+peak_meter_t::~peak_meter_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -98,7 +98,7 @@ void peak_meter_t::CreateParts() noexcept
     {
         if (_Settings->_FlipVertically)
         {
-            for (auto Measurement = _Analysis->_Measurements.rbegin(); Measurement != _Analysis->_Measurements.rend(); ++Measurement)
+            for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -110,7 +110,7 @@ void peak_meter_t::CreateParts() noexcept
         }
         else
         {
-            for (auto Measurement = _Analysis->_Measurements.begin(); Measurement != _Analysis->_Measurements.end(); ++Measurement)
+            for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -125,7 +125,7 @@ void peak_meter_t::CreateParts() noexcept
     {
         if (_Settings->_FlipHorizontally)
         {
-            for (auto Measurement = _Analysis->_Measurements.rbegin(); Measurement != _Analysis->_Measurements.rend(); ++Measurement)
+            for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -137,7 +137,7 @@ void peak_meter_t::CreateParts() noexcept
         }
         else
         {
-            for (auto Measurement = _Analysis->_Measurements.begin(); Measurement != _Analysis->_Measurements.end(); ++Measurement)
+            for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
                     _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -366,7 +366,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
-    if (SUCCEEDED(hr) && (_RenderedChannels != _Analysis->_MeasuredChannels))
+    if (SUCCEEDED(hr) && (_RenderedChannels != _Analysis->_PeakMeasuredChannels))
     {
         DeleteParts();
 
@@ -374,7 +374,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         MeasureParts(deviceContext);
 
-        _RenderedChannels = _Analysis->_MeasuredChannels;
+        _RenderedChannels = _Analysis->_PeakMeasuredChannels;
     }
 
     return hr;

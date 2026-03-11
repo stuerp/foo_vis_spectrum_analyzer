@@ -72,7 +72,6 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void UpdateCurrentColor(style_t * style) const noexcept;
     void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
 
 private:

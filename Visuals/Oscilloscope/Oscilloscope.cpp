@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.02.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.03.11) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -102,17 +102,8 @@ void oscilloscope_t::Resize() noexcept
     oscilloscope_base_t::Resize();
 
     // Release resources that are size dependent.
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
-
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
+    SafeRelease(&_XAxisTextStyle);
+    SafeRelease(&_YAxisTextStyle);
 
     _AxesCommandList.Release();
 
@@ -154,33 +145,36 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (_Settings->HasYAxis() && _Settings->_YAxisRight)
         ++YAxisCount;
 
-    const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
-
-    CComPtr<ID2D1PathGeometry> Geometry;
-
-    hr = CreateSignalGeometry(SignalSize, Geometry);
-
-    if (SUCCEEDED(hr))
+    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        _DeviceContext->SetTarget(_BackBuffer);
-        _DeviceContext->BeginDraw();
+        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
 
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.0f);
+        CComPtr<ID2D1PathGeometry> Geometry;
 
-        _DeviceContext->SetTransform(Translate);
+        hr = CreateSignalGeometry(SignalSize, Geometry);
 
-        // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-        _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        if (SUCCEEDED(hr))
+        {
+            _DeviceContext->SetTarget(_BackBuffer);
+            _DeviceContext->BeginDraw();
 
-        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.0f);
 
-        _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+            _DeviceContext->SetTransform(Translate);
 
-        _DeviceContext->PopAxisAlignedClip();
+            // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+            _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        hr = _DeviceContext->EndDraw();
+            _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+
+            _DeviceContext->PopAxisAlignedClip();
+
+            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+            hr = _DeviceContext->EndDraw();
+        }
     }
 
     if (SUCCEEDED(hr))
@@ -284,17 +278,8 @@ void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
     _AxesCommandList.Release();
 
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
-
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
+    SafeRelease(&_YAxisTextStyle);
+    SafeRelease(&_XAxisTextStyle);
 
     oscilloscope_base_t::DeleteDeviceSpecificResources();
 }

@@ -458,7 +458,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
         const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
         const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
 
-        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->Name.c_str(), (UINT32) _Measurement->Name.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
     }
 
     if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)
@@ -476,6 +476,7 @@ void bar_t::Render() const noexcept
 
     // Draw tick lines.
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
 /*
     if (_State->_HorizontalPeakMeter)
     {
@@ -488,156 +489,160 @@ void bar_t::Render() const noexcept
             _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
     }
 */
+
     if (_ScaleLinesCommandList != nullptr)
         _DeviceContext->DrawImage(_ScaleLinesCommandList);
 
     // Draw the bars.
-    _DeviceContext->SetTransform(_Transform);
-
-    if (_State->_IsHorizontalPeakMeter)
+    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        // Draw the background.
-        if (_BackgroundStyle->IsEnabled())
+        _DeviceContext->SetTransform(_Transform);
+
+        if (_State->_IsHorizontalPeakMeter)
         {
-            DrawHorizontalRectangle(Rect, _BackgroundStyle);
-        }
-
-        // Draw the foreground (Peak).
-        {
-            Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
-
-            DrawHorizontalRectangle(Rect, _PeakStyle);
-
-            // Draw the foreground (Peak, Measurement > 0dBFS).
-            if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+            // Draw the background.
+            if (_BackgroundStyle->IsEnabled())
             {
-                Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
+                DrawHorizontalRectangle(Rect, _BackgroundStyle);
+            }
+
+            // Draw the foreground (Peak).
+            {
                 Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
 
-                DrawHorizontalRectangle(Rect, _Peak0dBStyle);
-            }
-        }
-        // Draw the foreground (Peak Top).
-        if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
-        {
-            const FLOAT x = (FLOAT) _Measurement->MaxPeakNormalized * _Size.width;
+                DrawHorizontalRectangle(Rect, _PeakStyle);
 
-            Rect.left  = _Rect.left + x;
-            Rect.right = _Rect.left + x;
-
-            if (!_State->_LEDMode)
-            {
-                Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
-                Rect.right += _MaxPeakStyle->_Thickness / 2.f;
-            }
-            else
-            {
-                if (!_State->_LEDIntegralSize)
+                // Draw the foreground (Peak, Measurement > 0dBFS).
+                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
                 {
-                    Rect.top    -= _LEDSize / 2.f;
-                    Rect.bottom += _LEDSize / 2.f;
+                    Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
+                    Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
+
+                    DrawHorizontalRectangle(Rect, _Peak0dBStyle);
                 }
             }
-
-            const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
-
-            _MaxPeakStyle->_Brush->SetOpacity(Opacity);
-
-            DrawHorizontalRectangle(Rect, _MaxPeakStyle);
-        }
-
-        // Draw the foreground (RMS).
-        if (_RMSStyle->IsEnabled())
-        {
-            Rect.left  = _Rect.left;
-            Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
-
-            DrawHorizontalRectangle(Rect, _RMSStyle);
-
-            // Draw the foreground (RMS, Measurement > 0dBFS).
-            if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+            // Draw the foreground (Peak Top).
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
+                const FLOAT x = (FLOAT) _Measurement->MaxPeakNormalized * _Size.width;
+
+                Rect.left  = _Rect.left + x;
+                Rect.right = _Rect.left + x;
+
+                if (!_State->_LEDMode)
+                {
+                    Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
+                    Rect.right += _MaxPeakStyle->_Thickness / 2.f;
+                }
+                else
+                {
+                    if (!_State->_LEDIntegralSize)
+                    {
+                        Rect.top    -= _LEDSize / 2.f;
+                        Rect.bottom += _LEDSize / 2.f;
+                    }
+                }
+
+                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+
+                _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+
+                DrawHorizontalRectangle(Rect, _MaxPeakStyle);
+            }
+
+            // Draw the foreground (RMS).
+            if (_RMSStyle->IsEnabled())
+            {
+                Rect.left  = _Rect.left;
                 Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
 
-                DrawHorizontalRectangle(Rect, _RMS0dBStyle);
-            }
-        }
-    }
-    else
-    {
-        // Draw the background.
-        if (_BackgroundStyle->IsEnabled())
-        {
-            DrawVerticalRectangle(Rect, _BackgroundStyle);
-        }
+                DrawHorizontalRectangle(Rect, _RMSStyle);
 
-        // Draw the foreground (Peak).
-        if (_PeakStyle->IsEnabled())
-        {
-            Rect.bottom = _Rect.top + ((FLOAT) _Measurement->PeakNormalized * _Size.height);
-
-            DrawVerticalRectangle(Rect, _PeakStyle);
-
-            // Draw the foreground (Peak, Measurement > 0dBFS).
-            if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
-            {
-                Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
-                Rect.bottom = _Rect.top + (FLOAT) _Measurement->PeakNormalized * _Size.height;
-
-                DrawVerticalRectangle(Rect, _Peak0dBStyle);
-            }
-        }
-
-        // Draw the foreground (Peak Top).
-        if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
-        {
-            const FLOAT y = (FLOAT) _Measurement->MaxPeakNormalized * _Size.height;
-
-            Rect.top    = _Rect.top + y;
-            Rect.bottom = _Rect.top + y;
-
-            if (!_State->_LEDMode)
-            {
-                Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
-                Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
-            }
-            else
-            {
-                if (!_State->_LEDIntegralSize)
+                // Draw the foreground (RMS, Measurement > 0dBFS).
+                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
                 {
-                    Rect.top    -= _LEDSize / 2.f;
-                    Rect.bottom += _LEDSize / 2.f;
+                    Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
+                    Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
+
+                    DrawHorizontalRectangle(Rect, _RMS0dBStyle);
+                }
+            }
+        }
+        else
+        {
+            // Draw the background.
+            if (_BackgroundStyle->IsEnabled())
+            {
+                DrawVerticalRectangle(Rect, _BackgroundStyle);
+            }
+
+            // Draw the foreground (Peak).
+            if (_PeakStyle->IsEnabled())
+            {
+                Rect.bottom = _Rect.top + ((FLOAT) _Measurement->PeakNormalized * _Size.height);
+
+                DrawVerticalRectangle(Rect, _PeakStyle);
+
+                // Draw the foreground (Peak, Measurement > 0dBFS).
+                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+                {
+                    Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
+                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->PeakNormalized * _Size.height;
+
+                    DrawVerticalRectangle(Rect, _Peak0dBStyle);
                 }
             }
 
-            const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
-
-            _MaxPeakStyle->_Brush->SetOpacity(Opacity);
-
-            DrawVerticalRectangle(Rect, _MaxPeakStyle);
-        }
-
-        // Draw the foreground (RMS).
-        if (_RMSStyle->IsEnabled())
-        {
-            Rect.top    = _Rect.top;
-            Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
-
-            DrawVerticalRectangle(Rect, _RMSStyle);
-
-            // Draw the foreground (Peak, Measurement > 0dBFS).
-            if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+            // Draw the foreground (Peak Top).
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
+                const FLOAT y = (FLOAT) _Measurement->MaxPeakNormalized * _Size.height;
+
+                Rect.top    = _Rect.top + y;
+                Rect.bottom = _Rect.top + y;
+
+                if (!_State->_LEDMode)
+                {
+                    Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
+                    Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
+                }
+                else
+                {
+                    if (!_State->_LEDIntegralSize)
+                    {
+                        Rect.top    -= _LEDSize / 2.f;
+                        Rect.bottom += _LEDSize / 2.f;
+                    }
+                }
+
+                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+
+                _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+
+                DrawVerticalRectangle(Rect, _MaxPeakStyle);
+            }
+
+            // Draw the foreground (RMS).
+            if (_RMSStyle->IsEnabled())
+            {
+                Rect.top    = _Rect.top;
                 Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
 
-                DrawVerticalRectangle(Rect, _RMS0dBStyle);
+                DrawVerticalRectangle(Rect, _RMSStyle);
+
+                // Draw the foreground (Peak, Measurement > 0dBFS).
+                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+                {
+                    Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
+                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
+
+                    DrawVerticalRectangle(Rect, _RMS0dBStyle);
+                }
             }
         }
-    }
 
-    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 
     // Draw the text.
     if (_NameTextLayout != nullptr)

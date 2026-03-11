@@ -29,6 +29,9 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     groupbox "Artwork", IDC_ARTWORK, X_B06, Y_B06, W_B06, H_B06, BS_GROUPBOX, WS_EX_TRANSPARENT
 
+        rtext           "Artwork type:",            IDC_STATIC,                     X_G40, Y_G40 + 2, W_G40, H_G40
+        combobox                                    IDC_ARTWORK_TYPE,               X_G41, Y_G41,     W_G41, H_G41, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
         rtext           "No. artwork colors:"       IDC_STATIC,                     X_G06, Y_G06 + 2, W_G06, H_G06
         edittext                                    IDC_NUM_ARTWORK_COLORS,         X_G07, Y_G07, W_G07, H_G07, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_NUM_ARTWORK_COLORS_SPIN,    "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
@@ -36,19 +39,16 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext           "Lightness threshold:"      IDC_STATIC,                     X_G08, Y_G08 + 2, W_G08, H_G08
         edittext                                    IDC_LIGHTNESS_THRESHOLD,        X_G09, Y_G09, W_G09, H_G09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_LIGHTNESS_THRESHOLD_SPIN,   "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "%"                         IDC_STATIC,                  ,  X_G10, Y_G10 + 2, W_G10, H_G10
+        ltext           "%"                         IDC_STATIC,                     X_G10, Y_G10 + 2, W_G10, H_G10
 
         rtext           "Sort colors by:",          IDC_STATIC,                     X_G11, Y_G11 + 2, W_G11, H_G11
         combobox                                    IDC_COLOR_ORDER,                X_G12, Y_G12,     W_G12, H_G12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        control         "Show artwork on background" IDC_ARTWORK_BACKGROUND, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G02, Y_G02, W_G02, H_G02
-
-        rtext           "Artwork type:",            IDC_STATIC,                     X_G40, Y_G40 + 2, W_G40, H_G40
-        combobox                                    IDC_ARTWORK_TYPE,               X_G41, Y_G41,     W_G41, H_G41, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        control         "Show artwork on background" IDC_ARTWORK_BACKGROUND,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G02, Y_G02, W_G02, H_G02
 
         rtext           "Fit mode:",                IDC_STATIC,                     X_G30, Y_G30 + 2, W_G30, H_G30
         combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-        control         "Fit window",               IDC_FIT_WINDOW, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
+        control         "Fit window",               IDC_FIT_WINDOW,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
 
         rtext           "Artwork opacity:"          IDC_STATIC,                     X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

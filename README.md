@@ -48,7 +48,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter and Oscilloscope visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter, Oscilloscope and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -127,8 +127,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-alpha8, 2026-03-xx
+v0.10.0.0-beta1, 2026-03-11
 
+- New: Bit Meter visualisation
+  - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
 - Fixed: Some missing event handlers in the new Configuration dialog. (Regression)
 - Fixed: Some Configuration dialog notifications in 32-bit version. (Regression)
 

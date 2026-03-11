@@ -45,10 +45,6 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
-/*
-        if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
-            return;
-*/
         Now = Chrono.Now();
 
         const int64_t Elapsed = NextFrameTime - Now;
@@ -192,7 +188,7 @@ void uielement_t::ProcessAudio() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)) || _RenderState._IsPaused)
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
         return; // Playback is paused.
 
     double WindowSize;
@@ -239,9 +235,6 @@ void uielement_t::ProcessAudio() noexcept
 /// </summary>
 void uielement_t::Render() noexcept
 {
-    if (_RenderState._IsPaused && _RenderState._VisualizeDuringPause)
-        return;
-
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (!SUCCEEDED(hr))
@@ -268,16 +261,10 @@ void uielement_t::Render() noexcept
 }
 
 /// <summary>
-/// Updates the peak values of all the graphs.
+/// Updates the current and peak values of all the graphs.
 /// </summary>
 void uielement_t::Animate() noexcept
 {
-    if (_RenderState._IsPaused)
-    {
-        for (auto & Iter : _Grid)
-            Iter._Graph->_Analysis.UpdateCurrentValues();
-    }
-
     if (_UIState._PeakMode == PeakMode::None)
         return;
 

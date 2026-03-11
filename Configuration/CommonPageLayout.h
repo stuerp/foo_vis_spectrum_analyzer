@@ -72,21 +72,36 @@
 #define X_B06   X_B04
 #define Y_B06   Y_B04 + H_B04 + IY
 
-    #pragma region Artwork Colors
+    /** Artwork Type **/
+
+    // Label
+    #define W_G40    66
+    #define H_G40    H_LBL
+    #define X_G40    X_B06 + 5
+    #define Y_G40    Y_B06 + 11
+
+    // Combobox
+    #define W_G41    86
+    #define H_G41    H_CBX
+    #define X_G41    X_G40 + W_G40 + IX
+    #define Y_G41    Y_G40
+
+    /** Artwork Colors **/
+
     // Label
     #define W_G06    66
     #define H_G06    H_LBL
-    #define X_G06    X_B06 + 5
-    #define Y_G06    Y_B06 + 11
+    #define X_G06    X_G40
+    #define Y_G06    Y_G41 + H_G41 + IY
 
     // Textbox
     #define W_G07    30
     #define H_G07    H_TBX
     #define X_G07    X_G06 + W_G06 + IX
     #define Y_G07    Y_G06
-    #pragma endregion
 
-    #pragma region Lightness Threshold
+    /** Lightness Threshold **/
+
     // Label
     #define W_G08    66
     #define H_G08    H_LBL
@@ -99,14 +114,13 @@
     #define X_G09    X_G08 + W_G08 + IX
     #define Y_G09    Y_G08
 
-    // Label
+    // Label "%"
     #define W_G10    10
     #define H_G10    H_LBL
     #define X_G10    X_G09 + W_G09 + IX
     #define Y_G10    Y_G08
-    #pragma endregion
 
-    #pragma region Color Order
+    /** Color Order **/
 
     // Label
     #define W_G11    66
@@ -120,49 +134,38 @@
     #define X_G12    X_G11 + W_G11 + IX
     #define Y_G12    Y_G11
 
-    #pragma endregion
+    /** Checkbox: Show artwork on background **/
 
-    // Checkbox: Show artwork on background
+    // Checkbox
     #define W_G02    160
     #define H_G02    H_CHB
     #define X_G02    X_B06 + 5
     #define Y_G02    Y_G12 + H_G12 + IY
 
-    // Label: Artwork Type
-    #define W_G40    66
-    #define H_G40    H_LBL
-    #define X_G40    X_G08
-    #define Y_G40    Y_G02 + H_G02 + IY
+    /** Fit mode **/
 
-    // Combobox:  Artwork Type
-    #define W_G41    86
-    #define H_G41    H_CBX
-    #define X_G41    X_G40 + W_G40 + IX
-    #define Y_G41    Y_G40
-
-    #pragma region Fit mode
-
-    // Label: Fit mode
+    // Label
     #define W_G30    66
     #define H_G30    H_LBL
     #define X_G30    X_G02
-    #define Y_G30    Y_G41 + H_G41 + IY
+    #define Y_G30    Y_G02 + H_G02 + IY
 
-    // Combobox: Fit mode
+    // Combobox
     #define W_G31    86
     #define H_G31    H_CBX
     #define X_G31    X_G30 + W_G30 + IX
     #define Y_G31    Y_G30
 
-    // Checkbox: Fit window
+    /** Fit window **/
+
+    // Checkbox
     #define W_G32    60
     #define H_G32    H_CHB
     #define X_G32    X_G31
     #define Y_G32    Y_G31 + H_G31 + IY
 
-    #pragma endregion
+    /** Artwork Opacity **/
 
-    #pragma region Artwork Opacity
     // Label
     #define W_G03    66
     #define H_G03    H_LBL
@@ -180,9 +183,9 @@
     #define H_G05    H_LBL
     #define X_G05    X_G04 + W_G04 + IX
     #define Y_G05    Y_G03
-    #pragma endregion
 
-    #pragma region Script
+    /** Script **/
+
     // Label
     #define W_G13    66
     #define H_G13    H_LBL
@@ -194,10 +197,9 @@
     #define H_G14    H_TBX
     #define X_G14    X_G13 + W_G13 + IX
     #define Y_G14    Y_G13
-    #pragma endregion
 
 #define W_B06  184
-#define H_B06   11 + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G41 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
+#define H_B06   11 + H_G41 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
 
 #pragma endregion
 

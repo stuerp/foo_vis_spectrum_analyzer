@@ -189,8 +189,10 @@ void common_page_t::UpdateControls() noexcept
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+    const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(ID).EnableWindow(SupportsFFT);
@@ -199,9 +201,9 @@ void common_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
 
     // Artwork
-    GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsFFT);
+    const bool SupportsArtworkOnBackground = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
 
-    const bool SupportsArtworkOnBackground = SupportsFFT && _State->_ShowArtworkOnBackground;
+    GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsArtworkOnBackground);
 
     for (const auto ID :
     {
@@ -209,7 +211,7 @@ void common_page_t::UpdateControls() noexcept
         IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN,
         IDC_ARTWORK_FILE_PATH
     })
-        GetDlgItem(ID).EnableWindow(SupportsArtworkOnBackground);
+        GetDlgItem(ID).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
 }
 
 /// <summary>

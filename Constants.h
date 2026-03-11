@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.03.08) P. Stuer **/
+/** $VER: Constants.h (2026.03.11) P. Stuer **/
 
 #pragma once
 
@@ -308,7 +308,9 @@ enum class VisualizationType
     RadialBars = 5,
     RadialCurve = 6,
     Oscilloscope = 7,
-    Tester = 8,
+    BitMeter = 8,
+
+    Tester = 63,
 };
 
 enum class VisualizationTypes : uint64_t
@@ -323,6 +325,7 @@ enum class VisualizationTypes : uint64_t
     RadialBars      = 1 << (int) VisualizationType::RadialBars,
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
+    BitMeter        = 1 << (int) VisualizationType::BitMeter,
 
     All = ~0
 };
@@ -429,7 +432,11 @@ enum class VisualElement : uint32_t
 
     SignalLine                  = 32,
 
-    Count                       = 35
+    BarSign                     = 35,
+    BarMantissa                 = 36,
+    BarExponent                 = 37,
+
+    Count                       = 38
 };
 
 enum class ColorSource : uint32_t

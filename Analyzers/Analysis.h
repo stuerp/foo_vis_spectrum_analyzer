@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.02.25) P. Stuer **/
+/** $VER: Analysis.h (2026.03.11) P. Stuer **/
 
 #pragma once
 
@@ -23,11 +23,23 @@
 #include "FrequencyBand.h"
 
 /// <summary>
-/// Represents a level meter measurement.
+/// Represents a meter measurement.
 /// </summary>
 struct measurement_t
 {
-    measurement_t(const WCHAR * name, double holdTime) noexcept : Name(name), HoldTime(holdTime)
+    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName)
+    {
+    }
+
+    std::wstring ChannelName;
+};
+
+/// <summary>
+/// Represents a peak meter measurement.
+/// </summary>
+struct peak_measurement_t : measurement_t
+{
+    peak_measurement_t(const WCHAR * channelName, double holdTime) noexcept : measurement_t(channelName), HoldTime(holdTime)
     {
         RMSTotal = 0.;
 
@@ -40,8 +52,6 @@ struct measurement_t
     }
 
     // User settings
-    std::wstring Name;
-
     double HoldTime;            // Time to hold the current max value.
     double DecaySpeed;          // Speed at which the current max value decays.
     double Opacity;             // 0.0 .. 1.0
@@ -55,6 +65,19 @@ struct measurement_t
 
     double RMS;                 // in dBFS
     double RMSNormalized;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+};
+
+/// <summary>
+/// Represents a bit meter measurement.
+/// </summary>
+struct bit_measurement_t : measurement_t
+{
+    bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
+    {
+        BitCounts.resize(audio_sample_size, 0.);
+    }
+
+    std::vector<double> BitCounts;
 };
 
 /// <summary>
@@ -76,10 +99,9 @@ public:
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
-    void ResetMeasurements() noexcept;
+    void ResetPeakMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
-    void UpdateCurrentValues() noexcept;
     void UpdatePeakValues(bool isStopped) noexcept;
 
 private:
@@ -100,10 +122,15 @@ private:
     // Peak Meter / Level Meter
     void MeterProcessing(const audio_chunk & chunk) noexcept;
 
-    void InitializeMeasurements(uint32_t channelMask) noexcept;
+    void InitializePeakMeasurements(uint32_t channelMask) noexcept;
 
     // Oscilloscope
     void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
+
+    // Bit Meter
+    void BitMeterProcessing(const audio_chunk & chunk) noexcept;
+
+    void InitializeBitMeasurements(uint32_t channelMask) noexcept;
 
     double NormalizeValue(double amplitude) const noexcept
     {
@@ -156,11 +183,10 @@ public:
 
     frequency_bands_t _FrequencyBands;
 
-    // Peak meter / Balance Meter
-    std::vector<measurement_t> _Measurements;
-    uint32_t _MeasuredChannels;
+    // Peak meter
+    uint32_t _PeakMeasuredChannels;
+    std::vector<peak_measurement_t> _PeakMeasurements;
 
-    // Peak Meter
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
     size_t _RMSFrameCount;  // Number of frames used in the current RMS window.
 
@@ -173,6 +199,10 @@ public:
 
     double _Balance;        // [0, 1], 0.5 = Center
     double _Phase;          // [0, 1], 0.5 = Center
+
+    // Bit Meter
+    uint32_t _BitMeasuredChannels;
+    std::vector<bit_measurement_t> _BitMeasurements;
 
     static const uint32_t ChannelPairs[6];
 
