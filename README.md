@@ -40,11 +40,23 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
+<sup>Oscilloscope</sup>
+
+![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
+
 <sup>Oscilloscope with Y-axis in dBFS</sup>
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
 <sup>Oscilloscope in X-Y mode</sup>
+
+![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar heights</sup>
+
+![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar opacity</sup>
 
 ## Features
 
@@ -129,7 +141,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.10.0.0-beta1, 2026-03-12
 
-- New: Bit Meter visualisation
+- New: Bit Meter vizualisation
   - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
   - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
 - Fixed: Some missing event handlers in the new Configuration dialog. (Regression)

@@ -240,6 +240,14 @@ The distribution of bit usage over time is display as a histogram during playbac
 > [!Note]
 > This visualization supports dedicated styles to highlight the sign, mantissa and exponent of a foobar2000 samples.
 
+![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar heights</sup>
+
+![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar opacity</sup>
+
 #### Peak Indicators group
 
 Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
@@ -312,7 +320,7 @@ Set the visualization type to **Bit Meter** to enable these settings.
 
 `Opacity Mode`
 
-Renders the bit histogram by varying the opacity of the bars instead of their height.
+Renders the bit histogram by varying the opacity of the bars instead of the height.
 
 #### Spectrogram group
 
