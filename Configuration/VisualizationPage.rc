@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.02.20) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.03.12) P. Stuer **/
 
 #include "Resources.h"
 
@@ -50,6 +50,10 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext       "Angular velocity:"             IDC_ANGULAR_VELOCITY_LBL,       X_C34, Y_C34 + 2, W_C34, H_C34
         edittext                                    IDC_ANGULAR_VELOCITY,           X_C35, Y_C35, W_C35, H_C35, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    groupbox "Bit Meter", IDC_BIT_METER, X_C50, Y_C50, W_C50, H_C50, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        control     "Opacity Mode",                 IDC_OPACITY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C80, Y_C80, W_C80, H_C80
 
     groupbox "Spectrogram", IDC_SPECTROGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
 

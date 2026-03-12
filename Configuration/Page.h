@@ -42,7 +42,7 @@ public:
     virtual LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 protected:
-    void ConfigurationChanged(Settings settings) const noexcept;
+    void ConfigurationChanged(ConfigurationChanges settings) const noexcept;
 
     virtual void InitializeControls() noexcept = 0;
     virtual void UpdateControls() noexcept = 0;

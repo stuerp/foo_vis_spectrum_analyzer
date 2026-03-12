@@ -131,7 +131,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
             {
                 *_State = _OldState;
 
-                ConfigurationChanged(Settings::All);
+                ConfigurationChanged(ConfigurationChanges::All);
             }
 
             GetWindowRect(&_State->_DialogRect);
@@ -302,7 +302,7 @@ void configuration_dialog_t::ResizePages() noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void configuration_dialog_t::ConfigurationChanged(Settings settings) const noexcept
+void configuration_dialog_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;

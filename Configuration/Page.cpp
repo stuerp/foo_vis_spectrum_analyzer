@@ -172,7 +172,7 @@ void page_t::SetNote(int id, uint32_t noteNumber) noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void page_t::ConfigurationChanged(Settings settings) const noexcept
+void page_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;

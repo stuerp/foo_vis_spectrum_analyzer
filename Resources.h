@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.03.11) P. Stuer **/
+/** $VER: Resources.h (2026.03.12) P. Stuer **/
 
 #pragma once
 
@@ -494,6 +494,12 @@
 #define IDC_BLUR_SIGMA                  7220
 #define IDC_DECAY_FACTOR_LBL            7222
 #define IDC_DECAY_FACTOR                7224
+
+// Bit Meter
+
+#define IDC_BIT_METER                   7240
+
+#define IDC_OPACITY_MODE                7242
 
 #pragma endregion
 

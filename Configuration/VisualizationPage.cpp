@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.03.10) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.03.12) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -30,6 +30,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_INNER_RADIUS, "Sets the inner radius as a percentage of the smallest side of the graph area." },
         { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
         { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
+
+        { IDC_OPACITY_MODE, "Renders the bit occurancy using opacity." },
 
         { IDC_SCROLLING_SPECTROGRAM, "Activates scrolling of the spectrogram." },
         { IDC_HORIZONTAL_SPECTROGRAM, "Renders the spectrogram horizontally." },
@@ -69,7 +71,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak / RMS", L"Balance / Correlation", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak Meter", L"Level Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -115,6 +117,11 @@ void visualization_page_t::InitializeControls() noexcept
         SetDouble(IDC_INNER_RADIUS, _State->_InnerRadius * 100., 0, 1);
         SetDouble(IDC_OUTER_RADIUS, _State->_OuterRadius * 100., 0, 1);
         SetDouble(IDC_ANGULAR_VELOCITY, _State->_AngularVelocity, 0, 1);
+    }
+
+    // Bit Meter
+    {
+        SendDlgItemMessageW(IDC_OPACITY_MODE, BM_SETCHECK, _State->_OpacityMode);
     }
 
     // Spectrogram
@@ -207,7 +214,7 @@ void visualization_page_t::UpdateControls() noexcept
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
-//  const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+    const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
 
 //  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
@@ -234,6 +241,9 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadial);
     GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
     GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
+
+    // Bit Meter
+    GetDlgItem(IDC_OPACITY_MODE).EnableWindow(IsBitMeter);
 
     // Spectrogram
     GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
@@ -286,7 +296,7 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto cb = (CComboBox) w;
 
@@ -333,7 +343,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -434,7 +444,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_XGain, std::clamp(::_wtof(Text), MinXGain, MaxXGain)))
                 return;
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -443,7 +453,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_YGain, std::clamp(::_wtof(Text), MinYGain, MaxYGain)))
                 return;
             
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -452,7 +462,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_Rotation, std::clamp((FLOAT) ::_wtof(Text), MinRotation, MaxRotation)))
                 return;
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -461,7 +471,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
                 return;
 
-            ChangedSettings = Settings::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
 
@@ -470,7 +480,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_DecayFactor, std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor)))
                 return;
 
-            ChangedSettings = Settings::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
     }
@@ -486,7 +496,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -562,7 +572,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_XGain, 0, 2);
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -570,7 +580,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_YGain, 0, 2);
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -578,7 +588,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_Rotation, 0, 2);
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -586,7 +596,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_BlurSigma, 0, 2);
 
-            ChangedSettings = Settings::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
 
@@ -594,7 +604,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_DecayFactor, 0, 2);
 
-            ChangedSettings = Settings::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
     }
@@ -610,7 +620,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -651,6 +661,14 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_OPACITY_MODE:
+        {
+            _State->_OpacityMode = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::Layout;
+            break;
+        }
+
         case IDC_HORIZONTAL_PEAK_METER:
         {
             _State->_IsHorizontalPeakMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -678,6 +696,8 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_HORIZONTAL_LEVEL_METER:
         {
             _State->_HorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
 
@@ -687,7 +707,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = Settings::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -697,7 +717,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = Settings::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::PhosphorEffect;
             break;
         }
     }
@@ -713,7 +733,7 @@ LRESULT visualization_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     if (_State == nullptr)
         return -1;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto nmud = (LPNMUPDOWN) nmhd;
 

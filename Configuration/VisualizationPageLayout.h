@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.03.12) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
 
-#pragma region Peak Indicators
+/** Peak Indicators **/
 
 // Groupbox
 #define X_B13   X_E01
@@ -68,9 +68,7 @@
 #define W_B13   116
 #define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + 7
 
-#pragma endregion
-
-#pragma region LEDs
+/** LEDs **/
 
 // Groupbox
 #define X_B07   X_B13
@@ -122,9 +120,8 @@
 
 #define W_B07  W_B13
 #define H_B07  11 + H_C12 + IY + H_C18 + IY + H_C20 + IY + H_C29 + 7
-#pragma endregion
 
-#pragma region Bars (Not used yet)
+/** Bars (Not used yet) **/
 
 // Groupbox
 #define X_B17   X_B07
@@ -133,9 +130,7 @@
 #define W_B17   W_B07
 #define H_B17   0
 
-#pragma endregion
-
-#pragma region Radial Bars
+/** Radial Bars / Radial Curve **/
 
 // Groupbox
 #define X_B15   X_B07
@@ -186,9 +181,23 @@
 #define W_B15   W_B17
 #define H_B15   11 + H_C31 + IY + H_C33 + IY + H_C35 + 7
 
-#pragma endregion
+/** Bit Meter **/
 
-#pragma region Spectrogram
+// Groupbox
+#define X_C50   X_B15
+#define Y_C50   Y_B15 + H_B15 + IY
+
+    // Checkbox: Opacity Mode
+    #define W_C80    60
+    #define H_C80    H_CHB
+    #define X_C80    X_C50 + 5
+    #define Y_C80    Y_C50 + 11
+
+#define W_C50   W_B15
+#define H_C50   11 + H_C80 + 7
+
+/** Spectrogram **/
+
 // Groupbox
 #define X_B08   X_B13 + W_B13 + IX
 #define Y_B08   Y_B13
@@ -219,9 +228,9 @@
 
 #define W_B08   232
 #define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + 7
-#pragma endregion
 
-#pragma region Peak Meter
+
+/** Peak Meter **/
 
 // Groupbox
 #define X_B12   X_B08
@@ -298,9 +307,7 @@
 #define W_B12  W_B08
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
 
-#pragma endregion
-
-#pragma region Level Meter
+/** Level Meter **/
 
 // Groupbox
 #define X_B14   X_B12
@@ -315,9 +322,7 @@
 #define W_B14  W_B12
 #define H_B14  11 + H_C52 + 7
 
-#pragma endregion
-
-#pragma region Oscilloscope
+/** Oscilloscope **/
 
 // Groupbox
 #define X_B18   X_B14
@@ -397,5 +402,3 @@
 
 #define W_B18  W_B14
 #define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + 7
-
-#pragma endregion

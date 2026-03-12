@@ -284,7 +284,7 @@ void frequencies_page_t::OnSelectionChanged(UINT notificationCode, int id, CWind
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     const auto cb = (CComboBox) w;
 
@@ -328,7 +328,7 @@ void frequencies_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -381,7 +381,7 @@ void frequencies_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -430,7 +430,7 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     if (_State == nullptr)
         return -1;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto nmud = (LPNMUPDOWN) nmhd;
 

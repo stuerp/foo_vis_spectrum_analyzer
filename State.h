@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.02.18) P. Stuer **/
+/** $VER: State.h (2026.03.12) P. Stuer **/
 
 #pragma once
 
@@ -262,6 +262,12 @@ public:
 
         #pragma endregion
 
+        #pragma region Bit Meter
+
+            bool _OpacityMode;
+
+        #pragma endregion
+
     #pragma endregion
 
     style_manager_t _StyleManager;
@@ -378,7 +384,7 @@ private:
     #pragma endregion
 
 private:
-    const size_t _CurrentVersion = 34; // v0.10.0.0-alpha5
+    const size_t _CurrentVersion = 35; // v0.10.0.0-beta1
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

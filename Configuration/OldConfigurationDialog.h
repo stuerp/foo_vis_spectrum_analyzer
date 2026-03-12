@@ -68,7 +68,7 @@ private:
     void Initialize();
     void Terminate();
 
-    void ConfigurationChanged(Settings settings) const noexcept;
+    void ConfigurationChanged(ConfigurationChanges settings) const noexcept;
 
     void OnSelectionChanged(UINT, int, CWindow);
     void OnEditChange(UINT, int, CWindow) noexcept;

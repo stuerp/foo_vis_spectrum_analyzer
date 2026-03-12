@@ -159,11 +159,11 @@ The same as bars but with a smoothed curve instead of bars.
 
 <sup>Horizontal scrolling spectrogram visualization</sup>
 
-##### Peak / RMS
+##### Peak Meter
 
 Displays the peak and RMS levels of the audio.
 
-##### Balance / Correlation
+##### Level Meter
 
 Displays the balance and mid/side correlation of the audio.
 
@@ -305,6 +305,14 @@ Sets the outer radius as a percentage of the smallest side of the graph.
 `Angular velocity`
 
 Sets the angular velocity of the rotation in degrees per second. Use positive values for clockwise rotation; negative values for anti-clockwise rotation.
+
+#### Bit Meter group
+
+Set the visualization type to **Bit Meter** to enable these settings.
+
+`Opacity Mode`
+
+Renders the bit histogram by varying the opacity of the bars instead of their height.
 
 #### Spectrogram group
 

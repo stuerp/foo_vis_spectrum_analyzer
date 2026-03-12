@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.03.11) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.03.12) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -159,7 +159,15 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 if (Style->IsEnabled())
                 {
-                    r.top = dy - ((FLOAT) BitCount * dy);
+
+                    if (_State->_OpacityMode)
+                    {
+                        r.top = 0;
+
+                        Style->_Brush->SetOpacity((FLOAT) BitCount);
+                    }
+                    else
+                        r.top = dy - ((FLOAT) BitCount * dy);
 
                     deviceContext->FillRectangle(r, Style->_Brush);
                 }

@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.02.18) P. Stuer **/
+/** $VER: State.cpp (2026.03.12) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -245,9 +245,11 @@ void state_t::Reset() noexcept
     _HasScaleLines = true;
     _MaxBarSize = 0.f; // pixels
 
+    // Level Meter
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
 
+    // Oscilloscope
     _XYMode = false;
     _XGain = 1.f;
     _YGain = 1.f;
@@ -255,6 +257,9 @@ void state_t::Reset() noexcept
     _PhosphorDecay = true;
     _BlurSigma = 3.f;
     _DecayFactor = 0.92f;
+
+    // Bit Meter
+    _OpacityMode = false;
 
     _StyleManager.Reset();
 
@@ -528,6 +533,9 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _PhosphorDecay = other._PhosphorDecay;
     _BlurSigma = other._BlurSigma;
     _DecayFactor = other._DecayFactor;
+
+    // Bit Meter
+    _OpacityMode = other._OpacityMode;
 
     #pragma endregion
 
@@ -963,6 +971,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         {
             reader->read_object_t(_Rotation, abortHandler);
         }
+
+        if (Version >= 35)
+        {
+            reader->read_object_t(_OpacityMode, abortHandler);
+        }
     }
     catch (exception & ex)
     {
@@ -1299,6 +1312,9 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         // Version 34, v0.10.0-alpha5
         writer->write_object_t(_Rotation, abortHandler);
+
+        // Version 35, v0.10.0-beta1
+        writer->write_object_t(_OpacityMode, abortHandler);
     }
     catch (exception & ex)
     {

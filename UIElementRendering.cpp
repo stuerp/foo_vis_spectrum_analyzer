@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.02.15) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.03.11) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 #include "UIElement.h"

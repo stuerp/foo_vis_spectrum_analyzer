@@ -581,19 +581,22 @@ enum class VerticalTextAlignment : uint32_t
     Bottom = 2
 };
 
-enum class Settings : uint32_t
+enum class ConfigurationChanges : uint32_t
 {
     None = 0,
 
-    RefreshRate     = 1 << 0,
-    PhosphorEffect  = 1 << 1,
+    RenderLoop      = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Layout          = 1 << 1, // Configuration change impacts the layout of the visualization.
+
+    RefreshRate     = 1 << 2,
+    PhosphorEffect  = 1 << 3, // Configuration change impacts the phosphor effect.
 
     Oscilloscope = PhosphorEffect,
 
     All = ~0u,
 };
 
-inline bool operator==(Settings a, Settings b)
+inline bool operator==(ConfigurationChanges a, ConfigurationChanges b)
 {
     return (size_t) a == (size_t) b;
 }

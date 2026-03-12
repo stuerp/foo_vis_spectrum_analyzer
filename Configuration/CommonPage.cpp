@@ -234,7 +234,7 @@ void common_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     const auto cb = (CComboBox) w;
 
@@ -295,7 +295,7 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -359,7 +359,7 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -402,7 +402,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -412,6 +412,8 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_SHOW_TOOLTIPS:
         {
             _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::RenderLoop;
             break;
         }
 
@@ -424,6 +426,8 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_VISUALIZE_DURING_PAUSE:
         {
             _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::RenderLoop;
             break;
         }
 
@@ -432,6 +436,8 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             _State->_ShowArtworkOnBackground = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::RenderLoop;
             break;
         }
 
@@ -453,7 +459,7 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     if (_State == nullptr)
         return -1;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto nmud = (LPNMUPDOWN) nmhd;
 

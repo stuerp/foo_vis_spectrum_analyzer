@@ -127,10 +127,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-beta1, 2026-03-11
+v0.10.0.0-beta1, 2026-03-12
 
 - New: Bit Meter visualisation
   - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
+  - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
 - Fixed: Some missing event handlers in the new Configuration dialog. (Regression)
 - Fixed: Some Configuration dialog notifications in 32-bit version. (Regression)
 

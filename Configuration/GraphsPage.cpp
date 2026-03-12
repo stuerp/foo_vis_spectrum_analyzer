@@ -363,7 +363,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto cb = (CComboBox) w;
 
@@ -389,7 +389,13 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
+            _IgnoreNotifications = true;
+
             UpdateControls();
+
+            _IgnoreNotifications = false;
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -399,7 +405,11 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             gs._XAxisMode = (XAxisMode) SelectedIndex;
 
+            _IgnoreNotifications = true;
+
             UpdateControls();
+
+            _IgnoreNotifications = false;
             break;
         }
 
@@ -409,7 +419,11 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             gs._YAxisMode = (YAxisMode) SelectedIndex;
 
+            _IgnoreNotifications = true;
+
             UpdateControls();
+
+            _IgnoreNotifications = false;
             break;
         }
 
@@ -433,7 +447,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     WCHAR Text[MAX_PATH] = { };
@@ -490,7 +504,7 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     switch (id)
     {
@@ -538,7 +552,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     if (_State == nullptr)
         return;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
 
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
@@ -668,7 +682,7 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     if (_State == nullptr)
         return -1;
 
-    auto ChangedSettings = Settings::All;
+    auto ChangedSettings = ConfigurationChanges::All;
     auto & gd = _State->_GraphDescriptions[_SelectedGraph];
 
     auto nmud = (LPNMUPDOWN) nmhd;

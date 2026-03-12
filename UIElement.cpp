@@ -103,7 +103,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
     CreateToolTipControl();
 
     // Apply the initial configuration.
-    UpdateState(Settings::All);
+    UpdateState(ConfigurationChanges::All);
 
     _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
@@ -327,7 +327,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
                     _UIState = NewState;
 
-                    UpdateState(Settings::All);
+                    UpdateState(ConfigurationChanges::All);
 
                     // Notify the configuration dialog.
                     if (_ConfigurationDialog.IsWindow())
@@ -477,7 +477,7 @@ void uielement_t::OnColorsChanged()
 /// </summary>
 LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    UpdateState((Settings) wParam);
+    UpdateState((ConfigurationChanges) wParam);
 
     return 0;
 }
@@ -546,9 +546,9 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState(Settings settings) noexcept
+void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
 {
-    if (settings == Settings::All)
+    if (settings == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
 
@@ -566,7 +566,7 @@ void uielement_t::UpdateState(Settings settings) noexcept
     {
         _RenderState = _UIState; // Copies only the settings that are relevant for rendering.
 
-        if (settings == Settings::All)
+        if (settings == ConfigurationChanges::All)
         {
             _RenderState._SampleRate = 0;
             _RenderState._StyleManager.DeleteDeviceSpecificResources();
@@ -597,7 +597,7 @@ void uielement_t::UpdateState(Settings settings) noexcept
 
     _CriticalSection.Leave();
 
-    if (settings == Settings::All)
+    if (settings == ConfigurationChanges::All)
     {
         for (auto & Iter : _Grid)
         {
@@ -636,7 +636,7 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState(Settings::All);
+    UpdateState(ConfigurationChanges::All);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
