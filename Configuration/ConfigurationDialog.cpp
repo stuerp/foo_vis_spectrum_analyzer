@@ -127,7 +127,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
                 _Pages[_State->_PageIndex]->ShowWindow(SW_SHOW); // Re-showing the pages also initializes the controls of that page.
 
-                _MenuList.SetCurSel(_State->_PageIndex);
+                _MenuList.SetCurSel((int) _State->_PageIndex);
             }
 
             ConfigurationChanged(ConfigurationChanges::All);

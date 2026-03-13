@@ -1,12 +1,11 @@
 
-/** $VER: UIElement.h (2026.02.25) P. Stuer **/
+/** $VER: UIElement.h (2026.03.13) P. Stuer **/
 
 #pragma once
 
 #include "pch.h"
 
 #include "State.h"
-#include "OldConfigurationDialog.h"
 #include "ConfigurationDialog.h"
 #include "Event.h"
 
