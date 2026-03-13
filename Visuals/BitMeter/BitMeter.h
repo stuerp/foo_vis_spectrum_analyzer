@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.03.11) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.03.13) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -29,11 +29,13 @@ public:
     void Resize() noexcept;
 
 private:
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
     size_t _MeasurementCount;
+
+    std::vector<std::wstring> _Labels;
 
     style_t * _BarBackground;
 
@@ -47,4 +49,10 @@ private:
 
     const FLOAT XPadding = 2.f;
     const FLOAT YPadding = 2.f;
+
+    #if (audio_sample_size == 64)
+    const size_t ExponentBits = 11;
+    #else
+    const size_t ExponentBits =  8;
+    #endif
 };

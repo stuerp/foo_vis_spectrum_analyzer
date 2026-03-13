@@ -228,17 +228,20 @@ This visualization uses the following settings:
 
 ##### Bit Meter
 
-The Bit Meter visualization is a specialized tool used to analyze the digital precision (bit depth) of an audio signal in real-time. It displays which bits in the digital data are being actively used. 
+The Bit Meter visualization is a specialized tool used to analyze the digital precision (bit depth) of an audio signal in real-time. It displays which bits in the digital data are being actively used.
 
 It can demonstrate if a file is, for example, 24-bit but only actually using 16 bits of information, indicating potential wasted headroom or improper recording levels.
 
-The distribution of bit usage over time is display as a histogram during playback.
+The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the y-axis the channel name.
+
+foobar2000 uses single or double precision floating-point numbers (real numbers) between -1 and 1 to represent audio samples.
+A floating-point number is internally represented by 32 or 64 bits divided into a sign (+/-) and exponent and a mantissa (the decimal part).
+Each of these bit ranges can be rendered with a different style.
+If, while playing a track, not all of the bits of the mantissa are used that may indicate resolution loss during the encoding of the track.
 
 > [!Note]
 > This visualization only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
-
-> [!Note]
-> This visualization supports dedicated styles to highlight the sign, mantissa and exponent of a foobar2000 samples.
+> It supports dedicated styles to highlight the sign, mantissa and exponent of a foobar2000 samples.
 
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 

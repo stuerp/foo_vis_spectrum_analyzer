@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-beta1, 2026-03-12
+
+- New: Bit Meter vizualisation
+  - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
+  - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
+- Fixed: Some missing event handlers in the new Configuration dialog. (Regression)
+- Fixed: Some Configuration dialog notifications in 32-bit version. (Regression)
+
 v0.10.0.0-alpha7, 2026-03-01
 
 - Improved: Completely refactored the configuration dialog.

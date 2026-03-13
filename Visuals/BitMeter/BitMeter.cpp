@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.03.12) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.03.13) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -38,6 +38,20 @@ void bit_meter_t::Initialize(state_t * state, const graph_description_t * settin
     _Analysis = analysis;
 
     _MeasurementCount = 0;
+
+    // Create the labels.
+    {
+        _Labels.clear();
+
+        for (int BitNumber = 1; BitNumber <= audio_sample_size; ++BitNumber)
+        {
+            WCHAR Text[4] = { };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%d", BitNumber);
+
+            _Labels.push_back(Text);
+        }
+    }
 }
 
 /// <summary>
@@ -94,29 +108,23 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
 
-    FLOAT dx = ClientWidth  / audio_sample_size;
+    FLOAT BarWidth = ClientWidth  / audio_sample_size;
 
     // Use the full width of the graph?
     if (_Settings->_HorizontalAlignment != HorizontalAlignment::Fit)
-        dx = std::floor(dx);
+        BarWidth = std::floor(BarWidth);
 
-    const FLOAT BarsWidth = dx * (FLOAT) audio_sample_size;
+    const FLOAT TotalBarWidth = BarWidth * (FLOAT) audio_sample_size;
 
-    const FLOAT dy = ClientHeight / (FLOAT) _MeasurementCount;
+    const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
-    #if (audio_sample_size == 64)
-    constexpr size_t ExponentBits = 11;
-    #else
-    constexpr size_t ExponentBits =  8;
-    #endif
-
-    const FLOAT XOffset = GetHOffset(_Settings->_HorizontalAlignment, ClientWidth - BarsWidth);
+    const FLOAT XOffset = GetHOffset(_Settings->_HorizontalAlignment, ClientWidth - TotalBarWidth);
     FLOAT YOffset = 0.f;
-
-    D2D1_RECT_F r = { .bottom = dy };
 
     // Render the measurements for each selected channel.
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
+
+    D2D1_RECT_F r = { .bottom = ChannelHeight };
 
     for (const auto & m : _Analysis->_BitMeasurements)
     {
@@ -147,7 +155,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             // Draw the background.
             r.top   = 0.f;
-            r.right = r.left + dx - 1.f;
+            r.right = r.left + BarWidth - 1.f;
 
             if (_BarBackground->IsEnabled())
                 deviceContext->FillRectangle(r, _BarBackground->_Brush);
@@ -167,7 +175,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         Style->_Brush->SetOpacity((FLOAT) BitCount);
                     }
                     else
-                        r.top = dy - ((FLOAT) BitCount * dy);
+                        r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
 
                     deviceContext->FillRectangle(r, Style->_Brush);
                 }
@@ -176,7 +184,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             // Draw the bit number.
             if (_Settings->_XAxisBottom && _XAxisText->IsEnabled())
             {
-                const std::wstring Text = msc::UTF8ToWide(pfc::format_int((t_int64) BitNumber + 1).c_str());
+                const std::wstring & Text = _Labels[BitNumber];
 
                 const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
 
@@ -188,7 +196,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             ++BitNumber;
         }
 
-        YOffset += dy + XAxisHeight;
+        YOffset += ChannelHeight + XAxisHeight;
     }
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -197,7 +205,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT bit_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
     if ((_Size.width == 0.f) || _Size.height == 0.f)
         return E_FAIL;

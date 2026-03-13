@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.03.08) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.03.13) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
@@ -41,16 +41,18 @@ BOOL configuration_dialog_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
     _OldState = *_State;
 
-    InitializeControls();
-
     MoveWindow(&_State->_DialogRect);
 
     _DarkMode.AddDialogWithControls(*this);
 
-    ResizePages();
+    {
+        InitializeControls();
 
-    if (_State->_PageIndex < _Pages.size())
-        _Pages[ _State->_PageIndex]->ShowWindow(SW_SHOW);
+        ResizePages();
+
+        if (_State->_PageIndex < _Pages.size())
+            _Pages[_State->_PageIndex]->ShowWindow(SW_SHOW);
+    }
 
     _IsInitializing = false;
 
@@ -119,8 +121,16 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
             _State->Reset();
             CfgLogLevel = (int64_t) DefaultCfgLogLevel;
 
-            TerminateControls();
-            InitializeControls();
+            {
+                for (auto & Page : _Pages)
+                    Page->ShowWindow(SW_HIDE);
+
+                _Pages[_State->_PageIndex]->ShowWindow(SW_SHOW); // Re-showing the pages also initializes the controls of that page.
+
+                _MenuList.SetCurSel(_State->_PageIndex);
+            }
+
+            ConfigurationChanged(ConfigurationChanges::All);
             break;
         }
 

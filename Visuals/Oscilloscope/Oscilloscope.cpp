@@ -47,6 +47,8 @@ void oscilloscope_t::Initialize(state_t * state, const graph_description_t * set
 
     // Create the labels.
     {
+        _Labels.clear();
+
         for (double Amplitude = _Settings->_AmplitudeLo; Amplitude <= _Settings->_AmplitudeHi; Amplitude -= _Settings->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
