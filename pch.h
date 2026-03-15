@@ -11,8 +11,8 @@
 
 #define NOMINMAX
 
-#include <helpers/foobar2000+atl.h>
-#include <helpers/helpers.h>
+#include <helpers\foobar2000+atl.h>
+#include <helpers\helpers.h>
 
 #include <dxgi1_3.h>
 #include <d3d11_2.h>
@@ -45,9 +45,6 @@
 #define Assert(b)
 #endif
 #endif
-
-#define TOSTRING_IMPL(x) #x
-#define TOSTRING(x) TOSTRING_IMPL(x)
 
 #ifndef THIS_HINSTANCE
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;

@@ -38,7 +38,7 @@ Write-Host "Creating directory `"$PackagePath`"...";
 
 $null = New-Item -Path '..\out\' -Name "$TargetName\x64" -ItemType 'directory' -Force;
 
-# Copy the shared x86\x64 files to the package directory.
+# Copy the shared x86/x64 files to the package directory.
 Write-Host "Copying shared component files to the package directory...";
 
 $PackagePath = "..\out\$TargetName";

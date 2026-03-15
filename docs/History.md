@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-beta2, 2026-03-13
+
+- Fixed: Clicking the Reset button resulted in a crash. (Regression)
+
 v0.10.0.0-beta1, 2026-03-12
 
 - New: Bit Meter vizualisation

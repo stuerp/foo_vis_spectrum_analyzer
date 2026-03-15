@@ -139,9 +139,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0-beta2, 2026-03-13
+v0.10.0.0, 2026-03-xx
 
-- Fixed: Clicking the Reset button resulted in a crash. (Regression)
+- 
 
 You can read the full history [here](docs/History.md).
 
