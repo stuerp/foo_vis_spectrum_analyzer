@@ -139,9 +139,38 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0, 2026-03-xx
+v0.10.0.0, 2026-03-15
 
-- 
+- New: Implemented a high resolution timer.
+  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
+- New: All / None button in configuration dialog to quickly select all or no channels.
+- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
+- New: `Scale lines` option. Enable to draw scale lines on the bar area of a peak meter. (Default: Enabled)
+- New: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
+- New: `Rotation` option to rotate the X/Y oscilloscope.
+- New: Bit Meter vizualisation
+  - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
+  - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
+- Improved: Complete rewrite of Peak meter visualization.
+  - Reduced CPU and GPU load.
+  - Fixed known graphical glitches and inconsistencies.
+  - New: *Center scale* setting to draw scales between the peak meter bars.
+  - New: *Max. bar size* setting to constrain the width/height of a meter bar. (Forum feature request)
+- Improved: Raised the max. number of frequency bins from 512 to 8192.
+- Improved: Completely refactored the configuration dialog.
+  - It became too complex to maintain.
+  - Faster interaction with the render thread.
+- Improved: The preset location supports `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
+- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
+- Fixed: SWIFT optimization bug.
+- Fixed: Lanczos interpolation bug.
+- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
+- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
+- Fixed: The gradient stops are no longer reset when editing a color of the gradient.
+- Fixed: Oscilloscope did not implement all of the Y-axis settings.
+- Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
+- Fixed: Oscilloscope did not render the vertical grid lines correctly.
+- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
 
 You can read the full history [here](docs/History.md).
 
