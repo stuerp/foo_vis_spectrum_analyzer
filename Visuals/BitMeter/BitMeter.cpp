@@ -1,14 +1,11 @@
 
-/** $VER: BitMeter.cpp (2026.03.13) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.03.15) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
 #include "BitMeter.h"
 
 #include "Support.h"
-#include "Log.h"
-
-#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -102,6 +99,9 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
+    // Draw the static content.
+    deviceContext->DrawImage(_StaticContentCommandList);
+
     const FLOAT XAxisHeight = _Settings->_XAxisBottom ? YPadding + _XAxisText->_Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _Settings->_YAxisLeft   ? XPadding + _YAxisText->_Width  + XPadding : 0.f;
 
@@ -121,7 +121,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT XOffset = GetHOffset(_Settings->_HorizontalAlignment, ClientWidth - TotalBarWidth);
     FLOAT YOffset = 0.f;
 
-    // Render the measurements for each selected channel.
+    // Draw the measurements for each selected channel.
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
     D2D1_RECT_F r = { .bottom = ChannelHeight };
@@ -132,64 +132,28 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         deviceContext->SetTransform(Translate);
 
-        // Draw the channel name.
-        {
-            r.top = 0.f;
-            r.left = XOffset;
+        r.left = XOffset + YAxisWidth;
 
-            if (_Settings->_YAxisLeft && _YAxisText->IsEnabled())
-            {
-                r.left  += XPadding;
-                r.right = r.left + _YAxisText->_Width;
-
-//              deviceContext->DrawRectangle(r, _DebugBrush);
-                deviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText->_TextFormat, r, _YAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                r.left = r.right + XPadding;
-            }
-        }
-
+        // Draw the bit bar counts for the current channel.
         size_t BitNumber = 0;
 
         for (const auto & BitCount : m.BitCounts)
         {
-            // Draw the background.
-            r.top   = 0.f;
             r.right = r.left + BarWidth - 1.f;
 
-            if (_BarBackground->IsEnabled())
-                deviceContext->FillRectangle(r, _BarBackground->_Brush);
-
-            // Draw the bit count.
             if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
             {
                 style_t * Style = (BitNumber == 0) ? _BarSign : ((BitNumber <= ExponentBits) ? _BarExponent : _BarMantissa);
 
                 if (Style->IsEnabled())
                 {
-
                     if (_State->_OpacityMode)
-                    {
-                        r.top = 0;
-
                         Style->_Brush->SetOpacity((FLOAT) BitCount);
-                    }
                     else
                         r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
 
                     deviceContext->FillRectangle(r, Style->_Brush);
                 }
-            }
-
-            // Draw the bit number.
-            if (_Settings->_XAxisBottom && _XAxisText->IsEnabled())
-            {
-                const std::wstring & Text = _Labels[BitNumber];
-
-                const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
-
-//              deviceContext->DrawRectangle(cr, _DebugBrush);
-                deviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText->_TextFormat, cr, _XAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             r.left = r.right + 1.f;
@@ -218,6 +182,8 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         SafeRelease(&_BarSign);
         SafeRelease(&_BarExponent);
         SafeRelease(&_BarMantissa);
+
+        _StaticContentCommandList.Release();
     }
 
     if (_MeasurementCount == 0)
@@ -257,6 +223,18 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
+    if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
+    {
+        CComPtr<ID2D1Device> D2DDevice;
+
+        deviceContext->GetDevice(&D2DDevice);
+
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+    }
+
+    if (SUCCEEDED(hr) && (_StaticContentCommandList == nullptr))
+        hr = CreateStaticContentCommandList();
+
     return hr;
 }
 
@@ -265,15 +243,114 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 /// </summary>
 void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 {
-    SafeRelease(&_BarBackground);
-    SafeRelease(&_BarSign);
-    SafeRelease(&_BarExponent);
-    SafeRelease(&_BarMantissa);
+    _StaticContentCommandList.Release();
 
-    SafeRelease(&_XAxisText);
-    SafeRelease(&_YAxisText);
+    _DeviceContext.Release();
 
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+
+    SafeRelease(&_YAxisText);
+    SafeRelease(&_XAxisText);
+
+    SafeRelease(&_BarMantissa);
+    SafeRelease(&_BarExponent);
+    SafeRelease(&_BarSign);
+    SafeRelease(&_BarBackground);
+}
+
+/// <summary>
+/// Creates a command list to render the static content.
+/// </summary>
+HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
+{
+    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContentCommandList);
+
+    if (SUCCEEDED(hr))
+    {
+        _DeviceContext->SetTarget(_StaticContentCommandList);
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+
+        _DeviceContext->Clear(D2D1::ColorF(0, 0.f));
+
+        const FLOAT XAxisHeight = _Settings->_XAxisBottom ? YPadding + _XAxisText->_Height + YPadding : 1.f;
+        const FLOAT YAxisWidth  = _Settings->_YAxisLeft   ? XPadding + _YAxisText->_Width  + XPadding : 0.f;
+
+        const FLOAT ClientWidth  = _Size.width - YAxisWidth;
+        const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
+
+        FLOAT BarWidth = ClientWidth  / audio_sample_size;
+
+        // Use the full width of the graph?
+        if (_Settings->_HorizontalAlignment != HorizontalAlignment::Fit)
+            BarWidth = std::floor(BarWidth);
+
+        const FLOAT TotalBarWidth = BarWidth * (FLOAT) audio_sample_size;
+
+        const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
+
+        const FLOAT XOffset = GetHOffset(_Settings->_HorizontalAlignment, ClientWidth - TotalBarWidth);
+        FLOAT YOffset = 0.f;
+
+        // Draw the static content for each selected channel.
+        D2D1_RECT_F r = { .bottom = ChannelHeight };
+
+        for (const auto & m : _Analysis->_BitMeasurements)
+        {
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(0.f, YOffset);
+
+            _DeviceContext->SetTransform(Translate);
+
+            // Draw the channel name.
+            {
+                r.left = XOffset;
+
+                if (_Settings->_YAxisLeft && _YAxisText->IsEnabled())
+                {
+                    r.left  += XPadding;
+                    r.right = r.left + _YAxisText->_Width;
+
+    //              _DeviceContext->DrawRectangle(r, _DebugBrush);
+                    _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText->_TextFormat, r, _YAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                    r.left = r.right + XPadding;
+                }
+            }
+
+            // Draw the bit bar backgrounds and numbers.
+            for (size_t BitNumber = 0; BitNumber < m.BitCounts.size(); ++BitNumber)
+            {
+                // Draw the background.
+                r.right = r.left + BarWidth - 1.f;
+
+                if (_BarBackground->IsEnabled())
+                    _DeviceContext->FillRectangle(r, _BarBackground->_Brush);
+
+                // Draw the bit number.
+                if (_Settings->_XAxisBottom && _XAxisText->IsEnabled())
+                {
+                    const std::wstring & Text = _Labels[BitNumber];
+
+                    const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
+
+    //              _DeviceContext->DrawRectangle(cr, _DebugBrush);
+                    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText->_TextFormat, cr, _XAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                }
+
+                r.left = r.right + 1.f;
+            }
+
+            YOffset += ChannelHeight + XAxisHeight;
+        }
+
+        hr = _DeviceContext->EndDraw();
+    }
+
+    if (SUCCEEDED(hr))
+        hr = _StaticContentCommandList->Close();
+
+    return hr;
 }

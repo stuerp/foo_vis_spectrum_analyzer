@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.03.11) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.03.15) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -7,9 +7,6 @@
 #include "AmplitudeScaler.h"
 
 #include "Support.h"
-#include "Log.h"
-
-#include "DirectWrite.h"
 
 #pragma hdrstop
 

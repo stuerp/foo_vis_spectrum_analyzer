@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.03.13) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.03.15) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -32,6 +32,8 @@ private:
     HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateStaticContentCommandList() noexcept;
+
 private:
     size_t _MeasurementCount;
 
@@ -46,6 +48,9 @@ private:
     style_t * _YAxisText;
 
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+
+    CComPtr<ID2D1DeviceContext> _DeviceContext;
+    CComPtr<ID2D1CommandList> _StaticContentCommandList;
 
     const FLOAT XPadding = 2.f;
     const FLOAT YPadding = 2.f;
