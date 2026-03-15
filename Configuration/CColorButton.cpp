@@ -1,10 +1,12 @@
 
-/** $VER: CColorButton.cpp (2025.10.19) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: CColorButton.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
+
 #include "CColorButton.h"
 #include "CColorDialogEx.h"
 
+#include "Theme.h"
 #include "Color.h"
 
 #pragma hdrstop
@@ -12,13 +14,19 @@
 /// <summary>
 /// Initializes the control.
 /// </summary>
-void CColorButton::Initialize(HWND hWnd)
+void CColorButton::Initialize(HWND hWnd) noexcept
 {
+    if (_IsSubclassed)
+        return;
+
     ATLASSERT(::IsWindow(hWnd));
 
     __super::_hWnd = hWnd;
 
-    SubclassWindow(hWnd);
+    _IsSubclassed = SubclassWindow(hWnd);
+
+    if (!_IsSubclassed)
+        return;
 
     CreateDeviceIndependentResources();
 
@@ -30,36 +38,37 @@ void CColorButton::Initialize(HWND hWnd)
 /// Terminates the control.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void CColorButton::Terminate()
+void CColorButton::Terminate() noexcept
 {
-    if (!IsWindow())
+    if (!IsWindow() || !_IsSubclassed)
         return;
 
     DeleteDeviceSpecificResources();
     DeleteDeviceIndependentResources();
 
     UnsubclassWindow(TRUE);
+    _IsSubclassed = false;
 }
 
 /// <summary>
 /// Sets the color scheme.
 /// </summary>
-void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops)
+void CColorButton::SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
 {
     _GradientStops = gradientStops;
 
     _Brush.Release();
 
+    EnableWindow(gradientStops.size() > 0);
+
     Invalidate();
     UpdateWindow();
-
-    EnableWindow(gradientStops.size() > 0);
 }
 
 /// <summary>
 /// Sets the color.
 /// </summary>
-void CColorButton::SetColor(COLORREF color)
+void CColorButton::SetColor(COLORREF color) noexcept
 {
     SetColor(color_t::ToD2D1_COLOR_F(color));
 }
@@ -67,7 +76,7 @@ void CColorButton::SetColor(COLORREF color)
 /// <summary>
 /// Sets the color.
 /// </summary>
-void CColorButton::SetColor(const D2D1_COLOR_F & color)
+void CColorButton::SetColor(const D2D1_COLOR_F & color) noexcept
 {
     _Color = color;
     _GradientStops.clear();
@@ -81,7 +90,7 @@ void CColorButton::SetColor(const D2D1_COLOR_F & color)
 /// <summary>
 /// Gets the color.
 /// </summary>
-void CColorButton::GetColor(D2D1_COLOR_F & color) const
+void CColorButton::GetColor(D2D1_COLOR_F & color) const noexcept
 {
     color = _Color;
 }
@@ -89,34 +98,36 @@ void CColorButton::GetColor(D2D1_COLOR_F & color) const
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void CColorButton::OnPaint(HDC)
+void CColorButton::OnPaint(HDC) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (FAILED(hr))
         return;
 
+    CRect cr;
+
+    GetClientRect(&cr);
+
+    D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
+
+    _RenderTarget->BeginDraw();
+
     if (IsWindowEnabled())
     {
-        _RenderTarget->BeginDraw();
-
-        CRect cr;
-
-        GetClientRect(&cr);
-
-        D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, (FLOAT) cr.Width(), (FLOAT) cr.Height());
-
         if (_PatternBrush)
             _RenderTarget->FillRectangle(Rect, _PatternBrush);
 
         if (_Brush)
             _RenderTarget->FillRectangle(Rect, _Brush);
-
-        hr = _RenderTarget->EndDraw();
-
-        if (hr == D2DERR_RECREATE_TARGET)
-            DeleteDeviceSpecificResources();
     }
+    else
+        _RenderTarget->FillRectangle(Rect, _BackgroundBrush);
+
+    hr = _RenderTarget->EndDraw();
+
+    if (hr == D2DERR_RECREATE_TARGET)
+        DeleteDeviceSpecificResources();
 
     ValidateRect(NULL);
 }
@@ -124,7 +135,7 @@ void CColorButton::OnPaint(HDC)
 /// <summary>
 /// Handles the WM_LBUTTONDBLCLK message.
 /// </summary>
-LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
+LRESULT CColorButton::OnLButtonDown(UINT, CPoint) noexcept
 {
     if (!_GradientStops.empty())
         return 1;
@@ -141,7 +152,7 @@ LRESULT CColorButton::OnLButtonDown(UINT, CPoint)
 }
 
 /// <summary>
-/// Sends a notification that the content has changed.
+/// Sends a notification to the parent that the content has changed.
 /// </summary>
 void CColorButton::SendChangedNotification() const noexcept
 {
@@ -156,9 +167,16 @@ void CColorButton::SendChangedNotification() const noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CColorButton::CreateDeviceSpecificResources()
+HRESULT CColorButton::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = __super::CreateDeviceSpecificResources();
+
+    if (SUCCEEDED(hr) && (_BackgroundBrush == nullptr))
+    {
+        COLORREF Color = _Theme.GetSysColor(COLOR_BTNFACE);
+
+        hr = _RenderTarget->CreateSolidColorBrush(D2D1::ColorF(Color), &_BackgroundBrush);
+    }
 
     if (SUCCEEDED(hr) && (_Brush == nullptr))
     {
@@ -197,9 +215,21 @@ HRESULT CColorButton::CreateDeviceSpecificResources()
 }
 
 /// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void CColorButton::DeleteDeviceSpecificResources() noexcept
+{
+    _PatternBrush.Release();
+    _Brush.Release();
+    _BackgroundBrush.Release();
+
+    __super::DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates a pattern brush for rendering the background.
 /// </summary>
-HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
+HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget) noexcept
 {
     CComPtr<ID2D1BitmapRenderTarget> rt;
 
@@ -243,17 +273,6 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget)
     }
 
     return hr;
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void CColorButton::DeleteDeviceSpecificResources()
-{
-    _PatternBrush.Release();
-    _Brush.Release();
-
-    __super::DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

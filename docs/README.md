@@ -22,7 +22,7 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 
 ## Introduction
 
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectogram and peak meters.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters or oscilloscope.
 
 ---
 
@@ -118,6 +118,304 @@ Closes the dialog box and preserves the changes to the configuration during the 
 `Cancel`
 
 Closes the dialog box and undoes any changes to the configuration.
+
+---
+
+### Visualization page
+
+This page contains settings specific to some of the visualizations.
+
+#### Type
+
+Determines the type of visualization of a graph:
+
+##### Bars
+
+The classic frequency spectrum visualization.
+
+![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-LED-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer LED Bars Mode with gradient colors</sup>
+
+##### Curve
+
+The same as bars but with a smoothed curve instead of bars.
+
+![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
+
+##### Spectrogram
+
+![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
+
+<sup>Horizontal scrolling spectrogram visualization</sup>
+
+##### Peak Meter
+
+Displays the peak and RMS levels of the audio.
+
+##### Level Meter
+
+Displays the balance and mid/side correlation of the audio.
+
+##### Radial Bars
+
+A variation of the Bars visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
+
+##### Radial Curve
+
+A variation of the Curve visualization that displays the frequency spectrum in a circle.
+
+![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
+
+##### Oscilloscope
+
+Shows the shape of the audio signal over time, helping you understand how sound behaves.
+
+> [!Note]
+> The oscilloscope only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
+
+###### Time-domain mode
+
+In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
+
+This visualization uses the following settings:
+
+- Graph X-axis and Y-axis settings
+  - Select *Off* or *None* to prevent the axis from being rendered.
+- Channel selection
+- Y signal gain
+- Phosphor effect settings
+
+![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
+
+<sup>Oscilloscope</sup>
+
+![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
+
+<sup>Oscilloscope with Y-axis in dBFS</sup>
+
+###### X-Y mode
+
+In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
+and the other the vertical axis (Y), instead of the usual time-based sweep.
+
+This mode is useful for visualizing the relationship between two signals, such as phase differences, frequency ratios, or specific patterns like Lissajous figures.
+
+This visualization uses the following settings:
+
+- Graph X-axis and Y-axis settings
+  - Select *Off* or *None* to prevent the axis from being rendered.
+- Channel pair selection: Determines which channels will be plotted against each other.
+- Swap channels to determine which channel uses the X axis and which one uses the Y axis. 
+- X and Y signal gain
+- Phosphor effect settings
+
+![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
+
+<sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
+
+##### Bit Meter
+
+The Bit Meter visualization is a specialized tool used to analyze the digital precision (bit depth) of an audio signal in real-time. It displays which bits in the digital data are being actively used.
+
+It can demonstrate if a file is, for example, 24-bit but only actually using 16 bits of information, indicating potential wasted headroom or improper recording levels.
+
+The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the y-axis the channel name.
+
+foobar2000 uses single or double precision floating-point numbers (real numbers) between -1 and 1 to represent audio samples.
+A floating-point number is internally represented by 32 or 64 bits divided into a sign (+/-) and exponent and a mantissa (the decimal part).
+Each of these bit ranges can be rendered with a different style.
+If, while playing a track, not all of the bits of the mantissa are used that may indicate resolution loss during the encoding of the track.
+
+> [!Note]
+> This visualization only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
+> It supports dedicated styles to highlight the sign, mantissa and exponent of a foobar2000 samples.
+
+![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar heights</sup>
+
+![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar opacity</sup>
+
+#### Peak Indicators group
+
+Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
+
+Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
+
+`Peak mode`
+
+Specifies how the peak indicators are rendered:
+
+- None
+- Classic
+- Gravity
+- AIMP
+- Fade Out
+- Fading AIMP: A combination of AIMP and Fade Out
+
+`Hold time`
+
+Specifies how long a peak value will be held steady before it decays.
+
+`Acceleration`
+
+Specifies the acceleration used to decay the peak value.
+
+#### LEDs group
+
+Some visualizations can display a bar as simulated LED lights.
+
+Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
+
+`Enabled`
+
+Display the spectrum bars and peak meters as LEDs.
+
+`LED light`
+
+The size of the LED light, in pixels.
+
+`LED gap`
+
+The size of the gap between the LEDs, in pixels.
+
+`Integral size`
+
+Enable this setting to render the LEDs only as full blocks.
+
+#### Radial Bars / Radial Curve group
+
+Set the visualization type to **Radial Bars** or  **Radial Curve** to enable these settings.
+
+`Inner radius`
+
+Sets the inner radius as a percentage of the smallest side of the graph.
+
+`Outer radius`
+
+Sets the outer radius as a percentage of the smallest side of the graph.
+
+> [!Note]
+> If the inner radius is greater than the outer radius the bars are drawn inwards.
+
+`Angular velocity`
+
+Sets the angular velocity of the rotation in degrees per second. Use positive values for clockwise rotation; negative values for anti-clockwise rotation.
+
+#### Bit Meter group
+
+Set the visualization type to **Bit Meter** to enable these settings.
+
+`Opacity Mode`
+
+Renders the bit histogram by varying the opacity of the bars instead of the height.
+
+#### Spectrogram group
+
+Set the visualization type to **Spectrogram** to enable these settings.
+
+`Scrolling`
+
+Activates scrolling of the spectrogram.
+
+`Horizontal`
+
+Renders the spectrogram horizontally when enabled, vertically when not.
+
+`Use spectrum bar metrics`
+
+#### Peak Meter group
+
+The peak meter will display the instant peak and RMS over time level of the playing track.
+
+> [!Tip]
+> A bar will be shown for each of the channels in the playing track but only when it is also selected in the Channels list on the Graphs page. F.e. a 7.1 track with only the Front Left and Front Right channel selected will only show 2 bars. A mono track without the Front Center channel selected will show no bar.
+
+Set the visualization type to **Peak / RMS** to enable these settings.
+
+`Horizontal`
+
+Renders the peak meter horizontally when enabled, vertically when not.
+
+`RMS+3`
+
+Adds 3dB to the RMS value.
+
+`Center scale`
+
+Adds a scale between each bar.
+
+`Scale lines`
+
+Draws a scale line on the bar area when enabled.
+
+> [!Tip]
+> When using LED mode the scale lines can appear in the gap between the LEDs causing an inconsitent look. Disable this option to stop drawing the lines.
+
+`RMS window`
+
+Specifies the duration of each RMS measurement in seconds.
+
+`Bar gap`
+
+Specifies the gap between the bar (in pixels). Defaults to 1 pixel.
+
+`Max. bar size`
+
+Allows you to constrain the width or height of a bar when the graph is resized. Specify a size in pixels to constrain the bar width or height. Set to 0 to remove the constraint.
+
+#### Level Meter group
+
+Set the visualization type to **Balance / Correlation** to enable these settings.
+
+`Horizontal`
+
+Renders the level meter horizontally when enabled, vertically when not.
+
+#### Oscilloscope group
+
+`X-Y mode`
+
+Enables X/Y-mode. Select a channel pair, typically Left/Right. The Left signal will be plotted on the X-axis; the Right signal will be plotted on the Y-axis.
+
+`X-gain`
+
+Specifies the gain applied to the X signal.
+
+`Y-gain`
+
+Specifies the gain applied to the Y signal.
+
+`Rotation`
+
+Specifies the rotation angle in degrees of the signal when displayed by an X/Y oscilloscope. Valid range is -180 to +180 degrees.
+
+`Phosphor decay`
+
+Enables a phosphor decay effect simulation of analog oscilloscopes.
+
+`Blur sigma`
+
+Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring.
+
+`Decay factor`
+
+Specifies the color fade speed. Lower values cause a faster decay.
 
 ---
 
@@ -293,7 +591,7 @@ Available when selecting the ''Octaves'' distribution. Select a range between th
 
 Number of bands per octave ranging from 1 to 48.
 
-`Pitch`
+`Tuning pitch`
 
 Frequency of the tuning pitch (A4 = 440.0Hz). Valid values are 1Hz to 96000Hz.
 
@@ -393,12 +691,20 @@ Enable the check box to see a tooltip with the center frequency and when appropr
 
 Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered.
 
+`Visualize during pause`
+
+Enable this option to continue visualization when playback is paused.
+
 #### Artwork group
 
 Some visualizations can use artwork to display on the background or to use as a source for a color list. The artwork can come from the playing track or from file location.
 
 > [!Note]
 > The color selection runs only when a new track is started.
+
+`Artwork type`
+
+Determines which artwork will be displayed on the graph background.
 
 `No. artwork colors`
 
@@ -419,14 +725,7 @@ Determines how to sort the colors selected from the artwork.
 
 `Show artwork on background`
 
-Displays artwork on the graph background. By default the front cover of the playing track is used. You can override this behavior using the `Artwork file path` setting.
-
-`Artwork type`
-
-Determines which artwork will be displayed on the graph background.
-
-> [!Note]
-> The selection only becomes active when a new track is started.
+Displays artwork on the graph background. By default the front cover of the playing track is used. You can override this behavior using the `Artwork type` or `Artwork file path` setting.
 
 `Fit mode`
 
@@ -458,217 +757,6 @@ Allows you to control the messages the component will write to the foobar2000 co
 
 > [!Warning]
 > The **Debug** and **Trace** levels may generate a lot of technical output.
-
----
-
-### Visualization page
-
-This page contains settings specific to some of the visualizations.
-
-#### Type
-
-Determines the type of visualization of a graph:
-
-##### Bars
-
-The classic frequency spectrum visualization.
-
-![Screenshot](assets/Bars.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
-
-##### Curve
-
-The same as bars but with a smoothed curve instead of bars.
-
-![Screenshot](assets/Curve.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
-
-##### Spectogram
-
-![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
-
-<sup>Horizontal scrolling spectogram visualization</sup>
-
-##### Peak / RMS
-
-Displays the peak and RMS levels of the audio.
-
-##### Balance / Correlation
-
-Displays the balance and mid/side correlation of the audio.
-
-##### Radial Bars
-
-A variation of the Bars visualization that displays the frequency spectrum in a circle.
-
-![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
-
-##### Radial Curve
-
-A variation of the Curve visualization that displays the frequency spectrum in a circle.
-
-![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
-
-##### Oscilloscope
-
-Shows the shape of the audio signal over time, helping you understand how sound behaves.
-
-> [!Note]
-> The oscilloscope only displays a signal if a channel is present in the audio and if the channel has been selected for display on the *Graphs* page.
-
-**Time-domain mode**
-
-In this mode the X-axis represents the time and the Y-axis represents the amplitude of the signal.
-
-This visualization uses the following settings:
-
-- Graph X-axis and Y-axis settings
-  - Select *Off* or *None* to prevent the axis from being rendered.
-- Channel selection
-- Y signal gain
-- Phosphor effect settings
- 
-![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
-
-<sup>Oscilloscope</sup>
-
-![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
-
-<sup>Oscilloscope with Y-axis in dBFS</sup>
-
-**X-Y mode**
-
-In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
-and the other the vertical axis (Y), instead of the usual time-based sweep.
-
-This mode is useful for visualizing the relationship between two signals, such as phase differences, frequency ratios, or specific patterns like Lissajous figures.
-
-This visualization uses the following settings:
-
-- Graph X-axis and Y-axis settings
-  - Select *Off* or *None* to prevent the axis from being rendered.
-- Channel pair selection: Determines which channels will be plotted against each other.
-- X and Y signal gain
-- Phosphor effect settings
-
-![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
-
-<sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
-
-#### Peak indicators group
-
-Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
-
-Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
-
-`Peak mode`
-
-Specifies how the peak indicators are rendered:
-
-- None
-- Classic
-- Gravity
-- AIMP
-- Fade Out
-- Fading AIMP: A combination of AIMP and Fade Out
-
-`Hold time`
-
-Specifies how long a peak value will be held steady before it decays.
-
-`Acceleration`
-
-Specifies the acceleration used to decay the peak value.
-
-#### LEDs group
-
-Some visualizations can display a bar as simulated LED lights.
-
-Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
-
-`Enabled`
-
-Display the spectrum bars and peak meters as LEDs.
-
-`LED size`
-
-The size of the LED light, in pixels.
-
-`LED gap`
-
-The size of the gap between the LEDs, in pixels.
-
-#### Spectogram group
-
-Set the visualization type to **Spectogram** to enable these settings.
-
-`Scrolling`
-
-Activates scrolling of the spectogram.
-
-`Horizontal`
-
-Renders the spectogram horizontally when enabled, vertically when not.
-
-`Use spectrum bar metrics`
-
-#### Radial Bars group
-
-Set the visualization type to **Radial Bars** to enable these settings.
-
-`Inner radius`
-
-Sets the inner radius as a percentage of the smallest side of the graph.
-
-`Outer radius`
-
-Sets the outer radius as a percentage of the smallest side of the graph.
-
-> [!Note]
-> If the inner radius is greater than the outer radius the bars are drawn inwards.
-
-`Angular velocity`
-
-Sets the angular velocity of the rotation in degrees per second. Use positive values for clockwise rotation; negative values for anti-clockwise rotation.
-
-#### Level Meter group
-
-Set the visualization type to **Balance / Correlation** to enable these settings.
-
-`Channel pairs`
-
-Allows you to select the channel pair that will be visualized.
-
-`Horizontal`
-
-Renders the level meter horizontally when enabled, vertically when not.
-
-#### Peak Meter group
-
-The peak meter will display the instant peak and RMS over time level of the playing track.
-
-> [!Tip]
-> A gauge will be shown for each of the channels in the playing track but only when it is also selected in the Channels list on the Graphs page. F.e. a 7.1 track with only the Front Left and Front Right channel selected will only show 2 gauges. A mono track without the Front Center channel selected will show no gauge.
-
-Set the visualization type to **Peak / RMS** to enable these settings.
-
-`Horizontal`
-
-Renders the peak meter horizontally when enabled, vertically when not.
-
-`RMS+3`
-
-Adds 3dB to the RMS value.
-
-`RMS window`
-
-Specifies the duration of each RMS measurement in seconds.
-
-`Gauge gap`
-
-Specifies the gap between the gauges (in pixels). Defaults to 1 pixel.
 
 ---
 
@@ -772,6 +860,22 @@ Allows you to select the audio channels that will be used to participate in the 
 > [!Tip]
 > Most users will enable only the **Left** and the **Right** channel. Therefor no information will be shown in the graph when a mono track is played. Also enable the **Front Center** channel to remedy this situation.
 
+`All`
+
+Selects all channels in the `Channels` list.
+
+`None`
+
+Deselects all channels in the `Channels` list.
+
+`Channel pair`
+
+Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Level Meter](#balance--correlation) and the [Oscilloscope](#oscilloscope).
+
+`Swap channels`
+
+Enable to swap the interpretation of a channel pair by visualisations that support it e.g. the [Oscilloscope](#oscilloscope) in X/Y mode.
+
 ---
 
 ### Styles page
@@ -814,7 +918,7 @@ Specifies the color scheme used to render the element.
 - foobar2000 Dark Mode
 - Fire
 - Rainbow
-- SoX: A list of colors emulating the spectogram colors used by SoX.
+- SoX: A list of colors emulating the spectrogram colors used by SoX.
 
 `Color list`
 
@@ -868,6 +972,9 @@ Contains the path name of the location of your preset files. By default the foob
 > [!Note]
 > For privacy reasons the location is stored in your foobar2000 settings but will not be included in a preset file. Preset files contain no personal information and can be safely exchanged with other users.
 
+> [!Tip]
+> You can use a foobar2000 script to specify the location. In addition the following variables are supported: `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
+
 Below the location you find the preset files currently found in the specified location.
 
 Double click a preset to activate it or select it and press the Load button.
@@ -899,13 +1006,39 @@ Deletes the currently selected preset.
 ## FAQs
 
 **Q:** Why does the fullscreen version of the component not respect my settings when using DUI?
+
 **A:** In DUI the fullscreen version of the component is a completely new instance with its own settings. You have to configure it separately.
+
+**Q:** What do the letters of the channel names mean?
+
+**A:**
+
+|Abbr|Description|
+|----|-----------|
+|FL|Front Left|
+|FR|Front Right|
+|FC|Front Center|
+|LFE|Low-Frequence Effects|
+|BL|Back Left|
+|BR|Back Right|
+|FCL|Front Center Left|
+|FCR|Front Center Right|
+|BC|Back Center|
+|SL|Side Left|
+|SR|Side Right|
+|TC|Top Center|
+|TFL|Top Front Left|
+|TFC|Top Front Center|
+|TFR|Top Front Right|
+|TBL|Top Back Left|
+|TBC|Top Back Center|
+|TBR|Top Back Right|
 
 ---
 
 ## Reference Material
 
-This chapter contains a lot of reference material I consulted during the development of foo_vis_spectrum_analyzer.
+This chapter contains some reference material I consulted during the development of foo_vis_spectrum_analyzer.
 
 ### foobar2000
 

@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2024.03.09) P. Stuer **/
+/** $VER: WindowFunctions.h (2026.02.11) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@ using namespace std;
 
 enum class WindowFunction
 {
-    Boxcar = 0,         // Rectangular
+    BoxCar = 0,         // Rectangular
 
     Hann,               // Cosine-squared
     Hamming,            // Raied cosine
@@ -31,7 +31,7 @@ enum class WindowFunction
     PowerOfSine,
     PowerOfCircle,
 
-    Gauss,
+    Gaussian,
     Tukey,              // Tapered cosine
     Kaiser,
     Poison,             // Exponential
@@ -67,30 +67,32 @@ public:
 
     virtual double operator () (double x) const
     {
-        x = (_Skew > 0.) ? ((x / 2. - 0.5) / (1. - (x / 2. - 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. + 1.:
-                           ((x / 2. + 0.5) / (1. + (x / 2. + 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. - 1.;
+        if (_Skew != 0.)
+            x = (_Skew > 0.) ? ((x / 2. - 0.5) / (1. - (x / 2. - 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. + 1.:
+                               ((x / 2. + 0.5) / (1. + (x / 2. + 0.5) * _SkewSquared)) / (1. / (1. + _SkewSquared)) * 2. - 1.;
 
-        return (_Truncate && (::fabs(x) >  1.)) ? 0. : x;
+        return (_Truncate && (std::fabs(x) >  1.)) ? 0. : x;
     }
 
     static window_function_t * Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
 
 private:
     double _Skew;
-    bool _Truncate;
+    bool _Truncate; // True when the input value of the function should be truncated to 0 if it is outside the range of [-1, 1]
 
     double _SkewSquared;
 };
 
 /// <summary>
-/// Implements the boxcar (rectangular, Dirichlet) window function.
+/// Implements the Box Car (rectangular, Dirichlet) window function.
+/// Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage.
 /// </summary>
-class Boxcar : public window_function_t
+class BoxCar : public window_function_t
 {
 public:
-    Boxcar(double skew, bool truncate) : window_function_t(skew, truncate) { }
+    BoxCar(double skew, bool truncate) : window_function_t(skew, truncate) { }
 
-    virtual ~Boxcar() { }
+    virtual ~BoxCar() { }
 
     virtual double operator () (double) const override
     {
@@ -99,7 +101,8 @@ public:
 };
 
 /// <summary>
-/// Implements the Hann (cosine squared, raised cosine) window function.
+/// Implements the Hann (Hanning, cosine squared, raised cosine) window function.
+/// Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose.
 /// </summary>
 class Hann : public window_function_t
 {
@@ -112,13 +115,19 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::cos(x * M_PI_2), 2.);
-    //  return 0.5 * (1. - ::cos(x * 2. * M_PI));
+        return 0.5 * (1. + std::cos(x * M_PI));
+/*
+        const double y = std::cos(x * M_PI_2);
+
+        return y * y;
+*/
+//      return 0.5 * (1. - std::cos(x * 2. * M_PI));
     }
 };
 
 /// <summary>
-/// Implements the Hamming window function.
+/// Implements the Hamming (raised cosine) window function.
+/// Slightly narrower main lobe than Hann, sidelobes ~43 dB. Use when you want a little more frequency resolution.
 /// </summary>
 class Hamming : public window_function_t
 {
@@ -131,14 +140,15 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.53836 - (0.46164 * ::cos(x * M_PI_2));
-    //  return 0.54      + (0.46 * ::cos(x * M_PI));
-    //  return (25./46.) + (0.46 * ::cos(x * M_PI));
+        return 0.53836   - (0.46164 * std::cos(x * 2. * M_PI));
+    //  return 0.54      + (0.46    * std::cos(x * M_PI));
+    //  return (25./46.) + (0.46    * std::cos(x * M_PI));
     }
 };
 
 /// <summary>
 /// Implements the Blackman window function.
+/// Sidelobes ~58 dB. Use when a high dynamic range is needed.
 /// </summary>
 class Blackman : public window_function_t
 {
@@ -151,7 +161,8 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.42 + (0.5 * ::cos(x * M_PI)) + (0.08 * ::cos(2. * x * M_PI));
+        return 0.42 + (0.5 * std::cos(x * M_PI)) + (0.08 * std::cos(x * 2. * M_PI));
+//      return 0.42 - (0.5 * std::cos(x * 2. * M_PI)) + (0.08 * std::cos(x * 4. * M_PI));
     }
 };
 
@@ -169,7 +180,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.355768 + (0.487396 * ::cos(x * M_PI)) + (0.144232 * ::cos(2. * x * M_PI)) + (0.012604 * ::cos(3. * x * M_PI));
+        return 0.355768 + (0.487396 * std::cos(x * M_PI)) + (0.144232 * std::cos(2. * x * M_PI)) + (0.012604 * std::cos(3. * x * M_PI));
     }
 };
 
@@ -187,12 +198,12 @@ public:
     {
         x = __super::operator()(x);
 
-        return 0.21557895 + (0.41663158 * ::cos(x * M_PI)) + (0.277263158 * ::cos(2. * x * M_PI)) + (0.083578947 * ::cos(3. * x * M_PI)) + (0.006947368 * ::cos(4. * x * M_PI));
+        return 0.21557895 + (0.41663158 * std::cos(x * M_PI)) + (0.277263158 * std::cos(2. * x * M_PI)) + (0.083578947 * std::cos(3. * x * M_PI)) + (0.006947368 * std::cos(4. * x * M_PI));
     }
 };
 
 /// <summary>
-/// Implements the Bartlett window function.
+/// Implements the Bartlett (Triangular) window function.
 /// </summary>
 class Bartlett : public window_function_t
 {
@@ -205,7 +216,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. - ::fabs(x);
+        return 1. - std::fabs(x);
     }
 };
 
@@ -223,7 +234,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) > 0.5) ? (-2. * ::pow((-1. + ::fabs(x)), 3.)) : (1. - 24. * ::pow(::fabs(x / 2.), 2.) + 48. * ::pow(::fabs(x / 2.), 3.));
+        return (std::fabs(x) > 0.5) ? (-2. * std::pow((-1. + std::fabs(x)), 3.)) : (1. - 24. * std::pow(std::fabs(x / 2.), 2.) + 48. * std::pow(std::fabs(x / 2.), 3.));
     }
 };
 
@@ -241,7 +252,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(1. - (x * x), _Power);
+        return std::pow(1. - (x * x), _Power);
     }
 
 private:
@@ -262,7 +273,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::cos(x * M_PI_2), _Power);
+        return std::pow(std::cos(x * M_PI_2), _Power);
     }
 
 private:
@@ -283,7 +294,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(::sqrt(1. - (x * x)), _Power);
+        return std::pow(std::sqrt(1. - (x * x)), _Power);
     }
 
 private:
@@ -291,20 +302,21 @@ private:
 };
 
 /// <summary>
-/// Implements the Gauss window function.
+/// Implements the Gaussian window function.
+/// No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window.
 /// </summary>
-class Gauss : public window_function_t
+class Gaussian : public window_function_t
 {
 public:
-    Gauss(double skew, bool truncate, double sigma) : window_function_t(skew, truncate), _Sigma(sigma) { }
+    Gaussian(double skew, bool truncate, double sigma) : window_function_t(skew, truncate), _Sigma(sigma) { }
 
-    virtual ~Gauss() { }
+    virtual ~Gaussian() { }
 
     virtual double operator () (double x) const override
     {
         x = __super::operator()(x);
 
-        return ::exp(-(_Sigma * _Sigma) * (x * x));
+        return std::exp(-(_Sigma * _Sigma) * (x * x));
     }
 
 private:
@@ -325,7 +337,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) <= 1. - _Parameter) ? 1 : (x > 0. ? ::pow(-::sin((x - 1.) * M_PI / _Parameter / 2.), 2.) : ::pow(::sin((x + 1.) * M_PI / _Parameter / 2.), 2.));
+        return (std::fabs(x) <= 1. - _Parameter) ? 1 : (x > 0. ? std::pow(-::sin((x - 1.) * M_PI / _Parameter / 2.), 2.) : std::pow(std::sin((x + 1.) * M_PI / _Parameter / 2.), 2.));
     }
 
 private:
@@ -346,7 +358,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::cosh(::sqrt(1. - (x * x)) * _AlphaSquared) / ::cosh(_AlphaSquared);
+        return std::cosh(std::sqrt(1. - (x * x)) * _AlphaSquared) / std::cosh(_AlphaSquared);
     }
 
 private:
@@ -367,7 +379,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::exp(-::fabs(x * _ParameterSquared));
+        return std::exp(-::fabs(x * _ParameterSquared));
     }
 
 private:
@@ -388,7 +400,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. / ::cosh(x * _ParameterSquared);
+        return 1. / std::cosh(x * _ParameterSquared);
     }
 
 private:
@@ -409,7 +421,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return (::fabs(x) <= 0.5) ? -::pow((x * M_SQRT2), 2.) + 1. : ::pow(::fabs(x * M_SQRT2) - M_SQRT2, 2.);
+        return (std::fabs(x) <= 0.5) ? -std::pow((x * M_SQRT2), 2.) + 1. : std::pow(std::fabs(x * M_SQRT2) - M_SQRT2, 2.);
     }
 };
 
@@ -427,7 +439,9 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::sin(M_PI_2 * ::pow(::cos(x * M_PI_2), 2.));
+        const double y = std::cos(x * M_PI_2);
+
+        return std::sin(M_PI_2 * y * y);
     }
 };
 
@@ -445,7 +459,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return 1. - ::sin(M_PI_2 * ::pow(::sin(x * M_PI_2), 2.));
+        return 1. - std::sin(M_PI_2 * std::pow(std::sin(x * M_PI_2), 2.));
     }
 };
 
@@ -455,7 +469,7 @@ public:
 class Galss : public window_function_t
 {
 public:
-    Galss(double skew, bool truncate) : window_function_t(skew, truncate) { _Denominator = ::pow(::tanh(M_SQRT2), 2.); }
+    Galss(double skew, bool truncate) : window_function_t(skew, truncate) { _Denominator = std::pow(std::tanh(M_SQRT2), 2.); }
 
     virtual ~Galss() { }
 
@@ -463,7 +477,7 @@ public:
     {
         x = __super::operator()(x);
 
-        return ::pow(((1. - 1. /(x + 2.)) * (1. - 1. / (-x + 2.))) * 4., 2.) * -(::tanh(M_SQRT2 * (-x + 1.)) * ::tanh(M_SQRT2 * (-x - 1.))) / _Denominator;
+        return std::pow(((1. - 1. /(x + 2.)) * (1. - 1. / (-x + 2.))) * 4., 2.) * -(std::tanh(M_SQRT2 * (-x + 1.)) * std::tanh(M_SQRT2 * (-x - 1.))) / _Denominator;
     }
 
 private:
@@ -479,8 +493,8 @@ inline window_function_t * window_function_t::Create(WindowFunction windowFuncti
     {
         default:
 
-        case WindowFunction::Boxcar:
-            return new Boxcar(windowSkew, truncate);
+        case WindowFunction::BoxCar:
+            return new BoxCar(windowSkew, truncate);
 
         // Cosine-sum windows
         case WindowFunction::Hann:
@@ -516,8 +530,8 @@ inline window_function_t * window_function_t::Create(WindowFunction windowFuncti
             return new PowerOfSine(windowSkew, truncate, windowParameter);
 
         // Adjustable windows
-        case WindowFunction::Gauss:
-            return new Gauss(windowSkew, truncate, windowParameter);
+        case WindowFunction::Gaussian:
+            return new Gaussian(windowSkew, truncate, windowParameter);
 
         case WindowFunction::Tukey:
             return new Tukey(windowSkew, truncate, windowParameter);

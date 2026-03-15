@@ -6,21 +6,29 @@
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
 
-![Screenshot](assets/Bars.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Bars Mode with gradient colors</sup>
 
-![Screenshot](assets/Curve.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrum-Analyzer-LED-Bars.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer LED Bars Mode with gradient colors</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
 <sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+
+![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
+
+<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
 
 ![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
 
 <sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
 
-![Screenshot](assets/Spectogram.png?raw=true "Screenshot")
+![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
 
-<sup>Horizontal scrolling spectogram visualization</sup>
+<sup>Horizontal scrolling spectrogram visualization</sup>
 
 ![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
 
@@ -32,15 +40,27 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
+<sup>Oscilloscope</sup>
+
+![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
+
 <sup>Oscilloscope with Y-axis in dBFS</sup>
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
 <sup>Oscilloscope in X-Y mode</sup>
 
+![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar heights</sup>
+
+![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
+
+<sup>Bit Meter using varying bar opacity</sup>
+
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars), Spectogram, Peak Meter, Level Meter and Oscilloscope visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter, Oscilloscope and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -49,7 +69,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 - Uses DirectX rendering.
 - Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
 - Supports dark mode.
-- Supports foobar2000 2.0 and later (32-bit and 64-bit version).
+- Supports foobar2000 2.0 and later (32 and 64-bit version).
 
 ## Requirements
 
@@ -119,9 +139,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.9.1.0, 2025-11-02
+v0.10.0.0, 2026-03-xx
 
-- Fixed: Handling of selected channels for FFT-based visualizations.
+- 
 
 You can read the full history [here](docs/History.md).
 

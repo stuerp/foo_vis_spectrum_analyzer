@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.h (2025.10.19) P. Stuer - Describes the layout and setting of a graph. **/
+/** $VER: GraphDescription.h (2026.02.18) P. Stuer - Describes the layout and setting of a graph. **/
 
 #pragma once
 
@@ -43,7 +43,9 @@ private:
     void Initialize()
     {
         _SelectedChannels = (uint32_t) Channels::ConfigStereo;
+
         _ChannelPair = (uint32_t) ChannelPair::FrontLeftRight;
+        _SwapChannels = false;
 
         _HorizontalAlignment = HorizontalAlignment::Center;
         _VerticalAlignment = VerticalAlignment::Center;
@@ -82,10 +84,12 @@ public:
     std::wstring _Description;
 
     uint32_t _SelectedChannels;                 // The channels that should be visualized.
+
     uint32_t _ChannelPair;
+    bool _SwapChannels;                         // True if the channels of a channel pair should be swapped.
 
     HorizontalAlignment _HorizontalAlignment;   // Horizonal alignment of a visualization in the graph area.
-    VerticalAlignment _VerticalAlignment;       // Horizonal alignment of a visualization in the graph area.
+    VerticalAlignment _VerticalAlignment;       // Vertical alignment of a visualization in the graph area.
 
     bool _FlipHorizontally;
     bool _FlipVertically;
@@ -116,5 +120,5 @@ public:
     HorizontalTextAlignment _HAlignment;
     VerticalTextAlignment _VAlignment;
 
-    static const uint32_t _CurentVersion = 3;
+    static const uint32_t _CurentVersion = 4; // v0.10.0-alpha5
 };

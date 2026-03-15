@@ -23,18 +23,21 @@
 class CNumericEdit: public CWindowImpl<CNumericEdit, CEdit>
 {
 public:
-    BEGIN_MSG_MAP(CNumericEdit)
-        MESSAGE_HANDLER(EM_SETSEL, OnSetSel)
-    END_MSG_MAP()
+    CNumericEdit() : _IsSubclassed(false)
+    {
+    }
 
     /// <summary>
     /// Initializes the control.
     /// </summary>
-    bool Initialize(HWND hWnd)
+    bool Initialize(HWND hWnd) noexcept
     {
+        if (_IsSubclassed)
+            return false;
+
         ATLASSERT(::IsWindow(hWnd));
 
-        this->SubclassWindow(hWnd);
+        _IsSubclassed = SubclassWindow(hWnd);
 
         return true;
     }
@@ -42,22 +45,28 @@ public:
     /// <summary>
     /// Terminates the control.
     /// </summary>
-    void Terminate()
+    void Terminate() noexcept
     {
-        if (!IsWindow())
+        if (!IsWindow() || !_IsSubclassed)
             return;
 
-        this->UnsubclassWindow(TRUE);
+        UnsubclassWindow(TRUE);
+        _IsSubclassed = false;
     }
 
     /// <summary>
     /// Handles EM_SETSEL to prevent the content from being selected.
     /// </summary>
-    LRESULT OnSetSel(UINT, WPARAM, LPARAM, BOOL & handled)
+    LRESULT OnSetSel(UINT, WPARAM, LPARAM, BOOL & handled) noexcept
     {
         return 0;
     }
 
+    BEGIN_MSG_MAP(CNumericEdit)
+        MESSAGE_HANDLER(EM_SETSEL, OnSetSel)
+    END_MSG_MAP()
+
 private:
+    bool _IsSubclassed;
     int _Value;
 };

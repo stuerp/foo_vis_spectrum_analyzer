@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2025.10.15) P. Stuer **/
+/** $VER: State.cpp (2026.03.12) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -22,7 +22,7 @@ using namespace stringcvt;
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-state_t::state_t()
+state_t::state_t() noexcept
 {
     Reset();
 }
@@ -35,7 +35,8 @@ void state_t::Reset() noexcept
     _DialogRect = { };
     _PageIndex = 0;
 
-    _RefreshRateLimit = 20;
+    _RefreshRateLimit = 20; // Hz
+    _SleepTime = 200; // μs
 
     _UseHardwareRendering = true;
     _UseAntialiasing = true;
@@ -129,30 +130,30 @@ void state_t::Reset() noexcept
     _SmoothGainTransition = true;
 
     // Rendering parameters
-    _BackColor_Deprecated = D2D1::ColorF(0.f, 0.f, 0.f, 1.f);                  // Deprecated
-    _UseCustomBackColor_Deprecated = true;                                     // Deprecated
+    _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);                  // Deprecated
+    _UseCustomBackColor_Deprecated = true;                                      // Deprecated
 
     // X axis
     _XAxisMode_Deprecated = XAxisMode::Notes;
     _XAxisTop_Deprecated = true;
     _XAxisBottom_Deprecated = true;
 
-    _XTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);                // Deprecated
-    _UseCustomXTextColor_Deprecated = true;                                    // Deprecated
+    _XTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);                 // Deprecated
+    _UseCustomXTextColor_Deprecated = true;                                     // Deprecated
 
-    _XLineColor_Deprecated = D2D1::ColorF(.25f, .25f, .25f, 1.f);              // Deprecated
-    _UseCustomXLineColor_Deprecated = true;                                    // Deprecated
+    _XLineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);                 // Deprecated
+    _UseCustomXLineColor_Deprecated = true;                                     // Deprecated
 
     // Y axis
     _YAxisMode_Deprecated = YAxisMode::Decibels;
     _YAxisLeft_Deprecated = true;
     _YAxisRight_Deprecated = true;
 
-    _YTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);                // Deprecated
-    _UseCustomYTextColor_Deprecated = true;                                    // Deprecated
-
-    _YLineColor_Deprecated = D2D1::ColorF(.25f, .25f, .25f, 1.f);              // Deprecated
-    _UseCustomYLineColor_Deprecated = true;                                    // Deprecated
+    _YTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);                 // Deprecated
+    _UseCustomYTextColor_Deprecated = true;                                     // Deprecated
+ 
+    _YLineColor_Deprecated = D2D1::ColorF(.25f, .25f, .25f, 1.f);               // Deprecated
+    _UseCustomYLineColor_Deprecated = true;                                     // Deprecated
 
     _AmplitudeLo_Deprecated = -90.;
     _AmplitudeHi_Deprecated =   0.;
@@ -164,11 +165,12 @@ void state_t::Reset() noexcept
     // Common
     _ColorScheme_Deprecated = ColorScheme::Prism1;
 
-    _GradientStops = GetBuiltInGradientStops(_ColorScheme_Deprecated);
+//  _GradientStops = GetBuiltInGradientStops(_ColorScheme_Deprecated);
     _CustomGradientStops_Deprecated = GetBuiltInGradientStops(ColorScheme::Custom);
 
     _ShowToolTipsAlways = true;
     _SuppressMirrorImage = true;
+    _VisualizeDuringPause = true;
 
     // Artwork
     _NumArtworkColors = 10;
@@ -206,7 +208,7 @@ void state_t::Reset() noexcept
     _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
     _LEDMode = false;
-    _LEDSize = 2.f;
+    _LEDLight = 2.f;
     _LEDGap = 2.f;
     _LEDIntegralSize = false;
 
@@ -229,26 +231,35 @@ void state_t::Reset() noexcept
     _UseCustomPeakLineColor_Deprecated = false;
     _AreaOpacity_Deprecated = 0.5f;
 
-    // Spectogram
-    _ScrollingSpectogram = true;
-    _HorizontalSpectogram = true;
+    // Spectrogram
+    _ScrollingSpectrogram = true;
+    _HorizontalSpectrogram = true;
     _UseSpectrumBarMetrics = false;
 
     // Peak Meter
-    _HorizontalPeakMeter = false;
+    _IsHorizontalPeakMeter = false;
     _RMSPlus3 = false;
     _RMSWindow = .300; // seconds
-    _GaugeGap = 1.f; // pixels
+    _BarGap = 1.f; // pixels
+    _HasCenterScale = false;
+    _HasScaleLines = true;
+    _MaxBarSize = 0.f; // pixels
 
+    // Level Meter
     _ChannelPair = ChannelPair::FrontLeftRight;
     _HorizontalLevelMeter = false;
 
+    // Oscilloscope
     _XYMode = false;
     _XGain = 1.f;
     _YGain = 1.f;
+    _Rotation = 0.f;
     _PhosphorDecay = true;
     _BlurSigma = 3.f;
     _DecayFactor = 0.92f;
+
+    // Bit Meter
+    _OpacityMode = false;
 
     _StyleManager.Reset();
 
@@ -256,20 +267,19 @@ void state_t::Reset() noexcept
 
     Path = foobar2000_io::filesystem::g_get_native_path(Path);
 
-    _PresetsDirectoryPath = ::wideFromUTF8(Path);
+    _PresetsDirectoryPath = pfc::wideFromUTF8(Path);
 
     /** Not serialized **/
 
     _SampleRate = 0;
 
-    _Barrier = 0;
     _ActivePresetName.clear();
 }
 
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-state_t & state_t::operator=(const state_t & other)
+state_t & state_t::operator=(const state_t & other) noexcept
 {
     _DialogRect = other._DialogRect;
     _PageIndex = other._PageIndex;
@@ -279,7 +289,7 @@ state_t & state_t::operator=(const state_t & other)
     _UseHardwareRendering = other._UseHardwareRendering;
     _UseAntialiasing = other._UseAntialiasing;
 
-    _UseZeroTrigger_Deprecated = other._UseZeroTrigger_Deprecated;
+//  _UseZeroTrigger_Deprecated = other._UseZeroTrigger_Deprecated;
     _WindowDuration = other._WindowDuration;
 
     #pragma region Transform
@@ -293,7 +303,7 @@ state_t & state_t::operator=(const state_t & other)
 
         _ReactionAlignment = other._ReactionAlignment;
 
-        _Channels_Deprecated = other._Channels_Deprecated;
+//      _Channels_Deprecated = other._Channels_Deprecated;
 
     #pragma endregion
 
@@ -384,54 +394,55 @@ state_t & state_t::operator=(const state_t & other)
 
     #pragma region Rendering
 
-        _BackColor_Deprecated = other._BackColor_Deprecated;
-        _UseCustomBackColor_Deprecated = other._UseCustomBackColor_Deprecated;
+//      _BackColor_Deprecated = other._BackColor_Deprecated;
+//      _UseCustomBackColor_Deprecated = other._UseCustomBackColor_Deprecated;
 
         // X axis
-        _XAxisMode_Deprecated = other._XAxisMode_Deprecated;
-        _XAxisTop_Deprecated = other._XAxisTop_Deprecated;
-        _XAxisBottom_Deprecated = other._XAxisBottom_Deprecated;
+//      _XAxisMode_Deprecated = other._XAxisMode_Deprecated;
+//      _XAxisTop_Deprecated = other._XAxisTop_Deprecated;
+//      _XAxisBottom_Deprecated = other._XAxisBottom_Deprecated;
 
-        _XTextColor_Deprecated = other._XTextColor_Deprecated;
-        _UseCustomXTextColor_Deprecated = other._UseCustomXTextColor_Deprecated;
+//      _XTextColor_Deprecated = other._XTextColor_Deprecated;
+//      _UseCustomXTextColor_Deprecated = other._UseCustomXTextColor_Deprecated;
 
-        _XLineColor_Deprecated = other._XLineColor_Deprecated;
-        _UseCustomXLineColor_Deprecated = other._UseCustomXLineColor_Deprecated;
+//      _XLineColor_Deprecated = other._XLineColor_Deprecated;
+//      _UseCustomXLineColor_Deprecated = other._UseCustomXLineColor_Deprecated;
 
         // Y axis
-        _YAxisMode_Deprecated = other._YAxisMode_Deprecated;
-        _YAxisLeft_Deprecated = other._YAxisLeft_Deprecated;
-        _YAxisRight_Deprecated = other._YAxisRight_Deprecated;
+//      _YAxisMode_Deprecated = other._YAxisMode_Deprecated;
+//      _YAxisLeft_Deprecated = other._YAxisLeft_Deprecated;
+//      _YAxisRight_Deprecated = other._YAxisRight_Deprecated;
 
-        _YTextColor_Deprecated = other._YTextColor_Deprecated;
-        _UseCustomYTextColor_Deprecated = other._UseCustomYTextColor_Deprecated;
+//      _YTextColor_Deprecated = other._YTextColor_Deprecated;
+//      _UseCustomYTextColor_Deprecated = other._UseCustomYTextColor_Deprecated;
 
-        _YLineColor_Deprecated = other._YLineColor_Deprecated;
-        _UseCustomYLineColor_Deprecated = other._UseCustomYLineColor_Deprecated;
+//      _YLineColor_Deprecated = other._YLineColor_Deprecated;
+//      _UseCustomYLineColor_Deprecated = other._UseCustomYLineColor_Deprecated;
 
-        _AmplitudeLo_Deprecated = other._AmplitudeLo_Deprecated;
-        _AmplitudeHi_Deprecated = other._AmplitudeHi_Deprecated;
-        _AmplitudeStep_Deprecated = other._AmplitudeStep_Deprecated;
+//      _AmplitudeLo_Deprecated = other._AmplitudeLo_Deprecated;
+//      _AmplitudeHi_Deprecated = other._AmplitudeHi_Deprecated;
+//      _AmplitudeStep_Deprecated = other._AmplitudeStep_Deprecated;
 
-        _UseAbsolute_Deprecated = other._UseAbsolute_Deprecated;
+//      _UseAbsolute_Deprecated = other._UseAbsolute_Deprecated;
 
-        _Gamma_Deprecated = other._Gamma_Deprecated;
+//      _Gamma_Deprecated = other._Gamma_Deprecated;
 
     #pragma endregion
 
     #pragma region Graph Common
 
         // Common
-        _ColorScheme_Deprecated = other._ColorScheme_Deprecated;                      // Deprecated
+//      _ColorScheme_Deprecated = other._ColorScheme_Deprecated;
 
         _SmoothingMethod = other._SmoothingMethod;
         _SmoothingFactor = other._SmoothingFactor;
 
-        _GradientStops = other._GradientStops;                  // Deprecated
-        _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;      // Deprecated
+//      _GradientStops = other._GradientStops;                  // Deprecated
+//      _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;
 
         _ShowToolTipsAlways = other._ShowToolTipsAlways;
         _SuppressMirrorImage = other._SuppressMirrorImage;
+        _VisualizeDuringPause = other._VisualizeDuringPause;
 
         // Artwork
         _NumArtworkColors = other._NumArtworkColors;
@@ -440,7 +451,7 @@ state_t & state_t::operator=(const state_t & other)
 
         _ColorOrder = other._ColorOrder;
 
-        _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;                //Deprecated
+//      _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;
 
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
         _ArtworkType = other._ArtworkType;
@@ -468,16 +479,16 @@ state_t & state_t::operator=(const state_t & other)
     _VisualizationType = other._VisualizationType;
 
     // Bars
-    _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
-    _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
-    _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
+//  _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
+//  _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
+//  _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
 
     _LEDMode = other._LEDMode;
-    _LEDSize = other._LEDSize;
+    _LEDLight = other._LEDLight;
     _LEDGap = other._LEDGap;
     _LEDIntegralSize = other._LEDIntegralSize;
 
-    _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
+//  _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode = other._PeakMode;
     _HoldTime = other._HoldTime;
@@ -489,23 +500,26 @@ state_t & state_t::operator=(const state_t & other)
     _AngularVelocity = other._AngularVelocity;
 
     // Curve
-    _LineWidth_Deprecated = other._LineWidth_Deprecated;
-    _LineColor_Deprecated = other._LineColor_Deprecated;
-    _UseCustomLineColor_Deprecated = other._UseCustomLineColor_Deprecated;
-    _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
-    _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
-    _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
+//  _LineWidth_Deprecated = other._LineWidth_Deprecated;
+//  _LineColor_Deprecated = other._LineColor_Deprecated;
+//  _UseCustomLineColor_Deprecated = other._UseCustomLineColor_Deprecated;
+//  _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
+//  _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
+//  _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
 
-    // Spectogram
-    _ScrollingSpectogram = other._ScrollingSpectogram;
-    _HorizontalSpectogram = other._HorizontalSpectogram;
+    // Spectrogram
+    _ScrollingSpectrogram = other._ScrollingSpectrogram;
+    _HorizontalSpectrogram = other._HorizontalSpectrogram;
     _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
 
     // Peak Meter
-    _HorizontalPeakMeter = other._HorizontalPeakMeter;
+    _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
     _RMSPlus3 = other._RMSPlus3;
     _RMSWindow = other._RMSWindow;
-    _GaugeGap = other._GaugeGap;
+    _BarGap = other._BarGap;
+    _HasCenterScale = other._HasCenterScale;
+    _HasScaleLines = other._HasScaleLines;
+    _MaxBarSize = other._MaxBarSize;
 
     // Level Meter
     _ChannelPair = other._ChannelPair;
@@ -515,9 +529,13 @@ state_t & state_t::operator=(const state_t & other)
     _XYMode = other._XYMode;
     _XGain = other._XGain;
     _YGain = other._YGain;
+    _Rotation = other._Rotation;
     _PhosphorDecay = other._PhosphorDecay;
     _BlurSigma = other._BlurSigma;
     _DecayFactor = other._DecayFactor;
+
+    // Bit Meter
+    _OpacityMode = other._OpacityMode;
 
     #pragma endregion
 
@@ -548,8 +566,6 @@ state_t & state_t::operator=(const state_t & other)
 /// </summary>
 void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler, bool isPreset) noexcept
 {
-    Reset();
-
     size_t Version;
 
     if (size < sizeof(Version))
@@ -570,7 +586,6 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
 
         reader->read(&_UseZeroTrigger_Deprecated, sizeof(_UseZeroTrigger_Deprecated), abortHandler);
-
         reader->read(&_WindowDuration, sizeof(_WindowDuration), abortHandler); _WindowDuration = std::clamp<size_t>(_WindowDuration, 50, 800);
 
         reader->read(&_Transform, sizeof(_Transform), abortHandler);
@@ -602,6 +617,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
     #pragma endregion
 
     #pragma region Frequencies
+
         reader->read(&_FrequencyDistribution, sizeof(_FrequencyDistribution), abortHandler);
 
         reader->read(&_BandCount, sizeof(_BandCount), abortHandler);
@@ -618,6 +634,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
         reader->read(&_ScalingFunction, sizeof(_ScalingFunction), abortHandler);
         reader->read(&_SkewFactor, sizeof(_SkewFactor), abortHandler);
         reader->read(&_Bandwidth, sizeof(_Bandwidth), abortHandler);
+
     #pragma endregion
 
     #pragma region Rendering
@@ -800,49 +817,54 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
             for (size_t i = 0; i < Count; ++i)
             {
-                graph_description_t gs;
+                graph_description_t gd;
 
-                pfc::string Description; reader->read_string(Description, abortHandler); gs._Description = pfc::wideFromUTF8(Description);
-                reader->read_object_t(gs._SelectedChannels, abortHandler);
-                reader->read_object_t(gs._FlipHorizontally, abortHandler);
-                reader->read_object_t(gs._FlipVertically, abortHandler);
+                pfc::string Description; reader->read_string(Description, abortHandler); gd._Description = pfc::wideFromUTF8(Description);
+                reader->read_object_t(gd._SelectedChannels, abortHandler);
+                reader->read_object_t(gd._FlipHorizontally, abortHandler);
+                reader->read_object_t(gd._FlipVertically, abortHandler);
 
-                reader->read_object(&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
-                reader->read_object_t(gs._XAxisTop, abortHandler);
-                reader->read_object_t(gs._XAxisBottom, abortHandler);
+                reader->read_object(&gd._XAxisMode, sizeof(gd._XAxisMode), abortHandler);
+                reader->read_object_t(gd._XAxisTop, abortHandler);
+                reader->read_object_t(gd._XAxisBottom, abortHandler);
 
-                reader->read_object(&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
-                reader->read_object_t(gs._YAxisLeft, abortHandler);
-                reader->read_object_t(gs._YAxisRight, abortHandler);
+                reader->read_object(&gd._YAxisMode, sizeof(gd._YAxisMode), abortHandler);
+                reader->read_object_t(gd._YAxisLeft, abortHandler);
+                reader->read_object_t(gd._YAxisRight, abortHandler);
 
-                reader->read_object_t(gs._AmplitudeLo, abortHandler);
-                reader->read_object_t(gs._AmplitudeHi, abortHandler);
-                reader->read_object_t(gs._AmplitudeStep, abortHandler);
+                reader->read_object_t(gd._AmplitudeLo, abortHandler);
+                reader->read_object_t(gd._AmplitudeHi, abortHandler);
+                reader->read_object_t(gd._AmplitudeStep, abortHandler);
 
-                reader->read_object_t(gs._UseAbsolute, abortHandler);
-                reader->read_object_t(gs._Gamma, abortHandler);
+                reader->read_object_t(gd._UseAbsolute, abortHandler);
+                reader->read_object_t(gd._Gamma, abortHandler);
 
-                reader->read_object_t(gs._HRatio, abortHandler);
-                reader->read_object_t(gs._VRatio, abortHandler);
+                reader->read_object_t(gd._HRatio, abortHandler);
+                reader->read_object_t(gd._VRatio, abortHandler);
 
                 if (GraphDescriptionVersion > 1)
                 {
-                    reader->read_object_t(gs._LPadding, abortHandler);
-                    reader->read_object_t(gs._RPadding, abortHandler);
-                    reader->read_object_t(gs._TPadding, abortHandler);
-                    reader->read_object_t(gs._BPadding, abortHandler);
+                    reader->read_object_t(gd._LPadding, abortHandler);
+                    reader->read_object_t(gd._RPadding, abortHandler);
+                    reader->read_object_t(gd._TPadding, abortHandler);
+                    reader->read_object_t(gd._BPadding, abortHandler);
 
-                    reader->read_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
-                    reader->read_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                    reader->read_object(&gd._HAlignment, sizeof(gd._HAlignment), abortHandler);
+                    reader->read_object(&gd._VAlignment, sizeof(gd._VAlignment), abortHandler);
                 }
 
                 if (GraphDescriptionVersion > 2)
                 {
-                    reader->read_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler);
-                    reader->read_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                    reader->read_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler);
+                    reader->read_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
                 }
 
-                _GraphDescriptions.push_back(gs);
+                if (GraphDescriptionVersion > 3) // v0.10.0.0-alpha5
+                {
+                    reader->read_object_t(gd._SwapChannels, abortHandler);
+                }
+
+                _GraphDescriptions.push_back(gd);
             }
         }
 
@@ -865,17 +887,17 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 21)
         {
-            reader->read_object_t(_ScrollingSpectogram, abortHandler);
+            reader->read_object_t(_ScrollingSpectrogram, abortHandler);
         }
 
         if (Version >= 22)
         {
-            reader->read_object_t(_HorizontalPeakMeter, abortHandler);
+            reader->read_object_t(_IsHorizontalPeakMeter, abortHandler);
         }
 
         if (Version >= 23)
         {
-            reader->read_object_t(_LEDSize, abortHandler);
+            reader->read_object_t(_LEDLight, abortHandler);
             reader->read_object_t(_LEDGap, abortHandler);
         }
 
@@ -891,7 +913,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
 
         if (Version >= 26)
         {
-            reader->read_object_t(_GaugeGap, abortHandler);
+            reader->read_object_t(_BarGap, abortHandler);
             reader->read_object_t(_RMSPlus3, abortHandler);
         }
 
@@ -901,7 +923,7 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
 
             reader->read_object_t(_HorizontalLevelMeter, abortHandler);
-            reader->read_object_t(_HorizontalSpectogram, abortHandler);
+            reader->read_object_t(_HorizontalSpectrogram, abortHandler);
             reader->read_object_t(_UseSpectrumBarMetrics, abortHandler);
         }
 
@@ -931,6 +953,28 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
             reader->read_object_t(_PhosphorDecay, abortHandler);
             reader->read_object_t(_BlurSigma, abortHandler);
             reader->read_object_t(_DecayFactor, abortHandler);
+        }
+
+        if (Version >= 32)
+        {
+            reader->read_object_t(_HasCenterScale, abortHandler);
+            reader->read_object_t(_MaxBarSize, abortHandler);
+        }
+
+        if (Version >= 33)
+        {
+            reader->read_object_t(_VisualizeDuringPause, abortHandler);
+            reader->read_object_t(_HasScaleLines, abortHandler);
+        }
+
+        if (Version >= 34)
+        {
+            reader->read_object_t(_Rotation, abortHandler);
+        }
+
+        if (Version >= 35)
+        {
+            reader->read_object_t(_OpacityMode, abortHandler);
         }
     }
     catch (exception & ex)
@@ -1145,50 +1189,56 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
 
         writer->write_object_t(_GraphDescriptions.size(), abortHandler);
 
-        for (auto & gs : _GraphDescriptions)
+        for (auto & gd : _GraphDescriptions)
         {
-            pfc::string Description = pfc::utf8FromWide(gs._Description.c_str());
+            pfc::string Description = pfc::utf8FromWide(gd._Description.c_str());
             writer->write_string(Description, abortHandler);
 
-            writer->write_object_t(gs._SelectedChannels, abortHandler);
-            writer->write_object_t(gs._FlipHorizontally, abortHandler);
-            writer->write_object_t(gs._FlipVertically, abortHandler);
+            writer->write_object_t(gd._SelectedChannels, abortHandler);
+            writer->write_object_t(gd._FlipHorizontally, abortHandler);
+            writer->write_object_t(gd._FlipVertically, abortHandler);
 
-            writer->write_object (&gs._XAxisMode, sizeof(gs._XAxisMode), abortHandler);
-            writer->write_object_t(gs._XAxisTop, abortHandler);
-            writer->write_object_t(gs._XAxisBottom, abortHandler);
+            writer->write_object (&gd._XAxisMode, sizeof(gd._XAxisMode), abortHandler);
+            writer->write_object_t(gd._XAxisTop, abortHandler);
+            writer->write_object_t(gd._XAxisBottom, abortHandler);
 
-            writer->write_object (&gs._YAxisMode, sizeof(gs._YAxisMode), abortHandler);
-            writer->write_object_t(gs._YAxisLeft, abortHandler);
-            writer->write_object_t(gs._YAxisRight, abortHandler);
+            writer->write_object (&gd._YAxisMode, sizeof(gd._YAxisMode), abortHandler);
+            writer->write_object_t(gd._YAxisLeft, abortHandler);
+            writer->write_object_t(gd._YAxisRight, abortHandler);
 
-            writer->write_object_t(gs._AmplitudeLo, abortHandler);
-            writer->write_object_t(gs._AmplitudeHi, abortHandler);
-            writer->write_object_t(gs._AmplitudeStep, abortHandler);
+            writer->write_object_t(gd._AmplitudeLo, abortHandler);
+            writer->write_object_t(gd._AmplitudeHi, abortHandler);
+            writer->write_object_t(gd._AmplitudeStep, abortHandler);
 
-            writer->write_object_t(gs._UseAbsolute, abortHandler);
-            writer->write_object_t(gs._Gamma, abortHandler);
+            writer->write_object_t(gd._UseAbsolute, abortHandler);
+            writer->write_object_t(gd._Gamma, abortHandler);
 
-            writer->write_object_t(gs._HRatio, abortHandler);
-            writer->write_object_t(gs._VRatio, abortHandler);
+            writer->write_object_t(gd._HRatio, abortHandler);
+            writer->write_object_t(gd._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
             if (graph_description_t::_CurentVersion > 1)
             {
-                writer->write_object_t(gs._LPadding, abortHandler);
-                writer->write_object_t(gs._RPadding, abortHandler);
-                writer->write_object_t(gs._TPadding, abortHandler);
-                writer->write_object_t(gs._BPadding, abortHandler);
+                writer->write_object_t(gd._LPadding, abortHandler);
+                writer->write_object_t(gd._RPadding, abortHandler);
+                writer->write_object_t(gd._TPadding, abortHandler);
+                writer->write_object_t(gd._BPadding, abortHandler);
 
-                writer->write_object(&gs._HAlignment, sizeof(gs._HAlignment), abortHandler);
-                writer->write_object(&gs._VAlignment, sizeof(gs._VAlignment), abortHandler);
+                writer->write_object(&gd._HAlignment, sizeof(gd._HAlignment), abortHandler);
+                writer->write_object(&gd._VAlignment, sizeof(gd._VAlignment), abortHandler);
             }
 
             // Version 3, v0.8.0.0-beta2
             if (graph_description_t::_CurentVersion > 2)
             {
-                writer->write_object(&gs._HorizontalAlignment, sizeof(gs._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
-                writer->write_object(&gs._VerticalAlignment, sizeof(gs._VerticalAlignment), abortHandler);
+                writer->write_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
+                writer->write_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
+            }
+
+            // Version 4, v0.10.0-alpha5
+            if (graph_description_t::_CurentVersion > 2)
+            {
+                writer->write_object_t(gd._SwapChannels, abortHandler);
             }
         }
 
@@ -1208,13 +1258,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         }
 
         // Version 21, v0.7.5.0-beta1
-        writer->write_object_t(_ScrollingSpectogram, abortHandler);
+        writer->write_object_t(_ScrollingSpectrogram, abortHandler);
 
         // Version 22, v0.7.5.0-beta2
-        writer->write_object_t(_HorizontalPeakMeter, abortHandler);
+        writer->write_object_t(_IsHorizontalPeakMeter, abortHandler);
 
         // Version 23, v0.7.5.0-beta3
-        writer->write_object_t(_LEDSize, abortHandler);
+        writer->write_object_t(_LEDLight, abortHandler);
         writer->write_object_t(_LEDGap, abortHandler);
 
         // Version 24, v0.7.5.2
@@ -1224,13 +1274,13 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_RMSWindow, abortHandler);
 
         // Version 26, v0.7.6.0
-        writer->write_object_t(_GaugeGap, abortHandler);
+        writer->write_object_t(_BarGap, abortHandler);
         writer->write_object_t(_RMSPlus3, abortHandler);
 
         // Version 27, v0.8.0.0-beta1
         writer->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
         writer->write_object_t(_HorizontalLevelMeter, abortHandler);
-        writer->write_object_t(_HorizontalSpectogram, abortHandler);
+        writer->write_object_t(_HorizontalSpectrogram, abortHandler);
         writer->write_object_t(_UseSpectrumBarMetrics, abortHandler);
 
         // Version 28, v0.8.0.0-beta2
@@ -1251,6 +1301,20 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_PhosphorDecay, abortHandler);
         writer->write_object_t(_BlurSigma, abortHandler);
         writer->write_object_t(_DecayFactor, abortHandler);
+
+        // Version 32, v0.9.2
+        writer->write_object_t(_HasCenterScale, abortHandler);
+        writer->write_object_t(_MaxBarSize, abortHandler);
+
+        // Version 33, v0.10.0-alpha4
+        writer->write_object_t(_VisualizeDuringPause, abortHandler);
+        writer->write_object_t(_HasScaleLines, abortHandler);
+
+        // Version 34, v0.10.0-alpha5
+        writer->write_object_t(_Rotation, abortHandler);
+
+        // Version 35, v0.10.0-beta1
+        writer->write_object_t(_OpacityMode, abortHandler);
     }
     catch (exception & ex)
     {

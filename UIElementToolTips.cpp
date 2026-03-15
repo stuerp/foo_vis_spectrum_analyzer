@@ -1,5 +1,5 @@
 
-/** $VER: ToolTips.cpp (2025.09.17) P. Stuer **/
+/** $VER: ToolTips.cpp (2025.11.12) P. Stuer **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -24,7 +24,7 @@ void uielement_t::CreateToolTipControl() noexcept
 /// </summary>
 void uielement_t::OnMouseMove(UINT, CPoint pt)
 {
-    if (!_ToolTipControl.IsWindow() || (!_RenderThread._ShowToolTipsAlways && !_RenderThread._ShowToolTipsNow))
+    if (!_ToolTipControl.IsWindow() || (!_UIState._ShowToolTipsAlways && !_UIState._ShowToolTipsNow))
         return;
 
     if (_TrackingGraph == nullptr)

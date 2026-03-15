@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2025.10.19) P. Stuer **/
+/** $VER: Analysis.h (2026.03.11) P. Stuer **/
 
 #pragma once
 
@@ -23,38 +23,61 @@
 #include "FrequencyBand.h"
 
 /// <summary>
-/// Represents the values of a gauge.
+/// Represents a meter measurement.
 /// </summary>
-struct gauge_value_t
+struct measurement_t
 {
-    gauge_value_t(const WCHAR * name, double holdTime) noexcept : Name(name), HoldTime(holdTime)
+    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName)
+    {
+    }
+
+    std::wstring ChannelName;
+};
+
+/// <summary>
+/// Represents a peak meter measurement.
+/// </summary>
+struct peak_measurement_t : measurement_t
+{
+    peak_measurement_t(const WCHAR * channelName, double holdTime) noexcept : measurement_t(channelName), HoldTime(holdTime)
     {
         RMSTotal = 0.;
 
         Peak = -std::numeric_limits<double>::infinity();
-        PeakRender = 0.;
-        MaxPeakRender = 0.;
+        PeakNormalized = 0.;
+        MaxPeakNormalized = 0.;
 
         RMS = 0.;
-        RMSRender = 0.;
+        RMSNormalized = 0.;
     }
 
     // User settings
-    std::wstring Name;
-
-    double HoldTime;        // Time to hold the current max value.
-    double DecaySpeed;      // Speed at which the current max value decays.
-    double Opacity;         // 0.0 .. 1.0
+    double HoldTime;            // Time to hold the current max value.
+    double DecaySpeed;          // Speed at which the current max value decays.
+    double Opacity;             // 0.0 .. 1.0
 
     // Measurements
-    double RMSTotal;        // RMS value for the current RMS window.
+    double RMSTotal;            // RMS value for the current RMS window.
 
-    double Peak;            // in dBFS
-    double PeakRender;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-    double MaxPeakRender;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double Peak;                // in dBFS
+    double PeakNormalized;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double MaxPeakNormalized;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
 
-    double RMS;             // in dBFS
-    double RMSRender;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double RMS;                 // in dBFS
+    double RMSNormalized;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+};
+
+/// <summary>
+/// Represents a bit meter measurement.
+/// </summary>
+struct bit_measurement_t : measurement_t
+{
+    bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
+    {
+        BitCounts.resize(audio_sample_size, 0.);
+    }
+
+    std::vector<double> BitCounts;
 };
 
 /// <summary>
@@ -63,33 +86,31 @@ struct gauge_value_t
 class analysis_t
 {
 public:
-    analysis_t() noexcept : _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t() noexcept : _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     analysis_t(const analysis_t &) = delete;
     analysis_t & operator=(const analysis_t &) = delete;
     analysis_t(analysis_t &&) = delete;
     analysis_t & operator=(analysis_t &&) = delete;
 
-    virtual ~analysis_t() { Reset(); };
+    virtual ~analysis_t() noexcept { Reset(); };
 
     void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
-    void ResetPeakValues() noexcept;
+    void ResetPeakMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
     void UpdatePeakValues(bool isStopped) noexcept;
 
 private:
     // Spectrum
-    void ProcessSpectrum(const audio_chunk & chunk) noexcept;
+    void SpectrumProcessing(const audio_chunk & chunk) noexcept;
 
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
-
-    void GetAnalyzer(const audio_chunk & chunk) noexcept;
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -98,12 +119,18 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
-    // Peak Meter
-    void ProcessMeters(const audio_chunk & chunk) noexcept;
-    void InitializeGauges(uint32_t channelMask) noexcept;
+    // Peak Meter / Level Meter
+    void MeterProcessing(const audio_chunk & chunk) noexcept;
+
+    void InitializePeakMeasurements(uint32_t channelMask) noexcept;
 
     // Oscilloscope
-    void ProcessOscilloscope(const audio_chunk & chunk) noexcept;
+    void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
+
+    // Bit Meter
+    void BitMeterProcessing(const audio_chunk & chunk) noexcept;
+
+    void InitializeBitMeasurements(uint32_t channelMask) noexcept;
 
     double NormalizeValue(double amplitude) const noexcept
     {
@@ -137,7 +164,7 @@ public:
     const state_t * _State;
     const graph_description_t * _GraphDescription;
 
-    audio_chunk_impl _Chunk;
+    audio_chunk_impl _Chunk;    // Only used by oscilloscope
 
     uint32_t _SampleRate;
     uint32_t _ChannelCount;
@@ -145,9 +172,6 @@ public:
     uint32_t _ChannelMask;
 
     double _NyquistFrequency;
-
-    std::vector<gauge_value_t> _GaugeValues;
-    uint32_t _CurrentChannelMask;
 
     const window_function_t * _WindowFunction;
     const window_function_t * _BrownPucketteKernel;
@@ -159,23 +183,30 @@ public:
 
     frequency_bands_t _FrequencyBands;
 
-    // Peak Meter
+    // Peak meter
+    uint32_t _PeakMeasuredChannels;
+    std::vector<peak_measurement_t> _PeakMeasurements;
+
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
     size_t _RMSFrameCount;  // Number of frames used in the current RMS window.
 
     // Balance Meter
-    double _Left;           // -1.0 .. 1.0
-    double _Right;          // -1.0 .. 1.0
+    double _Left;           // [-1, 1]
+    double _Right;          // [-1, 1]
 
-    double _Mid;            // -1.0 .. 1.0
-    double _Side;           // -1.0 .. 1.0
+    double _Mid;            // [-1, 1]
+    double _Side;           // [-1, 1]
 
-    double _Balance;        // 0.0 .. 1.0, 0.5 = Center
-    double _Phase;          // 0.0 .. 1.0, 0.5 = Center
+    double _Balance;        // [0, 1], 0.5 = Center
+    double _Phase;          // [0, 1], 0.5 = Center
+
+    // Bit Meter
+    uint32_t _BitMeasuredChannels;
+    std::vector<bit_measurement_t> _BitMeasurements;
 
     static const uint32_t ChannelPairs[6];
 
 private:
     const double Amax = M_SQRT1_2;
-    const double dBCorrection = -20. * ::log10(Amax); // 3.01 dB;
+    const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 };

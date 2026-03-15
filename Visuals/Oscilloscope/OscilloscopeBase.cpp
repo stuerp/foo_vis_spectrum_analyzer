@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2025.10.25) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.02.22) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -19,8 +19,10 @@
 oscilloscope_base_t::oscilloscope_base_t()
 {
     _SignalLineStyle = nullptr;
+
     _XAxisLineStyle = nullptr;
     _YAxisLineStyle = nullptr;
+
     _HorizontalGridLineStyle = nullptr;
     _VerticalGridLineStyle = nullptr;
 }
@@ -28,7 +30,7 @@ oscilloscope_base_t::oscilloscope_base_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-oscilloscope_base_t::~oscilloscope_base_t()
+oscilloscope_base_t::~oscilloscope_base_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2025.11.02) P. Stuer **/
+/** $VER: Resources.h (2026.03.13) P. Stuer **/
 
 #pragma once
 
@@ -7,16 +7,16 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          9
-#define NUM_FILE_PATCH          1
+#define NUM_FILE_MINOR          10
+#define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       9
-#define NUM_PRODUCT_PATCH       1
+#define NUM_PRODUCT_MINOR       10
+#define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         ""
+#define STR_RELEASE_TAG         "-beta2"
 
 /** Component specific **/
 
@@ -25,7 +25,7 @@
 #define STR_COMPONENT_BASENAME      "foo_vis_spectrum_analyzer"
 #define STR_COMPONENT_FILENAME      STR_COMPONENT_BASENAME ".dll"
 #define STR_COMPONENT_COMPANY_NAME  ""
-#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2025 P. Stuer. All rights reserved."
+#define STR_COMPONENT_COPYRIGHT     "Copyright (c) 2023-2026 P. Stuer. All rights reserved."
 #define STR_COMPONENT_COMMENTS      ""
 #define STR_COMPONENT_DESCRIPTION   "A spectrum analyzer for foobar2000"
 #define STR_COMPONENT_COMMENT       "\n" \
@@ -34,7 +34,6 @@
                                     "- SWIFT, Sliding Windowed Infinite Fourier Transform (https://codepen.io/TF3RDL/pen/JjBzjeY)\n" \
                                     "- Analog-style spectrum analyzer and sliding DFT visualization using AudioWorklet (https://codepen.io/TF3RDL/pen/MWLzPoO)"
 #define STR_COMPONENT_URL           "https://github.com/stuerp/" STR_COMPONENT_BASENAME
-
 
 /** Generic **/
 
@@ -66,7 +65,18 @@
 
 /** State **/
 
-#define IDD_CONFIGURATION               1000
+#define IDD_MAIN_DIALOG                 1000
+
+#define IDD_VISUALIZATION_PAGE          1001
+#define IDD_TRANSFORM_PAGE              1002
+#define IDD_FREQUENCIES_PAGE            1003
+#define IDD_FILTERS_PAGE                1004
+#define IDD_COMMON_PAGE                 1005
+#define IDD_GRAPHS_PAGE                 1006
+#define IDD_STYLES_PAGE                 1007
+#define IDD_PRESETS_PAGE                1008
+
+#define IDD_CONFIGURATION               1099
 
 // Menu List
 
@@ -259,6 +269,7 @@
 
 #define IDC_SHOW_TOOLTIPS               6070
 #define IDC_SUPPRESS_MIRROR_IMAGE       6072
+#define IDC_VISUALIZE_DURING_PAUSE      6074
 
 #pragma endregion
 
@@ -292,8 +303,8 @@
 #define IDC_COLOR_ORDER_LBL             6114
 #define IDC_COLOR_ORDER                 6116
 
-#define IDC_FILE_PATH_LBL               6120
-#define IDC_FILE_PATH                   6122
+#define IDC_ARTWORK_FILE_PATH_LBL               6120
+#define IDC_ARTWORK_FILE_PATH                   6122
 
 #pragma endregion
 
@@ -330,8 +341,13 @@
 #define IDC_CHANNELS_LBL                5120
 #define IDC_CHANNELS                    5122
 
-#define IDC_CHANNEL_PAIRS_LBL           5124
-#define IDC_CHANNEL_PAIRS               5126
+#define IDC_ALL_CHANNELS                5124
+#define IDC_NO_CHANNELS                 5126
+
+#define IDC_CHANNEL_PAIRS_LBL           5128
+#define IDC_CHANNEL_PAIRS               5130
+
+#define IDC_SWAP_CHANNELS               5132
 
 #pragma endregion
 
@@ -424,12 +440,12 @@
 #define IDC_ANGULAR_VELOCITY_LBL        7196
 #define IDC_ANGULAR_VELOCITY            7197
 
-// Spectogram
+// Spectrogram
 
-#define IDC_SPECTOGRAM                  7150
+#define IDC_SPECTROGRAM                 7150
 
-#define IDC_SCROLLING_SPECTOGRAM        7152
-#define IDC_HORIZONTAL_SPECTOGRAM       7154
+#define IDC_SCROLLING_SPECTROGRAM       7152
+#define IDC_HORIZONTAL_SPECTROGRAM      7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
 
 // Peak Meter
@@ -438,20 +454,25 @@
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
 #define IDC_RMS_PLUS_3                  7164
+#define IDC_CENTER_SCALE                7166
+#define IDC_SCALE_LINES                 7168
 
-#define IDC_RMS_WINDOW_LBL              7166
-#define IDC_RMS_WINDOW                  7167
-#define IDC_RMS_WINDOW_SPIN             7168
-#define IDC_RMS_WINDOW_UNIT             7169
+#define IDC_RMS_WINDOW_LBL              7170
+#define IDC_RMS_WINDOW                  7172
+#define IDC_RMS_WINDOW_SPIN             7174
+#define IDC_RMS_WINDOW_UNIT             7176
 
-#define IDC_GAUGE_GAP_LBL               7170
-#define IDC_GAUGE_GAP                   7171
+#define IDC_BAR_GAP_LBL                 7178
+#define IDC_BAR_GAP                     7180
+
+#define IDC_MAX_BAR_SIZE_LBL            7182
+#define IDC_MAX_BAR_SIZE                7184
 
 // Level Meter
 
-#define IDC_LEVEL_METER                 7180
+#define IDC_LEVEL_METER                 7230
 
-#define IDC_HORIZONTAL_LEVEL_METER      7184
+#define IDC_HORIZONTAL_LEVEL_METER      7232
 
 // Oscilloscope
 
@@ -464,12 +485,21 @@
 #define IDC_Y_GAIN_LBL                  7208
 #define IDC_Y_GAIN                      7210
 
-#define IDC_PHOSPHOR_DECAY              7212
+#define IDC_ROTATION_LBL                7212
+#define IDC_ROTATION                    7214
 
-#define IDC_BLUR_SIGMA_LBL              7214
-#define IDC_BLUR_SIGMA                  7216
-#define IDC_DECAY_FACTOR_LBL            7218
-#define IDC_DECAY_FACTOR                7220
+#define IDC_PHOSPHOR_DECAY              7216
+
+#define IDC_BLUR_SIGMA_LBL              7218
+#define IDC_BLUR_SIGMA                  7220
+#define IDC_DECAY_FACTOR_LBL            7222
+#define IDC_DECAY_FACTOR                7224
+
+// Bit Meter
+
+#define IDC_BIT_METER                   7240
+
+#define IDC_OPACITY_MODE                7242
 
 #pragma endregion
 

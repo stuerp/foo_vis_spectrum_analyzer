@@ -16,14 +16,14 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() : NewValue(), CurValue(), Lo(), Center(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t() : RawValue(), Value(), Lo(), Center(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
-    frequency_band_t(double l, double c, double h) : NewValue(), CurValue(), Lo(l), Center(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t(double l, double c, double h) : RawValue(), Value(), Lo(l), Center(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
 
     frequency_band_t(const frequency_band_t & other)
     {
-        NewValue = other.NewValue;
-        CurValue = other.CurValue;
+        RawValue = other.RawValue;
+        Value = other.Value;
 
         Lo  = other.Lo;
         Center = other.Center;
@@ -40,10 +40,10 @@ struct frequency_band_t
         GradientColor     = other.GradientColor;
     }
 
-    virtual ~frequency_band_t() { }
+    virtual ~frequency_band_t() noexcept { }
 
-    double NewValue;    // 0.0 .. 1.0
-    double CurValue;    // 0.0 .. 1.0
+    double RawValue;    // [0, 1]
+    double Value;    // [0, 1]
 
     double Lo;          // Hz
     double Center;         // Hz

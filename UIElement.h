@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2025.10.21) P. Stuer **/
+/** $VER: UIElement.h (2026.03.13) P. Stuer **/
 
 #pragma once
 
@@ -51,7 +51,7 @@ protected:
     virtual void OnContextMenu(CWindow wnd, CPoint point);
     virtual void GetColors() noexcept = 0;
 
-    void UpdateState(Settings settings) noexcept;
+    void UpdateState(ConfigurationChanges settings) noexcept;
 
 private:
     // These methods (must) run on the main foobar2000 UI thread.
@@ -78,23 +78,23 @@ private:
 
     #pragma region play_callback methods
 
-    void on_playback_starting(play_control::t_track_command p_command, bool p_paused) { }
-    void on_playback_new_track(metadb_handle_ptr p_track);
-    void on_playback_stop(play_control::t_stop_reason p_reason);
-    void on_playback_seek(double p_time) { }
-    void on_playback_pause(bool p_state);
-    void on_playback_edited(metadb_handle_ptr p_track) { }
-    void on_playback_dynamic_info(const file_info& p_info) { }
-    void on_playback_dynamic_info_track(const file_info& p_info) { }
+    void on_playback_starting(play_control::t_track_command command, bool isPaused) { }
+    void on_playback_new_track(metadb_handle_ptr track);
+    void on_playback_stop(play_control::t_stop_reason reason);
+    void on_playback_seek(double time) { }
+    void on_playback_pause(bool state);
+    void on_playback_edited(metadb_handle_ptr track) { }
+    void on_playback_dynamic_info(const file_info&  info) { }
+    void on_playback_dynamic_info_track(const file_info & info) { }
     void on_playback_time(double time);
-    void on_volume_change(float p_new_val) { }
+    void on_volume_change(float newValue) { }
 
     #pragma endregion
 
-    void StartTimer() noexcept;
-    void StopTimer() noexcept;
+    void StartRenderer() noexcept;
+    void StopRenderer() noexcept;
 
-    static VOID CALLBACK TimerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
+    static DWORD WINAPI CallRenderThreadProc(LPVOID context) noexcept;
 
     virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
@@ -111,6 +111,7 @@ private:
 
     void on_album_art(album_art_data::ptr data);
 
+    bool GetArtwork(const metadb_handle_ptr & track) noexcept;
     bool GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
     bool GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
 
@@ -143,11 +144,11 @@ private:
     // These methods run on the render thread.
     #pragma region Render thread
 
-    void OnTimer() noexcept;
+    void RenderThreadProc() noexcept;
 
     void ProcessEvents() noexcept;
     void Render() noexcept;
-    void Process() noexcept;
+    void ProcessAudio() noexcept;
     void Animate() noexcept;
 
     void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
@@ -164,11 +165,13 @@ private:
     #pragma endregion
 
 protected:
-    state_t _UIThread;
-    state_t _RenderThread;
+    state_t _UIState;
+    state_t _RenderState;
 
     msc::critical_section_t _CriticalSection;
-    ConfigurationDialog _ConfigurationDialog;
+//  ConfigurationDialog _ConfigurationDialog;
+    configuration_dialog_t _ConfigurationDialog;
+    configuration_dialog_t _NewConfigurationDialog;
 
     RECT _OldRect;
     bool _IsFullScreen;
@@ -239,7 +242,9 @@ private:
         IDM_PRESET_NAME,
     };
 
-    PTP_TIMER _ThreadPoolTimer;
+    HANDLE _hStopRendering;
+    DWORD _ThreadId;
+    HANDLE _hThread;
 
     CToolTipCtrl _ToolTipControl;
 

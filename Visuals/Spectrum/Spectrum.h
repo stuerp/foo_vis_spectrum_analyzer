@@ -57,6 +57,8 @@ private:
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept;
 
+    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * style) const noexcept;
+
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept;
@@ -88,14 +90,16 @@ private:
     HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
-    const FLOAT PaddingX = 1.f;
-    const FLOAT PaddingY = 1.f;
+    const FLOAT PaddingX = 0.f;
+    const FLOAT PaddingY = 0.f;
 
     D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
 
     x_axis_t _XAxis;
     y_axis_t _YAxis;
+
+    FLOAT _LEDSize;
 
     chrono_t _Chrono;
 

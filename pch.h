@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2025.10.20) P. Stuer **/
+/** $VER: pch.h (2026.02.18) P. Stuer **/
 
 #pragma once
 
@@ -11,8 +11,8 @@
 
 #define NOMINMAX
 
-#include <helpers/foobar2000+atl.h>
-#include <helpers/helpers.h>
+#include <helpers\foobar2000+atl.h>
+#include <helpers\helpers.h>
 
 #include <dxgi1_3.h>
 #include <d3d11_2.h>
@@ -32,6 +32,8 @@
 #include <bit>
 #include <cassert>
 #include <cmath>
+#include <memory>
+#include <ranges>
 #include <string>
 
 #include <libmsc.h>
@@ -43,9 +45,6 @@
 #define Assert(b)
 #endif
 #endif
-
-#define TOSTRING_IMPL(x) #x
-#define TOSTRING(x) TOSTRING_IMPL(x)
 
 #ifndef THIS_HINSTANCE
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;

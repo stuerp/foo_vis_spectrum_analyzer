@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2025.10.15) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2026.03.11) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -20,9 +20,9 @@
 class element_t
 {
 public:
-    element_t() : _State(), _GraphDescription(), _IsResized(true) {}
+    element_t() : _State(), _Settings(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
 
-    virtual ~element_t() {}
+    virtual ~element_t() noexcept {}
 
     virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept { }
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
@@ -102,7 +102,7 @@ protected:
 
 protected:
     state_t * _State;
-    const graph_description_t * _GraphDescription;
+    const graph_description_t * _Settings;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Rect;

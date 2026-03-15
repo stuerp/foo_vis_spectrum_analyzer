@@ -1,5 +1,5 @@
 
-/** $VER: Layout.h (2025.10.14) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: Layout.h (2026.02.20) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -27,7 +27,6 @@
 #define H_D01   H_A00 - DY - DY
 #define X_D01   DX
 #define Y_D01   DY
-
 
 /** Page: Visualization **/
 
@@ -216,7 +215,7 @@
 
 #pragma endregion
 
-#pragma region Spectogram
+#pragma region Spectrogram
 // Groupbox
 #define X_B08   X_B13 + W_B13 + IX
 #define Y_B08   Y_B13
@@ -250,6 +249,7 @@
 #pragma endregion
 
 #pragma region Peak Meter
+
 // Groupbox
 #define X_B12   X_B08
 #define Y_B12   Y_B08 + H_B08 + IY
@@ -261,11 +261,22 @@
     #define Y_C16    Y_B12 + 11
 
    // Checkbox: RMS +3
-
     #define W_C24    80
     #define H_C24    H_CHB
     #define X_C24    X_C16
     #define Y_C24    Y_C16 + H_C16 + IY
+
+    // Checkbox: Center scale
+    #define W_C74    80
+    #define H_C74    H_CHB
+    #define X_C74    X_C16 + W_C16 + IX
+    #define Y_C74    Y_C16 
+
+    // Checkbox: Scale lines
+    #define W_C77    80
+    #define H_C77    H_CHB
+    #define X_C77    X_C74
+    #define Y_C77    Y_C74 + H_C74 + IY 
 
     #pragma region RMS window
     // Label: RMS window
@@ -287,7 +298,7 @@
     #define Y_C23   Y_C22
     #pragma endregion
 
-    // Label: Gauge gap
+    // Label: Bar gap
     #define W_C25   46
     #define H_C25   H_LBL
     #define X_C25   X_C21
@@ -299,8 +310,21 @@
     #define X_C26   X_C25 + W_C25 + IX
     #define Y_C26   Y_C25
 
+    // Label: Max. bar size
+    #define W_C75   46
+    #define H_C75   H_LBL
+    #define X_C75   X_C26 + W_C26 + IX
+    #define Y_C75   Y_C25
+
+    // Text Box
+    #define W_C76   34
+    #define H_C76   H_TBX
+    #define X_C76   X_C75 + W_C75 + IX
+    #define Y_C76   Y_C75
+
 #define W_B12  W_B08
 #define H_B12  11 + H_C16 + IY + H_C24 + IY + H_C22 + IY + H_C26 + 7
+
 #pragma endregion
 
 #pragma region Level Meter
@@ -340,7 +364,7 @@
 
     // Textbox: X gain
     #define W_C58    30
-    #define H_C58    H_CBX
+    #define H_C58    H_TBX
     #define X_C58    X_C56 + W_C56 + IX
     #define Y_C58    Y_C56
 
@@ -352,15 +376,27 @@
 
     // Textbox: Y gain
     #define W_C62    30
-    #define H_C62    H_CBX
+    #define H_C62    H_TBX
     #define X_C62    X_C60 + W_C60 + IX
     #define Y_C62    Y_C60
+
+    // Label: Rotation
+    #define W_C78    34
+    #define H_C78    H_LBL
+    #define X_C78    X_C56
+    #define Y_C78    Y_C62 + H_C62 + IY
+
+    // Textbox: Rotation
+    #define W_C79    30
+    #define H_C79    H_TBX
+    #define X_C79    X_C78 + W_C78 + IX
+    #define Y_C79    Y_C78
 
     // Checkbox: Phosphor decay effect
     #define W_C64    62
     #define H_C64    H_CHB
     #define X_C64    X_C54
-    #define Y_C64    Y_C62 + H_C62 + IY
+    #define Y_C64    Y_C79 + H_C79 + IY
 
     // Label: Blur sigma
     #define W_C66    34
@@ -370,7 +406,7 @@
 
     // Textbox: Blur sigma
     #define W_C68    30
-    #define H_C68    H_CBX
+    #define H_C68    H_TBX
     #define X_C68    X_C66 + W_C66 + IX
     #define Y_C68    Y_C66
 
@@ -382,12 +418,12 @@
 
     // Textbox: Decay factor
     #define W_C72    30
-    #define H_C72    H_CBX
+    #define H_C72    H_TBX
     #define X_C72    X_C70 + W_C70 + IX
     #define Y_C72    Y_C70
 
 #define W_B18  W_B14
-#define H_B18  11 + H_C54 + IY + H_C68 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + 7
 
 #pragma endregion
 
@@ -396,6 +432,7 @@
 /** Page: Transform **/
 
 #pragma region Transform
+
 // Groupbox
 #define X_B05   X_D01 + W_D01 + IX
 #define Y_B05   Y_D01
@@ -465,7 +502,7 @@
     #define H_C08    H_CBX
     #define X_C08    X_C07 + W_C07 + IX
     #define Y_C08    Y_C07
-
+/*
     #pragma region Channels
     // Button
     #define W_A88    82
@@ -473,9 +510,9 @@
     #define X_A88    X_C08
     #define Y_A88    Y_C08 + H_C08 + IY
     #pragma endregion
-
+*/
 #define W_B05   178
-#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 + IY + H_A88 + 7
+#define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 /*+ IY + H_A88*/ + 7
 #pragma endregion
 
 #pragma region FFT
@@ -1106,9 +1143,9 @@
     #pragma region Tool tips
 
     // Checkbox
-    #define W_A87    90
+    #define W_A87    86
     #define H_A87    H_CHB
-    #define X_A87    X_A38
+    #define X_A87    X_A17
     #define Y_A87    Y_A38 + H_A38 + IY
 
     #pragma endregion
@@ -1116,10 +1153,20 @@
     #pragma region Suppress mirror image
 
     // Checkbox
-    #define W_G19    90
+    #define W_G19    86
     #define H_G19    H_CHB
     #define X_G19    X_A87
     #define Y_G19    Y_A87 + H_A87 + IY
+
+    #pragma endregion
+
+    #pragma region Visualize during pause
+
+    // Checkbox
+    #define W_A95    86
+    #define H_A95    H_CHB
+    #define X_A95    X_A87 + W_A87 + IX
+    #define Y_A95    Y_A87
 
     #pragma endregion
 
@@ -1526,22 +1573,40 @@
 #define Y_G28    Y_G24
 
 // ListBox: Channels
-#define W_G29    70
+#define W_G29    80
 #define H_G29   160
 #define X_G29   X_G28
 #define Y_G29   Y_G28 + H_G28 + IY
 
+// Button: All Channels
+#define W_G52   30
+#define H_G52   H_BTN
+#define X_G52   X_G29
+#define Y_G52   Y_G29 + H_G29 + IY
+
+// Button: No Channels
+#define W_G53   30
+#define H_G53   H_BTN
+#define X_G53   X_G29 + W_G29 - W_G53
+#define Y_G53   Y_G52
+
 // Label: Channel Pairs
-#define W_C50    46
-#define H_C50    H_LBL
-#define X_C50    X_G29
-#define Y_C50    Y_G29 + H_G29 + IY
+#define W_C50   46
+#define H_C50   H_LBL
+#define X_C50   X_G52
+#define Y_C50   Y_G52 + H_G52 + IY
 
 // Combobox: Channel Pairs
-#define W_C51    76
-#define H_C51    H_CBX
-#define X_C51    X_C50
-#define Y_C51    Y_C50 + H_C50 + IY
+#define W_C51   76
+#define H_C51   H_CBX
+#define X_C51   X_C50
+#define Y_C51   Y_C50 + H_C50 + IY
+
+// Checkbox: Swap channels
+#define W_C53   60
+#define H_C53   H_CBX
+#define X_C53   X_C51
+#define Y_C53   Y_C51 + H_C51 + IY
 
 #pragma endregion
 

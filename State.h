@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2025.10.12) P. Stuer **/
+/** $VER: State.h (2026.03.12) P. Stuer **/
 
 #pragma once
 
@@ -26,11 +26,11 @@
 class state_t
 {
 public:
-    state_t();
+    state_t() noexcept;
 
-    state_t & operator=(const state_t & other);
+    state_t & operator=(const state_t & other) noexcept;
 
-    virtual ~state_t() { }
+    virtual ~state_t() noexcept { }
 
     void Reset() noexcept;
 
@@ -47,9 +47,15 @@ public:
 
 public:
     RECT _DialogRect;                                                   // Will be initialized in OnInitDialog()
-    size_t _PageIndex;
+    size_t _PageIndex;                                                  // Index of the active configuration dialog page
 
-    size_t _RefreshRateLimit;                                           // Hz
+#ifdef _WIN64
+    int64_t _RefreshRateLimit;                                          // Target FPS in Hz
+#else
+    int32_t _RefreshRateLimit;                                          // Target FPS in Hz
+#endif
+
+    int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
 
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;
@@ -160,6 +166,7 @@ public:
 
         bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
+        bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
 
         SmoothingMethod _SmoothingMethod;
         double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
@@ -177,16 +184,16 @@ public:
         bool _ShowArtworkOnBackground;
         ArtworkType _ArtworkType;
 
-        FLOAT _ArtworkOpacity;                                      // 0.0 .. 1.0
-        std::wstring _ArtworkFilePath;                              // Script that generates a valid file path to load artwork from.
-        FitMode _FitMode;                                           // Determines how over- or undersized artwork is rendered.
-        bool _FitWindow;                                            // True when the component window instead of the client area of the graph is used to fit artwork.
+        FLOAT _ArtworkOpacity;                                          // 0.0 .. 1.0
+        std::wstring _ArtworkFilePath;                                  // Script that generates a valid file path to load artwork from.
+        FitMode _FitMode;                                               // Determines how over- or undersized artwork is rendered.
+        bool _FitWindow;                                                // True when the component window instead of the client area of the graph is used to fit artwork.
 
     #pragma endregion
 
     #pragma region Graphs
 
-        bool _VerticalLayout;                                       // Shows the graphs vertically instead of horizontally.
+        bool _VerticalLayout;                                           // Shows the graphs vertically instead of horizontally.
 
     #pragma endregion
 
@@ -201,9 +208,9 @@ public:
         #pragma region Bars
 
             bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-            FLOAT _LEDSize;                                         // Size of the LED.
-            FLOAT _LEDGap;                                          // Gap between the LEDs.
-            bool _LEDIntegralSize;                                   // The LEDs will be rendered with an integral height.
+            FLOAT _LEDLight;                                        // Size of the LED light, in pixels.
+            FLOAT _LEDGap;                                          // Gap between the LEDs lights, in pixels.
+            bool _LEDIntegralSize;                                  // The LEDs will be rendered with an integral height.
 
         #pragma endregion
 
@@ -215,20 +222,24 @@ public:
 
         #pragma endregion
 
-        #pragma region Spectogram
+        #pragma region Spectrogram
 
-            bool _ScrollingSpectogram;                              // True if the spectogram needs to scroll.
-            bool _HorizontalSpectogram;                             // True if the spectogram should be rendered horizontally.
+            bool _ScrollingSpectrogram;                             // True if the spectrogram needs to scroll.
+            bool _HorizontalSpectrogram;                            // True if the spectrogram should be rendered horizontally.
             bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
 
         #pragma endregion
 
         #pragma region Peak Meter
 
-            bool _HorizontalPeakMeter;                              // True if the peak meter should be rendered horizontally.
+            bool _IsHorizontalPeakMeter;                            // True if the peak meter should be rendered horizontally.
             bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
+            bool _HasCenterScale;                                   // Render a scale between the bars.
+            bool _HasScaleLines;                                    // Render a scale between the bars.
+
             double _RMSWindow;                                      // Duration of the RMS window, in seconds.
-            FLOAT _GaugeGap;                                        // Gap between the peak meter gauges, in pixels.
+            FLOAT _BarGap;                                          // Gap between the peak meter bar, in pixels.
+            FLOAT _MaxBarSize;                                      // Max. bar width / height, in pixels. 0 to disable.
 
         #pragma endregion
 
@@ -244,9 +255,16 @@ public:
             bool _XYMode;                                           // Oscilloscope in X-Y mode
             double _XGain;
             double _YGain;
+            FLOAT _Rotation;
             bool _PhosphorDecay;
             FLOAT _BlurSigma;
             FLOAT _DecayFactor;
+
+        #pragma endregion
+
+        #pragma region Bit Meter
+
+            bool _OpacityMode;
 
         #pragma endregion
 
@@ -269,23 +287,36 @@ public:
 
     // These parameters will never be serialized.
 
-    bool _IsDUI;                                                        // True if the Default User Interface is being used.
+//  gradient_stops_t _GradientStops;                                    // The current gradient stops.
 
-    uint32_t _SampleRate;
-    size_t _BinCount;
+    #pragma region UI + Render thread
 
-    std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
     gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
 
-    gradient_stops_t _GradientStops;                                    // The current gradient stops.
+    #pragma endregion
 
-    double _LastPlaybackTime;                                           // Timestamp of the last rendered audio chunk.
-    double _TrackTime;                                                  // Used by spectogram
+    #pragma region UI thread
 
-    LONG64 _Barrier;
+    bool _IsDUI;                                                        // True if the Default User Interface is being used.
     std::wstring _ActivePresetName;                                     // The name of the last loaded preset.
+    bool _ShowToolTipsNow;                                              // True when the tool tip is forced to be visible (left mousebutton down)
 
-    bool _ShowToolTipsNow;
+    uint32_t _SampleRate;
+
+    #pragma endregion
+
+    #pragma region Render thread
+
+    std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
+
+    size_t _BinCount;                                                   // Spectrum
+
+    double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
+    double _TrackTime;                                                  // Spectrogram
+
+    bool _IsPaused;                                                     // Playback has been paused.
+
+    #pragma endregion
 
     #pragma endregion
 
@@ -294,6 +325,8 @@ private:
     void ConvertGraphDescription() noexcept;
 
 private:
+    #pragma region Deprecated settings
+
     bool _UseZeroTrigger_Deprecated;
 
     uint32_t _Channels_Deprecated;
@@ -318,41 +351,40 @@ private:
     ColorScheme _ColorScheme_Deprecated;
     std::vector<D2D1_GRADIENT_STOP> _CustomGradientStops_Deprecated;
 
-    D2D1::ColorF _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);
+    D2D1_COLOR_F _BackColor_Deprecated;
     bool _UseCustomBackColor_Deprecated;
 
-    D2D1::ColorF _XTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    D2D1_COLOR_F _XTextColor_Deprecated;
     bool _UseCustomXTextColor_Deprecated;
 
-    D2D1::ColorF _XLineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    D2D1_COLOR_F _XLineColor_Deprecated;
     bool _UseCustomXLineColor_Deprecated;
 
-    D2D1::ColorF _YTextColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    D2D1_COLOR_F _YTextColor_Deprecated;
     bool _UseCustomYTextColor_Deprecated;
 
-    D2D1::ColorF _YLineColor_Deprecated = D2D1::ColorF(D2D1::ColorF::White);
+    D2D1_COLOR_F _YLineColor_Deprecated;
     bool _UseCustomYLineColor_Deprecated;
 
-    D2D1::ColorF _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    D2D1::ColorF _DarkBandColor_Deprecated  = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    D2D1_COLOR_F _LightBandColor_Deprecated;
+    D2D1_COLOR_F _DarkBandColor_Deprecated;
 
     FLOAT _LineWidth_Deprecated;
-    D2D1::ColorF _LineColor_Deprecated = _DefLineColor_Deprecated;
+    D2D1_COLOR_F _LineColor_Deprecated;
     bool _UseCustomLineColor_Deprecated;
-    D2D1::ColorF _PeakLineColor_Deprecated = _DefPeakLineColor_Deprecated;
+    D2D1_COLOR_F _PeakLineColor_Deprecated;
     bool _UseCustomPeakLineColor_Deprecated;
     FLOAT _AreaOpacity_Deprecated;                                      // 0.0 .. 1.0
-
-    const D2D1::ColorF _DefLineColor_Deprecated = D2D1::ColorF(0);
-    const D2D1::ColorF _DefPeakLineColor_Deprecated = D2D1::ColorF(0);
 
     bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
 
     const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
+    #pragma endregion
+
 private:
-    const size_t _CurrentVersion = 31; // v0.9.0.0-alpha3
+    const size_t _CurrentVersion = 35; // v0.10.0.0-beta1
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

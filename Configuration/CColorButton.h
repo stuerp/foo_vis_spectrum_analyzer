@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.h (2024.03.09) P. Stuer **/
+/** $VER: CColorButton.h (2026.02.22) P. Stuer **/
 
 #pragma once
 
@@ -39,18 +39,18 @@ public:
 
     virtual ~CColorButton() { }
 
-    void Initialize(HWND hWnd);
-    void Terminate();
+    void Initialize(HWND hWnd) noexcept;
+    void Terminate() noexcept;
 
-    void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops);
+    void SetGradientStops(const std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept;
 
-    void GetColor(D2D1_COLOR_F & color) const;
-    void SetColor(const D2D1_COLOR_F & color);
-    void SetColor(COLORREF color);
+    void GetColor(D2D1_COLOR_F & color) const noexcept;
+    void SetColor(const D2D1_COLOR_F & color) noexcept;
+    void SetColor(COLORREF color) noexcept;
 
 private:
-    void OnPaint(HDC);
-    LRESULT OnLButtonDown(UINT, CPoint);
+    void OnPaint(HDC) noexcept;
+    LRESULT OnLButtonDown(UINT, CPoint) noexcept;
 
     void SendChangedNotification() const noexcept;
 
@@ -63,18 +63,16 @@ private:
     END_MSG_MAP()
 
 private:
-    #pragma region DirectX
-    HRESULT CreateDeviceSpecificResources() override;
-    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget);
-    void DeleteDeviceSpecificResources() override;
-    #pragma endregion
+    HRESULT CreateDeviceSpecificResources() noexcept override final;
+    void DeleteDeviceSpecificResources() noexcept override final;
+
+    HRESULT CreatePatternBrush(ID2D1RenderTarget * renderTarget) noexcept;
 
 private:
-    #pragma region DirectX
     // Device-specific resources
+    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
     CComPtr<ID2D1Brush> _Brush;
     CComPtr<ID2D1BitmapBrush> _PatternBrush;
-    #pragma endregion
 
 private:
     D2D1_COLOR_F _Color;

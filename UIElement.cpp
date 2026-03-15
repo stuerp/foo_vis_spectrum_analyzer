@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2025.10.21) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.01.21) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -19,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _ThreadPoolTimer(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
 {
 }
 
@@ -96,21 +96,18 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
         metadb_handle_ptr CurrentTrack;
 
         if (playback_control::get()->get_now_playing(CurrentTrack))
-        {
-            GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
-
-            if (_UIThread._ArtworkFilePath.empty())
-                GetArtworkFromTrack(CurrentTrack, fb2k::noAbort);
-            else
-                GetArtworkFromScript(CurrentTrack, fb2k::noAbort);
-        }
+            GetArtwork(CurrentTrack);
     }
 
     // Create the tooltip control.
     CreateToolTipControl();
 
     // Apply the initial configuration.
-    UpdateState(Settings::All);
+    UpdateState(ConfigurationChanges::All);
+
+    _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
+    StartRenderer();
 
     return 0;
 }
@@ -120,7 +117,9 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 /// </summary>
 void uielement_t::OnDestroy()
 {
-    StopTimer();
+    StopRenderer();
+
+    ::CloseHandle(_hStopRendering);
 
     _CriticalSection.Enter();
 
@@ -164,8 +163,6 @@ LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
 /// </summary>
 void uielement_t::OnPaint(CDCHandle hDC)
 {
-    StartTimer();
-
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
 }
 
@@ -220,17 +217,17 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
         Menu.AppendMenu((UINT) MF_STRING, IDM_CONFIGURE, L"Configure");
         Menu.AppendMenu((UINT) MF_SEPARATOR);
         Menu.AppendMenu((UINT) MF_STRING, IDM_TOGGLE_FULLSCREEN, L"Toggle Full-Screen Mode");
-        Menu.AppendMenu((UINT) MF_STRING | (_UIThread._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
+        Menu.AppendMenu((UINT) MF_STRING | (_UIState._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {
             RefreshRateLimitMenu.CreatePopupMenu();
 
-            const size_t RefreshRates[] = { 20, 30, 60, 100, 200 };
+            const int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
                 RefreshRateLimitMenu.AppendMenu
                 (
-                    (UINT) MF_STRING | ((_UIThread._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
+                    (UINT) MF_STRING | ((_UIState._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
                     IDM_REFRESH_RATE_LIMIT_20 + i,
                     pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz"))
                 );
@@ -241,13 +238,13 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
         {
             PresetMenu.CreatePopupMenu();
 
-            PresetManager::GetPresetNames(_UIThread._PresetsDirectoryPath, PresetNames);
+            PresetManager::GetPresetNames(_UIState._PresetsDirectoryPath, PresetNames);
 
             UINT_PTR i = 0;
 
             for (auto & PresetName : PresetNames)
             {
-                PresetMenu.AppendMenu((UINT) MF_STRING | ((_UIThread._ActivePresetName == PresetName) ? MF_CHECKED : 0), IDM_PRESET_NAME + i, PresetName.c_str());
+                PresetMenu.AppendMenu((UINT) MF_STRING | ((_UIState._ActivePresetName == PresetName) ? MF_CHECKED : 0), IDM_PRESET_NAME + i, PresetName.c_str());
                 i++;
             }
 
@@ -277,28 +274,28 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             break;
 
         case IDM_REFRESH_RATE_LIMIT_20:
-            _UIThread._RefreshRateLimit = 20;
-            StartTimer();
+            _UIState._RefreshRateLimit =
+            _RenderState._RefreshRateLimit = 20; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_30:
-            _UIThread._RefreshRateLimit = 30;
-            StartTimer();
+            _UIState._RefreshRateLimit =
+            _RenderState._RefreshRateLimit = 30; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_60:
-            _UIThread._RefreshRateLimit =60;
-            StartTimer();
+            _UIState._RefreshRateLimit =
+            _RenderState._RefreshRateLimit = 60; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_100:
-            _UIThread._RefreshRateLimit =100;
-            StartTimer();
+            _UIState._RefreshRateLimit =
+            _RenderState._RefreshRateLimit = 100; // Near-atomic
             break;
 
         case IDM_REFRESH_RATE_LIMIT_200:
-            _UIThread._RefreshRateLimit =200;
-            StartTimer();
+            _UIState._RefreshRateLimit =
+            _RenderState._RefreshRateLimit = 200; // Near-atomic
             break;
 
         case IDM_CONFIGURE:
@@ -319,19 +316,20 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 
                 if (msc::InRange(Index, (size_t) 0, PresetNames.size() - (size_t) 1))
                 {
-                    PresetManager::Load(_UIThread._PresetsDirectoryPath, PresetNames[Index], &NewState);
+                    PresetManager::Load(_UIState._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
-                    NewState._StyleManager.DominantColor       = _UIThread._StyleManager.DominantColor;
-                    NewState._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
+                    NewState._StyleManager.DominantColor       = _UIState._StyleManager.DominantColor;
+                    NewState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
 
                     NewState._StyleManager.UpdateCurrentColors();
 
                     NewState._ActivePresetName = PresetNames[Index];
 
-                    _UIThread = NewState;
+                    _UIState = NewState;
 
-                    UpdateState(Settings::All);
+                    UpdateState(ConfigurationChanges::All);
 
+                    // Notify the configuration dialog.
                     if (_ConfigurationDialog.IsWindow())
                     {
                         _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
@@ -351,14 +349,14 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 /// </summary>
 void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 {
-    if (_RenderThread._ShowToolTipsAlways)
+   if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
 
     _ToolTipControl.Activate(true);
 
     DeleteTrackingToolTip();
 
-    _RenderThread._ShowToolTipsNow = true;
+    _UIState._ShowToolTipsNow = true;
 
     OnMouseMove(flags, point);
 }
@@ -368,14 +366,14 @@ void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 /// </summary>
 void uielement_t::OnLButtonUp(UINT flags, CPoint point)
 {
-    if (_RenderThread._ShowToolTipsAlways)
+    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
 
     _ToolTipControl.Activate(false);
 
     DeleteTrackingToolTip();
 
-    _RenderThread._ShowToolTipsNow = false;
+    _UIState._ShowToolTipsNow = false;
 }
 
 /// <summary>
@@ -423,15 +421,15 @@ void uielement_t::Resize()
             _ToolTipControl.DelTool(&ti);
         }
 
-        _CriticalSection.Enter();
-
         {
+            _CriticalSection.Enter();
+
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderThread._StyleManager.DeleteGradientBrushes();
-        }
+            _RenderState._StyleManager.DeleteGradientBrushes();
 
-        _CriticalSection.Leave();
+            _CriticalSection.Leave();
+        }
 
         for (auto & Iter : _Grid)
         {
@@ -450,67 +448,65 @@ void uielement_t::OnColorsChanged()
 {
     GetColors();
 
-    _UIThread._StyleManager.UpdateCurrentColors();
+    _UIState._StyleManager.UpdateCurrentColors();
 
-    _CriticalSection.Enter();
+    {
+        _CriticalSection.Enter();
 
-    _RenderThread._StyleManager.UserInterfaceColors = _UIThread._StyleManager.UserInterfaceColors;
+        _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
 
-    ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
+        ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
-    // Notify the render thread.
-    _Event.Raise(event_t::UserInterfaceColorsChanged);
+        // Notify the render thread.
+        _Event.Raise(event_t::UserInterfaceColorsChanged);
 
-    _CriticalSection.Leave();
+        _CriticalSection.Leave();
+    }
 
-    // Notify the configuration dialog.
+    // Notify the configuration dialog about the changed UI colors.
     if (_ConfigurationDialog.IsWindow())
     {
-        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS);
+        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors changed).");
+        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors).");
     }
 }
 
 /// <summary>
-/// Handles the UM_CONFIGURATION_CHANGED message.
+/// Handles the UM_CONFIGURATION_CHANGED message from the configuration dialog.
 /// </summary>
 LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    UpdateState((Settings) wParam);
+    UpdateState((ConfigurationChanges) wParam);
 
     return 0;
 }
 
 /// <summary>
-/// Starts the timer.
+/// Starts the render thread.
 /// </summary>
-void uielement_t::StartTimer() noexcept
+void uielement_t::StartRenderer() noexcept
 {
-    if (_ThreadPoolTimer != nullptr)
-        StopTimer();
+    assert(_hThread == NULL);
 
-    _ThreadPoolTimer = ::CreateThreadpoolTimer(TimerCallback, this, nullptr);
+    _ThreadId = 0;
 
-    FILETIME DueTime = { };
-
-    ::SetThreadpoolTimer(_ThreadPoolTimer, &DueTime, 1000 / (DWORD) _UIThread._RefreshRateLimit, 0);
+    _hThread = ::CreateThread(nullptr, 0, CallRenderThreadProc, this, 0, &_ThreadId);
 }
 
 /// <summary>
-/// Stops the timer.
+/// Stops the render thread.
 /// </summary>
-void uielement_t::StopTimer() noexcept
+void uielement_t::StopRenderer() noexcept
 {
-    if (_ThreadPoolTimer == nullptr)
+    if (_hThread == NULL)
         return;
 
-    ::SetThreadpoolTimer(_ThreadPoolTimer, nullptr, 0, 0);
+    ::SetEvent(_hStopRendering);
 
-    ::WaitForThreadpoolTimerCallbacks(_ThreadPoolTimer, true);
+    ::WaitForSingleObject(_hThread, INFINITE);
 
-    ::CloseThreadpoolTimer(_ThreadPoolTimer);
-    _ThreadPoolTimer = nullptr;
+    ::CloseHandle(_hThread), _hThread = NULL;
 }
 
 /// <summary>
@@ -518,7 +514,7 @@ void uielement_t::StopTimer() noexcept
 /// </summary>
 void uielement_t::ToggleFrameCounter() noexcept
 {
-    _UIThread._ShowFrameCounter = !_UIThread._ShowFrameCounter;
+    _UIState._ShowFrameCounter = !_UIState._ShowFrameCounter;
 }
 
 /// <summary>
@@ -526,7 +522,7 @@ void uielement_t::ToggleFrameCounter() noexcept
 /// </summary>
 void uielement_t::ToggleHardwareRendering() noexcept
 {
-    _UIThread._UseHardwareRendering = !_UIThread._UseHardwareRendering;
+    _UIState._UseHardwareRendering = !_UIState._UseHardwareRendering;
 
     DeleteDeviceSpecificResources();
 }
@@ -538,7 +534,7 @@ void uielement_t::Configure() noexcept
 {
     if (!_ConfigurationDialog.IsWindow())
     {
-        DialogParameters dp = { m_hWnd, &_UIThread };
+        dialog_parameters_t dp = { m_hWnd, &_UIState };
 
         if (_ConfigurationDialog.Create(m_hWnd, (LPARAM) &dp) != NULL)
             _ConfigurationDialog.ShowWindow(SW_SHOW);
@@ -550,8 +546,9 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState(Settings settings) noexcept
+void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
 {
+    if (settings == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
 
@@ -567,36 +564,40 @@ void uielement_t::UpdateState(Settings settings) noexcept
     _CriticalSection.Enter();
 
     {
-        _RenderThread = _UIThread;
+        _RenderState = _UIState; // Copies only the settings that are relevant for rendering.
 
-        _RenderThread._SampleRate = 0;
-        _RenderThread._StyleManager.DeleteDeviceSpecificResources();
-
-        // Recreate the resources that depend on the artwork.
-        CreateArtworkDependentResources();
-
-        // Create the graphs.
+        if (settings == ConfigurationChanges::All)
         {
-            for (auto & Iter : _Grid)
-                delete Iter._Graph;
+            _RenderState._SampleRate = 0;
+            _RenderState._StyleManager.DeleteDeviceSpecificResources();
 
-            _Grid.clear();
+            // Recreate the resources that depend on the artwork.
+            CreateArtworkDependentResources();
 
-            _Grid.Initialize(_RenderThread._GridRowCount, _RenderThread._GridColumnCount);
-
-            for (const auto & GraphDescription : _RenderThread._GraphDescriptions)
+            // Create the graphs.
             {
-                auto * Graph = new graph_t();
+                for (auto & Iter : _Grid)
+                    delete Iter._Graph;
 
-                Graph->Initialize(&_RenderThread, &GraphDescription, nullptr);
+                _Grid.clear();
 
-                _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
+
+                for (const auto & GraphDescription : _RenderState._GraphDescriptions)
+                {
+                    auto * Graph = new graph_t();
+
+                    Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
+
+                    _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                }
             }
         }
     }
 
     _CriticalSection.Leave();
 
+    if (settings == ConfigurationChanges::All)
     {
         for (auto & Iter : _Grid)
         {
@@ -606,10 +607,10 @@ void uielement_t::UpdateState(Settings settings) noexcept
             _ToolTipControl.AddTool(&ti);
         }
 
-        _ToolTipControl.Activate(_RenderThread._ShowToolTipsAlways);
-    }
+        _ToolTipControl.Activate(_RenderState._ShowToolTipsAlways);
 
-    Resize();
+        Resize();
+    }
 }
 
 /// <summary>
@@ -635,37 +636,12 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState(Settings::All);
+    UpdateState(ConfigurationChanges::All);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
-    {
-        if (_UIThread._ArtworkFilePath.empty())
-            GetArtworkFromTrack(track, fb2k::noAbort);
-        else
-            GetArtworkFromScript(track, fb2k::noAbort);
-    }
-/*
-static COLORREF _TheColor = 0x808080 + ((rand() * 0x7F7F7F) % RAND_MAX);
+        GetArtwork(track);
 
-RECT cr;
-
-GetClientRect(&cr);
-
-HDC hDC = ::GetDC(GetParent());
-
-HBRUSH hBrush = ::CreateSolidBrush(_TheColor);
-
-::FillRect(hDC, &cr, hBrush);
-
-WCHAR Text[32];
-::swprintf(Text, _countof(Text), L"Color: %06X", _TheColor);
-::DrawTextW(hDC, Text, ::wcslen(Text), &cr, DT_EDITCONTROL);
-
-::DeleteObject((HGDIOBJ) hBrush);
-
-::ReleaseDC(GetParent(), hDC);
-*/
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackStartedNewTrack);
 }
@@ -677,7 +653,7 @@ void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 {
     _Artwork.DeleteWICResources();
 
-    _UIThread._SampleRate = 0;
+    _UIState._SampleRate = 0;
 
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackStopped);
@@ -686,8 +662,10 @@ void uielement_t::on_playback_stop(play_control::t_stop_reason reason)
 /// <summary>
 /// Playback paused/resumed.
 /// </summary>
-void uielement_t::on_playback_pause(bool)
+void uielement_t::on_playback_pause(bool state)
 {
+    // Notify the render thread.
+    _Event.Raise(state ? event_t::PlaybackPaused : event_t::PlaybackResumed);
 }
 
 /// <summary>
@@ -695,19 +673,30 @@ void uielement_t::on_playback_pause(bool)
 /// </summary>
 void uielement_t::on_playback_time(double time)
 {
-    _RenderThread._TrackTime = time;
+    _RenderState._TrackTime = time; // Near-atomic
 }
 
 #pragma endregion
 
 /// <summary>
-/// Gets the album art from the specified track.
+/// Gets the artwork for the specified track.
+/// </summary>
+bool uielement_t::GetArtwork(const metadb_handle_ptr & track) noexcept
+{
+    if (_UIState._ArtworkFilePath.empty())
+        return GetArtworkFromTrack(track, fb2k::noAbort);
+    else
+        return GetArtworkFromScript(track, fb2k::noAbort);
+}
+
+/// <summary>
+/// Gets the artwork for the specified track.
 /// </summary>
 bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork for the playing track.");
 
-    GUID ArtworkGUID = GetArtworkTypeGUID(_UIThread._ArtworkType);
+    GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
 
     static_api_ptr_t<album_art_manager_v2> ArtworkManager;
 
@@ -743,15 +732,15 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
 }
 
 /// <summary>
-/// Gets the artwork from a script.
+/// Gets the artwork for the specified track from a script.
 /// </summary>
 bool uielement_t::GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept
 {
-    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork from script \"%s\".", pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str()).c_str());
+    Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork from script \"%s\".", pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str()).c_str());
 
     titleformat_object::ptr Script;
 
-    if (!titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIThread._ArtworkFilePath.c_str())))
+    if (!titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str())))
         return false;
 
     if (!Script.is_valid())

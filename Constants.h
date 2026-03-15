@@ -1,5 +1,5 @@
 
-/** $VER: Constans.h (2025.10.21) P. Stuer **/
+/** $VER: Constants.h (2026.03.11) P. Stuer **/
 
 #pragma once
 
@@ -47,8 +47,8 @@ inline const double MaxIIRBandwidth = 64.;
 // Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
-inline const int MinBands =   2;
-inline const int MaxBands = 512;
+inline const int MinBands =    2;
+inline const int MaxBands = 8192;
 
 inline const double MinFrequency =     1.; // Hz
 inline const double MaxFrequency = 96000.; // Hz
@@ -126,8 +126,11 @@ inline const FLOAT MaxLEDGap = 32.f;
 inline const double MinRMSWindow = 0.; // in seconds
 inline const double MaxRMSWindow = 3.; // in seconds
 
-inline const FLOAT MinGaugeGap =   0.; // in pixels
-inline const FLOAT MaxGaugeGap = 100.; // in pixels
+inline const FLOAT MinBarGap =   0.; // in pixels
+inline const FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // in pixels
+
+inline const FLOAT MinBarSize =   0.; // in pixels
+inline const FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // in pixels
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
@@ -146,11 +149,14 @@ inline const double MaxXGain = 10.;
 inline const double MinYGain =  0.;
 inline const double MaxYGain = 10.;
 
-inline const FLOAT MinBlurSigma =  1.;
-inline const FLOAT MaxBlurSigma = 10.;
+inline const FLOAT MinRotation = -180.f;
+inline const FLOAT MaxRotation =  180.f;
 
-inline const FLOAT MinDecayFactor = 0.;
-inline const FLOAT MaxDecayFactor = 1.;
+inline const FLOAT MinBlurSigma =  1.f;
+inline const FLOAT MaxBlurSigma = 10.f;
+
+inline const FLOAT MinDecayFactor = 0.f;
+inline const FLOAT MaxDecayFactor = 1.f;
 
 
 
@@ -296,13 +302,15 @@ enum class VisualizationType
 {
     Bars = 0,
     Curve = 1,
-    Spectogram = 2,
+    Spectrogram = 2,
     PeakMeter = 3,
     LevelMeter = 4,
     RadialBars = 5,
     RadialCurve = 6,
     Oscilloscope = 7,
-    Tester = 8,
+    BitMeter = 8,
+
+    Tester = 63,
 };
 
 enum class VisualizationTypes : uint64_t
@@ -311,12 +319,13 @@ enum class VisualizationTypes : uint64_t
 
     Bars            = 1 << (int) VisualizationType::Bars,
     Curve           = 1 << (int) VisualizationType::Curve,
-    Spectogram      = 1 << (int) VisualizationType::Spectogram,
+    Spectrogram     = 1 << (int) VisualizationType::Spectrogram,
     PeakMeter       = 1 << (int) VisualizationType::PeakMeter,
     LevelMeter      = 1 << (int) VisualizationType::LevelMeter,
     RadialBars      = 1 << (int) VisualizationType::RadialBars,
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
+    BitMeter        = 1 << (int) VisualizationType::BitMeter,
 
     All = ~0
 };
@@ -400,30 +409,34 @@ enum class VisualElement : uint32_t
     CurvePeakLine               = 12,
     CurvePeakArea               = 13,
 
-    Spectogram                  = 18,
+    Spectrogram                 = 18,
 
-    GaugeBackground             = 19,
+    BarBackground               = 19,
 
-    GaugePeakLevel              = 20,
-    Gauge0dBPeakLevel           = 23,
-    GaugeMaxPeakLevel           = 25,
-    GaugePeakLevelText          = 26,
+    BarPeakLevel                = 20,
+    Bar0dBPeakLevel             = 23,
+    BarMaxPeakLevel             = 25,
+    BarPeakLevelText            = 26,
 
-    GaugeRMSLevel               = 21,
-    Gauge0dBRMSLevel            = 24,
-    GaugeRMSLevelText           = 22,
+    BarRMSLevel                 = 21,
+    Bar0dBRMSLevel              = 24,
+    BarRMSLevelText             = 22,
 
     NyquistMarker               = 15,
 
-    GaugeLeftRight              = 27,
-    GaugeMidSide                = 28,
+    BarLeftRight                = 27,
+    BarMidSide                  = 28,
     LevelMeterAxis              = 29,
-    GaugeLeftRightIndicator     = 30,
-    GaugeMidSideIndicator       = 31,
+    BarLeftRightIndicator       = 30,
+    BarMidSideIndicator         = 31,
 
     SignalLine                  = 32,
 
-    Count                       = 35
+    BarSign                     = 35,
+    BarMantissa                 = 36,
+    BarExponent                 = 37,
+
+    Count                       = 38
 };
 
 enum class ColorSource : uint32_t
@@ -568,13 +581,22 @@ enum class VerticalTextAlignment : uint32_t
     Bottom = 2
 };
 
-enum class Settings : uint64_t
+enum class ConfigurationChanges : uint32_t
 {
     None = 0,
 
-    PhosphorEffect = 1 << 0,
+    RenderLoop      = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Layout          = 1 << 1, // Configuration change impacts the layout of the visualization.
 
-    Oscilloscope = PhosphorEffect, 
+    RefreshRate     = 1 << 2,
+    PhosphorEffect  = 1 << 3, // Configuration change impacts the phosphor effect.
 
-    All = ~0,
+    Oscilloscope = PhosphorEffect,
+
+    All = ~0u,
 };
+
+inline bool operator==(ConfigurationChanges a, ConfigurationChanges b)
+{
+    return (size_t) a == (size_t) b;
+}

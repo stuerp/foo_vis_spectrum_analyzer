@@ -1,5 +1,5 @@
 
-/** $VER: CColorDialogEx.cpp (2023.12.31) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
+/** $VER: CColorDialogEx.cpp (2026.02.21) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
 #include "pch.h"
 #include "CColorDialogEx.h"
@@ -15,7 +15,7 @@
 /// <summary>
 /// Shows the Color dialog.
 /// </summary>
-bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color)
+bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept
 {
     _Color = color;
 
@@ -50,7 +50,7 @@ bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color)
 /// <summary>
 /// Hooks the standard Color dialog procedure.
 /// </summary>
-UINT_PTR CALLBACK CColorDialogEx::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+UINT_PTR CALLBACK CColorDialogEx::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
     CColorDialogEx * This;
 
@@ -71,7 +71,7 @@ UINT_PTR CALLBACK CColorDialogEx::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARA
     return 0;
 }
 
-UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (msg)
     {
@@ -229,7 +229,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 /// <summary>
 /// Draws the alpha slider cursor.
 /// </summary>
-void CColorDialogEx::DrawAlphaSliderCursor(HWND hDlg)
+void CColorDialogEx::DrawAlphaSliderCursor(HWND hDlg) noexcept
 {
     // Calculate the background rectangle.
     RECT BackRect = _SliderRect;
@@ -269,7 +269,7 @@ void CColorDialogEx::DrawAlphaSliderCursor(HWND hDlg)
 /// <summary>
 /// Updates the color gradient of the alpha slider.
 /// </summary>
-void CColorDialogEx::UpdateAlphaSlider()
+void CColorDialogEx::UpdateAlphaSlider() noexcept
 {
     std::vector<D2D1_GRADIENT_STOP> GradientStops =
     {

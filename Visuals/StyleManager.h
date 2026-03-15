@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2025.10.14) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.03.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -21,7 +21,7 @@ public:
     style_manager_t(style_manager_t &&) = delete;
     style_manager_t & operator=(style_manager_t &&) = delete;
 
-    virtual ~style_manager_t() { }
+    virtual ~style_manager_t() noexcept { }
 
     void Reset() noexcept;
 
@@ -102,28 +102,33 @@ public:
         VisualElement::CurvePeakLine,
         VisualElement::CurvePeakArea,
 
-        // Spectogram
-        VisualElement::Spectogram,
+        // Spectrogram
+        VisualElement::Spectrogram,
 
         // Peak Meter
-        VisualElement::GaugeBackground,
-        VisualElement::GaugePeakLevel,
-        VisualElement::Gauge0dBPeakLevel,
-        VisualElement::GaugeMaxPeakLevel,
-        VisualElement::GaugePeakLevelText,
-        VisualElement::GaugeRMSLevel,
-        VisualElement::Gauge0dBRMSLevel,
-        VisualElement::GaugeRMSLevelText,
+        VisualElement::BarBackground,
+        VisualElement::BarPeakLevel,
+        VisualElement::Bar0dBPeakLevel,
+        VisualElement::BarMaxPeakLevel,
+        VisualElement::BarPeakLevelText,
+        VisualElement::BarRMSLevel,
+        VisualElement::Bar0dBRMSLevel,
+        VisualElement::BarRMSLevelText,
 
         // Level Meter
-        VisualElement::GaugeLeftRight,
-        VisualElement::GaugeLeftRightIndicator,
-        VisualElement::GaugeMidSide,
-        VisualElement::GaugeMidSideIndicator,
+        VisualElement::BarLeftRight,
+        VisualElement::BarLeftRightIndicator,
+        VisualElement::BarMidSide,
+        VisualElement::BarMidSideIndicator,
         VisualElement::LevelMeterAxis,
 
         // Oscilloscope
         VisualElement::SignalLine,
+
+        // Bit Meter
+        VisualElement::BarSign,
+        VisualElement::BarExponent,
+        VisualElement::BarMantissa,
     };
 
 private:
@@ -136,16 +141,16 @@ private:
             {
                 /* Name                */ L"Graph Background",
                 /* UsedBy              */ VisualizationTypes::All,
-                /*_Flags               */ style_t::Features::SupportsOpacity,
-                /*_ColorSource         */ ColorSource::Solid,
-                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::Solid,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 0.f,
-                /*_FontName            */ L"",
-                /*_FontSize            */ 0.f
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f
             }
         },
 
@@ -154,16 +159,16 @@ private:
             {
                 /* Name                */ L"Graph Description Text",
                 /* UsedBy              */ VisualizationTypes::All,
-                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                /*_ColorSource         */ ColorSource::Solid,
-                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::Solid,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 0.f,
-                /*_FontName            */ L"Segoe UI",
-                /*_FontSize            */ 14.f,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"Segoe UI",
+                /* FontSize            */ 14.f,
             }
         },
 
@@ -172,8 +177,8 @@ private:
             {
                 /* Name                */ L"Graph Description Background",
                 /* UsedBy              */ VisualizationTypes::All,
-                style_t::Features::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(1.f, 1.f, 1.f, .25f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* ColorSource         */ ColorSource::Solid, D2D1::ColorF(1.f, 1.f, 1.f, .25f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
             }
         },
 
@@ -181,17 +186,17 @@ private:
             VisualElement::XAxisText,
             {
                 /* Name                */ L"X-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
-                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                /*_ColorSource         */ ColorSource::Solid,
-                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::Solid,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 0.f,
-                /*_FontName            */ L"Segoe UI",
-                /*_FontSize            */ 6.f
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"Segoe UI",
+                /* FontSize            */ 6.f
             }
         },
 
@@ -200,8 +205,16 @@ private:
             {
                 /* Name                */ L"X-axis Line",
                 /* UsedBy              */ VisualizationTypes::Oscilloscope,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 1.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f,
             }
         },
 
@@ -209,17 +222,17 @@ private:
             VisualElement::YAxisText,
             {
                 /* Name                */ L"Y-axis Text",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope,
-                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-                /*_ColorSource         */ ColorSource::Solid,
-                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::Solid,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 0.f,
-                /*_FontName            */ L"Segoe UI",
-                /*_FontSize            */ 6.f
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"Segoe UI",
+                /* FontSize            */ 6.f
             }
         },
 
@@ -228,8 +241,8 @@ private:
             {
                 /* Name                */ L"Y-axis Line",
                 /* UsedBy              */ VisualizationTypes::Oscilloscope,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* ColorSource         */ ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -237,9 +250,9 @@ private:
             VisualElement::HorizontalGridLine,
             {
                 /* Name                */ L"Horizontal Grid Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* CustomColor         */ ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -247,9 +260,9 @@ private:
             VisualElement::VerticalGridLine,
             {
                 /* Name                */ L"Vertical Grid Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram | VisualizationTypes::Oscilloscope,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* CustomColor         */ ColorSource::Solid, D2D1::ColorF(.25f, .25f, .25f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
 
@@ -257,9 +270,9 @@ private:
             VisualElement::NyquistMarker,
             {
                 /* Name                */ L"Nyquist Frequency Line",
-                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectogram,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
+                /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* CustomColor         */ ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f,
             }
         },
         #pragma endregion
@@ -270,8 +283,16 @@ private:
             {
                 /* Name                */ L"Bar Area",
                 /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
-                style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware,
-                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware,
+                /* CustomColor         */ ColorSource::Gradient,
+                D2D1::ColorF(D2D1::ColorF::Black),
+                0,
+                ColorScheme::Prism1,
+                GetBuiltInGradientStops(ColorScheme::Custom),
+                1.f,
+                0.f,
+                L"",
+                0.f,
             }
         },
 
@@ -280,8 +301,8 @@ private:
             {
                 /* Name                */ L"Bar Top",
                 /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
-                style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 5.f, L"", 0.f,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* CustomColor         */ ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 5.f, L"", 0.f,
             }
         },
 
@@ -368,49 +389,65 @@ private:
         },
         #pragma endregion
 
-        #pragma region Spectogram
+        #pragma region Spectrogram
         {
-            VisualElement::Spectogram,
+            VisualElement::Spectrogram,
             {
-                /* Name                */ L"Spectogram",
-                /* UsedBy              */ VisualizationTypes::Spectogram,
-                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient,
-                /*_ColorSource         */ ColorSource::Gradient,
-                /*_CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::SoX,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 0.f,
-                /*_FontName            */ L"",
-                /*_FontSize            */ 0.f
+                /* Name                */ L"Spectrogram",
+                /* UsedBy              */ VisualizationTypes::Spectrogram,
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware | style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient,
+                /* ColorSource         */ ColorSource::Gradient,
+                /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::SoX,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f
             }
         },
         #pragma endregion
 
         #pragma region Peak Meter
         {
-            VisualElement::GaugeBackground,
+            VisualElement::BarBackground,
             {
-                /* Name                */ L"Gauge Background",
-                /* UsedBy              */ VisualizationTypes::PeakMeter,
-                style_t::Features::SupportsOpacity,
-                ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, 1.f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                /* Name                */ L"Bar Background",
+                /* UsedBy              */ VisualizationTypes::PeakMeter | VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(.2f, .2f, .2f, 1.f),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f,
             }
         },
 
         {
-            VisualElement::GaugePeakLevel,
+            VisualElement::BarPeakLevel,
             {
                 /* Name                */ L"Peak Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
                 style_t::Features::SupportsOpacity,
-                ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f,
+                ColorSource::Gradient,
+                D2D1::ColorF(D2D1::ColorF::Black),
+                0,
+                ColorScheme::Prism1,
+                GetBuiltInGradientStops(ColorScheme::Custom),
+                1.f,
+                0.f,
+                L"",
+                0.f,
             }
         },
 
         {
-            VisualElement::Gauge0dBPeakLevel,
+            VisualElement::Bar0dBPeakLevel,
             {
                 /* Name                */ L"Peak Level (> 0dB)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -420,7 +457,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMaxPeakLevel,
+            VisualElement::BarMaxPeakLevel,
             {
                 /* Name                */ L"Peak Level (Max)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -430,7 +467,7 @@ private:
         },
 
         {
-            VisualElement::GaugePeakLevelText,
+            VisualElement::BarPeakLevelText,
             {
                 /* Name                */ L"Peak Level Read Out",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -441,7 +478,7 @@ private:
 
         // RMS
         {
-            VisualElement::GaugeRMSLevel,
+            VisualElement::BarRMSLevel,
             {
                 /* Name                */ L"RMS Level",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -451,7 +488,7 @@ private:
         },
 
         {
-            VisualElement::Gauge0dBRMSLevel,
+            VisualElement::Bar0dBRMSLevel,
             {
                 /* Name                */ L"RMS Level (> 0dB)",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -461,7 +498,7 @@ private:
         },
 
         {
-            VisualElement::GaugeRMSLevelText,
+            VisualElement::BarRMSLevelText,
             {
                 /* Name                */ L"RMS Level Read Out",
                 /* UsedBy              */ VisualizationTypes::PeakMeter,
@@ -473,7 +510,7 @@ private:
 
         #pragma region Level Meter
         {
-            VisualElement::GaugeLeftRight,
+            VisualElement::BarLeftRight,
             {
                 /* Name                */ L"Left/Right Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -483,7 +520,7 @@ private:
         },
 
         {
-            VisualElement::GaugeLeftRightIndicator,
+            VisualElement::BarLeftRightIndicator,
             {
                 /* Name                */ L"Left/Right Level Indicator",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -493,7 +530,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMidSide,
+            VisualElement::BarMidSide,
             {
                 /* Name                */ L"Mid/Side Level",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -503,7 +540,7 @@ private:
         },
 
         {
-            VisualElement::GaugeMidSideIndicator,
+            VisualElement::BarMidSideIndicator,
             {
                 /* Name                */ L"Mid/Side Level Indicator",
                 /* UsedBy              */ VisualizationTypes::LevelMeter,
@@ -529,16 +566,70 @@ private:
             {
                 /* Name                */ L"Signal Line",
                 /* UsedBy              */ VisualizationTypes::Oscilloscope,
-                /*_Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-                /*_ColorSource         */ ColorSource::Solid,
-                /*_CustomColor         */ D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f),
-                /*_ColorIndex          */ 0,
-                /*_ColorScheme         */ ColorScheme::Solid,
-                /*_CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
-                /*_Opacity             */ 1.f,
-                /*_Thickness           */ 1.5f,
-                /*_FontName            */ L"",
-                /*_FontSize            */ 0.f
+                /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Solid,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 1.5f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f
+            }
+        },
+        #pragma endregion
+
+        #pragma region Bit Meter
+        {
+            VisualElement::BarSign,
+            {
+                /* Name                */ L"Sign Bits",
+                /* UsedBy              */ VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* ColorSource         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF((UINT32) RGB(192, 192, 192)),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Prism1,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f,
+            }
+        },
+        {
+            VisualElement::BarMantissa,
+            {
+                /* Name                */ L"Mantissa Bits",
+                /* UsedBy              */ VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* CustomColor         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF((UINT32) RGB(86, 156, 214)),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Prism1,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f,
+            }
+        },
+        {
+            VisualElement::BarExponent,
+            {
+                /* Name                */ L"Exponent Bits",
+                /* UsedBy              */ VisualizationTypes::BitMeter,
+                /* Flags               */ style_t::Features::SupportsOpacity,
+                /* CustomColor         */ ColorSource::Solid,
+                /* CustomColor         */ D2D1::ColorF((UINT32) RGB(214, 156, 86)),
+                /* ColorIndex          */ 0,
+                /* ColorScheme         */ ColorScheme::Prism1,
+                /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+                /* Opacity             */ 1.f,
+                /* Thickness           */ 0.f,
+                /* FontName            */ L"",
+                /* FontSize            */ 0.f,
             }
         },
         #pragma endregion

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2025.10.25) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: Oscilloscope.h (2026.02.22) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@ public:
     oscilloscope_xy_t(oscilloscope_xy_t &&) = delete;
     oscilloscope_xy_t & operator=(oscilloscope_xy_t &&) = delete;
 
-    virtual ~oscilloscope_xy_t();
+    virtual ~oscilloscope_xy_t() noexcept;
 
     // element_t
     void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;

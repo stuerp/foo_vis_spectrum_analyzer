@@ -1,6 +1,78 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.10.0.0-beta2, 2026-03-13
+
+- Fixed: Clicking the Reset button resulted in a crash. (Regression)
+
+v0.10.0.0-beta1, 2026-03-12
+
+- New: Bit Meter vizualisation
+  - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
+  - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
+- Fixed: Some missing event handlers in the new Configuration dialog. (Regression)
+- Fixed: Some Configuration dialog notifications in 32-bit version. (Regression)
+
+v0.10.0.0-alpha7, 2026-03-01
+
+- Improved: Completely refactored the configuration dialog.
+  - It became too complex to maintain.
+  - Faster interaction with the render thread.
+- Improved: The preset location supports `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
+- Fixed: The gradient stops are no longer reset when editing a color of the gradient.
+- Fixed: Oscilloscope did not implement all of the Y-axis settings.
+- Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
+- Fixed: Oscilloscope did not render the vertical grid lines correctly.
+- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
+
+v0.10.0.0-alpha6, 2026-02-21
+
+- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
+
+v0.10.0.0-alpha5, 2026-02-18
+
+- Added: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
+- Added: `Rotation` option to rotate the X/Y oscilloscope.
+- Improved: Spectogram honors the new `Visualize on pause` setting.
+- Improved: Started tweaking the interaction between the configuration dialog and the renderer.
+- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
+
+v0.10.0.0-alpha4, 2026-01-25
+
+- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
+- New: `Scale lines` option. Enable to draw scale lines on the bar area of a peak meter. (Default: Enabled)
+- Fixed: Render code for the peak meter Top LED. (Regression)
+
+v0.10.0.0-alpha3, 2025-12-20
+
+- Fixed: 32-bit backwards compatibility with settings.
+
+v0.10.0.0-alpha2, 2025-12-20
+
+- Improved: Peak meter
+  - Removal of overlapping labels.
+  - Axis lines added again.
+- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
+- Fixed: SWIFT optimization bug.
+- Fixed: Lanczos interpolation bug.
+
+v0.10.0.0-alpha1, 2025-11-10
+
+- New: Implemented a high resolution timer.
+  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
+- New: All / None button in configuration dialog to quickly select all or no channels.
+- Improved: Complete rewrite of Peak meter visualization.
+  - Reduced CPU and GPU load.
+  - Fixed known graphical glitches and inconsistencies.
+  - New: *Center scale* setting to draw scales between the peak meter bars.
+  - New: *Max. bar size* setting to constrain the width/height of a meter bar. (Forum feature request)
+- Improved: Raised the max. number of frequency bins from 512 to 8192.
+- Improved: Added Overlap-Add (OLA) to the FFT analyzer.
+
+v0.9.1.0, 2025-11-02
+
+- Fixed: Handling of selected channels for FFT-based visualizations.
+
 v0.9.0.0, 2025-11-01
 
 - Fixed: Regression in level meter rendering of tracks with more than 2 channels.
@@ -38,7 +110,7 @@ v0.9.0.0-alpha2, 2025-10-09
   - X and Y-axis support
   - Y-axis none, dBFS and linear dBFS modes.
   - Only the selected channels are rendered.
-- Fixed: Rendering bug in horizontally scrolling spectogram.
+- Fixed: Rendering bug in horizontally scrolling spectrogram.
 
 v0.9.0.0-alpha1, 2025-10-05
 
@@ -89,8 +161,8 @@ v0.8.0.0-beta1, 2024-05-01
 
 * New: Left/Right and Mid/Side level meter.
   * The left/right channel pair is selectable.
-* Spectogram
-  * New: Vertical scrolling and static spectogram. A special setting is available to align the spectogram with a spectrum bars visualization over or under the spectogram.
+* Spectrogram
+  * New: Vertical scrolling and static spectrogram. A special setting is available to align the spectrogram with a spectrum bars visualization over or under the spectrogram.
   * Improved: Overall polishing and removal of glitches.
 * Added: Separate peak and RMS level read outs to the peak meter.
 * Fixed: An old color bug in the owner-drawn menu list.
@@ -150,10 +222,10 @@ v0.7.5.1, 2024-04-06
 
 v0.7.5.0, 2024-04-04
 
-* New: Spectogram visualization.
+* New: Spectrogram visualization.
   * Static or scrolling
 * New: Peak Meter visualization.
-* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectogram visualization.
+* New: Built-in SoX color scheme and corresponding non-linear amplitude color map suited for the spectrogram visualization.
 * New: The context menu can be used to load a preset.
 * New: Artwork Fit mode. Defaults to "Fit Big".
 * Improved: Double-clicking a preset activates it.

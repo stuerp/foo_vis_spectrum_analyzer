@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2025.09.24) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.03.11) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -8,8 +8,6 @@
 #include "Support.h"
 #include "Log.h"
 
-#include "DirectWrite.h"
-
 #pragma hdrstop
 
 /// <summary>
@@ -17,16 +15,13 @@
 /// </summary>
 peak_meter_t::peak_meter_t()
 {
-    _Rect = { };
-    _Size = { };
-
     Reset();
 }
 
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-peak_meter_t::~peak_meter_t()
+peak_meter_t::~peak_meter_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -36,14 +31,8 @@ peak_meter_t::~peak_meter_t()
 /// </summary>
 void peak_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
-    _Gauges.Initialize(state, settings, analysis);
-    _GaugeScales.Initialize(state, settings, analysis);
-    _GaugeNames.Initialize(state, settings, analysis);
-    _RMSReadOut.Initialize(state, settings, analysis);
-    _PeakReadOut.Initialize(state, settings, analysis);
-
     _State = state;
-    _GraphDescription = settings;
+    _Settings = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -56,11 +45,9 @@ void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetRect(rect);
 
-    _Gauges.Move(rect);
-    _GaugeNames.Move(rect);
-    _GaugeScales.Move(rect);
-    _RMSReadOut.Move(rect);
-    _PeakReadOut.Move(rect);
+    _RenderedChannels = 0;
+
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -68,352 +55,8 @@ void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void peak_meter_t::Reset() noexcept
 {
+    _RenderedChannels = 0;
     _IsResized = true;
-
-    _Gauges.Reset();
-    _GaugeNames.Reset();
-    _GaugeScales.Reset();
-    _RMSReadOut.Reset();
-    _PeakReadOut.Reset();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void peak_meter_t::Resize() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    D2D1_RECT_F Rect = _Rect;
-
-    // Gauge names metrics
-    {
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_YAxisLeft)
-                Rect.bottom -= (FLOAT) _GaugeScales.GetTextHeight();
-
-            if (_GraphDescription->_YAxisRight)
-                Rect.bottom -= (FLOAT) _GaugeScales.GetTextHeight();
-        }
-        else
-        {
-            if (_GraphDescription->_YAxisLeft)
-                Rect.right  -= (FLOAT) _GaugeScales.GetTextWidth();
-
-            if (_GraphDescription->_YAxisRight)
-                Rect.right  -= (FLOAT) _GaugeScales.GetTextWidth();
-        }
-
-        _GaugeNames.SetRect(Rect);
-        _GaugeNames.Resize();
-    }
-
-    // RMS read out metrics
-    {
-        if (_State->_HorizontalPeakMeter)
-        {
-            Rect.left  = 0.f;
-            Rect.right = _RMSReadOut.GetTextWidth();
-        }
-
-        _RMSReadOut.SetRect(Rect);
-        _RMSReadOut.Resize();
-    }
-
-    // Peak read out metrics
-    {
-        if (_State->_HorizontalPeakMeter)
-        {
-            Rect.left  = 0.f;
-            Rect.right = _PeakReadOut.GetTextWidth();
-        }
-
-        _PeakReadOut.SetRect(Rect);
-        _PeakReadOut.Resize();
-    }
-
-    // Gauge scales metrics
-    {
-        Rect = _Rect;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_XAxisBottom)
-                Rect.right -= _GaugeNames.GetTextWidth();
-
-            if (_RMSReadOut.IsVisible())
-                Rect.right -= _RMSReadOut.GetTextWidth();
-
-            if (_PeakReadOut.IsVisible())
-                Rect.right -= _PeakReadOut.GetTextWidth();
-
-            if (_GraphDescription->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
-                Rect.right -= 4.f;
-
-            if (_GraphDescription->_XAxisTop)
-                Rect.right -= _GaugeNames.GetTextWidth();
-        }
-        else
-        {
-            if (_GraphDescription->_XAxisBottom)
-                Rect.bottom -= _GaugeNames.GetTextHeight();
-
-            if (_RMSReadOut.IsVisible())
-                Rect.bottom -= _RMSReadOut.GetTextHeight();
-
-            if (_PeakReadOut.IsVisible())
-                Rect.bottom -= _PeakReadOut.GetTextHeight();
-
-            if (_GraphDescription->_XAxisTop)
-                Rect.bottom -= _GaugeNames.GetTextHeight();
-        }
-
-        _GaugeScales.SetRect(Rect);
-        _GaugeScales.Resize();
-    }
-
-    // Gauge metrics
-    {
-        Rect = _Rect;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_XAxisBottom)
-                Rect.right -= _GaugeNames.GetTextWidth();
-
-            if (_RMSReadOut.IsVisible())
-                Rect.right -= _RMSReadOut.GetTextWidth();
-
-            if (_PeakReadOut.IsVisible())
-                Rect.right -= _PeakReadOut.GetTextWidth();
-
-            if (_GraphDescription->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
-                Rect.right -= 4.f;
-
-            if (_GraphDescription->_XAxisTop)
-                Rect.right -= _GaugeNames.GetTextWidth();
-
-            if (_GraphDescription->_YAxisRight)
-                Rect.bottom -= _GaugeScales.GetTextHeight();
-
-            if (_GraphDescription->_YAxisLeft)
-                Rect.bottom -= _GaugeScales.GetTextHeight();
-        }
-        else
-        {
-            if (_GraphDescription->_XAxisBottom)
-                Rect.bottom -= _GaugeNames.GetTextHeight();
-
-            if (_RMSReadOut.IsVisible())
-                Rect.bottom -= _RMSReadOut.GetTextHeight();
-
-            if (_PeakReadOut.IsVisible())
-                Rect.bottom -= _PeakReadOut.GetTextHeight();
-
-            if (_GraphDescription->_XAxisTop)
-                Rect.bottom -= _GaugeNames.GetTextHeight();
-
-            if (_GraphDescription->_YAxisRight)
-                Rect.right -= _GaugeScales.GetTextWidth();
-
-            if (_GraphDescription->_YAxisLeft)
-                Rect.right -= _GaugeScales.GetTextWidth();
-        }
-
-        _Gauges.SetRect(Rect);
-        _Gauges.Resize();
-    }
-
-    // Don't continue the resize operation until the gauge metrics have been calculated.
-    if (!_Gauges.GetMetrics(_GaugeMetrics))
-        return;
-
-    // Gauge names transform
-    {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_YAxisLeft)
-                dy += (_GraphDescription->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphDescription->_YAxisLeft)
-                dx += (_GraphDescription->_FlipHorizontally) ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-        }
-
-        _GaugeNamesTransform = D2D1::Matrix3x2F::Translation(dx, dy);
-    }
-
-    // RMS read out transform
-    {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_FlipHorizontally)
-                dx = GetWidth() - _RMSReadOut.GetTextWidth();
-
-            if (_GraphDescription->_XAxisBottom)
-                dx += _GraphDescription->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
-
-            if (_GraphDescription->_YAxisLeft)
-                dy += (_GraphDescription->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphDescription->_YAxisLeft)
-                dx += _GraphDescription->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-
-            if (_GraphDescription->_XAxisBottom)
-                dy += _GraphDescription->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
-        }
-
-        _RMSReadOutTransform = D2D1::Matrix3x2F::Translation(dx, dy);
-    }
-
-    // Peak read out transform
-    {
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_FlipHorizontally)
-                dx = GetWidth() - _PeakReadOut.GetTextWidth();
-
-            if (_GraphDescription->_XAxisBottom)
-                dx += _GraphDescription->_FlipHorizontally ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
-
-            if (_RMSReadOut.IsVisible())
-                dx += _GraphDescription->_FlipHorizontally ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
-
-            if (_GraphDescription->_YAxisLeft)
-                dy += (_GraphDescription->_FlipVertically) ? (_GaugeScales.GetTextHeight() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (_GraphDescription->_YAxisLeft)
-                dx += _GraphDescription->_FlipHorizontally ? (_GaugeScales.GetTextWidth() - _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-
-            if (_GraphDescription->_XAxisBottom)
-                dy += _GraphDescription->_FlipVertically ? _GaugeNames.GetTextHeight() : -_GaugeNames.GetTextHeight();
-
-            if (_RMSReadOut.IsVisible())
-                dy += _GraphDescription->_FlipVertically ? _RMSReadOut.GetTextHeight() : -_RMSReadOut.GetTextHeight();
-        }
-
-        _PeakReadOutTransform = D2D1::Matrix3x2F::Translation(dx, dy);
-    }
-
-    // Gauge scales transform
-    {
-        // Translate from client coordinates to element coordinates.
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_FlipHorizontally)
-            {
-                if (_GraphDescription->_XAxisTop)
-                    dx += _GaugeNames.GetTextWidth();
-            }
-            else
-            {
-                if (_GraphDescription->_XAxisBottom)
-                    dx += _GaugeNames.GetTextWidth();
-    
-                if (_RMSReadOut.IsVisible())
-                    dx += _RMSReadOut.GetTextWidth();
-    
-                if (_PeakReadOut.IsVisible())
-                    dx += _PeakReadOut.GetTextWidth();
-
-                if (_GraphDescription->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
-                    dx += 4.f;
-            }
-        }
-        else
-        {
-            if (_GraphDescription->_FlipVertically)
-            {
-                if (_GraphDescription->_XAxisBottom)
-                    dy += _GaugeNames.GetTextHeight();
-
-                if (_RMSReadOut.IsVisible())
-                    dy += _RMSReadOut.GetTextHeight();
-    
-                if (_PeakReadOut.IsVisible())
-                    dy += _PeakReadOut.GetTextHeight();
-            }
-            else
-            {
-                if (_GraphDescription->_XAxisTop)
-                    dy += _GaugeNames.GetTextHeight();
-            }
-        }
-
-        _GaugeScalesTransform = D2D1::Matrix3x2F::Translation(dx, dy);
-    }
-
-    // Gauge transform
-    {
-        // Translate from client coordinates to element coordinates.
-        D2D1::Matrix3x2F Transform = (_GraphDescription->_FlipHorizontally) ? D2D1::Matrix3x2F(-1.f, 0.f, 0.f, 1.f, GetWidth(), 0.f) : D2D1::Matrix3x2F::Identity();
-
-        FLOAT dx = 0.f;
-        FLOAT dy = 0.f;
-
-        if (_State->_HorizontalPeakMeter)
-        {
-            if (_GraphDescription->_FlipVertically)
-                Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
-
-            if (_GraphDescription->_XAxisBottom)
-                dx += (_GraphDescription->_FlipHorizontally) ? -_GaugeNames.GetTextWidth() : _GaugeNames.GetTextWidth();
-
-            if (_RMSReadOut.IsVisible())
-                dx += (_GraphDescription->_FlipHorizontally) ? -_RMSReadOut.GetTextWidth() : _RMSReadOut.GetTextWidth();
-
-            if (_PeakReadOut.IsVisible())
-                dx += (_GraphDescription->_FlipHorizontally) ? -_PeakReadOut.GetTextWidth() : _PeakReadOut.GetTextWidth();
-
-            if (_GraphDescription->_XAxisBottom || _RMSReadOut.IsVisible() || _PeakReadOut.IsVisible())
-                dx += 4.f;
-
-            if (_GraphDescription->_YAxisLeft)
-                dy += (_GraphDescription->_FlipVertically) ? -(_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextHeight() + _GaugeMetrics._Offset);
-        }
-        else
-        {
-            if (!_GraphDescription->_FlipVertically)
-                Transform = Transform * D2D1::Matrix3x2F(1.f, 0.f, 0.f, -1.f, 0.f, GetHeight());
-
-            if (_GraphDescription->_XAxisBottom)
-                dy -= (_GraphDescription->_FlipVertically) ? -_GaugeNames.GetTextHeight() : _GaugeNames.GetTextHeight();
-
-            if (_RMSReadOut.IsVisible())
-                dy -= (_GraphDescription->_FlipVertically) ? -_RMSReadOut.GetTextHeight() : _RMSReadOut.GetTextHeight();
-
-            if (_PeakReadOut.IsVisible())
-                dy -= (_GraphDescription->_FlipVertically) ? -_PeakReadOut.GetTextHeight() : _PeakReadOut.GetTextHeight();
-
-            if (_GraphDescription->_YAxisLeft)
-                dx += (_GraphDescription->_FlipHorizontally) ? -(_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset) : (_GaugeScales.GetTextWidth() + _GaugeMetrics._Offset);
-        }
-
-        D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(dx, dy);
-
-        _GaugesTransform = Transform * Translate;
-    }
-
-    _IsResized = false;
 }
 
 /// <summary>
@@ -426,42 +69,253 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    // Render the gauge scales.
-    {
-        deviceContext->SetTransform(_GaugeScalesTransform);
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-        _GaugeScales.Render(deviceContext);
+//  deviceContext->DrawRectangle(_Rect, _DebugBrush);
+
+    for (auto Part : _Parts)
+        Part->Render();
+}
+
+/// <summary>
+/// Creates the parts of this instance (e.g. after resizing or a change in channel configuration)
+/// </summary>
+void peak_meter_t::CreateParts() noexcept
+{
+    if (_Settings->_YAxisLeft)
+    {
+        _Parts.push_back(new scale_t
+        (
+            _State, _Settings,
+            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
+            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+        ));
     }
 
-    // Render the gauges.
-    {
-        deviceContext->SetTransform(_GaugesTransform);
+    bool IsFirstBar = true;
 
-        _Gauges.Render(deviceContext, _GaugeMetrics);
+    if (_State->_IsHorizontalPeakMeter)
+    {
+        if (_Settings->_FlipVertically)
+        {
+            for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
+            {
+                if (_State->_HasCenterScale && !IsFirstBar)
+                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+
+                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+
+                IsFirstBar = false;
+            }
+        }
+        else
+        {
+            for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
+            {
+                if (_State->_HasCenterScale && !IsFirstBar)
+                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+
+                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+
+                IsFirstBar = false;
+            }
+        }
+    }
+    else
+    {
+        if (_Settings->_FlipHorizontally)
+        {
+            for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
+            {
+                if (_State->_HasCenterScale && !IsFirstBar)
+                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+
+                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+
+                IsFirstBar = false;
+            }
+        }
+        else
+        {
+            for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
+            {
+                if (_State->_HasCenterScale && !IsFirstBar)
+                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+
+                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+
+                IsFirstBar = false;
+            }
+        }
     }
 
-    // Render the gauge names.
+    if (_Settings->_YAxisRight)
     {
-        deviceContext->SetTransform(_GaugeNamesTransform);
+        _Parts.push_back(new scale_t
+        (
+            _State, _Settings,
+            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
+            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+        ));
+    }
+}
 
-        _GaugeNames.Render(deviceContext, _GaugeMetrics);
+/// <summary>
+/// Deletes the parts of this instance.
+/// </summary>
+void peak_meter_t::DeleteParts() noexcept
+{
+    for (auto Part : _Parts)
+        delete Part;
+
+    _Parts.clear();
+}
+
+/// <summary>
+/// Measures the parts after the Direct 2D resources have been assigned.
+/// </summary>
+void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
+{
+    uint32_t BarCount = 0;
+
+    FLOAT TotalScaleWidth  = 0.f;
+    FLOAT TotalScaleHeight = 0.f;
+
+    // Calculate how much space the scales occupy.
+    for (auto Part : _Parts)
+    {
+        Part->Bind
+        (
+            deviceContext,
+            _BackgroundStyle,
+            _PeakStyle,
+            _Peak0dBStyle,
+            _MaxPeakStyle,
+            _PeakTextStyle,
+            _RMSStyle,
+            _RMS0dBStyle,
+            _RMSTextStyle,
+            _NameStyle,
+            _ScaleTextStyle,
+            _ScaleLineStyle,
+            _DebugBrush,
+            _OpacityMask
+        );
+
+        auto * Scale = dynamic_cast<scale_t *>(Part);
+
+        if (Scale != nullptr)
+        {
+            if (_State->_IsHorizontalPeakMeter)
+                TotalScaleHeight += _ScaleTextStyle->_Height + (Scale->IsCenter() ? 0.f : _TickSize);
+            else
+                TotalScaleWidth  += _ScaleTextStyle->_Width  + (Scale->IsCenter() ? 0.f : _TickSize);
+        }
+        else
+            ++BarCount;
     }
 
-    // Render the RMS read out.
-    {
-        deviceContext->SetTransform(_RMSReadOutTransform);
+    const FLOAT TotalBarGap = _State->_HasCenterScale ? 0.f : _State->_BarGap * (FLOAT) (BarCount - 1);
 
-        _RMSReadOut.Render(deviceContext, _GaugeMetrics);
+    FLOAT Offset = 0.f;
+    FLOAT BarWidth = 0.f;
+    FLOAT BarHeight = 0.f;
+
+    // Calculate the width / height of a bar and the offset on the graph.
+    {
+        if (_State->_IsHorizontalPeakMeter)
+        {
+            BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) BarCount;
+
+            if ((_State->_MaxBarSize != 0.f) && (BarHeight > _State->_MaxBarSize))
+                BarHeight = _State->_MaxBarSize;
+
+            const FLOAT TotalBarHeight = (BarHeight * (FLOAT) BarCount) + TotalBarGap;
+
+            Offset = (_Size.height - TotalScaleHeight - TotalBarHeight) / 2.f;
+        }
+        else
+        {
+            BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) BarCount;
+
+            if ((_State->_MaxBarSize != 0.f) && (BarWidth > _State->_MaxBarSize))
+                BarWidth = _State->_MaxBarSize;
+
+            const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) BarCount) + TotalBarGap;
+
+            Offset = (_Size.width - TotalScaleWidth - TotalBarWidth) / 2.f;
+        }
     }
 
-    // Render the peak read out.
+    // Layout the meter parts.
+    bool NeedGap = false;
+
+    if (_State->_IsHorizontalPeakMeter)
     {
-        deviceContext->SetTransform(_PeakReadOutTransform);
+        D2D1_RECT_F Rect = { 0.f, 0.f, _Size.width, 0.f };
+        FLOAT y = Offset;
 
-        _PeakReadOut.Render(deviceContext, _GaugeMetrics);
+        for (auto & Part : _Parts)
+        {
+            auto * Scale = dynamic_cast<scale_t *>(Part);
+
+            if (Scale != nullptr) // Scale
+            {
+                Rect.top    = y;
+                Rect.bottom = y + _ScaleTextStyle->_Height + (Scale->IsCenter() ? 0.f : _TickSize);
+
+                NeedGap = false;
+            }
+            else // Bar
+            {
+                if (NeedGap)
+                    y += _State->_BarGap;
+
+                Rect.top    = y;
+                Rect.bottom = y + BarHeight;
+
+                NeedGap = true;
+            }
+
+            Part->SetRect(Rect);
+
+            y += Rect.bottom - Rect.top;
+        }
     }
+    else
+    {
+        D2D1_RECT_F Rect = { 0.f, 0.f, 0.f, _Size.height };
+        FLOAT x = Offset;
 
-    ResetTransform(deviceContext);
+        for (auto & Part : _Parts)
+        {
+            auto * Scale = dynamic_cast<scale_t *>(Part);
+
+            // A scale determines its own width.
+            if (Scale != nullptr)
+            {
+                Rect.left  = x;
+                Rect.right = x + _ScaleTextStyle->_Width + (Scale->IsCenter() ? 0.f : _TickSize);
+
+                NeedGap = false;
+            }
+            // A bar's width is determined by the remaining graph area.
+            else
+            {
+                if (NeedGap)
+                    x += _State->_BarGap;
+
+                Rect.left  = x;
+                Rect.right = x + BarWidth;
+
+                NeedGap = true;
+            }
+
+            Part->SetRect(Rect);
+
+            x += Rect.right - Rect.left;
+        }
+    }
 }
 
 /// <summary>
@@ -469,24 +323,59 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _GaugeNames.CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr))
-        hr = _RMSReadOut.CreateDeviceSpecificResources(deviceContext);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _PeakReadOut.CreateDeviceSpecificResources(deviceContext);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevel, deviceContext, _Size, L"", 1.f, &_PeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _GaugeScales.CreateDeviceSpecificResources(deviceContext);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBPeakLevel, deviceContext, _Size, L"", 1.f, &_Peak0dBStyle);
 
     if (SUCCEEDED(hr))
-        hr = _Gauges.CreateDeviceSpecificResources(deviceContext);
-
-    _IsResized = !_IsResized && _Gauges.GetMetrics(_GaugeMetrics);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevelText, deviceContext, _Size, L"+199.9", 1.f, &_PeakTextStyle);
 
     if (SUCCEEDED(hr))
-        Resize();
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMaxPeakLevel, deviceContext, _Size, L"", 1.f, &_MaxPeakStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevel, deviceContext, _Size, L"", 1.f, &_RMSStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBRMSLevel, deviceContext, _Size, L"", 1.f, &_RMS0dBStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevelText, deviceContext, _Size, L"+199.9", 1.f, &_RMSTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"LFE", 1.f, &_NameStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, &_ScaleTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_ScaleLineStyle);
+
+    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
+        hr = CreateOpacityMask(deviceContext);
+
+#ifdef _DEBUG
+    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+#endif
+
+    if (SUCCEEDED(hr) && (_RenderedChannels != _Analysis->_PeakMeasuredChannels))
+    {
+        DeleteParts();
+
+        CreateParts();
+
+        MeasureParts(deviceContext);
+
+        _RenderedChannels = _Analysis->_PeakMeasuredChannels;
+    }
 
     return hr;
 }
@@ -496,13 +385,79 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// </summary>
 void peak_meter_t::DeleteDeviceSpecificResources() noexcept
 {
-    _Gauges.DeleteDeviceSpecificResources();
+    for (const auto & Part : _Parts)
+        Part->Unbind();
 
-    _GaugeScales.DeleteDeviceSpecificResources();
+    DeleteParts();
 
-    _PeakReadOut.DeleteDeviceSpecificResources();
+    SafeRelease(&_BackgroundStyle);
 
-    _RMSReadOut.DeleteDeviceSpecificResources();
+    SafeRelease(&_PeakStyle);
+    SafeRelease(&_Peak0dBStyle);
+    SafeRelease(&_MaxPeakStyle);
+    SafeRelease(&_PeakTextStyle);
 
-    _GaugeNames.DeleteDeviceSpecificResources();
+    SafeRelease(&_RMSStyle);
+    SafeRelease(&_RMS0dBStyle);
+    SafeRelease(&_RMSTextStyle);
+
+    SafeRelease(&_NameStyle);
+
+    SafeRelease(&_ScaleTextStyle);
+    SafeRelease(&_ScaleLineStyle);
+
+    _OpacityMask.Release();
+
+#ifdef _DEBUG
+    _DebugBrush.Release();
+#endif
+}
+
+/// <summary>
+/// Creates an opacity mask to render the LEDs.
+/// </summary>
+HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
+{
+    CComPtr<ID2D1BitmapRenderTarget> rt;
+
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), &rt);
+
+    if (SUCCEEDED(hr))
+    {
+        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+        CComPtr<ID2D1SolidColorBrush> Brush;
+
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush); // Black parts will be masked out.
+
+        if (SUCCEEDED(hr))
+        {
+            rt->BeginDraw();
+
+            rt->Clear();
+
+            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+            if (LEDSize > 0.f)
+            {
+                if (_State->_IsHorizontalPeakMeter)
+                {
+                    for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
+                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush);
+                }
+                else
+                {
+                    for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
+                        rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush);
+                }
+            }
+
+            hr = rt->EndDraw();
+        }
+
+        if (SUCCEEDED(hr))
+            hr = rt->GetBitmap(&_OpacityMask);
+    }
+
+    return hr;
 }

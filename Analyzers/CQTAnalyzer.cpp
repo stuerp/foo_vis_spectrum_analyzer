@@ -71,7 +71,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
             f1 = s;
         }
 
-        fb.NewValue = std::sqrt((f1 * f1) + (f2 * f2) - (Coeff * f1 * f2)) / Norm; // Power
+        fb.RawValue = std::sqrt((f1 * f1) + (f2 * f2) - (Coeff * f1 * f2)) / Norm; // Power
     }
 
     return true;

@@ -1,5 +1,5 @@
 
-/** $VER: CColorDialogEx.h (2024.03.09) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
+/** $VER: CColorDialogEx.h (2026.02.21) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
 #pragma once
 
@@ -32,19 +32,19 @@ public:
     CColorDialogEx(CColorDialogEx &&) = delete;
     CColorDialogEx & operator=(CColorDialogEx &&) = delete;
 
-    virtual ~CColorDialogEx() { }
+    virtual ~CColorDialogEx() noexcept { }
 
-    bool SelectColor(HWND hWnd, D2D1_COLOR_F & color);
+    bool SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept;
 
 private:
-    static UINT_PTR CALLBACK Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+    static UINT_PTR CALLBACK Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
-    UINT_PTR ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-    void DrawAlphaSliderCursor(HWND hDlg);
-    void UpdateAlphaSlider();
+    UINT_PTR ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+    void DrawAlphaSliderCursor(HWND hDlg) noexcept;
+    void UpdateAlphaSlider() noexcept;
 
     // Explicit version to prevent truncation.
-    LONG MapEx(float value, float srcMin, float srcMax, LONG dstMin, LONG dstMax)
+    static LONG MapEx(float value, float srcMin, float srcMax, LONG dstMin, LONG dstMax) noexcept
     {
         return dstMin + (LONG) ((value - srcMin) * (float) (dstMax - dstMin) / (srcMax - srcMin));
     }

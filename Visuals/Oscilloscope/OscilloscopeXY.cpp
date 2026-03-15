@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2025.10.25) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.03.11) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -27,7 +27,7 @@ oscilloscope_xy_t::oscilloscope_xy_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-oscilloscope_xy_t::~oscilloscope_xy_t()
+oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -38,7 +38,7 @@ oscilloscope_xy_t::~oscilloscope_xy_t()
 void oscilloscope_xy_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _Settings = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -105,79 +105,89 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
     const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+    const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
-
-    const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-    const uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;                     // Mask containing the channels selected by the user.
-    const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
-
-    const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
-
-    if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
+    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const audio_sample * Samples = _Analysis->_Chunk.get_data();
+        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                         // get_sample_count() actually returns the number of frames.
+        const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-        const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
-        const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
+        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
+        const uint32_t SelectedChannels = _Settings->_SelectedChannels;                             // Mask containing the channels selected by the user.
+        const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
-        CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
+        const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
 
-        // Create the geometry for the X-Y plot.
+        if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
         {
-            CComPtr<ID2D1PathGeometry> Geometry;
+            const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-            hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
+            const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
+            const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
 
-            if (SUCCEEDED(hr))
+            CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
+
+            // Create the geometry for the X-Y plot.
             {
-                CComPtr<ID2D1GeometrySink> Sink;
+                CComPtr<ID2D1PathGeometry> Geometry;
 
-                hr = Geometry->Open(&Sink);
+                hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
 
-                FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
-                FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
-
-                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-                for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+                if (SUCCEEDED(hr))
                 {
-                    x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
-                    y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
+                    CComPtr<ID2D1GeometrySink> Sink;
 
-                    Sink->AddLine(D2D1::Point2F(x, y));
+                    hr = Geometry->Open(&Sink);
+
+                    FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
+                    FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
+
+                    if (_Settings->_SwapChannels)
+                        std::swap(x, y);
+
+                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                    for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+                    {
+                        x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
+                        y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
+
+                        if (_Settings->_SwapChannels)
+                            std::swap(x, y);
+
+                        Sink->AddLine(D2D1::Point2F(x, y));
+                    }
+
+                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                    hr = Sink->Close();
                 }
 
-                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-                hr = Sink->Close();
+                if (SUCCEEDED(hr))
+                    hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Rotate * Scale * Translate, &TransformedGeometry);
             }
 
             if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Scale * Translate, &TransformedGeometry);
-        }
+            {
+                _DeviceContext->SetTarget(_BackBuffer);
+                _DeviceContext->BeginDraw();
 
-        if (SUCCEEDED(hr))
-        {
-            _DeviceContext->SetTarget(_BackBuffer);
-            _DeviceContext->BeginDraw();
+                _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
 
-            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
-
-            hr = _DeviceContext->EndDraw();
+                hr = _DeviceContext->EndDraw();
+            }
         }
     }
 
     if (SUCCEEDED(hr))
     {
-        // Draw the grid.
+        // Draw the grid to the window.
         {
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            deviceContext->SetTransform(Translate);
+            deviceContext->SetTransform(Rotate * Translate);
 
             deviceContext->DrawImage(_GridCommandList);
 
@@ -318,7 +328,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         {
             D2D1_RECT_F TextRect = { -1.f, 0.01f, 1.f, 1.f };
 
-            if (_GraphDescription->HasXAxis() || _GraphDescription->HasYAxis())
+            if (_Settings->HasXAxis() || _Settings->HasYAxis())
             {
                 _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -326,10 +336,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_GraphDescription->HasXAxis())
+            if (_Settings->HasXAxis())
                 _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
-            if (_GraphDescription->HasYAxis())
+            if (_Settings->HasYAxis())
                 _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
         }
 
@@ -344,7 +354,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_GraphDescription->HasXAxis())
+            if (_Settings->HasXAxis())
             {
                 // Draw the negative X label.
                 _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -364,7 +374,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
         }
 
-        if (!_GraphDescription->HasXAxis())
+        if (!_Settings->HasXAxis())
             _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
         _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -378,7 +388,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_GraphDescription->HasYAxis())
+            if (_Settings->HasYAxis())
             {
                 // Draw the negative y label.
                 _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
@@ -398,7 +408,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
         }
 
-        if (!_GraphDescription->HasYAxis())
+        if (!_Settings->HasYAxis())
             _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);

@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2025.10.14) P. Stuer **/
+/** $VER: Style.cpp (2026.02.11) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -199,7 +199,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
     {
-        if (Has(style_t::Features::HorizontalGradient))
+        if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
             hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
 
@@ -242,9 +242,7 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 
     const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
-    D2D1_COLOR_F Color = _AmplitudeMap[Index];
-
-    ColorBrush->SetColor(Color);
+    ColorBrush->SetColor(_AmplitudeMap[Index]);
 
     ColorBrush->Release();
 
@@ -254,13 +252,13 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 /// <summary>
 /// Creates a color table to map the amplitudes to.
 /// </summary>
-/// <remarks>Assumes a sane gradient collection with position running from 0.f to 1.f in ascending order.
+/// <remarks>Assumes a sane gradient collection with position running from 0 to 1 in ascending order.</remarks>
 HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0. and 1.
+    const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0 and 1.
 
     colors.clear();
     colors.reserve(((gradientStops.size() - 1) * Steps) + 1);
@@ -281,25 +279,29 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stop
         // Add the gradient colors.
         for (size_t i = 1; i < gradientStops.size(); ++i)
         {
-            D2D1_COLOR_F Color2 = gradientStops[i].color;
-            FLOAT Position2 = gradientStops[i].position;
+            const D2D1_COLOR_F & Color2 = gradientStops[i].color;
+            const FLOAT & Position2 = gradientStops[i].position;
 
-            const D2D1_COLOR_F Delta = { Color2.r - Color1.r, Color2.g - Color1.g, Color2.b - Color1.b, Color2.a - Color1.a };
-
-            n = (uint32_t) (Position2 * (FLOAT) Steps) - (uint32_t) (Position1 * (FLOAT) Steps);
-
-            for (uint32_t j = 1; j < n; ++j)
+            // Positions may not be in ascending order while the user is editing the gradient.
+            if (Position2 > Position1)
             {
-                const FLOAT Factor = (FLOAT) j / (FLOAT) n;
-                const D2D1_COLOR_F Color =
-                {
-                    Color1.r + (Delta.r * Factor),
-                    Color1.g + (Delta.g * Factor),
-                    Color1.b + (Delta.b * Factor),
-                    Color1.a + (Delta.a * Factor)
-                };
+                const D2D1_COLOR_F Delta = { Color2.r - Color1.r, Color2.g - Color1.g, Color2.b - Color1.b, Color2.a - Color1.a };
 
-                colors.push_back(Color);
+                n = (uint32_t) ((Position2 - Position1) * (FLOAT) Steps);
+
+                for (uint32_t j = 1; j < n; ++j)
+                {
+                    const FLOAT Factor = (FLOAT) j / (FLOAT) n;
+                    const D2D1_COLOR_F Color =
+                    {
+                        Color1.r + (Delta.r * Factor),
+                        Color1.g + (Delta.g * Factor),
+                        Color1.b + (Delta.b * Factor),
+                        Color1.a + (Delta.a * Factor)
+                    };
+
+                    colors.push_back(Color);
+                }
             }
 
             Color1 = Color2;

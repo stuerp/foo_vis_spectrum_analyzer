@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2025.09.15) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.02.08) P. Stuer **/
 
 #pragma once
 
@@ -43,7 +43,7 @@ private:
     void AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
     void AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
 
-    double Lanzcos(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
+    double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
     double Median(std::vector<double> & data) const noexcept;
 
     /// <summary>
@@ -73,7 +73,7 @@ private:
     /// <summary>
     /// Gets the index of the coefficient corresponding to the specified frequency.
     /// </summary>
-    double HzToFFTIndex(double frequency, size_t bufferSize, uint32_t sampleRate) const noexcept
+    double HzToBinIndex(double frequency, size_t bufferSize, uint32_t sampleRate) const noexcept
     {
         return frequency * (double) bufferSize / sampleRate;
     }
@@ -91,9 +91,8 @@ private:
     size_t _FFTSize;
 
     // Wrap-around sample buffer
-    audio_sample * _Data;
-    size_t _Size;
-    size_t _Curr;
+    std::vector<audio_sample> _InputRing;
+    size_t _Next;   // Index of the next input sample
 
     std::vector<std::complex<double>> _TimeData;
     std::vector<std::complex<double>> _FreqData;
