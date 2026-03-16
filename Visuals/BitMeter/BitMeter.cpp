@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.03.15) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.03.16) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -35,6 +35,7 @@ void bit_meter_t::Initialize(state_t * state, const graph_description_t * settin
     _Analysis = analysis;
 
     _MeasurementCount = 0;
+    _OldHorizontalAlignment = (HorizontalAlignment) -1;
 
     // Create the labels.
     {
@@ -128,11 +129,11 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & m : _Analysis->_BitMeasurements)
     {
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(0.f, YOffset);
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset + YAxisWidth, YOffset);
 
         deviceContext->SetTransform(Translate);
 
-        r.left = XOffset + YAxisWidth;
+        r.left = 0.f;
 
         // Draw the bit bar counts for the current channel.
         size_t BitNumber = 0;
@@ -174,7 +175,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     if ((_Size.width == 0.f) || _Size.height == 0.f)
         return E_FAIL;
 
-    if (_MeasurementCount != _Analysis->_BitMeasurements.size())
+    if ((_MeasurementCount != _Analysis->_BitMeasurements.size()) || (_Settings->_HorizontalAlignment != _OldHorizontalAlignment))
     {
         _MeasurementCount = _Analysis->_BitMeasurements.size();
 
@@ -182,6 +183,8 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         SafeRelease(&_BarSign);
         SafeRelease(&_BarExponent);
         SafeRelease(&_BarMantissa);
+
+        _OldHorizontalAlignment = _Settings->_HorizontalAlignment;
 
         _StaticContentCommandList.Release();
     }

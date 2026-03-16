@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.03.15) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.03.16) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -36,6 +36,7 @@ private:
 
 private:
     size_t _MeasurementCount;
+    HorizontalAlignment _OldHorizontalAlignment;
 
     std::vector<std::wstring> _Labels;
 
