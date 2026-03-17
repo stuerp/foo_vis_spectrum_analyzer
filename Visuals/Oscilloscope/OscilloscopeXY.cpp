@@ -38,7 +38,7 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 void oscilloscope_xy_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _Settings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -113,7 +113,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
         const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _Settings->_SelectedChannels;                             // Mask containing the channels selected by the user.
+        const uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;                             // Mask containing the channels selected by the user.
         const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
         const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
@@ -142,7 +142,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
                     FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
 
-                    if (_Settings->_SwapChannels)
+                    if (_GraphDescription->_SwapChannels)
                         std::swap(x, y);
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
@@ -152,7 +152,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
                         y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
 
-                        if (_Settings->_SwapChannels)
+                        if (_GraphDescription->_SwapChannels)
                             std::swap(x, y);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
@@ -328,7 +328,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         {
             D2D1_RECT_F TextRect = { -1.f, 0.01f, 1.f, 1.f };
 
-            if (_Settings->HasXAxis() || _Settings->HasYAxis())
+            if (_GraphDescription->HasXAxis() || _GraphDescription->HasYAxis())
             {
                 _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -336,10 +336,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_Settings->HasXAxis())
+            if (_GraphDescription->HasXAxis())
                 _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
-            if (_Settings->HasYAxis())
+            if (_GraphDescription->HasYAxis())
                 _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
         }
 
@@ -354,7 +354,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_Settings->HasXAxis())
+            if (_GraphDescription->HasXAxis())
             {
                 // Draw the negative X label.
                 _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -374,7 +374,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
         }
 
-        if (!_Settings->HasXAxis())
+        if (!_GraphDescription->HasXAxis())
             _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
         _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -388,7 +388,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
                 _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_Settings->HasYAxis())
+            if (_GraphDescription->HasYAxis())
             {
                 // Draw the negative y label.
                 _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
@@ -408,7 +408,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
         }
 
-        if (!_Settings->HasYAxis())
+        if (!_GraphDescription->HasYAxis())
             _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);

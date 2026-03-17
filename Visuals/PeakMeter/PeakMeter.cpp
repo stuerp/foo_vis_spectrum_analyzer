@@ -32,7 +32,7 @@ peak_meter_t::~peak_meter_t() noexcept
 void peak_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _Settings = settings;
+    _GraphDescription = settings;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -82,11 +82,11 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void peak_meter_t::CreateParts() noexcept
 {
-    if (_Settings->_YAxisLeft)
+    if (_GraphDescription->_YAxisLeft)
     {
         _Parts.push_back(new scale_t
         (
-            _State, _Settings,
+            _State, _GraphDescription,
             _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
             _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
@@ -96,14 +96,14 @@ void peak_meter_t::CreateParts() noexcept
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        if (_Settings->_FlipVertically)
+        if (_GraphDescription->_FlipVertically)
         {
             for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -113,9 +113,9 @@ void peak_meter_t::CreateParts() noexcept
             for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -123,14 +123,14 @@ void peak_meter_t::CreateParts() noexcept
     }
     else
     {
-        if (_Settings->_FlipHorizontally)
+        if (_GraphDescription->_FlipHorizontally)
         {
             for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -140,20 +140,20 @@ void peak_meter_t::CreateParts() noexcept
             for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _Settings, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _Settings, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
 
                 IsFirstBar = false;
             }
         }
     }
 
-    if (_Settings->_YAxisRight)
+    if (_GraphDescription->_YAxisRight)
     {
         _Parts.push_back(new scale_t
         (
-            _State, _Settings,
+            _State, _GraphDescription,
             _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
             _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));

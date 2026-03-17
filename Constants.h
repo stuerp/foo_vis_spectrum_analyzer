@@ -585,13 +585,11 @@ enum class ConfigurationChanges : uint32_t
 {
     None = 0,
 
-    RenderLoop      = 1 << 0, // Configuration change impacts the behavior of the render loop.
-    Layout          = 1 << 1, // Configuration change impacts the layout of the visualization.
+    RenderLoop   = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Layout       = 1 << 1, // Configuration change impacts the layout of the visualization.
 
-    RefreshRate     = 1 << 2,
-    PhosphorEffect  = 1 << 3, // Configuration change impacts the phosphor effect.
-
-    Oscilloscope = PhosphorEffect,
+    RefreshRate  = 1 << 2,
+    Oscilloscope = 1 << 3, // Configuration change impacts the oscilloscope.
 
     All = ~0u,
 };

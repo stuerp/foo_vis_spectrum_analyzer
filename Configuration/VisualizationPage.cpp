@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.03.12) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.03.17) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -471,7 +471,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -480,7 +480,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_DecayFactor, std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }
@@ -596,7 +596,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_BlurSigma, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -604,7 +604,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_DecayFactor, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }
@@ -697,7 +697,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             _State->_HorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -717,7 +717,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }

@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.03.16) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.03.17) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -28,6 +28,8 @@ public:
 
     void Resize() noexcept;
 
+    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+
 private:
     HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -36,7 +38,6 @@ private:
 
 private:
     size_t _MeasurementCount;
-    HorizontalAlignment _OldHorizontalAlignment;
 
     std::vector<std::wstring> _Labels;
 

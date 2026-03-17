@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.03.11) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -20,7 +20,7 @@
 class element_t
 {
 public:
-    element_t() : _State(), _Settings(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
+    element_t() : _State(), _GraphDescription(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
 
     virtual ~element_t() noexcept {}
 
@@ -67,6 +67,8 @@ public:
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
+    virtual void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept { }
+
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
 
@@ -102,7 +104,7 @@ protected:
 
 protected:
     state_t * _State;
-    const graph_description_t * _Settings;
+    const graph_description_t * _GraphDescription;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Rect;

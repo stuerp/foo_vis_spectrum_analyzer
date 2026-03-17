@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.03.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.03.17) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -20,21 +20,21 @@ graph_t::graph_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-graph_t::~graph_t()
+graph_t::~graph_t() noexcept
 {
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t *) noexcept
+void graph_t::Initialize(state_t * state, const graph_description_t * graphDescription, const analysis_t *) noexcept
 {
     _State = state;
-    _Settings = settings;
+    _GraphDescription = graphDescription;
 
-    _Description = settings->_Description;
+    _Description = graphDescription->_Description;
 
-    _Analysis.Initialize(state, settings);
+    _Analysis.Initialize(state, graphDescription);
 
     _Visualization.reset();
 
@@ -76,7 +76,7 @@ void graph_t::Initialize(state_t * state, const graph_description_t * settings, 
             break;
     }
 
-    _Visualization->Initialize(state, settings, &_Analysis);
+    _Visualization->Initialize(state, graphDescription, &_Analysis);
 }
 
 /// <summary>
@@ -86,10 +86,10 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     const D2D1_RECT_F Rect =
     {
-        .left   = rect.left   + _Settings->_LPadding,
-        .top    = rect.top    + _Settings->_TPadding,
-        .right  = rect.right  - _Settings->_RPadding,
-        .bottom = rect.bottom - _Settings->_BPadding
+        .left   = rect.left   + _GraphDescription->_LPadding,
+        .top    = rect.top    + _GraphDescription->_TPadding,
+        .right  = rect.right  - _GraphDescription->_RPadding,
+        .bottom = rect.bottom - _GraphDescription->_BPadding
     };
 
     SetRect(Rect);
@@ -159,12 +159,12 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
         // Allow non-integer bar widths?
-        if (_Settings->_HorizontalAlignment != HorizontalAlignment::Fit)
+        if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
         const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
-        const FLOAT HOffset = GetHOffset(_Settings->_HorizontalAlignment, cr.Width() - SpectrumWidth);
+        const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
@@ -172,7 +172,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (!msc::InRange(x, x1, x2))
             return false;
 
-        if (_Settings->_FlipHorizontally)
+        if (_GraphDescription->_FlipHorizontally)
             x = (x2 + x1) - x;
 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -187,7 +187,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;
 
-            if (!_Settings->_FlipVertically)
+            if (!_GraphDescription->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
             bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -255,28 +255,30 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 
     DWRITE_TEXT_METRICS TextMetrics = { };
 
-    if (SUCCEEDED(hr))
-        hr = TextLayout->GetMetrics(&TextMetrics);
+    if (!SUCCEEDED(hr))
+        return;
 
-    if (SUCCEEDED(hr))
+    hr = TextLayout->GetMetrics(&TextMetrics);
+
+    if (!SUCCEEDED(hr))
+        return;
+
+    const FLOAT Inset = 2.f;
+
+    D2D1_RECT_F Rect =
     {
-        const FLOAT Inset = 2.f;
+        .left = _Visualization->GetClientRect().left + 10.f,
+        .top  = _Visualization->GetClientRect().top  + 10.f,
+    };
 
-        D2D1_RECT_F Rect =
-        {
-            .left = _Visualization->GetClientRect().left + 10.f,
-            .top  = _Visualization->GetClientRect().top  + 10.f,
-        };
+    Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
+    Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
-        Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
-        Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
+    if (_DescriptionBackgroundStyle->IsEnabled())
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
 
-        if (_DescriptionBackgroundStyle->IsEnabled())
-            deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
-
-        if (_DescriptionTextStyle->IsEnabled())
-            deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-    }
+    if (_DescriptionTextStyle->IsEnabled())
+        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -284,19 +286,23 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
+    if (!SUCCEEDED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, &_DescriptionTextStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, &_DescriptionTextStyle);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, &_DescriptionBackgroundStyle);
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, &_DescriptionBackgroundStyle);
+
+    if (!SUCCEEDED(hr))
+        return hr;
 
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
     return hr;
@@ -316,4 +322,13 @@ void graph_t::DeleteDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+}
+
+/// <summary>
+/// Forwards the configuration change event to the visualization.
+/// </summary>
+void graph_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (_Visualization.get() != nullptr)
+        _Visualization->OnConfigurationChange(configurationChanges);
 }

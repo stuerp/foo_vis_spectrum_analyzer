@@ -546,9 +546,9 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
+void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcept
 {
-    if (settings == ConfigurationChanges::All)
+    if (configurationChanges == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
 
@@ -566,38 +566,56 @@ void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
     {
         _RenderState = _UIState; // Copies only the settings that are relevant for rendering.
 
-        if (settings == ConfigurationChanges::All)
+        switch (configurationChanges)
         {
-            _RenderState._SampleRate = 0;
-            _RenderState._StyleManager.DeleteDeviceSpecificResources();
-
-            // Recreate the resources that depend on the artwork.
-            CreateArtworkDependentResources();
-
-            // Create the graphs.
+            case ConfigurationChanges::All:
             {
-                for (auto & Iter : _Grid)
-                    delete Iter._Graph;
+                _RenderState._SampleRate = 0;
+                _RenderState._StyleManager.DeleteDeviceSpecificResources();
 
-                _Grid.clear();
+                // Recreate the resources that depend on the artwork.
+                CreateArtworkDependentResources();
 
-                _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
-
-                for (const auto & GraphDescription : _RenderState._GraphDescriptions)
+                // Create the graphs.
                 {
-                    auto * Graph = new graph_t();
+                    for (auto & Item : _Grid)
+                        delete Item._Graph;
 
-                    Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
+                    _Grid.clear();
 
-                    _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
+
+                    for (const auto & GraphDescription : _RenderState._GraphDescriptions)
+                    {
+                        auto * Graph = new graph_t();
+
+                        Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
+
+                        _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                    }
                 }
+                break;
             }
+            
+            case ConfigurationChanges::Layout:
+            {
+                for (auto & Item : _Grid)
+                    Item._Graph->OnConfigurationChange(configurationChanges);
+                break;
+            }
+
+            case ConfigurationChanges::None:
+            case ConfigurationChanges::RenderLoop:
+            case ConfigurationChanges::RefreshRate:
+            case ConfigurationChanges::Oscilloscope:
+            default:
+                break;
         }
     }
 
     _CriticalSection.Leave();
 
-    if (settings == ConfigurationChanges::All)
+    if (configurationChanges == ConfigurationChanges::All)
     {
         for (auto & Iter : _Grid)
         {
