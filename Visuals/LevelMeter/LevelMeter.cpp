@@ -1,14 +1,11 @@
 
-/** $VER: LevelMeter.cpp (2025.10.08) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.03.18) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
 #include "LevelMeter.h"
 
 #include "Support.h"
-#include "Log.h"
-
-#include "DirectWrite.h"
 
 #pragma hdrstop
 
@@ -22,7 +19,7 @@ level_meter_t::level_meter_t()
 
     _LeftRightStyle =
     _MidSideStyle =
-    _AxisStyle =  nullptr;
+    _AxisStyle = nullptr;
 
     Reset();
 }
@@ -30,7 +27,7 @@ level_meter_t::level_meter_t()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-level_meter_t::~level_meter_t()
+level_meter_t::~level_meter_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -38,10 +35,10 @@ level_meter_t::~level_meter_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void level_meter_t::Initialize(state_t * state, const graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -60,18 +57,6 @@ void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void level_meter_t::Reset() noexcept
 {
-    _IsResized = true;
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void level_meter_t::Resize() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _IsResized = false;
 }
 
 /// <summary>
@@ -278,31 +263,41 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
-    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
+    if (_OpacityMask == nullptr)
         hr = CreateOpacityMask(deviceContext);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
+    if (!SUCCEEDED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
+    if (!SUCCEEDED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, &_AxisStyle);
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
+
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
+
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, &_AxisStyle);
+
+    if (!SUCCEEDED(hr))
+        return hr;
 
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
         deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
-
-    if (SUCCEEDED(hr))
-        Resize();
 
     return hr;
 }
