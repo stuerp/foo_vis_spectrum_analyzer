@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.03.15) P. Stuer **/
+/** $VER: Resources.h (2026.03.18) P. Stuer **/
 
 #pragma once
 
@@ -360,6 +360,8 @@
 
 #define IDC_X_AXIS_TOP                  4006
 #define IDC_X_AXIS_BOTTOM               4008
+
+#define IDC_X_AXIS_DECIMALS             4010
 
 #pragma endregion
 

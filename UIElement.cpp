@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.01.21) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.03.18) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -19,7 +19,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
 {
 }
 
@@ -56,6 +56,8 @@ CWndClassInfo & uielement_t::GetWndClassInfo()
 /// </summary>
 LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 {
+    _hParent = ::GetAncestor(m_hWnd, GA_ROOT); // This is usually the main foobar2000 window but it can also be a flowin window.
+
     ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT); // Required for alpha transparency
 
     HRESULT hr = CreateDeviceIndependentResources();

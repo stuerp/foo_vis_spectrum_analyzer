@@ -113,9 +113,9 @@ public:
 
     #pragma region IIR (Infinite Impulse Response, SWIFT / Analog-style analysis)
 
-        size_t _FilterBankOrder;                                        // 1 .. 8, Filter bank order
-        double _TimeResolution;                                         // 0 .. 2000, Max. time resolution
-        double _IIRBandwidth;                                           // 0 .. 8, SWIFT Bandwidth
+        size_t _FilterBankOrder;                                        // [1, 8], Filter bank order
+        double _TimeResolution;                                         // [0, 2000], Max. time resolution
+        double _IIRBandwidth;                                           // [0, 8], SWIFT Bandwidth
         bool _ConstantQ;                                                // True, Use constant-Q instead of variable-Q.
         bool _CompensateBW;                                             // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
         bool _PreWarpQ;                                                 // False. Use prewarped Q (analog-style analyzer only)
@@ -128,15 +128,15 @@ public:
 
         // Frequency range
         size_t _BandCount;                                              // Number of frequency bands, 2 .. 512
-        double _LoFrequency;                                            // Hz, 0 .. 96000
-        double _HiFrequency;                                            // Hz, 0 .. 96000
+        double _LoFrequency;                                            // Hz, [0, 96000]
+        double _HiFrequency;                                            // Hz, [0, 96000]
 
         // Note range
-        uint32_t _MinNote;                                              // Minimum note, 0 .. 143, 12 octaves
-        uint32_t _MaxNote;                                              // Maximum note, 0 .. 143, 12 octaves
-        uint32_t _BandsPerOctave;                                       // Bands per octave, 1 .. 48
-        double _TuningPitch;                                                  // Hz, 0 .. 96000, Octave bands tuning (nearest note = tuning frequency in Hz)
-        int _Transpose;                                                 // Transpose, -24 ..24 quarter tones
+        uint32_t _MinNote;                                              // Minimum note, [0, 143], 12 octaves
+        uint32_t _MaxNote;                                              // Maximum note, [0, 143], 12 octaves
+        uint32_t _BandsPerOctave;                                       // Bands per octave, [1, 48]
+        double _TuningPitch;                                            // Hz, [0, 96000], Octave bands tuning (nearest note = tuning frequency in Hz)
+        int _Transpose;                                                 // Transpose, [-24,.24] quarter tones
 
         ScalingFunction _ScalingFunction;
 

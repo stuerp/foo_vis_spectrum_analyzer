@@ -40,6 +40,9 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         control         "Top",                      IDC_X_AXIS_TOP,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G15, Y_G15, W_G15, H_G15
         control         "Bottom",                   IDC_X_AXIS_BOTTOM,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G16, Y_G16, W_G16, H_G16
 
+        rtext           "Decimals:"                 IDC_STATIC,                     X_A51, Y_A51 + 2, W_A51, H_A51
+        edittext                                    IDC_X_AXIS_DECIMALS,            X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
     groupbox "Y axis", IDC_Y_AXIS, X_B03, Y_B03, W_B03, H_B03, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Mode:",                    IDC_STATIC,                     X_A07, Y_A07 + 2, W_A07, H_A07

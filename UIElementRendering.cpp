@@ -2,12 +2,11 @@
 /** $VER: UIElementRendering.cpp (2026.03.11) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
+
 #include "UIElement.h"
 
 #include "DirectX.h"
 #include "Direct2D.h"
-#include "DirectWrite.h"
-#include "WIC.h"
 
 #include "Resources.h"
 #include "Color.h"
@@ -21,11 +20,15 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
-#pragma comment(lib, "dcomp.lib")
+#pragma comment(lib, "dcomp")
+
+#include <dwmapi.h>
+
+#pragma comment(lib, "dwmapi")
 
 #pragma hdrstop
 
-static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024);
+static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024) noexcept;
 
 /// <summary>
 /// Render thread procedure.
@@ -45,31 +48,33 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
-        Now = Chrono.Now();
-
-        const int64_t Elapsed = NextFrameTime - Now;
-
-        // Coarse delay
-        if (Elapsed > SleepTime)
         {
-            const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
+            Now = Chrono.Now();
 
-            const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
+            const int64_t Elapsed = NextFrameTime - Now;
 
-            if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
-                return;
+            // Coarse delay
+            if (Elapsed > SleepTime)
+            {
+                const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
 
-            continue;
+                const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
+
+                if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
+                    return;
+
+                continue;
+            }
+
+            // Fine delay (Ugly busy wait)
+            while (Chrono.Now() < NextFrameTime)
+            {
+                if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
+                    return;
+            }
         }
 
-        // Fine delay (Ugly busy wait)
-        while (Chrono.Now() < NextFrameTime)
-        {
-            if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
-                return;
-        }
-
-        if (!(_IsFrozen || !_IsVisible || ::IsIconic(::GetParent(m_hWnd))))
+        if (!(_IsFrozen || !_IsVisible || ::IsIconic(_hParent)))
         {
             bool HaveColorsChanged = false;
 
@@ -112,13 +117,15 @@ void uielement_t::RenderThreadProc() noexcept
         }
 
         // Determine the presentation time of the next frame.
-        MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
-        NextFrameTime += MaxFrameTime;
+        {
+            MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+            NextFrameTime += MaxFrameTime;
 
-        const int64_t Latency = Chrono.Now() - NextFrameTime;
+            const int64_t Latency = Chrono.Now() - NextFrameTime;
 
-        if (Latency > MaxFrameTime * 3)
-            NextFrameTime = Chrono.Now() + MaxFrameTime;
+            if (Latency > MaxFrameTime * 3)
+                NextFrameTime = Chrono.Now() + MaxFrameTime;
+        }
     }
 }
 
@@ -630,7 +637,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 /// <summary>
 /// Gets an initialized audio chunk.
 /// </summary>
-bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount)
+bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount) noexcept
 {
     audio_sample * Samples = new audio_sample[frameCount];
 

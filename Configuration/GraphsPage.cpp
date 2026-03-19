@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.03.11) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.03.18) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -49,6 +49,7 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_AXIS_MODE, "Determines the type of X-axis." },
         { IDC_X_AXIS_TOP, "Enables or disables an X-axis above the visualization." },
         { IDC_X_AXIS_BOTTOM, "Enables or disables an X-axis below the visualization." },
+        { IDC_X_AXIS_DECIMALS, "Determines the number of decimals used by X-axis labels." },
 
         // Y-axis
         { IDC_Y_AXIS_MODE, "Determines the type of Y-axis." },
@@ -285,6 +286,8 @@ void graphs_page_t::UpdateControls() noexcept
 
         GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !(IsLevelMeter || IsOscilloscope || IsBitMeter));
         GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gd.HasXAxis() && !(IsLevelMeter || IsOscilloscope));
+
+        SetInteger(IDC_X_AXIS_DECIMALS, gd._XAxisDecimals);
     }
 
     // Y axis
@@ -464,6 +467,15 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        // X axis
+        case IDC_X_AXIS_DECIMALS:
+        {
+            gd._XAxisDecimals = (int8_t) std::clamp(::_wtoi(Text), MinXAxisDecimals, MaxXAxisDecimals);
+
+            ChangedSettings = ConfigurationChanges::Layout;
+            break;
+        }
+
         // Y axis
         case IDC_AMPLITUDE_LO:
         {
@@ -504,37 +516,41 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
+    auto & gs = _State->_GraphDescriptions[_SelectedGraph];
 
     switch (id)
     {
         default:
             return;
 
+        case IDC_X_AXIS_DECIMALS:
+        {
+            SetInteger(id, gs._XAxisDecimals);
+
+            ChangedSettings = ConfigurationChanges::Layout;
+            break;
+        }
+
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
             SetDouble(id, gs._AmplitudeLo, 0, 1);
             break;
         }
+
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
             SetDouble(id, gs._AmplitudeHi, 0, 1);
             break;
         }
+
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
             SetDouble(id, gs._AmplitudeStep, 0, 1);
             break;
         }
+
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
             SetDouble(id, gs._Gamma, 0, 1);
             break;
         }

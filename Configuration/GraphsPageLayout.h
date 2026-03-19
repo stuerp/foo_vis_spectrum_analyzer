@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: GraphsPageLayout.h (2026.03.18) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -41,8 +41,8 @@
 #define X_G25    X_G24 + W_G24 + IX
 #define Y_G25    Y_G24
 
-#pragma region Layout
-// Groupbox
+/** Layout Groupbox **/
+
 #define X_B16   X_G24
 #define Y_B16   Y_G25 + H_G25 + IY
 
@@ -71,29 +71,26 @@
     #define Y_G36    Y_G35
 
     // Checkbox: Flip horizontally
-    #define W_G26   80
+    #define W_G26   76
     #define H_G26   H_CHB
     #define X_G26   X_G33
     #define Y_G26   Y_G34 + H_G34 + IY
 
     // Checkbox: Flip vertically
-    #define W_G27   80
+    #define W_G27   76
     #define H_G27   H_CHB
     #define X_G27   X_G26 + W_G26 + IX
     #define Y_G27   Y_G26
 
 #define W_B16  170
 #define H_B16   11 + H_G34 + IY + H_G26 + 7
-#pragma endregion
 
-#pragma region X axis
-// Groupbox
+/** X axis Groupbox **/
+
 #define X_B02   X_B16
 #define Y_B02   Y_B16 + H_B16 + IY
 
-    #pragma region X axis
-
-    // Label
+    // Label: Mode
     #define W_A05    66
     #define H_A05    H_LBL
     #define X_A05    X_B02 + 5
@@ -117,19 +114,25 @@
     #define X_G16    X_G15 + W_G15 + IX
     #define Y_G16    Y_G15
 
-    #pragma endregion
+    // Label
+    #define W_A51    66
+    #define H_A51    H_LBL
+    #define X_A51    X_A05
+    #define Y_A51    Y_G15 + H_G15 + IY
+
+    // Textbox: Decimals
+    #define W_A52    20
+    #define H_A52    H_TBX
+    #define X_A52    X_A51 + W_A51 + IX
+    #define Y_A52    Y_A51
 
 #define W_B02  170
-#define H_B02   11 + H_A06 + IY + H_G15 + 7
-#pragma endregion
+#define H_B02   11 + H_A06 + IY + H_G15 + IY + H_A52 + 7
 
-#pragma region Y axis
+/** Y axis Groupbox **/
 
-// Groupbox
 #define X_B03   X_B02
 #define Y_B03   Y_B02 + H_B02 + IY
-
-    #pragma region Y axis
 
     // Label
     #define W_A07    66
@@ -155,9 +158,8 @@
     #define X_G18    X_G17 + W_G17 + IX
     #define Y_G18    Y_G17
 
-    #pragma endregion
+    /** Amplitude range: [Lo] - [Hi] dB **/
 
-    #pragma region Amplitude range: [Lo] - [Hi] dB
     // Label
     #define W_A45    54
     #define H_A45    H_LBL
@@ -187,9 +189,9 @@
     #define H_A49    H_LBL
     #define X_A49    X_A48 + W_A48 + IX
     #define Y_A49    Y_A48
-    #pragma endregion
 
-    #pragma region Amplitude increment
+    /** Amplitude increment **/
+
     // Label
     #define W_A84    54
     #define H_A84    H_LBL
@@ -207,17 +209,17 @@
     #define H_A86    H_LBL
     #define X_A86    X_A85 + W_A85 + IX
     #define Y_A86    Y_A85
-    #pragma endregion
 
-    #pragma region Use absolute
+    /** Use absolute **/
+
     // Checkbox
     #define W_A50    100
     #define H_A50    H_CHB
     #define X_A50    X_A85
     #define Y_A50    Y_A85 + H_A85 + IY
-    #pragma endregion
 
-    #pragma region Gamma
+    /** Gamma **/
+
     // Label
     #define W_A41    54
     #define H_A41    H_LBL
@@ -229,12 +231,9 @@
     #define H_A42    H_TBX
     #define X_A42    X_A41 + W_A41 + IX
     #define Y_A42    Y_A41
-    #pragma endregion
 
 #define W_B03   170
 #define H_B03   11 + H_A08 + IY + H_G17 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
-
-#pragma endregion
 
 // Label: Channels
 #define W_G28    46

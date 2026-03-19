@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.03.12) P. Stuer **/
+/** $VER: State.cpp (2026.03.18) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -864,6 +864,11 @@ void state_t::Read(stream_reader * reader, size_t size, abort_callback & abortHa
                     reader->read_object_t(gd._SwapChannels, abortHandler);
                 }
 
+                if (GraphDescriptionVersion > 4) // v0.11.0.0-alpha1
+                {
+                    reader->read_object_t(gd._XAxisDecimals, abortHandler);
+                }
+
                 _GraphDescriptions.push_back(gd);
             }
         }
@@ -1183,7 +1188,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
         writer->write_object_t(_GridRowCount, abortHandler);
         writer->write_object_t(_GridColumnCount, abortHandler);
 
-        writer->write_object_t(graph_description_t::_CurentVersion, abortHandler);
+        writer->write_object_t(graph_description_t::_CurrentVersion, abortHandler);
 
         writer->write_object_t(_VerticalLayout, abortHandler);
 
@@ -1217,7 +1222,7 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             writer->write_object_t(gd._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
-            if (graph_description_t::_CurentVersion > 1)
+            if (graph_description_t::_CurrentVersion > 1)
             {
                 writer->write_object_t(gd._LPadding, abortHandler);
                 writer->write_object_t(gd._RPadding, abortHandler);
@@ -1229,16 +1234,22 @@ void state_t::Write(stream_writer * writer, abort_callback & abortHandler, bool 
             }
 
             // Version 3, v0.8.0.0-beta2
-            if (graph_description_t::_CurentVersion > 2)
+            if (graph_description_t::_CurrentVersion > 2)
             {
                 writer->write_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
                 writer->write_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
             }
 
-            // Version 4, v0.10.0-alpha5
-            if (graph_description_t::_CurentVersion > 2)
+            // Version 4, v0.10.0.0-alpha5
+            if (graph_description_t::_CurrentVersion > 2)
             {
                 writer->write_object_t(gd._SwapChannels, abortHandler);
+            }
+
+            // Version 5, v0.11.0.0-alpha1
+            if (graph_description_t::_CurrentVersion > 4)
+            {
+                writer->write_object_t(gd._XAxisDecimals, abortHandler);
             }
         }
 

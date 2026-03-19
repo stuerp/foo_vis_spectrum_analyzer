@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.h (2026.02.18) P. Stuer - Describes the layout and setting of a graph. **/
+/** $VER: GraphDescription.h (2026.03.18) P. Stuer - Describes the layout and setting of a graph. **/
 
 #pragma once
 
@@ -33,14 +33,14 @@ public:
         Initialize();
     }
 
-    double ScaleAmplitude(double value) const;
+    double ScaleAmplitude(double value) const noexcept;
 
     /* Code readability shortcuts */
     bool HasXAxis() const noexcept { return _XAxisMode != XAxisMode::None; }
     bool HasYAxis() const noexcept { return _YAxisMode != YAxisMode::None; }
 
 private:
-    void Initialize()
+    void Initialize() noexcept
     {
         _SelectedChannels = (uint32_t) Channels::ConfigStereo;
 
@@ -56,17 +56,18 @@ private:
         _XAxisMode = XAxisMode::Bands;
         _XAxisTop = false;
         _XAxisBottom = true;
+        _XAxisDecimals = 3;
 
         _YAxisMode = YAxisMode::Decibels;
         _YAxisLeft = true;
         _YAxisRight = false;
 
-        _AmplitudeLo =  -90.;    // Lower amplitude, -120.0 .. 0.0
-        _AmplitudeHi =    0.;    // Upper amplitude, -120.0 .. 0.0
+        _AmplitudeLo =  -90.;    // Lower amplitude, [-120, 0]
+        _AmplitudeHi =    0.;    // Upper amplitude, [-120, 0]
         _AmplitudeStep = -6.;
 
         _UseAbsolute = true;    // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-        _Gamma = 1.;            // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
+        _Gamma = 1.;            // Linear/n-th root scaling: Index n of the n-th root calculation, [0.5, 10.0]
 
         _HRatio = 1.;
         _VRatio = 1.;
@@ -97,17 +98,18 @@ public:
     XAxisMode _XAxisMode;
     bool _XAxisTop;
     bool _XAxisBottom;
+    int8_t _XAxisDecimals;                      // Number of decimals to show on the x-axis labels, [0..3]
 
     YAxisMode _YAxisMode;
     bool _YAxisLeft;
     bool _YAxisRight;
 
-    double _AmplitudeLo;                        // Lower amplitude, -120.0 .. 0.0 dBFS
-    double _AmplitudeHi;                        // Upper amplitude, -120.0 .. 0.0 dBFS
+    double _AmplitudeLo;                        // Lower amplitude, [-120, 0] dBFS
+    double _AmplitudeHi;                        // Upper amplitude, [-120, 0] dBFS
     double _AmplitudeStep;
 
     bool _UseAbsolute;                          // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
-    double _Gamma;                              // Linear/n-th root scaling: Index n of the n-th root calculation, 0.5 .. 10.0
+    double _Gamma;                              // Linear/n-th root scaling: Index n of the n-th root calculation, [0.5, 10.0]
 
     FLOAT _HRatio;
     FLOAT _VRatio;
@@ -120,5 +122,5 @@ public:
     HorizontalTextAlignment _HAlignment;
     VerticalTextAlignment _VAlignment;
 
-    static const uint32_t _CurentVersion = 4; // v0.10.0-alpha5
+    static const uint32_t _CurrentVersion = 5; // v0.11.0.0-alpha1
 };

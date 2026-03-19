@@ -145,6 +145,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.11.0.0-alpha1, 2026-04-xx
 
+- New: The number of decimals used by the X-axis labels can be configured.
 - Changed: Builds with Visual Studio 2026.
 
 You can read the full history [here](docs/History.md).

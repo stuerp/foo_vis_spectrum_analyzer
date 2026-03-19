@@ -109,8 +109,6 @@ private:
     void DeleteTrackingToolTip() noexcept;
     graph_t * GetGraph(const CPoint & pt) noexcept;
 
-    void on_album_art(album_art_data::ptr data);
-
     bool GetArtwork(const metadb_handle_ptr & track) noexcept;
     bool GetArtworkFromTrack(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
     bool GetArtworkFromScript(const metadb_handle_ptr & track, abort_callback & abort) noexcept;
@@ -169,7 +167,6 @@ protected:
     state_t _RenderState;
 
     msc::critical_section_t _CriticalSection;
-//  ConfigurationDialog _ConfigurationDialog;
     configuration_dialog_t _ConfigurationDialog;
     configuration_dialog_t _NewConfigurationDialog;
 
@@ -181,6 +178,8 @@ protected:
     event_t _Event;
 
 private:
+    HWND _hParent;
+
     #pragma region Shared
 
     artwork_t _Artwork;

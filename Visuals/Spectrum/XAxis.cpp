@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2025.09.24) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.03.18) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 #include "XAxis.h"
@@ -14,10 +14,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, const graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     _Labels.clear();
@@ -36,7 +36,7 @@ void x_axis_t::Initialize(state_t * state, const graph_description_t * settings,
     {
         WCHAR Text[32] = { };
 
-        switch (settings->_XAxisMode)
+        switch (graphDescription->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -50,9 +50,9 @@ void x_axis_t::Initialize(state_t * state, const graph_description_t * settings,
                     double Frequency = fb[i].Center;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphDescription->_XAxisDecimals, Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphDescription->_XAxisDecimals, Frequency / 1000.);
 
                     label_t lb = { Text, Frequency };
 
@@ -72,9 +72,9 @@ void x_axis_t::Initialize(state_t * state, const graph_description_t * settings,
                     Frequency = j * i;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1f", Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphDescription->_XAxisDecimals, Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphDescription->_XAxisDecimals, Frequency / 1000.);
 
                     label_t lb = { Text, Frequency };
 

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.03.11) P. Stuer **/
+/** $VER: Constants.h (2026.03.18) P. Stuer **/
 
 #pragma once
 
@@ -80,7 +80,8 @@ inline const double MaxAmplitudeStep =  -1.; // dB
 inline const double MinGamma =  0.5;
 inline const double MaxGamma = 10.0;
 
-
+inline const int MinXAxisDecimals = 0;
+inline const int MaxXAxisDecimals = 3;
 
 // Filters
 inline const double MinSlopeFunctionOffset = 0.;

@@ -11,7 +11,7 @@
 /// <summary>
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
 /// </summary>
-double graph_description_t::ScaleAmplitude(double value) const
+double graph_description_t::ScaleAmplitude(double value) const noexcept
 {
     switch (_YAxisMode)
     {
