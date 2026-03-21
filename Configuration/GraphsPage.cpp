@@ -4,8 +4,7 @@
 #include "pch.h"
 
 #include "GraphsPage.h"
-#include "Support.h"
-#include "Log.h"
+#include <Constants.h>
 
 // Display names for the audio_chunk channel bits.
 static const WCHAR * const ChannelNames[] =
@@ -237,10 +236,10 @@ void graphs_page_t::UpdateControls() noexcept
         _State->_GridColumnCount = (size_t) _State->_GraphDescriptions.size();
     }
 
-    for (auto & gs : _State->_GraphDescriptions)
+    for (auto & gd : _State->_GraphDescriptions)
     {
-        gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
-        gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
+        gd._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
+        gd._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
     }
 
     GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
@@ -470,7 +469,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         // X axis
         case IDC_X_AXIS_DECIMALS:
         {
-            gd._XAxisDecimals = (int8_t) std::clamp(::_wtoi(Text), MinXAxisDecimals, MaxXAxisDecimals);
+            gd._XAxisDecimals = (uint32_t) std::clamp(::_wtoi(Text), MinXAxisDecimals, MaxXAxisDecimals);
 
             ChangedSettings = ConfigurationChanges::Layout;
             break;

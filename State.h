@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.03.12) P. Stuer **/
+/** $VER: State.h (2026.03.21) P. Stuer **/
 
 #pragma once
 
@@ -37,16 +37,12 @@ public:
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) const noexcept;
 
-    /// <summary>
-    /// Gets the duration (in ms) of the window that will be rendered.
-    /// </summary>
-    double GetWindowDurationInMs() const noexcept
-    {
-        return (double) _WindowDuration * 0.001;
-    }
+    json ToJSON(bool isPreset = false) const;
+    void FromJSON(const char * data, size_t size, bool isPreset = false);
 
 public:
-    RECT _DialogRect;                                                   // Will be initialized in OnInitDialog()
+    // Configuration Dialog
+    RECT _Bounds;                                                       // Position and size of the configuration dialog. Will be initialized in OnInitDialog()
     size_t _PageIndex;                                                  // Index of the active configuration dialog page
 
 #ifdef _WIN64
@@ -58,14 +54,87 @@ public:
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
 
     bool _ShowFrameCounter;
-    bool _UseHardwareRendering;
-    bool _UseAntialiasing;
+    bool _UseHardwareRendering;                                         // Deprecated
+    bool _UseAntialiasing;                                              // Deprecated
 
-    size_t _WindowDuration;                                             // μs
+    size_t _WindowDuration;                                             // Deprecated, in μs
+
+    #pragma region Visualization
+
+        VisualizationType _VisualizationType;
+
+        PeakMode _PeakMode;
+        double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
+        double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
+
+        #pragma region Bars
+
+            bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
+            FLOAT _LEDLight;                                        // Size of the LED light, in pixels.
+            FLOAT _LEDGap;                                          // Gap between the LEDs lights, in pixels.
+            bool _LEDIntegralSize;                                  // The LEDs will be rendered with an integral height.
+
+        #pragma endregion
+
+        #pragma region Radial Bars
+
+            FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
+            FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
+            FLOAT _AngularVelocity;                                 // degrees / s
+
+        #pragma endregion
+
+        #pragma region Spectrogram
+
+            bool _IsScrollingSpectrogram;                             // True if the spectrogram needs to scroll.
+            bool _IsHorizontalSpectrogram;                            // True if the spectrogram should be rendered horizontally.
+            bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
+
+        #pragma endregion
+
+        #pragma region Peak Meter
+
+            bool _IsHorizontalPeakMeter;                            // True if the peak meter should be rendered horizontally.
+            bool _HasRMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
+            bool _HasCenterScale;                                   // Render a scale between the bars.
+            bool _HasScaleLines;                                    // Render a scale between the bars.
+
+            double _RMSWindow;                                      // Duration of the RMS window, in seconds.
+            FLOAT _BarGap;                                          // Gap between the peak meter bar, in pixels.
+            FLOAT _MaxBarSize;                                      // Max. bar width / height, in pixels. 0 to disable.
+
+        #pragma endregion
+
+        #pragma region Level Meter
+
+            ChannelPair _ChannelPair;
+            bool _IsHorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
+
+        #pragma endregion
+
+        #pragma region Oscilloscope
+
+            bool _XYMode;                                           // Oscilloscope in X-Y mode
+            double _XGain;
+            double _YGain;
+            FLOAT _Rotation;
+            bool _HasPhosphorDecay;
+            FLOAT _BlurSigma;
+            FLOAT _DecayFactor;
+
+        #pragma endregion
+
+        #pragma region Bit Meter
+
+            bool _OpacityMode;
+
+        #pragma endregion
+
+    #pragma endregion
 
     #pragma region Transform
 
-        Transform _Transform;                                           // FFT, CQT or SWIFT
+        TransformMethod _TransformMethod;                           // FFT, CQT, SWIFT, Analog Style
 
         WindowFunction _WindowFunction;
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
@@ -85,7 +154,7 @@ public:
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
 
         int _KernelSize = 32;                                           // Lanczos interpolation kernel size, 1 .. 64
-        SummationMethod _SummationMethod;
+        AggregationMethod _AggregationMethod;
         bool _SmoothLowerFrequencies;                                   // When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more (rather than one in the case of this parameter is set to disabled, which of course, has artifacts on lower frequencies similar to ones seen in spectrum visualizations on YouTube videos generated by ZGameEditor Visualizer that comes with FL Studio like this), otherwise a sinc/Lanczos-interpolated spectrum.
         bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
 
@@ -117,8 +186,8 @@ public:
         double _TimeResolution;                                         // [0, 2000], Max. time resolution
         double _IIRBandwidth;                                           // [0, 8], SWIFT Bandwidth
         bool _ConstantQ;                                                // True, Use constant-Q instead of variable-Q.
-        bool _CompensateBW;                                             // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
-        bool _PreWarpQ;                                                 // False. Use prewarped Q (analog-style analyzer only)
+        bool _CompensateBandwidth;                                             // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
+        bool _UsePreWarpedQ;                                                 // False. Use prewarped Q (analog-style analyzer only)
 
     #pragma endregion
 
@@ -132,8 +201,8 @@ public:
         double _HiFrequency;                                            // Hz, [0, 96000]
 
         // Note range
-        uint32_t _MinNote;                                              // Minimum note, [0, 143], 12 octaves
-        uint32_t _MaxNote;                                              // Maximum note, [0, 143], 12 octaves
+        uint32_t _LoNote;                                              // Minimum note, [0, 143], 12 octaves
+        uint32_t _HiNote;                                              // Maximum note, [0, 143], 12 octaves
         uint32_t _BandsPerOctave;                                       // Bands per octave, [1, 48]
         double _TuningPitch;                                            // Hz, [0, 96000], Octave bands tuning (nearest note = tuning frequency in Hz)
         int _Transpose;                                                 // Transpose, [-24,.24] quarter tones
@@ -164,12 +233,12 @@ public:
 
     #pragma region Common
 
+        SmoothingMethod _SmoothingMethod;
+        double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
+
         bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
         bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
-
-        SmoothingMethod _SmoothingMethod;
-        double _SmoothingFactor;                                        // Smoothing factor, 0.0 .. 1.0
 
     #pragma endregion
 
@@ -197,79 +266,6 @@ public:
 
     #pragma endregion
 
-    #pragma region Visualization
-
-        VisualizationType _VisualizationType;
-
-        PeakMode _PeakMode;
-        double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
-        double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
-
-        #pragma region Bars
-
-            bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-            FLOAT _LEDLight;                                        // Size of the LED light, in pixels.
-            FLOAT _LEDGap;                                          // Gap between the LEDs lights, in pixels.
-            bool _LEDIntegralSize;                                  // The LEDs will be rendered with an integral height.
-
-        #pragma endregion
-
-        #pragma region Radial Bars
-
-            FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
-            FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
-            FLOAT _AngularVelocity;                                 // degrees / s
-
-        #pragma endregion
-
-        #pragma region Spectrogram
-
-            bool _ScrollingSpectrogram;                             // True if the spectrogram needs to scroll.
-            bool _HorizontalSpectrogram;                            // True if the spectrogram should be rendered horizontally.
-            bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
-
-        #pragma endregion
-
-        #pragma region Peak Meter
-
-            bool _IsHorizontalPeakMeter;                            // True if the peak meter should be rendered horizontally.
-            bool _RMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
-            bool _HasCenterScale;                                   // Render a scale between the bars.
-            bool _HasScaleLines;                                    // Render a scale between the bars.
-
-            double _RMSWindow;                                      // Duration of the RMS window, in seconds.
-            FLOAT _BarGap;                                          // Gap between the peak meter bar, in pixels.
-            FLOAT _MaxBarSize;                                      // Max. bar width / height, in pixels. 0 to disable.
-
-        #pragma endregion
-
-        #pragma region Level Meter
-
-            ChannelPair _ChannelPair;
-            bool _HorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
-
-        #pragma endregion
-
-        #pragma region Oscilloscope
-
-            bool _XYMode;                                           // Oscilloscope in X-Y mode
-            double _XGain;
-            double _YGain;
-            FLOAT _Rotation;
-            bool _PhosphorDecay;
-            FLOAT _BlurSigma;
-            FLOAT _DecayFactor;
-
-        #pragma endregion
-
-        #pragma region Bit Meter
-
-            bool _OpacityMode;
-
-        #pragma endregion
-
-    #pragma endregion
-
     style_manager_t _StyleManager;
 
     #pragma region Graphs
@@ -287,8 +283,6 @@ public:
 
     // These parameters will never be serialized.
 
-//  gradient_stops_t _GradientStops;                                    // The current gradient stops.
-
     #pragma region UI + Render thread
 
     gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
@@ -305,11 +299,11 @@ public:
 
     #pragma endregion
 
-    #pragma region Render thread
+    #pragma region Render thread only
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
 
-    size_t _BinCount;                                                   // Spectrum
+    size_t _BinCount;                                                   // The number of bins used by the spectrum analyzer.
 
     double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram
@@ -341,8 +335,8 @@ private:
     bool _YAxisLeft_Deprecated;
     bool _YAxisRight_Deprecated;
 
-    double _AmplitudeLo_Deprecated;                                     // Lower amplitude, -120.0 .. 0.0
-    double _AmplitudeHi_Deprecated;                                     // Upper amplitude, -120.0 .. 0.0
+    double _AmplitudeLo_Deprecated;                                     // Lower amplitude, [-120, 0]
+    double _AmplitudeHi_Deprecated;                                     // Upper amplitude, [-120, 0]
     double _AmplitudeStep_Deprecated;
 
     bool _UseAbsolute_Deprecated;                                       // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
@@ -374,7 +368,7 @@ private:
     bool _UseCustomLineColor_Deprecated;
     D2D1_COLOR_F _PeakLineColor_Deprecated;
     bool _UseCustomPeakLineColor_Deprecated;
-    FLOAT _AreaOpacity_Deprecated;                                      // 0.0 .. 1.0
+    FLOAT _AreaOpacity_Deprecated;                                      // [0, 1]
 
     bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
@@ -385,6 +379,7 @@ private:
 
 private:
     const size_t _CurrentVersion = 35; // v0.10.0.0-beta1
+    const uint32_t _SchemaVersion = 1; // v0.11.0.0
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

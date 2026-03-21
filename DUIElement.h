@@ -1,26 +1,26 @@
 
-/** $VER: DUIElement.h (2024.03.11) P. Stuer - Default User Interface support **/
+/** $VER: DUIElement.h (2026.03.21) P. Stuer - Default User Interface support **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <helpers/BumpableElem.h>
+#include <helpers\BumpableElem.h>
 
 #include "UIElement.h"
 
 /// <summary>
 /// Implements a Default UI element.
 /// </summary>
-class DUIElement : public uielement_t, public ui_element_instance
+class dui_element_t : public uielement_t, public ui_element_instance
 {
 public:
-    DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
+    dui_element_t(ui_element_config::ptr data, ui_element_instance_callback::ptr callback);
 
-    DUIElement(const DUIElement &) = delete;
-    DUIElement & operator=(const DUIElement &) = delete;
-    DUIElement(DUIElement &&) = delete;
-    DUIElement & operator=(DUIElement &&) = delete;
+    dui_element_t(const dui_element_t &) = delete;
+    dui_element_t & operator=(const dui_element_t &) = delete;
+    dui_element_t(dui_element_t &&) = delete;
+    dui_element_t & operator=(dui_element_t &&) = delete;
 
 //  LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void OnContextMenu(CWindow wnd, CPoint position) override final;
@@ -45,6 +45,8 @@ public:
 
 private:
     void GetColors() noexcept override;
+
+    static ui_element_config::ptr get_configuration(state_t & state);
 
 protected:
     ui_element_instance_callback::ptr m_callback;

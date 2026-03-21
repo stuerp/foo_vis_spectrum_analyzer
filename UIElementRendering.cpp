@@ -22,10 +22,6 @@
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "dcomp")
 
-#include <dwmapi.h>
-
-#pragma comment(lib, "dwmapi")
-
 #pragma hdrstop
 
 static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024) noexcept;
@@ -201,7 +197,7 @@ void uielement_t::ProcessAudio() noexcept
     double WindowSize;
     double WindowOffset;
 
-    const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
+    const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
 
     if (!IsSlidingWindow)
     {

@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2024.03.11) P. Stuer **/
+/** $VER: DUIElement.cpp (2026.03.21) P. Stuer **/
 
 #include "pch.h"
 
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
+dui_element_t::dui_element_t(ui_element_config::ptr data, ui_element_instance_callback::ptr callback) : m_callback(callback)
 {
     _UIState._IsDUI = true;
 
@@ -26,7 +26,7 @@ DUIElement::DUIElement(ui_element_config::ptr data, ui_element_instance_callback
 /// <summary>
 /// Retrieves the name of the element.
 /// </summary>
-void DUIElement::g_get_name(pfc::string_base & name)
+void dui_element_t::g_get_name(pfc::string_base & name)
 {
     name = STR_COMPONENT_NAME;
 }
@@ -34,7 +34,7 @@ void DUIElement::g_get_name(pfc::string_base & name)
 /// <summary>
 /// Retrieves the description of the element.
 /// </summary>
-const char * DUIElement::g_get_description()
+const char * dui_element_t::g_get_description()
 {
     return "Spectum analyzer visualization using DirectX";
 }
@@ -42,7 +42,7 @@ const char * DUIElement::g_get_description()
 /// <summary>
 /// Retrieves the GUID of the element.
 /// </summary>
-GUID DUIElement::g_get_guid()
+GUID dui_element_t::g_get_guid()
 {
     return uielement_t::GetGUID();
 }
@@ -50,29 +50,15 @@ GUID DUIElement::g_get_guid()
 /// <summary>
 /// Retrieves the subclass GUID of the element.
 /// </summary>
-GUID DUIElement::g_get_subclass()
+GUID dui_element_t::g_get_subclass()
 {
     return ui_element_subclass_playback_visualisation;
 }
 
 /// <summary>
-/// Retrieves the default configuration of the element.
-/// </summary>
-ui_element_config::ptr DUIElement::g_get_default_configuration()
-{
-    state_t DefaultConfiguration;
-
-    ui_element_config_builder Builder;
-
-    DefaultConfiguration.Write(&Builder.m_stream);
-
-    return Builder.finish(g_get_guid());
-}
-
-/// <summary>
 /// Initializes the element's windows.
 /// </summary>
-void DUIElement::initialize_window(HWND p_parent)
+void dui_element_t::initialize_window(HWND p_parent)
 {
     const DWORD Style = 0;
     const DWORD ExStyle = 0;
@@ -81,25 +67,65 @@ void DUIElement::initialize_window(HWND p_parent)
 }
 
 /// <summary>
-/// Alters element's current configuration. Specified ui_element_config's GUID must be the same as this element's GUID.
+/// Sets the element's current configuration.
 /// </summary>
-void DUIElement::set_configuration(ui_element_config::ptr data)
+void dui_element_t::set_configuration(ui_element_config::ptr configData)
 {
-    ui_element_config_parser Parser(data);
+    // Try to read the data as JSON first. (v0.11.0.0 and later)
+    try
+    {
+        _UIState.FromJSON((const char *) configData->get_data(), configData->get_data_size());
+    }
+    catch (...)
+    {
+        // Try to read the data as a binary stream. (Legacy)
+        ui_element_config_parser Parser(configData);
 
-    _UIState.Read(&Parser.m_stream, Parser.get_remaining());
+        _UIState.Read(&Parser.m_stream, Parser.get_remaining());
+    }
 }
 
 /// <summary>
-/// Retrieves element's current configuration. Returned object's GUID must be set to your element's GUID so your element can be re-instantiated with stored settings.
+/// Gets the element's default configuration.
 /// </summary>
-ui_element_config::ptr DUIElement::get_configuration()
+ui_element_config::ptr dui_element_t::g_get_default_configuration()
 {
-    ui_element_config_builder Builder;
+    state_t DefaultConfiguration;
 
-    _UIState.Write(&Builder.m_stream);
+    return get_configuration(DefaultConfiguration);
+}
 
-    return Builder.finish(g_get_guid());
+/// <summary>
+/// Gets the element's current configuration.
+/// </summary>
+ui_element_config::ptr dui_element_t::get_configuration()
+{
+    return get_configuration(_UIState);
+}
+
+/// <summary>
+/// Gets the element's configuration.
+/// </summary>
+ui_element_config::ptr dui_element_t::get_configuration(state_t & state)
+{
+    // Try to write the data as JSON first. (v0.11.0.0 and later)
+    try
+    {
+        std::string Config = state.ToJSON(false).dump(-1);
+
+        return ui_element_config::g_create(g_get_guid(), Config.c_str(), Config.size());
+    }
+    catch (const std::exception & e)
+    {
+        Log.AtError().Write("Failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
+
+        // Try to write the data as a binary stream. (Legacy)
+        ui_element_config_builder Builder;
+
+        state.Write(&Builder.m_stream);
+
+        return Builder.finish(g_get_guid());
+    }
 }
 
 /// <summary>
@@ -107,7 +133,7 @@ ui_element_config::ptr DUIElement::get_configuration()
 /// See ui_element_notify_* GUIDs for possible p_what parameter; meaning of other parameters depends on p_what value.
 /// Container classes should dispatch all notifications to their children.
 /// </summary>
-void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t_size param2Size)
+void dui_element_t::notify(const GUID & what, t_size param1, const void * param2, t_size param2Size)
 {
     if (what == ui_element_notify_colors_changed)
     {
@@ -125,14 +151,14 @@ void DUIElement::notify(const GUID & what, t_size param1, const void * param2, t
     }
 }
 
-static service_factory_single_t<ui_element_impl_visualisation<DUIElement>> _Factory;
+static service_factory_single_t<ui_element_impl_visualisation<dui_element_t>> _Factory;
 
 #pragma endregion
 /*
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
-LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
+LRESULT dui_element_t::OnEraseBackground(CDCHandle hDC)
 {
     if (!_IsInitializing)
         return 0;
@@ -155,7 +181,7 @@ LRESULT DUIElement::OnEraseBackground(CDCHandle hDC)
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
+void dui_element_t::OnContextMenu(CWindow wnd, CPoint position)
 {
     if (m_callback->is_edit_mode_enabled())
         SetMsgHandled(FALSE);
@@ -166,7 +192,7 @@ void DUIElement::OnContextMenu(CWindow wnd, CPoint position)
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>
-void DUIElement::ToggleFullScreen() noexcept
+void dui_element_t::ToggleFullScreen() noexcept
 {
     static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
 }
@@ -174,7 +200,7 @@ void DUIElement::ToggleFullScreen() noexcept
 /// <summary>
 /// Gets the user interface colors.
 /// </summary>
-void DUIElement::GetColors() noexcept
+void dui_element_t::GetColors() noexcept
 {
     _UIState._StyleManager.UserInterfaceColors.clear();
 

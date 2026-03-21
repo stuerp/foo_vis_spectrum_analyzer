@@ -33,8 +33,8 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
         const double K = std::tan(rad);
         const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State->_IIRBandwidth + (1. / (TimeResolution / 1000.));
 
-        const double QCompensationFactor = _State->_PreWarpQ ? rad / K : 1.;
-        const double Q = fb.Center / Bandwidth * QCompensationFactor / (_State->_CompensateBW ? ::sqrt(_State->_FilterBankOrder) : 1.);
+        const double QCompensationFactor = _State->_UsePreWarpedQ ? rad / K : 1.;
+        const double Q = fb.Center / Bandwidth * QCompensationFactor / (_State->_CompensateBandwidth ? ::sqrt(_State->_FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
         coef_t c = { };

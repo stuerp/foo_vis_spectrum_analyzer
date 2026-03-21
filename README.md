@@ -146,6 +146,8 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.11.0.0-alpha1, 2026-04-xx
 
 - New: The number of decimals used by the X-axis labels can be configured.
+- Changed: Saves the settings as a JSON object.
+  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
 - Changed: Builds with Visual Studio 2026.
 
 You can read the full history [here](docs/History.md).
@@ -162,6 +164,7 @@ You can read the full history [here](docs/History.md).
 - fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
+- [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://json.nlohmann.me/).
 
 ## Reference Material
 

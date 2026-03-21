@@ -182,7 +182,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
     {
         const D2D1_RECT_F & cr = _Visualization->GetClientRect();
 
-        if (_State->_HorizontalSpectrogram)
+        if (_State->_IsHorizontalSpectrogram)
         {
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;

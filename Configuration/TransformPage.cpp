@@ -89,7 +89,7 @@ void transform_page_t::InitializeControls() noexcept
         for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style" })
             w.AddString(x);
 
-        w.SetCurSel((int) _State->_Transform);
+        w.SetCurSel((int) _State->_TransformMethod);
     }
 
     // FFT
@@ -121,7 +121,7 @@ void transform_page_t::InitializeControls() noexcept
         for (const auto & x : { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" })
             w.AddString(x);
 
-        w.SetCurSel((int) _State->_SummationMethod);
+        w.SetCurSel((int) _State->_AggregationMethod);
     }
 
     {
@@ -221,8 +221,8 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
-    SendDlgItemMessageW(IDC_COMPENSATE_BW, BM_SETCHECK, _State->_CompensateBW);
-    SendDlgItemMessageW(IDC_PREWARPED_Q, BM_SETCHECK, _State->_PreWarpQ);
+    SendDlgItemMessageW(IDC_COMPENSATE_BW, BM_SETCHECK, _State->_CompensateBandwidth);
+    SendDlgItemMessageW(IDC_PREWARPED_Q, BM_SETCHECK, _State->_UsePreWarpedQ);
 
     UpdateControls();
 }
@@ -240,8 +240,8 @@ void transform_page_t::UpdateControls() noexcept
 
     const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
-    const bool IsFFT = (_State->_Transform == Transform::FFT);
-    const bool IsIIR = (_State->_Transform == Transform::SWIFT) || (_State->_Transform == Transform::AnalogStyle);
+    const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT);
+    const bool IsIIR = (_State->_TransformMethod == TransformMethod::SWIFT) || (_State->_TransformMethod == TransformMethod::AnalogStyle);
 
     if (SupportsTransform)
     {
@@ -283,7 +283,7 @@ void transform_page_t::UpdateControls() noexcept
             for (const auto & Iter : { IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q,IDC_COMPENSATE_BW, })
                 GetDlgItem(Iter).EnableWindow(IsIIR);
 
-            GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_Transform == Transform::AnalogStyle);
+            GetDlgItem(IDC_PREWARPED_Q).EnableWindow(_State->_TransformMethod == TransformMethod::AnalogStyle);
         }
     }
     else
@@ -360,7 +360,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_METHOD:
         {
-            _State->_Transform = (Transform) SelectedIndex;
+            _State->_TransformMethod = (TransformMethod) SelectedIndex;
 
             UpdateControls();
             break;
@@ -392,7 +392,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_SUMMATION_METHOD:
         {
-            _State->_SummationMethod = (SummationMethod) SelectedIndex;
+            _State->_AggregationMethod = (AggregationMethod) SelectedIndex;
             break;
         }
     }
@@ -667,13 +667,13 @@ void transform_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_COMPENSATE_BW:
         {
-            _State->_CompensateBW = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_CompensateBandwidth = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_PREWARPED_Q:
         {
-            _State->_PreWarpQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_UsePreWarpedQ = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
     }

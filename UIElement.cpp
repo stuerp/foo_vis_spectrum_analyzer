@@ -6,7 +6,6 @@
 #include "UIElement.h"
 
 #include "StyleManager.h"
-#include "Color.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -271,10 +270,6 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             ToggleFrameCounter();
             break;
 
-        case IDM_TOGGLE_HARDWARE_RENDERING:
-            ToggleHardwareRendering();
-            break;
-
         case IDM_REFRESH_RATE_LIMIT_20:
             _UIState._RefreshRateLimit =
             _RenderState._RefreshRateLimit = 20; // Near-atomic
@@ -517,16 +512,6 @@ void uielement_t::StopRenderer() noexcept
 void uielement_t::ToggleFrameCounter() noexcept
 {
     _UIState._ShowFrameCounter = !_UIState._ShowFrameCounter;
-}
-
-/// <summary>
-/// Toggles hardware/software rendering.
-/// </summary>
-void uielement_t::ToggleHardwareRendering() noexcept
-{
-    _UIState._UseHardwareRendering = !_UIState._UseHardwareRendering;
-
-    DeleteDeviceSpecificResources();
 }
 
 /// <summary>

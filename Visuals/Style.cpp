@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2026.02.11) P. Stuer **/
+/** $VER: Style.cpp (2026.03.21) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"

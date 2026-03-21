@@ -4,7 +4,6 @@
 #include "pch.h"
 
 #include "Analysis.h"
-#include "Log.h"
 
 #include "Support.h"
 
@@ -424,9 +423,9 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     if (_WindowFunction == nullptr)
         _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
 
-    switch (_State->_Transform)
+    switch (_State->_TransformMethod)
     {
-        case Transform::FFT:
+        case TransformMethod::FFT:
         {
             if (_FFTAnalyzer == nullptr)
             {       
@@ -440,7 +439,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
             break;
         }
 
-        case Transform::CQT:
+        case TransformMethod::CQT:
         {
             if (_CQTAnalyzer == nullptr)
                 _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
@@ -449,7 +448,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
             break;
         }
 
-        case Transform::SWIFT:
+        case TransformMethod::SWIFT:
         {
             if (_SWIFTAnalyzer == nullptr)
             {
@@ -462,7 +461,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
             break;
         }
 
-        case Transform::AnalogStyle:
+        case TransformMethod::AnalogStyle:
         {
             if (_AnalogStyleAnalyzer == nullptr)
             {
@@ -530,7 +529,7 @@ void analysis_t::GenerateLinearFrequencyBands()
     const double MinScale = ScaleFrequency(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleFrequency(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State->_BandCount);
 
@@ -582,10 +581,10 @@ void analysis_t::GenerateOctaveFrequencyBands()
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
-    const double LoIndex = ::round(_State->_MinNote * 2. / NoteGroup);
-    const double HiIndex = ::round(_State->_MaxNote * 2. / NoteGroup);
+    const double LoIndex = ::round(_State->_LoNote * 2. / NoteGroup);
+    const double HiIndex = ::round(_State->_HiNote * 2. / NoteGroup);
 
-    const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.clear();
 
@@ -626,7 +625,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
 /// </summary>
 void analysis_t::GenerateAveePlayerFrequencyBands()
 {
-    const double Bandwidth = (((_State->_Transform == Transform::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_Transform == Transform::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State->_BandCount);
 
@@ -845,7 +844,7 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
         for (auto & m : _PeakMeasurements)
         {
             // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-            m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State->_RMSPlus3 ? dBCorrection : 0.);
+            m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State->_HasRMSPlus3 ? dBCorrection : 0.);
             m.RMSNormalized = SmoothValue(NormalizeValue(m.RMS), m.RMSNormalized);
 
             // Reset the RMS window-dependent values.

@@ -1,10 +1,10 @@
 
-/** $VER: StyleManager.cpp (2025.09.22) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.03.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
+
 #include "StyleManager.h"
 
-#include "Support.h"
 #include "Resources.h"
 #include "Log.h"
 
@@ -199,7 +199,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             if (Style.Has(style_t::Features::SupportsFont))
             {
                 const auto & DefaultStyle = _DefaultStyles[(VisualElement) Id];
-;
+
                 if (Style._FontName.empty())
                     Style._FontName = DefaultStyle._FontName;
 
@@ -280,4 +280,193 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
     {
         Log.AtError().Write(STR_COMPONENT_BASENAME " failed to write styles: %s", ex.what());
     }
+}
+
+/// <summary>
+/// Serialize this instance to JSON.
+/// </summary>
+json style_manager_t::ToJSON() const noexcept
+{
+    json::array_t Array;
+
+    try
+    {
+        for (const auto & Iter : Styles)
+        {
+            const style_t & Style = Iter.second;
+
+            Array.push_back
+            (
+                json::object_t
+                ({
+                    { "id", (uint32_t) Iter.first },
+
+                    { "flags", Style.Flags },
+                    { "colorSource", Style._ColorSource },
+                    { "customColor", style_manager_t::ToJSON(Style._CustomColor) },
+                    { "colorIndex", Style._ColorIndex },
+                    { "colorScheme", Style._ColorScheme },
+                    { "customGradientStops", style_manager_t::ToJSON(Style._CustomGradientStops) },
+                    { "opacity", Style._Opacity },
+                    { "thickness", Style._Thickness },
+                    { "font", json::object_t
+                        ({
+                            { "name", msc::WideToUTF8(Style._FontName) },
+                            { "size", Style._FontSize },
+                        })
+                    },
+                })
+            );
+        }
+    }
+    catch (std::exception & ex)
+    {
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to serialize styles: %s", ex.what());
+
+        Array.clear();
+    }
+
+    return Array;
+}
+
+/// <summary>
+/// Deserializes this instance from JSON.
+/// </summary>
+void style_manager_t::FromJSON(const json & array) noexcept
+{
+    try
+    {
+        for (const auto & Iter : array)
+        {
+            const uint32_t Id = Iter.value("id", 0u);
+
+            style_t Style = { };
+
+            // Handle unknown styles. This can happen when an older component version reads a preset from a newer one.
+            if (Id < (uint32_t) VisualElement::Count)
+                Style = Styles[(VisualElement) Id];    
+
+            Style.Flags = Iter.value("flags", Style.Flags);
+            Style._ColorSource = Iter.value("colorSource", ColorSource::None);
+
+            const auto & Color = Iter.value("customColor", json::object());
+
+            Style._CustomColor = style_manager_t::ColorFromJSON(Color);
+
+            Style._ColorIndex = Iter.value("colorIndex", Style._ColorIndex);
+            Style._ColorScheme = Iter.value("colorScheme", Style._ColorScheme);
+
+            const auto & Array = Iter.value("customGradientStops", json::array());
+
+            Style._CustomGradientStops = style_manager_t::GradientStopsFromJSON(Array);
+
+            Style._Opacity = Iter.value("opacity", Style._Opacity);
+            Style._Thickness = Iter.value("thickness", Style._Thickness);
+
+            const auto & Font = Iter.value("font", json::object());
+
+            Style._FontName = msc::UTF8ToWide(Font.value("name", msc::WideToUTF8(Style._FontName)));
+            Style._FontSize = Font.value("size", Style._FontSize);
+
+            // Sets the default font settings.
+            if (Style.Has(style_t::Features::SupportsFont))
+            {
+                const auto & DefaultStyle = _DefaultStyles[(VisualElement) Id];
+
+                if (Style._FontName.empty())
+                    Style._FontName = DefaultStyle._FontName;
+
+                if (Style._FontSize < 2.f)
+                    Style._FontSize = DefaultStyle._FontSize;
+            }
+
+            // 'Activate' the values we just read.
+            if (Style._ColorScheme == ColorScheme::Custom)
+                Style._CurrentGradientStops = Style._CustomGradientStops;
+            else
+                Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
+
+            Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
+
+            if (Id < (uint32_t) VisualElement::Count)
+                Styles[(VisualElement) Id] = Style;
+        }
+    }
+    catch (std::exception & ex)
+    {
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to deserialize styles: %s", ex.what());
+    }
+}
+
+/// <summary>
+/// Serializes a gradient_stops_t type to JSON.
+/// </summary>
+json style_manager_t::ToJSON(const gradient_stops_t & gradientStops) noexcept
+{
+    json::array_t Array;
+
+    for (const auto & gs : gradientStops)
+        Array.push_back(ToJSON(gs));
+
+    return Array;
+}
+
+/// <summary>
+/// Deserializes a gradient_stops_t type from JSON.
+/// </summary>
+gradient_stops_t style_manager_t::GradientStopsFromJSON(const json & array) noexcept
+{
+    gradient_stops_t gradientStops;
+
+    for (const auto & Iter : array)
+        gradientStops.push_back(GradientStopFromJSON(Iter));
+
+    return gradientStops;
+}
+
+/// <summary>
+/// Serializes a D2D1_GRADIENT_STOP structure to JSON.
+/// </summary>
+json style_manager_t::ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept
+{
+    return json::object_t
+    ({
+        { "position", gs.position },
+        { "color", ToJSON(gs.color) },
+    });
+}
+
+/// <summary>
+/// Deserializes a D2D1_GRADIENT_STOP type from JSON.
+/// </summary>
+D2D1_GRADIENT_STOP style_manager_t::GradientStopFromJSON(const json & object) noexcept
+{
+    D2D1_GRADIENT_STOP gs;
+
+    gs.position = object.value("position", 0.f);
+    gs.color    = ColorFromJSON(object.value("color", json::object()));
+
+    return gs;
+}   
+
+/// <summary>
+/// Serializes a D2D1_COLOR_F structure to JSON.
+/// </summary>
+json style_manager_t::ToJSON(const D2D1_COLOR_F & color) noexcept
+{
+    return json::object_t
+    ({
+        { "red", color.r },
+        { "green", color.g },
+        { "blue", color.b },
+        { "alpha", color.a },
+    });
+}
+
+/// <summary>
+/// Deserializes a D2D1_COLOR_F structure from JSON.
+/// </summary>
+D2D1_COLOR_F style_manager_t::ColorFromJSON(const json & object) noexcept
+{
+    return D2D1::ColorF(object.value("red", 0.f), object.value("green", 0.f), object.value("blue", 0.f), object.value("alpha", 1.f));
 }

@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.h (2026.03.18) P. Stuer - Describes the layout and setting of a graph. **/
+/** $VER: GraphDescription.h (2026.03.21) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -7,12 +7,18 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-#include <Windows.h>
-
 #include "Constants.h"
 
 #include <string>
+
+#pragma warning(push)
+#pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
+
+#include <nlohmann\json.hpp>
+
+using json = nlohmann::ordered_json;
+
+#pragma warning(pop)
 
 /// <summary>
 /// Represents the settings of a graph.
@@ -38,6 +44,9 @@ public:
     /* Code readability shortcuts */
     bool HasXAxis() const noexcept { return _XAxisMode != XAxisMode::None; }
     bool HasYAxis() const noexcept { return _YAxisMode != YAxisMode::None; }
+
+    json ToJSON() const noexcept;
+    static graph_description_t FromJSON(const json & object) noexcept;
 
 private:
     void Initialize() noexcept
@@ -98,7 +107,7 @@ public:
     XAxisMode _XAxisMode;
     bool _XAxisTop;
     bool _XAxisBottom;
-    int8_t _XAxisDecimals;                      // Number of decimals to show on the x-axis labels, [0..3]
+    uint32_t _XAxisDecimals;                    // Number of decimals to show on the x-axis labels, [0..3]
 
     YAxisMode _YAxisMode;
     bool _YAxisLeft;
@@ -122,5 +131,5 @@ public:
     HorizontalTextAlignment _HAlignment;
     VerticalTextAlignment _VAlignment;
 
-    static const uint32_t _CurrentVersion = 5; // v0.11.0.0-alpha1
+    static const uint32_t _CurrentVersion = 4;  // v0.10.0-alpha5
 };

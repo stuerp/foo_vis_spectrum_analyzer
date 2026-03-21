@@ -111,21 +111,21 @@ void frequencies_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MIN_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MIN_NOTE, _State->_MinNote);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MIN_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MIN_NOTE, _State->_LoNote);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN));
 
         w.SetRange32(MinNote, MaxNote);
-        w.SetPos32((int) _State->_MinNote);
+        w.SetPos32((int) _State->_LoNote);
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MAX_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MAX_NOTE, _State->_MaxNote);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MAX_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MAX_NOTE, _State->_HiNote);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN));
 
         w.SetRange32(MinNote, MaxNote);
-        w.SetPos32((int) _State->_MaxNote);
+        w.SetPos32((int) _State->_HiNote);
     }
 
     {
@@ -468,19 +468,19 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_MIN_NOTE_SPIN:
         {
-            if (!SetProperty(_State->_MinNote, std::min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MaxNote)))
+            if (!SetProperty(_State->_LoNote, std::min((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_HiNote)))
                 return -1;
 
-            SetNote(IDC_MIN_NOTE, _State->_MinNote);
+            SetNote(IDC_MIN_NOTE, _State->_LoNote);
             break;
         }
 
         case IDC_MAX_NOTE_SPIN:
         {
-            if (!SetProperty(_State->_MaxNote, std::max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_MinNote)))
+            if (!SetProperty(_State->_HiNote, std::max((uint32_t) ClampNewSpinPosition(nmud, MinNote, MaxNote), _State->_LoNote)))
                 return -1;
 
-            SetNote(IDC_MAX_NOTE, _State->_MaxNote);
+            SetNote(IDC_MAX_NOTE, _State->_HiNote);
             break;
         }
 

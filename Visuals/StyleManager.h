@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2026.03.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.03.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -8,18 +8,24 @@
 #include "Style.h"
 #include "Gradients.h"
 
-#include <map>
+#pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
+
+#include <nlohmann\json.hpp>
+
+using json = nlohmann::ordered_json;
+
+#pragma warning(default: 4868)
 
 #pragma warning(disable: 4820)
+
 class style_manager_t
 {
 public:
     style_manager_t();
 
-    style_manager_t(const style_manager_t &) = delete;
+    style_manager_t(const style_manager_t &) = default;
+
     style_manager_t & operator=(const style_manager_t & other);
-    style_manager_t(style_manager_t &&) = delete;
-    style_manager_t & operator=(style_manager_t &&) = delete;
 
     virtual ~style_manager_t() noexcept { }
 
@@ -27,6 +33,9 @@ public:
 
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort) const noexcept;
+
+    json ToJSON() const noexcept;
+    void FromJSON(const json & array) noexcept;
 
     /// <summary>
     /// Gets the style of the specified visual element.
@@ -62,6 +71,16 @@ public:
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept;
 
     void DeleteDeviceSpecificResources() noexcept;
+
+private:
+    static json ToJSON(const gradient_stops_t & gradientStops) noexcept;
+    static gradient_stops_t GradientStopsFromJSON(const json & array) noexcept;
+
+    static json ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept;
+    static D2D1_GRADIENT_STOP GradientStopFromJSON(const json & object) noexcept;
+
+    static json ToJSON(const D2D1_COLOR_F & color) noexcept;
+    static D2D1_COLOR_F ColorFromJSON(const json & object) noexcept;
 
 public:
     std::unordered_map<VisualElement, style_t> Styles;

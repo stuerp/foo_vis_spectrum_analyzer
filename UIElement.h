@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.03.13) P. Stuer **/
+/** $VER: UIElement.h (2026.03.21) P. Stuer **/
 
 #pragma once
 
@@ -13,8 +13,6 @@
 #include "Graph.h"
 #include "Artwork.h"
 #include "FrameCounter.h"
-
-#include <vector>
 
 /// <summary>
 /// Implements the UIElement and Playback interface.
@@ -99,7 +97,6 @@ private:
     virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
     void ToggleFrameCounter() noexcept;
-    void ToggleHardwareRendering() noexcept;
 
     void Configure() noexcept;
     void Resize();
@@ -227,7 +224,6 @@ private:
     {
         IDM_TOGGLE_FULLSCREEN = 1,
         IDM_TOGGLE_FRAME_COUNTER,
-        IDM_TOGGLE_HARDWARE_RENDERING,
 
         IDM_REFRESH_RATE_LIMIT_20,
         IDM_REFRESH_RATE_LIMIT_30,

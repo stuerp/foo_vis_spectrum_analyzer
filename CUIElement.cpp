@@ -1,23 +1,21 @@
 
-/** $VER: CUIElement.cpp (2024.03.13) P. Stuer **/
+/** $VER: CUIElement.cpp (2026.03.21) P. Stuer **/
 
 #include "pch.h"
 
 #include "CUIElement.h"
 #include "Color.h"
 
-#include "ui_extension.h"
+#include <ui_extension.h>
 
 #pragma hdrstop
 
 namespace uie
 {
-static cui::colours::client::factory<CUIColorClient> _CUIColorClientFactory;
-
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CUIElement::CUIElement()
+cui_element_t::cui_element_t()
 {
     _IsVisible = true; // CUI does send notifications.
 
@@ -29,14 +27,14 @@ CUIElement::CUIElement()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-CUIElement::~CUIElement()
+cui_element_t::~cui_element_t() noexcept
 {
 }
 
 /// <summary>
 /// Creates or transfers the window.
 /// </summary>
-HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
+HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
 {
     if (*this == nullptr)
     {
@@ -61,7 +59,7 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
         SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
-    CUIColorClient::Register(this);
+    cui_color_client_t::Register(this);
 
     return *this;
 }
@@ -69,9 +67,9 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void CUIElement::destroy_window()
+void cui_element_t::destroy_window()
 {
-    CUIColorClient::Unregister(this);
+    cui_color_client_t::Unregister(this);
 
     ::DestroyWindow(*this);
 
@@ -104,7 +102,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>
-void CUIElement::ToggleFullScreen() noexcept
+void cui_element_t::ToggleFullScreen() noexcept
 {
     _CriticalSection.Enter();
 
@@ -163,7 +161,7 @@ void CUIElement::ToggleFullScreen() noexcept
 /// <summary>
 /// Gets the user interface colors.
 /// </summary>
-void CUIElement::GetColors() noexcept
+void cui_element_t::GetColors() noexcept
 {
     cui::colours::helper Helper(pfc::guid_null);
 
@@ -180,16 +178,23 @@ void CUIElement::GetColors() noexcept
     _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
-static uie::window_factory<CUIElement> _WindowFactory;
-
-void CUIColorClient::on_colour_changed(uint32_t changed_items_mask) const
+/// <summary>
+/// Handles color change notifications from CUI.
+/// </summary>
+void cui_color_client_t::on_colour_changed(uint32_t changed_items_mask) const
 {
     for (auto Iter : _Elements)
         Iter->OnColorsChanged();
 }
 
-void CUIColorClient::on_bool_changed(uint32_t changed_items_mask) const
+/// <summary>
+/// 
+/// </summary>
+void cui_color_client_t::on_bool_changed(uint32_t changed_items_mask) const
 {
 }
 
+static cui::colours::client::factory<cui_color_client_t> _CUIColorClientFactory;
+
+static uie::window_factory<cui_element_t> _WindowFactory;
 }

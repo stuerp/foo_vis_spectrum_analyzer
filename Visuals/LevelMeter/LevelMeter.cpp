@@ -76,7 +76,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     const FLOAT LEDHeight = _State->_LEDLight + _State->_LEDGap;
 
-    if (_State->_HorizontalLevelMeter)
+    if (_State->_IsHorizontalLevelMeter)
     {
         // Render the bars.
         {
@@ -371,7 +371,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 
             if (LEDSize > 0.f)
             {
-                if (_State->_HorizontalLevelMeter)
+                if (_State->_IsHorizontalLevelMeter)
                 {
                     FLOAT w = Size.width;
 

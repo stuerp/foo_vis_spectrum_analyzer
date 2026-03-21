@@ -201,7 +201,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             _DeviceContext->SetTarget(_FrontBuffer);
             _DeviceContext->BeginDraw();
 
-            if (_State->_PhosphorDecay)
+            if (_State->_HasPhosphorDecay)
             {
                 _GaussBlurEffect->SetInput(0, _BackBuffer);
 

@@ -126,15 +126,15 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Spectrogram
     {
-        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_ScrollingSpectrogram);
-        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_HorizontalSpectrogram);
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_IsScrollingSpectrogram);
+        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_IsHorizontalSpectrogram);
         SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
     }
 
     // Peak Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_IsHorizontalPeakMeter);
-        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
+        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_HasRMSPlus3);
         SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_HasCenterScale);
         SendDlgItemMessageW(IDC_SCALE_LINES, BM_SETCHECK, _State->_HasScaleLines);
 
@@ -171,7 +171,7 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Level Meter
     {
-        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
+        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_IsHorizontalLevelMeter);
     }
 
     // Oscilloscope
@@ -188,7 +188,7 @@ void visualization_page_t::InitializeControls() noexcept
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
         }
 
-        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
+        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_HasPhosphorDecay);
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
         }
@@ -248,7 +248,7 @@ void visualization_page_t::UpdateControls() noexcept
     // Spectrogram
     GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_HorizontalSpectrogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
 
     // Peak Meter
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
@@ -272,8 +272,8 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
+    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
 }
 
 /// <summary>
@@ -643,13 +643,13 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_SCROLLING_SPECTROGRAM:
         {
-            _State->_ScrollingSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsScrollingSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_HORIZONTAL_SPECTROGRAM:
         {
-            _State->_HorizontalSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsHorizontalSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
             break;
@@ -677,7 +677,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_RMS_PLUS_3:
         {
-            _State->_RMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HasRMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -695,7 +695,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_HORIZONTAL_LEVEL_METER:
         {
-            _State->_HorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsHorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
@@ -713,7 +713,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_PHOSPHOR_DECAY:
         {
-            _State->_PhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HasPhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
 

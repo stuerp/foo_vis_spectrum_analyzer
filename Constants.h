@@ -172,7 +172,7 @@ inline const double MaxThickness = 32.;
 inline const double MinFontSize = 1.;
 inline const double MaxFontSize = 200.;
 
-enum class Transform
+enum class TransformMethod
 {
     FFT = 0,
     CQT = 1,
@@ -244,7 +244,7 @@ enum class ScalingFunction
     Period = 11,
 };
 
-enum class SummationMethod
+enum class AggregationMethod
 {
     Minimum = 0,
     Maximum = 1,

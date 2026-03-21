@@ -1,5 +1,5 @@
 
-/** $VER: PresetManager.cpp (2026.03.01) P. Stuer - Manages the component presets. **/
+/** $VER: PresetManager.cpp (2026.03.21) P. Stuer - Manages the component presets. **/
 
 #include "pch.h"
 
@@ -33,25 +33,40 @@ bool PresetManager::Load(const path_t & rootPath, const std::wstring & presetNam
 
         size_t Size = (size_t) Reader->get_size_ex(fb2k::noAbort);
 
-        uint32_t Value;
-
-        Reader->read_object_t(Value, fb2k::noAbort);
-        Size -= sizeof(Value);
-
-        if (Value != PresetManager::Magic)
-            return false;
-
-        Reader->read_object_t(Value, fb2k::noAbort);
-        Size -= sizeof(Value);
-
-        if (Value != PresetManager::Version)
-            return false;
-
         state_t NewState;
 
         NewState._PresetsDirectoryPath = PresetPath.c_str();
 
-        NewState.Read(Reader, Size, fb2k::noAbort, true);
+        try
+        {
+            // Try to read the data as JSON first. (v0.11.0.0 and later)
+            pfc::string Data;
+
+            Reader->read_string_raw(Data, fb2k::noAbort, Size);
+
+            NewState.FromJSON(Data.c_str(), Data.length(), true);
+        }
+        catch (...)
+        {
+            File->seek(0, fb2k::noAbort);
+
+            // Try to read the data as a binary stream. (Legacy)
+            uint32_t Value;
+
+            Reader->read_object_t(Value, fb2k::noAbort);
+            Size -= sizeof(Value);
+
+            if (Value != PresetManager::Magic)
+                return false;
+
+            Reader->read_object_t(Value, fb2k::noAbort);
+            Size -= sizeof(Value);
+
+            if (Value != PresetManager::Version)
+                return false;
+
+            NewState.Read(Reader, Size, fb2k::noAbort, true);
+        }
 
         NewState._PresetsDirectoryPath = rootPath.c_str();
 
@@ -82,11 +97,17 @@ bool PresetManager::Save(const path_t & rootPath, const std::wstring & presetNam
 
         auto Writer = File.get_ptr();
 
+        // Write the data as a JSON. (v0.11.0.0 and later)
+        auto Object = state->ToJSON(true);
+
+        Writer->write_string_raw(Object.dump(4).c_str(), fb2k::noAbort);
+/*
+        // Write the data as a binary stream. (Legacy)
         Writer->write_object_t(PresetManager::Magic, fb2k::noAbort);
         Writer->write_object_t(PresetManager::Version, fb2k::noAbort);
 
         state->Write(Writer, fb2k::noAbort, true);
-
+*/
         return true;
     }
     catch (pfc::exception ex)
