@@ -1,12 +1,12 @@
 
-/** $VER: CUIElement.cpp (2026.03.21) P. Stuer **/
+/** $VER: CUIElement.cpp (2026.03.22) P. Stuer **/
 
 #include "pch.h"
 
 #include "CUIElement.h"
-#include "Color.h"
+#include "CUINotificationHandler.h"
 
-#include <ui_extension.h>
+#include "Color.h"
 
 #pragma hdrstop
 
@@ -59,7 +59,7 @@ HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_pt
         SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
-    cui_color_client_t::Register(this);
+    cui_notification_handler_t::Register(this);
 
     return *this;
 }
@@ -69,7 +69,7 @@ HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_pt
 /// </summary>
 void cui_element_t::destroy_window()
 {
-    cui_color_client_t::Unregister(this);
+    cui_notification_handler_t::Unregister(this);
 
     ::DestroyWindow(*this);
 
@@ -177,24 +177,6 @@ void cui_element_t::GetColors() noexcept
 
     _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
-
-/// <summary>
-/// Handles color change notifications from CUI.
-/// </summary>
-void cui_color_client_t::on_colour_changed(uint32_t changed_items_mask) const
-{
-    for (auto Iter : _Elements)
-        Iter->OnColorsChanged();
-}
-
-/// <summary>
-/// 
-/// </summary>
-void cui_color_client_t::on_bool_changed(uint32_t changed_items_mask) const
-{
-}
-
-static cui::colours::client::factory<cui_color_client_t> _CUIColorClientFactory;
 
 static uie::window_factory<cui_element_t> _WindowFactory;
 }

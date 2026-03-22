@@ -146,8 +146,9 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.11.0.0-alpha1, 2026-04-xx
 
 - New: The number of decimals used by the X-axis labels can be configured.
-- Changed: Saves the settings as a JSON object.
+- Changed: Saves the settings as a human-readable JSON object.
   - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
+  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
 - Changed: Builds with Visual Studio 2026.
 
 You can read the full history [here](docs/History.md).

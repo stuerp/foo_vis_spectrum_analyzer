@@ -218,7 +218,7 @@ This visualization uses the following settings:
 - Graph X-axis and Y-axis settings
   - Select *Off* or *None* to prevent the axis from being rendered.
 - Channel pair selection: Determines which channels will be plotted against each other.
-- Swap channels to determine which channel uses the X axis and which one uses the Y axis. 
+- Swap channels to determine which channel uses the X-axis and which one uses the Y-axis. 
 - X and Y signal gain
 - Phosphor effect settings
 
@@ -232,7 +232,7 @@ The Bit Meter visualization is a specialized tool used to analyze the digital pr
 
 It can demonstrate if a file is, for example, 24-bit but only actually using 16 bits of information, indicating potential wasted headroom or improper recording levels.
 
-The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the y-axis the channel name.
+The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the Y-axis the channel name.
 
 foobar2000 uses single or double precision floating-point numbers (real numbers) between -1 and 1 to represent audio samples.
 A floating-point number is internally represented by 32 or 64 bits divided into a sign (+/-) and exponent and a mantissa (the decimal part).
@@ -780,7 +780,7 @@ Allow you to edit the description of the selected graph.
 
 `Horizontal alignment`
 
-Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X axis).
+Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X-axis).
 
 - *Near* aligns the visualization with the near side of the graph (aka the *left* edge when using normal orientation).
 - *Center* centers the visualization in the graph area.
@@ -795,15 +795,15 @@ Flips the current graph horizontally. Any axes will be rendered accordingly.
 
 Flips the current graph vertically. Any axes will be rendered accordingly.
 
-#### X axis group
+#### X-axis group
 
-Groups the parameters that determine the way the X axis is displayed.
+Groups the parameters that determine the way the X-axis is displayed.
 
 `Mode`
 
-Determines which X axis to display.
+Determines which X-axis to display.
 
-- None: Hides the X axis (reserve no screen area for it).
+- None: Hides the X-axis (reserve no screen area for it).
 - Bands: Center frequency of a band, every 10 bands.
 - Decades: Fixed frequency range
 - Octaves: Frequency of the C note of each octave
@@ -817,15 +817,19 @@ Displays an X-axis on top of the graph.
 
 Displays an X-axis at the bottom of the graph.
 
-#### Y axis group
+`Decimals`
 
-Groups the parameters that determine the way the Y axis is displayed.
+Determines the number of decimals to show in the X-axis labels. Valid values are 0 to 3.
+
+#### Y-axis group
+
+Groups the parameters that determine the way the Y-axis is displayed.
 
 `Mode`
 
-Determines which Y axis to display.
+Determines which Y-axis to display.
 
-- None: Hides the Y axis (reserve no screen area for it).
+- None: Hides the Y-axis (reserve no screen area for it).
 - Decibel: Uses decibel values to render the scale.
 - Linear/n-th root: Uses logarithmic values to render the scale.
 

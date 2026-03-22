@@ -1,5 +1,5 @@
 
-/** $VER: ToolTips.cpp (2025.11.12) P. Stuer **/
+/** $VER: UIElementToolTips.cpp (2025.11.12) P. Stuer **/
 
 #include "pch.h"
 #include "UIElement.h"

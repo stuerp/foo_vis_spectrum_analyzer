@@ -324,7 +324,9 @@
     <ClInclude Include="Configuration\TransformPageLayout.h" />
     <ClInclude Include="Configuration\VisualizationPage.h" />
     <ClInclude Include="Configuration\VisualizationPageLayout.h" />
+    <ClInclude Include="CUINotificationHandler.h" />
     <ClInclude Include="CustomTitleFormatHook.h" />
+    <ClInclude Include="MemoryStream.h" />
     <ClInclude Include="Visuals\BitMeter\BitMeter.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
@@ -402,6 +404,7 @@
     <ClCompile Include="Configuration\StylesPage.cpp" />
     <ClCompile Include="Configuration\TransformPage.cpp" />
     <ClCompile Include="Configuration\VisualizationPage.cpp" />
+    <ClCompile Include="CUINotificationHandler.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
