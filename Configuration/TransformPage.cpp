@@ -27,7 +27,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
     const std::unordered_map<int, const char *> Tips =
     {
-        { IDC_METHOD, "Method used to transform the samples" },
+        { IDC_METHOD, "Selects the method used to perform the Time to Frequency domain transform" },
 
         { IDC_WINDOW_FUNCTION, "Window function applied to the samples" },
         { IDC_WINDOW_PARAMETER, "Parameter used by certain window functions like Gaussian and Kaiser windows" },

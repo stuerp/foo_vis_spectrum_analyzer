@@ -1,7 +1,9 @@
 
-/** $VER: CustomTitleFormatHook.h (2026.03.01) P. Stuer - Implements a custom hook to expand title formatting **/
+/** $VER: CustomTitleFormatHook.h (2026.03.22) P. Stuer - Implements a custom hook to expand title formatting **/
 
 #pragma once
+
+#undef ExpandEnvironmentStrings
 
 class custom_titleformat_hook_t : public titleformat_hook
 {
@@ -10,7 +12,7 @@ public:
 
     virtual ~custom_titleformat_hook_t() noexcept { }
 
-    virtual bool process_field(titleformat_text_out * out, const char * name, t_size nameSize, bool & isFound)
+    bool process_field(titleformat_text_out * out, const char * name, t_size nameSize, bool & isFound) override final
     {
         pfc::string Path;
 
@@ -68,7 +70,7 @@ public:
         return false;
     }
 
-    virtual bool process_function(titleformat_text_out * out, const char * name, t_size nameSize, titleformat_hook_function_params * parameters, bool & isFound)
+    bool process_function(titleformat_text_out * out, const char * name, t_size nameSize, titleformat_hook_function_params * parameters, bool & isFound) override final
     {
         return false;
     }

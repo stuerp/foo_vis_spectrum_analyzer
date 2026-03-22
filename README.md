@@ -125,8 +125,8 @@ Create the following directory structure:
     out
     sdk
 
-- `3rdParty/columns_ui-sdk` contains the Columns UI SDK 7.0.0.
-- `3rdParty/WTL10_10320` contains WTL 10.0.10320.
+- `3rdParty\columns_ui-sdk` contains the Columns UI SDK 7.0.0.
+- `3rdParty\WTL10_10320` contains WTL 10.0.10320.
 - `bin` contains a portable version of foobar2000 64-bit for debugging purposes.
 - `bin.x86` contains a portable version of foobar2000 32-bit for debugging purposes.
 - `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
