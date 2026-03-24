@@ -25,10 +25,10 @@ style_t::style_t(const style_t & other)
 /// </summary>
 style_t & style_t::operator=(const style_t & other)
 {
-    Name = other.Name;
-    UsedBy = other.UsedBy;
+    _Name = other._Name;
+    _UsedBy = other._UsedBy;
 
-    Flags = other.Flags;
+    _Flags = other._Flags;
 
     _ColorSource = other._ColorSource;
     _ColorIndex = other._ColorIndex;
@@ -59,10 +59,10 @@ style_t & style_t::operator=(const style_t & other)
 /// </summary>
 style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    Name = name;
-    UsedBy = usedBy;
+    _Name = name;
+    _UsedBy = usedBy;
 
-    Flags = flags;
+    _Flags = flags;
 
     _ColorSource = colorSource;
     _ColorIndex = colorIndex;

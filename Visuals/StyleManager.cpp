@@ -160,7 +160,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             reader->read_object_t(Flags, abortHandler);
 
             // Add only the non-system flags to the style from the read value.
-            Style.Flags = (Style.Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
+            Style._Flags = (Style._Flags & style_t::Features::System) | ((style_t::Features) Flags & ~style_t::Features::System); 
 
             uint32_t Integer;
 
@@ -251,7 +251,7 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
             {
                 const style_t & Style = Iter.second;
 
-                writer->write_object_t((uint64_t) Style.Flags, abortHandler);
+                writer->write_object_t((uint64_t) Style._Flags, abortHandler);
                 writer->write_object(&Style._ColorSource, sizeof(Style._ColorSource), abortHandler);
                 writer->write_object(&Style._CustomColor, sizeof(Style._CustomColor), abortHandler);
                 writer->write_object_t(Style._ColorIndex, abortHandler);
@@ -301,7 +301,7 @@ json style_manager_t::ToJSON() const noexcept
                 ({
                     { "id", (uint32_t) Iter.first },
 
-                    { "flags", Style.Flags },
+                    { "flags", Style._Flags },
                     { "colorSource", Style._ColorSource },
                     { "customColor", style_manager_t::ToJSON(Style._CustomColor) },
                     { "colorIndex", Style._ColorIndex },
@@ -346,19 +346,19 @@ void style_manager_t::FromJSON(const json & array) noexcept
             if (Id < (uint32_t) VisualElement::Count)
                 Style = Styles[(VisualElement) Id];    
 
-            Style.Flags = Iter.value("flags", Style.Flags);
+            Style._Flags = Iter.value("flags", Style._Flags);
             Style._ColorSource = Iter.value("colorSource", ColorSource::None);
 
             const auto & Color = Iter.value("customColor", json::object());
 
-            Style._CustomColor = style_manager_t::ColorFromJSON(Color);
+            Style._CustomColor = style_manager_t::FromJSONColor(Color);
 
             Style._ColorIndex = Iter.value("colorIndex", Style._ColorIndex);
             Style._ColorScheme = Iter.value("colorScheme", Style._ColorScheme);
 
             const auto & Array = Iter.value("customGradientStops", json::array());
 
-            Style._CustomGradientStops = style_manager_t::GradientStopsFromJSON(Array);
+            Style._CustomGradientStops = style_manager_t::FromJSONGradientStops(Array);
 
             Style._Opacity = Iter.value("opacity", Style._Opacity);
             Style._Thickness = Iter.value("thickness", Style._Thickness);
@@ -414,12 +414,12 @@ json style_manager_t::ToJSON(const gradient_stops_t & gradientStops) noexcept
 /// <summary>
 /// Deserializes a gradient_stops_t type from JSON.
 /// </summary>
-gradient_stops_t style_manager_t::GradientStopsFromJSON(const json & array) noexcept
+gradient_stops_t style_manager_t::FromJSONGradientStops(const json::array_t & array) noexcept
 {
     gradient_stops_t gradientStops;
 
     for (const auto & Iter : array)
-        gradientStops.push_back(GradientStopFromJSON(Iter));
+        gradientStops.push_back(FromJSONGradientStop(Iter));
 
     return gradientStops;
 }
@@ -439,12 +439,12 @@ json style_manager_t::ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept
 /// <summary>
 /// Deserializes a D2D1_GRADIENT_STOP type from JSON.
 /// </summary>
-D2D1_GRADIENT_STOP style_manager_t::GradientStopFromJSON(const json & object) noexcept
+D2D1_GRADIENT_STOP style_manager_t::FromJSONGradientStop(const json & object) noexcept
 {
     D2D1_GRADIENT_STOP gs;
 
     gs.position = object.value("position", 0.f);
-    gs.color    = ColorFromJSON(object.value("color", json::object()));
+    gs.color    = FromJSONColor(object.value("color", json::object()));
 
     return gs;
 }   
@@ -466,7 +466,7 @@ json style_manager_t::ToJSON(const D2D1_COLOR_F & color) noexcept
 /// <summary>
 /// Deserializes a D2D1_COLOR_F structure from JSON.
 /// </summary>
-D2D1_COLOR_F style_manager_t::ColorFromJSON(const json & object) noexcept
+D2D1_COLOR_F style_manager_t::FromJSONColor(const json & object) noexcept
 {
     return D2D1::ColorF(object.value("red", 0.f), object.value("green", 0.f), object.value("blue", 0.f), object.value("alpha", 1.f));
 }

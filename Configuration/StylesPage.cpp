@@ -557,9 +557,9 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style->Flags, style_t::Features::HorizontalGradient);
+                Set(style->_Flags, style_t::Features::HorizontalGradient);
             else
-                UnSet(style->Flags, style_t::Features::HorizontalGradient);
+                UnSet(style->_Flags, style_t::Features::HorizontalGradient);
 
             UpdateControls();
             break;
@@ -570,9 +570,9 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             style_t * style = _State->_StyleManager.GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style->Flags, style_t::Features::AmplitudeBasedColor);
+                Set(style->_Flags, style_t::Features::AmplitudeBasedColor);
             else
-                UnSet(style->Flags, style_t::Features::AmplitudeBasedColor);
+                UnSet(style->_Flags, style_t::Features::AmplitudeBasedColor);
             break;
         }
 
@@ -757,11 +757,11 @@ void styles_page_t::InitializeStyles() noexcept
     {
         const auto Style = _State->_StyleManager.GetStyle(ID);
 
-        if ((uint64_t) Style->UsedBy & (uint64_t) User)
+        if ((uint64_t) Style->_UsedBy & (uint64_t) User)
         {
             _ActiveStyles.push_back(ID);
 
-            w.AddString(Style->Name.c_str());
+            w.AddString(Style->_Name.c_str());
         }
     }
 

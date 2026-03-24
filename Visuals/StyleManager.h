@@ -74,13 +74,13 @@ public:
 
 private:
     static json ToJSON(const gradient_stops_t & gradientStops) noexcept;
-    static gradient_stops_t GradientStopsFromJSON(const json & array) noexcept;
+    static gradient_stops_t FromJSONGradientStops(const json::array_t & array) noexcept;
 
     static json ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept;
-    static D2D1_GRADIENT_STOP GradientStopFromJSON(const json & object) noexcept;
+    static D2D1_GRADIENT_STOP FromJSONGradientStop(const json & object) noexcept;
 
     static json ToJSON(const D2D1_COLOR_F & color) noexcept;
-    static D2D1_COLOR_F ColorFromJSON(const json & object) noexcept;
+    static D2D1_COLOR_F FromJSONColor(const json & object) noexcept;
 
 public:
     std::unordered_map<VisualElement, style_t> Styles;

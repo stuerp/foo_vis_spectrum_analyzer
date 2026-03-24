@@ -55,7 +55,7 @@ public:
 
     bool Has(Features feature) const noexcept
     {
-        return IsSet(Flags, feature);
+        return IsSet(_Flags, feature);
     }
 
     void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
@@ -88,12 +88,12 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
-    std::wstring Name;
-    VisualizationTypes UsedBy;              // Determines which visualization uses the style.
+    std::wstring _Name;
+    VisualizationTypes _UsedBy;              // Determines which visualization uses the style.
 
 #pragma region Serialized
 
-    Features Flags;
+    Features _Flags;
 
     ColorSource _ColorSource;               // Determines the source of the color
     D2D1_COLOR_F _CustomColor;              // User-specified color

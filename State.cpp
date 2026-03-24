@@ -1866,7 +1866,7 @@ void state_t::ConvertColorSettings() noexcept
         }
 
         if (_HorizontalGradient_Deprecated)
-            style->Flags |= style_t::Features::HorizontalGradient;
+            style->_Flags |= style_t::Features::HorizontalGradient;
     }
 
     {
