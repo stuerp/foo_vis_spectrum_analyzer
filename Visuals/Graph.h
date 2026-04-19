@@ -11,22 +11,9 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Support.h"
 #include "Artwork.h"
 
 #include "Element.h"
-
-#include "Spectrum.h"
-#include "Spectrogram.h"
-#include "PeakMeter.h"
-#include "LevelMeter.h"
-#include "Oscilloscope.h"
-#include "OscilloscopeXY.h"
-#include "BitMeter.h"
-
-#include "Tester.h"
-
-#include "Log.h"
 
 /// <summary>
 /// Implements a graph on which the visualizations are rendered.

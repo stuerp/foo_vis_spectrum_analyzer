@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.03.21) P. Stuer **/
+/** $VER: State.h (2026.04.19) P. Stuer **/
 
 #pragma once
 
@@ -260,18 +260,14 @@ public:
 
     #pragma endregion
 
-    #pragma region Graphs
-
-        bool _VerticalLayout;                                           // Shows the graphs vertically instead of horizontally.
-
-    #pragma endregion
-
     style_manager_t _StyleManager;
 
     #pragma region Graphs
 
     size_t _GridRowCount;
     size_t _GridColumnCount;
+    bool _VerticalLayout;                                               // Shows the graphs vertically instead of horizontally.
+    bool _OverlapGraphs;                                                // True if the graphs should be rendered overlapped instead of in a grid layout.
 
     std::vector<graph_description_t> _GraphDescriptions;
 

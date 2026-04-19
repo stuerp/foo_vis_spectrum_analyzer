@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2025.11.12) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2026.04.19) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -29,7 +29,7 @@ public:
     part_t(const state_t * state, const graph_description_t * settings) noexcept : _Rect()
     {
         _State    = state;
-        _Settings = settings;
+        _GraphDescription = settings;
     }
 
     virtual ~part_t() = default;
@@ -49,7 +49,7 @@ private:
 
 protected:
     const state_t * _State;
-    const graph_description_t * _Settings;
+    const graph_description_t * _GraphDescription;
 
     D2D1_RECT_F _Rect;
     D2D1_SIZE_F _Size;
@@ -111,7 +111,7 @@ public:
     {
         _Measurement = measurement;
 
-        _dBFSZeroNormalized = msc::Map(0., _Settings->_AmplitudeLo, _Settings->_AmplitudeHi, 0., 1.);
+        _dBFSZeroNormalized = msc::Map(0., _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.);
     }
 
     bar_t(const bar_t &) = delete;

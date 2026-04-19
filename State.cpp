@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.03.21) P. Stuer **/
+/** $VER: State.cpp (2026.04.19) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -199,10 +199,10 @@ void state_t::Reset() noexcept
 
     _GraphDescriptions.push_back(graph_description_t(L"Stereo"));
 
-    _VerticalLayout = false;
-
     _GridRowCount = 1;
     _GridColumnCount = 1;
+    _VerticalLayout = false;
+    _OverlapGraphs = true;
 
     /** Visualization **/
 
@@ -473,10 +473,10 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     _GraphDescriptions = other._GraphDescriptions;
 
-    _VerticalLayout = other._VerticalLayout;
-
     _GridRowCount = other._GridRowCount;
     _GridColumnCount = other._GridColumnCount;
+    _VerticalLayout = other._VerticalLayout;
+    _OverlapGraphs = other._OverlapGraphs;
 
     #pragma endregion
 
@@ -1525,7 +1525,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     _GridRowCount    = Grid.value("rows", _GridRowCount);
     _GridColumnCount = Grid.value("columns", _GridColumnCount);
+
     _VerticalLayout  = Grid.value("verticalLayout", _VerticalLayout);
+    _OverlapGraphs   = Grid.value("overlapGraphs", _OverlapGraphs);
 
     {
         std::vector<graph_description_t> GraphDescriptions;
@@ -1811,6 +1813,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "rows", _GridRowCount },
                 { "columns", _GridColumnCount },
                 { "verticalLayout", _VerticalLayout },
+                { "overlapGraphs", _OverlapGraphs },
                 { "graphs", json::array_t::value_type() },
             })
         ), 

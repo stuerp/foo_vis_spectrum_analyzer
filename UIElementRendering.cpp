@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.03.11) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.03.19) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -8,11 +8,14 @@
 #include "DirectX.h"
 #include "Direct2D.h"
 
+#include "Constants.h"
 #include "Resources.h"
 #include "Color.h"
 #include "Gradients.h"
 #include "StyleManager.h"
 #include "Chrono.h"
+#include "Event.h"
+#include "Support.h"
 
 #include "Log.h"
 
@@ -140,16 +143,16 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
+        for (auto & Item : _Grid)
+            Item->Reset();
 
         _RenderState._IsPaused = false;
     }
 
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
+        for (auto & Item : _Grid)
+            Item->Reset();
 
         _RenderState._IsPaused = true;
     }
@@ -226,8 +229,8 @@ void uielement_t::ProcessAudio() noexcept
     {
         InitializeSampleRateDependentParameters(Chunk);
 
-        for (auto & Iter : _Grid)
-            Iter._Graph->Process(Chunk);
+        for (auto & Item : _Grid)
+            Item->Process(Chunk);
     }
 
     _RenderState._PlaybackTime = PlaybackTime;
@@ -247,8 +250,8 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
-    for (auto & Iter : _Grid)
-        Iter._Graph->Render(_DeviceContext, _Artwork);
+    for (auto & Item : _Grid)
+        Item->Render(_DeviceContext, _Artwork);
 
     if (_UIState._ShowFrameCounter)
         _FrameCounter.Render(_DeviceContext);
@@ -272,8 +275,8 @@ void uielement_t::Animate() noexcept
         return;
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
+    for (auto & Item : _Grid)
+        Item->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
 }
 
 /// <summary>
@@ -482,8 +485,8 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 //          if (SUCCEEDED(hr) && _(_Artwork.Bitmap() != nullptr))
                 CreateArtworkDependentResources();
 
-            for (auto & Iter : _Grid)
-                Iter._Graph->Release();
+            for (auto & Item : _Grid)
+                Item->Release();
         }
         else
             hr = S_OK; // No WIC bitmap created because there is no artwork.
@@ -503,8 +506,8 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 
     _RenderState._StyleManager.DeleteDeviceSpecificResources();
 
-    for (auto & Iter : _Grid)
-        Iter._Graph->Release();
+    for (auto & Item : _Grid)
+        Item->Release();
 
     _Artwork.DeleteDeviceSpecificResources();
 

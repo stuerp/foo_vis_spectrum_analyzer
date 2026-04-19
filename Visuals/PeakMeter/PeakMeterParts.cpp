@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2026.01.25) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.04.19) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -26,9 +26,9 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         FLOAT & x1 = _Rect.left;
         FLOAT & x2 = _Rect.right;
 
-        if (_Settings->_FlipHorizontally)
+        if (_GraphDescription->_FlipHorizontally)
         {
-            FLOAT w = (_NameStyle->IsEnabled() && _Settings->_XAxisTop) ? _NameStyle->_Width : 0.f;
+            FLOAT w = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisTop) ? _NameStyle->_Width : 0.f;
 
             _TopNameRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
             x1 += w;
@@ -43,7 +43,7 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
             _PeakRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
             x2 -= w;
 
-            w = (_NameStyle->IsEnabled() && _Settings->_XAxisBottom) ? _NameStyle->_Width : 0.f;
+            w = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisBottom) ? _NameStyle->_Width : 0.f;
 
             _BottomNameRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
             x2 -= w;
@@ -62,12 +62,12 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
 
             if (_NameStyle->IsEnabled())
             {
-                w = _Settings->_XAxisBottom ? _NameStyle->_Width : 0.f;
+                w = _GraphDescription->_XAxisBottom ? _NameStyle->_Width : 0.f;
 
                 _BottomNameRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
                 x1 += w;
 
-                w = _Settings->_XAxisTop ? _NameStyle->_Width : 0.f;
+                w = _GraphDescription->_XAxisTop ? _NameStyle->_Width : 0.f;
 
                 _TopNameRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
                 x2 -= w;
@@ -79,7 +79,7 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         FLOAT & y1 = _Rect.top;
         FLOAT & y2 = _Rect.bottom;
 
-        if (_Settings->_FlipVertically)
+        if (_GraphDescription->_FlipVertically)
         {
             FLOAT h = _RMSTextStyle->IsEnabled() ? _RMSTextStyle->_Height : 0.f;
 
@@ -93,12 +93,12 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
 
             if (_NameStyle->IsEnabled())
             {
-                h = _Settings->_XAxisBottom ? _NameStyle->_Height : 0.f;
+                h = _GraphDescription->_XAxisBottom ? _NameStyle->_Height : 0.f;
 
                 _BottomNameRect = { _Rect.left, y1, _Rect.right, y1 + h };
                 y1 += h;
 
-                h = _Settings->_XAxisTop ? _NameStyle->_Height : 0.f;
+                h = _GraphDescription->_XAxisTop ? _NameStyle->_Height : 0.f;
 
                 _TopNameRect = { _Rect.left, y2 - h, _Rect.right, y2 };
                 y2 -= h;
@@ -106,7 +106,7 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         }
         else
         {
-            FLOAT h = (_NameStyle->IsEnabled() && _Settings->_XAxisTop) ? _NameStyle->_Height : 0.f;
+            FLOAT h = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisTop) ? _NameStyle->_Height : 0.f;
 
             _TopNameRect = { _Rect.left, y1, _Rect.right, y1 + h };
             y1 += h;
@@ -121,7 +121,7 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
             _PeakRect = { _Rect.left, y2 - h, _Rect.right, y2 };
             y2 -= h;
 
-            h = (_NameStyle->IsEnabled() && _Settings->_XAxisBottom) ? _NameStyle->_Height : 0.f;
+            h = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisBottom) ? _NameStyle->_Height : 0.f;
 
             _BottomNameRect = { _Rect.left, y2 - h, _Rect.right, y2 };
             y2 -= h;
@@ -196,19 +196,19 @@ void part_t::CreateAxis() noexcept
 {
     _Labels.clear();
 
-    if (_Settings->_YAxisMode == YAxisMode::None)
+    if (_GraphDescription->_YAxisMode == YAxisMode::None)
         return;
 
     const double Epsilon = 1.e-3;
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        const FLOAT xMin = (!_Settings->_FlipHorizontally ? _Rect.left  : _Rect.right);
-        const FLOAT xMax = (!_Settings->_FlipHorizontally ? _Rect.right : _Rect.left);
+        const FLOAT xMin = (!_GraphDescription->_FlipHorizontally ? _Rect.left  : _Rect.right);
+        const FLOAT xMax = (!_GraphDescription->_FlipHorizontally ? _Rect.right : _Rect.left);
 
         const FLOAT dw = _ScaleTextStyle->_Width / 2.f;
 
-        for (double Amplitude = _Settings->_AmplitudeLo; Amplitude <= (_Settings->_AmplitudeHi + Epsilon); Amplitude -= _Settings->_AmplitudeStep)
+        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= (_GraphDescription->_AmplitudeHi + Epsilon); Amplitude -= _GraphDescription->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -241,7 +241,7 @@ void part_t::CreateAxis() noexcept
                     y1 = y2 = 0.f;
             }
 
-            const FLOAT x = msc::Map(_Settings->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., xMin, xMax);
+            const FLOAT x = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., xMin, xMax);
 
             r.left  = x - dw;
             r.right = r.left + _ScaleTextStyle->_Width;
@@ -257,7 +257,7 @@ void part_t::CreateAxis() noexcept
             _Labels.push_back(Label);
         }
 
-        if (_Settings->_FlipHorizontally)
+        if (_GraphDescription->_FlipHorizontally)
         {
             // Adjust the left and/or right boundary of the first and last label to make sure they're completely visible.
             if (_Labels.front().Rect.right > _RMSRect.left)
@@ -306,12 +306,12 @@ void part_t::CreateAxis() noexcept
     }
     else
     {
-        const FLOAT yMin = (!_Settings->_FlipVertically ? _Rect.bottom : _Rect.top);
-        const FLOAT yMax = (!_Settings->_FlipVertically ? _Rect.top : _Rect.bottom);
+        const FLOAT yMin = (!_GraphDescription->_FlipVertically ? _Rect.bottom : _Rect.top);
+        const FLOAT yMax = (!_GraphDescription->_FlipVertically ? _Rect.top : _Rect.bottom);
 
         const FLOAT dh = _ScaleTextStyle->_Height / 2.f;
 
-        for (double Amplitude = _Settings->_AmplitudeLo; Amplitude <= (_Settings->_AmplitudeHi + Epsilon); Amplitude -= _Settings->_AmplitudeStep)
+        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= (_GraphDescription->_AmplitudeHi + Epsilon); Amplitude -= _GraphDescription->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -345,7 +345,7 @@ void part_t::CreateAxis() noexcept
                     x1 = x2 = 0.f;
             }
 
-            const FLOAT y = msc::Map(_Settings->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., yMin, yMax);
+            const FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., yMin, yMax);
 
             r.top    = y - dh;
             r.bottom = r.top + _ScaleTextStyle->_Height;
@@ -361,7 +361,7 @@ void part_t::CreateAxis() noexcept
             _Labels.push_back(Label);
         }
 
-        if (_Settings->_FlipVertically)
+        if (_GraphDescription->_FlipVertically)
         {
             // Adjust the top and/or bottom boundary of the first and last label to make sure they're completely visible.
             if (_Labels.front().Rect.top < 0.f)
@@ -435,17 +435,17 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
     // Compute center of the area.
     const D2D1_POINT_2F Center = { (_Rect.left + _Rect.right) / 2.f, (_Rect.top + _Rect.bottom) / 2.f };
 
-    if (_Settings->_FlipHorizontally)
+    if (_GraphDescription->_FlipHorizontally)
         _Transform = D2D1::Matrix3x2F::Scale(-1.0f, 1.0f, Center);
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        if (_Settings->_FlipVertically)
+        if (_GraphDescription->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
     else
     {
-        if (!_Settings->_FlipVertically)
+        if (!_GraphDescription->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
 
@@ -652,14 +652,14 @@ void bar_t::Render() const noexcept
         // Draw the channel name.
         if (_NameStyle->IsEnabled())
         {
-            if (_Settings->_XAxisTop)
+            if (_GraphDescription->_XAxisTop)
             {
 //              _DeviceContext->DrawRectangle(_TopNameRect, _DebugBrush);
 //              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_Settings->_XAxisBottom)
+            if (_GraphDescription->_XAxisBottom)
             {
 //              _DeviceContext->DrawRectangle(_BottomNameRect, _DebugBrush);
 //              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);

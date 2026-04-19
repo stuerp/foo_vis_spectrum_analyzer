@@ -8,6 +8,19 @@
 
 #include "DirectWrite.h"
 
+#include "Spectrum.h"
+#include "Spectrogram.h"
+#include "PeakMeter.h"
+#include "LevelMeter.h"
+#include "Oscilloscope.h"
+#include "OscilloscopeXY.h"
+
+#include "BitMeter.h"
+
+#include "Tester.h"
+
+#include "Log.h"
+
 #pragma hdrstop
 
 /// <summary>

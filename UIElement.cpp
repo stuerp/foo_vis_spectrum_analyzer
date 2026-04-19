@@ -124,12 +124,7 @@ void uielement_t::OnDestroy()
 
     _CriticalSection.Enter();
 
-    {
-        for (auto & Iter : _Grid)
-            delete Iter._Graph;
-
-        _Grid.clear();
-    }
+    _Grid.Clear();
 
     _VisualisationStream.release();
 
@@ -410,11 +405,11 @@ void uielement_t::Resize()
 
     // Resize the grid.
     {
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.DelTool(&ti);
         }
 
@@ -428,11 +423,11 @@ void uielement_t::Resize()
             _CriticalSection.Leave();
         }
 
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.AddTool(&ti);
         }
     }
@@ -539,11 +534,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
     {
         DeleteTrackingToolTip();
 
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.DelTool(&ti);
         }
     }
@@ -565,12 +560,9 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                 // Create the graphs.
                 {
-                    for (auto & Item : _Grid)
-                        delete Item._Graph;
+                    _Grid.Clear();
 
-                    _Grid.clear();
-
-                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
+                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, _RenderState._OverlapGraphs);
 
                     for (const auto & GraphDescription : _RenderState._GraphDescriptions)
                     {
@@ -578,7 +570,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                         Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
 
-                        _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                        _Grid.push_back({ Graph });
                     }
                 }
                 break;
@@ -587,7 +579,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::Layout:
             {
                 for (auto & Item : _Grid)
-                    Item._Graph->OnConfigurationChange(configurationChanges);
+                    Item->OnConfigurationChange(configurationChanges);
                 break;
             }
 
@@ -604,11 +596,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
     if (configurationChanges == ConfigurationChanges::All)
     {
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.AddTool(&ti);
         }
 
@@ -623,10 +615,10 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 /// </summary>
 graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 {
-    for (auto & Iter : _Grid)
+    for (auto & Item : _Grid)
     {
-        if (Iter._Graph->ContainsPoint(pt))
-            return Iter._Graph;
+        if (Item->ContainsPoint(pt))
+            return Item;
     }
 
     return nullptr;

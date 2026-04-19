@@ -1,12 +1,57 @@
 
-/** $VER: GraphDescription.cpp (2026.03.21) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphDescription.cpp (2026.04.19) P. Stuer - Describes the layout and settings of a graph. **/
 
 #include "pch.h"
 
+#include "Constants.h"
 #include "GraphDescription.h"
 #include "Support.h"
 
 #pragma hdrstop
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+void graph_description_t::Initialize() noexcept
+{
+    _SelectedChannels = (uint32_t) Channels::ConfigStereo;
+
+    _ChannelPair = (uint32_t) ChannelPair::FrontLeftRight;
+    _SwapChannels = false;
+
+    _HorizontalAlignment = HorizontalAlignment::Center;
+    _VerticalAlignment = VerticalAlignment::Center;
+
+    _FlipHorizontally = false;
+    _FlipVertically = false;
+
+    _XAxisMode = XAxisMode::Bands;
+    _XAxisTop = false;
+    _XAxisBottom = true;
+    _XAxisDecimals = 3;
+
+    _YAxisMode = YAxisMode::Decibels;
+    _YAxisLeft = true;
+    _YAxisRight = false;
+
+    _AmplitudeLo =  -90.;    // Lower amplitude, [-120, 0]
+    _AmplitudeHi =    0.;    // Upper amplitude, [-120, 0]
+    _AmplitudeStep = -6.;
+
+    _UseAbsolute = true;    // Linear/n-th root scaling: Sets the min. dB range to -∞ dB (0.0 on linear amplitude) when enabled. This only applies when not using logarithmic amplitude scale (or in other words, using linear/nth root amplitude scaling) as by mathematical definition. Logarithm of any base of zero is always -Infinity.
+    _Gamma = 1.;            // Linear/n-th root scaling: Index n of the n-th root calculation, [0.5, 10.0]
+
+    _HRatio = 1.f;
+    _VRatio = 1.f;
+
+    _LPadding = 0.f;
+    _RPadding = 0.f;
+    _TPadding = 0.f;
+    _BPadding = 0.f;
+
+    _HAlignment = HorizontalTextAlignment::Center;
+    _VAlignment = VerticalTextAlignment::Center;
+}
 
 /// <summary>
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
