@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.03.11) P. Stuer **/
+/** $VER: Analysis.cpp (2026.05.24) P. Stuer **/
 
 #include "pch.h"
 
@@ -945,6 +945,8 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 
     InitializeBitMeasurements(_ChannelMask);
 
+    const audio_sample MaxInteger = (audio_sample) ((1LL << (_State->_BitsPerInteger - 1)) - 1);
+
     const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
 
     for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
@@ -962,11 +964,12 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
             {
                 if ((SelectedChannels & 1) && (i < _BitMeasurements.size()))
                 {
-                    #if (audio_sample_size == 64)
-                    uint64_t Value = *(uint64_t *) Sample; // Value = 0b1101010101011001111111111111111111111111111111111111111111111001; // Test pattern
-                    #else
-                    uint32_t Value = *(uint32_t *) Sample; // Value = 0b11010101010000000000000000000001; // Test pattern
-                    #endif
+                    uint64_t Value;
+
+                    if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
+                        Value = *(uint64_t *) Sample; // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
+                    else
+                        Value = (uint64_t) (*Sample * MaxInteger);
 
                     for (auto & BitCount : _BitMeasurements[i].BitCounts)
                     {
@@ -982,7 +985,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
                     ++i;
                 }
 
-                Sample++;
+                ++Sample;
             }
 
             ChunkChannels    >>= 1;
@@ -1008,7 +1011,7 @@ void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
 {
     if (_BitMeasuredChannels != measuredChannels)
     {
-        // The chunk configuration has changed. Recreate the measurements.
+        // The chunk configuration has changed. Recreate the measurements, one per selected channel.
         static const WCHAR * ChannelNames[] =
         {
             L"FL", L"FR", L"FC",
@@ -1019,6 +1022,8 @@ void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
             L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
         };
 
+        const size_t n = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+
         size_t i = 0;
 
         _BitMeasurements.clear();
@@ -1026,7 +1031,7 @@ void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
         for (uint32_t SelectedChannels = measuredChannels; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _BitMeasurements.push_back({ ChannelNames[i], audio_sample_size });
+                _BitMeasurements.push_back({ ChannelNames[i], n });
         }
 
         _BitMeasuredChannels = measuredChannels;

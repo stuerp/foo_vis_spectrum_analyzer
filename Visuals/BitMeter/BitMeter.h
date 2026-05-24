@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.03.17) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.05.24) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -38,6 +38,7 @@ private:
 
 private:
     size_t _MeasurementCount;
+    size_t _BitCount;
 
     std::vector<std::wstring> _Labels;
 
@@ -48,6 +49,8 @@ private:
     style_t * _BarExponent;
     style_t * _XAxisText;
     style_t * _YAxisText;
+
+    std::vector<style_t *> _Styles;
 
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 

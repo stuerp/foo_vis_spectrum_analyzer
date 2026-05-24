@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.03.17) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.05.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -31,6 +31,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
         { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
 
+        { IDC_BIT_METER_MODE, "Determines the mode of the bit meter visualization." },
+        { IDC_BITS_PER_INTEGER, "Specifies the number of bits represented by each integer in Integer mode." },
         { IDC_OPACITY_MODE, "Renders the bit occurancy using opacity." },
 
         { IDC_SCROLLING_SPECTROGRAM, "Activates scrolling of the spectrogram." },
@@ -121,6 +123,17 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Bit Meter
     {
+        auto w = (CComboBox) GetDlgItem(IDC_BIT_METER_MODE);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"Floating-point", L"Integer" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_BitMeterMode);
+
+        SetInteger(IDC_BITS_PER_INTEGER, _State->_BitsPerInteger);
+
         SendDlgItemMessageW(IDC_OPACITY_MODE, BM_SETCHECK, _State->_OpacityMode);
     }
 
@@ -141,7 +154,7 @@ void visualization_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
+            auto w = ::CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
 
             UDACCEL Accel[] =
             {
@@ -155,7 +168,7 @@ void visualization_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
 
             SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
-            ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
+            ((::CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
         }
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
@@ -243,8 +256,10 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
 
     // Bit Meter
+    GetDlgItem(IDC_BIT_METER_MODE).EnableWindow(IsBitMeter);
+    GetDlgItem(IDC_BITS_PER_INTEGER).EnableWindow(IsBitMeter && (_State->_BitMeterMode == BitMeterMode::Integer));
     GetDlgItem(IDC_OPACITY_MODE).EnableWindow(IsBitMeter);
-
+ 
     // Spectrogram
     GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
@@ -315,6 +330,14 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             break;
         }
 
+        case IDC_BIT_METER_MODE:
+        {
+            _State->_BitMeterMode = (BitMeterMode) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+
         case IDC_PEAK_MODE:
         {
             _State->_PeakMode = (PeakMode) SelectedIndex;
@@ -353,6 +376,15 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     {
         default:
             return;
+
+        // Bit Meter
+        case IDC_BITS_PER_INTEGER:
+        {
+            if (!SetProperty(_State->_BitsPerInteger, std::clamp((uint8_t) ::_wtoi(Text), MinBitsPerInteger, MaxBitsPerInteger)))
+                return;
+
+            break;
+        }
 
         // Peak indicator
         case IDC_HOLD_TIME:
@@ -526,6 +558,13 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_LED_GAP:
         {
             SetDouble(id, _State->_LEDGap, 0, 0);
+            break;
+        }
+
+        // Bit Meter
+        case IDC_BITS_PER_INTEGER:
+        {
+            SetInteger(id, (int64_t) _State->_BitsPerInteger);
             break;
         }
 

@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.03.17) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.05.24) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -36,15 +36,17 @@ void bit_meter_t::Initialize(state_t * state, const graph_description_t * settin
 
     _MeasurementCount = 0;
 
+    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+
     // Create the labels.
     {
         _Labels.clear();
 
-        for (int BitNumber = 1; BitNumber <= audio_sample_size; ++BitNumber)
+        for (uint32_t BitNumber = 1; BitNumber <= _BitCount; ++BitNumber)
         {
             WCHAR Text[4] = { };
 
-            ::StringCchPrintfW(Text, _countof(Text), L"%d", BitNumber);
+            ::StringCchPrintfW(Text, _countof(Text), L"%u", BitNumber);
 
             _Labels.push_back(Text);
         }
@@ -108,13 +110,13 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
 
-    FLOAT BarWidth = ClientWidth  / audio_sample_size;
+    FLOAT BarWidth = ClientWidth  / (FLOAT) _BitCount;
 
     // Use the full width of the graph?
     if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
         BarWidth = std::floor(BarWidth);
 
-    const FLOAT TotalBarWidth = BarWidth * (FLOAT) audio_sample_size;
+    const FLOAT TotalBarWidth = BarWidth * (FLOAT) _BitCount;
 
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
@@ -128,7 +130,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & m : _Analysis->_BitMeasurements)
     {
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset + YAxisWidth, YOffset);
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(YAxisWidth + XOffset, YOffset);
 
         deviceContext->SetTransform(Translate);
 
@@ -143,7 +145,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
             {
-                style_t * Style = (BitNumber == 0) ? _BarSign : ((BitNumber <= ExponentBits) ? _BarExponent : _BarMantissa);
+                style_t * Style = _Styles[BitNumber];
 
                 if (Style->IsEnabled())
                 {
@@ -256,6 +258,17 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     if (_StaticContentCommandList == nullptr)
         hr = CreateStaticContentCommandList();
 
+    // Predetermine the style for each bit.
+    _Styles.resize(_BitCount);
+
+    for (size_t BitNumber = 0; BitNumber < _BitCount; ++BitNumber)
+    {
+        if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
+            _Styles[BitNumber] = (BitNumber == 0) ? _BarSign : ((BitNumber <= ExponentBits) ? _BarExponent : _BarMantissa);
+        else
+            _Styles[BitNumber] = (BitNumber == 0) ? _BarSign : _BarMantissa;
+    }
+
     return hr;
 }
 
@@ -304,13 +317,13 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
 
-    FLOAT BarWidth = ClientWidth  / audio_sample_size;
+    FLOAT BarWidth = ClientWidth  / (FLOAT) _BitCount;
 
     // Use the full width of the graph?
     if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
         BarWidth = std::floor(BarWidth);
 
-    const FLOAT TotalBarWidth = BarWidth * (FLOAT) audio_sample_size;
+    const FLOAT TotalBarWidth = BarWidth * (FLOAT) _BitCount;
 
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 

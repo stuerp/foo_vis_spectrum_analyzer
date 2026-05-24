@@ -6,11 +6,11 @@
 #include "ConfigurationDialogLayout.h"
 
 #define W_I00    W_A00 - IX - W_D01 - IX - IX
-#define H_I00    H_A00 - IY - IY - H_BTN - IY
+#define H_I00    H_A00 - IY - IY - H_BTN - IY - IY
 
 // Listbox
 #define W_I01    112
-#define H_I01    H_I00
+#define H_I01    291
 #define X_I01    0
 #define Y_I01    0
 

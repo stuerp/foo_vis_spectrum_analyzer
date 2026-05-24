@@ -5,7 +5,7 @@
 
 #include "ConfigurationDialog.h"
 #include "Gradients.h"
-#include "Layout.h"
+#include "ConfigurationDialogLayout.h"
 #include "CColorDialogEx.h"
 #include "PresetManager.h"
 #include "Support.h"

@@ -40,7 +40,4 @@ private:
 
 private:
     std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
-    std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
-
-    size_t _SelectedStyle;                      // Index of the selected style in the listbox.
 };

@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.04.19) P. Stuer **/
+/** $VER: State.h (2026.05.22) P. Stuer **/
 
 #pragma once
 
@@ -64,57 +64,57 @@ public:
         VisualizationType _VisualizationType;
 
         PeakMode _PeakMode;
-        double _HoldTime;                                           // Peak hold time, 0.0 .. 120.0
-        double _Acceleration;                                       // Peak fall acceleration rate, 0.0 .. 2.0
+        double _HoldTime;                                               // Peak hold time, 0.0 .. 120.0
+        double _Acceleration;                                           // Peak fall acceleration rate, 0.0 .. 2.0
 
         #pragma region Bars
 
-            bool _LEDMode;                                          // True if the bars will be drawn as LEDs.
-            FLOAT _LEDLight;                                        // Size of the LED light, in pixels.
-            FLOAT _LEDGap;                                          // Gap between the LEDs lights, in pixels.
-            bool _LEDIntegralSize;                                  // The LEDs will be rendered with an integral height.
+            bool _LEDMode;                                              // True if the bars will be drawn as LEDs.
+            FLOAT _LEDLight;                                            // Size of the LED light, in pixels.
+            FLOAT _LEDGap;                                              // Gap between the LEDs lights, in pixels.
+            bool _LEDIntegralSize;                                      // The LEDs will be rendered with an integral height.
 
         #pragma endregion
 
         #pragma region Radial Bars
 
-            FLOAT _InnerRadius;                                     // Percentage of the smallest side of the graph area
-            FLOAT _OuterRadius;                                     // Percentage of the smallest side of the graph area
-            FLOAT _AngularVelocity;                                 // degrees / s
+            FLOAT _InnerRadius;                                         // Percentage of the smallest side of the graph area
+            FLOAT _OuterRadius;                                         // Percentage of the smallest side of the graph area
+            FLOAT _AngularVelocity;                                     // degrees / s
 
         #pragma endregion
 
         #pragma region Spectrogram
 
-            bool _IsScrollingSpectrogram;                             // True if the spectrogram needs to scroll.
-            bool _IsHorizontalSpectrogram;                            // True if the spectrogram should be rendered horizontally.
-            bool _UseSpectrumBarMetrics;                            // True if the same algorithm should be used as the bar spectrum.
+            bool _IsScrollingSpectrogram;                               // True if the spectrogram needs to scroll.
+            bool _IsHorizontalSpectrogram;                              // True if the spectrogram should be rendered horizontally.
+            bool _UseSpectrumBarMetrics;                                // True if the same algorithm should be used as the bar spectrum.
 
         #pragma endregion
 
         #pragma region Peak Meter
 
-            bool _IsHorizontalPeakMeter;                            // True if the peak meter should be rendered horizontally.
-            bool _HasRMSPlus3;                                         // True if the RMS readings should be increased by 3dB.
-            bool _HasCenterScale;                                   // Render a scale between the bars.
-            bool _HasScaleLines;                                    // Render a scale between the bars.
+            bool _IsHorizontalPeakMeter;                                // True if the peak meter should be rendered horizontally.
+            bool _HasRMSPlus3;                                          // True if the RMS readings should be increased by 3dB.
+            bool _HasCenterScale;                                       // Render a scale between the bars.
+            bool _HasScaleLines;                                        // Render a scale between the bars.
 
-            double _RMSWindow;                                      // Duration of the RMS window, in seconds.
-            FLOAT _BarGap;                                          // Gap between the peak meter bar, in pixels.
-            FLOAT _MaxBarSize;                                      // Max. bar width / height, in pixels. 0 to disable.
+            double _RMSWindow;                                          // Duration of the RMS window, in seconds.
+            FLOAT _BarGap;                                              // Gap between the peak meter bar, in pixels.
+            FLOAT _MaxBarSize;                                          // Max. bar width / height, in pixels. 0 to disable.
 
         #pragma endregion
 
         #pragma region Level Meter
 
             ChannelPair _ChannelPair;
-            bool _IsHorizontalLevelMeter;                             // True if the level meter should be rendered horizontally.
+            bool _IsHorizontalLevelMeter;                               // True if the level meter should be rendered horizontally.
 
         #pragma endregion
 
         #pragma region Oscilloscope
 
-            bool _XYMode;                                           // Oscilloscope in X-Y mode
+            bool _XYMode;                                               // Oscilloscope in X-Y mode
             double _XGain;
             double _YGain;
             FLOAT _Rotation;
@@ -127,6 +127,8 @@ public:
         #pragma region Bit Meter
 
             bool _OpacityMode;
+            BitMeterMode _BitMeterMode;
+            uint8_t _BitsPerInteger;
 
         #pragma endregion
 
@@ -134,7 +136,7 @@ public:
 
     #pragma region Transform
 
-        TransformMethod _TransformMethod;                           // FFT, CQT, SWIFT, Analog Style
+        TransformMethod _TransformMethod;                               // FFT, CQT, SWIFT, Analog Style
 
         WindowFunction _WindowFunction;
         double _WindowParameter;                                        // 0 .. 10, Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
@@ -186,8 +188,8 @@ public:
         double _TimeResolution;                                         // [0, 2000], Max. time resolution
         double _IIRBandwidth;                                           // [0, 8], SWIFT Bandwidth
         bool _ConstantQ;                                                // True, Use constant-Q instead of variable-Q.
-        bool _CompensateBandwidth;                                             // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
-        bool _UsePreWarpedQ;                                                 // False. Use prewarped Q (analog-style analyzer only)
+        bool _CompensateBandwidth;                                      // True, Compensate bandwidth for narrowing on higher order filters (IIR filter banks only)
+        bool _UsePreWarpedQ;                                            // False. Use prewarped Q (analog-style analyzer only)
 
     #pragma endregion
 
@@ -201,8 +203,8 @@ public:
         double _HiFrequency;                                            // Hz, [0, 96000]
 
         // Note range
-        uint32_t _LoNote;                                              // Minimum note, [0, 143], 12 octaves
-        uint32_t _HiNote;                                              // Maximum note, [0, 143], 12 octaves
+        uint32_t _LoNote;                                               // Minimum note, [0, 143], 12 octaves
+        uint32_t _HiNote;                                               // Maximum note, [0, 143], 12 octaves
         uint32_t _BandsPerOctave;                                       // Bands per octave, [1, 48]
         double _TuningPitch;                                            // Hz, [0, 96000], Octave bands tuning (nearest note = tuning frequency in Hz)
         int _Transpose;                                                 // Transpose, [-24,.24] quarter tones

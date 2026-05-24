@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.03.18) P. Stuer **/
+/** $VER: Resources.h (2026.05.24) P. Stuer **/
 
 #pragma once
 
@@ -415,7 +415,6 @@
 #define IDC_ACCELERATION                7118
 
 // LEDs
-
 #define IDC_LEDS                        7120
 
 #define IDC_LED_MODE                    7122
@@ -426,7 +425,6 @@
 #define IDC_LED_INTEGRAL_SIZE           7132
 
 // Bars
-
 #define IDC_BARS                        7200
 
 // Radial Bars
@@ -499,9 +497,9 @@
 
 // Bit Meter
 
-#define IDC_BIT_METER                   7240
-
-#define IDC_OPACITY_MODE                7242
+#define IDC_BIT_METER_MODE              7240
+#define IDC_BITS_PER_INTEGER            7242 
+#define IDC_OPACITY_MODE                7244
 
 #pragma endregion
 

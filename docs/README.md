@@ -321,6 +321,14 @@ Sets the angular velocity of the rotation in degrees per second. Use positive va
 
 Set the visualization type to **Bit Meter** to enable these settings.
 
+`Mode`
+
+Determines if the bit meter displays the bits of a floating-point sample or an integer sample.
+
+`Bits per integer`
+
+Sets the number of bits an integer sample will use in *Integer* mode.
+
 `Opacity Mode`
 
 Renders the bit histogram by varying the opacity of the bars instead of the height.

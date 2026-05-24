@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FrequenciesPage.cpp (2026.05.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -308,13 +308,6 @@ void frequencies_page_t::OnSelectionChanged(UINT notificationCode, int id, CWind
             _State->_ScalingFunction = (ScalingFunction) SelectedIndex;
             break;
         }
-
-        case IDC_SMOOTHING_METHOD:
-        {
-            _State->_SmoothingMethod = (SmoothingMethod) SelectedIndex;
-            break;
-        }
-
     }
 
     ConfigurationChanged(ChangedSettings);

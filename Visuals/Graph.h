@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.03.17) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.04.19) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -75,6 +75,8 @@ public:
 private:
     std::wstring _Description;
     std::unique_ptr<element_t> _Visualization;
+
+    style_manager_t _StyleManager;                  // Styles only used by this graph in case of overlapping graphs.
 
     style_t * _BackgroundStyle;
     style_t * _DescriptionTextStyle;

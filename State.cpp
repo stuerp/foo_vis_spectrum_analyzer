@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.04.19) P. Stuer **/
+/** $VER: State.cpp (2026.05.24) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -265,6 +265,8 @@ void state_t::Reset() noexcept
     _DecayFactor = 0.92f;
 
     // Bit Meter
+    _BitMeterMode = BitMeterMode::FloatingPoint;
+    _BitsPerInteger = 63;
     _OpacityMode = false;
 
     _StyleManager.Reset();
@@ -541,6 +543,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _DecayFactor = other._DecayFactor;
 
     // Bit Meter
+    _BitMeterMode = other._BitMeterMode;
+    _BitsPerInteger = other._BitsPerInteger;
     _OpacityMode = other._OpacityMode;
 
     #pragma endregion
@@ -1414,7 +1418,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
 
-    _OpacityMode = BitMeter.value("opacityMode", _OpacityMode);
+    _BitMeterMode   = BitMeter.value("mode", _BitMeterMode);
+    _BitsPerInteger = BitMeter.value("bitsPerInteger", _BitsPerInteger);
+    _OpacityMode    = BitMeter.value("opacityMode", _OpacityMode);
 
     // Transform
     const auto & Transform = Object.value("transform", json::object());
@@ -1671,6 +1677,8 @@ json state_t::ToJSON(bool isPreset) const
         (
             "bitMeter", json::object
             ({
+                { "mode", _BitMeterMode },
+                { "bitsPerInteger", _BitsPerInteger },
                 { "opacityMode", _OpacityMode },
             })
         ),

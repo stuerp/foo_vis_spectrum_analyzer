@@ -68,16 +68,16 @@ struct peak_measurement_t : measurement_t
 };
 
 /// <summary>
-/// Represents a bit meter measurement.
+/// Represents a bit meter measurement of one channel.
 /// </summary>
 struct bit_measurement_t : measurement_t
 {
     bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
     {
-        BitCounts.resize(audio_sample_size, 0.);
+        BitCounts.resize(bitCount, 0.);
     }
 
-    std::vector<double> BitCounts;
+    std::vector<double> BitCounts; // Occurrance count of each bit
 };
 
 /// <summary>

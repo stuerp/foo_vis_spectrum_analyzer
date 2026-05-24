@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.04.19) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -76,10 +76,12 @@ private:
 
 private:
     std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
-    std::vector<VisualElement> _ActiveStyles;   // The styles relevant to the current visualization.
+    std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
     size_t _SelectedStyle;                      // Index of the selected style in the listbox.
 
     CColorButton _Color;
     CColorButton _Gradient;
     CColorListBox _Colors;
+
+    style_manager_t * _StyleManager;
 };
