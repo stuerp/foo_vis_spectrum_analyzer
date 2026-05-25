@@ -1,6 +1,20 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha1, 2026-05-24
+
+- New: The number of decimals used by the X-axis labels can be configured.
+- New: Added Integer mode to the Bit Meter visualization.
+  - The number of bits can be configured.
+- Changed: Saves the settings as a human-readable JSON object.
+  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
+  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
+- Changed: Builds with Visual Studio 2026.
+
+v0.10.0.0, 2026-03-15
+
+- Release to repository.
+
 v0.10.0.0-beta2, 2026-03-13
 
 - Fixed: Clicking the Reset button resulted in a crash. (Regression)

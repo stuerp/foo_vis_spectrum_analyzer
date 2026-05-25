@@ -266,7 +266,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
             _Styles[BitNumber] = (BitNumber == 0) ? _BarSign : ((BitNumber <= ExponentBits) ? _BarExponent : _BarMantissa);
         else
-            _Styles[BitNumber] = (BitNumber == 0) ? _BarSign : _BarMantissa;
+            _Styles[BitNumber] = _BarMantissa;
     }
 
     return hr;

@@ -143,15 +143,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha1, 2026-05-24
+v0.11.0.0-alpha2, 2026-05-25
 
-- New: The number of decimals used by the X-axis labels can be configured.
-- New: Added Integer mode to the Bit Meter visualization.
-  - The number of bits can be configured.
-- Changed: Saves the settings as a human-readable JSON object.
-  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
-  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
-- Changed: Builds with Visual Studio 2026.
+- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
 
 You can read the full history [here](docs/History.md).
 
