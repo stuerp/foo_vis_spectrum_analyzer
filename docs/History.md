@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha2, 2026-05-25
+
+- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
+
 v0.11.0.0-alpha1, 2026-05-24
 
 - New: The number of decimals used by the X-axis labels can be configured.

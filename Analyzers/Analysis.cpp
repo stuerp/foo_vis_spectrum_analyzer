@@ -635,9 +635,9 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
+        fb.Lo     = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
         fb.Center = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
-        fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
+        fb.Hi     = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
         ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Center);
@@ -945,7 +945,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 
     InitializeBitMeasurements(_ChannelMask);
 
-    const audio_sample MaxInteger = (audio_sample) ((1LL << (_State->_BitsPerInteger - 1)) - 1);
+    const auto MaxInteger = (audio_sample) (1LL << (_State->_BitsPerInteger - 1));
 
     const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
 
@@ -969,7 +969,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
                     if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
                         Value = *(uint64_t *) Sample; // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
                     else
-                        Value = (uint64_t) std::abs(*Sample * MaxInteger);
+                        Value = ((uint64_t) std::abs(*Sample * MaxInteger));
 
                     for (auto & BitCount : _BitMeasurements[i].BitCounts)
                     {
@@ -1000,8 +1000,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
             BitCount /= (double) FrameCount;
 
         // Reverse the array to get: Index 0 = Sign bit, Index 1 - 11 = Exponent bits, Index 12 - 63 = Mantissa bits
-        if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
-            std::reverse(m.BitCounts.begin(), m.BitCounts.end());
+        std::reverse(m.BitCounts.begin(), m.BitCounts.end());
     }
 }
 

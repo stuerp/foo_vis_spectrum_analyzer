@@ -143,9 +143,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha2, 2026-05-25
+v0.11.0.0-alpha3, 2026-xx-xx
 
-- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
+- Changed: Reduced Bit Meter Integer mode to use max. 32 bits.
 
 You can read the full history [here](docs/History.md).
 

@@ -465,7 +465,7 @@ enum class BitMeterMode : uint32_t
 };
 
 inline constexpr uint8_t MinBitsPerInteger =  1;
-inline constexpr uint8_t MaxBitsPerInteger = 64;
+inline constexpr uint8_t MaxBitsPerInteger = 32;
 
 // Graphs
 enum class HorizontalAlignment
