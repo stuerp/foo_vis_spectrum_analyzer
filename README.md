@@ -143,9 +143,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha3, 2026-xx-xx
+v0.11.0.0-alpha3, 2026-05-30
 
-- Changed: Reduced Bit Meter Integer mode to use max. 32 bits.
+- Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.
+- Fixed: The JSON configuration file reader ignored the Y-axis visibility setting.
 
 You can read the full history [here](docs/History.md).
 
