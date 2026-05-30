@@ -184,8 +184,8 @@ graph_description_t graph_description_t::FromJSON(const json & object) noexcept
     const auto & YAxis = object.value("yAxis", json::object());
 
     gd._YAxisMode     = YAxis.value("mode", gd._YAxisMode);
-    gd._YAxisLeft     = YAxis.value("top", gd._YAxisLeft);
-    gd._YAxisRight    = YAxis.value("bottom", gd._YAxisRight);
+    gd._YAxisLeft     = YAxis.value("left", gd._YAxisLeft);
+    gd._YAxisRight    = YAxis.value("right", gd._YAxisRight);
 
     gd._AmplitudeLo   = YAxis.value("amplitudeLo", gd._AmplitudeLo);
     gd._AmplitudeHi   = YAxis.value("amplitudeHi", gd._AmplitudeHi);
