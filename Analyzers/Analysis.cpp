@@ -969,7 +969,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
                     if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
                         Value = *(uint64_t *) Sample; // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
                     else
-                        Value = ((uint64_t) std::abs(*Sample * MaxInteger));
+                        Value = (uint64_t) std::abs(*Sample * MaxInteger);
 
                     for (auto & BitCount : _BitMeasurements[i].BitCounts)
                     {
