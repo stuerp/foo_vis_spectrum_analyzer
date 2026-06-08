@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.05.24) P. Stuer **/
+/** $VER: State.cpp (2026.06.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -189,6 +189,7 @@ void state_t::Reset() noexcept
     _BackgroundMode_Deprecated = BackgroundMode::Artwork;
     _ShowArtworkOnBackground = true;
     _ArtworkOpacity = 1.f;
+    _ArtworkBlurSigma = 0.f;
     _ArtworkFilePath.clear();
     _FitMode = FitMode::FitBig;
     _FitWindow = false;
@@ -465,6 +466,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _ArtworkType = other._ArtworkType;
 
         _ArtworkOpacity = other._ArtworkOpacity;
+        _ArtworkBlurSigma = other._ArtworkBlurSigma;
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
         _FitWindow = other._FitWindow;
@@ -1525,6 +1527,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _FitMode                 = Artwork.value("fitMode", _FitMode);
     _FitWindow               = Artwork.value("fitWindow", _FitWindow);
     _ArtworkOpacity          = Artwork.value("opacity", _ArtworkOpacity);
+    _ArtworkBlurSigma        = Artwork.value("blurSigma", _ArtworkBlurSigma);
     _ArtworkFilePath         = msc::UTF8ToWide(Artwork.value("filePath", msc::WideToUTF8(_ArtworkFilePath)));
 
     const auto & Grid = Object.value("grid", json::object());
@@ -1809,6 +1812,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "fitMode", _FitMode },
                 { "fitWindow", _FitWindow },
                 { "opacity", _ArtworkOpacity },
+                { "blurSigma", _ArtworkBlurSigma },
                 { "filePath", msc::WideToUTF8(_ArtworkFilePath) },
             })
         ), 

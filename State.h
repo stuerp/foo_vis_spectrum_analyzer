@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.05.22) P. Stuer **/
+/** $VER: State.h (2026.06.08) P. Stuer **/
 
 #pragma once
 
@@ -256,6 +256,7 @@ public:
         ArtworkType _ArtworkType;
 
         FLOAT _ArtworkOpacity;                                          // 0.0 .. 1.0
+        FLOAT _ArtworkBlurSigma;                                        // 0.0 .. 1.0
         std::wstring _ArtworkFilePath;                                  // Script that generates a valid file path to load artwork from.
         FitMode _FitMode;                                               // Determines how over- or undersized artwork is rendered.
         bool _FitWindow;                                                // True when the component window instead of the client area of the graph is used to fit artwork.

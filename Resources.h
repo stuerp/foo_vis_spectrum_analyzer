@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.05.31) P. Stuer **/
+/** $VER: Resources.h (2026.06.08) P. Stuer **/
 
 #pragma once
 
@@ -286,10 +286,11 @@
 #define IDC_FIT_MODE                    6086
 #define IDC_FIT_WINDOW                  6088
 
-#define IDC_ARTWORK_OPACITY_LBL         6090
-#define IDC_ARTWORK_OPACITY             6092
-#define IDC_ARTWORK_OPACITY_SPIN        6094
-#define IDC_ARTWORK_OPACITY_LBL_2       6096
+#define IDC_ARTWORK_OPACITY             6090
+#define IDC_ARTWORK_OPACITY_SPIN        6092
+
+#define IDC_ARTWORK_BLUR_SIGMA          6094
+#define IDC_ARTWORK_BLUR_SIGMA_SLIDER   6096
 
 #define IDC_NUM_ARTWORK_COLORS_LBL      6100
 #define IDC_NUM_ARTWORK_COLORS          6102

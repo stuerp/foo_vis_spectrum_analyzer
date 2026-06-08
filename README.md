@@ -145,6 +145,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.11.0.0-alpha4, 2026-xx-xx
 
+- New: Artwork can be blurred.
 - Fixed: Static content of the bit meter did not resize correctly.
 
 You can read the full history [here](docs/History.md).

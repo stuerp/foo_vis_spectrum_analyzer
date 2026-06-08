@@ -753,6 +753,10 @@ Enable to use the full component window as available area instead of the client 
 
 Determines the opacity of the artwork when displayed.
 
+`Artwork blur`
+
+Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring.
+
 `Artwork file path`
 
 A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background.

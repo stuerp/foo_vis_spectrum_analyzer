@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.05.24) P. Stuer **/
+/** $VER: Constants.h (2026.06.08) P. Stuer **/
 
 #pragma once
 
@@ -26,6 +26,9 @@ inline const double MaxSmoothingFactor = 1.;
 
 inline const double MinArtworkOpacity = 0.;
 inline const double MaxArtworkOpacity = 1.;
+
+inline const double MinArtworkBlurSigma = 0.;
+inline const double MaxArtworkBlurSigma = 20.;
 
 inline const uint32_t MinArtworkColors = 2;
 inline const uint32_t MaxArtworkColors = 16;
@@ -598,6 +601,8 @@ enum class ConfigurationChanges : uint32_t
 
     RefreshRate  = 1 << 2,
     Oscilloscope = 1 << 3, // Configuration change impacts the oscilloscope.
+
+    Artwork      = 1 << 4, // Configuration change impacts how the artwork is rendered.
 
     All = ~0u,
 };

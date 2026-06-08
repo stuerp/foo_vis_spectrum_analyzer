@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2025.10.22) P. Stuer **/
+/** $VER: Artwork.cpp (2026.06.08) P. Stuer **/
 
 #include "pch.h"
 
@@ -7,7 +7,7 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
-#include "Support.h"
+//include "Support.h"
 
 #pragma hdrstop
 
@@ -169,11 +169,29 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
     if (_Bitmap != nullptr)
     {
+        FLOAT Scalar = 1.f;
         D2D1_RECT_F Rect = rect;
 
-        AdjustRect(state->_FitMode, Rect);
+        AdjustRect(state->_FitMode, Scalar, Rect);
 
-        deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        if (state->_ArtworkBlurSigma == 0.f)
+        {
+            deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        }
+        else
+        {
+            _ScaleEffect->SetInput(0, _Bitmap);
+            _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar, Scalar));
+
+            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
+
+            _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, state->_ArtworkOpacity);
+
+            const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
+
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+            deviceContext->DrawImage(_OpacityEffect, Offset);
+        }
     }
 
     _CriticalSection.Leave();
@@ -182,15 +200,13 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
-void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rect) const noexcept
+void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept
 {
     const FLOAT MaxWidth  = rect.right  - rect.left;
     const FLOAT MaxHeight = rect.bottom - rect.top;
 
     FLOAT WScalar = 1.f;
     FLOAT HScalar = 1.f;
-
-    FLOAT Scalar = 1.f;
 
     D2D1_SIZE_F Size = _Bitmap->GetSize();
 
@@ -202,18 +218,18 @@ void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rec
         if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitBig))
             HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
 
-        Scalar = std::min(WScalar, HScalar);
+        scalar = std::min(WScalar, HScalar);
     }
     else
     {
         WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
         HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
 
-        Scalar = std::max(WScalar, HScalar);
+        scalar = std::max(WScalar, HScalar);
     }
 
-    Size.width  *= Scalar;
-    Size.height *= Scalar;
+    Size.width  *= scalar;
+    Size.height *= scalar;
 
     rect.left   += (MaxWidth  - Size.width)  / 2.f;
     rect.top    += (MaxHeight - Size.height) / 2.f;
@@ -242,6 +258,30 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 
     _CriticalSection.Leave();
 
+    if (SUCCEEDED(hr) && (_ScaleEffect == nullptr))
+        hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
+
+    if (SUCCEEDED(hr) && (_BlurEffect == nullptr))
+    {
+        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+
+        if (SUCCEEDED(hr))
+        {
+            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+
+            _BlurEffect->SetInputEffect(0, _ScaleEffect);
+        }
+    }
+
+    if (SUCCEEDED(hr) && (_OpacityEffect == nullptr))
+    {
+        hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
+
+        if (SUCCEEDED(hr))
+            _OpacityEffect->SetInputEffect(0, _BlurEffect);
+    }
+
     return hr;
 }
 
@@ -250,6 +290,10 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 /// </summary>
 void artwork_t::DeleteDeviceSpecificResources() noexcept
 {
+    _OpacityEffect.Release();
+    _BlurEffect.Release();
+    _ScaleEffect.Release();
+
     _CriticalSection.Enter();
 
     _Bitmap.Release();

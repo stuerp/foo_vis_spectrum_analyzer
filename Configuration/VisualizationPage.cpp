@@ -54,7 +54,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
         { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
-        { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring." },
+        { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
     };
 

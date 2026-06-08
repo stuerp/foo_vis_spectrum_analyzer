@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.03.18) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.06.08) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -587,6 +587,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::RenderLoop:
             case ConfigurationChanges::RefreshRate:
             case ConfigurationChanges::Oscilloscope:
+            case ConfigurationChanges::Artwork:
             default:
                 break;
         }

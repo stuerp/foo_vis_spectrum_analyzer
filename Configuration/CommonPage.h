@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: CommonPage.h (2026.06.08) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -32,6 +32,7 @@ public:
     void OnButtonClick(UINT, int id, CWindow) noexcept override final;
 
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
+    LRESULT OnHScroll(UINT, WPARAM, LPARAM) noexcept;
 
 private:
     void InitializeControls() noexcept override;

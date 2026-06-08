@@ -1,142 +1,115 @@
 
-/** $VER: CommonPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: CommonPageLayout.h (2026.06.08) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
 #include "ConfigurationDialogLayout.h"
 
-// Groupbox
+// Groupbox: Common
 #define X_B04   0
 #define Y_B04   0
 
-    #pragma region Smoothing Method
-    // Label
+    // Label: Smoothing Method
     #define W_A17    66
     #define H_A17    H_LBL
     #define X_A17    X_B04 + 5
     #define Y_A17    Y_B04 + 11
 
-    // Combobox
+    // Combobox: Smoothing Method
     #define W_A18    60
     #define H_A18    H_CBX
     #define X_A18    X_A17 + W_A17 + IX
     #define Y_A18    Y_A17
-    #pragma endregion
 
-    #pragma region Smoothing Factor
-    // Label
+    // Label: Smoothing Factor
     #define W_A37    66
     #define H_A37    H_LBL
     #define X_A37    X_A17
     #define Y_A37    Y_A18 + H_A18 + IY
 
-    // Textbox
+    // Textbox: Smoothing Factor
     #define W_A38    30
     #define H_A38    H_TBX
     #define X_A38    X_A37 + W_A37 + IX
     #define Y_A38    Y_A37
-    #pragma endregion
 
-    #pragma region Tool tips
-
-    // Checkbox
+    // Checkbox: Tool tips
     #define W_A87    86
     #define H_A87    H_CHB
     #define X_A87    X_A17
     #define Y_A87    Y_A38 + H_A38 + IY
 
-    #pragma endregion
-
-    #pragma region Suppress mirror image
-
-    // Checkbox
+    // Checkbox: Suppress mirror image
     #define W_G19    86
     #define H_G19    H_CHB
     #define X_G19    X_A87
     #define Y_G19    Y_A87 + H_A87 + IY
 
-    #pragma endregion
-
-    #pragma region Visualize during pause
-
-    // Checkbox
+    // Checkbox: Visualize during pause
     #define W_A95    86
     #define H_A95    H_CHB
     #define X_A95    X_A87 + W_A87 + IX
     #define Y_A95    Y_A87
 
-    #pragma endregion
-
-#pragma region Artwork
-// Groupbox
+// Groupbox: Artwork
 #define X_B06   X_B04
 #define Y_B06   Y_B04 + H_B04 + IY
 
-    /** Artwork Type **/
-
-    // Label
+    // Label: Artwork Type
     #define W_G40    66
     #define H_G40    H_LBL
     #define X_G40    X_B06 + 5
     #define Y_G40    Y_B06 + 11
 
-    // Combobox
+    // Combobox: Artwork Type
     #define W_G41    86
     #define H_G41    H_CBX
     #define X_G41    X_G40 + W_G40 + IX
     #define Y_G41    Y_G40
 
-    /** Artwork Colors **/
-
-    // Label
+    // Label: Artwork Colors
     #define W_G06    66
     #define H_G06    H_LBL
     #define X_G06    X_G40
     #define Y_G06    Y_G41 + H_G41 + IY
 
-    // Textbox
+    // Textbox: Artwork Colors
     #define W_G07    30
     #define H_G07    H_TBX
     #define X_G07    X_G06 + W_G06 + IX
     #define Y_G07    Y_G06
 
-    /** Lightness Threshold **/
-
-    // Label
+    // Label: Lightness Threshold
     #define W_G08    66
     #define H_G08    H_LBL
     #define X_G08    X_G06
     #define Y_G08    Y_G07 + H_G07 + IY
 
-    // Textbox
+    // Textbox: Lightness Threshold
     #define W_G09    30
     #define H_G09    H_TBX
     #define X_G09    X_G08 + W_G08 + IX
     #define Y_G09    Y_G08
 
-    // Label "%"
+    // Label: "%"
     #define W_G10    10
     #define H_G10    H_LBL
     #define X_G10    X_G09 + W_G09 + IX
     #define Y_G10    Y_G08
 
-    /** Color Order **/
-
-    // Label
+    // Label: Color Order
     #define W_G11    66
     #define H_G11    H_LBL
     #define X_G11    X_G08
     #define Y_G11    Y_G09 + H_G09 + IY
 
-    // Combobox
+    // Combobox: Color Order
     #define W_G12    86
     #define H_G12    H_CBX
     #define X_G12    X_G11 + W_G11 + IX
     #define Y_G12    Y_G11
 
-    /** Checkbox: Show artwork on background **/
-
-    // Checkbox
+    // Checkbox: Show artwork on background
     #define W_G02    160
     #define H_G02    H_CHB
     #define X_G02    X_B06 + 5
@@ -164,47 +137,58 @@
     #define X_G32    X_G31
     #define Y_G32    Y_G31 + H_G31 + IY
 
-    /** Artwork Opacity **/
-
-    // Label
+    // Label: Opacity
     #define W_G03    66
     #define H_G03    H_LBL
     #define X_G03    X_G30
     #define Y_G03    Y_G32 + H_G32 + IY
 
-    // Textbox
+    // Textbox: Opacity Value
     #define W_G04    30
     #define H_G04    H_TBX
     #define X_G04    X_G03 + W_G03 + IX
     #define Y_G04    Y_G03
 
-    // Label: Unit
+    // Label: Opacity Unit
     #define W_G05    10
     #define H_G05    H_LBL
     #define X_G05    X_G04 + W_G04 + IX
     #define Y_G05    Y_G03
 
-    /** Script **/
+    // Label: Blur Sigma
+    #define W_G20    18
+    #define H_G20    H_LBL
+    #define X_G20    X_G05 + W_G05 + IX
+    #define Y_G20    Y_G03
 
-    // Label
+    // Label: Blur Sigma Value
+    #define W_G21    34
+    #define H_G21    H_LBL
+    #define X_G21    X_G20 + W_G20 + IX
+    #define Y_G21    Y_G20
+
+    // Slider: Blur Sigma
+    #define W_G22    100
+    #define H_G22    15
+    #define X_G22    X_G21 + W_G21 + IX
+    #define Y_G22    Y_G21 - 2
+
+    // Label: Script
     #define W_G13    66
     #define H_G13    H_LBL
     #define X_G13    X_G03
     #define Y_G13    Y_G04 + H_G04 + IY
 
-    // Textbox
+    // Textbox: Script
     #define W_G14    100
     #define H_G14    H_TBX
     #define X_G14    X_G13 + W_G13 + IX
     #define Y_G14    Y_G13
 
-#define W_B06  184
+#define W_B06  300
 #define H_B06   11 + H_G41 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
 
-#pragma endregion
-
-#pragma region Component
-// Groupbox
+// Groupbox: Component
 #define X_K00   X_B06
 #define Y_K00   Y_B06 + H_B06 + IY
 #define W_K00   W_B06
@@ -222,8 +206,6 @@
     #define H_K02    H_CBX
 
 #define H_K00   11 + H_K02 + 7
-
-#pragma endregion
 
 #define W_B04  184
 #define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7
