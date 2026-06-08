@@ -1,6 +1,11 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha3, 2026-05-30
+
+- Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.
+- Fixed: The JSON configuration file reader ignored the Y-axis visibility setting.
+
 v0.11.0.0-alpha2, 2026-05-25
 
 - Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.

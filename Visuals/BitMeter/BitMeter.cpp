@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.05.24) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.05.31) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -88,6 +88,8 @@ void bit_meter_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
+    _StaticContentCommandList = nullptr;
+
     _IsResized = false;
 }
 
@@ -175,6 +177,8 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 {
     if ((_Size.width == 0.f) || _Size.height == 0.f)
         return E_FAIL;
+
+    Resize();
 
     if (_MeasurementCount != _Analysis->_BitMeasurements.size())
     {
