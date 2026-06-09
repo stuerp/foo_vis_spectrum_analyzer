@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.06.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.06.09) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -111,7 +111,7 @@ void common_page_t::InitializeControls() noexcept
         auto w = (CTrackBarCtrl) GetDlgItem(IDC_ARTWORK_BLUR_SIGMA_SLIDER);
 
         w.SetBuddy(GetDlgItem(IDC_ARTWORK_BLUR_SIGMA), TRUE);
-        w.SetRange(0, 20 * 10);
+        w.SetRange((int) MinArtworkBlurSigma, (int) MaxArtworkBlurSigma * 10);
         w.SetPageSize(1);
         w.SetPos((int) (_State->_ArtworkBlurSigma * 10.f));
 

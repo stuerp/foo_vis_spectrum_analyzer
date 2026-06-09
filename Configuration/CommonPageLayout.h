@@ -1,5 +1,5 @@
 
-/** $VER: CommonPageLayout.h (2026.06.08) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: CommonPageLayout.h (2026.06.09) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -50,6 +50,9 @@
     #define H_A95    H_CHB
     #define X_A95    X_A87 + W_A87 + IX
     #define Y_A95    Y_A87
+
+#define W_B04  288
+#define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7
 
 // Groupbox: Artwork
 #define X_B06   X_B04
@@ -180,12 +183,12 @@
     #define Y_G13    Y_G04 + H_G04 + IY
 
     // Textbox: Script
-    #define W_G14    100
-    #define H_G14    H_TBX
     #define X_G14    X_G13 + W_G13 + IX
     #define Y_G14    Y_G13
+    #define W_G14    208
+    #define H_G14    H_TBX
 
-#define W_B06  300
+#define W_B06  W_B04
 #define H_B06   11 + H_G41 + IY + H_G07 + IY + H_G09 + IY + H_G12 + IY + H_G02 + IY + H_G31 + IY + H_G32 + IY + H_G04 + IY + H_G14 + 7
 
 // Groupbox: Component
@@ -206,6 +209,3 @@
     #define H_K02    H_CBX
 
 #define H_K00   11 + H_K02 + 7
-
-#define W_B04  184
-#define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7

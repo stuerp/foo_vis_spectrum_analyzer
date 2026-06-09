@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.06.08) P. Stuer **/
+/** $VER: Artwork.cpp (2026.06.09) P. Stuer **/
 
 #include "pch.h"
 
@@ -191,6 +191,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
             deviceContext->DrawImage(_OpacityEffect, Offset);
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
     }
 
