@@ -1,6 +1,11 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha4, 2026-06-09
+
+- New: Artwork can be blurred. Setting the number of pixels to 0 (default) disables the blurring.
+- Fixed: Static content of the bit meter did not resize correctly.
+
 v0.11.0.0-alpha3, 2026-05-30
 
 - Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.

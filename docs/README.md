@@ -753,9 +753,9 @@ Enable to use the full component window as available area instead of the client 
 
 Determines the opacity of the artwork when displayed.
 
-`Artwork blur`
+`Artwork blur radius`
 
-Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring. Setting the number of pixels to 0 (default) disables the blurring.
+Specifies the number of pixels used for the Gaussian blur radius. A higher value increases the blurring. Setting the number of pixels to 0 (default) disables the blurring.
 
 `Artwork file path`
 

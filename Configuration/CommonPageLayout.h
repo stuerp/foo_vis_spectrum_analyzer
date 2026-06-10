@@ -158,20 +158,20 @@
     #define X_G05    X_G04 + W_G04 + IX
     #define Y_G05    Y_G03
 
-    // Label: Blur Sigma
-    #define W_G20    18
+    // Label: Blur Radius
+    #define W_G20    38
     #define H_G20    H_LBL
     #define X_G20    X_G05 + W_G05 + IX
     #define Y_G20    Y_G03
 
-    // Label: Blur Sigma Value
+    // Label: Blur Radius Value
     #define W_G21    34
     #define H_G21    H_LBL
     #define X_G21    X_G20 + W_G20 + IX
     #define Y_G21    Y_G20
 
-    // Slider: Blur Sigma
-    #define W_G22    100
+    // Slider: Blur Radius
+    #define W_G22    80
     #define H_G22    15
     #define X_G22    X_G21 + W_G21 + IX
     #define Y_G22    Y_G21 - 2

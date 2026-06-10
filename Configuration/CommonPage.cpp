@@ -115,7 +115,7 @@ void common_page_t::InitializeControls() noexcept
         w.SetPageSize(1);
         w.SetPos((int) (_State->_ArtworkBlurSigma * 10.f));
 
-        SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma).c_str());
+        SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma * 3.f).c_str());
     }
     {
         UDACCEL Accel[] =
@@ -533,7 +533,7 @@ LRESULT common_page_t::OnHScroll(UINT msg, WPARAM wParam, LPARAM lParam) noexcep
         {
             _State->_ArtworkBlurSigma = (FLOAT) w.GetPos() / 10.f;
 
-            SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma).c_str());
+            SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma * 3.f).c_str());
             break;
         }
 

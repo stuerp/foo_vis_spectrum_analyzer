@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.06.09) P. Stuer **/
+/** $VER: Artwork.cpp (2026.06.10) P. Stuer **/
 
 #include "pch.h"
 
@@ -180,8 +180,14 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
         }
         else
         {
+            FLOAT DPIX, DPIY;
+
+            deviceContext->GetDpi(&DPIX, &DPIY);
+
+            const FLOAT DPIScale = DPIX / 96.0f;
+
             _ScaleEffect->SetInput(0, _Bitmap);
-            _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar, Scalar));
+            _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
 
             _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
 
@@ -189,9 +195,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
             const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
 
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
             deviceContext->DrawImage(_OpacityEffect, Offset);
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
     }
 
@@ -201,7 +205,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
-void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept
+void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept
 {
     const FLOAT MaxWidth  = rect.right  - rect.left;
     const FLOAT MaxHeight = rect.bottom - rect.top;

@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.06.08) P. Stuer  **/
+/** $VER: Artwork.h (2026.06.10) P. Stuer  **/
 
 #pragma once
 
@@ -49,7 +49,7 @@ public:
     HRESULT DeleteWICResources() noexcept;
 
 private:
-    void AdjustRect(_In_ const FitMode fitMode, _Inout_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
+    void AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
 
 private:
     enum Status
