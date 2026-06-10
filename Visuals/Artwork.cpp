@@ -126,7 +126,7 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 
         if (SUCCEEDED(hr))
         {
-            uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+            const uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
 
             hr = ColorThief::GetPalette(_FormatConverter, Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
         }
@@ -179,7 +179,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
         deviceContext->GetDpi(&DPIX, &DPIY);
 
-        const FLOAT DPIScale = DPIX / 96.0f;
+        const FLOAT DPIScale = DPIX / 96.f;
 
         _ScaleEffect->SetInput(0, _Bitmap);
         _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
@@ -202,25 +202,24 @@ void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _In
     const FLOAT MaxWidth  = rect.right  - rect.left;
     const FLOAT MaxHeight = rect.bottom - rect.top;
 
-    FLOAT WScalar = 1.f;
-    FLOAT HScalar = 1.f;
+    FLOAT WScalar = 1.f, HScalar = 1.f;
 
     D2D1_SIZE_F Size = _Bitmap->GetSize();
 
     if (fitMode != FitMode::Fill)
     {
         if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitBig))
-            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+            WScalar = (Size.width  > MaxWidth)  ? MaxWidth  / Size.width  : 1.f;
 
         if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitBig))
-            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+            HScalar = (Size.height > MaxHeight) ? MaxHeight / Size.height : 1.f;
 
         scalar = std::min(WScalar, HScalar);
     }
     else
     {
-        WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
-        HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
+        WScalar = (Size.width  > MaxWidth)  ? Size.width  / MaxWidth  : MaxWidth  / Size.width;
+        HScalar = (Size.height > MaxHeight) ? Size.height / MaxHeight : MaxHeight / Size.height;
 
         scalar = std::max(WScalar, HScalar);
     }

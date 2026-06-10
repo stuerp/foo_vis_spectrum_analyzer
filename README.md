@@ -145,7 +145,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.11.0.0-alpha5, 2026-xx-xx
 
-- 
+- Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
 
 You can read the full history [here](docs/History.md).
 
