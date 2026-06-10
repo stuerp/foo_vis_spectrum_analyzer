@@ -104,7 +104,7 @@ LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
 /// </summary>
 void cui_element_t::ToggleFullScreen() noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     if (!_IsFullScreen)
     {
@@ -154,8 +154,6 @@ void cui_element_t::ToggleFullScreen() noexcept
 
         _IsFullScreen = false;
     }
-
-    _CriticalSection.Leave();
 }
 
 /// <summary>

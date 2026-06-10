@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Direct2D.h"
 
-#include <libmsc.h>
+#include <Win32Exception.h>
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "dwrite")

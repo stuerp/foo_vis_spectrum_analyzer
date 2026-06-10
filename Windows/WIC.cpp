@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "WIC.h"
 
-#include <libmsc.h>
+#include <Win32Exception.h>
 
 #pragma comment(lib, "windowscodecs")
 

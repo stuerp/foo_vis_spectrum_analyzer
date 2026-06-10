@@ -746,7 +746,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 

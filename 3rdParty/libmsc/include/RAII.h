@@ -1,5 +1,5 @@
 
-/** $VER: RAII.h (2025.09.16) P. Stuer - Various RAII wrappers for common OS resources **/
+/** $VER: RAII.h (2026.06.10) P. Stuer - Various RAII wrappers for common OS resources **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 
 namespace fs = std::filesystem;
 
-#include "Win32Exception.h"
+#include "CriticalSection.h"
 
 namespace msc
 {
@@ -74,6 +74,31 @@ private:
             _Handle = INVALID_HANDLE_VALUE;
         }
     }
+};
+
+/// <summary>
+/// Implements a synchronization lock. 
+/// </summary>
+class lock_t
+{
+public:
+    lock_t(critical_section_t & cs) : _cs(cs)
+    {
+        _cs.Enter();
+    }
+
+    lock_t(const lock_t &) = delete;
+    lock_t & operator=(const lock_t &) = delete;
+    lock_t(lock_t &&) = delete;
+    lock_t & operator=(lock_t &&) = delete;
+
+    ~lock_t()
+    {
+        _cs.Leave();
+    }
+     
+private:
+    critical_section_t & _cs;
 };
 
 }

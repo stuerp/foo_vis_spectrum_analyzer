@@ -13,6 +13,8 @@
 #include "Error.h"
 #include "PresetManager.h"
 
+#include <Constants.h>
+
 #pragma hdrstop
 
 /// <summary>
@@ -122,17 +124,17 @@ void uielement_t::OnDestroy()
 
     ::CloseHandle(_hStopRendering);
 
-    _CriticalSection.Enter();
+    {
+        msc::lock_t Lock(_CriticalSection);
 
-    _Grid.Clear();
+        _Grid.Clear();
 
-    _VisualisationStream.release();
+        _VisualisationStream.release();
 
-    DeleteDeviceSpecificResources();
+        DeleteDeviceSpecificResources();
 
-    DeleteDeviceIndependentResources();
-
-    _CriticalSection.Leave();
+        DeleteDeviceIndependentResources();
+    }
 }
 
 /// <summary>
@@ -170,7 +172,7 @@ void uielement_t::OnSize(UINT type, CSize size)
     if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
         return;
 
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     // Remove the bitmap from the device context.
     _DeviceContext->SetTarget(nullptr);
@@ -190,8 +192,6 @@ void uielement_t::OnSize(UINT type, CSize size)
         _DeviceContext->SetTarget(_BackBuffer);
 
     Resize();
-
-    _CriticalSection.Leave();
 
 //  ::InvalidateRect(m_hWnd, nullptr, FALSE); // Force a repaint.
 }
@@ -414,13 +414,11 @@ void uielement_t::Resize()
         }
 
         {
-            _CriticalSection.Enter();
+            msc::lock_t Lock(_CriticalSection);
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
             _RenderState._StyleManager.DeleteGradientBrushes();
-
-            _CriticalSection.Leave();
         }
 
         for (auto & Item : _Grid)
@@ -443,7 +441,7 @@ void uielement_t::OnColorsChanged()
     _UIState._StyleManager.UpdateCurrentColors();
 
     {
-        _CriticalSection.Enter();
+        msc::lock_t Lock(_CriticalSection);
 
         _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
 
@@ -451,8 +449,6 @@ void uielement_t::OnColorsChanged()
 
         // Notify the render thread.
         _Event.Raise(event_t::UserInterfaceColorsChanged);
-
-        _CriticalSection.Leave();
     }
 
     // Notify the configuration dialog about the changed UI colors.
@@ -543,9 +539,9 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
         }
     }
 
-    _CriticalSection.Enter();
-
     {
+        msc::lock_t Lock(_CriticalSection);
+
         _RenderState = _UIState; // Copies only the settings that are relevant for rendering.
 
         switch (configurationChanges)
@@ -586,14 +582,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::None:
             case ConfigurationChanges::RenderLoop:
             case ConfigurationChanges::RefreshRate:
-            case ConfigurationChanges::Oscilloscope:
             case ConfigurationChanges::Artwork:
             default:
                 break;
         }
     }
-
-    _CriticalSection.Leave();
 
     if (configurationChanges == ConfigurationChanges::All)
     {

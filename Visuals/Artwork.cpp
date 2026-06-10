@@ -7,7 +7,9 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
-//include "Support.h"
+
+#include <State.h>
+#include <Constants.h>
 
 #pragma hdrstop
 
@@ -16,7 +18,7 @@
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -45,8 +47,6 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 
     SetStatus(Initialized);
 
-    _CriticalSection.Leave();
-
     return hr;
 }
 
@@ -55,7 +55,7 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -81,8 +81,6 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 
     SetStatus(Initialized);
 
-    _CriticalSection.Leave();
-
     return S_OK;
 }
 
@@ -91,7 +89,7 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 /// </summary>
 HRESULT artwork_t::DeleteWICResources() noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -106,8 +104,6 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 
     SetStatus(Idle);
 
-    _CriticalSection.Leave();
-
     return S_OK;
 }
 
@@ -116,9 +112,9 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 /// </summary>
 HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
-    HRESULT hr = E_FAIL;
+    msc::lock_t Lock(_CriticalSection);
 
-    _CriticalSection.Enter();
+    HRESULT hr = E_FAIL;
 
     if (_FormatConverter != nullptr)
     {
@@ -155,8 +151,6 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 
     SetStatus(GotColors);
 
-    _CriticalSection.Leave();
-
     return hr;
 }
 
@@ -165,41 +159,39 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 /// </summary>
 void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
-    if (_Bitmap != nullptr)
+    if (_Bitmap == nullptr)
+        return;
+
+    FLOAT Scalar = 1.f;
+    D2D1_RECT_F Rect = rect;
+
+    AdjustRect(state->_FitMode, Scalar, Rect);
+
+    if (state->_ArtworkBlurSigma == 0.f)
     {
-        FLOAT Scalar = 1.f;
-        D2D1_RECT_F Rect = rect;
-
-        AdjustRect(state->_FitMode, Scalar, Rect);
-
-        if (state->_ArtworkBlurSigma == 0.f)
-        {
-            deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-        }
-        else
-        {
-            FLOAT DPIX, DPIY;
-
-            deviceContext->GetDpi(&DPIX, &DPIY);
-
-            const FLOAT DPIScale = DPIX / 96.0f;
-
-            _ScaleEffect->SetInput(0, _Bitmap);
-            _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
-
-            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
-
-            _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, state->_ArtworkOpacity);
-
-            const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
-
-            deviceContext->DrawImage(_OpacityEffect, Offset);
-        }
+        deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
+    else
+    {
+        FLOAT DPIX, DPIY;
 
-    _CriticalSection.Leave();
+        deviceContext->GetDpi(&DPIX, &DPIY);
+
+        const FLOAT DPIScale = DPIX / 96.0f;
+
+        _ScaleEffect->SetInput(0, _Bitmap);
+        _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
+
+        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, state->_ArtworkOpacity);
+
+        const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
+
+        deviceContext->DrawImage(_OpacityEffect, Offset);
+    }
 }
 
 /// <summary>
@@ -248,20 +240,22 @@ void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _In
 /// </summary>
 HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _CriticalSection.Enter();
+    HRESULT hr = S_OK;
 
-    HRESULT hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
-
-    // Create a Direct2D bitmap from the WIC bitmap source.
-    if (SUCCEEDED(hr) && (_Bitmap == nullptr))
     {
-        hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+        msc::lock_t Lock(_CriticalSection);
 
-        if (SUCCEEDED(hr))
-            SetStatus(GotBitmap);
+        hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
+
+        // Create a Direct2D bitmap from the WIC bitmap source.
+        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
+        {
+            hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+
+            if (SUCCEEDED(hr))
+                SetStatus(GotBitmap);
+        }
     }
-
-    _CriticalSection.Leave();
 
     if (SUCCEEDED(hr) && (_ScaleEffect == nullptr))
         hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
@@ -299,11 +293,11 @@ void artwork_t::DeleteDeviceSpecificResources() noexcept
     _BlurEffect.Release();
     _ScaleEffect.Release();
 
-    _CriticalSection.Enter();
+    {
+        msc::lock_t Lock(_CriticalSection);
 
-    _Bitmap.Release();
+        _Bitmap.Release();
 
-    SetStatus(Initialized);
-
-    _CriticalSection.Leave();
+        SetStatus(Initialized);
+    }
 }
