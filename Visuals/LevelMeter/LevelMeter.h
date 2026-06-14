@@ -37,7 +37,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -48,11 +48,11 @@ private:
 private:
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    style_t * _LeftRightStyle;
-    style_t * _LeftRightIndicatorStyle;
-    style_t * _MidSideStyle;
-    style_t * _MidSideIndicatorStyle;
-    style_t * _AxisStyle;
+    style_t _LeftRightStyle;
+    style_t _LeftRightIndicatorStyle;
+    style_t _MidSideStyle;
+    style_t _MidSideIndicatorStyle;
+    style_t _AxisStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

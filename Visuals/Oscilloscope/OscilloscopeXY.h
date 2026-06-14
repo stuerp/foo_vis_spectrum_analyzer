@@ -24,7 +24,7 @@ public:
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
     void Resize() noexcept;
 
 private:
@@ -37,8 +37,8 @@ private:
     HRESULT CreateGridCommandList() noexcept;
 
 private:
-    style_t * _XAxisTextStyle;
-    style_t * _YAxisTextStyle;
+    style_t _XAxisTextStyle;
+    style_t _YAxisTextStyle;
 
     CComPtr<ID2D1CommandList> _GridCommandList;
 };

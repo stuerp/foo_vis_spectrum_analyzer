@@ -37,7 +37,7 @@ public:
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -55,21 +55,21 @@ private:
 
     const FLOAT _TickSize = 4.f;
 
-    style_t * _BackgroundStyle;
+    style_t _BackgroundStyle;
 
-    style_t * _PeakStyle;
-    style_t * _Peak0dBStyle;
-    style_t * _MaxPeakStyle;
-    style_t * _PeakTextStyle;
+    style_t _PeakStyle;
+    style_t _Peak0dBStyle;
+    style_t _MaxPeakStyle;
+    style_t _PeakTextStyle;
 
-    style_t * _RMSStyle;
-    style_t * _RMS0dBStyle;
-    style_t * _RMSTextStyle;
+    style_t _RMSStyle;
+    style_t _RMS0dBStyle;
+    style_t _RMSTextStyle;
 
-    style_t * _NameStyle;
+    style_t _NameStyle;
 
-    style_t * _ScaleTextStyle;
-    style_t * _ScaleLineStyle;
+    style_t _ScaleTextStyle;
+    style_t _ScaleLineStyle;
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
 

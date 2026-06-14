@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.06.10) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.06.14) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -26,10 +26,10 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void spectrum_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -58,11 +58,11 @@ void spectrum_t::Resize() noexcept
     if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xt = ((_GraphDescription->_XAxisMode != XAxisMode::None) && _GraphDescription->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
-    const FLOAT xb = ((_GraphDescription->_XAxisMode != XAxisMode::None) && _GraphDescription->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xb = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
 
-    const FLOAT yl = ((_GraphDescription->_YAxisMode != YAxisMode::None) && _GraphDescription->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
-    const FLOAT yr = ((_GraphDescription->_YAxisMode != YAxisMode::None) && _GraphDescription->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yl = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yr = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
 
     _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
     _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
@@ -154,13 +154,13 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
-    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = std::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
-    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
@@ -177,12 +177,12 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the bar background, even above the Nyquist frequency.
         if (fb.HasDarkBackground)
         {
-            if (_DarkBackgroundStyle->IsEnabled())
+            if (_DarkBackgroundStyle.IsEnabled())
                 RenderBarPart(deviceContext, Rect, _DarkBackgroundStyle);
         }
         else
         {
-            if (_LightBackgroundStyle->IsEnabled())
+            if (_LightBackgroundStyle.IsEnabled())
                 RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
         }
 
@@ -208,22 +208,22 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 /// <summary>
 /// Renders a single bar.
 /// </summary>
-void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept
+void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept
 {
     rect.top    = 0.f;
     rect.bottom = _ClientSize.height * (FLOAT) value;
 
     // Draw the bar area.
-    if (areaStyle->IsEnabled())
+    if (areaStyle.IsEnabled())
     {
-        if (_BarAreaStyle->IsAmplitudeBased())
-            _BarAreaStyle->SetBrushColor(value);
+        if (_BarAreaStyle.IsAmplitudeBased())
+            _BarAreaStyle.SetBrushColor(value);
 
         RenderBarPart(deviceContext, rect, areaStyle);
     }
 
     // Draw the bar top.
-    if (topStyle->IsEnabled())
+    if (topStyle.IsEnabled())
     {
         if (_State->_LEDMode)
         {
@@ -232,12 +232,12 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         }
         else
         {
-            rect.top    = std::clamp(rect.bottom - topStyle->_Thickness / 2.f, 0.f, _ClientSize.height);
-            rect.bottom = std::clamp(rect.top    + topStyle->_Thickness,       0.f, _ClientSize.height);
+            rect.top    = std::clamp(rect.bottom - topStyle._Thickness / 2.f, 0.f, _ClientSize.height);
+            rect.bottom = std::clamp(rect.top    + topStyle._Thickness,       0.f, _ClientSize.height);
         }
 
         if ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP))
-            topStyle->_Brush->SetOpacity((FLOAT) opacity);
+            topStyle._Brush->SetOpacity((FLOAT) opacity);
 
         RenderBarPart(deviceContext, rect, topStyle);
     }
@@ -246,7 +246,7 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
 /// <summary>
 /// Renders a part of a bar.
 /// </summary>
-void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * style) const noexcept
+void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept
 {
     if (_State->_LEDMode)
     {
@@ -260,12 +260,12 @@ void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F &
 
         const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _ClientSize.height };
 
-        deviceContext->FillOpacityMask(_OpacityMask, style->_Brush, Src, Src);
+        deviceContext->FillOpacityMask(_OpacityMask, style._Brush, Src, Src);
 
         deviceContext->PopAxisAlignedClip();
     }
     else
-        deviceContext->FillRectangle(rect, style->_Brush);
+        deviceContext->FillRectangle(rect, style._Brush);
 }
 
 /// <summary>
@@ -380,88 +380,88 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
         {
             // Draw the peak indicator area.
-            if (_BarPeakAreaStyle->IsEnabled())
+            if (_BarPeakAreaStyle.IsEnabled())
             {
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue);
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    if (_BarPeakAreaStyle->Has(style_t::Features::HorizontalGradient))
+                    if (_BarPeakAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarPeakAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
+                        const double Value = _BarPeakAreaStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
 
-                        _BarPeakAreaStyle->SetBrushColor(Value);
+                        _BarPeakAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle->_Brush);
+                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle._Brush);
 
                     Path.Release();
                 }
             }
 
             // Draw the peak indicator top.
-            if (_BarPeakTopStyle->IsEnabled() &&(_State->_PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
+            if (_BarPeakTopStyle.IsEnabled() &&(_State->_PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
             {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - _BarPeakTopStyle->_Thickness / 2.f;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + _BarPeakTopStyle->_Thickness;
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) - _BarPeakTopStyle._Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.MaxValue) + _BarPeakTopStyle._Thickness;
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    if (_BarPeakTopStyle->Has(style_t::Features::HorizontalGradient))
+                    if (_BarPeakTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarPeakTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
+                        const double Value = _BarPeakTopStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
 
-                        _BarPeakTopStyle->SetBrushColor(Value);
+                        _BarPeakTopStyle.SetBrushColor(Value);
                     }
 
-                    const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle->_Opacity;
+                    const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle._Opacity;
 
-                    _BarPeakTopStyle->_Brush->SetOpacity(Opacity);
+                    _BarPeakTopStyle._Brush->SetOpacity(Opacity);
 
-                    deviceContext->FillGeometry(Path, _BarPeakTopStyle->_Brush);
+                    deviceContext->FillGeometry(Path, _BarPeakTopStyle._Brush);
 
                     Path.Release();
                 }
             }
 
             // Draw the area of the bar.
-            if (_BarAreaStyle->IsEnabled())
+            if (_BarAreaStyle.IsEnabled())
             {
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value);
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    if (_BarAreaStyle->Has(style_t::Features::HorizontalGradient))
+                    if (_BarAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarAreaStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
+                        const double Value = _BarAreaStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
 
-                        _BarAreaStyle->SetBrushColor(Value);
+                        _BarAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarAreaStyle->_Brush);
+                    deviceContext->FillGeometry(Path, _BarAreaStyle._Brush);
 
                     Path.Release();
                 }
             }
 
             // Draw the peak indicator top.
-            if (_BarTopStyle->IsEnabled())
+            if (_BarTopStyle.IsEnabled())
             {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle->_Thickness / 2.f;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle->_Thickness;
+                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle._Thickness / 2.f;
+                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle._Thickness;
 
                 if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
                 {
-                    if (_BarTopStyle->Has(style_t::Features::HorizontalGradient))
+                    if (_BarTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
-                        const double Value = _BarTopStyle->Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
+                        const double Value = _BarTopStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.MaxValue : ((double) i / n);
 
-                        _BarTopStyle->SetBrushColor(Value);
+                        _BarTopStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarTopStyle->_Brush);
+                    deviceContext->FillGeometry(Path, _BarTopStyle._Brush);
 
                     Path.Release();
                 }
@@ -567,12 +567,12 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
-    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = ::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
-    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
     const FLOAT x = HOffset + msc::Map(NyquistScale, MinScale, MaxScale, 0.f, SpectrumWidth);
 
@@ -590,7 +590,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 {
     HRESULT hr = S_OK;
 
-    auto & StyleManager = _State->_OverlapGraphs ? _GraphDescription->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _State->_OverlapGraphs ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     if (SUCCEEDED(hr))
         hr = _XAxis.CreateDeviceSpecificResources(deviceContext);
@@ -608,22 +608,22 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         {
             case VisualizationType::Bars:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, L"", 1.f, &_BarAreaStyle);
+                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, L"", 1.f, _BarAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, L"", 1.f, &_BarTopStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, L"", 1.f, _BarTopStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, L"", 1.f, &_BarPeakAreaStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, L"", 1.f, _BarPeakAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, L"", 1.f, &_BarPeakTopStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, L"", 1.f, _BarPeakTopStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, deviceContext, _ClientSize, L"", 1.f, &_DarkBackgroundStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, deviceContext, _ClientSize, L"", 1.f, _DarkBackgroundStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, deviceContext, _ClientSize, L"", 1.f, &_LightBackgroundStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, deviceContext, _ClientSize, L"", 1.f, _LightBackgroundStyle);
 
                 if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
                     hr = CreateOpacityMask(deviceContext);
@@ -648,16 +648,16 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
             case VisualizationType::RadialBars:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarAreaStyle);
+                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarTopStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarTopStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakAreaStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarPeakAreaStyle);
 
                 if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, &_BarPeakTopStyle);
+                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarPeakTopStyle);
 
                 break;
             }
@@ -699,12 +699,12 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _CurvePeakLineStyle.DeleteDeviceSpecificResources();
     _CurvePeakAreaStyle.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_BarAreaStyle);
-    SafeRelease(&_BarTopStyle);
-    SafeRelease(&_BarPeakAreaStyle);
-    SafeRelease(&_BarPeakTopStyle);
-    SafeRelease(&_DarkBackgroundStyle);
-    SafeRelease(&_LightBackgroundStyle);
+    _BarAreaStyle.DeleteDeviceSpecificResources();
+    _BarTopStyle.DeleteDeviceSpecificResources();
+    _BarPeakAreaStyle.DeleteDeviceSpecificResources();
+    _BarPeakTopStyle.DeleteDeviceSpecificResources();
+    _DarkBackgroundStyle.DeleteDeviceSpecificResources();
+    _LightBackgroundStyle.DeleteDeviceSpecificResources();
 
     _NyquistMarkerStyle.DeleteDeviceSpecificResources();
 

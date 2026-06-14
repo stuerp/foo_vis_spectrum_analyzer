@@ -84,7 +84,7 @@ void graphs_page_t::InitializeControls() noexcept
 {
     _SelectedGraph = 0;
 
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     // Vertical Layout
     {
@@ -221,7 +221,7 @@ void graphs_page_t::UpdateControls() noexcept
 
         uint32_t i = 1;
 
-        for (const auto & Iter : _State->_GraphDescriptions)
+        for (const auto & Iter : _State->_GraphOptions)
         {
             w.AddString(!Iter._Description.empty() ? Iter._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
 
@@ -233,22 +233,22 @@ void graphs_page_t::UpdateControls() noexcept
 
     if (_State->_VerticalLayout)
     {
-        _State->_GridRowCount    = (size_t) _State->_GraphDescriptions.size();
+        _State->_GridRowCount    = (size_t) _State->_GraphOptions.size();
         _State->_GridColumnCount = (size_t) 1;
     }
     else
     {
         _State->_GridRowCount    = (size_t) 1;
-        _State->_GridColumnCount = (size_t) _State->_GraphDescriptions.size();
+        _State->_GridColumnCount = (size_t) _State->_GraphOptions.size();
     }
 
-    for (auto & gd : _State->_GraphDescriptions)
+    for (auto & gd : _State->_GraphOptions)
     {
         gd._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
         gd._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
     }
 
-    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
+    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphOptions.size() > 1);
 
     /* Vertical Layout **/
 
@@ -258,7 +258,7 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Graph settings */
 
-    const auto & gd = _State->_GraphDescriptions[(size_t) _SelectedGraph];
+    const auto & gd = _State->_GraphOptions[(size_t) _SelectedGraph];
 
     // Description
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, gd._Description.c_str());
@@ -392,7 +392,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_HORIZONTAL_ALIGNMENT:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & gs = _State->_GraphOptions[_SelectedGraph];
 
             gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
@@ -408,7 +408,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_X_AXIS_MODE:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & gs = _State->_GraphOptions[_SelectedGraph];
 
             gs._XAxisMode = (XAxisMode) SelectedIndex;
 
@@ -422,7 +422,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_Y_AXIS_MODE:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & gs = _State->_GraphOptions[_SelectedGraph];
 
             gs._YAxisMode = (YAxisMode) SelectedIndex;
 
@@ -455,7 +455,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -521,7 +521,7 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gs = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
@@ -574,7 +574,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
     auto ChangedSettings = ConfigurationChanges::All;
 
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
@@ -583,15 +583,15 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ADD_GRAPH:
         {
-            graph_description_t NewGraphDescription = _State->_GraphDescriptions[_SelectedGraph];
+            graph_options_t NewOptions = _State->_GraphOptions[_SelectedGraph];
 
-            int Index = (int) _State->_GraphDescriptions.size();
+            int Index = (int) _State->_GraphOptions.size();
 
             WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
 
-            NewGraphDescription._Description = Description;
+            NewOptions._Description = Description;
 
-            _State->_GraphDescriptions.insert(_State->_GraphDescriptions.begin() + (int) Index, NewGraphDescription);
+            _State->_GraphOptions.insert(_State->_GraphOptions.begin() + (int) Index, NewOptions);
 
             _IsInitializing = true;
 
@@ -606,9 +606,9 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_REMOVE_GRAPH:
         {
-            _State->_GraphDescriptions.erase(_State->_GraphDescriptions.begin() + (int) _SelectedGraph);
+            _State->_GraphOptions.erase(_State->_GraphOptions.begin() + (int) _SelectedGraph);
 
-            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphDescriptions.size() - 1);
+            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphOptions.size() - 1);
 
             UpdateControls();
             break;
@@ -703,7 +703,7 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         return -1;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     auto nmud = (LPNMUPDOWN) nmhd;
 
@@ -764,10 +764,10 @@ void graphs_page_t::InitializeXAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphDescriptions[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode, 0, 1);
+        _State->_GraphOptions[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphOptions[_SelectedGraph]._XAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode);
+    w.SetCurSel((int) _State->_GraphOptions[_SelectedGraph]._XAxisMode);
 }
 
 /// <summary>
@@ -789,10 +789,10 @@ void graphs_page_t::InitializeYAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphDescriptions[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode, 0, 1);
+        _State->_GraphOptions[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphOptions[_SelectedGraph]._YAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode);
+    w.SetCurSel((int) _State->_GraphOptions[_SelectedGraph]._YAxisMode);
 }
 
 /// <summary>
@@ -813,5 +813,5 @@ void graphs_page_t::UpdateSelectedChannels() noexcept
     for (int Item : Items)
         Channels |= 1 << Item;
 
-    _State->_GraphDescriptions[_SelectedGraph]._SelectedChannels = Channels;
+    _State->_GraphOptions[_SelectedGraph]._SelectedChannels = Channels;
 }

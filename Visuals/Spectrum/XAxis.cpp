@@ -14,10 +14,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     _Labels.clear();
@@ -161,19 +161,19 @@ void x_axis_t::Resize() noexcept
     FLOAT t = _Size.width / (FLOAT) _BandCount;
 
     // Use the full width of the graph?
-    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
         t = ::floor(t);
 
     // Calculate the position of the labels.
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _BandCount : _Size.width;
-    const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, _Size.width - SpectrumWidth);
+    const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _Size.width - SpectrumWidth);
 
-    const FLOAT x1 = !_GraphDescription->_FlipHorizontally ? _Rect.left  + HOffset : _Rect.right - HOffset;
-    const FLOAT x2 = !_GraphDescription->_FlipHorizontally ? _Rect.right - HOffset : _Rect.left  + HOffset;
+    const FLOAT x1 = !_GraphOptions->_FlipHorizontally ? _Rect.left  + HOffset : _Rect.right - HOffset;
+    const FLOAT x2 = !_GraphOptions->_FlipHorizontally ? _Rect.right - HOffset : _Rect.left  + HOffset;
 
-    const FLOAT yt = _Rect.top    + (_GraphDescription->_XAxisTop    ? _TextStyle->_Height : 0.f); // Top axis
-    const FLOAT yb = _Rect.bottom - (_GraphDescription->_XAxisBottom ? _TextStyle->_Height : 0.f); // Bottom axis
+    const FLOAT yt = _Rect.top    + (_GraphOptions->_XAxisTop    ? _TextStyle._Height : 0.f); // Top axis
+    const FLOAT yb = _Rect.bottom - (_GraphOptions->_XAxisBottom ? _TextStyle._Height : 0.f); // Bottom axis
 
     const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
@@ -183,7 +183,7 @@ void x_axis_t::Resize() noexcept
     {
         const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
-        const FLOAT x = !_GraphDescription->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
+        const FLOAT x = !_GraphOptions->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 
         Iter.PointT = D2D1_POINT_2F(x, yt);
         Iter.PointB = D2D1_POINT_2F(x, yb);
@@ -191,7 +191,7 @@ void x_axis_t::Resize() noexcept
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -202,7 +202,7 @@ void x_axis_t::Resize() noexcept
                 Iter.RectT = { x - (TextMetrics.width / 2.f), _Rect.top, x + (TextMetrics.width / 2.f), yt };
 
                 // Make sure the label is completely visible.
-                if (!_GraphDescription->_FlipHorizontally)
+                if (!_GraphOptions->_FlipHorizontally)
                 {
                     if (Iter.RectT.left < x1)
                     {
@@ -241,7 +241,7 @@ void x_axis_t::Resize() noexcept
 
     if (_Labels.size() > 2)
     {
-        const bool NotesMode = (_GraphDescription->_XAxisMode == XAxisMode::Notes);
+        const bool NotesMode = (_GraphOptions->_XAxisMode == XAxisMode::Notes);
 
         const label_t * LastLabel = nullptr;
 
@@ -273,30 +273,30 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    FLOAT Opacity = _TextStyle->_Brush->GetOpacity();
+    FLOAT Opacity = _TextStyle._Brush->GetOpacity();
 
-    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+    _TextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
     for (const label_t & Iter : _Labels)
     {
         // Draw the vertical grid line.
-        if (_LineStyle->IsEnabled())
-            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+        if (_LineStyle.IsEnabled())
+            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush, _LineStyle._Thickness, nullptr);
 
         // Draw the text.
-        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphDescription->_XAxisMode != XAxisMode::None))
+        if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_XAxisMode != XAxisMode::None))
         {
-            _TextStyle->_Brush->SetOpacity(Iter.IsDimmed && (_GraphDescription->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
+            _TextStyle._Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
-            if (_GraphDescription->_XAxisTop)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectT, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (_GraphOptions->_XAxisTop)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectT, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_GraphDescription->_XAxisBottom)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectB, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (_GraphOptions->_XAxisBottom)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectB, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 
-    _TextStyle->_Brush->SetOpacity(Opacity);
+    _TextStyle._Brush->SetOpacity(Opacity);
 }
 
 #pragma region DirectX
@@ -307,10 +307,10 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_LineStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, _LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999.9k", 1.f, &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"999.9k", 1.f, _TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -323,8 +323,8 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 /// </summary>
 void x_axis_t::DeleteDeviceSpecificResources() noexcept
 {
-    SafeRelease(&_TextStyle);
-    SafeRelease(&_LineStyle);
+    _TextStyle.DeleteDeviceSpecificResources();
+    _LineStyle.DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

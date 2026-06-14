@@ -29,10 +29,10 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void tester_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     CreateDeviceIndependentResources();

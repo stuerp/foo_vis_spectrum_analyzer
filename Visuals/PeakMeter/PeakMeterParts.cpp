@@ -5,8 +5,8 @@
 
 #include "PeakMeterParts.h"
 
+#include "DirectWrite.h"
 #include "Support.h"
-#include "Log.h"
 
 #include "libmsc.h"
 
@@ -26,48 +26,48 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         FLOAT & x1 = _Rect.left;
         FLOAT & x2 = _Rect.right;
 
-        if (_GraphDescription->_FlipHorizontally)
+        if (_GraphOptions->_FlipHorizontally)
         {
-            FLOAT w = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisTop) ? _NameStyle->_Width : 0.f;
+            FLOAT w = (_NameStyle.IsEnabled() && _GraphOptions->_XAxisTop) ? _NameStyle._Width : 0.f;
 
             _TopNameRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
             x1 += w;
 
-            w = _RMSTextStyle->IsEnabled() ? _RMSTextStyle->_Width : 0.f;
+            w = _RMSTextStyle.IsEnabled() ? _RMSTextStyle._Width : 0.f;
 
             _RMSRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
             x2 -= w;
 
-            w = _PeakTextStyle->IsEnabled() ? _PeakTextStyle->_Width : 0.f;
+            w = _PeakTextStyle.IsEnabled() ? _PeakTextStyle._Width : 0.f;
 
             _PeakRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
             x2 -= w;
 
-            w = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisBottom) ? _NameStyle->_Width : 0.f;
+            w = (_NameStyle.IsEnabled() && _GraphOptions->_XAxisBottom) ? _NameStyle._Width : 0.f;
 
             _BottomNameRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
             x2 -= w;
         }
         else
         {
-            FLOAT w = _RMSTextStyle->IsEnabled() ? _RMSTextStyle->_Width : 0.f;
+            FLOAT w = _RMSTextStyle.IsEnabled() ? _RMSTextStyle._Width : 0.f;
 
             _RMSRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
             x1 += w;
 
-            w = _PeakTextStyle->IsEnabled() ? _PeakTextStyle->_Width : 0.f;
+            w = _PeakTextStyle.IsEnabled() ? _PeakTextStyle._Width : 0.f;
 
             _PeakRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
             x1 += w;
 
-            if (_NameStyle->IsEnabled())
+            if (_NameStyle.IsEnabled())
             {
-                w = _GraphDescription->_XAxisBottom ? _NameStyle->_Width : 0.f;
+                w = _GraphOptions->_XAxisBottom ? _NameStyle._Width : 0.f;
 
                 _BottomNameRect = { x1, _Rect.top, x1 + w, _Rect.bottom };
                 x1 += w;
 
-                w = _GraphDescription->_XAxisTop ? _NameStyle->_Width : 0.f;
+                w = _GraphOptions->_XAxisTop ? _NameStyle._Width : 0.f;
 
                 _TopNameRect = { x2 - w, _Rect.top, x2, _Rect.bottom };
                 x2 -= w;
@@ -79,26 +79,26 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         FLOAT & y1 = _Rect.top;
         FLOAT & y2 = _Rect.bottom;
 
-        if (_GraphDescription->_FlipVertically)
+        if (_GraphOptions->_FlipVertically)
         {
-            FLOAT h = _RMSTextStyle->IsEnabled() ? _RMSTextStyle->_Height : 0.f;
+            FLOAT h = _RMSTextStyle.IsEnabled() ? _RMSTextStyle._Height : 0.f;
 
             _RMSRect = { _Rect.left, y1, _Rect.right, y1 + h };
             y1 += h;
 
-            h = _PeakTextStyle->IsEnabled() ? _PeakTextStyle->_Height : 0.f;
+            h = _PeakTextStyle.IsEnabled() ? _PeakTextStyle._Height : 0.f;
 
             _PeakRect = { _Rect.left, y1, _Rect.right, y1 + h };
             y1 += h;
 
-            if (_NameStyle->IsEnabled())
+            if (_NameStyle.IsEnabled())
             {
-                h = _GraphDescription->_XAxisBottom ? _NameStyle->_Height : 0.f;
+                h = _GraphOptions->_XAxisBottom ? _NameStyle._Height : 0.f;
 
                 _BottomNameRect = { _Rect.left, y1, _Rect.right, y1 + h };
                 y1 += h;
 
-                h = _GraphDescription->_XAxisTop ? _NameStyle->_Height : 0.f;
+                h = _GraphOptions->_XAxisTop ? _NameStyle._Height : 0.f;
 
                 _TopNameRect = { _Rect.left, y2 - h, _Rect.right, y2 };
                 y2 -= h;
@@ -106,22 +106,22 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
         }
         else
         {
-            FLOAT h = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisTop) ? _NameStyle->_Height : 0.f;
+            FLOAT h = (_NameStyle.IsEnabled() && _GraphOptions->_XAxisTop) ? _NameStyle._Height : 0.f;
 
             _TopNameRect = { _Rect.left, y1, _Rect.right, y1 + h };
             y1 += h;
 
-            h = _RMSTextStyle->IsEnabled() ? _RMSTextStyle->_Height : 0.f;
+            h = _RMSTextStyle.IsEnabled() ? _RMSTextStyle._Height : 0.f;
 
             _RMSRect = { _Rect.left, y2 - h, _Rect.right, y2 };
             y2 -= h;
 
-            h = _PeakTextStyle->IsEnabled() ? _PeakTextStyle->_Height : 0.f;
+            h = _PeakTextStyle.IsEnabled() ? _PeakTextStyle._Height : 0.f;
 
             _PeakRect = { _Rect.left, y2 - h, _Rect.right, y2 };
             y2 -= h;
 
-            h = (_NameStyle->IsEnabled() && _GraphDescription->_XAxisBottom) ? _NameStyle->_Height : 0.f;
+            h = (_NameStyle.IsEnabled() && _GraphOptions->_XAxisBottom) ? _NameStyle._Height : 0.f;
 
             _BottomNameRect = { _Rect.left, y2 - h, _Rect.right, y2 };
             y2 -= h;
@@ -136,25 +136,44 @@ void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Binds the Direct2D resources to this instance.
 /// </summary>
-void part_t::Bind(ID2D1DeviceContext * deviceContext, style_t * backgroundStyle, style_t * peakStyle, style_t * peak0dBStyle, style_t * maxPeakStyle, style_t * peakTextStyle, style_t * rmsStyle, style_t * rms0dBStyle, style_t * rmsTextStyle, style_t * nameStyle, style_t * scaleTextStyle, style_t * scaleLineStyle, ID2D1SolidColorBrush * debugBrush, ID2D1Bitmap * opacityMask) noexcept
+void part_t::Initialize(state_t * state, ID2D1DeviceContext * deviceContext, ID2D1Bitmap * opacityMask, ID2D1SolidColorBrush * debugBrush) noexcept
 {
     _DeviceContext = deviceContext;
 
-    _BackgroundStyle = backgroundStyle;
+    HRESULT hr = S_OK;
 
-    _PeakStyle = peakStyle;
-    _Peak0dBStyle = peak0dBStyle;
-    _MaxPeakStyle = maxPeakStyle;
-    _PeakTextStyle = peakTextStyle;
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, _Size, L"", 1.f, _BackgroundStyle);
 
-    _RMSStyle = rmsStyle;
-    _RMS0dBStyle = rms0dBStyle;
-    _RMSTextStyle = rmsTextStyle;
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevel, deviceContext, _Size, L"", 1.f, _PeakStyle);
 
-    _NameStyle = nameStyle;
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBPeakLevel, deviceContext, _Size, L"", 1.f, _Peak0dBStyle);
 
-    _ScaleTextStyle = scaleTextStyle;
-    _ScaleLineStyle = scaleLineStyle;
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevelText, deviceContext, _Size, L"+199.9", 1.f, _PeakTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMaxPeakLevel, deviceContext, _Size, L"", 1.f, _MaxPeakStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevel, deviceContext, _Size, L"", 1.f, _RMSStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBRMSLevel, deviceContext, _Size, L"", 1.f, _RMS0dBStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevelText, deviceContext, _Size, L"+199.9", 1.f, _RMSTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"LFE", 1.f, _NameStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, _ScaleTextStyle);
+
+    if (SUCCEEDED(hr))
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _ScaleLineStyle);
 
     _DebugBrush = debugBrush;
 
@@ -168,21 +187,21 @@ void part_t::Unbind() noexcept
 {
     _DeviceContext.Release();
 
-    _BackgroundStyle = nullptr;
+    _BackgroundStyle.DeleteDeviceSpecificResources();
 
-    _PeakStyle = nullptr;
-    _Peak0dBStyle = nullptr;
-    _MaxPeakStyle = nullptr;
-    _PeakTextStyle = nullptr;
+    _PeakStyle.DeleteDeviceSpecificResources();
+    _Peak0dBStyle.DeleteDeviceSpecificResources();
+    _MaxPeakStyle.DeleteDeviceSpecificResources();
+    _PeakTextStyle.DeleteDeviceSpecificResources();
 
-    _RMSStyle = nullptr;
-    _RMS0dBStyle = nullptr;
-    _RMSTextStyle = nullptr;
+    _RMSStyle.DeleteDeviceSpecificResources();
+    _RMS0dBStyle.DeleteDeviceSpecificResources();
+    _RMSTextStyle.DeleteDeviceSpecificResources();
 
-    _NameStyle = nullptr;
+    _NameStyle.DeleteDeviceSpecificResources();
 
-    _ScaleTextStyle = nullptr;
-    _ScaleLineStyle = nullptr;
+    _ScaleTextStyle.DeleteDeviceSpecificResources();
+    _ScaleLineStyle.DeleteDeviceSpecificResources();
 
     _DebugBrush.Release();
 
@@ -196,19 +215,19 @@ void part_t::CreateAxis() noexcept
 {
     _Labels.clear();
 
-    if (_GraphDescription->_YAxisMode == YAxisMode::None)
+    if (_GraphOptions->_YAxisMode == YAxisMode::None)
         return;
 
     const double Epsilon = 1.e-3;
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        const FLOAT xMin = (!_GraphDescription->_FlipHorizontally ? _Rect.left  : _Rect.right);
-        const FLOAT xMax = (!_GraphDescription->_FlipHorizontally ? _Rect.right : _Rect.left);
+        const FLOAT xMin = (!_GraphOptions->_FlipHorizontally ? _Rect.left  : _Rect.right);
+        const FLOAT xMax = (!_GraphOptions->_FlipHorizontally ? _Rect.right : _Rect.left);
 
-        const FLOAT dw = _ScaleTextStyle->_Width / 2.f;
+        const FLOAT dw = _ScaleTextStyle._Width / 2.f;
 
-        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= (_GraphDescription->_AmplitudeHi + Epsilon); Amplitude -= _GraphDescription->_AmplitudeStep)
+        for (double Amplitude = _GraphOptions->_AmplitudeLo; Amplitude <= (_GraphOptions->_AmplitudeHi + Epsilon); Amplitude -= _GraphOptions->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -241,10 +260,10 @@ void part_t::CreateAxis() noexcept
                     y1 = y2 = 0.f;
             }
 
-            const FLOAT x = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., xMin, xMax);
+            const FLOAT x = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., xMin, xMax);
 
             r.left  = x - dw;
-            r.right = r.left + _ScaleTextStyle->_Width;
+            r.right = r.left + _ScaleTextStyle._Width;
 
             label_t Label =
             {
@@ -257,7 +276,7 @@ void part_t::CreateAxis() noexcept
             _Labels.push_back(Label);
         }
 
-        if (_GraphDescription->_FlipHorizontally)
+        if (_GraphOptions->_FlipHorizontally)
         {
             // Adjust the left and/or right boundary of the first and last label to make sure they're completely visible.
             if (_Labels.front().Rect.right > _RMSRect.left)
@@ -306,12 +325,12 @@ void part_t::CreateAxis() noexcept
     }
     else
     {
-        const FLOAT yMin = (!_GraphDescription->_FlipVertically ? _Rect.bottom : _Rect.top);
-        const FLOAT yMax = (!_GraphDescription->_FlipVertically ? _Rect.top : _Rect.bottom);
+        const FLOAT yMin = (!_GraphOptions->_FlipVertically ? _Rect.bottom : _Rect.top);
+        const FLOAT yMax = (!_GraphOptions->_FlipVertically ? _Rect.top : _Rect.bottom);
 
-        const FLOAT dh = _ScaleTextStyle->_Height / 2.f;
+        const FLOAT dh = _ScaleTextStyle._Height / 2.f;
 
-        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= (_GraphDescription->_AmplitudeHi + Epsilon); Amplitude -= _GraphDescription->_AmplitudeStep)
+        for (double Amplitude = _GraphOptions->_AmplitudeLo; Amplitude <= (_GraphOptions->_AmplitudeHi + Epsilon); Amplitude -= _GraphOptions->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -345,10 +364,10 @@ void part_t::CreateAxis() noexcept
                     x1 = x2 = 0.f;
             }
 
-            const FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., yMin, yMax);
+            const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Amplitude)), 0., 1., yMin, yMax);
 
             r.top    = y - dh;
-            r.bottom = r.top + _ScaleTextStyle->_Height;
+            r.bottom = r.top + _ScaleTextStyle._Height;
 
             label_t Label =
             {
@@ -361,7 +380,7 @@ void part_t::CreateAxis() noexcept
             _Labels.push_back(Label);
         }
 
-        if (_GraphDescription->_FlipVertically)
+        if (_GraphOptions->_FlipVertically)
         {
             // Adjust the top and/or bottom boundary of the first and last label to make sure they're completely visible.
             if (_Labels.front().Rect.top < 0.f)
@@ -435,17 +454,17 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
     // Compute center of the area.
     const D2D1_POINT_2F Center = { (_Rect.left + _Rect.right) / 2.f, (_Rect.top + _Rect.bottom) / 2.f };
 
-    if (_GraphDescription->_FlipHorizontally)
+    if (_GraphOptions->_FlipHorizontally)
         _Transform = D2D1::Matrix3x2F::Scale(-1.0f, 1.0f, Center);
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        if (_GraphDescription->_FlipVertically)
+        if (_GraphOptions->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
     else
     {
-        if (!_GraphDescription->_FlipVertically)
+        if (!_GraphOptions->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
 
@@ -458,7 +477,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
         const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
         const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
 
-        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle._TextFormat, Width, Height, &_NameTextLayout);
     }
 
     if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)
@@ -481,12 +500,12 @@ void bar_t::Render() const noexcept
     if (_State->_HorizontalPeakMeter)
     {
         for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness);
     }
     else
     {
         for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness);
     }
 */
 
@@ -501,7 +520,7 @@ void bar_t::Render() const noexcept
         if (_State->_IsHorizontalPeakMeter)
         {
             // Draw the background.
-            if (_BackgroundStyle->IsEnabled())
+            if (_BackgroundStyle.IsEnabled())
             {
                 DrawHorizontalRectangle(Rect, _BackgroundStyle);
             }
@@ -513,7 +532,7 @@ void bar_t::Render() const noexcept
                 DrawHorizontalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+                if (_Peak0dBStyle.IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
                 {
                     Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
                     Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
@@ -522,7 +541,7 @@ void bar_t::Render() const noexcept
                 }
             }
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle.IsEnabled())
             {
                 const FLOAT x = (FLOAT) _Measurement->MaxPeakNormalized * _Size.width;
 
@@ -531,8 +550,8 @@ void bar_t::Render() const noexcept
 
                 if (!_State->_LEDMode)
                 {
-                    Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
-                    Rect.right += _MaxPeakStyle->_Thickness / 2.f;
+                    Rect.left  -= _MaxPeakStyle._Thickness / 2.f;
+                    Rect.right += _MaxPeakStyle._Thickness / 2.f;
                 }
                 else
                 {
@@ -543,15 +562,15 @@ void bar_t::Render() const noexcept
                     }
                 }
 
-                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle._Opacity;
 
-                _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+                _MaxPeakStyle._Brush->SetOpacity(Opacity);
 
                 DrawHorizontalRectangle(Rect, _MaxPeakStyle);
             }
 
             // Draw the foreground (RMS).
-            if (_RMSStyle->IsEnabled())
+            if (_RMSStyle.IsEnabled())
             {
                 Rect.left  = _Rect.left;
                 Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
@@ -559,7 +578,7 @@ void bar_t::Render() const noexcept
                 DrawHorizontalRectangle(Rect, _RMSStyle);
 
                 // Draw the foreground (RMS, Measurement > 0dBFS).
-                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+                if (_RMS0dBStyle.IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
                 {
                     Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
                     Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
@@ -571,20 +590,20 @@ void bar_t::Render() const noexcept
         else
         {
             // Draw the background.
-            if (_BackgroundStyle->IsEnabled())
+            if (_BackgroundStyle.IsEnabled())
             {
                 DrawVerticalRectangle(Rect, _BackgroundStyle);
             }
 
             // Draw the foreground (Peak).
-            if (_PeakStyle->IsEnabled())
+            if (_PeakStyle.IsEnabled())
             {
                 Rect.bottom = _Rect.top + ((FLOAT) _Measurement->PeakNormalized * _Size.height);
 
                 DrawVerticalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+                if (_Peak0dBStyle.IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
                 {
                     Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
                     Rect.bottom = _Rect.top + (FLOAT) _Measurement->PeakNormalized * _Size.height;
@@ -594,7 +613,7 @@ void bar_t::Render() const noexcept
             }
 
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle.IsEnabled())
             {
                 const FLOAT y = (FLOAT) _Measurement->MaxPeakNormalized * _Size.height;
 
@@ -603,8 +622,8 @@ void bar_t::Render() const noexcept
 
                 if (!_State->_LEDMode)
                 {
-                    Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
-                    Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
+                    Rect.top    -= _MaxPeakStyle._Thickness / 2.f;
+                    Rect.bottom += _MaxPeakStyle._Thickness / 2.f;
                 }
                 else
                 {
@@ -615,15 +634,15 @@ void bar_t::Render() const noexcept
                     }
                 }
 
-                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle._Opacity;
 
-                _MaxPeakStyle->_Brush->SetOpacity(Opacity);
+                _MaxPeakStyle._Brush->SetOpacity(Opacity);
 
                 DrawVerticalRectangle(Rect, _MaxPeakStyle);
             }
 
             // Draw the foreground (RMS).
-            if (_RMSStyle->IsEnabled())
+            if (_RMSStyle.IsEnabled())
             {
                 Rect.top    = _Rect.top;
                 Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
@@ -631,7 +650,7 @@ void bar_t::Render() const noexcept
                 DrawVerticalRectangle(Rect, _RMSStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+                if (_RMS0dBStyle.IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
                 {
                     Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
                     Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
@@ -650,43 +669,43 @@ void bar_t::Render() const noexcept
         WCHAR Text[16];
 
         // Draw the channel name.
-        if (_NameStyle->IsEnabled())
+        if (_NameStyle.IsEnabled())
         {
-            if (_GraphDescription->_XAxisTop)
+            if (_GraphOptions->_XAxisTop)
             {
 //              _DeviceContext->DrawRectangle(_TopNameRect, _DebugBrush);
-//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle._TextFormat, _TopNameRect, _NameStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout, _NameStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_GraphDescription->_XAxisBottom)
+            if (_GraphOptions->_XAxisBottom)
             {
 //              _DeviceContext->DrawRectangle(_BottomNameRect, _DebugBrush);
-//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                _DeviceContext->DrawTextLayout(D2D1::Point2F(_BottomNameRect.left, _BottomNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle._TextFormat, _BottomNameRect, _NameStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_BottomNameRect.left, _BottomNameRect.top), _NameTextLayout, _NameStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
         // Draw the peak readout.
-        if (_PeakTextStyle->IsEnabled())
+        if (_PeakTextStyle.IsEnabled())
         {
             if (::isfinite(_Measurement->Peak))
                 ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", _Measurement->Peak);
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
-            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _PeakTextStyle->_TextFormat, _PeakRect, _PeakTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _PeakTextStyle._TextFormat, _PeakRect, _PeakTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         // Draw the RMS readout.
-        if (_RMSTextStyle->IsEnabled())
+        if (_RMSTextStyle.IsEnabled())
         {
             if (::isfinite(_Measurement->RMS))
                 ::StringCchPrintfW(Text, _countof(Text), L"%+5.1f", _Measurement->RMS);
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
-            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, _RMSRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle._TextFormat, _RMSRect, _RMSTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -718,12 +737,12 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
         if (_State->_IsHorizontalPeakMeter)
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness);
         }
         else
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness);
         }
 
         hr = _DeviceContext->EndDraw();
@@ -743,7 +762,7 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
 /// <summary>
 /// Draws a horizontal rectangle using the specified style.
 /// </summary>
-void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
+void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t & style) const noexcept
 {
 //  _DeviceContext->DrawRectangle(rect, _DebugBrush);
 
@@ -759,18 +778,18 @@ void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) c
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
+        _DeviceContext->FillOpacityMask(_OpacityMask, style._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
     else
-        _DeviceContext->FillRectangle(rect, style->_Brush);
+        _DeviceContext->FillRectangle(rect, style._Brush);
 }
 
 /// <summary>
 /// Draws a vertical rectangle using the specified style.
 /// </summary>
-void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
+void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t & style) const noexcept
 {
 //  _DeviceContext->DrawRectangle(rect, _DebugBrush);
 
@@ -786,12 +805,12 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
+        _DeviceContext->FillOpacityMask(_OpacityMask, style._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
     else
-        _DeviceContext->FillRectangle(rect, style->_Brush);
+        _DeviceContext->FillRectangle(rect, style._Brush);
 }
 
 /// <summary>
@@ -828,18 +847,18 @@ void scale_t::Render() const noexcept
 
 //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
 
-    _ScaleTextStyle->SetHorizontalAlignment(_TextAlignment);
-    _ScaleTextStyle->SetVerticalAlignment(_ParagraphAlignment);
+    _ScaleTextStyle.SetHorizontalAlignment(_TextAlignment);
+    _ScaleTextStyle.SetVerticalAlignment(_ParagraphAlignment);
 
     for (const label_t & Label : _Labels)
     {
 //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
         if (!Label.IsHidden)
-            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle._TextFormat, Label.Rect, _ScaleTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         if (!IsCenter())
-            _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness);
     }
 */
 }
@@ -870,18 +889,18 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
 
     //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
 
-        _ScaleTextStyle->SetHorizontalAlignment(_TextAlignment);
-        _ScaleTextStyle->SetVerticalAlignment(_ParagraphAlignment);
+        _ScaleTextStyle.SetHorizontalAlignment(_TextAlignment);
+        _ScaleTextStyle.SetVerticalAlignment(_ParagraphAlignment);
 
         for (const label_t & Label : _Labels)
         {
     //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
             if (!Label.IsHidden)
-                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle._TextFormat, Label.Rect, _ScaleTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 
             if (!IsCenter())
-                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness); // Draw the tick.
+                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle._Brush, _ScaleLineStyle._Thickness); // Draw the tick.
         }
 
         hr = _DeviceContext->EndDraw();

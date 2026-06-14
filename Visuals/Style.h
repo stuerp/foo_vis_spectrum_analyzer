@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2025.10.13) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.06.14) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -11,14 +11,12 @@
 #include <Windows.h>
 #include <atlbase.h>
 
-#include "Gradients.h"
-
-#include "DirectWrite.h"
-#include "Support.h"
+#include <dwrite.h>
 
 #include <string>
 
-#pragma warning(disable: 4820)
+#include "Gradients.h"
+
 class style_t
 {
 public:
@@ -26,6 +24,9 @@ public:
 
     style_t(const style_t &);
     style_t & operator=(const style_t & other);
+
+    style_t(const style_t &&) = delete;
+    style_t & operator=(const style_t && other) = delete;
 
     virtual ~style_t() { }
 

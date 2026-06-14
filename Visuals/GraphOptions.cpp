@@ -1,10 +1,10 @@
 
-/** $VER: GraphDescription.cpp (2026.06.10) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.cpp (2026.06.10) P. Stuer - Describes the layout and settings of a graph. **/
 
 #include "pch.h"
 
 #include "Constants.h"
-#include "GraphDescription.h"
+#include "GraphOptions.h"
 #include "Support.h"
 
 #pragma hdrstop
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_description_t::Initialize() noexcept
+void graph_options_t::Initialize() noexcept
 {
     _SelectedChannels = (uint32_t) Channels::ConfigStereo;
 
@@ -56,7 +56,7 @@ void graph_description_t::Initialize() noexcept
 /// <summary>
 /// Scales the specified value to a relative amplitude between 0.0 and 1.0.
 /// </summary>
-double graph_description_t::ScaleAmplitude(double value) const noexcept
+double graph_options_t::ScaleAmplitude(double value) const noexcept
 {
     switch (_YAxisMode)
     {
@@ -79,9 +79,9 @@ double graph_description_t::ScaleAmplitude(double value) const noexcept
 /// <summary>
 /// Deserializes this instance.
 /// </summary>
-graph_description_t graph_description_t::FromJSON(const json & object) noexcept
+graph_options_t graph_options_t::FromJSON(const json & object) noexcept
 {
-    graph_description_t gd;
+    graph_options_t gd;
 
     const auto & Description = object.value("description", json::object());
 
@@ -137,7 +137,7 @@ graph_description_t graph_description_t::FromJSON(const json & object) noexcept
 /// <summary>
 /// Serializes this instance to JSON string.
 /// </summary>
-json graph_description_t::ToJSON() const noexcept
+json graph_options_t::ToJSON() const noexcept
 {
     json Object =
     {

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.28) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.06.14) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -46,7 +46,7 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -57,9 +57,9 @@ private:
     void Resize() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept;
+    void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;
 
-    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * style) const noexcept;
+    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
 
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
@@ -108,12 +108,12 @@ private:
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    style_t * _BarAreaStyle;
-    style_t * _BarTopStyle;
-    style_t * _BarPeakAreaStyle;
-    style_t * _BarPeakTopStyle;
-    style_t * _DarkBackgroundStyle;
-    style_t * _LightBackgroundStyle;
+    style_t _BarAreaStyle;
+    style_t _BarTopStyle;
+    style_t _BarPeakAreaStyle;
+    style_t _BarPeakTopStyle;
+    style_t _DarkBackgroundStyle;
+    style_t _LightBackgroundStyle;
 
     style_t _CurveLineStyle;
     style_t _CurveAreaStyle;

@@ -37,11 +37,11 @@ protected:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
     CComPtr<ID2D1StrokeStyle1> _AxisStrokeStyle;
 
-    style_t * _SignalLineStyle;
-    style_t * _XAxisLineStyle;
-    style_t * _YAxisLineStyle;
-    style_t * _HorizontalGridLineStyle;
-    style_t * _VerticalGridLineStyle;
+    style_t _SignalLineStyle;
+    style_t _XAxisLineStyle;
+    style_t _YAxisLineStyle;
+    style_t _HorizontalGridLineStyle;
+    style_t _VerticalGridLineStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

@@ -38,10 +38,10 @@ graph_t::~graph_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_description_t * graphDescription, bool isFirst, bool isLast) noexcept
+void graph_t::Initialize(state_t * state, graph_options_t * graphDescription, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _IsFirst = isFirst;
     _IsLast = isLast;
 
@@ -99,10 +99,10 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     const D2D1_RECT_F Rect =
     {
-        .left   = rect.left   + _GraphDescription->_LPadding,
-        .top    = rect.top    + _GraphDescription->_TPadding,
-        .right  = rect.right  - _GraphDescription->_RPadding,
-        .bottom = rect.bottom - _GraphDescription->_BPadding
+        .left   = rect.left   + _GraphOptions->_LPadding,
+        .top    = rect.top    + _GraphOptions->_TPadding,
+        .right  = rect.right  - _GraphOptions->_RPadding,
+        .bottom = rect.bottom - _GraphOptions->_BPadding
     };
 
     SetRect(Rect);
@@ -172,12 +172,12 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 
         // Allow non-integer bar widths?
-        if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+        if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
         const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
-        const FLOAT HOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, cr.Width() - SpectrumWidth);
+        const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
         const FLOAT x2 = x1 + SpectrumWidth;
@@ -185,7 +185,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (!msc::InRange(x, x1, x2))
             return false;
 
-        if (_GraphDescription->_FlipHorizontally)
+        if (_GraphOptions->_FlipHorizontally)
             x = (x2 + x1) - x;
 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -200,7 +200,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;
 
-            if (!_GraphDescription->_FlipVertically)
+            if (!_GraphOptions->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
             bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
@@ -229,8 +229,8 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
     if (!_IsFirst)
         return;
 
-    if (_BackgroundStyle->IsEnabled())
-        deviceContext->FillRectangle(_Rect, _BackgroundStyle->_Brush);
+    if (_BackgroundStyle.IsEnabled())
+        deviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush);
 
     if (!_State->_ShowArtworkOnBackground)
         return;
@@ -267,7 +267,7 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 
     CComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle->_TextFormat, _Size.width, _Size.height, &TextLayout);
+    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
 
     DWRITE_TEXT_METRICS TextMetrics = { };
 
@@ -290,11 +290,11 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
     Rect.right  = Rect.left + TextMetrics.width  + (Inset * 2.f);
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
-    if (_DescriptionBackgroundStyle->IsEnabled())
-        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle->_Brush);
+    if (_DescriptionBackgroundStyle.IsEnabled())
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush);
 
-    if (_DescriptionTextStyle->IsEnabled())
-        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle->_TextFormat, Rect, _DescriptionTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    if (_DescriptionTextStyle.IsEnabled())
+        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat, Rect, _DescriptionTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -302,17 +302,17 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, _BackgroundStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, &_DescriptionTextStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, _DescriptionTextStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, &_DescriptionBackgroundStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, _DescriptionBackgroundStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
@@ -331,9 +331,9 @@ void graph_t::DeleteDeviceSpecificResources() noexcept
 {
     _Visualization->Release();
 
-    SafeRelease(&_DescriptionBackgroundStyle);
-    SafeRelease(&_DescriptionTextStyle);
-    SafeRelease(&_BackgroundStyle);
+    _DescriptionBackgroundStyle.DeleteDeviceSpecificResources();
+    _DescriptionTextStyle.DeleteDeviceSpecificResources();
+    _BackgroundStyle.DeleteDeviceSpecificResources();
 
 #ifdef _DEBUG
     _DebugBrush.Release();

@@ -349,7 +349,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Windows\Error.h" />
     <ClInclude Include="Windows\Path.h" />
-    <ClInclude Include="Visuals\GraphDescription.h" />
+    <ClInclude Include="Visuals\GraphOptions.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
@@ -425,7 +425,7 @@
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
     <ClCompile Include="Visuals\Gradients.cpp" />
-    <ClCompile Include="Visuals\GraphDescription.cpp" />
+    <ClCompile Include="Visuals\GraphOptions.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="CUIElement.cpp" />

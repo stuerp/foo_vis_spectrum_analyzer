@@ -72,7 +72,7 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
+    void UpdateGradientStopPositons(style_t & style, size_t index) const noexcept;
 
 private:
     std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;

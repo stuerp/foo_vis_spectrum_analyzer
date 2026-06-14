@@ -32,7 +32,7 @@ public:
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_description_t * graphDescription, bool isFirst, bool isLast) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphDescription, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
 
@@ -80,11 +80,11 @@ private:
     std::wstring _Description;
     std::unique_ptr<visualization_t> _Visualization;
 
-    style_manager_t _StyleManager;                  // Styles only used by this graph in case of overlapping graphs.
+//  style_manager_t _StyleManager;                  // Styles only used by this graph in case of overlapping graphs.
 
-    style_t * _BackgroundStyle;
-    style_t * _DescriptionTextStyle;
-    style_t * _DescriptionBackgroundStyle;
+    style_t _BackgroundStyle;
+    style_t _DescriptionTextStyle;
+    style_t _DescriptionBackgroundStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

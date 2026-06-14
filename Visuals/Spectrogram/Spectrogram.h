@@ -39,7 +39,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
@@ -113,15 +113,15 @@ private:
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
-    style_t * _SpectrogramStyle;
+    style_t _SpectrogramStyle;
 
-    style_t * _TimeLineStyle;
-    style_t * _TimeTextStyle;
+    style_t _TimeLineStyle;
+    style_t _TimeTextStyle;
 
-    style_t * _FreqLineStyle;
-    style_t * _FreqTextStyle;
+    style_t _FreqLineStyle;
+    style_t _FreqTextStyle;
 
-    style_t * _NyquistMarkerStyle;
+    style_t _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
 

@@ -5,29 +5,29 @@
 #include "YAxis.h"
 
 #include "StyleManager.h"
-#include "DirectWrite.h"
+#include "Support.h"
 
 #pragma hdrstop
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void y_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     _FlipVertically = graphDescription->_FlipVertically;
 
     _Labels.clear();
 
-    if (_GraphDescription->_YAxisMode == YAxisMode::None)
+    if (_GraphOptions->_YAxisMode == YAxisMode::None)
         return;
 
     // Create the labels.
     {
-        for (double Amplitude = _GraphDescription->_AmplitudeLo; Amplitude <= _GraphDescription->_AmplitudeHi; Amplitude -= _GraphDescription->_AmplitudeStep)
+        for (double Amplitude = _GraphOptions->_AmplitudeLo; Amplitude <= _GraphOptions->_AmplitudeHi; Amplitude -= _GraphOptions->_AmplitudeStep)
         {
             WCHAR Text[16] = { };
 
@@ -56,15 +56,15 @@ void y_axis_t::Resize() noexcept
     if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
-    const FLOAT xl = _Rect.left  + (_GraphDescription->_YAxisLeft  ? _TextStyle->_Width : 0.f); // Left axis
-    const FLOAT xr = _Rect.right - (_GraphDescription->_YAxisRight ? _TextStyle->_Width : 0.f); // Right axis
+    const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle._Width : 0.f); // Left axis
+    const FLOAT xr = _Rect.right - (_GraphOptions->_YAxisRight ? _TextStyle._Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
 
     for (label_t & Iter : _Labels)
     {
-        FLOAT y = msc::Map(_GraphDescription->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Rect.bottom : _Rect.top, !_FlipVertically ? _Rect.top : _Rect.bottom);
+        FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Iter.Amplitude)), 0., 1., !_FlipVertically ? _Rect.bottom : _Rect.top, !_FlipVertically ? _Rect.top : _Rect.bottom);
 
         // Don't generate any labels outside the client rectangle.
         if (!msc::InRange(y, _Rect.top, _Rect.bottom))
@@ -76,16 +76,16 @@ void y_axis_t::Resize() noexcept
         Iter.PointL = D2D1_POINT_2F(xl, y);
         Iter.PointR = D2D1_POINT_2F(xr, y);
 
-        y -= (_TextStyle->_Height / 2.f);
+        y -= (_TextStyle._Height / 2.f);
 
-        if ((!_GraphDescription->_XAxisTop) && (y <_Rect.top))
+        if ((!_GraphOptions->_XAxisTop) && (y <_Rect.top))
             y = _Rect.top;
 
-        if ((!_GraphDescription->_XAxisBottom) && (y + _TextStyle->_Height > _Rect.bottom))
-            y = _Rect.bottom - _TextStyle->_Height;
+        if ((!_GraphOptions->_XAxisBottom) && (y + _TextStyle._Height > _Rect.bottom))
+            y = _Rect.bottom - _TextStyle._Height;
 
-        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle->_Height };
-        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle->_Height };
+        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle._Height };
+        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle._Height };
 
         Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
 
@@ -108,22 +108,22 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    _TextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
+    _TextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING); // Right-align horizontally, also for the right axis.
 
     for (const label_t & Iter : _Labels)
     {
         // Draw the horizontal grid line.
-        if (_LineStyle->IsEnabled())
-            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle->_Brush, _LineStyle->_Thickness, nullptr);
+        if (_LineStyle.IsEnabled())
+            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle._Brush, _LineStyle._Thickness, nullptr);
 
         // Draw the text.
-        if (!Iter.IsHidden && _TextStyle->IsEnabled() && (_GraphDescription->_YAxisMode != YAxisMode::None))
+        if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_YAxisMode != YAxisMode::None))
         {
-            if (_GraphDescription->_YAxisLeft)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectL, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (_GraphOptions->_YAxisLeft)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectL, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            if (_GraphDescription->_YAxisRight)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle->_TextFormat, Iter.RectR, _TextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (_GraphOptions->_YAxisRight)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectR, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -136,10 +136,10 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_LineStyle);
+    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _LineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, &_TextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, _TextStyle);
 
     if (SUCCEEDED(hr))
         Resize();
@@ -152,8 +152,8 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 /// </summary>
 void y_axis_t::DeleteDeviceSpecificResources() noexcept
 {
-    SafeRelease(&_TextStyle);
-    SafeRelease(&_LineStyle);
+    _TextStyle.DeleteDeviceSpecificResources();
+    _LineStyle.DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

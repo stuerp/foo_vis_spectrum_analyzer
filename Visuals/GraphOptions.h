@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.h (2026.10.06) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.h (2026.06.14) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -25,15 +25,15 @@ using json = nlohmann::ordered_json;
 /// Represents the settings of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-struct graph_description_t
+struct graph_options_t
 {
 public:
-    graph_description_t()
+    graph_options_t()
     {
         Initialize();
     }
 
-    graph_description_t(const std::wstring & description)
+    graph_options_t(const std::wstring & description)
     {
         _Description = description;
 
@@ -47,7 +47,7 @@ public:
     bool HasYAxis() const noexcept { return _YAxisMode != YAxisMode::None; }
 
     json ToJSON() const noexcept;
-    static graph_description_t FromJSON(const json & object) noexcept;
+    static graph_options_t FromJSON(const json & object) noexcept;
 
 private:
     void Initialize() noexcept;

@@ -16,13 +16,6 @@
 /// </summary>
 oscilloscope_base_t::oscilloscope_base_t()
 {
-    _SignalLineStyle = nullptr;
-
-    _XAxisLineStyle = nullptr;
-    _YAxisLineStyle = nullptr;
-
-    _HorizontalGridLineStyle = nullptr;
-    _VerticalGridLineStyle = nullptr;
 }
 
 /// <summary>
@@ -97,19 +90,19 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
         Resize();
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", 1.f, &_SignalLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", 1.f, _SignalLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", 1.f, &_XAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", 1.f, _XAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", 1.f, &_YAxisLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", 1.f, _YAxisLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_HorizontalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _HorizontalGridLineStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, &_VerticalGridLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, _VerticalGridLineStyle);
 
     if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
     {
@@ -225,27 +218,8 @@ void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
 
     _DeviceContext.Release();
 
-    if (_SignalLineStyle)
-    {
-        _SignalLineStyle->DeleteDeviceSpecificResources();
-        _SignalLineStyle = nullptr;
-    }
-
-    if (_XAxisLineStyle)
-    {
-        _XAxisLineStyle->DeleteDeviceSpecificResources();
-        _XAxisLineStyle = nullptr;
-    }
-
-    if (_YAxisLineStyle)
-    {
-        _YAxisLineStyle->DeleteDeviceSpecificResources();
-        _YAxisLineStyle = nullptr;
-    }
-
-    if (_HorizontalGridLineStyle)
-    {
-        _HorizontalGridLineStyle->DeleteDeviceSpecificResources();
-        _HorizontalGridLineStyle = nullptr;
-    }
+    _SignalLineStyle.DeleteDeviceSpecificResources();
+    _XAxisLineStyle.DeleteDeviceSpecificResources();
+    _YAxisLineStyle.DeleteDeviceSpecificResources();
+    _HorizontalGridLineStyle.DeleteDeviceSpecificResources();
 }

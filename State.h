@@ -7,13 +7,11 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Support.h"
-
 #include "Constants.h"
 #include "WindowFunctions.h"
 
 #include "StyleManager.h"
-#include "GraphDescription.h"
+#include "GraphOptions.h"
 
 #include "Log.h"
 
@@ -271,7 +269,7 @@ public:
     bool _OverlapGraphs;                                                // True if the graphs should be rendered overlapped instead of in a grid layout.
 
     style_manager_t _StyleManager;                                      // Styles shared by all graphs.
-    std::vector<graph_description_t> _GraphDescriptions;
+    std::vector<graph_options_t> _GraphOptions;
 
     #pragma endregion
 

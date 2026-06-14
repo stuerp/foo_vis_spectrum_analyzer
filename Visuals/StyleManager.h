@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2026.06.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.06.14) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -24,8 +24,10 @@ public:
     style_manager_t();
 
     style_manager_t(const style_manager_t & other);
-
     style_manager_t & operator=(const style_manager_t & other);
+
+    style_manager_t(const style_manager_t && other) = delete;
+    style_manager_t & operator=(const style_manager_t && other) = delete;
 
     virtual ~style_manager_t() noexcept { }
 
@@ -40,17 +42,17 @@ public:
     /// <summary>
     /// Gets the style of the specified visual element.
     /// </summary>
-    style_t * GetStyle(VisualElement visualElement) noexcept
+    void GetStyleOptions(VisualElement visualElement, style_t & style) noexcept
     {
-        return &_Styles[visualElement];
+        style = _StyleOptions[visualElement];
     }
 
     /// <summary>
     /// Gets the default style of the specified visual element.
     /// </summary>
-    const style_t * GetDefaultStyle(VisualElement visualElement) noexcept
+    const style_t * GetDefaultStyleOptions(VisualElement visualElement) noexcept
     {
-        return &_Styles[visualElement];
+        return &_StyleOptions[visualElement];
     }
 
     void SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept;
@@ -62,17 +64,14 @@ public:
     /// </summary>
     void DeleteGradientBrushes() noexcept
     {
-        for (auto & [ID, Style] : _Styles)
+        for (auto & [ID, Style] : _StyleOptions)
         {
             if (Style._ColorSource == ColorSource::Gradient)
                 Style._Brush.Release();
         }
     }
 
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept;
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t & style) noexcept;
-
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept;
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t & style) noexcept;
 
     void DeleteDeviceSpecificResources() noexcept;
@@ -155,7 +154,7 @@ public:
 
 private:
 private:
-    std::unordered_map<VisualElement, style_t> _Styles;
+    std::unordered_map<VisualElement, style_t> _StyleOptions;
 
     #pragma warning(disable: 4868)
     std::unordered_map<VisualElement, style_t> _DefaultStyles

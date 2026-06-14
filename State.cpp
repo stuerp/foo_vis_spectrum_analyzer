@@ -196,9 +196,9 @@ void state_t::Reset() noexcept
 
     /** Graphs **/
 
-    _GraphDescriptions.clear();
+    _GraphOptions.clear();
 
-    _GraphDescriptions.push_back(graph_description_t(L"Stereo"));
+    _GraphOptions.push_back(graph_options_t(L"Stereo"));
 
     _GridRowCount = 1;
     _GridColumnCount = 1;
@@ -475,7 +475,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Graphs
 
-    _GraphDescriptions = other._GraphDescriptions;
+    _GraphOptions = other._GraphOptions;
 
     _GridRowCount = other._GridRowCount;
     _GridColumnCount = other._GridColumnCount;
@@ -823,13 +823,13 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
             stream->read_object_t(_VerticalLayout, abortHandler);
 
-            _GraphDescriptions.clear();
+            _GraphOptions.clear();
 
             stream->read_object_t(Count, abortHandler);
 
             for (size_t i = 0; i < Count; ++i)
             {
-                graph_description_t gd;
+                graph_options_t gd;
 
                 pfc::string Description; stream->read_string(Description, abortHandler); gd._Description = pfc::wideFromUTF8(Description);
 
@@ -877,7 +877,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
                     stream->read_object_t(gd._SwapChannels, abortHandler);
                 }
 
-                _GraphDescriptions.push_back(gd);
+                _GraphOptions.push_back(gd);
             }
         }
 
@@ -1196,13 +1196,13 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write_object_t(_GridRowCount, abortHandler);
         stream->write_object_t(_GridColumnCount, abortHandler);
 
-        stream->write_object_t(graph_description_t::_CurrentVersion, abortHandler);
+        stream->write_object_t(graph_options_t::_CurrentVersion, abortHandler);
 
         stream->write_object_t(_VerticalLayout, abortHandler);
 
-        stream->write_object_t(_GraphDescriptions.size(), abortHandler);
+        stream->write_object_t(_GraphOptions.size(), abortHandler);
 
-        for (auto & gd : _GraphDescriptions)
+        for (auto & gd : _GraphOptions)
         {
             pfc::string Description = pfc::utf8FromWide(gd._Description.c_str());
             stream->write_string(Description, abortHandler);
@@ -1230,7 +1230,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
             stream->write_object_t(gd._VRatio, abortHandler);
 
             // Version 2, v0.7.6.0
-            if (graph_description_t::_CurrentVersion > 1)
+            if (graph_options_t::_CurrentVersion > 1)
             {
                 stream->write_object_t(gd._LPadding, abortHandler);
                 stream->write_object_t(gd._RPadding, abortHandler);
@@ -1242,20 +1242,20 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
             }
 
             // Version 3, v0.8.0.0-beta2
-            if (graph_description_t::_CurrentVersion > 2)
+            if (graph_options_t::_CurrentVersion > 2)
             {
                 stream->write_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler); // v30 adds HorizontalAlignment::Fit
                 stream->write_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
             }
 
             // Version 4, v0.10.0.0-alpha5
-            if (graph_description_t::_CurrentVersion > 2)
+            if (graph_options_t::_CurrentVersion > 2)
             {
                 stream->write_object_t(gd._SwapChannels, abortHandler);
             }
 
             // Version 5, v0.11.0.0-alpha1
-            if (graph_description_t::_CurrentVersion > 4)
+            if (graph_options_t::_CurrentVersion > 4)
             {
                 stream->write_object_t(gd._XAxisDecimals, abortHandler);
             }
@@ -1539,14 +1539,14 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _OverlapGraphs   = Grid.value("overlapGraphs", _OverlapGraphs);
 
     {
-        std::vector<graph_description_t> GraphDescriptions;
+        std::vector<graph_options_t> GraphDescriptions;
 
         const auto & Graphs = Grid.value("graphs", json::array_t());
 
         for (auto & Graph : Graphs)
-            GraphDescriptions.push_back(graph_description_t::FromJSON(Graph));
+            GraphDescriptions.push_back(graph_options_t::FromJSON(Graph));
 
-        _GraphDescriptions = std::move(GraphDescriptions);
+        _GraphOptions = std::move(GraphDescriptions);
     }
 
     _ChannelPair = Object.value("channelPair", _ChannelPair);
@@ -1841,7 +1841,7 @@ json state_t::ToJSON(bool isPreset) const
 
     auto & Graphs = Object["grid"]["graphs"];
 
-    for (const auto & GraphDescription : _GraphDescriptions)
+    for (const auto & GraphDescription : _GraphOptions)
         Graphs.push_back(GraphDescription.ToJSON());
 
     return Object;
@@ -1853,191 +1853,211 @@ json state_t::ToJSON(bool isPreset) const
 void state_t::ConvertColorSettings() noexcept
 {
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::GraphBackground);
+        style_t style;
 
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::GraphBackground, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
         if ((_BackgroundMode_Deprecated > BackgroundMode::Artwork) && !_ArtworkGradientStops.empty())
         {
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
-            style->_ColorSource = ColorSource::DominantColor;
-            style->_CurrentColor = _StyleManager.DominantColor;
+            style._ColorSource = ColorSource::DominantColor;
+            style._CurrentColor = _StyleManager.DominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
-            style->_ColorSource = ColorSource::UserInterface;
-            style->_CurrentColor = _StyleManager.UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style._ColorSource = ColorSource::UserInterface;
+            style._CurrentColor = _StyleManager.UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
-            style->_CustomColor = _BackColor_Deprecated;
+            style._CustomColor = _BackColor_Deprecated;
 
-            style->_ColorSource = ColorSource::Solid;
-            style->_CurrentColor = style->_CustomColor;
+            style._ColorSource = ColorSource::Solid;
+            style._CurrentColor = style._CustomColor;
         }
 
         if (_HorizontalGradient_Deprecated)
-            style->_Flags |= style_t::Features::HorizontalGradient;
+            style._Flags |= style_t::Features::HorizontalGradient;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::VerticalGridLine);
+        style_t style;
 
-        style->_CustomColor = _XLineColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::VerticalGridLine, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomColor = _XLineColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomXLineColor_Deprecated)
             {
-                style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._ColorSource = ColorSource::UserInterface;
+                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
-                style->_ColorSource = ColorSource::Solid;
-                style->_CurrentColor = style->_CustomColor;
+                style._ColorSource = ColorSource::Solid;
+                style._CurrentColor = style._CustomColor;
             }
 
-        style->_CurrentGradientStops = style->_CustomGradientStops;
+        style._CurrentGradientStops = style._CustomGradientStops;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::XAxisText);
+        style_t style;
 
-        style->_CustomColor = _XTextColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::XAxisText, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomColor = _XTextColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomXTextColor_Deprecated)
             {
-                style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._ColorSource = ColorSource::UserInterface;
+                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
-                style->_ColorSource = ColorSource::Solid;
-                style->_CurrentColor = style->_CustomColor;
+                style._ColorSource = ColorSource::Solid;
+                style._CurrentColor = style._CustomColor;
             }
 
-        style->_CurrentGradientStops = style->_CustomGradientStops;
+        style._CurrentGradientStops = style._CustomGradientStops;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+        style_t style;
 
-        style->_CustomColor = _YLineColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::HorizontalGridLine, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomColor = _YLineColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomYLineColor_Deprecated)
             {
-                style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._ColorSource = ColorSource::UserInterface;
+                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
-                style->_ColorSource = ColorSource::Solid;
-                style->_CurrentColor = style->_CustomColor;
+                style._ColorSource = ColorSource::Solid;
+                style._CurrentColor = style._CustomColor;
             }
 
-        style->_CurrentGradientStops = style->_CustomGradientStops;
+        style._CurrentGradientStops = style._CustomGradientStops;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::YAxisText);
+        style_t style;
 
-        style->_CustomColor = _YTextColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::YAxisText, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomColor = _YTextColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomYTextColor_Deprecated)
             {
-                style->_ColorSource = ColorSource::UserInterface;
-                style->_CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._ColorSource = ColorSource::UserInterface;
+                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
             }
             else
             {
-                style->_ColorSource = ColorSource::Solid;
-                style->_CurrentColor = style->_CustomColor;
+                style._ColorSource = ColorSource::Solid;
+                style._CurrentColor = style._CustomColor;
             }
 
-        style->_CurrentGradientStops = style->_CustomGradientStops;
+        style._CurrentGradientStops = style._CustomGradientStops;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::BarArea);
+        style_t style;
 
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::BarArea, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
 
-            style->_ColorSource = ColorSource::Gradient;
-            style->_CurrentColor = D2D1::ColorF(0, 0.f);
-            style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+        style._ColorScheme = _ColorScheme_Deprecated;
+
+            style._ColorSource = ColorSource::Gradient;
+            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::BarDarkBackground);
+        style_t style;
 
-        style->_CustomColor = _DarkBandColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::BarDarkBackground, style);
 
-            style->_ColorSource = ColorSource::Solid;
-            style->_CurrentColor = style->_CustomColor;
+        style._CustomColor = _DarkBandColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+            style._ColorSource = ColorSource::Solid;
+            style._CurrentColor = style._CustomColor;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::BarLightBackground);
+        style_t style;
 
-        style->_CustomColor = _LightBandColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::BarLightBackground, style);
 
-            style->_ColorSource = ColorSource::Solid;
-            style->_CurrentColor = style->_CustomColor;
+        style._CustomColor = _LightBandColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+            style._ColorSource = ColorSource::Solid;
+            style._CurrentColor = style._CustomColor;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::CurveLine);
+        style_t style;
 
-        style->_CustomColor = _LineColor_Deprecated;
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::CurveLine, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomColor = _LineColor_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+
+        style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomLineColor_Deprecated)
             {
-                style->_ColorSource = ColorSource::Gradient;
-                style->_CurrentColor = D2D1::ColorF(0, 0.f);
-                style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+                style._ColorSource = ColorSource::Gradient;
+                style._CurrentColor = D2D1::ColorF(0, 0.f);
+                style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
             {
-                style->_ColorSource = ColorSource::Solid;
-                style->_CurrentColor = style->_CustomColor;
+                style._ColorSource = ColorSource::Solid;
+                style._CurrentColor = style._CustomColor;
             }
 
-        style->_Thickness = _LineWidth_Deprecated;
+        style._Thickness = _LineWidth_Deprecated;
     }
 
     {
-        style_t * style = _StyleManager.GetStyle(VisualElement::CurveArea);
+        style_t style;
 
-        style->_CustomGradientStops = _CustomGradientStops_Deprecated;
+        _StyleManager.GetStyleOptions(VisualElement::CurveArea, style);
 
-        style->_ColorScheme = _ColorScheme_Deprecated;
+        style._CustomGradientStops = _CustomGradientStops_Deprecated;
 
-            style->_ColorSource = ColorSource::Gradient;
-            style->_CurrentColor = D2D1::ColorF(0, 0.f);
-            style->_CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
-            style->_Opacity = _AreaOpacity_Deprecated;
+        style._ColorScheme = _ColorScheme_Deprecated;
+
+            style._ColorSource = ColorSource::Gradient;
+            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style._Opacity = _AreaOpacity_Deprecated;
     }
 }
 
@@ -2046,7 +2066,7 @@ void state_t::ConvertColorSettings() noexcept
 /// </summary>
 void state_t::ConvertGraphDescription() noexcept
 {
-    for (auto & gs : _GraphDescriptions)
+    for (auto & gs : _GraphOptions)
     {
         gs._XAxisMode     = _XAxisMode_Deprecated;
         gs._XAxisTop      = _XAxisTop_Deprecated;

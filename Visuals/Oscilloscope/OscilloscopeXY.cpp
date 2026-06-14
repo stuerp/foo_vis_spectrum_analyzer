@@ -16,9 +16,6 @@
 /// </summary>
 oscilloscope_xy_t::oscilloscope_xy_t()
 {
-    _XAxisTextStyle = nullptr;
-    _YAxisTextStyle = nullptr;
-
     Reset();
 }
 
@@ -33,10 +30,10 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -73,18 +70,8 @@ void oscilloscope_xy_t::Resize() noexcept
 
     oscilloscope_base_t::Resize();
 
-    // Release resources that are size dependent.
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
-
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
+    _XAxisTextStyle.DeleteDeviceSpecificResources();
+    _YAxisTextStyle.DeleteDeviceSpecificResources();
 
     _GridCommandList.Release();
 
@@ -111,7 +98,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
         const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _GraphDescription->_SelectedChannels;                             // Mask containing the channels selected by the user.
+        const uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                             // Mask containing the channels selected by the user.
         const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
         const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
@@ -140,7 +127,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
                     FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
 
-                    if (_GraphDescription->_SwapChannels)
+                    if (_GraphOptions->_SwapChannels)
                         std::swap(x, y);
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
@@ -150,7 +137,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
                         y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
 
-                        if (_GraphDescription->_SwapChannels)
+                        if (_GraphOptions->_SwapChannels)
                             std::swap(x, y);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
@@ -172,7 +159,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+                _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
 
                 hr = _DeviceContext->EndDraw();
             }
@@ -263,11 +250,11 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_XAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, _XAxisTextStyle);
 
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_YAxisTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, _YAxisTextStyle);
 
     if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
         hr = CreateGridCommandList();
@@ -282,17 +269,8 @@ void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
 {
     _GridCommandList.Release();
 
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
-
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
+    _YAxisTextStyle.DeleteDeviceSpecificResources();
+    _XAxisTextStyle.DeleteDeviceSpecificResources();
 
     oscilloscope_base_t::DeleteDeviceSpecificResources();
 }
@@ -326,88 +304,88 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         {
             D2D1_RECT_F TextRect = { -1.f, 0.01f, 1.f, 1.f };
 
-            if (_GraphDescription->HasXAxis() || _GraphDescription->HasYAxis())
+            if (_GraphOptions->HasXAxis() || _GraphOptions->HasYAxis())
             {
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-                _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_GraphDescription->HasXAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+            if (_GraphOptions->HasXAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
-            if (_GraphDescription->HasYAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+            if (_GraphOptions->HasYAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
         }
 
-        _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
         for (FLOAT x = .2f; x < 1.01f; x += .2f)
         {
             // Draw the vertical grid line.
-            if (_VerticalGridLineStyle->IsEnabled())
+            if (_VerticalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_GraphDescription->HasXAxis())
+            if (_GraphOptions->HasXAxis())
             {
                 // Draw the negative X label.
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
                 D2D1_RECT_F TextRect = { -x + 0.01f, 0.01f, 0.f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive X label.
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
                 TextRect = { 0.f, 0.01f, x - 0.01f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        if (!_GraphDescription->HasXAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+        if (!_GraphOptions->HasXAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
-        _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
         for (FLOAT y = .2f; y < 1.01f; y += .2f)
         {
             // Draw the horizontal grid line.
-            if (_HorizontalGridLineStyle->IsEnabled())
+            if (_HorizontalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_GraphDescription->HasYAxis())
+            if (_GraphOptions->HasYAxis())
             {
                 // Draw the negative y label.
-                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+                _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
                 D2D1_RECT_F TextRect = { 0.01f, y - 0.01f, 1.f, -1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive y label.
-                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
                 TextRect = { 0.01f, -y + 0.01f, 1.f, 0.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        if (!_GraphDescription->HasYAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+        if (!_GraphOptions->HasYAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 

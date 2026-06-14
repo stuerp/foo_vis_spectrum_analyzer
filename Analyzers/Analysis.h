@@ -95,7 +95,7 @@ public:
 
     virtual ~analysis_t() noexcept { Reset(); };
 
-    void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
+    void Initialize(const state_t * state, const graph_options_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
@@ -162,7 +162,7 @@ private:
 
 public:
     const state_t * _State;
-    const graph_description_t * _GraphDescription;
+    const graph_options_t * _GraphDescription;
 
     audio_chunk_impl _Chunk;    // Only used by oscilloscope
 

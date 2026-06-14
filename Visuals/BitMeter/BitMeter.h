@@ -26,7 +26,7 @@ public:
     void Release() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
     void Resize() noexcept;
 
     void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
@@ -43,13 +43,13 @@ private:
 
     std::vector<std::wstring> _Labels;
 
-    style_t * _BarBackground;
+    style_t _BarBackground;
 
-    style_t * _BarSign;
-    style_t * _BarMantissa;
-    style_t * _BarExponent;
-    style_t * _XAxisText;
-    style_t * _YAxisText;
+    style_t _BarSign;
+    style_t _BarMantissa;
+    style_t _BarExponent;
+    style_t _XAxisText;
+    style_t _YAxisText;
 
     std::vector<style_t *> _Styles;
 

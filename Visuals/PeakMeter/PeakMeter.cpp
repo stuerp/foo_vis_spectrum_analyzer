@@ -1,12 +1,9 @@
 
-/** $VER: PeakMeter.cpp (2026.03.11) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.06.14) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
 #include "PeakMeter.h"
-
-#include "Support.h"
-#include "Log.h"
 
 #pragma hdrstop
 
@@ -29,10 +26,10 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void peak_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -82,11 +79,11 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void peak_meter_t::CreateParts() noexcept
 {
-    if (_GraphDescription->_YAxisLeft)
+    if (_GraphOptions->_YAxisLeft)
     {
         _Parts.push_back(new scale_t
         (
-            _State, _GraphDescription,
+            _State, _GraphOptions,
             _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_TRAILING,
             _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
@@ -96,14 +93,14 @@ void peak_meter_t::CreateParts() noexcept
 
     if (_State->_IsHorizontalPeakMeter)
     {
-        if (_GraphDescription->_FlipVertically)
+        if (_GraphOptions->_FlipVertically)
         {
             for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphOptions, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -113,9 +110,9 @@ void peak_meter_t::CreateParts() noexcept
             for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphOptions, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -123,14 +120,14 @@ void peak_meter_t::CreateParts() noexcept
     }
     else
     {
-        if (_GraphDescription->_FlipHorizontally)
+        if (_GraphOptions->_FlipHorizontally)
         {
             for (auto Measurement = _Analysis->_PeakMeasurements.rbegin(); Measurement != _Analysis->_PeakMeasurements.rend(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphOptions, &(*Measurement)));
 
                 IsFirstBar = false;
             }
@@ -140,20 +137,20 @@ void peak_meter_t::CreateParts() noexcept
             for (auto Measurement = _Analysis->_PeakMeasurements.begin(); Measurement != _Analysis->_PeakMeasurements.end(); ++Measurement)
             {
                 if (_State->_HasCenterScale && !IsFirstBar)
-                    _Parts.push_back(new scale_t(_State, _GraphDescription, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+                    _Parts.push_back(new scale_t(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-                _Parts.push_back(new bar_t(_State, _GraphDescription, &(*Measurement)));
+                _Parts.push_back(new bar_t(_State, _GraphOptions, &(*Measurement)));
 
                 IsFirstBar = false;
             }
         }
     }
 
-    if (_GraphDescription->_YAxisRight)
+    if (_GraphOptions->_YAxisRight)
     {
         _Parts.push_back(new scale_t
         (
-            _State, _GraphDescription,
+            _State, _GraphOptions,
             _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER: DWRITE_TEXT_ALIGNMENT_LEADING,
             _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
@@ -184,32 +181,16 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     // Calculate how much space the scales occupy.
     for (auto Part : _Parts)
     {
-        Part->Bind
-        (
-            deviceContext,
-            _BackgroundStyle,
-            _PeakStyle,
-            _Peak0dBStyle,
-            _MaxPeakStyle,
-            _PeakTextStyle,
-            _RMSStyle,
-            _RMS0dBStyle,
-            _RMSTextStyle,
-            _NameStyle,
-            _ScaleTextStyle,
-            _ScaleLineStyle,
-            _DebugBrush,
-            _OpacityMask
-        );
+        Part->Initialize(_State, deviceContext, _OpacityMask, _DebugBrush);
 
         auto * Scale = dynamic_cast<scale_t *>(Part);
 
         if (Scale != nullptr)
         {
             if (_State->_IsHorizontalPeakMeter)
-                TotalScaleHeight += _ScaleTextStyle->_Height + (Scale->IsCenter() ? 0.f : _TickSize);
+                TotalScaleHeight += _ScaleTextStyle._Height + (Scale->IsCenter() ? 0.f : _TickSize);
             else
-                TotalScaleWidth  += _ScaleTextStyle->_Width  + (Scale->IsCenter() ? 0.f : _TickSize);
+                TotalScaleWidth  += _ScaleTextStyle._Width  + (Scale->IsCenter() ? 0.f : _TickSize);
         }
         else
             ++BarCount;
@@ -262,7 +243,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             if (Scale != nullptr) // Scale
             {
                 Rect.top    = y;
-                Rect.bottom = y + _ScaleTextStyle->_Height + (Scale->IsCenter() ? 0.f : _TickSize);
+                Rect.bottom = y + _ScaleTextStyle._Height + (Scale->IsCenter() ? 0.f : _TickSize);
 
                 NeedGap = false;
             }
@@ -295,7 +276,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             if (Scale != nullptr)
             {
                 Rect.left  = x;
-                Rect.right = x + _ScaleTextStyle->_Width + (Scale->IsCenter() ? 0.f : _TickSize);
+                Rect.right = x + _ScaleTextStyle._Width + (Scale->IsCenter() ? 0.f : _TickSize);
 
                 NeedGap = false;
             }
@@ -326,37 +307,37 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     HRESULT hr = S_OK;
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, _Size, L"", 1.f, &_BackgroundStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, _Size, L"", 1.f, _BackgroundStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevel, deviceContext, _Size, L"", 1.f, &_PeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevel, deviceContext, _Size, L"", 1.f, _PeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBPeakLevel, deviceContext, _Size, L"", 1.f, &_Peak0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBPeakLevel, deviceContext, _Size, L"", 1.f, _Peak0dBStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevelText, deviceContext, _Size, L"+199.9", 1.f, &_PeakTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevelText, deviceContext, _Size, L"+199.9", 1.f, _PeakTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMaxPeakLevel, deviceContext, _Size, L"", 1.f, &_MaxPeakStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMaxPeakLevel, deviceContext, _Size, L"", 1.f, _MaxPeakStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevel, deviceContext, _Size, L"", 1.f, &_RMSStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevel, deviceContext, _Size, L"", 1.f, _RMSStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBRMSLevel, deviceContext, _Size, L"", 1.f, &_RMS0dBStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBRMSLevel, deviceContext, _Size, L"", 1.f, _RMS0dBStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevelText, deviceContext, _Size, L"+199.9", 1.f, &_RMSTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevelText, deviceContext, _Size, L"+199.9", 1.f, _RMSTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"LFE", 1.f, &_NameStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"LFE", 1.f, _NameStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, &_ScaleTextStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, _ScaleTextStyle);
 
     if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, &_ScaleLineStyle);
+        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _ScaleLineStyle);
 
     if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
         hr = CreateOpacityMask(deviceContext);
@@ -390,21 +371,21 @@ void peak_meter_t::DeleteDeviceSpecificResources() noexcept
 
     DeleteParts();
 
-    SafeRelease(&_BackgroundStyle);
+    _BackgroundStyle.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_PeakStyle);
-    SafeRelease(&_Peak0dBStyle);
-    SafeRelease(&_MaxPeakStyle);
-    SafeRelease(&_PeakTextStyle);
+    _PeakStyle.DeleteDeviceSpecificResources();
+    _Peak0dBStyle.DeleteDeviceSpecificResources();
+    _MaxPeakStyle.DeleteDeviceSpecificResources();
+    _PeakTextStyle.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_RMSStyle);
-    SafeRelease(&_RMS0dBStyle);
-    SafeRelease(&_RMSTextStyle);
+    _RMSStyle.DeleteDeviceSpecificResources();
+    _RMS0dBStyle.DeleteDeviceSpecificResources();
+    _RMSTextStyle.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_NameStyle);
+    _NameStyle.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_ScaleTextStyle);
-    SafeRelease(&_ScaleLineStyle);
+    _ScaleTextStyle.DeleteDeviceSpecificResources();
+    _ScaleLineStyle.DeleteDeviceSpecificResources();
 
     _OpacityMask.Release();
 

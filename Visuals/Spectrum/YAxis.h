@@ -38,14 +38,14 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle->_Width;
+        return _TextStyle._Width;
     }
 
 private:
@@ -69,6 +69,6 @@ private:
 
     std::vector<label_t> _Labels;
 
-    style_t * _LineStyle;
-    style_t * _TextStyle;
+    style_t _LineStyle;
+    style_t _TextStyle;
 };

@@ -17,10 +17,6 @@ level_meter_t::level_meter_t()
     _Rect = { };
     _Size = { };
 
-    _LeftRightStyle =
-    _MidSideStyle =
-    _AxisStyle = nullptr;
-
     Reset();
 }
 
@@ -35,10 +31,10 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void level_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -84,84 +80,84 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             D2D1_RECT_F Rect = { CenterX, 2.f, x, CenterY - 2.f };
 
-            if (_LeftRightStyle->IsEnabled())
+            if (_LeftRightStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _LeftRightStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush);
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
-            if (_LeftRightIndicatorStyle->IsEnabled())
+            if (_LeftRightIndicatorStyle.IsEnabled())
             {
-                Rect.left  = x - _LeftRightIndicatorStyle->_Thickness;
-                Rect.right = x + _LeftRightIndicatorStyle->_Thickness;
+                Rect.left  = x - _LeftRightIndicatorStyle._Thickness;
+                Rect.right = x + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle->_Brush);
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
             }
 
             x = (FLOAT) _Analysis->_Phase * GetWidth();
 
             Rect = { CenterX, CenterY + 2.f, x, GetHeight() - 2.f };
 
-            if (_MidSideStyle->IsEnabled())
+            if (_MidSideStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _MidSideStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush);
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
-            if (_MidSideIndicatorStyle->IsEnabled())
+            if (_MidSideIndicatorStyle.IsEnabled())
             {
-                Rect.left  = x - _MidSideIndicatorStyle->_Thickness;
-                Rect.right = x + _MidSideIndicatorStyle->_Thickness;
+                Rect.left  = x - _MidSideIndicatorStyle._Thickness;
+                Rect.right = x + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle->_Brush);
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush);
             }
         }
 
         // Render the axis.
-        if (_AxisStyle->IsEnabled())
+        if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ 2.f, CenterY }, { GetWidth() - 2.f, CenterY }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+            deviceContext->DrawLine({ 2.f, CenterY }, { GetWidth() - 2.f, CenterY }, _AxisStyle._Brush, _AxisStyle._Thickness);
 
             D2D1_RECT_F Rect = { 4.f, 2.f, GetWidth() - 4.f, CenterY - 2.f };
 
             {
-                _AxisStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-                deviceContext->DrawText(L"L", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                _AxisStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
-                deviceContext->DrawText(L"R", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             {
                 Rect.top    = CenterY     + 2.f;
                 Rect.bottom = GetHeight() - 2.f;
 
-                _AxisStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-                deviceContext->DrawText(L"S", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                _AxisStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
-                deviceContext->DrawText(L"M", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
         }
     }
     else
@@ -172,84 +168,84 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
 
-            if (_LeftRightStyle->IsEnabled())
+            if (_LeftRightStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _LeftRightStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush);
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
-            if (_LeftRightIndicatorStyle->IsEnabled())
+            if (_LeftRightIndicatorStyle.IsEnabled())
             {
-                Rect.top    = y - _LeftRightIndicatorStyle->_Thickness;
-                Rect.bottom = y + _LeftRightIndicatorStyle->_Thickness;
+                Rect.top    = y - _LeftRightIndicatorStyle._Thickness;
+                Rect.bottom = y + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle->_Brush);
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
             }
 
             y = (FLOAT) _Analysis->_Phase * GetHeight();
 
             Rect = { CenterX + 2.f, CenterY, GetWidth() - 2.f, y };
 
-            if (_MidSideStyle->IsEnabled())
+            if (_MidSideStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _MidSideStyle->_Brush);
+                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush);
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
-            if (_MidSideIndicatorStyle->IsEnabled())
+            if (_MidSideIndicatorStyle.IsEnabled())
             {
-                Rect.top    = y - _MidSideIndicatorStyle->_Thickness;
-                Rect.bottom = y + _MidSideIndicatorStyle->_Thickness;
+                Rect.top    = y - _MidSideIndicatorStyle._Thickness;
+                Rect.bottom = y + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle->_Brush);
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush);
             }
         }
 
         // Render the axis.
-        if (_AxisStyle->IsEnabled())
+        if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
 
             D2D1_RECT_F Rect = { 2.f, 4.f, CenterX - 2.f, GetHeight() - 4.f };
 
             {
-                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                deviceContext->DrawText(L"L", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+                _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-                deviceContext->DrawText(L"R", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             {
                 Rect.left  = CenterX    + 2.f;
                 Rect.right = GetWidth() - 2.f;
 
-                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                deviceContext->DrawText(L"S", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-                _AxisStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+                _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-                deviceContext->DrawText(L"M", 1, _AxisStyle->_TextFormat, Rect, _AxisStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle->_Brush, _AxisStyle->_Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
         }
     }
 }
@@ -269,27 +265,27 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, &_LeftRightStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, _LeftRightStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, &_LeftRightIndicatorStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, _LeftRightIndicatorStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, &_MidSideStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, _MidSideStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, &_MidSideIndicatorStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, _MidSideIndicatorStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, &_AxisStyle);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, _AxisStyle);
 
     if (!SUCCEEDED(hr))
         return hr;
@@ -311,35 +307,11 @@ void level_meter_t::DeleteDeviceSpecificResources() noexcept
     _DebugBrush.Release();
 #endif
 
-    if (_AxisStyle)
-    {
-        _AxisStyle->DeleteDeviceSpecificResources();
-        _AxisStyle = nullptr;
-    }
-
-    if (_MidSideIndicatorStyle)
-    {
-        _MidSideIndicatorStyle->DeleteDeviceSpecificResources();
-        _MidSideIndicatorStyle = nullptr;
-    }
-
-    if (_MidSideStyle)
-    {
-        _MidSideStyle->DeleteDeviceSpecificResources();
-        _MidSideStyle = nullptr;
-    }
-
-    if (_LeftRightIndicatorStyle)
-    {
-        _LeftRightIndicatorStyle->DeleteDeviceSpecificResources();
-        _LeftRightIndicatorStyle = nullptr;
-    }
-
-    if (_LeftRightStyle)
-    {
-        _LeftRightStyle->DeleteDeviceSpecificResources();
-        _LeftRightStyle = nullptr;
-    }
+    _AxisStyle.DeleteDeviceSpecificResources();
+    _MidSideIndicatorStyle.DeleteDeviceSpecificResources();
+    _MidSideStyle.DeleteDeviceSpecificResources();
+    _LeftRightIndicatorStyle.DeleteDeviceSpecificResources();
+    _LeftRightStyle.DeleteDeviceSpecificResources();
 
     _OpacityMask.Release();
 }

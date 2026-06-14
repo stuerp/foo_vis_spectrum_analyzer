@@ -1,14 +1,13 @@
 
-/** $VER: Style.cpp (2026.03.21) P. Stuer **/
+/** $VER: Style.cpp (2026.06.14) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
 
 #include "Direct2D.h"
+#include "DirectWrite.h"
 #include "Gradients.h"
 #include "Support.h"
-
-#include "Log.h"
 
 #pragma hdrstop
 

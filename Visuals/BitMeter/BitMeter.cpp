@@ -28,10 +28,10 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void bit_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = graphDescription;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     _MeasurementCount = 0;
@@ -106,8 +106,8 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Draw the static content.
     deviceContext->DrawImage(_StaticContentCommandList);
 
-    const FLOAT XAxisHeight = _GraphDescription->_XAxisBottom ? YPadding + _XAxisText->_Height + YPadding : 1.f;
-    const FLOAT YAxisWidth  = _GraphDescription->_YAxisLeft   ? XPadding + _YAxisText->_Width  + XPadding : 0.f;
+    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
+    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
 
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
@@ -115,14 +115,14 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT BarWidth = ClientWidth  / (FLOAT) _BitCount;
 
     // Use the full width of the graph?
-    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
         BarWidth = std::floor(BarWidth);
 
     const FLOAT TotalBarWidth = BarWidth * (FLOAT) _BitCount;
 
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
-    const FLOAT XOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, ClientWidth - TotalBarWidth);
+    const FLOAT XOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, ClientWidth - TotalBarWidth);
     FLOAT YOffset = 0.f;
 
     // Draw the measurements for each selected channel.
@@ -184,10 +184,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _MeasurementCount = _Analysis->_BitMeasurements.size();
 
-        SafeRelease(&_BarBackground);
-        SafeRelease(&_BarSign);
-        SafeRelease(&_BarExponent);
-        SafeRelease(&_BarMantissa);
+        _BarBackground.DeleteDeviceSpecificResources();
+        _BarSign.DeleteDeviceSpecificResources();
+        _BarExponent.DeleteDeviceSpecificResources();
+        _BarMantissa.DeleteDeviceSpecificResources();
 
         _StaticContentCommandList.Release();
     }
@@ -202,40 +202,40 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, TextSize, L"", 1.f, &_BarBackground);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, TextSize, L"", 1.f, _BarBackground);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarSign, deviceContext, TextSize, L"", 1.f, &_BarSign);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarSign, deviceContext, TextSize, L"", 1.f, _BarSign);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarExponent, deviceContext, TextSize, L"", 1.f, &_BarExponent);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarExponent, deviceContext, TextSize, L"", 1.f, _BarExponent);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMantissa, deviceContext, TextSize, L"", 1.f, &_BarMantissa);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMantissa, deviceContext, TextSize, L"", 1.f, _BarMantissa);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"99", 1.f, &_XAxisText);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"99", 1.f, _XAxisText);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    _XAxisText->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-    _XAxisText->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+    _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"WW", 1.f, &_YAxisText);
+    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"WW", 1.f, _YAxisText);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    _YAxisText->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
@@ -268,9 +268,9 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     for (size_t BitNumber = 0; BitNumber < _BitCount; ++BitNumber)
     {
         if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
-            _Styles[BitNumber] = (BitNumber == 0) ? _BarSign : ((BitNumber <= ExponentBits) ? _BarExponent : _BarMantissa);
+            _Styles[BitNumber] = (BitNumber == 0) ? &_BarSign : ((BitNumber <= ExponentBits) ? &_BarExponent : &_BarMantissa);
         else
-            _Styles[BitNumber] = _BarMantissa;
+            _Styles[BitNumber] = &_BarMantissa;
     }
 
     return hr;
@@ -289,13 +289,13 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
     _DebugBrush.Release();
 #endif
 
-    SafeRelease(&_YAxisText);
-    SafeRelease(&_XAxisText);
+    _YAxisText.DeleteDeviceSpecificResources();
+    _XAxisText.DeleteDeviceSpecificResources();
 
-    SafeRelease(&_BarMantissa);
-    SafeRelease(&_BarExponent);
-    SafeRelease(&_BarSign);
-    SafeRelease(&_BarBackground);
+    _BarMantissa.DeleteDeviceSpecificResources();
+    _BarExponent.DeleteDeviceSpecificResources();
+    _BarSign.DeleteDeviceSpecificResources();
+    _BarBackground.DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -315,8 +315,8 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     _DeviceContext->Clear(D2D1::ColorF(0, 0.f));
 
-    const FLOAT XAxisHeight = _GraphDescription->_XAxisBottom ? YPadding + _XAxisText->_Height + YPadding : 1.f;
-    const FLOAT YAxisWidth  = _GraphDescription->_YAxisLeft   ? XPadding + _YAxisText->_Width  + XPadding : 0.f;
+    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
+    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
 
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
@@ -324,14 +324,14 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     FLOAT BarWidth = ClientWidth  / (FLOAT) _BitCount;
 
     // Use the full width of the graph?
-    if (_GraphDescription->_HorizontalAlignment != HorizontalAlignment::Fit)
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
         BarWidth = std::floor(BarWidth);
 
     const FLOAT TotalBarWidth = BarWidth * (FLOAT) _BitCount;
 
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
-    const FLOAT XOffset = GetHOffset(_GraphDescription->_HorizontalAlignment, ClientWidth - TotalBarWidth);
+    const FLOAT XOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, ClientWidth - TotalBarWidth);
     FLOAT YOffset = 0.f;
 
     // Draw the static content for each selected channel.
@@ -347,13 +347,13 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
         {
             r.left = XOffset;
 
-            if (_GraphDescription->_YAxisLeft && _YAxisText->IsEnabled())
+            if (_GraphOptions->_YAxisLeft && _YAxisText.IsEnabled())
             {
                 r.left  += XPadding;
-                r.right = r.left + _YAxisText->_Width;
+                r.right = r.left + _YAxisText._Width;
 
 //              _DeviceContext->DrawRectangle(r, _DebugBrush);
-                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText->_TextFormat, r, _YAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat, r, _YAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 r.left = r.right + XPadding;
             }
@@ -365,18 +365,18 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             // Draw the background.
             r.right = r.left + BarWidth - 1.f;
 
-            if (_BarBackground->IsEnabled())
-                _DeviceContext->FillRectangle(r, _BarBackground->_Brush);
+            if (_BarBackground.IsEnabled())
+                _DeviceContext->FillRectangle(r, _BarBackground._Brush);
 
             // Draw the bit number.
-            if (_GraphDescription->_XAxisBottom && _XAxisText->IsEnabled())
+            if (_GraphOptions->_XAxisBottom && _XAxisText.IsEnabled())
             {
                 const std::wstring & Text = _Labels[BitNumber];
 
                 const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
 
 //              _DeviceContext->DrawRectangle(cr, _DebugBrush);
-                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText->_TextFormat, cr, _XAxisText->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat, cr, _XAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             r.left = r.right + 1.f;

@@ -562,11 +562,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                     size_t i = 0;
 
-                    for (auto & GraphDescription : _RenderState._GraphDescriptions)
+                    for (auto & GraphDescription : _RenderState._GraphOptions)
                     {
                         auto * Graph = new graph_t();
 
-                        Graph->Initialize(&_RenderState, &GraphDescription, (i == 0), (i == _RenderState._GraphDescriptions.size() - 1));
+                        Graph->Initialize(&_RenderState, &GraphDescription, (i == 0), (i == _RenderState._GraphOptions.size() - 1));
 
                         _Grid.push_back({ Graph });
                         ++i;

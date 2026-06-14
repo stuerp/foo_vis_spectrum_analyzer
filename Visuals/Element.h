@@ -10,15 +10,13 @@
 #include <SDKDDKVer.h>
 
 #include "State.h"
-#include "GraphDescription.h"
+#include "Graphoptions.h"
 #include "Analysis.h"
-
-#include "Style.h"
 
 class element_t
 {
 public:
-    element_t() : _State(), _GraphDescription(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
+    element_t() : _State(), _GraphOptions(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
 
     virtual ~element_t() noexcept { }
 
@@ -90,18 +88,8 @@ public:
     }
 
 protected:
-    void SafeRelease(style_t ** style) noexcept
-    {
-        if (*style != nullptr)
-        {
-            (*style)->DeleteDeviceSpecificResources();
-            *style = nullptr;
-        }
-    }
-
-protected:
     state_t * _State;
-    graph_description_t * _GraphDescription;
+    graph_options_t * _GraphOptions;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Rect;
