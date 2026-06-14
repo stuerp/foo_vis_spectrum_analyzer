@@ -219,11 +219,11 @@ void graphs_page_t::UpdateControls() noexcept
 
         w.ResetContent();
 
-        int i = 1;
+        uint32_t i = 1;
 
         for (const auto & Iter : _State->_GraphDescriptions)
         {
-            w.AddString(!Iter._Description.empty() ? Iter._Description.c_str() : msc::FormatText(L"Graph %d", i).c_str());
+            w.AddString(!Iter._Description.empty() ? Iter._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
 
             i++;
         }

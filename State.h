@@ -263,8 +263,6 @@ public:
 
     #pragma endregion
 
-    style_manager_t _StyleManager;
-
     #pragma region Graphs
 
     size_t _GridRowCount;
@@ -272,6 +270,7 @@ public:
     bool _VerticalLayout;                                               // Shows the graphs vertically instead of horizontally.
     bool _OverlapGraphs;                                                // True if the graphs should be rendered overlapped instead of in a grid layout.
 
+    style_manager_t _StyleManager;                                      // Styles shared by all graphs.
     std::vector<graph_description_t> _GraphDescriptions;
 
     #pragma endregion

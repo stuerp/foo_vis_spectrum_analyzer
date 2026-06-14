@@ -336,6 +336,7 @@
     <ClInclude Include="Visuals\PeakMeter\PeakMeterParts.h" />
     <ClInclude Include="Visuals\Spectrogram\Spectrogram.h" />
     <ClInclude Include="Visuals\Tester\Tester.h" />
+    <ClInclude Include="Visuals\Visualization.h" />
     <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Direct3D.h" />
     <ClInclude Include="Windows\Event.h" />

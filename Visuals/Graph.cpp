@@ -19,8 +19,6 @@
 
 #include "Tester.h"
 
-#include "Log.h"
-
 #pragma hdrstop
 
 /// <summary>
@@ -40,10 +38,12 @@ graph_t::~graph_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, const graph_description_t * graphDescription, const analysis_t *) noexcept
+void graph_t::Initialize(state_t * state, graph_description_t * graphDescription, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphDescription = graphDescription;
+    _IsFirst = isFirst;
+    _IsLast = isLast;
 
     _Description = graphDescription->_Description;
 
@@ -226,6 +226,9 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// </summary>
 void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
+    if (!_IsFirst)
+        return;
+
     if (_BackgroundStyle->IsEnabled())
         deviceContext->FillRectangle(_Rect, _BackgroundStyle->_Brush);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.06.10) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -17,11 +17,11 @@
 
 #include <atlbase.h>
 
-#include "Element.h"
+#include "Visualization.h"
 
 #include <deque>
 
-class spectrogram_t : public element_t
+class spectrogram_t : public visualization_t
 {
 public:
     spectrogram_t();
@@ -34,10 +34,12 @@ public:
     virtual ~spectrogram_t();
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
+
+    // visualization_t
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 

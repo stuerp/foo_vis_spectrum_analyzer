@@ -418,7 +418,7 @@ void uielement_t::Resize()
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._StyleManager.DeleteGradientBrushes();
+            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
         }
 
         for (auto & Item : _Grid)
@@ -560,13 +560,16 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                     _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, _RenderState._OverlapGraphs);
 
-                    for (const auto & GraphDescription : _RenderState._GraphDescriptions)
+                    size_t i = 0;
+
+                    for (auto & GraphDescription : _RenderState._GraphDescriptions)
                     {
                         auto * Graph = new graph_t();
 
-                        Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
+                        Graph->Initialize(&_RenderState, &GraphDescription, (i == 0), (i == _RenderState._GraphDescriptions.size() - 1));
 
                         _Grid.push_back({ Graph });
+                        ++i;
                     }
                 }
                 break;
@@ -582,6 +585,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::None:
             case ConfigurationChanges::RenderLoop:
             case ConfigurationChanges::RefreshRate:
+            case ConfigurationChanges::Oscilloscope:
             case ConfigurationChanges::Artwork:
             default:
                 break;

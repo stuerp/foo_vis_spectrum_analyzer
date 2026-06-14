@@ -5,11 +5,6 @@
 
 #include "Tester.h"
 
-#include "Support.h"
-#include "Log.h"
-
-#include "DirectWrite.h"
-
 #pragma hdrstop
 
 /// <summary>
@@ -34,10 +29,10 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void tester_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     CreateDeviceIndependentResources();

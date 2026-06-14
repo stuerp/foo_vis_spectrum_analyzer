@@ -13,8 +13,6 @@
 #include "GraphDescription.h"
 #include "Analysis.h"
 
-#include "Direct2D.h"
-
 #include "Style.h"
 
 class element_t
@@ -22,9 +20,8 @@ class element_t
 public:
     element_t() : _State(), _GraphDescription(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
 
-    virtual ~element_t() noexcept {}
+    virtual ~element_t() noexcept { }
 
-    virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept { }
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { }
@@ -104,7 +101,7 @@ protected:
 
 protected:
     state_t * _State;
-    const graph_description_t * _GraphDescription;
+    graph_description_t * _GraphDescription;
     const analysis_t * _Analysis;
 
     D2D1_RECT_F _Rect;

@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.h (2026.03.21) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphDescription.h (2026.10.06) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include "Constants.h"
+#include "StyleManager.h"
 
 #include <string>
 
@@ -91,6 +92,8 @@ public:
 
     HorizontalTextAlignment _HAlignment;
     VerticalTextAlignment _VAlignment;
+
+    style_manager_t _StyleManager;
 
     static const uint32_t _CurrentVersion = 4;  // v0.10.0-alpha5
 };

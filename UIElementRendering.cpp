@@ -171,7 +171,7 @@ void uielement_t::ProcessEvents() noexcept
 
             _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
             _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-            _RenderState._StyleManager.DeleteGradientBrushes();
+            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the new artwork.
 
             _IsConfigurationChanged = true;
         }
@@ -482,8 +482,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         if (SUCCEEDED(hr))
         {
             // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-//          if (SUCCEEDED(hr) && _(_Artwork.Bitmap() != nullptr))
-                CreateArtworkDependentResources();
+            CreateArtworkDependentResources();
 
             for (auto & Item : _Grid)
                 Item->Release();
@@ -623,7 +622,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
     {
         _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
         _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-        _RenderState._StyleManager.DeleteGradientBrushes();
+        _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
 
         _IsConfigurationChanged = true;
     }
@@ -638,7 +637,9 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 /// </summary>
 bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount) noexcept
 {
-    audio_sample * Samples = new audio_sample[frameCount];
+    const uint32_t ChannelCount = 1;
+
+    audio_sample * Samples = new audio_sample[frameCount * ChannelCount];
 
     if (Samples == nullptr)
         return false;
@@ -666,7 +667,7 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
         Samples[i] = (audio_sample) std::sin(2.0 * M_PI * Frequency * t);
     }
     
-    chunk = audio_chunk_impl(Samples, frameCount, 1, sampleRate);
+    chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);
     
     delete[] Samples;
     

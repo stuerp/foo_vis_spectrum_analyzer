@@ -1,5 +1,5 @@
 
-/** $VER: GraphDescription.cpp (2026.04.19) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphDescription.cpp (2026.06.10) P. Stuer - Describes the layout and settings of a graph. **/
 
 #include "pch.h"
 
@@ -77,6 +77,64 @@ double graph_description_t::ScaleAmplitude(double value) const noexcept
 }
 
 /// <summary>
+/// Deserializes this instance.
+/// </summary>
+graph_description_t graph_description_t::FromJSON(const json & object) noexcept
+{
+    graph_description_t gd;
+
+    const auto & Description = object.value("description", json::object());
+
+    gd._Description = msc::UTF8ToWide(Description.value("text", msc::WideToUTF8(gd._Description)));
+    gd._HAlignment  = Description.value("horizontalAlignment", gd._HAlignment);
+    gd._VAlignment  = Description.value("verticalAlignment", gd._VAlignment);
+
+    gd._SelectedChannels = object.value("channels", gd._SelectedChannels);
+    gd._SwapChannels     = object.value("swapChannels", gd._SwapChannels);
+
+    const auto & Layout = object.value("layout", json::object());
+
+    gd._HorizontalAlignment = Layout.value("horizontalAlignment", gd._HorizontalAlignment);
+    gd._HRatio              = Layout.value("horizontalRatio", gd._HRatio);
+    gd._VerticalAlignment   = Layout.value("verticalAlignment", gd._VerticalAlignment);
+    gd._VRatio              = Layout.value("verticalRatio", gd._VRatio);
+
+    gd._FlipHorizontally = Layout.value("flipHorizontally", gd._FlipHorizontally);
+    gd._FlipVertically   = Layout.value("flipVertically", gd._FlipVertically);
+
+    gd._LPadding = Layout.value("leftPadding", gd._LPadding);
+    gd._RPadding = Layout.value("rightPadding", gd._RPadding);
+    gd._TPadding = Layout.value("topPadding", gd._TPadding);
+    gd._BPadding = Layout.value("bottomPadding", gd._BPadding);
+
+    const auto & XAxis = object.value("xAxis", json::object());
+
+    gd._XAxisMode     = XAxis.value("mode", gd._XAxisMode);
+    gd._XAxisTop      = XAxis.value("top", gd._XAxisTop);
+    gd._XAxisBottom   = XAxis.value("bottom", gd._XAxisBottom);
+    gd._XAxisDecimals = XAxis.value("decimals", gd._XAxisDecimals);
+
+    const auto & YAxis = object.value("yAxis", json::object());
+
+    gd._YAxisMode     = YAxis.value("mode", gd._YAxisMode);
+    gd._YAxisLeft     = YAxis.value("left", gd._YAxisLeft);
+    gd._YAxisRight    = YAxis.value("right", gd._YAxisRight);
+
+    gd._AmplitudeLo   = YAxis.value("amplitudeLo", gd._AmplitudeLo);
+    gd._AmplitudeHi   = YAxis.value("amplitudeHi", gd._AmplitudeHi);
+    gd._AmplitudeStep = YAxis.value("amplitudeStep", gd._AmplitudeStep);
+
+    gd._UseAbsolute   = YAxis.value("useAbsolute", gd._UseAbsolute);
+    gd._Gamma         = YAxis.value("gamma", gd._Gamma);
+
+    const auto & Styles = object.value("styles", json::array());
+
+    gd._StyleManager.FromJSON(Styles);
+
+    return gd;
+}
+
+/// <summary>
 /// Serializes this instance to JSON string.
 /// </summary>
 json graph_description_t::ToJSON() const noexcept
@@ -138,61 +196,9 @@ json graph_description_t::ToJSON() const noexcept
                 { "gamma", _Gamma },
             })
         },
+
+        { "styles", _StyleManager.ToJSON() },
     };
 
     return Object;
-}
-
-/// <summary>
-/// Deserializes this instance.
-/// </summary>
-graph_description_t graph_description_t::FromJSON(const json & object) noexcept
-{
-    graph_description_t gd;
-
-    const auto & Description = object.value("description", json::object());
-
-    gd._Description = msc::UTF8ToWide(Description.value("text", msc::WideToUTF8(gd._Description)));
-    gd._HAlignment  = Description.value("horizontalAlignment", gd._HAlignment);
-    gd._VAlignment  = Description.value("verticalAlignment", gd._VAlignment);
-
-    gd._SelectedChannels = object.value("channels", gd._SelectedChannels);
-    gd._SwapChannels     = object.value("swapChannels", gd._SwapChannels);
-
-    const auto & Layout = object.value("layout", json::object());
-
-    gd._HorizontalAlignment = Layout.value("horizontalAlignment", gd._HorizontalAlignment);
-    gd._HRatio              = Layout.value("horizontalRatio", gd._HRatio);
-    gd._VerticalAlignment   = Layout.value("verticalAlignment", gd._VerticalAlignment);
-    gd._VRatio              = Layout.value("verticalRatio", gd._VRatio);
-
-    gd._FlipHorizontally = Layout.value("flipHorizontally", gd._FlipHorizontally);
-    gd._FlipVertically   = Layout.value("flipVertically", gd._FlipVertically);
-
-    gd._LPadding = Layout.value("leftPadding", gd._LPadding);
-    gd._RPadding = Layout.value("rightPadding", gd._RPadding);
-    gd._TPadding = Layout.value("topPadding", gd._TPadding);
-    gd._BPadding = Layout.value("bottomPadding", gd._BPadding);
-
-    const auto & XAxis = object.value("xAxis", json::object());
-
-    gd._XAxisMode     = XAxis.value("mode", gd._XAxisMode);
-    gd._XAxisTop      = XAxis.value("top", gd._XAxisTop);
-    gd._XAxisBottom   = XAxis.value("bottom", gd._XAxisBottom);
-    gd._XAxisDecimals = XAxis.value("decimals", gd._XAxisDecimals);
-
-    const auto & YAxis = object.value("yAxis", json::object());
-
-    gd._YAxisMode     = YAxis.value("mode", gd._YAxisMode);
-    gd._YAxisLeft     = YAxis.value("left", gd._YAxisLeft);
-    gd._YAxisRight    = YAxis.value("right", gd._YAxisRight);
-
-    gd._AmplitudeLo   = YAxis.value("amplitudeLo", gd._AmplitudeLo);
-    gd._AmplitudeHi   = YAxis.value("amplitudeHi", gd._AmplitudeHi);
-    gd._AmplitudeStep = YAxis.value("amplitudeStep", gd._AmplitudeStep);
-
-    gd._UseAbsolute   = YAxis.value("useAbsolute", gd._UseAbsolute);
-    gd._Gamma         = YAxis.value("gamma", gd._Gamma);
-
-    return gd;
 }

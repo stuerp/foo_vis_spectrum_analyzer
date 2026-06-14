@@ -4,12 +4,10 @@
 #include <pch.h>
 
 #include "OscilloscopeXY.h"
-#include "AmplitudeScaler.h"
 
 #include "Support.h"
-#include "Log.h"
 
-#include "DirectWrite.h"
+#include "Direct2D.h"
 
 #pragma hdrstop
 
@@ -35,10 +33,10 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void oscilloscope_xy_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();

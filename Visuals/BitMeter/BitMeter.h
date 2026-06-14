@@ -1,13 +1,13 @@
 
-/** $VER: BitMeter.h (2026.05.24) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.06.10) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
 #include <pch.h>
 
-#include "Element.h"
+#include "Visualization.h"
 
-class bit_meter_t : public element_t
+class bit_meter_t : public visualization_t
 {
 public:
     bit_meter_t();
@@ -20,12 +20,13 @@ public:
     virtual ~bit_meter_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
+    // visualization_t
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
     void Resize() noexcept;
 
     void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;

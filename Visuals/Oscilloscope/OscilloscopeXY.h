@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.02.22) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.h (2026.06.10) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #pragma once
 
@@ -20,11 +20,11 @@ public:
     virtual ~oscilloscope_xy_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
     void Resize() noexcept;
 
 private:

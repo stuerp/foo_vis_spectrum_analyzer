@@ -1,13 +1,13 @@
 
-/** $VER: Tester.h (2025.10.21) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.h (2026.06.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #pragma once
 
 #include <pch.h>
 
-#include "Element.h"
+#include "Visualization.h"
 
-class tester_t : public element_t
+class tester_t : public visualization_t
 {
 public:
     tester_t();
@@ -20,12 +20,13 @@ public:
     virtual ~tester_t();
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
+    // visualization_t
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept;
     void Resize() noexcept;
 
 private:

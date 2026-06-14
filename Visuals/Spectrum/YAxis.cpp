@@ -12,13 +12,13 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void y_axis_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
-    _FlipVertically = settings->_FlipVertically;
+    _FlipVertically = graphDescription->_FlipVertically;
 
     _Labels.clear();
 

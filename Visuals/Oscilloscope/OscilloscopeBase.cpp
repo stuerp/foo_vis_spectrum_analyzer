@@ -4,12 +4,10 @@
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
-#include "AmplitudeScaler.h"
 
 #include "Support.h"
-#include "Log.h"
 
-#include "DirectWrite.h"
+#include "Direct2D.h"
 
 #pragma hdrstop
 

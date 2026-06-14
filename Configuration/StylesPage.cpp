@@ -1,11 +1,10 @@
 
-/** $VER: StylesPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.06.10) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "StylesPage.h"
 #include "Support.h"
-#include "Log.h"
 
 #include "Direct2D.h"
 #include "CColorDialogEx.h"
@@ -22,6 +21,8 @@ BOOL styles_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
     const std::unordered_map<int, const char *> Tips =
     {
         { IDC_STYLES, "Selects the visual element that will be styled" },
+
+        { IDC_SCOPE, "Determines the scope of the styles being edited." },
 
         { IDC_COLOR_SOURCE, "Determines the source of the color that will be used to render the visual element. Select \"None\" to prevent rendering." },
         { IDC_COLOR_INDEX, "Selects the specific Windows, DUI or CUI color to use." },
@@ -64,6 +65,24 @@ void styles_page_t::InitializeControls() noexcept
 {
     {
         InitializeStyles();
+    }
+
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_SCOPE);
+
+        w.ResetContent();
+
+        w.AddString(L"Global");
+
+        uint32_t i = 1;
+
+        for (const auto & gd : _State->_GraphDescriptions)
+        {
+            w.AddString(!gd._Description.empty() ? gd._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
+            ++i;
+        }
+
+        w.SetCurSel(0);
     }
 
     {
@@ -277,6 +296,14 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
             _IsInitializing = false;
 
             return;
+        }
+
+        case IDC_SCOPE:
+        {
+            _StyleManager = (SelectedIndex == 0) ? &_State->_StyleManager : &_State->_GraphDescriptions[(size_t) SelectedIndex - 1]._StyleManager;
+
+            UpdateControls();
+            break;
         }
 
         case IDC_COLOR_SOURCE:

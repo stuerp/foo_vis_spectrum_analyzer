@@ -8,6 +8,8 @@
 
 #include "Support.h"
 
+#include "Direct2D.h"
+
 #pragma hdrstop
 
 /// <summary>
@@ -34,10 +36,10 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void oscilloscope_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();

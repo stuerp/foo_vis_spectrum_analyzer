@@ -13,7 +13,7 @@
 
 #include "Support.h"
 
-#include "Element.h"
+#include "Visualization.h"
 #include "Gradients.h"
 
 #include "XAxis.h"
@@ -28,7 +28,7 @@
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class spectrum_t : public element_t
+class spectrum_t : public visualization_t
 {
 public:
     spectrum_t() {}
@@ -41,10 +41,12 @@ public:
     virtual ~spectrum_t();
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
+
+    // visualization_t
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -113,10 +115,10 @@ private:
     style_t * _DarkBackgroundStyle;
     style_t * _LightBackgroundStyle;
 
-    style_t * _CurveLineStyle;
-    style_t * _CurveAreaStyle;
-    style_t * _CurvePeakLineStyle;
-    style_t * _CurvePeakAreaStyle;
+    style_t _CurveLineStyle;
+    style_t _CurveAreaStyle;
+    style_t _CurvePeakLineStyle;
+    style_t _CurvePeakAreaStyle;
 
-    style_t * _NyquistMarkerStyle;
+    style_t _NyquistMarkerStyle;
 };

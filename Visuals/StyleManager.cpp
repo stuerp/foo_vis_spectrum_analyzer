@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.03.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.06.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -21,12 +21,23 @@ style_manager_t::style_manager_t()
 }
 
 /// <summary>
+/// Initializes a new instance.
+/// </summary>
+style_manager_t::style_manager_t(const style_manager_t & other)
+{
+    for (const auto & [ID, Style] : other._Styles)
+        _Styles[ID] = Style;
+}
+
+/// <summary>
 /// Implements the = operator.
 /// </summary>
 style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 {
-    for (const auto & [ID, Style] : other.Styles)
-        Styles[ID] = Style;
+    DeleteDeviceSpecificResources();
+
+    for (const auto & [ID, Style] : other._Styles)
+        _Styles[ID] = Style;
 
     return *this;
 }
@@ -36,9 +47,9 @@ style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 /// </summary>
 void style_manager_t::Reset() noexcept
 {
-    Styles = _DefaultStyles;
+    _Styles = _DefaultStyles;
 
-    for (auto & [ID, Style] : Styles)
+    for (auto & [ID, Style] : _Styles)
     {
         Style._CurrentColor         = Style._CustomColor;
         Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
@@ -50,15 +61,12 @@ void style_manager_t::Reset() noexcept
 /// </summary>
 void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept
 {
-    for (auto & [ID, Style] : Styles)
+    for (auto & [ID, Style] : _Styles)
     {
-        if (Style._ColorSource == ColorSource::Gradient)
+        if ((Style._ColorSource == ColorSource::Gradient) && (Style._ColorScheme == ColorScheme::Artwork))
         {
-            if (Style._ColorScheme == ColorScheme::Artwork)
-            {
-                Style._CurrentGradientStops = gs;
-                Style.DeleteDeviceSpecificResources();
-            }
+            Style._CurrentGradientStops = gs;
+            Style.DeleteDeviceSpecificResources();
         }
         else
         if (Style._ColorSource == ColorSource::DominantColor)
@@ -74,7 +82,7 @@ void style_manager_t::SetArtworkDependentParameters(const gradient_stops_t & gs,
 /// </summary>
 void style_manager_t::UpdateCurrentColors() noexcept
 {
-    for (auto & [ID, Style] : Styles)
+    for (auto & [ID, Style] : _Styles)
         Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
 }
 
@@ -83,7 +91,7 @@ void style_manager_t::UpdateCurrentColors() noexcept
 /// </summary>
 void style_manager_t::DeleteDeviceSpecificResources() noexcept
 {
-    for (auto & [ID, Style] : Styles)
+    for (auto & [ID, Style] : _Styles)
         Style.DeleteDeviceSpecificResources();
 }
 
@@ -109,6 +117,24 @@ HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1D
 /// <summary>
 /// Gets the style with initialized DirectX resources.
 /// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t & style) noexcept
+{
+    if (style._Brush != nullptr)
+        return S_OK;
+
+    auto t = GetStyle(visualElement);
+
+    if (t == nullptr)
+        return E_FAIL;
+
+    style = *t;
+
+    return style.CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
 HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept
 {
     if (*style == nullptr)
@@ -123,6 +149,24 @@ HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1D
         return S_OK;
 
     return (*style)->CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
+}
+
+/// <summary>
+/// Gets the style with initialized DirectX resources.
+/// </summary>
+HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t & style) noexcept
+{
+    if (style._Brush != nullptr)
+        return S_OK;
+
+    auto t = GetStyle(visualElement);
+
+    if (t == nullptr)
+        return E_FAIL;
+
+    style = *t;
+
+    return style.CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
 }
 
 /// <summary>
@@ -153,7 +197,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
 
             // Handle unknown styles. This can happen when an older component version reads a preset from a newer one.
             if (Id < (uint32_t) VisualElement::Count)
-                Style = Styles[(VisualElement) Id];    
+                Style = _Styles[(VisualElement) Id];    
 
             uint64_t Flags;
 
@@ -216,7 +260,7 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
 
             if (Id < (uint32_t) VisualElement::Count)
-                Styles[(VisualElement) Id] = Style;
+                _Styles[(VisualElement) Id] = Style;
         }
     }
     catch (std::exception & ex)
@@ -236,11 +280,11 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
     {
         writer->write_object_t(_CurrentVersion, abortHandler);
 
-        size_t Size = Styles.size();
+        size_t Size = _Styles.size();
 
         writer->write_object_t(Size, abortHandler);
 
-        for (const auto & Iter : Styles)
+        for (const auto & Iter : _Styles)
         {
             {
                 uint32_t Id = (uint32_t) Iter.first;
@@ -291,7 +335,7 @@ json style_manager_t::ToJSON() const noexcept
 
     try
     {
-        for (const auto & Iter : Styles)
+        for (const auto & Iter : _Styles)
         {
             const style_t & Style = Iter.second;
 
@@ -344,7 +388,7 @@ void style_manager_t::FromJSON(const json & array) noexcept
 
             // Handle unknown styles. This can happen when an older component version reads a preset from a newer one.
             if (Id < (uint32_t) VisualElement::Count)
-                Style = Styles[(VisualElement) Id];    
+                Style = _Styles[(VisualElement) Id];    
 
             Style._Flags = Iter.value("flags", Style._Flags);
             Style._ColorSource = Iter.value("colorSource", ColorSource::None);
@@ -389,7 +433,7 @@ void style_manager_t::FromJSON(const json & array) noexcept
             Style.UpdateCurrentColor(DominantColor, UserInterfaceColors);
 
             if (Id < (uint32_t) VisualElement::Count)
-                Styles[(VisualElement) Id] = Style;
+                _Styles[(VisualElement) Id] = Style;
         }
     }
     catch (std::exception & ex)

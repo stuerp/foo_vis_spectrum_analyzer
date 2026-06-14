@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.04.19) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.06.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -14,6 +14,7 @@
 #include "Artwork.h"
 
 #include "Element.h"
+#include "Visualization.h"
 
 /// <summary>
 /// Implements a graph on which the visualizations are rendered.
@@ -26,12 +27,12 @@ public:
     virtual ~graph_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
+    void Initialize(state_t * state, graph_description_t * graphDescription, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
 
@@ -73,8 +74,11 @@ public:
     analysis_t _Analysis;
 
 private:
+    bool _IsFirst;
+    bool _IsLast;
+
     std::wstring _Description;
-    std::unique_ptr<element_t> _Visualization;
+    std::unique_ptr<visualization_t> _Visualization;
 
     style_manager_t _StyleManager;                  // Styles only used by this graph in case of overlapping graphs.
 

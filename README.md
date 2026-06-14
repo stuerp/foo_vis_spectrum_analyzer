@@ -145,6 +145,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.11.0.0-alpha5, 2026-xx-xx
 
+- New: Overlapping graphs
+  - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render 2 or more channels with different colors on top of each other.
+- Fixed: Artwork Blur for high DPI screens.
 - Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
 
 You can read the full history [here](docs/History.md).

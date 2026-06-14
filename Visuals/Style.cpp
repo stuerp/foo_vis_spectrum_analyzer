@@ -46,10 +46,10 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    DeleteDeviceSpecificResources();
-
     _Width = other._Width;
     _Height = other._Height;
+
+    DeleteDeviceSpecificResources();
 
     return *this;
 }

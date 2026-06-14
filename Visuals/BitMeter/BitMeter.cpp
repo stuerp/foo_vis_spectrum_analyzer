@@ -28,10 +28,10 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void bit_meter_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphDescription = settings;
+    _GraphDescription = graphDescription;
     _Analysis = analysis;
 
     _MeasurementCount = 0;

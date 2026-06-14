@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, const graph_description_t * graphDescription, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept
 {
     _State = state;
     _GraphDescription = graphDescription;

@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2025.09.24) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.10.06) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -11,7 +11,7 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Element.h"
+#include "Visualization.h"
 #include "State.h"
 #include "FrequencyBand.h"
 
@@ -22,7 +22,7 @@
 /// Implements the Y axis of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-class y_axis_t : public element_t
+class y_axis_t : public visualization_t
 {
 public:
     y_axis_t() { }
@@ -33,10 +33,12 @@ public:
     y_axis_t & operator=(y_axis_t &&) = delete;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
+
+    // visualization_t
+    void Initialize(state_t * state, graph_description_t * graphDescription, const analysis_t * analysis) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;

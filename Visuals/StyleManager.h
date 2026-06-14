@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2026.03.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.06.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -23,7 +23,7 @@ class style_manager_t
 public:
     style_manager_t();
 
-    style_manager_t(const style_manager_t &) = default;
+    style_manager_t(const style_manager_t & other);
 
     style_manager_t & operator=(const style_manager_t & other);
 
@@ -42,7 +42,7 @@ public:
     /// </summary>
     style_t * GetStyle(VisualElement visualElement) noexcept
     {
-        return &Styles[visualElement];
+        return &_Styles[visualElement];
     }
 
     /// <summary>
@@ -50,16 +50,19 @@ public:
     /// </summary>
     const style_t * GetDefaultStyle(VisualElement visualElement) noexcept
     {
-        return &Styles[visualElement];
+        return &_Styles[visualElement];
     }
 
     void SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept;
 
     void UpdateCurrentColors() noexcept;
 
+    /// <summary>
+    /// Deletes all gradient brushes.
+    /// </summary>
     void DeleteGradientBrushes() noexcept
     {
-        for (auto & [ID, Style] : Styles)
+        for (auto & [ID, Style] : _Styles)
         {
             if (Style._ColorSource == ColorSource::Gradient)
                 Style._Brush.Release();
@@ -67,8 +70,10 @@ public:
     }
 
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t ** style) noexcept;
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t & style) noexcept;
 
     HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t ** style) noexcept;
+    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t & style) noexcept;
 
     void DeleteDeviceSpecificResources() noexcept;
 
@@ -83,8 +88,6 @@ private:
     static D2D1_COLOR_F FromJSONColor(const json & object) noexcept;
 
 public:
-    std::unordered_map<VisualElement, style_t> Styles;
-
     std::vector<D2D1_COLOR_F> UserInterfaceColors;
     D2D1_COLOR_F DominantColor;                     // The current dominant color extracted from the artwork bitmap.
 
@@ -151,6 +154,9 @@ public:
     };
 
 private:
+private:
+    std::unordered_map<VisualElement, style_t> _Styles;
+
     #pragma warning(disable: 4868)
     std::unordered_map<VisualElement, style_t> _DefaultStyles
     {
