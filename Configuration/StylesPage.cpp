@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.06.10) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.06.15) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -163,12 +163,10 @@ void styles_page_t::UpdateControls() noexcept
 
     _IgnoreNotifications = true;
 
-    style_t style;
-
-    _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+    style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Update the controls based on the color source.
-    switch (style._ColorSource)
+    switch (style->_ColorSource)
     {
         case ColorSource::None:
         case ColorSource::Solid:
@@ -177,13 +175,13 @@ void styles_page_t::UpdateControls() noexcept
 
         case ColorSource::Gradient:
         {
-            if (style._ColorScheme == ColorScheme::Custom)
-                style._CurrentGradientStops = style._CustomGradientStops;
+            if (style->_ColorScheme == ColorScheme::Custom)
+                style->_CurrentGradientStops = style->_CustomGradientStops;
             else
-            if (style._ColorScheme == ColorScheme::Artwork)
-                style._CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
+            if (style->_ColorScheme == ColorScheme::Artwork)
+                style->_CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
             else
-                style._CurrentGradientStops = GetBuiltInGradientStops(style._ColorScheme);
+                style->_CurrentGradientStops = GetBuiltInGradientStops(style->_ColorScheme);
             break;
         }
 
@@ -196,7 +194,7 @@ void styles_page_t::UpdateControls() noexcept
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
 
-            w.SetCurSel((int) std::clamp(style._ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
 
@@ -217,40 +215,40 @@ void styles_page_t::UpdateControls() noexcept
                     w.AddString(x);
             }
 
-            w.SetCurSel((int) std::clamp(style._ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
             break;
         }
     }
 
     // Updates the current color based on the color source.
-    style.UpdateCurrentColor(_StyleManager->DominantColor, _StyleManager->UserInterfaceColors);
+    style->UpdateCurrentColor(_StyleManager->DominantColor, _StyleManager->UserInterfaceColors);
 
-    ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style._ColorSource);
+    ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
-    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) style.Has(style_t::Features::HorizontalGradient));
-    SendDlgItemMessageW(IDC_AMPLITUDE_BASED,     BM_SETCHECK, (WPARAM) style.Has(style_t::Features::AmplitudeBasedColor));
+    SendDlgItemMessageW(IDC_HORIZONTAL_GRADIENT, BM_SETCHECK, (WPARAM) style->Has(style_t::Features::HorizontalGradient));
+    SendDlgItemMessageW(IDC_AMPLITUDE_BASED,     BM_SETCHECK, (WPARAM) style->Has(style_t::Features::AmplitudeBasedColor));
 
-    SetInteger(IDC_OPACITY, (int64_t) (style._Opacity * 100.f));
-    ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style._Opacity * 100.f));
+    SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
+    ((CUpDownCtrl) GetDlgItem(IDC_OPACITY_SPIN)).SetPos32((int) (style->_Opacity * 100.f));
 
-    SetDouble(IDC_THICKNESS, style._Thickness, 0, 1);
-    ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style._Thickness * 10.f));
+    SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
+    ((CUpDownCtrl) GetDlgItem(IDC_THICKNESS_SPIN)).SetPos32((int) (style->_Thickness * 10.f));
 
-    SetDlgItemTextW(IDC_FONT_NAME, style._FontName.c_str());
-    SetDouble(IDC_FONT_SIZE, style._FontSize, 0, 1);
+    SetDlgItemTextW(IDC_FONT_NAME, style->_FontName.c_str());
+    SetDouble(IDC_FONT_SIZE, style->_FontSize, 0, 1);
 
     // Enable the contols as necessary.
-    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style._ColorSource == ColorSource::Windows) || (style._ColorSource == ColorSource::UserInterface));
-    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style._ColorSource == ColorSource::Gradient);
+    GetDlgItem(IDC_COLOR_INDEX).EnableWindow((style->_ColorSource == ColorSource::Windows) || (style->_ColorSource == ColorSource::UserInterface));
+    GetDlgItem(IDC_COLOR_SCHEME).EnableWindow(style->_ColorSource == ColorSource::Gradient);
 
-    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style._ColorSource == ColorSource::Gradient);
-    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style._ColorSource == ColorSource::Gradient) && style.Has(style_t::Features::AmplitudeAware | style_t::Features::HorizontalGradient));
+    GetDlgItem(IDC_HORIZONTAL_GRADIENT).EnableWindow(style->_ColorSource == ColorSource::Gradient);
+    GetDlgItem(IDC_AMPLITUDE_BASED).EnableWindow((style->_ColorSource == ColorSource::Gradient) && style->Has(style_t::Features::AmplitudeAware | style_t::Features::HorizontalGradient));
 
-    GetDlgItem(IDC_OPACITY)  .EnableWindow(style.IsEnabled() && style.Has(style_t::Features::SupportsOpacity));
-    GetDlgItem(IDC_THICKNESS).EnableWindow(style.IsEnabled() && style.Has(style_t::Features::SupportsThickness));
+    GetDlgItem(IDC_OPACITY)  .EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsOpacity));
+    GetDlgItem(IDC_THICKNESS).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsThickness));
 
-    GetDlgItem(IDC_FONT_NAME).EnableWindow(style.IsEnabled() && style.Has(style_t::Features::SupportsFont));
-    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style.IsEnabled() && style.Has(style_t::Features::SupportsFont));
+    GetDlgItem(IDC_FONT_NAME).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsFont));
+    GetDlgItem(IDC_FONT_SIZE).EnableWindow(style->IsEnabled() && style->Has(style_t::Features::SupportsFont));
 
     UpdateColorControls();
 
@@ -305,16 +303,15 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
             _StyleManager = (SelectedIndex == 0) ? &_State->_StyleManager : &_State->_GraphOptions[(size_t) SelectedIndex - 1]._StyleManager;
 
             UpdateControls();
-            break;
+
+            return;
         }
 
         case IDC_COLOR_SOURCE:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._ColorSource = (ColorSource) SelectedIndex;
+            style->_ColorSource = (ColorSource) SelectedIndex;
 
             UpdateControls();
             break;
@@ -322,11 +319,9 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_COLOR_INDEX:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._ColorIndex = (uint32_t) SelectedIndex;
+            style->_ColorIndex = (uint32_t) SelectedIndex;
 
             UpdateControls();
             break;
@@ -334,11 +329,9 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_COLOR_SCHEME:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._ColorScheme = (ColorScheme) SelectedIndex;
+            style->_ColorScheme = (ColorScheme) SelectedIndex;
 
             UpdateControls();
             break;
@@ -346,25 +339,22 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_COLOR_LIST:
         {
-            style_t style;
-
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            const style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             // Show the position of the selected color of the gradient.
             const size_t Index = (size_t) _Colors.GetCurSel();
 
-            if (!msc::InRange(Index, (size_t) 0, style._CurrentGradientStops.size() - 1))
+            if (!msc::InRange(Index, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            const t_int64 Position = (t_int64) (style._CurrentGradientStops[Index].position * 100.f);
+            const t_int64 Position = (t_int64) (style->_CurrentGradientStops[Index].position * 100.f);
 
             SetInteger(IDC_POSITION, Position);
 
             // Update the state of the buttons.
             const bool HasSelection = (Index != (size_t) LB_ERR);
-            const bool HasMoreThanOneColor = (style._CurrentGradientStops.size() > 1);
-            const bool UseArtwork = (style._ColorScheme == ColorScheme::Artwork);
+            const bool HasMoreThanOneColor = (style->_CurrentGradientStops.size() > 1);
+            const bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);
 
             GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
             GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
@@ -403,67 +393,57 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         // Color Scheme
         case IDC_POSITION:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!msc::InRange(SelectedIndex, (size_t) 0, style._CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
             int Position = std::clamp(::_wtoi(Text), 0, 100);
 
-            if ((int) (style._CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
+            if ((int) (style->_CurrentGradientStops[SelectedIndex].position * 100.f) == Position)
                 return;
 
-            style._CurrentGradientStops[SelectedIndex].position = (FLOAT) Position / 100.f;
+            style->_CurrentGradientStops[SelectedIndex].position = (FLOAT) Position / 100.f;
 
-            style._ColorScheme = ColorScheme::Custom;
-            style._CustomGradientStops = style._CurrentGradientStops;
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_CurrentGradientStops;
 
-            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style._ColorScheme);
-            _Gradient.SetGradientStops(style._CurrentGradientStops);
+            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
+            _Gradient.SetGradientStops(style->_CurrentGradientStops);
             break;
         }
 
         case IDC_OPACITY:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
+            style->_Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
             break;
         }
 
         case IDC_THICKNESS:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
+            style->_Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
             break;
         }
 
         case IDC_FONT_NAME:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._FontName = Text;
+            style->_FontName = Text;
             break;
         }
 
         case IDC_FONT_SIZE:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            style._FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
             break;
         }
     }
@@ -488,21 +468,13 @@ void styles_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_OPACITY:
         {
-            style_t Style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], Style);
-
-            SetInteger(id, (int64_t) (Style._Opacity * 100.f));
+            SetInteger(id, (int64_t) (_StyleManager->GetStyle(_ActiveStyles[_SelectedStyle])->_Opacity * 100.f));
             break;
         }
 
         case IDC_THICKNESS:
         {
-            style_t Style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], Style);
-
-            SetDouble(id, Style._Thickness, 0, 1);
+            SetDouble(id, _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle])->_Thickness, 0, 1);
             break;
         }
 
@@ -513,11 +485,7 @@ void styles_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_FONT_SIZE:
         {
-            style_t Style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], Style);
-
-            SetDouble(id, Style._FontSize, 0, 1);
+            SetDouble(id, _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle])->_FontSize, 0, 1);
             break;
         }
     }
@@ -542,23 +510,21 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ADD:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!msc::InRange(SelectedIndex, (size_t) 0, style._CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            D2D1_COLOR_F Color = style._CurrentGradientStops[SelectedIndex].color;
+            D2D1_COLOR_F Color = style->_CurrentGradientStops[SelectedIndex].color;
 
             CColorDialogEx cd;
 
             if (!cd.SelectColor(m_hWnd, Color))
                 return;
 
-            style._CurrentGradientStops.insert(style._CurrentGradientStops.begin() + (int) SelectedIndex + 1, { 0.f, Color });
+            style->_CurrentGradientStops.insert(style->_CurrentGradientStops.begin() + (int) SelectedIndex + 1, { 0.f, Color });
             
             UpdateGradientStopPositons(style, SelectedIndex + 1);
 
@@ -572,20 +538,18 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             if (_Colors.GetCount() == 1)
                 return;
 
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             size_t SelectedIndex = (size_t) _Colors.GetCurSel();
 
-            if (!msc::InRange(SelectedIndex, (size_t) 0, style._CurrentGradientStops.size() - 1))
+            if (!msc::InRange(SelectedIndex, (size_t) 0, style->_CurrentGradientStops.size() - 1))
                 return;
 
-            style._CurrentGradientStops.erase(style._CurrentGradientStops.begin() + (int) SelectedIndex);
+            style->_CurrentGradientStops.erase(style->_CurrentGradientStops.begin() + (int) SelectedIndex);
 
             // Save the current result as custom gradient stops.
-            style._ColorScheme = ColorScheme::Custom;
-            style._CustomGradientStops = style._CurrentGradientStops;
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_CurrentGradientStops;
 
             UpdateColorControls();
             break;
@@ -593,18 +557,16 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_REVERSE:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            std::reverse(style->_CurrentGradientStops.begin(), style->_CurrentGradientStops.end());
 
-            std::reverse(style._CurrentGradientStops.begin(), style._CurrentGradientStops.end());
-
-            for (auto & gs : style._CurrentGradientStops)
+            for (auto & gs : style->_CurrentGradientStops)
                 gs.position = 1.f - gs.position;
 
             // Save the current result as custom gradient stops.
-            style._ColorScheme = ColorScheme::Custom;
-            style._CustomGradientStops = style._CurrentGradientStops;
+            style->_ColorScheme = ColorScheme::Custom;
+            style->_CustomGradientStops = style->_CurrentGradientStops;
 
             UpdateColorControls();
             break;
@@ -612,9 +574,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_SPREAD:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UpdateGradientStopPositons(style, ~0U);
 
@@ -624,14 +584,12 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_HORIZONTAL_GRADIENT:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style._Flags, style_t::Features::HorizontalGradient);
+                Set(style->_Flags, style_t::Features::HorizontalGradient);
             else
-                UnSet(style._Flags, style_t::Features::HorizontalGradient);
+                UnSet(style->_Flags, style_t::Features::HorizontalGradient);
 
             UpdateControls();
             break;
@@ -639,22 +597,18 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_BASED:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             if ((bool) SendDlgItemMessageW(id, BM_GETCHECK))
-                Set(style._Flags, style_t::Features::AmplitudeBasedColor);
+                Set(style->_Flags, style_t::Features::AmplitudeBasedColor);
             else
-                UnSet(style._Flags, style_t::Features::AmplitudeBasedColor);
+                UnSet(style->_Flags, style_t::Features::AmplitudeBasedColor);
             break;
         }
 
         case IDC_FONT_NAME_SELECT:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             UINT DPI;
 
@@ -662,7 +616,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             LOGFONTW lf =
             {
-                .lfHeight         = -::MulDiv((int) style._FontSize, (int) DPI, 72),
+                .lfHeight         = -::MulDiv((int) style->_FontSize, (int) DPI, 72),
                 .lfWeight         = FW_NORMAL,
                 .lfCharSet        = DEFAULT_CHARSET,
                 .lfOutPrecision   = OUT_DEFAULT_PRECIS,
@@ -671,22 +625,22 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 .lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE,
             };
 
-            ::wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), style._FontName.c_str());
+            ::wcscpy_s(lf.lfFaceName, _countof(lf.lfFaceName), style->_FontName.c_str());
 
             CHOOSEFONTW cf =
             {
                 .lStructSize = sizeof(cf),
                 .hwndOwner   = m_hWnd,
                 .lpLogFont   = &lf,
-                .iPointSize  = (INT) (style._FontSize * 10.f),
+                .iPointSize  = (INT) (style->_FontSize * 10.f),
                 .Flags       = CF_FORCEFONTEXIST | CF_INITTOLOGFONTSTRUCT,
              };
 
             if (!::ChooseFontW(&cf))
                 return;
 
-            style._FontName = cf.lpLogFont->lfFaceName;
-            style._FontSize = (FLOAT) cf.iPointSize / 10.f;
+            style->_FontName = cf.lpLogFont->lfFaceName;
+            style->_FontSize = (FLOAT) cf.iPointSize / 10.f;
 
             UpdateControls();
             break;
@@ -727,27 +681,23 @@ LRESULT styles_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 
         case IDC_OPACITY_SPIN:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            if (!SetProperty(style._Opacity, (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.)))
+            if (!SetProperty(style->_Opacity, (FLOAT) ClampNewSpinPosition(nmud, MinOpacity, MaxOpacity, 100.)))
                 return -1;
 
-            SetInteger(IDC_OPACITY, (int64_t) (style._Opacity * 100.f));
+            SetInteger(IDC_OPACITY, (int64_t) (style->_Opacity * 100.f));
             break;
         }
 
         case IDC_THICKNESS_SPIN:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
-
-            if (!SetProperty(style._Thickness, (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.)))
+            if (!SetProperty(style->_Thickness, (FLOAT) ClampNewSpinPosition(nmud, MinThickness, MaxThickness, 10.)))
                 return -1;
 
-            SetDouble(IDC_THICKNESS, style._Thickness, 0, 1);
+            SetDouble(IDC_THICKNESS, style->_Thickness, 0, 1);
             break;
         }
     }
@@ -774,9 +724,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
 
         case IDC_COLOR_LIST:
         {
-            style_t style;
-
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
             std::vector<D2D1_COLOR_F> Colors;
 
@@ -785,34 +733,32 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
             if (Colors.empty())
                 return 0;
 
-            style._ColorScheme = ColorScheme::Custom;
+            style->_ColorScheme = ColorScheme::Custom;
 
-            if (style._ColorSource == ColorSource::Gradient)
+            if (style->_ColorSource == ColorSource::Gradient)
             {
                 for (size_t i = 0; i < Colors.size(); ++i)
-                    style._CustomGradientStops[i].color = Colors[i];
+                    style->_CustomGradientStops[i].color = Colors[i];
 
-                style._CurrentGradientStops = style._CustomGradientStops;
+                style->_CurrentGradientStops = style->_CustomGradientStops;
             }
             else
-                _Direct2D.CreateGradientStops(Colors, style._CustomGradientStops);
+                _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
 
             // Update the controls.
-            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style._ColorScheme);
-            _Gradient.SetGradientStops(style._CustomGradientStops);
+            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
+            _Gradient.SetGradientStops(style->_CustomGradientStops);
             break;
         }
 
         case IDC_COLOR_BUTTON:
         {
-            style_t style;
+            style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+            _Color.GetColor(style->_CustomColor);
 
-            _Color.GetColor(style._CustomColor);
-
-            style._ColorSource = ColorSource::Solid; // Force the color source to Solid.
-            style._CurrentColor = style._CustomColor;
+            style->_ColorSource = ColorSource::Solid; // Force the color source to Solid.
+            style->_CurrentColor = style->_CustomColor;
 
             UpdateColorControls();
             break;
@@ -839,15 +785,13 @@ void styles_page_t::InitializeStyles() noexcept
 
     for (const auto & ID : _StyleManager->DisplayOrder)
     {
-        style_t Style;
+        const style_t * const Style = _StyleManager->GetStyle(ID);
 
-        _StyleManager->GetStyleOptions(ID, Style);
-
-        if ((uint64_t) Style._UsedBy & (uint64_t) User)
+        if ((uint64_t) Style->_UsedBy & (uint64_t) User)
         {
             _ActiveStyles.push_back(ID);
 
-            w.AddString(Style._Name.c_str());
+            w.AddString(Style->_Name.c_str());
         }
     }
 
@@ -861,28 +805,26 @@ void styles_page_t::InitializeStyles() noexcept
 /// </summary>
 void styles_page_t::UpdateColorControls() noexcept
 {
-    style_t style;
-
-    _StyleManager->GetStyleOptions(_ActiveStyles[_SelectedStyle], style);
+    const style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
     // Initialize the gradient stops.
     gradient_stops_t gs;
 
-    if (style._ColorSource == ColorSource::Gradient)
+    if (style->_ColorSource == ColorSource::Gradient)
     {
-        ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style._ColorScheme);
+        ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);
 
-        if (style._ColorScheme == ColorScheme::Custom)
-            gs = style._CustomGradientStops;
+        if (style->_ColorScheme == ColorScheme::Custom)
+            gs = style->_CustomGradientStops;
         else
-        if (style._ColorScheme == ColorScheme::Artwork)
+        if (style->_ColorScheme == ColorScheme::Artwork)
             gs = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : GetBuiltInGradientStops(ColorScheme::Artwork);
         else
-            gs = GetBuiltInGradientStops(style._ColorScheme);
+            gs = GetBuiltInGradientStops(style->_ColorScheme);
     }
 
     // Update the color button.
-    _Color.SetColor(style._CurrentColor);
+    _Color.SetColor(style->_CurrentColor);
 
     // Update the gradient control.
     _Gradient.SetGradientStops(gs);
@@ -890,7 +832,7 @@ void styles_page_t::UpdateColorControls() noexcept
     // Update the color list.
     std::vector<D2D1_COLOR_F> Colors;
 
-    if (style._ColorSource == ColorSource::Gradient)
+    if (style->_ColorSource == ColorSource::Gradient)
     {
         int SelectedIndex = _Colors.GetCurSel();
 
@@ -919,7 +861,7 @@ void styles_page_t::UpdateColorControls() noexcept
     // Update the state of the buttons.
     const bool HasSelection = (_Colors.GetCurSel() != LB_ERR);                // Add and Remove are only enabled when a color is selected.
     const bool HasMoreThanOneColor = (gs.size() > 1);                         // Remove and Reverse are only enabled when there is more than 1 color.
-    const bool UseArtwork = (style._ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
+    const bool UseArtwork = (style->_ColorScheme == ColorScheme::Artwork);    // Gradient controls are disabled when the artwork provides the colors.
 
     GetDlgItem(IDC_ADD).EnableWindow(HasSelection && !UseArtwork);
     GetDlgItem(IDC_REMOVE).EnableWindow(HasSelection && HasMoreThanOneColor && !UseArtwork);
@@ -933,9 +875,9 @@ void styles_page_t::UpdateColorControls() noexcept
 /// <summary>
 /// Updates the position of the current gradient colors.
 /// </summary>
-void styles_page_t::UpdateGradientStopPositons(style_t & style, size_t index) const noexcept
+void styles_page_t::UpdateGradientStopPositons(style_t * style, size_t index) const noexcept
 {
-    auto & gs = style._CurrentGradientStops;
+    auto & gs = style->_CurrentGradientStops;
 
     if (gs.empty())
         return;
@@ -961,8 +903,8 @@ void styles_page_t::UpdateGradientStopPositons(style_t & style, size_t index) co
     }
 
     // Save the current result as custom gradient stops.
-    style._ColorScheme = ColorScheme::Custom;
-    style._CustomGradientStops = gs;
+    style->_ColorScheme = ColorScheme::Custom;
+    style->_CustomGradientStops = gs;
 }
 
 /// <summary>

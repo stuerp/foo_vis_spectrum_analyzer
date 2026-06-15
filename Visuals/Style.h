@@ -9,7 +9,7 @@
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
-#include <atlbase.h>
+#include <atlcomcli.h>
 
 #include <dwrite.h>
 

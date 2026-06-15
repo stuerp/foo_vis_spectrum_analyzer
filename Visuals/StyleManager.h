@@ -42,9 +42,17 @@ public:
     /// <summary>
     /// Gets the style of the specified visual element.
     /// </summary>
-    void GetStyleOptions(VisualElement visualElement, style_t & style) noexcept
+    void GetStyle(VisualElement visualElement, style_t & style) noexcept
     {
-        style = _StyleOptions[visualElement];
+        style = _Styles[visualElement];
+    }
+
+    /// <summary>
+    /// Gets the style of the specified visual element.
+    /// </summary>
+    style_t * GetStyle(VisualElement visualElement) noexcept
+    {
+        return &_Styles[visualElement];
     }
 
     /// <summary>
@@ -52,7 +60,7 @@ public:
     /// </summary>
     const style_t * GetDefaultStyleOptions(VisualElement visualElement) noexcept
     {
-        return &_StyleOptions[visualElement];
+        return &_Styles[visualElement];
     }
 
     void SetArtworkDependentParameters(const gradient_stops_t & gs, D2D1_COLOR_F dominantColor) noexcept;
@@ -64,7 +72,7 @@ public:
     /// </summary>
     void DeleteGradientBrushes() noexcept
     {
-        for (auto & [ID, Style] : _StyleOptions)
+        for (auto & [ID, Style] : _Styles)
         {
             if (Style._ColorSource == ColorSource::Gradient)
                 Style._Brush.Release();
@@ -153,8 +161,7 @@ public:
     };
 
 private:
-private:
-    std::unordered_map<VisualElement, style_t> _StyleOptions;
+    std::unordered_map<VisualElement, style_t> _Styles;
 
     #pragma warning(disable: 4868)
     std::unordered_map<VisualElement, style_t> _DefaultStyles

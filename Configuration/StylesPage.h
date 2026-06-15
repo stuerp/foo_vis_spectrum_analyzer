@@ -1,16 +1,13 @@
 
-/** $VER: StylesPage.h (2026.04.19) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.06.15) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
-
 #include "Page.h"
 #include "Resources.h"
-#include "State.h"
+#include "Constants.h"
 
 class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
@@ -72,7 +69,7 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void UpdateGradientStopPositons(style_t & style, size_t index) const noexcept;
+    void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
 
 private:
     std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;

@@ -1,5 +1,5 @@
 
-/** $VER: GraphOptions.h (2026.06.14) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.h (2026.06.15) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -22,9 +22,8 @@ using json = nlohmann::ordered_json;
 #pragma warning(pop)
 
 /// <summary>
-/// Represents the settings of a graph.
+/// Represents the options of a graph.
 /// </summary>
-#pragma warning(disable: 4820)
 struct graph_options_t
 {
 public:
@@ -38,6 +37,58 @@ public:
         _Description = description;
 
         Initialize();
+    }
+
+    graph_options_t(const graph_options_t & other)
+    {
+        *this = other;
+    }
+
+    graph_options_t & operator=(const graph_options_t & other)
+    {
+        _Description         = other._Description;
+
+        _SelectedChannels    = other._SelectedChannels;
+
+        _ChannelPair         = other._ChannelPair;
+        _SwapChannels        = other._SwapChannels;
+
+        _HorizontalAlignment = other._HorizontalAlignment;
+        _VerticalAlignment   = other._VerticalAlignment;
+
+        _FlipHorizontally    = other._FlipHorizontally;
+        _FlipVertically      = other._FlipVertically;
+
+        _XAxisMode           = other._XAxisMode;
+        _XAxisTop            = other._XAxisTop;
+        _XAxisBottom         = other._XAxisBottom;
+        _XAxisDecimals       = other._XAxisDecimals;
+
+        _YAxisMode           = other._YAxisMode;
+        _YAxisLeft           = other._YAxisLeft;
+        _YAxisRight          = other._YAxisRight;
+
+        _AmplitudeLo         = other._AmplitudeLo;
+        _AmplitudeHi         = other._AmplitudeHi;
+        _AmplitudeStep       = other._AmplitudeStep;
+
+        _UseAbsolute         = other._UseAbsolute;
+        _Gamma               = other._Gamma;
+
+        _HRatio              = other._HRatio;
+        _VRatio              = other._VRatio;
+
+        _LPadding            = other._LPadding;
+        _RPadding            = other._RPadding;
+        _TPadding            = other._TPadding;
+        _BPadding            = other._BPadding;
+
+        _HorizontalTextAlignment = other._HorizontalTextAlignment;
+        _VerticalTextAlignment   = other._VerticalTextAlignment;
+
+        _StyleManager            = other._StyleManager;
+
+        return *this;
     }
 
     double ScaleAmplitude(double value) const noexcept;
@@ -90,8 +141,8 @@ public:
     FLOAT _TPadding;
     FLOAT _BPadding;
 
-    HorizontalTextAlignment _HAlignment;
-    VerticalTextAlignment _VAlignment;
+    HorizontalTextAlignment _HorizontalTextAlignment;
+    VerticalTextAlignment _VerticalTextAlignment;
 
     style_manager_t _StyleManager;
 

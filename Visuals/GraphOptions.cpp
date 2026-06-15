@@ -49,8 +49,8 @@ void graph_options_t::Initialize() noexcept
     _TPadding = 0.f;
     _BPadding = 0.f;
 
-    _HAlignment = HorizontalTextAlignment::Center;
-    _VAlignment = VerticalTextAlignment::Center;
+    _HorizontalTextAlignment = HorizontalTextAlignment::Center;
+    _VerticalTextAlignment = VerticalTextAlignment::Center;
 }
 
 /// <summary>
@@ -86,8 +86,8 @@ graph_options_t graph_options_t::FromJSON(const json & object) noexcept
     const auto & Description = object.value("description", json::object());
 
     gd._Description = msc::UTF8ToWide(Description.value("text", msc::WideToUTF8(gd._Description)));
-    gd._HAlignment  = Description.value("horizontalAlignment", gd._HAlignment);
-    gd._VAlignment  = Description.value("verticalAlignment", gd._VAlignment);
+    gd._HorizontalTextAlignment  = Description.value("horizontalAlignment", gd._HorizontalTextAlignment);
+    gd._VerticalTextAlignment  = Description.value("verticalAlignment", gd._VerticalTextAlignment);
 
     gd._SelectedChannels = object.value("channels", gd._SelectedChannels);
     gd._SwapChannels     = object.value("swapChannels", gd._SwapChannels);
@@ -145,8 +145,8 @@ json graph_options_t::ToJSON() const noexcept
             json::object
             ({
                 { "text", msc::WideToUTF8(_Description) },
-                { "horizontalAlignment", _HAlignment },
-                { "verticalAlignment", _VAlignment },
+                { "horizontalAlignment", _HorizontalTextAlignment },
+                { "verticalAlignment", _VerticalTextAlignment },
             })
         },
 
