@@ -181,7 +181,23 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     // Calculate how much space the scales occupy.
     for (auto Part : _Parts)
     {
-        Part->Initialize(_State, deviceContext, _OpacityMask, _DebugBrush);
+        Part->Bind
+        (
+            deviceContext,
+            &_BackgroundStyle,
+            &_PeakStyle,
+            &_Peak0dBStyle,
+            &_MaxPeakStyle,
+            &_PeakTextStyle,
+            &_RMSStyle,
+            &_RMS0dBStyle,
+            &_RMSTextStyle,
+            &_NameStyle,
+            &_ScaleTextStyle,
+            &_ScaleLineStyle,
+            _DebugBrush,
+            _OpacityMask
+        );
 
         auto * Scale = dynamic_cast<scale_t *>(Part);
 

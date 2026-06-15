@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2026.06.14) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2026.06.15) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -26,17 +26,17 @@
 class part_t
 {
 public:
-    part_t(state_t * state, const graph_options_t * options) noexcept : _Rect()
+    part_t(const state_t * state, const graph_options_t * settings) noexcept : _Rect()
     {
-        _State        = state;
-        _GraphOptions = options;
+        _State    = state;
+        _GraphOptions = settings;
     }
 
     virtual ~part_t() = default;
 
     virtual void SetRect(const D2D1_RECT_F & rect) noexcept;
 
-    virtual void Initialize(state_t * state, ID2D1DeviceContext * deviceContext, ID2D1Bitmap * opacityMask, ID2D1SolidColorBrush * debugBrush) noexcept;
+    virtual void Bind(ID2D1DeviceContext * deviceContext, style_t * backgroundStyle, style_t * peakStyle, style_t * peak0dBStyle, style_t * maxPeakStyle, style_t * peakTextStyle, style_t * rmsStyle, style_t * rms0dBStyle, style_t * rmsTextStyle, style_t * nameStyle, style_t * scaleTextStyle, style_t * scaleLineStyle, ID2D1SolidColorBrush * debugBrush, ID2D1Bitmap * opacityMask) noexcept;
     virtual void Unbind() noexcept;
 
     virtual void Render() const noexcept = 0;
@@ -48,7 +48,7 @@ private:
     void CreateAxis() noexcept;
 
 protected:
-    state_t * _State;
+    const state_t * _State;
     const graph_options_t * _GraphOptions;
 
     D2D1_RECT_F _Rect;
@@ -77,28 +77,28 @@ protected:
 
     CComPtr<ID2D1DeviceContext> _DeviceContext;
 
-    const FLOAT _TickSize = 4.f;
-
-    style_t _BackgroundStyle;
-
-    style_t _PeakStyle;
-    style_t _Peak0dBStyle;
-    style_t _MaxPeakStyle;
-    style_t _PeakTextStyle;
-
-    style_t _RMSStyle;
-    style_t _RMS0dBStyle;
-    style_t _RMSTextStyle;
-
-    style_t _NameStyle;
-
-    style_t _ScaleTextStyle;
-    style_t _ScaleLineStyle;
-
     CComPtr<IDWriteTextLayout> _NameTextLayout;
 
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
     CComPtr<ID2D1Bitmap> _OpacityMask;
+
+    const FLOAT _TickSize = 4.f;
+
+    style_t * _BackgroundStyle;
+
+    style_t * _PeakStyle;
+    style_t * _Peak0dBStyle;
+    style_t * _MaxPeakStyle;
+    style_t * _PeakTextStyle;
+
+    style_t * _RMSStyle;
+    style_t * _RMS0dBStyle;
+    style_t * _RMSTextStyle;
+
+    style_t * _NameStyle;
+
+    style_t * _ScaleTextStyle;
+    style_t * _ScaleLineStyle;
 };
 
 /// <summary>
@@ -107,7 +107,7 @@ protected:
 class bar_t : public part_t
 {
 public:
-    bar_t(state_t * state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
+    bar_t(const state_t * state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
     {
         _Measurement = measurement;
 
@@ -127,8 +127,8 @@ public:
 private:
     HRESULT CreateScaleLinesCommandList() noexcept;
 
-    void DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t & style) const noexcept;
-    void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t & style) const noexcept;
+    void DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
+    void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
 
 private:
     const peak_measurement_t * _Measurement;
@@ -147,7 +147,7 @@ private:
 class scale_t : public part_t
 {
 public:
-    scale_t(state_t * state, const graph_options_t * options, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, options)
+    scale_t(const state_t * state, const graph_options_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
     {
         _TextAlignment      = textAlignment;
         _ParagraphAlignment = paragraphAlignment;
