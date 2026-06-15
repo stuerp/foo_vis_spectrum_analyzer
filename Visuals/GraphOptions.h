@@ -91,6 +91,8 @@ public:
         return *this;
     }
 
+    virtual ~graph_options_t() { }
+
     double ScaleAmplitude(double value) const noexcept;
 
     /* Code readability shortcuts */

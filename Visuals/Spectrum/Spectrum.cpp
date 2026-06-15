@@ -26,16 +26,16 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = options;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
 
-    _XAxis.Initialize(state, graphDescription, analysis);
-    _YAxis.Initialize(state, graphDescription, analysis);
+    _XAxis.Initialize(state, options, analysis);
+    _YAxis.Initialize(state, options, analysis);
 
     _Chrono.Reset();
 }

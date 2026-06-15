@@ -1,10 +1,10 @@
 
-/** $VER: GraphsPage.cpp (2026.03.18) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.06.15) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "GraphsPage.h"
-#include <Constants.h>
+#include "Constants.h"
 
 // Display names for the audio_chunk channel bits.
 static const WCHAR * const ChannelNames[] =
@@ -35,7 +35,8 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_ADD_GRAPH, "Adds a graph." },
         { IDC_REMOVE_GRAPH, "Removes the selected graph." },
 
-        { IDC_VERTICAL_LAYOUT, "Enable to stack the graphs vertically instead of horizontally." },
+        { IDC_VERTICAL_LAYOUT, "Select to stack the graphs vertically instead of horizontally." },
+        { IDC_OVERLAP_GRAPHS, "Select to draw the graphs overlapped instead of stacked horizontally or vertically." },
 
         { IDC_GRAPH_DESCRIPTION, "Describes the configuration of this graph." },
 
@@ -89,6 +90,11 @@ void graphs_page_t::InitializeControls() noexcept
     // Vertical Layout
     {
         SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
+    }
+
+    // Overlap graphs
+    {
+        SendDlgItemMessageW(IDC_OVERLAP_GRAPHS, BM_SETCHECK, _State->_OverlapGraphs);
     }
 
     // Horizontal Alignment
@@ -252,9 +258,15 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Vertical Layout **/
 
-    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter);
+    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1) && !_State->_OverlapGraphs;
 
     GetDlgItem(IDC_VERTICAL_LAYOUT).EnableWindow(SupportsVerticalLayout);
+
+    /* Overlap Graphs **/
+
+    const bool SupportsOverlapGraphs = !(IsBitMeter) && (_State->_GraphOptions.size() > 1);
+
+    GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 
     /* Graph settings */
 
@@ -574,7 +586,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
     auto ChangedSettings = ConfigurationChanges::All;
 
-    auto & gd = _State->_GraphOptions[_SelectedGraph];
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
@@ -583,7 +595,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ADD_GRAPH:
         {
-            graph_options_t NewOptions = _State->_GraphOptions[_SelectedGraph];
+            auto NewOptions = _State->_GraphOptions[_SelectedGraph];
 
             int Index = (int) _State->_GraphOptions.size();
 
@@ -622,45 +634,53 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_OVERLAP_GRAPHS:
+        {
+            _State->_OverlapGraphs = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+            break;
+        }
+
         case IDC_FLIP_HORIZONTALLY:
         {
-            gd._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_FLIP_VERTICALLY:
         {
-            gd._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_X_AXIS_TOP:
         {
-            gd._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_X_AXIS_BOTTOM:
         {
-            gd._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_LEFT:
         {
-            gd._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_RIGHT:
         {
-            gd._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_USE_ABSOLUTE:
         {
-            gd._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -686,7 +706,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_SWAP_CHANNELS:
         {
-            gd._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
     }

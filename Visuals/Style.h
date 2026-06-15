@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2026.06.14) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.06.15) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 

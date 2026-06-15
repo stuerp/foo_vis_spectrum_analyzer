@@ -23,7 +23,7 @@ public:
         _RowCount = rowCount;
         _ColCount = colCount;
         _VerticalLayout = verticalLayout;
-        _OverlapGraphs = true;//overlapGraphs;
+        _OverlapGraphs = overlapGraphs;
     }
 
     void Resize(FLOAT width, FLOAT height) noexcept

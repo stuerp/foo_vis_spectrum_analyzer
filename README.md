@@ -147,6 +147,8 @@ v0.11.0.0-alpha5, 2026-xx-xx
 
 - New: Overlapping graphs
   - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render 2 or more channels with different colors on top of each other.
+- New: Global and local styles.
+  - Each graph can have its own styles. This is particularly useful for overlapping graphs.
 - Fixed: Artwork Blur for high DPI screens.
 - Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
 

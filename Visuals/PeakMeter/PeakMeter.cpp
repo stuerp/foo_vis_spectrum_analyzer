@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.06.14) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.06.15) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 

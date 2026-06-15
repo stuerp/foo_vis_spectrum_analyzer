@@ -784,6 +784,10 @@ The graph list shows all graphs in the current window. Use the + button to add a
 
 Enables this setting to stack the graphs vertically instead of horizontally.
 
+`Overlap graphs`
+
+Select to draw the graphs overlapped instead of stacked horizontally or vertically.
+
 `Description`
 
 Allow you to edit the description of the selected graph.
@@ -897,6 +901,12 @@ Enable to swap the interpretation of a channel pair by visualisations that suppo
 ### Styles page
 
 Most of the elements of a graph can be styled. The styles list shows all available styles. Each style has a number of settings that determine how the element is rendered.
+
+`Scope`
+
+Styles are available in the global scope and local to each graph. Graph-local style override their definition in the global scope.
+
+Some styles behave differently when selecting the `Overlap graphs` options. F.e. when overlapping graphs the global graph styles are used.
 
 `Color source`
 

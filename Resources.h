@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.06.09) P. Stuer **/
+/** $VER: Resources.h (2026.06.15) P. Stuer **/
 
 #pragma once
 
@@ -324,6 +324,7 @@
 #define IDC_REMOVE_GRAPH                5104
 
 #define IDC_VERTICAL_LAYOUT             5106
+#define IDC_OVERLAP_GRAPHS              5107
 
 #define IDC_GRAPH_DESCRIPTION_LBL       5108
 #define IDC_GRAPH_DESCRIPTION           5109

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2026.06.14) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.06.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
@@ -15,8 +15,6 @@
 using json = nlohmann::ordered_json;
 
 #pragma warning(default: 4868)
-
-#pragma warning(disable: 4820)
 
 class style_manager_t
 {
@@ -40,7 +38,7 @@ public:
     void FromJSON(const json & array) noexcept;
 
     /// <summary>
-    /// Gets the style of the specified visual element.
+    /// Gets a copy of the style of the specified visual element.
     /// </summary>
     void GetStyle(VisualElement visualElement, style_t & style) noexcept
     {
@@ -51,14 +49,6 @@ public:
     /// Gets the style of the specified visual element.
     /// </summary>
     style_t * GetStyle(VisualElement visualElement) noexcept
-    {
-        return &_Styles[visualElement];
-    }
-
-    /// <summary>
-    /// Gets the default style of the specified visual element.
-    /// </summary>
-    const style_t * GetDefaultStyleOptions(VisualElement visualElement) noexcept
     {
         return &_Styles[visualElement];
     }

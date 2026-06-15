@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.06.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.06.15) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 

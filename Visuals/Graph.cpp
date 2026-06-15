@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.03.17) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.06.15) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 #include "Graph.h"
@@ -226,7 +226,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// </summary>
 void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
-    if (!_IsFirst)
+    if (_State->_OverlapGraphs && !_IsFirst)
         return;
 
     if (_BackgroundStyle.IsEnabled())

@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.06.10) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.06.15) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
