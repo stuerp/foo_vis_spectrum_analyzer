@@ -26,7 +26,7 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis) noexcept
+void peak_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -247,10 +247,11 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     // Layout the meter parts.
     bool NeedGap = false;
 
+    D2D1_RECT_F Rect = _Rect;
+
     if (_State->_IsHorizontalPeakMeter)
     {
-        D2D1_RECT_F Rect = { 0.f, 0.f, _Size.width, 0.f };
-        FLOAT y = Offset;
+        FLOAT y = Rect.top + Offset;
 
         for (auto & Part : _Parts)
         {
@@ -281,8 +282,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     }
     else
     {
-        D2D1_RECT_F Rect = { 0.f, 0.f, 0.f, _Size.height };
-        FLOAT x = Offset;
+        FLOAT x = _Rect.left + Offset;
 
         for (auto & Part : _Parts)
         {

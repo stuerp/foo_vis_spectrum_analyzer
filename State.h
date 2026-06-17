@@ -105,7 +105,6 @@ public:
 
         #pragma region Level Meter
 
-            ChannelPair _ChannelPair;
             bool _IsHorizontalLevelMeter;                               // True if the level meter should be rendered horizontally.
 
         #pragma endregion
@@ -281,7 +280,12 @@ public:
 
     #pragma region UI + Render thread
 
+    D2D1_COLOR_F _ArtworkDominantColor;                                 // The current dominant color extracted from the artwork bitmap.
     gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
+
+    std::vector<D2D1_COLOR_F> _UserInterfaceColors;
+
+    bool _RecreateStyles;                                               // True if the DirectX resources of the styles need to be recreated, e.g. because the artwork colors changed.
 
     #pragma endregion
 

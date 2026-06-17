@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.06.14) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.06.17) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -11,19 +11,14 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Support.h"
-
 #include "Visualization.h"
-#include "Gradients.h"
 
 #include "XAxis.h"
 #include "YAxis.h"
 
 #include "Chrono.h"
 
-#include <valarray>
 #include <vector>
-#include <string>
 
 /// <summary>
 /// Implements the visualisation of the spectrum.
@@ -46,7 +41,7 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;

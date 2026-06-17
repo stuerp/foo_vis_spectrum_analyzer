@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.h (2026.06.10) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.h (2026.06.17) P. Stuer - Base class for all visualization elements. **/
 
 #pragma once
 
@@ -16,7 +16,7 @@ public:
 
     virtual ~visualization_t() noexcept {}
 
-    virtual void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept = 0;
+    virtual void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept = 0;
 
 protected:
 };

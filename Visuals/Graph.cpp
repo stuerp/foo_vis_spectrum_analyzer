@@ -38,16 +38,16 @@ graph_t::~graph_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_options_t * graphDescription, bool isFirst, bool isLast) noexcept
+void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _IsFirst = isFirst;
     _IsLast = isLast;
 
-    _Description = graphDescription->_Description;
+    _Description = graphOptions->_Description;
 
-    _Analysis.Initialize(state, graphDescription);
+    _Analysis.Initialize(state, graphOptions);
 
     _Visualization.reset();
 
@@ -89,7 +89,7 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphDescription, bo
             break;
     }
 
-    _Visualization->Initialize(state, graphDescription, &_Analysis);
+    _Visualization->Initialize(state, graphOptions, &_Analysis, _IsFirst, _IsLast);
 }
 
 /// <summary>

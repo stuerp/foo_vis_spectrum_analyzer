@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2026.06.10) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.h (2026.06.17) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -37,7 +37,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;

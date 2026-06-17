@@ -167,7 +167,7 @@ LRESULT dui_element_t::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager.UserInterfaceColors[1]);
+    HBRUSH hBrush = color_t::CreateBrush(_UIThread._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 
@@ -202,11 +202,11 @@ void dui_element_t::ToggleFullScreen() noexcept
 /// </summary>
 void dui_element_t::GetColors() noexcept
 {
-    _UIState._StyleManager.UserInterfaceColors.clear();
+    _UIState._UserInterfaceColors.clear();
 
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_text)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_background)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_highlight)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_selection)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(m_callback->query_std_color(ui_color_darkmode)));
 }

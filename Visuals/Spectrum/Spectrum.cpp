@@ -1,15 +1,15 @@
 
-/** $VER: Spectrum.cpp (2026.06.14) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.06.17) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
 
 #include "Direct2D.h"
-#include "DirectWrite.h"
 
 #include "BezierSpline.h"
 
 #include "StyleManager.h"
+#include "Support.h"
 
 #include <execution>
 
@@ -26,16 +26,19 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis) noexcept
+void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = options;
     _Analysis = analysis;
 
+    _IsFirst = isFirst;
+    _IsLast = isLast;
+
     DeleteDeviceSpecificResources();
 
-    _XAxis.Initialize(state, options, analysis);
-    _YAxis.Initialize(state, options, analysis);
+    _XAxis.Initialize(state, options, analysis, isFirst, isLast);
+    _YAxis.Initialize(state, options, analysis, isFirst, isLast);
 
     _Chrono.Reset();
 }
@@ -88,9 +91,11 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         {
-            _XAxis.Render(deviceContext);
-
-            _YAxis.Render(deviceContext);
+            if (_IsFirst)
+            {
+                _XAxis.Render(deviceContext);
+                _YAxis.Render(deviceContext);
+            }
 
             SetTransform(deviceContext, _ClientRect);
 
@@ -100,7 +105,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             if (_State->_VisualizationType == VisualizationType::Curve)
                 RenderCurve(deviceContext);
 
-            if (_NyquistMarkerStyle.IsEnabled())
+            if (_IsLast && _NyquistMarkerStyle.IsEnabled())
                 RenderNyquistFrequencyMarker(deviceContext);
 
             break;
@@ -174,16 +179,19 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
         D2D1_RECT_F Rect = { x1, 0.f, x2 - 1.f, _ClientSize.height};
 
-        // Draw the bar background, even above the Nyquist frequency.
-        if (fb.HasDarkBackground)
+        // Draw the bar background, even above the Nyquist frequency, if it's the first visualization to be rendered.
+        if (_IsFirst)
         {
-            if (_DarkBackgroundStyle.IsEnabled())
-                RenderBarPart(deviceContext, Rect, _DarkBackgroundStyle);
-        }
-        else
-        {
-            if (_LightBackgroundStyle.IsEnabled())
-                RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
+            if (fb.HasDarkBackground)
+            {
+                if (_DarkBackgroundStyle.IsEnabled())
+                    RenderBarPart(deviceContext, Rect, _DarkBackgroundStyle);
+            }
+            else
+            {
+                if (_LightBackgroundStyle.IsEnabled())
+                    RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
+            }
         }
 
         if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
@@ -588,6 +596,9 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
 /// </summary>
 HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     auto & StyleManager = _State->_OverlapGraphs ? _GraphOptions->_StyleManager : _State->_StyleManager;
@@ -608,22 +619,59 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         {
             case VisualizationType::Bars:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, L"", 1.f, _BarAreaStyle);
+                if (SUCCEEDED(hr) && (_BarAreaStyle._Brush == nullptr))
+                {
+                    _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, L"", 1.f, _BarTopStyle);
+                    _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, L"", 1.f, _BarPeakAreaStyle);
+                    hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, L"", 1.f, _BarPeakTopStyle);
+                if (SUCCEEDED(hr) && (_BarTopStyle._Brush == nullptr))
+                {
+                    _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarDarkBackground, deviceContext, _ClientSize, L"", 1.f, _DarkBackgroundStyle);
+                    _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarLightBackground, deviceContext, _ClientSize, L"", 1.f, _LightBackgroundStyle);
+                    hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_BarPeakAreaStyle._Brush == nullptr))
+                {
+                    _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
+
+                    _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_BarPeakTopStyle._Brush == nullptr))
+                {
+                    _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
+
+                    _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_DarkBackgroundStyle._Brush == nullptr))
+                {
+                    _DarkBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarDarkBackground);
+
+                    _DarkBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _DarkBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_LightBackgroundStyle._Brush == nullptr))
+                {
+                    _LightBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarLightBackground);
+
+                    _LightBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _LightBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
 
                 if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
                     hr = CreateOpacityMask(deviceContext);
@@ -632,48 +680,135 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
             case VisualizationType::Curve:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::CurveLine, deviceContext, _ClientSize, L"", 1.f, _CurveLineStyle);
+                if (SUCCEEDED(hr) && (_CurveLineStyle._Brush == nullptr))
+                {
+                    _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurveArea, deviceContext, _ClientSize, L"", 1.f, _CurveAreaStyle);
+                    _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, deviceContext, _ClientSize, L"", 1.f, _CurvePeakLineStyle);
+                    hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, deviceContext, _ClientSize, L"", 1.f, _CurvePeakAreaStyle);
+                if (SUCCEEDED(hr) && (_CurveAreaStyle._Brush == nullptr))
+                {
+                    _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
+
+                    _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_CurvePeakLineStyle._Brush == nullptr))
+                {
+                    _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
+
+                    _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
+
+                if (SUCCEEDED(hr) && (_CurvePeakAreaStyle._Brush == nullptr))
+                {
+                    _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
+
+                    _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+                }
 
                 break;
             }
 
             case VisualizationType::RadialBars:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::BarArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarAreaStyle);
+                constexpr D2D1_POINT_2F Center = { };
+                constexpr D2D1_POINT_2F Offset = { };
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarTopStyle);
+                const FLOAT rx = _ClientSize.height / 2.f;
+                const FLOAT ry = _ClientSize.height / 2.f;
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarPeakAreaStyle);
+                if (SUCCEEDED(hr) && (_BarAreaStyle._Brush == nullptr))
+                {
+                    _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::BarPeakTop, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _BarPeakTopStyle);
+                    _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_BarTopStyle._Brush == nullptr))
+                {
+                    _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
+
+                    _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_BarPeakAreaStyle._Brush == nullptr))
+                {
+                    _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
+
+                    _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_BarPeakTopStyle._Brush == nullptr))
+                {
+                    _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
+
+                    _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
 
                 break;
             }
 
             case VisualizationType::RadialCurve:
             {
-                hr = StyleManager.GetInitializedStyle(VisualElement::CurveLine, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _CurveLineStyle);
+                constexpr D2D1_POINT_2F Center = { };
+                constexpr D2D1_POINT_2F Offset = { };
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurveArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _CurveAreaStyle);
+                const FLOAT rx = _ClientSize.height / 2.f;
+                const FLOAT ry = _ClientSize.height / 2.f;
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurvePeakLine, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _CurvePeakLineStyle);
+                if (SUCCEEDED(hr) && (_CurveLineStyle._Brush == nullptr))
+                {
+                    _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
 
-                if (SUCCEEDED(hr))
-                    hr = StyleManager.GetInitializedStyle(VisualElement::CurvePeakArea, deviceContext, _ClientSize, { 0.f, 0.f }, { 0.f, 0.f}, _ClientSize.height / 2.f, _ClientSize.height / 2.f, _State->_InnerRadius, _CurvePeakAreaStyle);
+                    _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_CurveAreaStyle._Brush == nullptr))
+                {
+                    _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
+
+                    _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_CurvePeakLineStyle._Brush == nullptr))
+                {
+                    _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
+
+                    _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
+
+                if (SUCCEEDED(hr) && (_CurvePeakAreaStyle._Brush == nullptr))
+                {
+                    _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
+
+                    _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+                    hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+                }
 
                 break;
             }

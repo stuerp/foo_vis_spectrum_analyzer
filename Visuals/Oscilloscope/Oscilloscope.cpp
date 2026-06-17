@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.03.15) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.06.17) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -33,7 +33,7 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;

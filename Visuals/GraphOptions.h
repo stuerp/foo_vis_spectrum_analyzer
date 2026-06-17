@@ -110,7 +110,7 @@ public:
 
     uint32_t _SelectedChannels;                 // The channels that should be visualized.
 
-    uint32_t _ChannelPair;
+    ChannelPair _ChannelPair;
     bool _SwapChannels;                         // True if the channels of a channel pair should be swapped.
 
     HorizontalAlignment _HorizontalAlignment;   // Horizonal alignment of a visualization in the graph area.

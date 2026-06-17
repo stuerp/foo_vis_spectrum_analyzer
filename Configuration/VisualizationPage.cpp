@@ -345,14 +345,6 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             UpdateControls();
             break;
         }
-
-        case IDC_CHANNEL_PAIRS:
-        {
-            _State->_ChannelPair = (ChannelPair) SelectedIndex;
-
-            UpdateControls();
-            break;
-        }
     }
 
     ConfigurationChanged(ChangedSettings);

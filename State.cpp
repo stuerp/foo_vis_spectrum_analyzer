@@ -253,7 +253,6 @@ void state_t::Reset() noexcept
     _MaxBarSize = 0.f; // pixels
 
     // Level Meter
-    _ChannelPair = ChannelPair::FrontLeftRight;
     _IsHorizontalLevelMeter = false;
 
     // Oscilloscope
@@ -532,7 +531,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _MaxBarSize = other._MaxBarSize;
 
     // Level Meter
-    _ChannelPair = other._ChannelPair;
     _IsHorizontalLevelMeter = other._IsHorizontalLevelMeter;
 
     // Oscilloscope
@@ -932,8 +930,9 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
         if (Version >= 27)
         {
-            stream->read(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
-            _ChannelPair = std::clamp(_ChannelPair, ChannelPair::FrontLeftRight, ChannelPair::TopBackLeftRight);
+            ChannelPair t;
+
+            stream->read(&t, sizeof(t), abortHandler); // Deprecated. Moved to graph options.
 
             stream->read_object_t(_IsHorizontalLevelMeter, abortHandler);
             stream->read_object_t(_IsHorizontalSpectrogram, abortHandler);
@@ -1297,7 +1296,8 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write_object_t(_HasRMSPlus3, abortHandler);
 
         // Version 27, v0.8.0.0-beta1
-        stream->write_object(&_ChannelPair, sizeof(_ChannelPair), abortHandler);
+        ChannelPair t;
+        stream->write_object(&t, sizeof(t), abortHandler); // Deprecated. Moved to graph options
         stream->write_object_t(_IsHorizontalLevelMeter, abortHandler);
         stream->write_object_t(_IsHorizontalSpectrogram, abortHandler);
         stream->write_object_t(_UseSpectrumBarMetrics, abortHandler);
@@ -1548,8 +1548,6 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
         _GraphOptions = std::move(GraphDescriptions);
     }
-
-    _ChannelPair = Object.value("channelPair", _ChannelPair);
 
     {
         const auto & Styles = Object.value("styles", json::array());
@@ -1830,7 +1828,7 @@ json state_t::ToJSON(bool isPreset) const
             })
         ), 
 
-        { "channelPair", _ChannelPair }, // FIXME: Shouldn't this be tied to a graph?
+//      { "channelPair", _ChannelPair }, // FIXME: Shouldn't this be tied to a graph?
 
         // Styles
         { "styles", _StyleManager.ToJSON() },
@@ -1866,13 +1864,13 @@ void state_t::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style._ColorSource = ColorSource::DominantColor;
-            style._CurrentColor = _StyleManager.DominantColor;
+            style._CurrentColor = _ArtworkDominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style._ColorSource = ColorSource::UserInterface;
-            style._CurrentColor = _StyleManager.UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style._CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
@@ -1899,7 +1897,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
@@ -1923,7 +1921,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
@@ -1947,7 +1945,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
@@ -1971,7 +1969,7 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _StyleManager.UserInterfaceColors[0];
+                style._CurrentColor = _UserInterfaceColors[0];
             }
             else
             {

@@ -147,7 +147,7 @@ LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
 
     GetClientRect(&cr);
 
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager.UserInterfaceColors[1]);
+    HBRUSH hBrush = color_t::CreateBrush(_UIThread._UserInterfaceColors[1]);
 
     ::FillRect(hDC, &cr, hBrush);
 
@@ -310,14 +310,14 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
                 {
                     PresetManager::Load(_UIState._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
-                    NewState._StyleManager.DominantColor       = _UIState._StyleManager.DominantColor;
-                    NewState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
-
-                    NewState._StyleManager.UpdateCurrentColors();
+                    NewState._ArtworkDominantColor = _UIState._ArtworkDominantColor;
+                    NewState._UserInterfaceColors  = _UIState._UserInterfaceColors;
 
                     NewState._ActivePresetName = PresetNames[Index];
 
                     _UIState = NewState;
+
+                    _UIState._RecreateStyles = true;
 
                     UpdateState(ConfigurationChanges::All);
 
@@ -418,7 +418,7 @@ void uielement_t::Resize()
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
+            _RenderState._RecreateStyles = true;
         }
 
         for (auto & Item : _Grid)
@@ -438,12 +438,12 @@ void uielement_t::OnColorsChanged()
 {
     GetColors();
 
-    _UIState._StyleManager.UpdateCurrentColors();
+    _UIState._RecreateStyles = true;
 
     {
         msc::lock_t Lock(_CriticalSection);
 
-        _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
+        _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
 
         ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
@@ -549,26 +549,31 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::All:
             {
                 _RenderState._SampleRate = 0;
-                _RenderState._StyleManager.DeleteDeviceSpecificResources();
+                _RenderState._RecreateStyles = true;
 
                 // Recreate the resources that depend on the artwork.
                 CreateArtworkDependentResources();
 
                 // Create the graphs.
                 {
+                    const bool OverlapGraphs = _RenderState._OverlapGraphs && (_RenderState._VisualizationType == VisualizationType::Bars) || (_RenderState._VisualizationType == VisualizationType::Curve) || (_RenderState._VisualizationType == VisualizationType::RadialBars) || (_RenderState._VisualizationType == VisualizationType::RadialCurve);
+
                     _Grid.Clear();
 
-                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, _RenderState._OverlapGraphs);
+                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, OverlapGraphs);
 
                     size_t i = 0;
 
-                    for (auto & GraphDescription : _RenderState._GraphOptions)
+                    for (auto & GraphOptions : _RenderState._GraphOptions)
                     {
                         auto * Graph = new graph_t();
 
-                        Graph->Initialize(&_RenderState, &GraphDescription, (i == 0), (i == _RenderState._GraphOptions.size() - 1));
+                        const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
+                        const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        _Grid.push_back({ Graph });
+                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast);
+
+                        _Grid.push_back(Graph);
                         ++i;
                     }
                 }

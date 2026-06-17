@@ -1,5 +1,5 @@
 
-/** $VER: GraphOptions.cpp (2026.06.10) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.cpp (2026.06.17) P. Stuer - Describes the layout and settings of a graph. **/
 
 #include "pch.h"
 
@@ -16,7 +16,7 @@ void graph_options_t::Initialize() noexcept
 {
     _SelectedChannels = (uint32_t) Channels::ConfigStereo;
 
-    _ChannelPair = (uint32_t) ChannelPair::FrontLeftRight;
+    _ChannelPair  = ChannelPair::FrontLeftRight;
     _SwapChannels = false;
 
     _HorizontalAlignment = HorizontalAlignment::Center;
@@ -81,57 +81,59 @@ double graph_options_t::ScaleAmplitude(double value) const noexcept
 /// </summary>
 graph_options_t graph_options_t::FromJSON(const json & object) noexcept
 {
-    graph_options_t gd;
+    graph_options_t Options;
 
     const auto & Description = object.value("description", json::object());
 
-    gd._Description = msc::UTF8ToWide(Description.value("text", msc::WideToUTF8(gd._Description)));
-    gd._HorizontalTextAlignment  = Description.value("horizontalAlignment", gd._HorizontalTextAlignment);
-    gd._VerticalTextAlignment  = Description.value("verticalAlignment", gd._VerticalTextAlignment);
+    Options._Description             = msc::UTF8ToWide(Description.value("text", msc::WideToUTF8(Options._Description)));
 
-    gd._SelectedChannels = object.value("channels", gd._SelectedChannels);
-    gd._SwapChannels     = object.value("swapChannels", gd._SwapChannels);
+    Options._HorizontalTextAlignment = Description.value("horizontalAlignment", Options._HorizontalTextAlignment);
+    Options._VerticalTextAlignment   = Description.value("verticalAlignment", Options._VerticalTextAlignment);
+
+    Options._SelectedChannels = object.value("channels", Options._SelectedChannels);
+    Options._ChannelPair      = object.value("channelPair", Options._ChannelPair);
+    Options._SwapChannels     = object.value("swapChannels", Options._SwapChannels);
 
     const auto & Layout = object.value("layout", json::object());
 
-    gd._HorizontalAlignment = Layout.value("horizontalAlignment", gd._HorizontalAlignment);
-    gd._HRatio              = Layout.value("horizontalRatio", gd._HRatio);
-    gd._VerticalAlignment   = Layout.value("verticalAlignment", gd._VerticalAlignment);
-    gd._VRatio              = Layout.value("verticalRatio", gd._VRatio);
+    Options._HorizontalAlignment = Layout.value("horizontalAlignment", Options._HorizontalAlignment);
+    Options._HRatio              = Layout.value("horizontalRatio", Options._HRatio);
+    Options._VerticalAlignment   = Layout.value("verticalAlignment", Options._VerticalAlignment);
+    Options._VRatio              = Layout.value("verticalRatio", Options._VRatio);
 
-    gd._FlipHorizontally = Layout.value("flipHorizontally", gd._FlipHorizontally);
-    gd._FlipVertically   = Layout.value("flipVertically", gd._FlipVertically);
+    Options._FlipHorizontally = Layout.value("flipHorizontally", Options._FlipHorizontally);
+    Options._FlipVertically   = Layout.value("flipVertically", Options._FlipVertically);
 
-    gd._LPadding = Layout.value("leftPadding", gd._LPadding);
-    gd._RPadding = Layout.value("rightPadding", gd._RPadding);
-    gd._TPadding = Layout.value("topPadding", gd._TPadding);
-    gd._BPadding = Layout.value("bottomPadding", gd._BPadding);
+    Options._LPadding = Layout.value("leftPadding", Options._LPadding);
+    Options._RPadding = Layout.value("rightPadding", Options._RPadding);
+    Options._TPadding = Layout.value("topPadding", Options._TPadding);
+    Options._BPadding = Layout.value("bottomPadding", Options._BPadding);
 
     const auto & XAxis = object.value("xAxis", json::object());
 
-    gd._XAxisMode     = XAxis.value("mode", gd._XAxisMode);
-    gd._XAxisTop      = XAxis.value("top", gd._XAxisTop);
-    gd._XAxisBottom   = XAxis.value("bottom", gd._XAxisBottom);
-    gd._XAxisDecimals = XAxis.value("decimals", gd._XAxisDecimals);
+    Options._XAxisMode     = XAxis.value("mode", Options._XAxisMode);
+    Options._XAxisTop      = XAxis.value("top", Options._XAxisTop);
+    Options._XAxisBottom   = XAxis.value("bottom", Options._XAxisBottom);
+    Options._XAxisDecimals = XAxis.value("decimals", Options._XAxisDecimals);
 
     const auto & YAxis = object.value("yAxis", json::object());
 
-    gd._YAxisMode     = YAxis.value("mode", gd._YAxisMode);
-    gd._YAxisLeft     = YAxis.value("left", gd._YAxisLeft);
-    gd._YAxisRight    = YAxis.value("right", gd._YAxisRight);
+    Options._YAxisMode     = YAxis.value("mode", Options._YAxisMode);
+    Options._YAxisLeft     = YAxis.value("left", Options._YAxisLeft);
+    Options._YAxisRight    = YAxis.value("right", Options._YAxisRight);
 
-    gd._AmplitudeLo   = YAxis.value("amplitudeLo", gd._AmplitudeLo);
-    gd._AmplitudeHi   = YAxis.value("amplitudeHi", gd._AmplitudeHi);
-    gd._AmplitudeStep = YAxis.value("amplitudeStep", gd._AmplitudeStep);
+    Options._AmplitudeLo   = YAxis.value("amplitudeLo", Options._AmplitudeLo);
+    Options._AmplitudeHi   = YAxis.value("amplitudeHi", Options._AmplitudeHi);
+    Options._AmplitudeStep = YAxis.value("amplitudeStep", Options._AmplitudeStep);
 
-    gd._UseAbsolute   = YAxis.value("useAbsolute", gd._UseAbsolute);
-    gd._Gamma         = YAxis.value("gamma", gd._Gamma);
+    Options._UseAbsolute   = YAxis.value("useAbsolute", Options._UseAbsolute);
+    Options._Gamma         = YAxis.value("gamma", Options._Gamma);
 
     const auto & Styles = object.value("styles", json::array());
 
-    gd._StyleManager.FromJSON(Styles);
+    Options._StyleManager.FromJSON(Styles);
 
-    return gd;
+    return Options;
 }
 
 /// <summary>
@@ -151,6 +153,7 @@ json graph_options_t::ToJSON() const noexcept
         },
 
         { "channels", _SelectedChannels },
+        { "channelPair", _ChannelPair },
         { "swapChannels", _SwapChannels },
 
         { "layout",

@@ -346,7 +346,6 @@
 #define IDC_ALL_CHANNELS                5124
 #define IDC_NO_CHANNELS                 5126
 
-#define IDC_CHANNEL_PAIRS_LBL           5128
 #define IDC_CHANNEL_PAIRS               5130
 
 #define IDC_SWAP_CHANNELS               5132
@@ -357,7 +356,6 @@
 
 #define IDC_X_AXIS                      4000
 
-#define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
 #define IDC_X_AXIS_TOP                  4006
@@ -371,7 +369,6 @@
 
 #define IDC_Y_AXIS                      5000
 
-#define IDC_Y_AXIS_MODE_LBL             5002
 #define IDC_Y_AXIS_MODE                 5004
 
 #define IDC_Y_AXIS_LEFT                 5006

@@ -1,5 +1,5 @@
 
-/** $VER: Tester.h (2026.06.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.h (2026.06.17) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #pragma once
 
@@ -26,7 +26,7 @@ public:
     void Release() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
     void Resize() noexcept;
 
 private:

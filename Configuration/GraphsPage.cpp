@@ -85,7 +85,7 @@ void graphs_page_t::InitializeControls() noexcept
 {
     _SelectedGraph = 0;
 
-    auto & gd = _State->_GraphOptions[_SelectedGraph];
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     // Vertical Layout
     {
@@ -106,7 +106,7 @@ void graphs_page_t::InitializeControls() noexcept
         for (const auto & x : { L"Near", L"Center", L"Far", L"Fit" })
             w.AddString(x);
 
-        w.SetCurSel((int) gd._HorizontalAlignment);
+        w.SetCurSel((int) Options._HorizontalAlignment);
     }
 
     // X Axis
@@ -136,8 +136,8 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
 
-            SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo);
-            w.SetPos32((int) (gd._AmplitudeLo * 10.));
+            SetDouble(IDC_AMPLITUDE_LO, Options._AmplitudeLo);
+            w.SetPos32((int) (Options._AmplitudeLo * 10.));
         }
 
         {
@@ -148,8 +148,8 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
 
-            SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi);
-            w.SetPos32((int) (gd._AmplitudeHi * 10.));
+            SetDouble(IDC_AMPLITUDE_HI, Options._AmplitudeHi);
+            w.SetPos32((int) (Options._AmplitudeHi * 10.));
         }
 
         {
@@ -160,17 +160,17 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
 
-            SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
-            w.SetPos32((int) (gd._AmplitudeStep * 10.));
+            SetDouble(IDC_AMPLITUDE_STEP, Options._AmplitudeStep, 0, 1);
+            w.SetPos32((int) (Options._AmplitudeStep * 10.));
         }
     }
 
     // Used by the Linear/n-th root y-axis mode.
     {
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, Options._UseAbsolute);
 
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
-        SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
+        SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
     }
 
     // Channels
@@ -195,12 +195,12 @@ void graphs_page_t::InitializeControls() noexcept
         for (const auto & x : { L"Front Left/Right", L"Back Left/Right", L"Front Center Left/Right", L"Side Left/Right", L"Top Front Left/Right", L"Top Back Left/Right" })
             w.AddString(x);
 
-        w.SetCurSel((int) _State->_ChannelPair);
+        w.SetCurSel((int) Options._ChannelPair);
     }
 
     // Swap channels of a channel pair
     {
-        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
+        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, Options._SwapChannels);
     }
 
     UpdateControls();
@@ -211,6 +211,7 @@ void graphs_page_t::InitializeControls() noexcept
 /// </summary>
 void graphs_page_t::UpdateControls() noexcept
 {
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
@@ -264,28 +265,28 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Overlap Graphs **/
 
-    const bool SupportsOverlapGraphs = !(IsBitMeter) && (_State->_GraphOptions.size() > 1);
+    const bool SupportsOverlapGraphs = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1);
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 
     /* Graph settings */
 
-    const auto & gd = _State->_GraphOptions[(size_t) _SelectedGraph];
+    const auto & Options = _State->_GraphOptions[(size_t) _SelectedGraph];
 
     // Description
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gd._Description.c_str());
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, Options._Description.c_str());
 
     // Layout
     {
-        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gd._HorizontalAlignment);
+        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) Options._HorizontalAlignment);
 
-        CheckDlgButton(IDC_FLIP_HORIZONTALLY, gd._FlipHorizontally);
-        CheckDlgButton(IDC_FLIP_VERTICALLY, gd._FlipVertically);
+        CheckDlgButton(IDC_FLIP_HORIZONTALLY, Options._FlipHorizontally);
+        CheckDlgButton(IDC_FLIP_VERTICALLY, Options._FlipVertically);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!(IsLevelMeter || IsOscilloscope));
+        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!(IsPeakMeter || IsLevelMeter || IsOscilloscope));
 
-        const bool SupportsLayout = !(IsLevelMeter || IsOscilloscope || IsBitMeter);
+        const bool SupportsLayout = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter);
 
         for (const auto ID : { IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
             GetDlgItem(ID).EnableWindow(SupportsLayout);
@@ -293,59 +294,59 @@ void graphs_page_t::UpdateControls() noexcept
 
     // X axis
     {
-        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gd._XAxisMode);
+        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) Options._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP,    gd._XAxisTop);
-        CheckDlgButton(IDC_X_AXIS_BOTTOM, gd._XAxisBottom);
+        CheckDlgButton(IDC_X_AXIS_TOP,    Options._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_BOTTOM, Options._XAxisBottom);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!(IsLevelMeter || IsBitMeter));
+        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
 
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !(IsLevelMeter || IsOscilloscope || IsBitMeter));
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gd.HasXAxis() && !(IsLevelMeter || IsOscilloscope));
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter));
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope));
 
-        SetInteger(IDC_X_AXIS_DECIMALS, gd._XAxisDecimals);
+        SetInteger(IDC_X_AXIS_DECIMALS, Options._XAxisDecimals);
     }
 
     // Y axis
     {
-        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gd._YAxisMode);
+        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) Options._YAxisMode);
 
-        CheckDlgButton(IDC_Y_AXIS_LEFT,  gd._YAxisLeft);
-        CheckDlgButton(IDC_Y_AXIS_RIGHT, gd._YAxisRight);
+        CheckDlgButton(IDC_Y_AXIS_LEFT,  Options._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_RIGHT, Options._YAxisRight);
 
-        SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gd._AmplitudeLo * 10.));
+        SetDouble(IDC_AMPLITUDE_LO, Options._AmplitudeLo, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (Options._AmplitudeLo * 10.));
 
-        SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gd._AmplitudeHi * 10.));
+        SetDouble(IDC_AMPLITUDE_HI, Options._AmplitudeHi, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (Options._AmplitudeHi * 10.));
 
-        SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gd._AmplitudeStep * 10.));
+        SetDouble(IDC_AMPLITUDE_STEP, Options._AmplitudeStep, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (Options._AmplitudeStep * 10.));
 
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
-        SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, Options._UseAbsolute);
+        SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!(IsLevelMeter || IsBitMeter));
+        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
 
-        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(gd.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY));
-        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gd.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
+        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY));
+        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
 
         for (const auto & Iter : { IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gd.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
 
-        const bool IsLinear = (gd._YAxisMode == YAxisMode::Linear);
+        const bool IsLinear = (Options._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
     }
 
     // Channels
     {
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        uint32_t Channels = gd._SelectedChannels;
+        uint32_t Channels = Options._SelectedChannels;
 
         for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {
@@ -356,10 +357,21 @@ void graphs_page_t::UpdateControls() noexcept
     }
 
     // Channel Pairs
-    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsOscilloscopeXY);
+    const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY;
 
-    SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
-    GetDlgItem(IDC_SWAP_CHANNELS).EnableWindow(IsOscilloscopeXY);
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+
+        w.EnableWindow(SupportsChannelPairs);
+        w.SetCurSel((int) Options._ChannelPair);
+    }
+
+    // Swap Channels
+    {
+        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, Options._SwapChannels);
+
+        GetDlgItem(IDC_SWAP_CHANNELS).EnableWindow(SupportsChannelPairs);
+    }
 }
 
 /// <summary>
@@ -404,9 +416,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_HORIZONTAL_ALIGNMENT:
         {
-            auto & gs = _State->_GraphOptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
+            Options._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -420,9 +432,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_X_AXIS_MODE:
         {
-            auto & gs = _State->_GraphOptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._XAxisMode = (XAxisMode) SelectedIndex;
+            Options._XAxisMode = (XAxisMode) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -434,9 +446,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_Y_AXIS_MODE:
         {
-            auto & gs = _State->_GraphOptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._YAxisMode = (YAxisMode) SelectedIndex;
+            Options._YAxisMode = (YAxisMode) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -449,6 +461,14 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
         case IDC_CHANNELS:
         {
             UpdateSelectedChannels();
+            break;
+        }
+
+        case IDC_CHANNEL_PAIRS:
+        {
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
+
+            Options._ChannelPair = (ChannelPair) SelectedIndex;
             break;
         }
 
@@ -533,7 +553,7 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gs = _State->_GraphOptions[_SelectedGraph];
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
@@ -542,7 +562,7 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_X_AXIS_DECIMALS:
         {
-            SetInteger(id, gs._XAxisDecimals);
+            SetInteger(id, Options._XAxisDecimals);
 
             ChangedSettings = ConfigurationChanges::Layout;
             break;
@@ -550,25 +570,25 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
 
         case IDC_AMPLITUDE_LO:
         {
-            SetDouble(id, gs._AmplitudeLo, 0, 1);
+            SetDouble(id, Options._AmplitudeLo, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_HI:
         {
-            SetDouble(id, gs._AmplitudeHi, 0, 1);
+            SetDouble(id, Options._AmplitudeHi, 0, 1);
             break;
         }
 
         case IDC_AMPLITUDE_STEP:
         {
-            SetDouble(id, gs._AmplitudeStep, 0, 1);
+            SetDouble(id, Options._AmplitudeStep, 0, 1);
             break;
         }
 
         case IDC_GAMMA:
         {
-            SetDouble(id, gs._Gamma, 0, 1);
+            SetDouble(id, Options._Gamma, 0, 1);
             break;
         }
     }

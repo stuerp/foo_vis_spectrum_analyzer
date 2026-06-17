@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.03.18) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.06.17) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 #include "XAxis.h"
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;

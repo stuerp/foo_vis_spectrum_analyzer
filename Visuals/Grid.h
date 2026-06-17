@@ -53,8 +53,8 @@ public:
                 {
                     const auto & g = _Items[(i * _ColCount) + j];
 
-                    w = width  * g->_Analysis._GraphDescription->_HRatio;
-                    h = height * g->_Analysis._GraphDescription->_VRatio;
+                    w = width  * g->_Analysis._GraphOptions->_HRatio;
+                    h = height * g->_Analysis._GraphOptions->_VRatio;
 
                     if (!_VerticalLayout)
                         Rect.right += w;

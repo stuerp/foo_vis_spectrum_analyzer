@@ -1,11 +1,9 @@
 
-/** $VER: LevelMeter.cpp (2026.03.18) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.06.17) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
 #include "LevelMeter.h"
-
-#include "Support.h"
 
 #pragma hdrstop
 
@@ -31,7 +29,7 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void level_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;
@@ -67,8 +65,15 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
 
-    const FLOAT CenterX = GetWidth()  / 2.f;
-    const FLOAT CenterY = GetHeight() / 2.f;
+    const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+
+    deviceContext->SetTransform(Translate);
+
+    const FLOAT w = (_Rect.right  - _Rect.left);
+    const FLOAT h = (_Rect.bottom - _Rect.top);
+
+    const FLOAT CenterX = w / 2.f;
+    const FLOAT CenterY = h / 2.f;
 
     const FLOAT LEDHeight = _State->_LEDLight + _State->_LEDGap;
 
@@ -76,7 +81,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Render the bars.
         {
-            FLOAT x = (FLOAT) _Analysis->_Balance * GetWidth();
+            FLOAT x = (FLOAT) _Analysis->_Balance * w;
 
             D2D1_RECT_F Rect = { CenterX, 2.f, x, CenterY - 2.f };
 
@@ -101,9 +106,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
             }
 
-            x = (FLOAT) _Analysis->_Phase * GetWidth();
+            x = (FLOAT) _Analysis->_Phase * w;
 
-            Rect = { CenterX, CenterY + 2.f, x, GetHeight() - 2.f };
+            Rect = { CenterX, CenterY + 2.f, x, h - 2.f };
 
             if (_MidSideStyle.IsEnabled())
             {
@@ -130,9 +135,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ 2.f, CenterY }, { GetWidth() - 2.f, CenterY }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ 2.f, CenterY }, { w - 2.f, CenterY }, _AxisStyle._Brush, _AxisStyle._Thickness);
 
-            D2D1_RECT_F Rect = { 4.f, 2.f, GetWidth() - 4.f, CenterY - 2.f };
+            D2D1_RECT_F Rect = { 4.f, 2.f, w - 4.f, CenterY - 2.f };
 
             {
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -145,8 +150,8 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
 
             {
-                Rect.top    = CenterY     + 2.f;
-                Rect.bottom = GetHeight() - 2.f;
+                Rect.top    = CenterY + 2.f;
+                Rect.bottom = h       - 2.f;
 
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
@@ -157,14 +162,14 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
         }
     }
     else
     {
         // Render the bars.
         {
-            FLOAT y = (FLOAT) _Analysis->_Balance * GetHeight();
+            FLOAT y = (FLOAT) _Analysis->_Balance * h;
 
             D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
 
@@ -189,9 +194,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
             }
 
-            y = (FLOAT) _Analysis->_Phase * GetHeight();
+            y = (FLOAT) _Analysis->_Phase * h;
 
-            Rect = { CenterX + 2.f, CenterY, GetWidth() - 2.f, y };
+            Rect = { CenterX + 2.f, CenterY, w - 2.f, y };
 
             if (_MidSideStyle.IsEnabled())
             {
@@ -218,9 +223,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
 
-            D2D1_RECT_F Rect = { 2.f, 4.f, CenterX - 2.f, GetHeight() - 4.f };
+            D2D1_RECT_F Rect = { 2.f, 4.f, CenterX - 2.f, h - 4.f };
 
             {
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -233,8 +238,8 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
 
             {
-                Rect.left  = CenterX    + 2.f;
-                Rect.right = GetWidth() - 2.f;
+                Rect.left  = CenterX + 2.f;
+                Rect.right = w       - 2.f;
 
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
@@ -245,9 +250,11 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, GetHeight() - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
         }
     }
+
+    deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 }
 
 /// <summary>

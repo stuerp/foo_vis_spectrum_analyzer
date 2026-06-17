@@ -74,9 +74,6 @@ public:
     analysis_t _Analysis;
 
 private:
-    bool _IsFirst;
-    bool _IsLast;
-
     std::wstring _Description;
     std::unique_ptr<visualization_t> _Visualization;
 

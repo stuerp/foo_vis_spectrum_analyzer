@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.03.11) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.06.17) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -30,7 +30,7 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;
@@ -94,12 +94,12 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                         // get_sample_count() actually returns the number of frames.
+        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                                 // get_sample_count() actually returns the number of frames.
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                             // Mask containing the channels selected by the user.
-        const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
+        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
+        const uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                                 // Mask containing the channels selected by the user.
+        const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
 
         const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
 

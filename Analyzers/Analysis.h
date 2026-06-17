@@ -134,7 +134,7 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(msc::Map(amplitude, _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
@@ -162,7 +162,7 @@ private:
 
 public:
     const state_t * _State;
-    const graph_options_t * _GraphDescription;
+    const graph_options_t * _GraphOptions;
 
     audio_chunk_impl _Chunk;    // Only used by oscilloscope
 

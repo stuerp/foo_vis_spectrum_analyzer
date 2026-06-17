@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2025.09.24) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.06.17) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void y_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;

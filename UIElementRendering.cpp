@@ -12,7 +12,6 @@
 #include "Resources.h"
 #include "Color.h"
 #include "Gradients.h"
-#include "StyleManager.h"
 #include "Chrono.h"
 #include "Event.h"
 #include "Support.h"
@@ -94,6 +93,7 @@ void uielement_t::RenderThreadProc() noexcept
 
                 if (_IsConfigurationChanged)
                 {
+                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
                     _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
                     _IsConfigurationChanged = false;
@@ -168,20 +168,15 @@ void uielement_t::ProcessEvents() noexcept
         {
             // Set the default dominant color and gradient for the artwork color scheme.
             _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
-
-            _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
-            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the new artwork.
+            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _RenderState._RecreateStyles = true;
 
             _IsConfigurationChanged = true;
         }
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-    {
-        _RenderState._StyleManager.UpdateCurrentColors();
-        _RenderState._StyleManager.DeleteDeviceSpecificResources();
-    }
+        _RenderState._RecreateStyles = true;
 }
 
 /// <summary>
@@ -264,6 +259,8 @@ void uielement_t::Render() noexcept
 
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
+
+    _RenderState._RecreateStyles = false;
 }
 
 /// <summary>
@@ -465,7 +462,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
+            _RenderState._RecreateStyles = true;
         }
 
     #ifdef _DEBUG
@@ -502,8 +499,6 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
-
-    _RenderState._StyleManager.DeleteDeviceSpecificResources();
 
     for (auto & Item : _Grid)
         Item->Release();
@@ -579,7 +574,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkColors[0];
+        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_RenderState._ColorOrder)
@@ -620,10 +615,10 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
     if (SUCCEEDED(hr))
     {
-        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
-        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-        _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
+//      _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._ArtworkDominantColor);
+//      _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
 
+        _RenderState._RecreateStyles = true;
         _IsConfigurationChanged = true;
     }
 

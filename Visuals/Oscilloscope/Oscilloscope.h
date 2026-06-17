@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.02.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.06.17) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
     void Resize() noexcept;
 
 private:

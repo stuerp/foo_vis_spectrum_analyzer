@@ -1,5 +1,5 @@
 
-/** $VER: Tester.cpp (2025.10.21) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.06.17) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
@@ -29,7 +29,7 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void tester_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;

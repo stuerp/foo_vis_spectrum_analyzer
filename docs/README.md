@@ -788,6 +788,9 @@ Enables this setting to stack the graphs vertically instead of horizontally.
 
 Select to draw the graphs overlapped instead of stacked horizontally or vertically.
 
+> [!Note]
+> Only allowed for the bar, curve, radial bar and radial curve visualization.
+
 `Description`
 
 Allow you to edit the description of the selected graph.

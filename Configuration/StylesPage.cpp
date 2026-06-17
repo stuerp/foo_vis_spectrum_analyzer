@@ -221,7 +221,7 @@ void styles_page_t::UpdateControls() noexcept
     }
 
     // Updates the current color based on the color source.
-    style->UpdateCurrentColor(_StyleManager->DominantColor, _StyleManager->UserInterfaceColors);
+    style->SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
     ((CComboBox) GetDlgItem(IDC_COLOR_SOURCE)).SetCurSel((int) style->_ColorSource);
 
@@ -783,7 +783,7 @@ void styles_page_t::InitializeStyles() noexcept
 
     const auto User = (VisualizationTypes) ((uint64_t) 1 << (int) _State->_VisualizationType);
 
-    for (const auto & ID : _StyleManager->DisplayOrder)
+    for (const auto & ID : _StyleDisplayOrder)
     {
         const style_t * const Style = _StyleManager->GetStyle(ID);
 

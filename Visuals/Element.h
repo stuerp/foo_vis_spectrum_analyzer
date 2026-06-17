@@ -7,8 +7,6 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-
 #include "State.h"
 #include "Graphoptions.h"
 #include "Analysis.h"
@@ -91,6 +89,9 @@ protected:
     state_t * _State;
     graph_options_t * _GraphOptions;
     const analysis_t * _Analysis;
+
+    bool _IsFirst;
+    bool _IsLast;
 
     D2D1_RECT_F _Rect;
     D2D1_SIZE_F _Size;

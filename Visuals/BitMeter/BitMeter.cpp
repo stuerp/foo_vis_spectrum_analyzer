@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.05.31) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.06.17) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -28,7 +28,7 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis) noexcept
+void bit_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
     _GraphOptions = graphDescription;
