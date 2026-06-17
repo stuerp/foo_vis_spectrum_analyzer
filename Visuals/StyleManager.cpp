@@ -62,32 +62,6 @@ void style_manager_t::Reset() noexcept
 }
 
 /// <summary>
-/// Gets the style with initialized DirectX resources.
-/// </summary>
-HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t & style) noexcept
-{
-    if (style._Brush != nullptr)
-        return S_OK;
-
-    GetStyle(visualElement, style);
-
-    return style.CreateDeviceSpecificResources(deviceContext, size, text, scaleFactor);
-}
-
-/// <summary>
-/// Gets the style with initialized DirectX resources.
-/// </summary>
-HRESULT style_manager_t::GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t & style) noexcept
-{
-    if (style._Brush != nullptr)
-        return S_OK;
-
-    GetStyle(visualElement, style);
-
-    return style.CreateDeviceSpecificResources(deviceContext, size, center, offset, rx, ry, rOffset);
-}
-
-/// <summary>
 /// Reads this instance from a stream.
 /// </summary>
 void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback & abortHandler) noexcept

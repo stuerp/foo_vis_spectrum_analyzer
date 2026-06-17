@@ -272,27 +272,62 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRight, deviceContext, Size, L"", 1.f, _LeftRightStyle);
+    if (_LeftRightStyle._Brush == nullptr)
+    {
+        _LeftRightStyle = *_State->_StyleManager.GetStyle(VisualElement::BarLeftRight);
+
+        _LeftRightStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _LeftRightStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarLeftRightIndicator, deviceContext, Size, L"", 1.f, _LeftRightIndicatorStyle);
+    if (_LeftRightIndicatorStyle._Brush == nullptr)
+    {
+        _LeftRightIndicatorStyle = *_State->_StyleManager.GetStyle(VisualElement::BarLeftRightIndicator);
+
+        _LeftRightIndicatorStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _LeftRightIndicatorStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSide, deviceContext, Size, L"", 1.f, _MidSideStyle);
+    if (_MidSideStyle._Brush == nullptr)
+    {
+        _MidSideStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMidSide);
+
+        _MidSideStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _MidSideStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMidSideIndicator, deviceContext, Size, L"", 1.f, _MidSideIndicatorStyle);
+    if (_MidSideIndicatorStyle._Brush == nullptr)
+    {
+        _MidSideIndicatorStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMidSideIndicator);
+
+        _MidSideIndicatorStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _MidSideIndicatorStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::LevelMeterAxis, deviceContext, Size, L"+1.0", 1.f, _AxisStyle);
+    if (_AxisStyle._Brush == nullptr)
+    {
+        _AxisStyle = *_State->_StyleManager.GetStyle(VisualElement::LevelMeterAxis);
+
+        _AxisStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _AxisStyle.CreateDeviceSpecificResources(deviceContext, Size, L"+1.0", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;

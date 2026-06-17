@@ -815,8 +815,14 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         }
     }
 
-    if (SUCCEEDED(hr))
-        hr = StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, _ClientSize, L"", 1.f, _NyquistMarkerStyle);
+    if (SUCCEEDED(hr) && (_NyquistMarkerStyle._Brush == nullptr))
+    {
+        _NyquistMarkerStyle = *StyleManager.GetStyle(VisualElement::NyquistMarker);
+
+        _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+    }
 
     return hr;
 }

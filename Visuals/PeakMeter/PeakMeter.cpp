@@ -322,48 +322,157 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 {
     HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, _Size, L"", 1.f, _BackgroundStyle);
+    if (_BackgroundStyle._Brush == nullptr)
+    {
+        _BackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevel, deviceContext, _Size, L"", 1.f, _PeakStyle);
+        _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBPeakLevel, deviceContext, _Size, L"", 1.f, _Peak0dBStyle);
+        hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarPeakLevelText, deviceContext, _Size, L"+199.9", 1.f, _PeakTextStyle);
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMaxPeakLevel, deviceContext, _Size, L"", 1.f, _MaxPeakStyle);
+    if (_PeakStyle._Brush == nullptr)
+    {
+        _PeakStyle = *_State->_StyleManager.GetStyle(VisualElement::BarPeakLevel);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevel, deviceContext, _Size, L"", 1.f, _RMSStyle);
+        _PeakStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Bar0dBRMSLevel, deviceContext, _Size, L"", 1.f, _RMS0dBStyle);
+        hr = _PeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarRMSLevelText, deviceContext, _Size, L"+199.9", 1.f, _RMSTextStyle);
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"LFE", 1.f, _NameStyle);
+    if (_Peak0dBStyle._Brush == nullptr)
+    {
+        _Peak0dBStyle = *_State->_StyleManager.GetStyle(VisualElement::Bar0dBPeakLevel);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, _ScaleTextStyle);
+        _Peak0dBStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _ScaleLineStyle);
+        hr = _Peak0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-    if (SUCCEEDED(hr) && (_OpacityMask == nullptr))
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_PeakTextStyle._Brush == nullptr)
+    {
+        _PeakTextStyle = *_State->_StyleManager.GetStyle(VisualElement::BarPeakLevelText);
+
+        _PeakTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _PeakTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_MaxPeakStyle._Brush == nullptr)
+    {
+        _MaxPeakStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMaxPeakLevel);
+
+        _MaxPeakStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _MaxPeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_RMSStyle._Brush == nullptr)
+    {
+        _RMSStyle = *_State->_StyleManager.GetStyle(VisualElement::BarRMSLevel);
+
+        _RMSStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _RMSStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_RMS0dBStyle._Brush == nullptr)
+    {
+        _RMS0dBStyle = *_State->_StyleManager.GetStyle(VisualElement::Bar0dBRMSLevel);
+
+        _RMS0dBStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _RMS0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_RMSTextStyle._Brush == nullptr)
+    {
+        _RMSTextStyle = *_State->_StyleManager.GetStyle(VisualElement::BarRMSLevelText);
+
+        _RMSTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _RMSTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_NameStyle._Brush == nullptr)
+    {
+        _NameStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+
+        _NameStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _NameStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"LFE", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_ScaleTextStyle._Brush == nullptr)
+    {
+        _ScaleTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _ScaleTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _ScaleTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_ScaleLineStyle._Brush == nullptr)
+    {
+        _ScaleLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+
+        _ScaleLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _ScaleLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_OpacityMask == nullptr)
+    {
         hr = CreateOpacityMask(deviceContext);
 
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
+    {
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 #endif
 
-    if (SUCCEEDED(hr) && (_RenderedChannels != _Analysis->_PeakMeasuredChannels))
+    if (_RenderedChannels != _Analysis->_PeakMeasuredChannels)
     {
         DeleteParts();
 

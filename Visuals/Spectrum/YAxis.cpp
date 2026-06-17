@@ -136,13 +136,33 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _LineStyle);
+    HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"+999", 1.f, _TextStyle);
+    if (_LineStyle._Brush == nullptr)
+    {
+        _LineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-    if (SUCCEEDED(hr))
-        Resize();
+        _LineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_TextStyle._Brush == nullptr)
+    {
+        _TextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _TextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    Resize();
 
     return hr;
 }

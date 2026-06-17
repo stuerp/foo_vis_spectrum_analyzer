@@ -89,20 +89,50 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
     if (SUCCEEDED(hr))
         Resize();
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::SignalLine, deviceContext, _Size, L"", 1.f, _SignalLineStyle);
+    if (SUCCEEDED(hr) && (_SignalLineStyle._Brush == nullptr))
+    {
+        _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisLine, deviceContext, _Size, L"", 1.f, _XAxisLineStyle);
+        _SignalLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisLine, deviceContext, _Size, L"", 1.f, _YAxisLineStyle);
+        hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, _Size, L"", 1.f, _HorizontalGridLineStyle);
+    if (SUCCEEDED(hr) && (_XAxisLineStyle._Brush == nullptr))
+    {
+        _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, _Size, L"", 1.f, _VerticalGridLineStyle);
+        _XAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
+
+    if (SUCCEEDED(hr) && (_YAxisLineStyle._Brush == nullptr))
+    {
+        _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
+
+        _YAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
+
+    if (SUCCEEDED(hr) && (_HorizontalGridLineStyle._Brush == nullptr))
+    {
+        _HorizontalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+
+        _HorizontalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
+
+    if (SUCCEEDED(hr) && (_VerticalGridLineStyle._Brush == nullptr))
+    {
+        _VerticalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
+
+        _VerticalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
     if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
     {

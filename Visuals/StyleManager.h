@@ -38,23 +38,12 @@ public:
     void FromJSON(const json & array) noexcept;
 
     /// <summary>
-    /// Gets a copy of the style of the specified visual element.
-    /// </summary>
-    void GetStyle(VisualElement visualElement, style_t & style) noexcept
-    {
-        style = _Styles[visualElement];
-    }
-
-    /// <summary>
     /// Gets the style of the specified visual element.
     /// </summary>
     style_t * GetStyle(VisualElement visualElement) noexcept
     {
         return &_Styles[visualElement];
     }
-
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor, style_t & style) noexcept;
-    HRESULT GetInitializedStyle(VisualElement visualElement, ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, style_t & style) noexcept;
 
 private:
     static json ToJSON(const gradient_stops_t & gradientStops) noexcept;

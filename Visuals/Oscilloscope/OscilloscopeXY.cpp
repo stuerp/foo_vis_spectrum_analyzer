@@ -249,12 +249,24 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, _XAxisTextStyle);
+    if (SUCCEEDED(hr) && (_XAxisTextStyle._Brush == nullptr))
+    {
+        _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+
+        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+    }
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, _YAxisTextStyle);
+    if (SUCCEEDED(hr) && (_YAxisTextStyle._Brush == nullptr))
+    {
+        _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+    }
 
     if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
         hr = CreateGridCommandList();

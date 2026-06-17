@@ -5,8 +5,6 @@
 
 #include "BitMeter.h"
 
-#include "Support.h"
-
 #pragma hdrstop
 
 /// <summary>
@@ -202,27 +200,62 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarBackground, deviceContext, TextSize, L"", 1.f, _BarBackground);
+    if (_BarBackground._Brush == nullptr)
+    {
+        _BarBackground = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
+
+        _BarBackground.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _BarBackground.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarSign, deviceContext, TextSize, L"", 1.f, _BarSign);
+    if (_BarSign._Brush == nullptr)
+    {
+        _BarSign = *_State->_StyleManager.GetStyle(VisualElement::BarSign);
+
+        _BarSign.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _BarSign.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarExponent, deviceContext, TextSize, L"", 1.f, _BarExponent);
+    if (_BarExponent._Brush == nullptr)
+    {
+        _BarExponent = *_State->_StyleManager.GetStyle(VisualElement::BarExponent);
+
+        _BarExponent.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _BarExponent.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::BarMantissa, deviceContext, TextSize, L"", 1.f, _BarMantissa);
+    if (_BarMantissa._Brush == nullptr)
+    {
+        _BarMantissa = *_State->_StyleManager.GetStyle(VisualElement::BarMantissa);
+
+        _BarMantissa.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _BarMantissa.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, _Size, L"99", 1.f, _XAxisText);
+    if (_XAxisText._Brush == nullptr)
+    {
+        _XAxisText = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+
+        _XAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _XAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
@@ -230,7 +263,14 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
     _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, _Size, L"WW", 1.f, _YAxisText);
+    if (_YAxisText._Brush == nullptr)
+    {
+        _YAxisText = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _YAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _YAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"WW", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;

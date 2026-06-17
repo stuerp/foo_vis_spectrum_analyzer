@@ -864,23 +864,77 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::Spectrogram, deviceContext, Size, L"", 1.f, _SpectrogramStyle);
+    if (_SpectrogramStyle._Brush == nullptr)
+    {
+        _SpectrogramStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::VerticalGridLine, deviceContext, Size, L"", 1.f, _TimeLineStyle);
+        _SpectrogramStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, deviceContext, Size, L"00:00", 1.f, _TimeTextStyle);
+        hr = _SpectrogramStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::HorizontalGridLine, deviceContext, Size, L"", 1.f, _FreqLineStyle);
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, deviceContext, Size, L"99.9fk", 1.f, _FreqTextStyle);
+    if (_TimeLineStyle._Brush == nullptr)
+    {
+        _TimeLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::NyquistMarker, deviceContext, Size, L"", 1.f, _NyquistMarkerStyle);
+        _TimeLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _TimeLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_TimeTextStyle._Brush == nullptr)
+    {
+        _TimeTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+
+        _TimeTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _TimeTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"00:00", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_FreqLineStyle._Brush == nullptr)
+    {
+        _FreqLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+
+        _FreqLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _FreqLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_FreqTextStyle._Brush == nullptr)
+    {
+        _FreqTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _FreqTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _FreqTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"99.9fk", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_NyquistMarkerStyle._Brush == nullptr)
+    {
+        _NyquistMarkerStyle = *_State->_StyleManager.GetStyle(VisualElement::NyquistMarker);
+
+        _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (SUCCEEDED(hr))
         Resize();

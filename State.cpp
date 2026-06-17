@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.06.08) P. Stuer **/
+/** $VER: State.cpp (2026.06.17) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -203,7 +203,7 @@ void state_t::Reset() noexcept
     _GridRowCount = 1;
     _GridColumnCount = 1;
     _VerticalLayout = false;
-    _OverlapGraphs = true;
+    _OverlapGraphs = false;
 
     /** Visualization **/
 
@@ -827,55 +827,55 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
             for (size_t i = 0; i < Count; ++i)
             {
-                graph_options_t gd;
+                graph_options_t Options;
 
-                pfc::string Description; stream->read_string(Description, abortHandler); gd._Description = pfc::wideFromUTF8(Description);
+                pfc::string Description; stream->read_string(Description, abortHandler); Options._Description = pfc::wideFromUTF8(Description);
 
-                stream->read_object_t(gd._SelectedChannels, abortHandler);
-                stream->read_object_t(gd._FlipHorizontally, abortHandler);
-                stream->read_object_t(gd._FlipVertically, abortHandler);
+                stream->read_object_t(Options._SelectedChannels, abortHandler);
+                stream->read_object_t(Options._FlipHorizontally, abortHandler);
+                stream->read_object_t(Options._FlipVertically, abortHandler);
 
-                stream->read_object(&gd._XAxisMode, sizeof(gd._XAxisMode), abortHandler);
-                stream->read_object_t(gd._XAxisTop, abortHandler);
-                stream->read_object_t(gd._XAxisBottom, abortHandler);
+                stream->read_object(&Options._XAxisMode, sizeof(Options._XAxisMode), abortHandler);
+                stream->read_object_t(Options._XAxisTop, abortHandler);
+                stream->read_object_t(Options._XAxisBottom, abortHandler);
 
-                stream->read_object(&gd._YAxisMode, sizeof(gd._YAxisMode), abortHandler);
-                stream->read_object_t(gd._YAxisLeft, abortHandler);
-                stream->read_object_t(gd._YAxisRight, abortHandler);
+                stream->read_object(&Options._YAxisMode, sizeof(Options._YAxisMode), abortHandler);
+                stream->read_object_t(Options._YAxisLeft, abortHandler);
+                stream->read_object_t(Options._YAxisRight, abortHandler);
 
-                stream->read_object_t(gd._AmplitudeLo, abortHandler);
-                stream->read_object_t(gd._AmplitudeHi, abortHandler);
-                stream->read_object_t(gd._AmplitudeStep, abortHandler);
+                stream->read_object_t(Options._AmplitudeLo, abortHandler);
+                stream->read_object_t(Options._AmplitudeHi, abortHandler);
+                stream->read_object_t(Options._AmplitudeStep, abortHandler);
 
-                stream->read_object_t(gd._UseAbsolute, abortHandler);
-                stream->read_object_t(gd._Gamma, abortHandler);
+                stream->read_object_t(Options._UseAbsolute, abortHandler);
+                stream->read_object_t(Options._Gamma, abortHandler);
 
-                stream->read_object_t(gd._HRatio, abortHandler);
-                stream->read_object_t(gd._VRatio, abortHandler);
+                stream->read_object_t(Options._HRatio, abortHandler);
+                stream->read_object_t(Options._VRatio, abortHandler);
 
                 if (GraphDescriptionVersion > 1)
                 {
-                    stream->read_object_t(gd._LPadding, abortHandler);
-                    stream->read_object_t(gd._RPadding, abortHandler);
-                    stream->read_object_t(gd._TPadding, abortHandler);
-                    stream->read_object_t(gd._BPadding, abortHandler);
+                    stream->read_object_t(Options._LPadding, abortHandler);
+                    stream->read_object_t(Options._RPadding, abortHandler);
+                    stream->read_object_t(Options._TPadding, abortHandler);
+                    stream->read_object_t(Options._BPadding, abortHandler);
 
-                    stream->read_object(&gd._HorizontalTextAlignment, sizeof(gd._HorizontalTextAlignment), abortHandler);
-                    stream->read_object(&gd._VerticalTextAlignment, sizeof(gd._VerticalTextAlignment), abortHandler);
+                    stream->read_object(&Options._HorizontalTextAlignment, sizeof(Options._HorizontalTextAlignment), abortHandler);
+                    stream->read_object(&Options._VerticalTextAlignment, sizeof(Options._VerticalTextAlignment), abortHandler);
                 }
 
                 if (GraphDescriptionVersion > 2)
                 {
-                    stream->read_object(&gd._HorizontalAlignment, sizeof(gd._HorizontalAlignment), abortHandler);
-                    stream->read_object(&gd._VerticalAlignment, sizeof(gd._VerticalAlignment), abortHandler);
+                    stream->read_object(&Options._HorizontalAlignment, sizeof(Options._HorizontalAlignment), abortHandler);
+                    stream->read_object(&Options._VerticalAlignment, sizeof(Options._VerticalAlignment), abortHandler);
                 }
 
                 if (GraphDescriptionVersion > 3) // v0.10.0.0-alpha5
                 {
-                    stream->read_object_t(gd._SwapChannels, abortHandler);
+                    stream->read_object_t(Options._SwapChannels, abortHandler);
                 }
 
-                _GraphOptions.push_back(gd);
+                _GraphOptions.push_back(Options);
             }
         }
 
@@ -1539,14 +1539,14 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _OverlapGraphs   = Grid.value("overlapGraphs", _OverlapGraphs);
 
     {
-        std::vector<graph_options_t> GraphDescriptions;
+        std::vector<graph_options_t> Options;
 
         const auto & Graphs = Grid.value("graphs", json::array_t());
 
         for (auto & Graph : Graphs)
-            GraphDescriptions.push_back(graph_options_t::FromJSON(Graph));
+            Options.push_back(graph_options_t::FromJSON(Graph));
 
-        _GraphOptions = std::move(GraphDescriptions);
+        _GraphOptions = std::move(Options);
     }
 
     {
@@ -1851,9 +1851,7 @@ json state_t::ToJSON(bool isPreset) const
 void state_t::ConvertColorSettings() noexcept
 {
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::GraphBackground, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::GraphBackground);
 
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
 
@@ -1885,9 +1883,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::VerticalGridLine, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         style._CustomColor = _XLineColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1909,9 +1905,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::XAxisText, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::XAxisText);
 
         style._CustomColor = _XTextColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1933,9 +1927,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::HorizontalGridLine, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         style._CustomColor = _YLineColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1957,9 +1949,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::YAxisText, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::YAxisText);
 
         style._CustomColor = _YTextColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -1981,9 +1971,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::BarArea, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::BarArea);
 
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
 
@@ -1995,9 +1983,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::BarDarkBackground, style);
+        style_t style= *_StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
         style._CustomColor = _DarkBandColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -2007,9 +1993,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::BarLightBackground, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::BarLightBackground);
 
         style._CustomColor = _LightBandColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -2019,9 +2003,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::CurveLine, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::CurveLine);
 
         style._CustomColor = _LineColor_Deprecated;
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
@@ -2044,9 +2026,7 @@ void state_t::ConvertColorSettings() noexcept
     }
 
     {
-        style_t style;
-
-        _StyleManager.GetStyle(VisualElement::CurveArea, style);
+        style_t style = *_StyleManager.GetStyle(VisualElement::CurveArea);
 
         style._CustomGradientStops = _CustomGradientStops_Deprecated;
 

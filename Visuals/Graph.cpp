@@ -302,17 +302,40 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphBackground, deviceContext, _Size, L"", 1.f, _BackgroundStyle);
+    HRESULT hr = S_OK;
+
+    if (_BackgroundStyle._Brush == nullptr)
+    {
+        _BackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphBackground);
+
+        _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionText, deviceContext, _Size, L"", 1.f, _DescriptionTextStyle);
+    if (_DescriptionTextStyle._Brush == nullptr)
+    {
+        _DescriptionTextStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphDescriptionText);
+
+        _DescriptionTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _DescriptionTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _State->_StyleManager.GetInitializedStyle(VisualElement::GraphDescriptionBackground, deviceContext, _Size, L"", 1.f, _DescriptionBackgroundStyle);
+    if (_DescriptionBackgroundStyle._Brush == nullptr)
+    {
+        _DescriptionBackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
+
+        _DescriptionBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _DescriptionBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    }
 
     if (!SUCCEEDED(hr))
         return hr;
