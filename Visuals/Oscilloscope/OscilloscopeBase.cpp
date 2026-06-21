@@ -84,145 +84,165 @@ void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    Resize();
+
     HRESULT hr = S_OK;
 
-    if (SUCCEEDED(hr))
-        Resize();
-
-    if (SUCCEEDED(hr) && (_SignalLineStyle._Brush == nullptr))
+    if (_SignalLineStyle._Brush == nullptr)
     {
         _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
 
         _SignalLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_XAxisLineStyle._Brush == nullptr))
+    if (_XAxisLineStyle._Brush == nullptr)
     {
         _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
         _XAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_YAxisLineStyle._Brush == nullptr))
+    if (_YAxisLineStyle._Brush == nullptr)
     {
         _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
 
         _YAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_HorizontalGridLineStyle._Brush == nullptr))
+    if (_HorizontalGridLineStyle._Brush == nullptr)
     {
         _HorizontalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         _HorizontalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_VerticalGridLineStyle._Brush == nullptr))
+    if (_VerticalGridLineStyle._Brush == nullptr)
     {
         _VerticalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         _VerticalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_DeviceContext == nullptr))
+    if (_DeviceContext == nullptr)
     {
         CComPtr<ID2D1Device> D2DDevice;
 
         deviceContext->GetDevice(&D2DDevice);
 
         hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr))
+    const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+    (
+        D2D1_BITMAP_OPTIONS_TARGET,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+    );
+
+    if (_FrontBuffer == nullptr)
     {
-        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-        (
-            D2D1_BITMAP_OPTIONS_TARGET,
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-        );
+        hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
 
-        if (_FrontBuffer == nullptr)
-        {
-            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
+        if (!SUCCEEDED(hr))
+            return hr;
 
-            if (SUCCEEDED(hr))
-            {
-                _DeviceContext->SetTarget(_FrontBuffer);
+        _DeviceContext->SetTarget(_FrontBuffer);
 
-                _DeviceContext->BeginDraw();
+        _DeviceContext->BeginDraw();
 
-                _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
+        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
-                hr = _DeviceContext->EndDraw();
+        hr = _DeviceContext->EndDraw();
 
-                _DeviceContext->SetTarget(nullptr);
-            }
-        }
+        if (!SUCCEEDED(hr))
+            return hr;
 
-        if (_BackBuffer == nullptr)
-        {
-            hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
-
-            if (SUCCEEDED(hr))
-            {
-                _DeviceContext->SetTarget(_BackBuffer);
-
-                _DeviceContext->BeginDraw();
-
-                _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
-
-                hr = _DeviceContext->EndDraw();
-
-                _DeviceContext->SetTarget(nullptr);
-            }
-        }
+        _DeviceContext->SetTarget(nullptr);
     }
 
-    if (SUCCEEDED(hr) && (_GaussBlurEffect == nullptr))
+    if (_BackBuffer == nullptr)
+    {
+        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _DeviceContext->SetTarget(_BackBuffer);
+
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
+
+        hr = _DeviceContext->EndDraw();
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _DeviceContext->SetTarget(nullptr);
+    }
+
+    if (_GaussBlurEffect == nullptr)
     {
         hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
 
-        if (SUCCEEDED(hr))
-        {
-            _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-            _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-            _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-        }
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
-    if (SUCCEEDED(hr) && (_ColorMatrixEffect == nullptr))
+    if (_ColorMatrixEffect == nullptr)
     {
         hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
 
-        if (SUCCEEDED(hr))
-        {
-            // Color matrix for uniform decay
-            #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-            const D2D1_MATRIX_5X4_F DecayMatrix =
-            {
-                _State->_DecayFactor, 0, 0, 0,  // Decay red
-                0, _State->_DecayFactor, 0, 0,  // Decay green
-                0, 0, _State->_DecayFactor, 0,  // Decay blue
-                0, 0, 0, 1,                     // Keep alpha
-                0, 0, 0, 0                      // Unused. Translation
-            };
+        if (!SUCCEEDED(hr))
+            return hr;
 
-            _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
-        }
+        // Color matrix for uniform decay
+        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
+        const D2D1_MATRIX_5X4_F DecayMatrix =
+        {
+            _State->_DecayFactor, 0, 0, 0,  // Decay red
+            0, _State->_DecayFactor, 0, 0,  // Decay green
+            0, 0, _State->_DecayFactor, 0,  // Decay blue
+            0, 0, 0, 1,                     // Keep alpha
+            0, 0, 0, 0                      // Unused. Translation
+        };
+
+        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
     }
 
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
         deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 

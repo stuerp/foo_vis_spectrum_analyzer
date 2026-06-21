@@ -246,8 +246,11 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 
         hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
 
+        if (!SUCCEEDED(hr))
+            return hr;
+
         // Create a Direct2D bitmap from the WIC bitmap source.
-        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
+        if (_Bitmap == nullptr)
         {
             hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
@@ -256,28 +259,35 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
         }
     }
 
-    if (SUCCEEDED(hr) && (_ScaleEffect == nullptr))
+    if (_ScaleEffect == nullptr)
+    {
         hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
 
-    if (SUCCEEDED(hr) && (_BlurEffect == nullptr))
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_BlurEffect == nullptr)
     {
         hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
 
-        if (SUCCEEDED(hr))
-        {
-            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+        if (!SUCCEEDED(hr))
+            return hr;
 
-            _BlurEffect->SetInputEffect(0, _ScaleEffect);
-        }
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+
+        _BlurEffect->SetInputEffect(0, _ScaleEffect);
     }
 
-    if (SUCCEEDED(hr) && (_OpacityEffect == nullptr))
+    if (_OpacityEffect == nullptr)
     {
         hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
 
-        if (SUCCEEDED(hr))
-            _OpacityEffect->SetInputEffect(0, _BlurEffect);
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _OpacityEffect->SetInputEffect(0, _BlurEffect);
     }
 
     return hr;

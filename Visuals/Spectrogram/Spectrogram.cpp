@@ -936,15 +936,19 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (SUCCEEDED(hr))
-        Resize();
+    Resize();
 
     // Create the offscreen bitmap resources.
     {
-        if (SUCCEEDED(hr) && (_BitmapRenderTarget == nullptr))
+        if (_BitmapRenderTarget == nullptr)
+        {
             hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
 
-        if (SUCCEEDED(hr) && (_Bitmap == nullptr))
+            if (!SUCCEEDED(hr))
+                return hr;
+        }
+
+        if (_Bitmap == nullptr)
         {
             _BitmapRenderTarget->BeginDraw();
             _BitmapRenderTarget->Clear(); // Make the bitmap completely transparent.
@@ -954,11 +958,14 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
             hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+
+            if (!SUCCEEDED(hr))
+                return hr;
         }
     }
 
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
         deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
 #endif
 

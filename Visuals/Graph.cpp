@@ -125,7 +125,7 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (FAILED(hr))
+    if (!SUCCEEDED(hr))
         return;
 
     RenderBackground(deviceContext, artwork);
@@ -311,10 +311,10 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_DescriptionTextStyle._Brush == nullptr)
     {
@@ -323,10 +323,10 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         _DescriptionTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _DescriptionTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_DescriptionBackgroundStyle._Brush == nullptr)
     {
@@ -335,10 +335,10 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         _DescriptionBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _DescriptionBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)

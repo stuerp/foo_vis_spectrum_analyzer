@@ -85,7 +85,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (FAILED(hr))
+    if (!SUCCEEDED(hr))
         return;
 
     const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
@@ -195,11 +195,13 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (_State->_HasPhosphorDecay)
             {
+                // Draw a blurred version of the previous bitmap.
                 _GaussBlurEffect->SetInput(0, _BackBuffer);
 
                 _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
                 _DeviceContext->DrawImage(_GaussBlurEffect);
 
+                // Reduce the colors of the bitmap.
                 _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                 _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
@@ -238,37 +240,39 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = S_OK;
-
     _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
 
-    if (SUCCEEDED(hr))
-        Resize();
+    Resize();
 
-    if (SUCCEEDED(hr))
-        hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
-    // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr) && (_XAxisTextStyle._Brush == nullptr))
+    if (_XAxisTextStyle._Brush == nullptr)
     {
         _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
         _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
+        // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr) && (_YAxisTextStyle._Brush == nullptr))
+    if (_YAxisTextStyle._Brush == nullptr)
     {
         _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
         _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
+        // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
+    if (_GridCommandList == nullptr)
         hr = CreateGridCommandList();
 
     return hr;

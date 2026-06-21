@@ -267,10 +267,12 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
     if (_OpacityMask == nullptr)
+    {
         hr = CreateOpacityMask(deviceContext);
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_LeftRightStyle._Brush == nullptr)
     {
@@ -279,10 +281,10 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         _LeftRightStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _LeftRightStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_LeftRightIndicatorStyle._Brush == nullptr)
     {
@@ -303,10 +305,10 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         _MidSideStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _MidSideStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_MidSideIndicatorStyle._Brush == nullptr)
     {
@@ -315,10 +317,10 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         _MidSideIndicatorStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _MidSideIndicatorStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_AxisStyle._Brush == nullptr)
     {
@@ -327,10 +329,10 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         _AxisStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _AxisStyle.CreateDeviceSpecificResources(deviceContext, Size, L"+1.0", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)

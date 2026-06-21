@@ -129,7 +129,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
-    if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+    if (_DebugBrush == nullptr)
         hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 

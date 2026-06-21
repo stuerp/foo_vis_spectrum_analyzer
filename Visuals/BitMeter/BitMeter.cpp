@@ -197,9 +197,6 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
     const D2D1_SIZE_F TextSize = { _Size.width, _Size.height / (FLOAT) _MeasurementCount };
 
-    if (!SUCCEEDED(hr))
-        return hr;
-
     if (_BarBackground._Brush == nullptr)
     {
         _BarBackground = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
@@ -207,10 +204,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _BarBackground.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _BarBackground.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_BarSign._Brush == nullptr)
     {
@@ -219,10 +216,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _BarSign.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _BarSign.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_BarExponent._Brush == nullptr)
     {
@@ -231,10 +228,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _BarExponent.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _BarExponent.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_BarMantissa._Brush == nullptr)
     {
@@ -243,10 +240,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _BarMantissa.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _BarMantissa.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-    }
 
-    if (!SUCCEEDED(hr))
-        return hr;
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     if (_XAxisText._Brush == nullptr)
     {
@@ -255,13 +252,13 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _XAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _XAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
     }
-
-    if (!SUCCEEDED(hr))
-        return hr;
-
-    _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-    _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
     if (_YAxisText._Brush == nullptr)
     {
@@ -270,12 +267,12 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _YAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _YAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"WW", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
     }
-
-    if (!SUCCEEDED(hr))
-        return hr;
-
-    _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
@@ -300,7 +297,13 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     }
 
     if (_StaticContentCommandList == nullptr)
+    {
         hr = CreateStaticContentCommandList();
+
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
 
     // Predetermine the style for each bit.
     _Styles.resize(_BitCount);

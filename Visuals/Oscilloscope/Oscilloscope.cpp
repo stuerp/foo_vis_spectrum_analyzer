@@ -201,11 +201,13 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (_State->_HasPhosphorDecay)
             {
+                // Draw a blurred version of the previous bitmap.
                 _GaussBlurEffect->SetInput(0, _BackBuffer);
 
                 _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
                 _DeviceContext->DrawImage(_GaussBlurEffect);
 
+                // Reduce the colors of the bitmap.
                 _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                 _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
@@ -246,35 +248,37 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = S_OK;
+    Resize();
 
-    if (SUCCEEDED(hr))
-        Resize();
-
-    if (SUCCEEDED(hr))
-        hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr) && (_XAxisTextStyle._Brush == nullptr))
+    if (_XAxisTextStyle._Brush == nullptr)
     {
         _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
         _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr) && (_YAxisTextStyle._Brush == nullptr))
+    if (_YAxisTextStyle._Brush == nullptr)
     {
         _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
         _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
-    if (SUCCEEDED(hr) && (_AxesCommandList == nullptr))
+    if (_AxesCommandList == nullptr)
         hr = CreateAxesCommandList();
 
     return hr;
