@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.06.17) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.06.21) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -150,25 +150,50 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         hr = CreateSignalGeometry(SignalSize, Geometry);
 
+        // Draw the signal in the composite buffer.
         if (SUCCEEDED(hr))
         {
-            _DeviceContext->SetTarget(_BackBuffer);
             _DeviceContext->BeginDraw();
 
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.0f);
+            _DeviceContext->SetTarget(_BackBuffer);
 
-            _DeviceContext->SetTransform(Translate);
+            {
+                // Clear the back buffer.
+                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
-            // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-            _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                // Draw a wide version of the signal.
+                _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
 
-            _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                _DeviceContext->PopAxisAlignedClip();
+            }
 
-            _DeviceContext->PopAxisAlignedClip();
+            _DeviceContext->SetTarget(_CompositeBuffer);
 
-            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            {
+                // Clear the composite buffer.
+                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
+                // Draw a color reduced version of the back buffer.
+                _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+                // Draw a blurred version of the back buffer.
+                _BlurEffect->SetInput(0, _BackBuffer);
+
+                _DeviceContext->DrawImage(_BlurEffect);
+
+                // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+                // Draw a normal version of the signal.
+                _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+
+                _DeviceContext->PopAxisAlignedClip();
+            }
 
             hr = _DeviceContext->EndDraw();
         }
@@ -185,38 +210,17 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             deviceContext->DrawImage(_AxesCommandList);
         }
 
-        // Draw the back buffer to the window.
+        // Draw the composite buffer to the window.
         {
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-            deviceContext->DrawBitmap(_BackBuffer);
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.f);
 
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-        }
+            deviceContext->SetTransform(Translate);
 
-        // Add the phosphor afterglow effect before the next pass.
-        {
-            _DeviceContext->SetTarget(_FrontBuffer);
-            _DeviceContext->BeginDraw();
+            deviceContext->DrawBitmap(_CompositeBuffer);
 
-            if (_State->_HasPhosphorDecay)
-            {
-                // Draw a blurred version of the previous bitmap.
-                _GaussBlurEffect->SetInput(0, _BackBuffer);
-
-                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-                _DeviceContext->DrawImage(_GaussBlurEffect);
-
-                // Reduce the colors of the bitmap.
-                _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-                _DeviceContext->DrawImage(_ColorMatrixEffect);
-            }
-            else
-                _DeviceContext->Clear(); // Required for alpha transparency.
-
-            hr = _DeviceContext->EndDraw();
+            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
         }
 
         std::swap(_FrontBuffer, _BackBuffer);

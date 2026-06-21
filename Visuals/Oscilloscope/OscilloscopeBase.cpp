@@ -1,11 +1,9 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.02.22) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
-
-#include "Support.h"
 
 #include "Direct2D.h"
 
@@ -35,6 +33,7 @@ void oscilloscope_base_t::Resize() noexcept
         return;
 
     // Release resources that are size dependent.
+    _CompositeBuffer.Release();
     _BackBuffer.Release();
     _FrontBuffer.Release();
 
@@ -172,19 +171,6 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         if (!SUCCEEDED(hr))
             return hr;
-
-        _DeviceContext->SetTarget(_FrontBuffer);
-
-        _DeviceContext->BeginDraw();
-
-        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
     }
 
     if (_BackBuffer == nullptr)
@@ -198,7 +184,7 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
+        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
         hr = _DeviceContext->EndDraw();
 
@@ -208,16 +194,24 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
         _DeviceContext->SetTarget(nullptr);
     }
 
-    if (_GaussBlurEffect == nullptr)
+    if (_CompositeBuffer == nullptr)
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_GaussBlurEffect);
+        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_CompositeBuffer);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_BlurEffect == nullptr)
+    {
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
 
         if (!SUCCEEDED(hr))
             return hr;
 
-        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-        _GaussBlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
     if (_ColorMatrixEffect == nullptr)
@@ -260,10 +254,10 @@ void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
 
     _ColorMatrixEffect.Release();
 
-    _GaussBlurEffect.Release();
+    _BlurEffect.Release();
 
+    _CompositeBuffer.Release();
     _BackBuffer.Release();
-
     _FrontBuffer.Release();
 
     _DeviceContext.Release();

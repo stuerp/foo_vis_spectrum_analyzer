@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.06.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.06.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -901,12 +901,12 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* UsedBy              */ VisualizationTypes::Oscilloscope,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             /* ColorSource         */ ColorSource::Solid,
-            /* CustomColor         */ D2D1::ColorF(104.f/255.f, 208.f/255.f, 208.f/255.f, 1.f),
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::LightGreen),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
             /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
             /* Opacity             */ 1.f,
-            /* Thickness           */ 1.5f,
+            /* Thickness           */ 1.f,
             /* FontName            */ L"",
             /* FontSize            */ 0.f
         )

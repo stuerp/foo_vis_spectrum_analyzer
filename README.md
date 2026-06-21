@@ -149,7 +149,8 @@ v0.11.0.0-alpha5, 2026-06-17
   - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render two or more channels with different colors on top of each other.
 - New: Global and local styles.
   - Each graph can have its own styles. This is particularly useful for overlapping graphs.
-- Changed: Channel Pair can be configured per graph.
+- New: Channel Pair can be configured per graph.
+- Improved: Significantly improved the after glow effect of the oscilloscope. It should work now with a transparent background.
 - Fixed: Artwork Blur for high DPI screens.
 - Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
 - Fixed: Level Meter should not have shown a measurement unless all channels of the selected channel pair were selected for measurement.

@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.06.17) P. Stuer **/
+/** $VER: State.cpp (2026.06.21) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -262,7 +262,7 @@ void state_t::Reset() noexcept
     _Rotation = 0.f;
     _HasPhosphorDecay = true;
     _BlurSigma = 3.f;
-    _DecayFactor = 0.92f;
+    _DecayFactor = 0.95f;
 
     // Bit Meter
     _BitMeterMode = BitMeterMode::FloatingPoint;

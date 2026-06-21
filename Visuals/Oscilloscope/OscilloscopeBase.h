@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2026.06.10) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -51,7 +51,8 @@ protected:
 
     CComPtr<ID2D1Bitmap1> _FrontBuffer;
     CComPtr<ID2D1Bitmap1> _BackBuffer;
+    CComPtr<ID2D1Bitmap1> _CompositeBuffer;
 
-    CComPtr<ID2D1Effect> _GaussBlurEffect;
+    CComPtr<ID2D1Effect> _BlurEffect;
     CComPtr<ID2D1Effect> _ColorMatrixEffect;
 };
