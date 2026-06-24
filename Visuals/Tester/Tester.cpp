@@ -1,9 +1,13 @@
 
-/** $VER: Tester.cpp (2026.06.17) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.06.24) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
+#include <cmath>
+
 #include "Tester.h"
+
+#include "Support.h"
 
 #pragma hdrstop
 
@@ -73,9 +77,7 @@ void tester_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
-    _p1 = D2D1::Point2F();
-    _p2 = D2D1::Point2F(_Size.width, _Size.height);
-    _d = 2.f;
+    _Angle = 0.f;
 
     _IsResized = false;
 }
@@ -90,13 +92,29 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    deviceContext->DrawLine(_p1, _p2, _DebugBrush);
+    deviceContext->PushAxisAlignedClip(_Rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    _p1.x += _d;
-    _p2.x -= _d;
+    const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
 
-    if (_p1.x < 0.f || _p1.x > _Size.width)
-        _d = -_d;
+    deviceContext->SetTransform(Translate);
+
+    float Sin;
+    float Cos;
+
+    ::D2D1SinCos(_Angle, &Sin, &Cos);
+
+    const auto r = std::sqrt(_Size.width * _Size.width / 4.f + _Size.height * _Size.height / 4.f);
+
+    const auto p1 = D2D1::Point2F(Sin * r, Cos * r);
+    const auto p2 = D2D1::Point2F(-p1.x, -p1.y);
+
+    deviceContext->DrawLine(p1, p2, _DebugBrush);
+
+    _Angle = msc::Wrap(_Angle - (FLOAT) (M_PI / 180.), 359.f);
+
+    deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    deviceContext->PopAxisAlignedClip();
 }
 
 /// <summary>

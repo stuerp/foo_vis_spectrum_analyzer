@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.06.15) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -615,6 +615,10 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ADD_GRAPH:
         {
+            // Make sure the first graph gets a local copy of the global styles before adding a second grahp.
+            if (_State->_GraphOptions.size() == 1)
+                _State->_GraphOptions[_SelectedGraph]._StyleManager = _State->_StyleManager;
+
             auto NewOptions = _State->_GraphOptions[_SelectedGraph];
 
             int Index = (int) _State->_GraphOptions.size();

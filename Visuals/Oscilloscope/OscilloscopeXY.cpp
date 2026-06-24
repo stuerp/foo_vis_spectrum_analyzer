@@ -86,12 +86,12 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
-    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
-    const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
-
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
+        const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+        const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+        const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+
         const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                                 // get_sample_count() actually returns the number of frames.
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
@@ -197,23 +197,31 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the grid to the window.
         {
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
+            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
             deviceContext->SetTransform(Rotate * Translate);
 
-            deviceContext->DrawImage(_GridCommandList);
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            deviceContext->DrawImage(_GridCommandList);
         }
 
         // Draw the composite buffer to the window.
         {
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+
+            deviceContext->SetTransform(Rotate * Translate);
+
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
             deviceContext->DrawBitmap(_CompositeBuffer);
 
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
+
+        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
         std::swap(_FrontBuffer, _BackBuffer);
     }

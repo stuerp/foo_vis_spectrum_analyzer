@@ -875,6 +875,9 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
                     stream->read_object_t(Options._SwapChannels, abortHandler);
                 }
 
+                // The default local styles are a copy of the global styles.
+                Options._StyleManager = _StyleManager;
+
                 _GraphOptions.push_back(Options);
             }
         }

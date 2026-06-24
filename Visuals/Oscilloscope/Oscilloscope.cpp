@@ -203,27 +203,29 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the axes to the window.
         {
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
 
-            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            deviceContext->SetTransform(Translate);
+
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
             deviceContext->DrawImage(_AxesCommandList);
         }
 
         // Draw the composite buffer to the window.
         {
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.f);
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + XOffset, _Rect.top + 0.f);
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->DrawBitmap(_CompositeBuffer);
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            deviceContext->DrawBitmap(_CompositeBuffer);
 
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
+
+        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
         std::swap(_FrontBuffer, _BackBuffer);
     }

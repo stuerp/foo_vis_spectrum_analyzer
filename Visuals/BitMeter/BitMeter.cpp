@@ -102,7 +102,13 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         return;
 
     // Draw the static content.
-    deviceContext->DrawImage(_StaticContentCommandList);
+    {
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+
+        deviceContext->SetTransform(Translate);
+
+        deviceContext->DrawImage(_StaticContentCommandList);
+    }
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
@@ -130,7 +136,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & m : _Analysis->_BitMeasurements)
     {
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(YAxisWidth + XOffset, YOffset);
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
 
         deviceContext->SetTransform(Translate);
 

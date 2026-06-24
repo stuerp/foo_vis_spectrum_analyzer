@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.06.15) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -74,12 +74,15 @@ void styles_page_t::InitializeControls() noexcept
 
         w.AddString(L"Global");
 
-        uint32_t i = 1;
-
-        for (const auto & gd : _State->_GraphOptions)
+        if (_State->_GraphOptions.size() > 1)
         {
-            w.AddString(!gd._Description.empty() ? gd._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
-            ++i;
+            uint32_t i = 1;
+
+            for (const auto & gd : _State->_GraphOptions)
+            {
+                w.AddString(!gd._Description.empty() ? gd._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
+                ++i;
+            }
         }
 
         w.SetCurSel(0);
@@ -162,6 +165,8 @@ void styles_page_t::UpdateControls() noexcept
         return;
 
     _IgnoreNotifications = true;
+
+    GetDlgItem(IDC_SCOPE).EnableWindow(_State->_GraphOptions.size() > 1);
 
     style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 

@@ -37,9 +37,7 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
-    D2D1_POINT_2F _p1;
-    D2D1_POINT_2F _p2;
-    FLOAT _d;
+    float _Angle;
 
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 };
