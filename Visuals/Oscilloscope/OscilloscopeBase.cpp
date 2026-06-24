@@ -171,6 +171,19 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         if (!SUCCEEDED(hr))
             return hr;
+
+        _DeviceContext->SetTarget(_FrontBuffer);
+
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
+        hr = _DeviceContext->EndDraw();
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _DeviceContext->SetTarget(nullptr);
     }
 
     if (_BackBuffer == nullptr)
@@ -200,6 +213,19 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         if (!SUCCEEDED(hr))
             return hr;
+
+        _DeviceContext->SetTarget(_CompositeBuffer);
+
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
+        hr = _DeviceContext->EndDraw();
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _DeviceContext->SetTarget(nullptr);
     }
 
     if (_BlurEffect == nullptr)

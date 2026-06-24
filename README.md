@@ -1,10 +1,12 @@
 
 # foo_vis_spectrum_analyzer
 
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that started as a spectrum analyzer panel.
 
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
+
+Over time other visualisations were added.
 
 ![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
 
@@ -20,11 +22,15 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
 
-<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
+<sup>Spectrum analyzer with mirrored Curve Mode</sup>
 
 ![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
 
-<sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
+<sup>Multiple spectrum analyzer graphs for the separate channels</sup>
+
+![Screenshot](assets/Overlapping-Graphs.png?raw=true "Screenshot")
+
+<sup>Multiple overlapping spectrum analyzer graphs</sup>
 
 ![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
 
@@ -44,7 +50,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
-<sup>Oscilloscope</sup>
+<sup>Oscilloscope with phosphor afterglow effect</sup>
 
 ![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
 
@@ -52,15 +58,19 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
-<sup>Oscilloscope in X-Y mode</sup>
+<sup>Oscilloscope in X-Y mode with phosphor afterglow effect</sup>
 
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar heights</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>
 
 ![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar opacity</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar opacity</sup>
+
+![Screenshot](assets/Bit-Meter-Integer-Mode.png?raw=true "Screenshot")
+
+<sup>Bit Meter (Integer Mode)</sup>
 
 ## Features
 
@@ -75,7 +85,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 - Supports dark mode.
 - Supports foobar2000 2.0 and later (32 and 64-bit version).
 
-## Requirements
+## Environment
 
 - Tested on [foobar2000](https://www.foobar2000.org/download) v2.0 or later (32 or 64-bit). ![foobar2000](https://www.foobar2000.org/button-small.png)
 - Tested on Microsoft Windows 10 and later.

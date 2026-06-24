@@ -19,10 +19,10 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 10. [Support](#support)
 
 ---
-
+`
 ## Introduction
-
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters or oscilloscope.
+`
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters, oscilloscope or bit meter.
 
 ---
 
@@ -220,7 +220,7 @@ This visualization uses the following settings:
 - Channel pair selection: Determines which channels will be plotted against each other.
 - Swap channels to determine which channel uses the X-axis and which one uses the Y-axis. 
 - X and Y signal gain
-- Phosphor effect settings
+- Phosphor afterglow effect settings
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
@@ -245,11 +245,15 @@ If, while playing a track, not all of the bits of the mantissa are used that may
 
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar heights</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>
 
 ![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar opacity</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar opacity</sup>
+
+![Screenshot](assets/Bit-Meter-Integer-Mode.png?raw=true "Screenshot")
+
+<sup>Bit Meter (Integer Mode)</sup>
 
 #### Peak Indicators group
 
@@ -415,7 +419,7 @@ Specifies the rotation angle in degrees of the signal when displayed by an X/Y o
 
 `Phosphor decay`
 
-Enables a phosphor decay effect simulation of analog oscilloscopes.
+Enables a phosphor afterglow effect simulation of analog oscilloscopes.
 
 `Blur sigma`
 
