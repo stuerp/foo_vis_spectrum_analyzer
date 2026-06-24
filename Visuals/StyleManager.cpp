@@ -28,10 +28,6 @@ style_manager_t::style_manager_t()
 style_manager_t::style_manager_t(const style_manager_t & other)
 {
     _Styles = other._Styles;
-/*
-    for (const auto & [ID, Style] : other._Styles)
-        _Styles[ID] = Style;
-*/
 }
 
 /// <summary>
@@ -40,10 +36,7 @@ style_manager_t::style_manager_t(const style_manager_t & other)
 style_manager_t & style_manager_t::operator=(const style_manager_t & other)
 {
     _Styles = other._Styles;
-/*
-    for (const auto & [ID, Style] : other._Styles)
-        _Styles[ID] = Style;
-*/
+
     return *this;
 }
 

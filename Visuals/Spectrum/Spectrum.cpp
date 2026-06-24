@@ -599,7 +599,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     if (_State->_RecreateStyles)
         DeleteDeviceSpecificResources();
 
-    auto & StyleManager = _State->_OverlapGraphs ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = (_State->_GraphOptions.size() > 1) ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext);
 

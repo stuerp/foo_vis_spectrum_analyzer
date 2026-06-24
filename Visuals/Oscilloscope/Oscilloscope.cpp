@@ -221,6 +221,8 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             deviceContext->DrawBitmap(_CompositeBuffer);
 
             deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         std::swap(_FrontBuffer, _BackBuffer);

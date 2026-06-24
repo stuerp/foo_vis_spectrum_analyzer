@@ -226,9 +226,6 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// </summary>
 void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
-    if (_State->_OverlapGraphs && !_IsFirst)
-        return;
-
     if (_BackgroundStyle.IsEnabled())
         deviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush);
 
@@ -304,9 +301,11 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
+    auto & StyleManager = (_State->_GraphOptions.size() > 1) ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
     if (_BackgroundStyle._Brush == nullptr)
     {
-        _BackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphBackground);
+        _BackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphBackground);
 
         _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
@@ -318,7 +317,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     if (_DescriptionTextStyle._Brush == nullptr)
     {
-        _DescriptionTextStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphDescriptionText);
+        _DescriptionTextStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionText);
 
         _DescriptionTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
@@ -330,7 +329,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     if (_DescriptionBackgroundStyle._Brush == nullptr)
     {
-        _DescriptionBackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
+        _DescriptionBackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
 
         _DescriptionBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
