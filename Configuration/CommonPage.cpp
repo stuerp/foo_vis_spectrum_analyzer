@@ -390,18 +390,21 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Artwork
         case IDC_NUM_ARTWORK_COLORS:
         {
-            SetInteger(id, _State->_NumArtworkColors); break;
+            SetInteger(id, _State->_NumArtworkColors);
+            break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
-            SetInteger(id, (int64_t) (_State->_LightnessThreshold * 100.f)); break;
+            SetInteger(id, (int64_t) (_State->_LightnessThreshold * 100.f));
+            break;
         }
 
         // Artwork Background
         case IDC_ARTWORK_OPACITY:
         {
-            SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f)); break;
+            SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f));
+            break;
         }
     }
 

@@ -7,8 +7,6 @@
 
 #include "Tester.h"
 
-#include "Support.h"
-
 #pragma hdrstop
 
 /// <summary>

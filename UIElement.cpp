@@ -5,8 +5,6 @@
 
 #include "UIElement.h"
 
-#include "StyleManager.h"
-
 #include "Support.h"
 #include "Log.h"
 

@@ -4,8 +4,6 @@
 #include "pch.h"
 
 #include "VisualizationPage.h"
-#include "Support.h"
-#include "Log.h"
 
 /// <summary>
 /// Initializes the page.

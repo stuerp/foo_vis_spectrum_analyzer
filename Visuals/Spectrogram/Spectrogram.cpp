@@ -8,8 +8,6 @@
 
 #include "DirectWrite.h"
 
-#include "Log.h"
-
 #pragma hdrstop
 
 /// <summary>

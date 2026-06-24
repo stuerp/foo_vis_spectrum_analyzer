@@ -424,7 +424,9 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            style->_Opacity = (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity);
+            if (!SetProperty(style->_Opacity, (FLOAT) std::clamp(::_wtof(Text) / 100.f, MinOpacity, MaxOpacity)))
+                return;
+
             break;
         }
 
@@ -432,7 +434,9 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            style->_Thickness = (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness);
+            if (!SetProperty(style->_Thickness, (FLOAT) std::clamp(::_wtof(Text), MinThickness, MaxThickness)))
+                return;
+
             break;
         }
 
@@ -448,7 +452,9 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         {
             style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            style->_FontSize = (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize);
+            if (!SetProperty(style->_FontSize, (FLOAT) std::clamp(::_wtof(Text), MinFontSize, MaxFontSize)))
+                return;
+
             break;
         }
     }

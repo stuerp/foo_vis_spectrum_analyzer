@@ -153,18 +153,19 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha5, 2026-06-xx
+v0.11.0.0-alpha5, 2026-06-24
 
 - New: Overlapping graphs support for bar, curve, radial bar and radial curve visualizations. See `Overlap graphs` option on the `Graph` page.
   - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render two or more channels with different colors on top of each other.
 - New: Global and local styles.
   - Each graph can have its own styles. This is particularly useful for overlapping graphs.
-  - Make sure the styles of overlapping visual elements are set to None to prevent overpainting (e.g. the background style of all but the first graph).
+  - Make sure the styles of overlapping visual elements are set to `None` to prevent overpainting (e.g. the background style of all but the first graph).
 - New: Channel Pair can be configured per graph.
 - Improved: Significantly improved the after glow effect of the oscilloscope. Also, it should work now with a transparent background.
 - Fixed: Artwork Blur for high DPI screens.
 - Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
 - Fixed: Level Meter should not show a measurement unless all channels of the selected channel pair were selected for measurement.
+- Fixed: Weird caret behavior of the numeric edit controls.
 
 You can read the full history [here](docs/History.md).
 
