@@ -210,9 +210,8 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the composite buffer to the window.
         {
             const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
-            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
-            deviceContext->SetTransform(Rotate * Translate);
+            deviceContext->SetTransform(Translate);
 
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 

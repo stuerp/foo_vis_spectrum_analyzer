@@ -1,10 +1,9 @@
 
-/** $VER: CommonPage.cpp (2026.06.09) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "CommonPage.h"
-#include "Support.h"
 #include "Log.h"
 
 /// <summary>
@@ -29,7 +28,7 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_COLOR_ORDER, "Determines how to sort the colors selected from the artwork." },
 
         { IDC_ARTWORK_BACKGROUND, "Renders artwork on the graph background." },
-        { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background." },
+        { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background or will be used to extract colors from." },
 
         { IDC_FIT_MODE, "Determines how over- and undersized artwork is rendered." },
         { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },

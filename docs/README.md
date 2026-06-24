@@ -712,7 +712,7 @@ Some visualizations can use artwork to display on the background or to use as a 
 
 `Artwork type`
 
-Determines which artwork will be displayed on the graph background.
+Determines which artwork will be displayed on the graph background or will be used to extract colors from.
 
 `No. artwork colors`
 
