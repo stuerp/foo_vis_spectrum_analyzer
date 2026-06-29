@@ -119,7 +119,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if ((FrameCount == 0) || (ChannelCount == 0))
         return;
 
-    if (_ChunkDuration != _Analysis->_Chunk.get_duration())
+    if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
         _AxesCommandList.Release();
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
@@ -197,7 +197,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             hr = _DeviceContext->EndDraw();
         }
-    }
+     }
 
     if (SUCCEEDED(hr))
     {

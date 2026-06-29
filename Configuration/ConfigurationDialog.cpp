@@ -1,16 +1,20 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.03.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.06.29) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
 #include "ConfigurationDialog.h"
-#include "Gradients.h"
 #include "ConfigurationDialogLayout.h"
-#include "CColorDialogEx.h"
-#include "PresetManager.h"
-#include "Support.h"
 
-#include "Direct2D.h"
+#include "VisualizationPage.h"
+#include "TransformPage.h"
+#include "FrequenciesPage.h"
+#include "FiltersPage.h"
+#include "CommonPage.h"
+#include "GraphsPage.h"
+#include "StylesPage.h"
+#include "PresetsPage.h"
+
 #include "Theme.h"
 
 #include "Log.h"

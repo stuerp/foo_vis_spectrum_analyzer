@@ -1,16 +1,11 @@
 
-/** $VER: VisualizationPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: VisualizationPage.h (2026.06.29) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
-
 #include "Page.h"
-#include "Resources.h"
-#include "State.h"
 
 class visualization_page_t : public page_t
 {

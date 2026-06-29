@@ -114,6 +114,8 @@ void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient
 
             if (_ColorScheme == ColorScheme::Artwork)
                 _CurrentGradientStops = artworkGradientStops;
+            else
+                _CurrentGradientStops = _CustomGradientStops;
             break;
         }
 
