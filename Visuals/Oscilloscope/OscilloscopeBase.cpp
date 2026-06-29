@@ -176,7 +176,8 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
+
 
         hr = _DeviceContext->EndDraw();
 
@@ -197,7 +198,7 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
         hr = _DeviceContext->EndDraw();
 
@@ -218,7 +219,7 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(0, 0, 0, 0)); // FIXME: Phosphor decay does not work with alpha transparency.
 
         hr = _DeviceContext->EndDraw();
 

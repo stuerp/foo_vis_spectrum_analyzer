@@ -155,44 +155,69 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             _DeviceContext->BeginDraw();
 
-            _DeviceContext->SetTarget(_BackBuffer);
-
+            if (_State->_HasPhosphorDecay)
             {
-                // Clear the back buffer.
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->SetTarget(_BackBuffer);
 
-                // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                {
+                    // Clear the buffer.
+                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
-                // Draw a wide version of the signal.
-                _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
+                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                _DeviceContext->PopAxisAlignedClip();
+                    // Draw a wide version of the signal.
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
+
+                    // Remove the clip region.
+                    _DeviceContext->PopAxisAlignedClip();
+                }
+
+                _DeviceContext->SetTarget(_CompositeBuffer);
+
+                {
+                    // Clear the buffer.
+                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+
+                    // Draw a color reduced version of the back buffer.
+                    _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+                    // Draw a blurred version of the back buffer.
+                    _BlurEffect->SetInput(0, _BackBuffer);
+
+                    _DeviceContext->DrawImage(_BlurEffect);
+
+                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+                    // Draw a normal version of the signal.
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+
+                    // Remove the clip region.
+                    _DeviceContext->PopAxisAlignedClip();
+                }
             }
-
-            _DeviceContext->SetTarget(_CompositeBuffer);
-
+            else
             {
-                // Clear the composite buffer.
-                _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                _DeviceContext->SetTarget(_CompositeBuffer);
 
-                // Draw a color reduced version of the back buffer.
-                _ColorMatrixEffect->SetInput(0, _BackBuffer);
+                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
-                _DeviceContext->DrawImage(_ColorMatrixEffect);
+                {
+                    // Clear the buffer.
+                    _DeviceContext->Clear(); // Required for alpha transparency.
 
-                // Draw a blurred version of the back buffer.
-                _BlurEffect->SetInput(0, _BackBuffer);
+                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                _DeviceContext->DrawImage(_BlurEffect);
+                    // Draw a normal version of the signal.
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
 
-                // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-                // Draw a normal version of the signal.
-                _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                _DeviceContext->PopAxisAlignedClip();
+                    // Remove the clip region.
+                    _DeviceContext->PopAxisAlignedClip();
+                }
             }
 
             hr = _DeviceContext->EndDraw();

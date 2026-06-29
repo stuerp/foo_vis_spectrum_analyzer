@@ -154,11 +154,12 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+                if (_State->_HasPhosphorDecay)
                 {
                     _DeviceContext->SetTarget(_BackBuffer);
 
                     {
-                        // Clear the back buffer.
+                        // Clear the buffer.
                         _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
                         // Draw a wide version of the signal.
@@ -170,7 +171,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
                     {
-                        // Clear the composite buffer.
+                        // Clear the buffer.
                         _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
                         // Draw a color reduced version of the back buffer.
@@ -186,6 +187,17 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         // Draw a normal version of the signal.
                         _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
                     }
+                }
+                else
+                {
+                    _DeviceContext->SetTarget(_CompositeBuffer);
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+
+                    // Clear the buffer.
+                    _DeviceContext->Clear(); // Required for alpha transparency
+
+                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
                 }
 
                 _DeviceContext->EndDraw();

@@ -153,10 +153,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha6, 2026-xx-xx
+v0.11.0.0-alpha6, 2026-07-xx
 
 - Fixed: Several regression errors
-  - Initializing gradient brushes
+  - Initializing gradient brushes.
+  - Honor the Phosphor Decay setting again.
 
 You can read the full history [here](docs/History.md).
 
