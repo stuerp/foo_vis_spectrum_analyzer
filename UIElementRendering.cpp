@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.03.19) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.07.04) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -201,7 +201,9 @@ void uielement_t::ProcessAudio() noexcept
     {
         if (_RenderState._SampleRate != 0)
         {
-            WindowSize   = (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount : _RenderState._FrameCount;
+
+            WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
             WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
         }
         else
@@ -382,77 +384,96 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         const UINT32 Width  = (UINT) cr.Width();
         const UINT32 Height = (UINT) cr.Height();
 
-        hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
+        if ((Width == 0) || (Height == 0))
+            return DXGI_ERROR_INVALID_CALL;
 
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
             CComPtr<IDXGIDevice1> DXGIDevice;
 
-            if (SUCCEEDED(hr))
-                hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
+            hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
 
-            if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+            hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
 
-            if (SUCCEEDED(hr))
-            {
-                GetDPI(m_hWnd, _DPI);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-                _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
-            }
+            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
 
-            if (SUCCEEDED(hr))
-                _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            GetDPI(m_hWnd, _DPI);
+
+            _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
         }
 
-        if (SUCCEEDED(hr))
+        if (_SwapChain == nullptr)
         {
-            DXGI_SWAP_CHAIN_DESC1 scd = { };
-
-            scd.Width              = Width;
-            scd.Height             = Height;
-            scd.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
-            scd.Scaling            = DXGI_SCALING_STRETCH;
-            scd.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-            scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            scd.BufferCount        = 2;
-            scd.SampleDesc.Count   = 1;
-            scd.SampleDesc.Quality = 0;
-            scd.AlphaMode          = DXGI_ALPHA_MODE_PREMULTIPLIED; // Required for alpha transparency.
-            scd.Flags              = 0;
+            const DXGI_SWAP_CHAIN_DESC1 scd =
+            {
+                .Width       = Width,
+                .Height      = Height,
+                .Format      = DXGI_FORMAT_B8G8R8A8_UNORM,
+                .SampleDesc  = { .Count = 1 },
+                .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+                .BufferCount = 2,
+                .Scaling     = DXGI_SCALING_STRETCH,
+                .SwapEffect  = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+                .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
+            };
 
             hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
+
+            if (!SUCCEEDED(hr))
+                return hr;
         }
 
         // Set up DirectComposition.
         {
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
 
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->CreateVisual(&_Visual);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _Visual->SetContent(_SwapChain);
+            hr = _DCompositionDevice->CreateVisual(&_Visual);
 
-            if (SUCCEEDED(hr))
-                hr = _Target->SetRoot(_Visual);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->Commit();
+            hr = _Visual->SetContent(_SwapChain);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _Target->SetRoot(_Visual);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _DCompositionDevice->Commit();
+
+            if (!SUCCEEDED(hr))
+                return hr;
         }
 
-        if (SUCCEEDED(hr))
+        if (_BackBuffer == nullptr)
+        {
             hr = CreateBackBuffer();
 
-        if (SUCCEEDED(hr))
+            if (!SUCCEEDED(hr))
+                return hr;
+
             _DeviceContext->SetTarget(_BackBuffer);
 
-        if (SUCCEEDED(hr))
-        {
             _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
             _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _DeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
@@ -466,13 +487,13 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         }
 
     #ifdef _DEBUG
-        if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        if (_DebugBrush == nullptr)
             _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
     #endif
     }
 
     // Create the background bitmap from the artwork.
-    if (SUCCEEDED(hr) && (_Artwork.Bitmap() == nullptr))
+    if (_Artwork.Bitmap() == nullptr)
     {
         hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
 
@@ -484,11 +505,9 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             for (auto & Item : _Grid)
                 Item->Release();
         }
-        else
-            hr = S_OK; // No WIC bitmap created because there is no artwork.
     }
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>

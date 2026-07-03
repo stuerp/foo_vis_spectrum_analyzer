@@ -244,10 +244,9 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
     {
         msc::lock_t Lock(_CriticalSection);
 
-        hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
-
-        if (!SUCCEEDED(hr))
-            return hr;
+        // No format converter means no artwork.
+        if (_FormatConverter == nullptr)
+            return E_FAIL;
 
         // Create a Direct2D bitmap from the WIC bitmap source.
         if (_Bitmap == nullptr)

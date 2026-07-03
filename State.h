@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.06.08) P. Stuer **/
+/** $VER: State.h (2026.07.04) P. Stuer **/
 
 #pragma once
 
@@ -118,6 +118,7 @@ public:
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
             FLOAT _DecayFactor;
+            uint32_t _FrameCount;
 
         #pragma endregion
 

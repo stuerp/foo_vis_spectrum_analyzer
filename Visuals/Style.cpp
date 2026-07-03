@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2026.06.29) P. Stuer **/
+/** $VER: Style.cpp (2026.07.03) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -115,7 +115,10 @@ void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient
             if (_ColorScheme == ColorScheme::Artwork)
                 _CurrentGradientStops = artworkGradientStops;
             else
+            if (_ColorScheme == ColorScheme::Custom)
                 _CurrentGradientStops = _CustomGradientStops;
+            else
+                _CurrentGradientStops = GetBuiltInGradientStops(_ColorScheme);
             break;
         }
 
@@ -127,7 +130,7 @@ void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient
 
         case ColorSource::UserInterface:
         {
-            if (userInterfaceColors.size() > 0)
+            if (userInterfaceColors.size() != 0)
                 _CurrentColor = userInterfaceColors[std::clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
             break;
         }

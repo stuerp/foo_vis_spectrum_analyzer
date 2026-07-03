@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.05.24) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.07.04) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -51,6 +51,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
+        { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope per screen update." },
         { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
@@ -198,6 +199,9 @@ void visualization_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
         }
+        {
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FRAME_COUNT)); _NumericEdits.push_back(ne); SetInteger(IDC_FRAME_COUNT, _State->_FrameCount);
+        }
 
         SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_HasPhosphorDecay);
         {
@@ -282,6 +286,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
     GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both modes.
     GetDlgItem(IDC_ROTATION).EnableWindow(IsOscilloscope && _State->_XYMode);
+    GetDlgItem(IDC_FRAME_COUNT).EnableWindow(IsOscilloscope);    // Available in both modes.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
@@ -488,6 +493,15 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_FRAME_COUNT:
+        {
+            if (!SetProperty(_State->_FrameCount, std::clamp((uint32_t) ::_wtoi(Text), MinFrameCount, MaxFrameCount)))
+                return;
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
         case IDC_BLUR_SIGMA:
         {
             if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
@@ -616,6 +630,14 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_ROTATION:
         {
             SetDouble(id, _State->_Rotation, 0, 2);
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
+        case IDC_FRAME_COUNT:
+        {
+            SetInteger(id, _State->_FrameCount);
 
             ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.06.24) P. Stuer **/
+/** $VER: Resources.h (2026.07.04) P. Stuer **/
 
 #pragma once
 
@@ -487,12 +487,14 @@
 #define IDC_ROTATION_LBL                7212
 #define IDC_ROTATION                    7214
 
-#define IDC_PHOSPHOR_DECAY              7216
+#define IDC_FRAME_COUNT                 7216
 
-#define IDC_BLUR_SIGMA_LBL              7218
-#define IDC_BLUR_SIGMA                  7220
-#define IDC_DECAY_FACTOR_LBL            7222
-#define IDC_DECAY_FACTOR                7224
+#define IDC_PHOSPHOR_DECAY              7218
+
+#define IDC_BLUR_SIGMA_LBL              7220
+#define IDC_BLUR_SIGMA                  7222
+#define IDC_DECAY_FACTOR_LBL            7224
+#define IDC_DECAY_FACTOR                7226
 
 // Bit Meter
 

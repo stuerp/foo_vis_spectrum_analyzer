@@ -417,6 +417,10 @@ Specifies the gain applied to the Y signal.
 
 Specifies the rotation angle in degrees of the signal when displayed by an X/Y oscilloscope. Valid range is -180 to +180 degrees.
 
+`Frame count`
+
+Specifies the number of audio frames that will be used by the oscilloscope per screen update.
+
 `Phosphor decay`
 
 Enables a phosphor afterglow effect simulation of analog oscilloscopes.

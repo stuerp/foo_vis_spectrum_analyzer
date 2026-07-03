@@ -161,7 +161,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
 
                     // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -177,33 +177,37 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
 
                     // Draw a color reduced version of the back buffer.
                     _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                     _DeviceContext->DrawImage(_ColorMatrixEffect);
 
-                    // Draw a blurred version of the back buffer.
-                    _BlurEffect->SetInput(0, _BackBuffer);
+                    {
+                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-                    _DeviceContext->DrawImage(_BlurEffect);
+                        // Draw a blurred version of the back buffer.
+                        _BlurEffect->SetInput(0, _BackBuffer);
 
-                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                        _DeviceContext->DrawImage(_BlurEffect);
 
-                    // Draw a normal version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                        // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                        _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                    // Remove the clip region.
-                    _DeviceContext->PopAxisAlignedClip();
+                        // Draw a normal version of the signal.
+                        _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+
+                        // Remove the clip region.
+                        _DeviceContext->PopAxisAlignedClip();
+
+                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+                    }
                 }
             }
             else
             {
                 _DeviceContext->SetTarget(_CompositeBuffer);
-
-                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
                 {
                     // Clear the buffer.
@@ -403,6 +407,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
 
                     Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 
+
                     ChannelBaseline += ChannelHeight;
                 }
 
@@ -554,4 +559,63 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
         hr = _AxesCommandList->Close();
 
     return hr;
+}
+
+/// <summary>
+/// Decimates an audio chunk (WIP)
+/// </summary>
+std::vector<D2D1_POINT_2F> DecimateChunk(const audio_sample * frames, size_t frameCount, float timeScale, size_t targetCount)
+{
+    if (frameCount == 0)
+        return {};
+
+    std::vector<D2D1_POINT_2F> Points;
+
+    Points.reserve(targetCount * 2);
+
+    const size_t BucketSize = (size_t) std::max(1.0f, (float) frameCount / (float) targetCount);
+
+    const float TimeStep = timeScale / (float) targetCount;
+
+    for (size_t i = 0; i < frameCount; i += BucketSize)
+    {
+        const size_t End = std::min(i + BucketSize, frameCount);
+
+        audio_sample MinVal = frames[i];
+        audio_sample MaxVal = frames[i];
+
+        size_t MinIdx = i;
+        size_t MaxIdx = i;
+
+        for (size_t j = i + 1; j < End; ++j)
+        {
+            if (frames[j] < MinVal)
+            {
+                MinVal = frames[j];
+                MinIdx = j;
+            }
+
+            if (frames[j] > MaxVal)
+            {
+                MaxVal = frames[j];
+                MaxIdx = j;
+            }
+        }
+
+        float x = ((float) i / (float) frameCount) * timeScale;
+
+        // Add in correct x-order
+        if (MinIdx < MaxIdx)
+        {
+            Points.push_back(D2D1::Point2F(x,                   (FLOAT) MinVal));
+            Points.push_back(D2D1::Point2F(x + TimeStep * 0.5f, (FLOAT) MaxVal));
+        }
+        else
+        {
+            Points.push_back(D2D1::Point2F(x,                   (FLOAT) MaxVal));
+            Points.push_back(D2D1::Point2F(x + TimeStep * 0.5f, (FLOAT) MinVal));
+        }
+    }
+
+    return Points;
 }

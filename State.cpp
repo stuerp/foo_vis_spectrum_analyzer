@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.06.21) P. Stuer **/
+/** $VER: State.cpp (2026.07.04) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -263,6 +263,7 @@ void state_t::Reset() noexcept
     _HasPhosphorDecay = true;
     _BlurSigma = 3.f;
     _DecayFactor = 0.95f;
+    _FrameCount = 1024;
 
     // Bit Meter
     _BitMeterMode = BitMeterMode::FloatingPoint;
@@ -541,6 +542,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _HasPhosphorDecay = other._HasPhosphorDecay;
     _BlurSigma = other._BlurSigma;
     _DecayFactor = other._DecayFactor;
+    _FrameCount = other._FrameCount;
 
     // Bit Meter
     _BitMeterMode = other._BitMeterMode;
@@ -1410,10 +1412,11 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
 
-    _XYMode   = Oscilloscope.value("xyMode", _XYMode);
-    _XGain    = Oscilloscope.value("xGain", _XGain);
-    _YGain    = Oscilloscope.value("yGain", _YGain);
-    _Rotation = Oscilloscope.value("rotation", _Rotation);
+    _XYMode     = Oscilloscope.value("xyMode", _XYMode);
+    _XGain      = Oscilloscope.value("xGain", _XGain);
+    _YGain      = Oscilloscope.value("yGain", _YGain);
+    _Rotation   = Oscilloscope.value("rotation", _Rotation);
+    _FrameCount = Oscilloscope.value("frameCount", _FrameCount);
 
     const auto & PhosporDecay = Oscilloscope.value("phosphorDecay", json::object());
 
@@ -1666,6 +1669,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "yGain", _YGain },
 
                 { "rotation", _Rotation },
+                { "frameCount", _FrameCount },
 
                 { "phosphorDecay", json::object
                     ({

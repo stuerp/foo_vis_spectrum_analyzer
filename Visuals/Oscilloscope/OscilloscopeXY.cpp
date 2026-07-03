@@ -160,7 +160,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                     {
                         // Clear the buffer.
-                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
 
                         // Draw a wide version of the signal.
                         _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
@@ -168,31 +168,33 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                     _DeviceContext->SetTarget(_CompositeBuffer);
 
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
                     {
                         // Clear the buffer.
-                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
 
                         // Draw a color reduced version of the back buffer.
                         _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                         _DeviceContext->DrawImage(_ColorMatrixEffect);
 
-                        // Draw a blurred version of the back buffer.
-                        _BlurEffect->SetInput(0, _BackBuffer);
+                        {
+                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-                        _DeviceContext->DrawImage(_BlurEffect);
+                            // Draw a blurred version of the back buffer.
+                            _BlurEffect->SetInput(0, _BackBuffer);
 
-                        // Draw a normal version of the signal.
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                            _DeviceContext->DrawImage(_BlurEffect);
+
+                            // Draw a normal version of the signal.
+                            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+
+                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+                        }
                     }
                 }
                 else
                 {
                     _DeviceContext->SetTarget(_CompositeBuffer);
-
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
                     // Clear the buffer.
                     _DeviceContext->Clear(); // Required for alpha transparency
@@ -314,7 +316,7 @@ void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
 
 /// <summary>
 /// Creates a command list to render the grid and the X and Y axis labels.
-/// This is created in a -1 .. 1 axis setup and scaled up as necessary.
+/// This is created in a [-1, 1] axis setup and scaled up as necessary.
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 {

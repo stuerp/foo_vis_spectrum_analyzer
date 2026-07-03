@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.06.08) P. Stuer **/
+/** $VER: Constants.h (2026.07.04) P. Stuer **/
 
 #pragma once
 
@@ -453,6 +453,9 @@ inline const double MaxYGain = 10.;
 
 inline const FLOAT MinRotation = -180.f;
 inline const FLOAT MaxRotation =  180.f;
+
+inline const uint32_t MinFrameCount = 256;
+inline const uint32_t MaxFrameCount = std::numeric_limits<uint32_t>::max();
 
 inline const FLOAT MinBlurSigma =  1.f;
 inline const FLOAT MaxBlurSigma = 10.f;

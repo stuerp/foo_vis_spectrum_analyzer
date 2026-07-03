@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.05.24) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.07.04) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -393,6 +393,18 @@
     #define H_C79    H_TBX
     #define X_C79    X_C78 + W_C78 + IX
     #define Y_C79    Y_C78
+
+    // Label: Frame Count
+    #define W_C90    48
+    #define H_C90    H_LBL
+    #define X_C90    X_C60
+    #define Y_C90    Y_C78
+
+    // Textbox: Frame Count
+    #define W_C91    30
+    #define H_C91    H_TBX
+    #define X_C91    X_C62
+    #define Y_C91    Y_C79
 
     // Checkbox: Phosphor decay effect
     #define W_C64    62
