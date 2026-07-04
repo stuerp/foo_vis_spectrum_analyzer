@@ -153,11 +153,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0-alpha6, 2026-07-04
+v0.11.0.0-alpha7, 2026-07-xx
 
-- New: `Frame count` settings determines the number of audio frames that will be used by the oscilloscope per screen update.
-- Fixed: Initializing gradient brushes (Regression)
-- Fixed: Phosphor Decay setting was not respected (Regression)
+- New: Oscilloscope uses decimation to improve the quality of the rendered signal.
 
 You can read the full history [here](docs/History.md).
 

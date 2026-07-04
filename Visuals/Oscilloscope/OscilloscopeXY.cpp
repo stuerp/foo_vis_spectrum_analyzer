@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.06.21) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.07.04) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -95,11 +95,11 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                                 // get_sample_count() actually returns the number of frames.
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                                 // Mask containing the channels selected by the user.
-        const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+        const uint32_t AvailableChannels = _Analysis->_Chunk.get_channel_config();                          // Mask containing the channels in the audio chunk.
+        const uint32_t SelectedChannels  = _GraphOptions->_SelectedChannels;                                // Mask containing the channels selected by the user.
+        const uint32_t BalanceChannels   = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
-        const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
+        const uint32_t ChannelMask = AvailableChannels & SelectedChannels & BalanceChannels;
 
         if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
         {

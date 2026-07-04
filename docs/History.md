@@ -1,6 +1,12 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha6, 2026-07-04
+
+- New: `Frame count` settings determines the number of audio frames that will be used by the oscilloscope per screen update.
+- Fixed: Initializing gradient brushes (Regression)
+- Fixed: Phosphor Decay setting was not respected (Regression)
+
 v0.11.0.0-alpha5, 2026-06-24
 
 - New: Overlapping graphs support for bar, curve, radial bar and radial curve visualizations. See `Overlap graphs` option on the `Graph` page.

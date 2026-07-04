@@ -1,11 +1,13 @@
 
-/** $VER: Oscilloscope.h (2026.06.17) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.07.04) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
+
+#include "Decimator.h"
 
 class oscilloscope_t : public oscilloscope_base_t
 {
@@ -35,10 +37,12 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateSignalGeometry(const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
     HRESULT CreateAxesCommandList() noexcept;
 
 private:
+    decimator_t _Decimator;
+
     struct label_t
     {
         std::wstring Text;

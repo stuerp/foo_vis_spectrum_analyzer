@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.06.21) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.07.04) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -146,9 +146,15 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
 
+        audio_chunk_impl Chunk;
+
+        const double Ratio = (double) _Analysis->_Chunk.get_sample_count() / (double) SignalSize.width;
+
+        _Decimator.Process(_Analysis->_Chunk, Chunk, Ratio);
+
         CComPtr<ID2D1PathGeometry> Geometry;
 
-        hr = CreateSignalGeometry(SignalSize, Geometry);
+        hr = CreateSignalGeometry(Chunk, SignalSize, Geometry);
 
         // Draw the signal in the composite buffer.
         if (SUCCEEDED(hr))
@@ -337,7 +343,7 @@ void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates the path geometry for the signal.
 /// </summary>
-HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CComPtr<ID2D1PathGeometry> & Geometry) noexcept
+HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & clientSize, CComPtr<ID2D1PathGeometry> & Geometry) noexcept
 {
     amplitude_scaler_t Scaler;
 
@@ -356,15 +362,14 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
             break;
     }
 
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+    const size_t FrameCount     = chunk.get_sample_count();         // get_sample_count() actually returns the number of frames.
+    const uint32_t ChannelCount = chunk.get_channel_count();
+    const audio_sample * Frames = chunk.get_data();
+    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
 
-    const audio_sample * Samples = _Analysis->_Chunk.get_data();
+    uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+    const size_t SelectedChannelCount = (size_t) std::popcount(AvailableChannels & SelectedChannels);
 
-    uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
-    uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;      // Mask containing the channels selected by the user.
-
-    const size_t SelectedChannelCount = (size_t) std::popcount(ChunkChannels & _GraphOptions->_SelectedChannels);
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
     const FLOAT ChannelMax = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
 
@@ -382,10 +387,10 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
         FLOAT ChannelBaseline = ChannelMax;
         size_t ChannelOffset = 0;
             
-        while ((ChunkChannels != 0) && (SelectedChannels != 0))
+        while ((AvailableChannels != 0) && (SelectedChannels != 0))
         {
             // Render the signal if the channel is in the chunk and if it has been selected.
-            if (ChunkChannels & 1)
+            if (AvailableChannels & 1)
             {
                 if (SelectedChannels & 1)
                 {
@@ -393,14 +398,14 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
                     const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
 
                     FLOAT x = 0.f;
-                    FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Samples[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                    FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
-                    for (size_t j = ChannelCount + ChannelOffset; j < SampleCount; j += ChannelCount)
+                    for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
                     {
                         x += dx;
-                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Samples[j]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
                     }
@@ -414,7 +419,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const D2D1_SIZE_F & clientSize, CCo
                 ChannelOffset++;
             }
 
-            ChunkChannels    >>= 1;
+            AvailableChannels >>= 1;
             SelectedChannels >>= 1;
         }
 
@@ -559,63 +564,4 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
         hr = _AxesCommandList->Close();
 
     return hr;
-}
-
-/// <summary>
-/// Decimates an audio chunk (WIP)
-/// </summary>
-std::vector<D2D1_POINT_2F> DecimateChunk(const audio_sample * frames, size_t frameCount, float timeScale, size_t targetCount)
-{
-    if (frameCount == 0)
-        return {};
-
-    std::vector<D2D1_POINT_2F> Points;
-
-    Points.reserve(targetCount * 2);
-
-    const size_t BucketSize = (size_t) std::max(1.0f, (float) frameCount / (float) targetCount);
-
-    const float TimeStep = timeScale / (float) targetCount;
-
-    for (size_t i = 0; i < frameCount; i += BucketSize)
-    {
-        const size_t End = std::min(i + BucketSize, frameCount);
-
-        audio_sample MinVal = frames[i];
-        audio_sample MaxVal = frames[i];
-
-        size_t MinIdx = i;
-        size_t MaxIdx = i;
-
-        for (size_t j = i + 1; j < End; ++j)
-        {
-            if (frames[j] < MinVal)
-            {
-                MinVal = frames[j];
-                MinIdx = j;
-            }
-
-            if (frames[j] > MaxVal)
-            {
-                MaxVal = frames[j];
-                MaxIdx = j;
-            }
-        }
-
-        float x = ((float) i / (float) frameCount) * timeScale;
-
-        // Add in correct x-order
-        if (MinIdx < MaxIdx)
-        {
-            Points.push_back(D2D1::Point2F(x,                   (FLOAT) MinVal));
-            Points.push_back(D2D1::Point2F(x + TimeStep * 0.5f, (FLOAT) MaxVal));
-        }
-        else
-        {
-            Points.push_back(D2D1::Point2F(x,                   (FLOAT) MaxVal));
-            Points.push_back(D2D1::Point2F(x + TimeStep * 0.5f, (FLOAT) MinVal));
-        }
-    }
-
-    return Points;
 }

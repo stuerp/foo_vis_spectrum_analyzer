@@ -328,6 +328,7 @@
     <ClInclude Include="CustomTitleFormatHook.h" />
     <ClInclude Include="MemoryStream.h" />
     <ClInclude Include="Visuals\BitMeter\BitMeter.h" />
+    <ClInclude Include="Analyzers\Decimator.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeBase.h" />
@@ -393,6 +394,7 @@
     <ClCompile Include="Analyzers\AnalogStyleAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
+    <ClCompile Include="Analyzers\Decimator.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\CommonPage.cpp" />
     <ClCompile Include="Configuration\FiltersPage.cpp" />
