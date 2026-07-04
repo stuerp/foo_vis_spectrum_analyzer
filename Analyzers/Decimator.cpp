@@ -67,7 +67,7 @@ void decimator_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, 
 
         for (size_t DstFrameIndex = 0; DstFrameIndex < DstFrameCount; ++DstFrameIndex)
         {
-            double SrcFrameIndex = (double) DstFrameIndex * ratio;
+            const double SrcFrameIndex = std::min((double) DstFrameIndex * ratio, (double) (SrcFrameCount - 1));
 
             const size_t Index = (size_t) SrcFrameIndex;
             const double Fraction = SrcFrameIndex - (double) Index;
