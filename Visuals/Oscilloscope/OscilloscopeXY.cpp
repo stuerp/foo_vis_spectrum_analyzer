@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.07.04) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.07.22) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -154,7 +154,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                if (_State->_HasPhosphorDecay)
+                if (_State->_HasPhosphorDecay && _HasEffects)
                 {
                     _DeviceContext->SetTarget(_BackBuffer);
 

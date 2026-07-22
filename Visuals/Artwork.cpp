@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.06.10) P. Stuer **/
+/** $VER: Artwork.cpp (2026.07.22) P. Stuer **/
 
 #include "pch.h"
 
@@ -7,6 +7,7 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
+#include "Support.h"
 
 #include <State.h>
 #include <Constants.h>
@@ -169,7 +170,8 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
     AdjustRect(state->_FitMode, Scalar, Rect);
 
-    if (state->_ArtworkBlurSigma == 0.f)
+    // When the blur effect chain is unavailable (e.g. under Wine/Proton), fall back to a plain bitmap draw. This still honors the opacity but loses the blur.
+    if ((state->_ArtworkBlurSigma == 0.f) || !_HasEffects)
     {
         deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
@@ -258,38 +260,45 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
         }
     }
 
-    if (_ScaleEffect == nullptr)
+    // Without a bitmap there is nothing to render or to attach effects to.
+    if (_Bitmap == nullptr)
+        return SUCCEEDED(hr) ? E_FAIL : hr;
+
+    // The Scale/GaussianBlur/Opacity effect chain is only used to render a blurred background. Direct2D effects are not (well) supported under
+    // Wine/Proton, so create them only when available and fall back to an unblurred DrawBitmap() (see Render()) otherwise.
+    if (!IsWineOrProton() && (_ScaleEffect == nullptr))
     {
         hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
 
-        if (!SUCCEEDED(hr))
-            return hr;
+        if (SUCCEEDED(hr))
+            hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+
+        if (SUCCEEDED(hr))
+        {
+            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+            _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+
+            _BlurEffect->SetInputEffect(0, _ScaleEffect);
+
+            hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            _OpacityEffect->SetInputEffect(0, _BlurEffect);
+        }
+        else
+        {
+            // Effects unavailable. Release any partial chain and render without blur.
+            _OpacityEffect.Release();
+            _BlurEffect.Release();
+            _ScaleEffect.Release();
+        }
     }
 
-    if (_BlurEffect == nullptr)
-    {
-        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+    _HasEffects = (_ScaleEffect != nullptr) && (_BlurEffect != nullptr) && (_OpacityEffect != nullptr);
 
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-
-        _BlurEffect->SetInputEffect(0, _ScaleEffect);
-    }
-
-    if (_OpacityEffect == nullptr)
-    {
-        hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _OpacityEffect->SetInputEffect(0, _BlurEffect);
-    }
-
-    return hr;
+    return S_OK;
 }
 
 /// <summary>

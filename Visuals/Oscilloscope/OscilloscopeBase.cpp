@@ -1,9 +1,11 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.07.22) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
+
+#include "Support.h"
 
 #include "Direct2D.h"
 
@@ -12,7 +14,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-oscilloscope_base_t::oscilloscope_base_t()
+oscilloscope_base_t::oscilloscope_base_t() : _HasEffects(false)
 {
 }
 
@@ -228,38 +230,54 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
         _DeviceContext->SetTarget(nullptr);
     }
 
-    if (_BlurEffect == nullptr)
+    // Gaussian blur and color matrix effects for the phosphor decay simulation.
+    // `DrawImage()` for Direct2D effects is not fully supported under Wine/Proton (https://bugs.winehq.org/show_bug.cgi?id=59117).
+    if (_State->_HasPhosphorDecay && !IsWineOrProton())
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-    }
-
-    if (_ColorMatrixEffect == nullptr)
-    {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        // Color matrix for uniform decay
-        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-        const D2D1_MATRIX_5X4_F DecayMatrix =
+        if (_BlurEffect == nullptr)
         {
-            _State->_DecayFactor, 0, 0, 0,  // Decay red
-            0, _State->_DecayFactor, 0, 0,  // Decay green
-            0, 0, _State->_DecayFactor, 0,  // Decay blue
-            0, 0, 0, 1,                     // Keep alpha
-            0, 0, 0, 0                      // Unused. Translation
-        };
+            hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
 
-        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
+            if (SUCCEEDED(hr))
+            {
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+            }
+        }
+
+        if (SUCCEEDED(hr) && (_ColorMatrixEffect == nullptr))
+        {
+            hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
+
+            if (SUCCEEDED(hr))
+            {
+                // Color matrix for uniform decay
+                #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
+                const D2D1_MATRIX_5X4_F DecayMatrix =
+                {
+                    _State->_DecayFactor, 0, 0, 0,  // Decay red
+                    0, _State->_DecayFactor, 0, 0,  // Decay green
+                    0, 0, _State->_DecayFactor, 0,  // Decay blue
+                    0, 0, 0, 1,                     // Keep alpha
+                    0, 0, 0, 0                      // Unused. Translation
+                };
+
+                _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
+            }
+        }
+
+        // If either effect could not be created, disable the phosphor decay path.
+        if (!SUCCEEDED(hr))
+        {
+            _ColorMatrixEffect.Release();
+            _BlurEffect.Release();
+
+            hr = S_OK;
+        }
     }
+
+    _HasEffects = (_BlurEffect != nullptr) && (_ColorMatrixEffect != nullptr);
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)

@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.03.21) P. Stuer **/
+/** $VER: UIElement.h (2026.07.22) P. Stuer **/
 
 #pragma once
 
@@ -187,6 +187,7 @@ private:
 
     UINT _DPI;
     double _DisplayRefreshRate;
+    bool _IsWineOrProton;
 
     // Device-independent resources.
     CComPtr<ID2D1Factory1> _D2DFactory;

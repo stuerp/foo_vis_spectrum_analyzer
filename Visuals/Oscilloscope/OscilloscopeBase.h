@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.07.22) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -55,4 +55,6 @@ protected:
 
     CComPtr<ID2D1Effect> _BlurEffect;
     CComPtr<ID2D1Effect> _ColorMatrixEffect;
+
+    bool _HasEffects;
 };
