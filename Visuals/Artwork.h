@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.06.10) P. Stuer  **/
+/** $VER: Artwork.h (2026.07.22) P. Stuer  **/
 
 #pragma once
 
@@ -20,7 +20,7 @@
 class artwork_t
 {
 public:
-    artwork_t()
+    artwork_t() : _HasEffects(false)
     {
         SetStatus(Idle);
     }
@@ -83,6 +83,8 @@ private:
     CComPtr<ID2D1Effect> _ScaleEffect;
     CComPtr<ID2D1Effect> _BlurEffect;
     CComPtr<ID2D1Effect> _OpacityEffect;
+
+    bool _HasEffects;
 
     Status _Status;
 };

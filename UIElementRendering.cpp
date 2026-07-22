@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.07.04) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.07.22) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -343,7 +343,10 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
     if (SUCCEEDED(hr))
         hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
 
-    if (SUCCEEDED(hr))
+    _IsWineOrProton = IsWineOrProton();
+
+    // DirectComposition is not fully supported under Wine/Proton and causes the component to render blank.
+    if (SUCCEEDED(hr) && !_IsWineOrProton)
         hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(&_DCompositionDevice));
 
     hr = _FrameCounter.CreateDeviceIndependentResources();
@@ -418,7 +421,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         if (_SwapChain == nullptr)
         {
-            const DXGI_SWAP_CHAIN_DESC1 scd =
+            DXGI_SWAP_CHAIN_DESC1 scd =
             {
                 .Width       = Width,
                 .Height      = Height,
@@ -431,38 +434,51 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
             };
 
-            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
+            // Prefer a composition swap chain presented through DirectComposition to enable transparent backgrounds.
+            if (!_IsWineOrProton)
+            {
+                hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
 
-            if (!SUCCEEDED(hr))
-                return hr;
-        }
+                // Set up DirectComposition.
+                if (SUCCEEDED(hr))
+                    hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
 
-        // Set up DirectComposition.
-        {
-            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+                if (SUCCEEDED(hr))
+                    hr = _DCompositionDevice->CreateVisual(&_Visual);
 
-            if (!SUCCEEDED(hr))
-                return hr;
+                if (SUCCEEDED(hr))
+                    hr = _Visual->SetContent(_SwapChain);
 
-            hr = _DCompositionDevice->CreateVisual(&_Visual);
+                if (SUCCEEDED(hr))
+                    hr = _Target->SetRoot(_Visual);
 
-            if (!SUCCEEDED(hr))
-                return hr;
+                if (SUCCEEDED(hr))
+                    hr = _DCompositionDevice->Commit();
 
-            hr = _Visual->SetContent(_SwapChain);
+                if (!SUCCEEDED(hr))
+                {
+                    _Visual.Release();
+                    _Target.Release();
+                    _SwapChain.Release();
+                }
+            }
 
-            if (!SUCCEEDED(hr))
-                return hr;
+            // Fall back to a windowed swap chain.
+            if (_SwapChain == nullptr)
+            {
+                scd.AlphaMode = DXGI_ALPHA_MODE_IGNORE; // Composition alpha is not available for a windowed swap chain.
 
-            hr = _Target->SetRoot(_Visual);
+                hr = _DXGIFactory->CreateSwapChainForHwnd(_D3DDevice, m_hWnd, &scd, nullptr, nullptr, &_SwapChain);
 
-            if (!SUCCEEDED(hr))
-                return hr;
+                if (!SUCCEEDED(hr))
+                    return hr;
 
-            hr = _DCompositionDevice->Commit();
+                // A window created with `WS_EX_NOREDIRECTIONBITMAP` has no redirection surface and would stay blank without DirectComposition.
+                const LONG_PTR ExStyle = ::GetWindowLongPtr(m_hWnd, GWL_EXSTYLE);
 
-            if (!SUCCEEDED(hr))
-                return hr;
+                if ((ExStyle & WS_EX_NOREDIRECTIONBITMAP) != 0)
+                    ::SetWindowLongPtr(m_hWnd, GWL_EXSTYLE, ExStyle & ~WS_EX_NOREDIRECTIONBITMAP);
+            }
         }
 
         if (_BackBuffer == nullptr)

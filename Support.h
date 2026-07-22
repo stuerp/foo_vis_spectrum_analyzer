@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2026.03.01) P. Stuer **/
+/** $VER: Support.h (2026.07.22) P. Stuer **/
 
 #pragma once
 
@@ -13,6 +13,17 @@
 HRESULT InitializeDpiAwareness() noexcept;
 HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept;
 HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::string & result) noexcept;
+
+/// <summary>
+/// Determines whether the component is running under Wine/Proton by probing for the
+/// `wine_get_version()` export that Wine adds to its "ntdll" implementation.
+/// </summary>
+inline bool IsWineOrProton() noexcept
+{
+    const HMODULE hNTDLL = ::GetModuleHandleW(L"ntdll.dll");
+
+    return (hNTDLL != nullptr) && (::GetProcAddress(hNTDLL, "wine_get_version") != nullptr);
+}
 
 /// <summary>
 /// Converts magnitude to decibel (dB).
