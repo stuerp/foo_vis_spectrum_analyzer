@@ -1,5 +1,5 @@
 
-/** $VER: CUIElement.h (2024.03.13) P. Stuer - Columns User Interface support **/
+/** $VER: CUIElement.h (2026.03.21) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -7,26 +7,26 @@
 
 #include "UIElement.h"
 
+#include "MemoryStream.h"
+
 #include <ui_extension.h>
 
 namespace uie
 {
-class CUIColorClient;
-
 /// <summary>
 /// Implements a Columns UI element.
 /// </summary>
-class CUIElement : public uielement_t, public uie::window
+class cui_element_t : public uielement_t, public uie::window
 {
 public:
-    CUIElement();
+    cui_element_t();
 
-    CUIElement(const CUIElement &) = delete;
-    CUIElement & operator=(const CUIElement &) = delete;
-    CUIElement(CUIElement &&) = delete;
-    CUIElement & operator=(CUIElement &&) = delete;
+    cui_element_t(const cui_element_t &) = delete;
+    cui_element_t & operator=(const cui_element_t &) = delete;
+    cui_element_t(cui_element_t &&) = delete;
+    cui_element_t & operator=(cui_element_t &&) = delete;
 
-    virtual ~CUIElement();
+    virtual ~cui_element_t() noexcept;
 
 //  LRESULT OnEraseBackground(CDCHandle hDC) override final;
     void ToggleFullScreen() noexcept override final;
@@ -102,17 +102,53 @@ public:
     /// <summary>
     /// Sets an instance of the configuration data.
     /// </summary>
-    void set_config(stream_reader * reader, size_t size, abort_callback & abortHandler) final
+    void set_config(stream_reader * stream, size_t size, abort_callback & abortHandler) final
     {
-        _UIState.Read(reader, size, abortHandler);
+        std::vector<uint8_t> Config(size);
+
+        stream->read(Config.data(), size, abortHandler);
+
+        // Try to read the data as JSON first. (v0.11.0.0 and later)
+        try
+        {
+            _UIState.FromJSON((const char *) Config.data(), Config.size());
+        }
+        catch (...)
+        {
+            service_ptr_t<file> Stream;
+
+            try
+            {
+                Stream = fb2k::service_new<memory_stream_t>(Config.data(), Config.size());
+
+                _UIState.Read(Stream.get_ptr(), size, abortHandler);
+            }
+            catch (const exception_io & e)
+            {
+                Log.AtError().Write(STR_COMPONENT_BASENAME " failed to deserialize configuration to binary stream. Error: ", e.what());
+            }
+        }
     }
 
     /// <summary>
     /// Gets an instance of the configuration data.
     /// </summary>
-    void get_config(stream_writer * writer, abort_callback & abortHandler) const final
+    void get_config(stream_writer * stream, abort_callback & abortHandler) const final
     {
-        _UIState.Write(writer, abortHandler);
+        // Try to write the data as JSON first. (v0.11.0.0 and later)
+        try
+        {
+            std::string Config = _UIState.ToJSON(false).dump(-1);
+
+            stream->write_string_raw(Config.c_str(), abortHandler);
+        }
+        catch (const std::exception & e)
+        {
+            Log.AtError().Write(STR_COMPONENT_BASENAME " failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
+
+            // Try to write the data as a binary stream. (Legacy)
+            _UIState.Write(stream, abortHandler);
+        }
     }
 
     #pragma endregion
@@ -123,81 +159,6 @@ private:
 private:
     window_host_ptr _Host;
     HWND _hParent;
-};
-
-static std::vector<CUIElement *> _Elements; // Very ugly but necessary because of the weird CUI notification mechanism.
-
-/// <summary>
-/// Receives notifications from CUI when the colors change.
-/// </summary>
-class CUIColorClient : public cui::colours::client
-{
-public:
-    CUIColorClient() { }
-
-    CUIColorClient(const CUIColorClient &) = delete;
-    CUIColorClient & operator=(const CUIColorClient &) = delete;
-    CUIColorClient(CUIColorClient &&) = delete;
-    CUIColorClient & operator=(CUIColorClient &&) = delete;
-
-    virtual ~CUIColorClient() { }
-
-    #pragma region cui::colours::client
-
-    virtual const GUID & get_client_guid() const
-    {
-        static const GUID guid = GUID_UI_ELEMENT;
-
-        return guid;
-   }
-
-    virtual void get_name(pfc::string_base & out) const
-    {
-        out = STR_COMPONENT_NAME;
-    }
-
-    /// <summary>
-    /// Return a combination of bool_flag_t to indicate which boolean flags are supported. 
-    /// </summary>
-    virtual uint32_t get_supported_bools() const override
-    {
-        return cui::colours::bool_dark_mode_enabled;
-    }
-
-    /// <summary>
-    /// Indicates whether the Theme API is supported.
-    /// </summary>
-    virtual bool get_themes_supported() const override
-    {
-        return false;
-    }
-
-    virtual void on_colour_changed(uint32_t changed_items_mask) const override;
-
-    /// <summary>
-    /// Called whenever a supported boolean flag changes. Support for a flag is determined using the get_supported_bools() method.
-    /// </summary>
-    virtual void on_bool_changed(uint32_t changed_items_mask) const override;
-
-    #pragma endregion
-
-    static void Register(CUIElement * element)
-    {
-        if (element == nullptr)
-            return;
-
-        _Elements.push_back(element);
-    }
-
-    static void Unregister(CUIElement * element)
-    {
-        auto Element = std::find(_Elements.begin(), _Elements.end(), element);
-
-        if (Element != _Elements.end())
-            _Elements.erase(Element);
-    }
-
-    #pragma endregion
 };
 
 }

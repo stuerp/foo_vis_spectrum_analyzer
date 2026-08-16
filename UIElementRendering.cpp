@@ -1,19 +1,20 @@
 
-/** $VER: UIElementRendering.cpp (2026.03.11) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.07.04) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
+
 #include "UIElement.h"
 
 #include "DirectX.h"
 #include "Direct2D.h"
-#include "DirectWrite.h"
-#include "WIC.h"
 
+#include "Constants.h"
 #include "Resources.h"
 #include "Color.h"
 #include "Gradients.h"
-#include "StyleManager.h"
 #include "Chrono.h"
+#include "Event.h"
+#include "Support.h"
 
 #include "Log.h"
 
@@ -21,11 +22,11 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
-#pragma comment(lib, "dcomp.lib")
+#pragma comment(lib, "dcomp")
 
 #pragma hdrstop
 
-static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024);
+static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024) noexcept;
 
 /// <summary>
 /// Render thread procedure.
@@ -45,31 +46,33 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
-        Now = Chrono.Now();
-
-        const int64_t Elapsed = NextFrameTime - Now;
-
-        // Coarse delay
-        if (Elapsed > SleepTime)
         {
-            const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
+            Now = Chrono.Now();
 
-            const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
+            const int64_t Elapsed = NextFrameTime - Now;
 
-            if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
-                return;
+            // Coarse delay
+            if (Elapsed > SleepTime)
+            {
+                const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
 
-            continue;
+                const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
+
+                if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
+                    return;
+
+                continue;
+            }
+
+            // Fine delay (Ugly busy wait)
+            while (Chrono.Now() < NextFrameTime)
+            {
+                if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
+                    return;
+            }
         }
 
-        // Fine delay (Ugly busy wait)
-        while (Chrono.Now() < NextFrameTime)
-        {
-            if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
-                return;
-        }
-
-        if (!(_IsFrozen || !_IsVisible || ::IsIconic(::GetParent(m_hWnd))))
+        if (!(_IsFrozen || !_IsVisible || ::IsIconic(_hParent)))
         {
             bool HaveColorsChanged = false;
 
@@ -90,6 +93,7 @@ void uielement_t::RenderThreadProc() noexcept
 
                 if (_IsConfigurationChanged)
                 {
+                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
                     _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
                     _IsConfigurationChanged = false;
@@ -112,13 +116,15 @@ void uielement_t::RenderThreadProc() noexcept
         }
 
         // Determine the presentation time of the next frame.
-        MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
-        NextFrameTime += MaxFrameTime;
+        {
+            MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+            NextFrameTime += MaxFrameTime;
 
-        const int64_t Latency = Chrono.Now() - NextFrameTime;
+            const int64_t Latency = Chrono.Now() - NextFrameTime;
 
-        if (Latency > MaxFrameTime * 3)
-            NextFrameTime = Chrono.Now() + MaxFrameTime;
+            if (Latency > MaxFrameTime * 3)
+                NextFrameTime = Chrono.Now() + MaxFrameTime;
+        }
     }
 }
 
@@ -137,16 +143,16 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
+        for (auto & Item : _Grid)
+            Item->Reset();
 
         _RenderState._IsPaused = false;
     }
 
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
-        for (auto & Iter : _Grid)
-            Iter._Graph->Reset();
+        for (auto & Item : _Grid)
+            Item->Reset();
 
         _RenderState._IsPaused = true;
     }
@@ -162,20 +168,15 @@ void uielement_t::ProcessEvents() noexcept
         {
             // Set the default dominant color and gradient for the artwork color scheme.
             _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
-
-            _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
-            _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-            _RenderState._StyleManager.DeleteGradientBrushes();
+            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+            _RenderState._RecreateStyles = true;
 
             _IsConfigurationChanged = true;
         }
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-    {
-        _RenderState._StyleManager.UpdateCurrentColors();
-        _RenderState._StyleManager.DeleteDeviceSpecificResources();
-    }
+        _RenderState._RecreateStyles = true;
 }
 
 /// <summary>
@@ -194,13 +195,15 @@ void uielement_t::ProcessAudio() noexcept
     double WindowSize;
     double WindowOffset;
 
-    const bool IsSlidingWindow = (_RenderState._Transform == Transform::SWIFT) || (_RenderState._Transform == Transform::AnalogStyle);
+    const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
 
     if (!IsSlidingWindow)
     {
         if (_RenderState._SampleRate != 0)
         {
-            WindowSize   = (double) _RenderState._BinCount / (double) _RenderState._SampleRate;
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount : _RenderState._FrameCount;
+
+            WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
             WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
         }
         else
@@ -223,8 +226,8 @@ void uielement_t::ProcessAudio() noexcept
     {
         InitializeSampleRateDependentParameters(Chunk);
 
-        for (auto & Iter : _Grid)
-            Iter._Graph->Process(Chunk);
+        for (auto & Item : _Grid)
+            Item->Process(Chunk);
     }
 
     _RenderState._PlaybackTime = PlaybackTime;
@@ -244,8 +247,8 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
-    for (auto & Iter : _Grid)
-        Iter._Graph->Render(_DeviceContext, _Artwork);
+    for (auto & Item : _Grid)
+        Item->Render(_DeviceContext, _Artwork);
 
     if (_UIState._ShowFrameCounter)
         _FrameCounter.Render(_DeviceContext);
@@ -258,6 +261,8 @@ void uielement_t::Render() noexcept
 
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
+
+    _RenderState._RecreateStyles = false;
 }
 
 /// <summary>
@@ -269,8 +274,8 @@ void uielement_t::Animate() noexcept
         return;
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    for (auto & Iter : _Grid)
-        Iter._Graph->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
+    for (auto & Item : _Grid)
+        Item->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
 }
 
 /// <summary>
@@ -376,80 +381,99 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         GetClientRect(cr);
 
-        const UINT32 Width  = (UINT) cr.Width();
-        const UINT32 Height = (UINT) cr.Height();
+        const auto Width  = (UINT32) cr.Width();
+        const auto Height = (UINT32) cr.Height();
 
-        hr = (Width != 0) && (Height != 0) ? S_OK : DXGI_ERROR_INVALID_CALL;
+        if ((Width == 0) || (Height == 0))
+            return DXGI_ERROR_INVALID_CALL;
 
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
             CComPtr<IDXGIDevice1> DXGIDevice;
 
-            if (SUCCEEDED(hr))
-                hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
+            hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
 
-            if (SUCCEEDED(hr))
-                hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+            hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
 
-            if (SUCCEEDED(hr))
-            {
-                GetDPI(m_hWnd, _DPI);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-                _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
-            }
+            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
 
-            if (SUCCEEDED(hr))
-                _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            GetDPI(m_hWnd, _DPI);
+
+            _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
         }
 
-        if (SUCCEEDED(hr))
+        if (_SwapChain == nullptr)
         {
-            DXGI_SWAP_CHAIN_DESC1 scd = { };
-
-            scd.Width              = Width;
-            scd.Height             = Height;
-            scd.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
-            scd.Scaling            = DXGI_SCALING_STRETCH;
-            scd.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-            scd.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            scd.BufferCount        = 2;
-            scd.SampleDesc.Count   = 1;
-            scd.SampleDesc.Quality = 0;
-            scd.AlphaMode          = DXGI_ALPHA_MODE_PREMULTIPLIED; // Required for alpha transparency.
-            scd.Flags              = 0;
+            const DXGI_SWAP_CHAIN_DESC1 scd =
+            {
+                .Width       = Width,
+                .Height      = Height,
+                .Format      = DXGI_FORMAT_B8G8R8A8_UNORM,
+                .SampleDesc  = { .Count = 1 },
+                .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+                .BufferCount = 2,
+                .Scaling     = DXGI_SCALING_STRETCH,
+                .SwapEffect  = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+                .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
+            };
 
             hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
+
+            if (!SUCCEEDED(hr))
+                return hr;
         }
 
         // Set up DirectComposition.
         {
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
 
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->CreateVisual(&_Visual);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _Visual->SetContent(_SwapChain);
+            hr = _DCompositionDevice->CreateVisual(&_Visual);
 
-            if (SUCCEEDED(hr))
-                hr = _Target->SetRoot(_Visual);
+            if (!SUCCEEDED(hr))
+                return hr;
 
-            if (SUCCEEDED(hr))
-                hr = _DCompositionDevice->Commit();
+            hr = _Visual->SetContent(_SwapChain);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _Target->SetRoot(_Visual);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+
+            hr = _DCompositionDevice->Commit();
+
+            if (!SUCCEEDED(hr))
+                return hr;
         }
 
-        if (SUCCEEDED(hr))
+        if (_BackBuffer == nullptr)
+        {
             hr = CreateBackBuffer();
 
-        if (SUCCEEDED(hr))
+            if (!SUCCEEDED(hr))
+                return hr;
+
             _DeviceContext->SetTarget(_BackBuffer);
 
-        if (SUCCEEDED(hr))
-        {
             _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
             _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _DeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
@@ -459,34 +483,31 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
+            _RenderState._RecreateStyles = true;
         }
 
     #ifdef _DEBUG
-        if (SUCCEEDED(hr) && (_DebugBrush == nullptr))
+        if (_DebugBrush == nullptr)
             _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
     #endif
     }
 
     // Create the background bitmap from the artwork.
-    if (SUCCEEDED(hr) && (_Artwork.Bitmap() == nullptr))
+    if (_Artwork.Bitmap() == nullptr)
     {
         hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
 
         if (SUCCEEDED(hr))
         {
             // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-//          if (SUCCEEDED(hr) && _(_Artwork.Bitmap() != nullptr))
-                CreateArtworkDependentResources();
+            CreateArtworkDependentResources();
 
-            for (auto & Iter : _Grid)
-                Iter._Graph->Release();
+            for (auto & Item : _Grid)
+                Item->Release();
         }
-        else
-            hr = S_OK; // No WIC bitmap created because there is no artwork.
     }
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
@@ -498,10 +519,8 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     _DebugBrush.Release();
 #endif
 
-    _RenderState._StyleManager.DeleteDeviceSpecificResources();
-
-    for (auto & Iter : _Grid)
-        Iter._Graph->Release();
+    for (auto & Item : _Grid)
+        Item->Release();
 
     _Artwork.DeleteDeviceSpecificResources();
 
@@ -574,7 +593,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
     // Sort the colors.
     if (SUCCEEDED(hr))
     {
-        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkColors[0];
+        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
 
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_RenderState._ColorOrder)
@@ -615,10 +634,10 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
     if (SUCCEEDED(hr))
     {
-        _RenderState._StyleManager.DominantColor = _RenderState._ArtworkGradientStops[0].color;
-        _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._StyleManager.DominantColor);
-        _RenderState._StyleManager.DeleteGradientBrushes();
+//      _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._ArtworkDominantColor);
+//      _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
 
+        _RenderState._RecreateStyles = true;
         _IsConfigurationChanged = true;
     }
 
@@ -630,9 +649,11 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 /// <summary>
 /// Gets an initialized audio chunk.
 /// </summary>
-bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount)
+bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount) noexcept
 {
-    audio_sample * Samples = new audio_sample[frameCount];
+    const uint32_t ChannelCount = 1;
+
+    audio_sample * Samples = new audio_sample[frameCount * ChannelCount];
 
     if (Samples == nullptr)
         return false;
@@ -660,7 +681,7 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
         Samples[i] = (audio_sample) std::sin(2.0 * M_PI * Frequency * t);
     }
     
-    chunk = audio_chunk_impl(Samples, frameCount, 1, sampleRate);
+    chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);
     
     delete[] Samples;
     

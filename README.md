@@ -1,10 +1,12 @@
 
 # foo_vis_spectrum_analyzer
 
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that implements a spectrum analyzer panel.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that started as a spectrum analyzer panel.
 
 It is an attempt to recreate the [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) component by fismineur 
 and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foobar2000 64-bit.
+
+Over time other visualisations were added.
 
 ![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
 
@@ -20,11 +22,15 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
 
-<sup>Spectrum analyzer wit mirrored Curve Mode</sup>
+<sup>Spectrum analyzer with mirrored Curve Mode</sup>
 
 ![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
 
-<sup>Multiple Spectrum analyzer graphs for the separate channels</sup>
+<sup>Multiple spectrum analyzer graphs for the separate channels</sup>
+
+![Screenshot](assets/Overlapping-Graphs.png?raw=true "Screenshot")
+
+<sup>Multiple overlapping spectrum analyzer graphs</sup>
 
 ![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
 
@@ -38,9 +44,13 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 <sup>Spectrum analyzer Radial Curve Mode</sup>
 
+![Screenshot](assets/Peak-Meter.png?raw=true "Screenshot")
+
+<sup>Peak Meter</sup>
+
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
-<sup>Oscilloscope</sup>
+<sup>Oscilloscope with phosphor afterglow effect</sup>
 
 ![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
 
@@ -48,15 +58,19 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
-<sup>Oscilloscope in X-Y mode</sup>
+<sup>Oscilloscope in X-Y mode with phosphor afterglow effect</sup>
 
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar heights</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>
 
 ![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar opacity</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar opacity</sup>
+
+![Screenshot](assets/Bit-Meter-Integer-Mode.png?raw=true "Screenshot")
+
+<sup>Bit Meter (Integer Mode)</sup>
 
 ## Features
 
@@ -71,7 +85,7 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 - Supports dark mode.
 - Supports foobar2000 2.0 and later (32 and 64-bit version).
 
-## Requirements
+## Environment
 
 - Tested on [foobar2000](https://www.foobar2000.org/download) v2.0 or later (32 or 64-bit). ![foobar2000](https://www.foobar2000.org/button-small.png)
 - Tested on Microsoft Windows 10 and later.
@@ -95,14 +109,15 @@ You can find the user guide [here](docs/README.md).
 
 To build the code you need:
 
-- [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
+- [Microsoft Visual Studio 2026 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
 - [foobar2000 SDK](https://www.foobar2000.org/SDK) 2025-03-07
 - [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320
-- [Columns UI SDK](https://yuo.be/columns-ui-sdk) 7.0.0
+- [Columns UI SDK](https://yuo.be/columns-ui-sdk) 8.0.0
 
-The following library is included in the code:
+The following libraries are included in the repository:
 
 - [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
+- [JSON for Modern C++](https://json.nlohmann.me/)
 
 To create the deployment package you need:
 
@@ -118,14 +133,16 @@ Create the following directory structure:
     bin
     bin.x86
     foo_vis_spectrum_analyzer
+    int
     out
     sdk
 
-- `3rdParty/columns_ui-sdk` contains the Columns UI SDK 7.0.0.
-- `3rdParty/WTL10_10320` contains WTL 10.0.10320.
+- `3rdParty\columns_ui-sdk` contains the Columns UI SDK 7.0.0.
+- `3rdParty\WTL10_10320` contains WTL 10.0.10320.
 - `bin` contains a portable version of foobar2000 64-bit for debugging purposes.
 - `bin.x86` contains a portable version of foobar2000 32-bit for debugging purposes.
 - `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
+* `int` receives the intermedidiate files of the build.
 - `out` receives a deployable version of the component.
 - `sdk` contains the foobar2000 SDK.
 
@@ -139,38 +156,31 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.10.0.0, 2026-03-15
+v0.11.0.0, 2026-08-16
 
-- New: Implemented a high resolution timer.
-  - Refresh rates greater than 60Hz are now achievable if your machine can handle it.
-- New: All / None button in configuration dialog to quickly select all or no channels.
-- New: `Visualize during pause` option. Enable to continue visualization when playback is paused. (Default: Enabled)
-- New: `Scale lines` option. Enable to draw scale lines on the bar area of a peak meter. (Default: Enabled)
-- New: `Swap channels` option to swap the channels of a channel pair during visualisation e.g. the X and Y axis of an X/Y oscilloscope.
-- New: `Rotation` option to rotate the X/Y oscilloscope.
-- New: Bit Meter vizualisation
-  - New `Sign Bits`, `Exponent Bits` and `Mantissa Bits` styles
-  - `Opacity Mode` renders the bit histogram by varying the bar opacity instead of the bar height.
-- Improved: Complete rewrite of Peak meter visualization.
-  - Reduced CPU and GPU load.
-  - Fixed known graphical glitches and inconsistencies.
-  - New: *Center scale* setting to draw scales between the peak meter bars.
-  - New: *Max. bar size* setting to constrain the width/height of a meter bar. (Forum feature request)
-- Improved: Raised the max. number of frequency bins from 512 to 8192.
-- Improved: Completely refactored the configuration dialog.
-  - It became too complex to maintain.
-  - Faster interaction with the render thread.
-- Improved: The preset location supports `%fb2k_path%`, `%fb2k_component_path%` and `%fb2k_profile_path%`.
-- Fixed: Annoying tooltip appearing all over the place in the configuration dialog.
-- Fixed: SWIFT optimization bug.
-- Fixed: Lanczos interpolation bug.
-- Fixed: While editing the stops of a color gradient the component would appear to hang if the stops were not in ascending order.
-- Fixed: The Preset directory no longer resets to the foobar2000 profile directory when loading a preset.
-- Fixed: The gradient stops are no longer reset when editing a color of the gradient.
-- Fixed: Oscilloscope did not implement all of the Y-axis settings.
-- Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
-- Fixed: Oscilloscope did not render the vertical grid lines correctly.
-- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
+- New: The number of decimals used by the X-axis labels can be configured.
+- New: Added Integer mode to the Bit Meter visualization.
+  - The number of bits can be configured.
+- New: Artwork can be blurred. Setting the number of pixels to 0 (default) disables the blurring.
+- New: Overlapping graphs support for bar, curve, radial bar and radial curve visualizations. See `Overlap graphs` option on the `Graph` page.
+  - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render two or more channels with different colors on top of each other.
+- New: Global and local styles.
+  - Each graph can have its own styles. This is particularly useful for overlapping graphs.
+  - Make sure the styles of overlapping visual elements are set to `None` to prevent overpainting (e.g. the background style of all but the first graph).
+- New: Channel Pair can be configured per graph.
+- New: `Frame count` setting determines the number of audio frames that will be used by the oscilloscope per screen update.
+- New: Oscilloscope uses decimation to improve the quality of the rendered signal.
+- New: Spectrogram uses resampling to improve the quality of the rendered spectrum.
+- Improved: Significantly improved the afterglow effect of the oscilloscope. Also, it should work now with a transparent background.
+- Changed: Saves the settings as a human-readable JSON object.
+  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
+  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
+- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
+- Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.
+- Changed: Builds with Visual Studio 2026.
+- Fixed: The JSON configuration file reader ignored the Y-axis visibility setting.
+- Fixed: Level Meter should not show a measurement unless all channels of the selected channel pair were selected for measurement.
+- Fixed: Weird caret behavior of the numeric edit controls.
 
 You can read the full history [here](docs/History.md).
 
@@ -186,6 +196,7 @@ You can read the full history [here](docs/History.md).
 - fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
+- [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://json.nlohmann.me/).
 
 ## Reference Material
 

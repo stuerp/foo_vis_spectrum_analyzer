@@ -1,12 +1,12 @@
 
-/** $VER: Page.h (2026.02.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: Page.h (2026.06.08) P. Stuer - Implements a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
+#include <SDK\coreDarkMode.h>
+#include <SDK\cfg_var.h>
 
 #include "DialogParameters.h"
 #include "State.h"
@@ -38,6 +38,8 @@ public:
 
     virtual LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept { return -1; }; // Prevent the change of the up-down control position.
     virtual LRESULT OnChanged(LPNMHDR nmhd) noexcept { return 0; };
+
+    virtual LRESULT OnHScroll(UINT, WPARAM, LPARAM) noexcept { return 1; };
 
     virtual LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
@@ -83,6 +85,8 @@ private:
 
         NOTIFY_CODE_HANDLER_EX(UDN_DELTAPOS, OnDeltaPos)
         NOTIFY_CODE_HANDLER_EX(NM_CHANGED, OnChanged)
+
+        MESSAGE_HANDLER_EX(WM_HSCROLL, OnHScroll)
 
         REFLECT_NOTIFICATIONS() // Required for CColorListBox
     END_MSG_MAP()

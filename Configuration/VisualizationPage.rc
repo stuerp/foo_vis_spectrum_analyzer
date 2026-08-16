@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.03.12) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.07.04) P. Stuer **/
 
 #include "Resources.h"
 
@@ -51,9 +51,15 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Angular velocity:"             IDC_ANGULAR_VELOCITY_LBL,       X_C34, Y_C34 + 2, W_C34, H_C34
         edittext                                    IDC_ANGULAR_VELOCITY,           X_C35, Y_C35, W_C35, H_C35, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Bit Meter", IDC_BIT_METER, X_C50, Y_C50, W_C50, H_C50, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Bit Meter", IDC_STATIC, X_C50, Y_C50, W_C50, H_C50, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "Opacity Mode",                 IDC_OPACITY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C80, Y_C80, W_C80, H_C80
+        rtext       "Mode:",                        IDC_STATIC,                     X_C80, Y_C80 + 2, W_C80, H_C80
+        combobox                                    IDC_BIT_METER_MODE,             X_C81, Y_C81,     W_C81, H_C81, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        edittext                                    IDC_BITS_PER_INTEGER,           X_C82, Y_C82, W_C82, H_C82, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext       "bits per integer"              IDC_STATIC,                     X_C83, Y_C83 + 2, W_C83, H_C83
+
+        control     "Opacity Mode",                 IDC_OPACITY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C84, Y_C84, W_C84, H_C84
 
     groupbox "Spectrogram", IDC_SPECTROGRAM, X_B08, Y_B08, W_B08, H_B08, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -96,6 +102,9 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext       "Rotation:"                     IDC_ROTATION_LBL,               X_C78, Y_C78 + 2, W_C78, H_C78
         edittext                                    IDC_ROTATION,                   X_C79, Y_C79, W_C79, H_C79, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext       "Frame count:"                  IDC_STATIC,                     X_C90, Y_C90 + 2, W_C90, H_C90
+        edittext                                    IDC_FRAME_COUNT,                X_C91, Y_C91, W_C91, H_C91, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         control     "Phosphor decay effect:"        IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
 

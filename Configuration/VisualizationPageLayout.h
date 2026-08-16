@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.03.12) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.07.04) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -187,14 +187,38 @@
 #define X_C50   X_B15
 #define Y_C50   Y_B15 + H_B15 + IY
 
-    // Checkbox: Opacity Mode
-    #define W_C80    60
-    #define H_C80    H_CHB
+    // Label: Mode
+    #define W_C80    20
+    #define H_C80    H_LBL
     #define X_C80    X_C50 + 5
     #define Y_C80    Y_C50 + 11
 
+    // Combobox: Mode
+    #define W_C81    82
+    #define H_C81    H_CBX
+    #define X_C81    X_C80 + W_C80 + IX
+    #define Y_C81    Y_C80
+
+    // Textbox: Bits per integer
+    #define W_C82    14
+    #define H_C82    H_TBX
+    #define X_C82    X_C81
+    #define Y_C82    Y_C81 + H_C81 + IY
+
+    // Label: Bits per integer
+    #define W_C83    60
+    #define H_C83    H_LBL
+    #define X_C83    X_C82 + W_C82 + IX
+    #define Y_C83    Y_C82
+
+    // Checkbox: Opacity Mode
+    #define W_C84    60
+    #define H_C84    H_CHB
+    #define X_C84    X_C80
+    #define Y_C84    Y_C82 + H_C82 + IY
+
 #define W_C50   W_B15
-#define H_C50   11 + H_C80 + 7
+#define H_C50   11 + H_C81 + IY + H_C82 + IY + H_C84 + 7
 
 /** Spectrogram **/
 
@@ -369,6 +393,18 @@
     #define H_C79    H_TBX
     #define X_C79    X_C78 + W_C78 + IX
     #define Y_C79    Y_C78
+
+    // Label: Frame Count
+    #define W_C90    48
+    #define H_C90    H_LBL
+    #define X_C90    X_C60
+    #define Y_C90    Y_C78
+
+    // Textbox: Frame Count
+    #define W_C91    30
+    #define H_C91    H_TBX
+    #define X_C91    X_C62
+    #define Y_C91    Y_C79
 
     // Checkbox: Phosphor decay effect
     #define W_C64    62

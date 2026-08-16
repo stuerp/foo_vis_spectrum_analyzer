@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2025.10.13) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.06.22) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -9,16 +9,13 @@
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
-#include <atlbase.h>
+#include <atlcomcli.h>
+
+#include <dwrite.h>
+#include <string>
 
 #include "Gradients.h"
 
-#include "DirectWrite.h"
-#include "Support.h"
-
-#include <string>
-
-#pragma warning(disable: 4820)
 class style_t
 {
 public:
@@ -26,6 +23,9 @@ public:
 
     style_t(const style_t &);
     style_t & operator=(const style_t & other);
+
+    style_t(const style_t &&) = delete;
+    style_t & operator=(const style_t && other) = delete;
 
     virtual ~style_t() { }
 
@@ -44,6 +44,8 @@ public:
         RadialGradient      = 0x80,
 
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
+
+        Global              = 1ULL << 63,
     };
 
     style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
@@ -55,10 +57,10 @@ public:
 
     bool Has(Features feature) const noexcept
     {
-        return IsSet(Flags, feature);
+        return IsSet(_Flags, feature);
     }
 
-    void UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
+    void SetColor(const D2D1_COLOR_F & dominantColor, const gradient_stops_t & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor = 1.f) noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
@@ -88,12 +90,12 @@ private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
-    std::wstring Name;
-    VisualizationTypes UsedBy;              // Determines which visualization uses the style.
+    std::wstring _Name;
+    VisualizationTypes _UsedBy;              // Determines which visualization uses the style.
 
 #pragma region Serialized
 
-    Features Flags;
+    Features _Flags;
 
     ColorSource _ColorSource;               // Determines the source of the color
     D2D1_COLOR_F _CustomColor;              // User-specified color

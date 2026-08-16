@@ -1,12 +1,9 @@
 
-/** $VER: UIElement.cpp (2026.01.21) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.06.08) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
 #include "UIElement.h"
-
-#include "StyleManager.h"
-#include "Color.h"
 
 #include "Support.h"
 #include "Log.h"
@@ -14,12 +11,14 @@
 #include "Error.h"
 #include "PresetManager.h"
 
+#include <Constants.h>
+
 #pragma hdrstop
 
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
 {
 }
 
@@ -54,8 +53,10 @@ CWndClassInfo & uielement_t::GetWndClassInfo()
 /// <summary>
 /// Creates the window.
 /// </summary>
-LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
+LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 {
+    _hParent = ::GetAncestor(m_hWnd, GA_ROOT); // This is usually the main foobar2000 window but it can also be a flowin window.
+
     ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT); // Required for alpha transparency
 
     HRESULT hr = CreateDeviceIndependentResources();
@@ -115,53 +116,37 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void uielement_t::OnDestroy()
+void uielement_t::OnDestroy() noexcept
 {
     StopRenderer();
 
     ::CloseHandle(_hStopRendering);
 
-    _CriticalSection.Enter();
-
     {
-        for (auto & Iter : _Grid)
-            delete Iter._Graph;
+        msc::lock_t Lock(_CriticalSection);
 
-        _Grid.clear();
+        _Grid.Clear();
+
+        _VisualisationStream.release();
+
+        DeleteDeviceSpecificResources();
+
+        DeleteDeviceIndependentResources();
     }
-
-    _VisualisationStream.release();
-
-    DeleteDeviceSpecificResources();
-
-    DeleteDeviceIndependentResources();
-
-    _CriticalSection.Leave();
 }
 
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
-LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
+LRESULT uielement_t::OnEraseBackground(CDCHandle hDC) noexcept
 {
-/*
-    RECT cr;
-
-    GetClientRect(&cr);
-
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager.UserInterfaceColors[1]);
-
-    ::FillRect(hDC, &cr, hBrush);
-
-    ::DeleteObject((HGDIOBJ) hBrush);
-*/
-    return 1; // Prevent GDI from erasing the background. Required for transparency.
+    return 1; // Prevent GDI from erasing the background. Required for alpha transparency.
 }
 
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void uielement_t::OnPaint(CDCHandle hDC)
+void uielement_t::OnPaint(CDCHandle hDC) noexcept
 {
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
 }
@@ -169,12 +154,12 @@ void uielement_t::OnPaint(CDCHandle hDC)
 /// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
-void uielement_t::OnSize(UINT type, CSize size)
+void uielement_t::OnSize(UINT type, CSize size) noexcept
 {
     if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
         return;
 
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     // Remove the bitmap from the device context.
     _DeviceContext->SetTarget(nullptr);
@@ -195,15 +180,13 @@ void uielement_t::OnSize(UINT type, CSize size)
 
     Resize();
 
-    _CriticalSection.Leave();
-
 //  ::InvalidateRect(m_hWnd, nullptr, FALSE); // Force a repaint.
 }
 
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
+void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 {
     CMenu Menu;
     CMenu RefreshRateLimitMenu;
@@ -269,10 +252,6 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
             ToggleFrameCounter();
             break;
 
-        case IDM_TOGGLE_HARDWARE_RENDERING:
-            ToggleHardwareRendering();
-            break;
-
         case IDM_REFRESH_RATE_LIMIT_20:
             _UIState._RefreshRateLimit =
             _RenderState._RefreshRateLimit = 20; // Near-atomic
@@ -318,14 +297,14 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
                 {
                     PresetManager::Load(_UIState._PresetsDirectoryPath, PresetNames[Index], &NewState);
 
-                    NewState._StyleManager.DominantColor       = _UIState._StyleManager.DominantColor;
-                    NewState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
-
-                    NewState._StyleManager.UpdateCurrentColors();
+                    NewState._ArtworkDominantColor = _UIState._ArtworkDominantColor;
+                    NewState._UserInterfaceColors  = _UIState._UserInterfaceColors;
 
                     NewState._ActivePresetName = PresetNames[Index];
 
                     _UIState = NewState;
+
+                    _UIState._RecreateStyles = true;
 
                     UpdateState(ConfigurationChanges::All);
 
@@ -347,7 +326,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 /// <summary>
 /// Handles a left mousebutton down message.
 /// </summary>
-void uielement_t::OnLButtonDown(UINT flags, CPoint point)
+void uielement_t::OnLButtonDown(UINT flags, CPoint point) noexcept
 {
    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
@@ -364,7 +343,7 @@ void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 /// <summary>
 /// Handles a left mousebutton up message.
 /// </summary>
-void uielement_t::OnLButtonUp(UINT flags, CPoint point)
+void uielement_t::OnLButtonUp(UINT flags, CPoint point) noexcept
 {
     if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
@@ -379,7 +358,7 @@ void uielement_t::OnLButtonUp(UINT flags, CPoint point)
 /// <summary>
 /// Toggles between panel and full screen mode.
 /// </summary>
-void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
+void uielement_t::OnLButtonDblClk(UINT flags, CPoint point) noexcept
 {
     ToggleFullScreen();
 }
@@ -387,7 +366,7 @@ void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
 /// <summary>
 /// Handles a DPI change.
 /// </summary>
-LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
+LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
 {
     _DPI = dpiX;
 
@@ -413,29 +392,27 @@ void uielement_t::Resize()
 
     // Resize the grid.
     {
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.DelTool(&ti);
         }
 
         {
-            _CriticalSection.Enter();
+            msc::lock_t Lock(_CriticalSection);
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._StyleManager.DeleteGradientBrushes();
-
-            _CriticalSection.Leave();
+            _RenderState._RecreateStyles = true;
         }
 
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.AddTool(&ti);
         }
     }
@@ -444,23 +421,21 @@ void uielement_t::Resize()
 /// <summary>
 /// Handles a change of the user interface colors.
 /// </summary>
-void uielement_t::OnColorsChanged()
+void uielement_t::OnColorsChanged() noexcept
 {
     GetColors();
 
-    _UIState._StyleManager.UpdateCurrentColors();
+    _UIState._RecreateStyles = true;
 
     {
-        _CriticalSection.Enter();
+        msc::lock_t Lock(_CriticalSection);
 
-        _RenderState._StyleManager.UserInterfaceColors = _UIState._StyleManager.UserInterfaceColors;
+        _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
 
         ::SetWindowTheme(_ToolTipControl, _DarkMode ? L"DarkMode_Explorer" : nullptr, nullptr);
 
         // Notify the render thread.
         _Event.Raise(event_t::UserInterfaceColorsChanged);
-
-        _CriticalSection.Leave();
     }
 
     // Notify the configuration dialog about the changed UI colors.
@@ -475,7 +450,7 @@ void uielement_t::OnColorsChanged()
 /// <summary>
 /// Handles the UM_CONFIGURATION_CHANGED message from the configuration dialog.
 /// </summary>
-LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     UpdateState((ConfigurationChanges) wParam);
 
@@ -518,16 +493,6 @@ void uielement_t::ToggleFrameCounter() noexcept
 }
 
 /// <summary>
-/// Toggles hardware/software rendering.
-/// </summary>
-void uielement_t::ToggleHardwareRendering() noexcept
-{
-    _UIState._UseHardwareRendering = !_UIState._UseHardwareRendering;
-
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
 /// Shows the configuration dialog.
 /// </summary>
 void uielement_t::Configure() noexcept
@@ -546,64 +511,86 @@ void uielement_t::Configure() noexcept
 /// <summary>
 /// Updates the state.
 /// </summary>
-void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
+void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcept
 {
-    if (settings == ConfigurationChanges::All)
+    if (configurationChanges == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
 
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.DelTool(&ti);
         }
     }
 
-    _CriticalSection.Enter();
-
     {
+        msc::lock_t Lock(_CriticalSection);
+
         _RenderState = _UIState; // Copies only the settings that are relevant for rendering.
 
-        if (settings == ConfigurationChanges::All)
+        switch (configurationChanges)
         {
-            _RenderState._SampleRate = 0;
-            _RenderState._StyleManager.DeleteDeviceSpecificResources();
-
-            // Recreate the resources that depend on the artwork.
-            CreateArtworkDependentResources();
-
-            // Create the graphs.
+            case ConfigurationChanges::All:
             {
-                for (auto & Iter : _Grid)
-                    delete Iter._Graph;
+                _RenderState._SampleRate = 0;
+                _RenderState._RecreateStyles = true;
 
-                _Grid.clear();
+                // Recreate the resources that depend on the artwork.
+                CreateArtworkDependentResources();
 
-                _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount);
-
-                for (const auto & GraphDescription : _RenderState._GraphDescriptions)
+                // Create the graphs.
                 {
-                    auto * Graph = new graph_t();
+                    const bool OverlapGraphs = _RenderState._OverlapGraphs && ((_RenderState._VisualizationType == VisualizationType::Bars) || (_RenderState._VisualizationType == VisualizationType::Curve) || (_RenderState._VisualizationType == VisualizationType::RadialBars) || (_RenderState._VisualizationType == VisualizationType::RadialCurve));
 
-                    Graph->Initialize(&_RenderState, &GraphDescription, nullptr);
+                    _Grid.Clear();
 
-                    _Grid.push_back({ Graph, GraphDescription._HRatio, GraphDescription._VRatio });
+                    _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, OverlapGraphs);
+
+                    size_t i = 0;
+
+                    for (auto & GraphOptions : _RenderState._GraphOptions)
+                    {
+                        auto * Graph = new graph_t();
+
+                        const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
+                        const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
+
+                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast);
+
+                        _Grid.push_back(Graph);
+                        ++i;
+                    }
                 }
+                break;
             }
+            
+            case ConfigurationChanges::Layout:
+            {
+                for (auto & Item : _Grid)
+                    Item->OnConfigurationChange(configurationChanges);
+                break;
+            }
+
+            case ConfigurationChanges::None:
+            case ConfigurationChanges::RenderLoop:
+            case ConfigurationChanges::RefreshRate:
+            case ConfigurationChanges::Oscilloscope:
+            case ConfigurationChanges::Artwork:
+            default:
+                break;
         }
     }
 
-    _CriticalSection.Leave();
-
-    if (settings == ConfigurationChanges::All)
+    if (configurationChanges == ConfigurationChanges::All)
     {
-        for (auto & Iter : _Grid)
+        for (auto & Item : _Grid)
         {
-            TTTOOLINFOW ti;
+            TTTOOLINFOW ti = { };
 
-            Iter._Graph->InitToolInfo(m_hWnd, ti);
+            Item->InitToolInfo(m_hWnd, ti);
             _ToolTipControl.AddTool(&ti);
         }
 
@@ -618,10 +605,10 @@ void uielement_t::UpdateState(ConfigurationChanges settings) noexcept
 /// </summary>
 graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 {
-    for (auto & Iter : _Grid)
+    for (auto & Item : _Grid)
     {
-        if (Iter._Graph->ContainsPoint(pt))
-            return Iter._Graph;
+        if (Item->ContainsPoint(pt))
+            return Item;
     }
 
     return nullptr;

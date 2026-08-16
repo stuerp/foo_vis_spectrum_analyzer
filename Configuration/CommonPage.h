@@ -1,12 +1,12 @@
 
-/** $VER: CommonPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: CommonPage.h (2026.06.08) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
+#include <SDK\coreDarkMode.h>
+#include <SDK\cfg_var.h>
 
 #include "Page.h"
 #include "Resources.h"
@@ -32,6 +32,7 @@ public:
     void OnButtonClick(UINT, int id, CWindow) noexcept override final;
 
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
+    LRESULT OnHScroll(UINT, WPARAM, LPARAM) noexcept;
 
 private:
     void InitializeControls() noexcept override;

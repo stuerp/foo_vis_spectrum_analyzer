@@ -1,11 +1,13 @@
 
-/** $VER: Oscilloscope.h (2026.02.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.07.04) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
+
+#include "Decimator.h"
 
 class oscilloscope_t : public oscilloscope_base_t
 {
@@ -20,11 +22,12 @@ public:
     virtual ~oscilloscope_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
+    // visualization_t
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
     void Resize() noexcept;
 
 private:
@@ -34,10 +37,12 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateSignalGeometry(const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
     HRESULT CreateAxesCommandList() noexcept;
 
 private:
+    decimator_t _Decimator;
+
     struct label_t
     {
         std::wstring Text;
@@ -49,8 +54,8 @@ private:
 
     std::vector<label_t> _Labels;
 
-    style_t * _XAxisTextStyle;
-    style_t * _YAxisTextStyle;
+    style_t _XAxisTextStyle;
+    style_t _YAxisTextStyle;
 
     double _ChunkDuration;
 

@@ -1,14 +1,13 @@
 
-/** $VER: Style.cpp (2026.02.11) P. Stuer **/
+/** $VER: Style.cpp (2026.07.03) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
 
 #include "Direct2D.h"
+#include "DirectWrite.h"
 #include "Gradients.h"
 #include "Support.h"
-
-#include "Log.h"
 
 #pragma hdrstop
 
@@ -25,10 +24,10 @@ style_t::style_t(const style_t & other)
 /// </summary>
 style_t & style_t::operator=(const style_t & other)
 {
-    Name = other.Name;
-    UsedBy = other.UsedBy;
+    _Name = other._Name;
+    _UsedBy = other._UsedBy;
 
-    Flags = other.Flags;
+    _Flags = other._Flags;
 
     _ColorSource = other._ColorSource;
     _ColorIndex = other._ColorIndex;
@@ -46,10 +45,10 @@ style_t & style_t::operator=(const style_t & other)
     _CurrentColor = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    DeleteDeviceSpecificResources();
-
     _Width = other._Width;
     _Height = other._Height;
+
+    DeleteDeviceSpecificResources();
 
     return *this;
 }
@@ -59,10 +58,10 @@ style_t & style_t::operator=(const style_t & other)
 /// </summary>
 style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    Name = name;
-    UsedBy = usedBy;
+    _Name = name;
+    _UsedBy = usedBy;
 
-    Flags = flags;
+    _Flags = flags;
 
     _ColorSource = colorSource;
     _ColorIndex = colorIndex;
@@ -85,9 +84,9 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
 }
 
 /// <summary>
-/// Updates the current color based on the color source.
+/// sets the current color based on the color source.
 /// </summary>
-void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
+void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient_stops_t & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
 {
     switch (_ColorSource)
     {
@@ -105,13 +104,21 @@ void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::
 
         case ColorSource::DominantColor:
         {
-            _CurrentColor = dominantColor;
+            _CurrentColor = artworkDominantColor;
             break;
         }
 
         case ColorSource::Gradient:
         {
             _CurrentColor = D2D1::ColorF(0, 0.f);
+
+            if (_ColorScheme == ColorScheme::Artwork)
+                _CurrentGradientStops = artworkGradientStops;
+            else
+            if (_ColorScheme == ColorScheme::Custom)
+                _CurrentGradientStops = _CustomGradientStops;
+            else
+                _CurrentGradientStops = GetBuiltInGradientStops(_ColorScheme);
             break;
         }
 
@@ -123,7 +130,7 @@ void style_t::UpdateCurrentColor(const D2D1_COLOR_F & dominantColor, const std::
 
         case ColorSource::UserInterface:
         {
-            if (userInterfaceColors.size() > 0)
+            if (userInterfaceColors.size() != 0)
                 _CurrentColor = userInterfaceColors[std::clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
             break;
         }
@@ -157,6 +164,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
+    // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
         hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
@@ -172,9 +180,10 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
             hr = _Direct2D.CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
     }
 
-    if (_Brush)
+    if (_Brush != nullptr)
         _Brush->SetOpacity(_Opacity);
 
+    // Create the DirectX text format.
     if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
         const FLOAT FontSize = ToDIPs(_FontSize) / scaleFactor; // In DIPs
@@ -195,6 +204,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
+    // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
         hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
     else
@@ -210,7 +220,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
             hr = _Direct2D.CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
     }
 
-    if (_Brush)
+    if (_Brush != nullptr)
         _Brush->SetOpacity(_Opacity);
 
     return hr;

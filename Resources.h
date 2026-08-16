@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.03.15) P. Stuer **/
+/** $VER: Resources.h (2026.08.16) P. Stuer **/
 
 #pragma once
 
@@ -7,12 +7,12 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          10
+#define NUM_FILE_MINOR          11
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       10
+#define NUM_PRODUCT_MINOR       11
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
@@ -286,10 +286,11 @@
 #define IDC_FIT_MODE                    6086
 #define IDC_FIT_WINDOW                  6088
 
-#define IDC_ARTWORK_OPACITY_LBL         6090
-#define IDC_ARTWORK_OPACITY             6092
-#define IDC_ARTWORK_OPACITY_SPIN        6094
-#define IDC_ARTWORK_OPACITY_LBL_2       6096
+#define IDC_ARTWORK_OPACITY             6090
+#define IDC_ARTWORK_OPACITY_SPIN        6092
+
+#define IDC_ARTWORK_BLUR_SIGMA          6094
+#define IDC_ARTWORK_BLUR_SIGMA_SLIDER   6096
 
 #define IDC_NUM_ARTWORK_COLORS_LBL      6100
 #define IDC_NUM_ARTWORK_COLORS          6102
@@ -323,6 +324,7 @@
 #define IDC_REMOVE_GRAPH                5104
 
 #define IDC_VERTICAL_LAYOUT             5106
+#define IDC_OVERLAP_GRAPHS              5107
 
 #define IDC_GRAPH_DESCRIPTION_LBL       5108
 #define IDC_GRAPH_DESCRIPTION           5109
@@ -344,7 +346,6 @@
 #define IDC_ALL_CHANNELS                5124
 #define IDC_NO_CHANNELS                 5126
 
-#define IDC_CHANNEL_PAIRS_LBL           5128
 #define IDC_CHANNEL_PAIRS               5130
 
 #define IDC_SWAP_CHANNELS               5132
@@ -355,11 +356,12 @@
 
 #define IDC_X_AXIS                      4000
 
-#define IDC_X_AXIS_MODE_LBL             4002
 #define IDC_X_AXIS_MODE                 4004
 
 #define IDC_X_AXIS_TOP                  4006
 #define IDC_X_AXIS_BOTTOM               4008
+
+#define IDC_X_AXIS_DECIMALS             4010
 
 #pragma endregion
 
@@ -367,7 +369,6 @@
 
 #define IDC_Y_AXIS                      5000
 
-#define IDC_Y_AXIS_MODE_LBL             5002
 #define IDC_Y_AXIS_MODE                 5004
 
 #define IDC_Y_AXIS_LEFT                 5006
@@ -413,7 +414,6 @@
 #define IDC_ACCELERATION                7118
 
 // LEDs
-
 #define IDC_LEDS                        7120
 
 #define IDC_LED_MODE                    7122
@@ -424,7 +424,6 @@
 #define IDC_LED_INTEGRAL_SIZE           7132
 
 // Bars
-
 #define IDC_BARS                        7200
 
 // Radial Bars
@@ -488,33 +487,38 @@
 #define IDC_ROTATION_LBL                7212
 #define IDC_ROTATION                    7214
 
-#define IDC_PHOSPHOR_DECAY              7216
+#define IDC_FRAME_COUNT                 7216
 
-#define IDC_BLUR_SIGMA_LBL              7218
-#define IDC_BLUR_SIGMA                  7220
-#define IDC_DECAY_FACTOR_LBL            7222
-#define IDC_DECAY_FACTOR                7224
+#define IDC_PHOSPHOR_DECAY              7218
+
+#define IDC_BLUR_SIGMA_LBL              7220
+#define IDC_BLUR_SIGMA                  7222
+#define IDC_DECAY_FACTOR_LBL            7224
+#define IDC_DECAY_FACTOR                7226
 
 // Bit Meter
 
-#define IDC_BIT_METER                   7240
-
-#define IDC_OPACITY_MODE                7242
+#define IDC_BIT_METER_MODE              7240
+#define IDC_BITS_PER_INTEGER            7242 
+#define IDC_OPACITY_MODE                7244
 
 #pragma endregion
 
-#pragma region Styles
+/** Styles **/
 
 #define IDC_STYLES                      7500
 
-#define IDC_COLOR_SOURCE_LBL            7502
+#define IDC_SCOPE                       7502
 #define IDC_COLOR_SOURCE                7504
+#define IDC_COLOR_INDEX                 7506
+#define IDC_COLOR_BUTTON                7508
+#define IDC_COLOR_SCHEME                7510
 
-#define IDC_COLOR_INDEX_LBL             7506
-#define IDC_COLOR_INDEX                 7508
-
-#define IDC_COLOR_BUTTON_LBL            7510
-#define IDC_COLOR_BUTTON                7512
+#define IDC_GRADIENT                    7534
+#define IDC_COLOR_LIST                  7536
+#define IDC_ADD                         7538
+#define IDC_REMOVE                      7540
+#define IDC_REVERSE                     7542
 
 #define IDC_OPACITY_LBL                 7514
 #define IDC_OPACITY                     7516
@@ -524,15 +528,6 @@
 #define IDC_THICKNESS_LBL               7522
 #define IDC_THICKNESS                   7524
 #define IDC_THICKNESS_SPIN              7526
-
-#define IDC_COLOR_SCHEME_LBL            7530
-#define IDC_COLOR_SCHEME                7532
-
-#define IDC_GRADIENT                    7534
-#define IDC_COLOR_LIST                  7536
-#define IDC_ADD                         7538
-#define IDC_REMOVE                      7540
-#define IDC_REVERSE                     7542
 
 #define IDC_POSITION                    7544
 #define IDC_POSITION_LBL                7546
@@ -548,9 +543,7 @@
 #define IDC_FONT_SIZE_LBL               7560
 #define IDC_FONT_SIZE                   7562
 
-#pragma endregion
-
-#pragma region Presets
+/** Presets **/
 
 #define IDC_PRESETS_LBL                 7600
 #define IDC_PRESETS_ROOT                7602
@@ -563,8 +556,6 @@
 #define IDC_PRESET_LOAD                 7612
 #define IDC_PRESET_SAVE                 7614
 #define IDC_PRESET_DELETE               7616
-
-#pragma endregion
 
 #define IDC_RESET                       9999
 

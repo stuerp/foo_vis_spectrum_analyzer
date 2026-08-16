@@ -1,9 +1,10 @@
 
-/** $VER: CommonPage.rc (2026.03.08) P. Stuer **/
+/** $VER: CommonPage.rc (2026.06.09) P. Stuer **/
 
 #include "Resources.h"
 
 #include <winres.h>
+#include <commctrl.h>
 
 #include "CommonPageLayout.h"
 
@@ -50,10 +51,14 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
         control         "Fit window",               IDC_FIT_WINDOW,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
 
-        rtext           "Artwork opacity:"          IDC_STATIC,                     X_G03, Y_G03 + 2, W_G03, H_G03
+        rtext           "Opacity:"                  IDC_STATIC,                     X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_ARTWORK_OPACITY_SPIN,       "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "%"                         IDC_STATIC,                     X_G05, Y_G05 + 2, W_G05, H_G05
+
+        rtext           "Blur Radius:",             IDC_STATIC,                     X_G20, Y_G20 + 2, W_G20, H_G20
+        rtext           "",                         IDC_ARTWORK_BLUR_SIGMA,         X_G21, Y_G21 + 2, W_G21, H_G21
+        control         "",                         IDC_ARTWORK_BLUR_SIGMA_SLIDER, TRACKBAR_CLASS, TBS_HORZ | TBS_TOP | TBS_NOTICKS | TBS_TRANSPARENTBKGND | WS_TABSTOP, X_G22, Y_G22, W_G22, H_G22
 
         rtext           "Artwork file path:"        IDC_STATIC,                     X_G13, Y_G13 + 2, W_G13, H_G13
         edittext                                    IDC_ARTWORK_FILE_PATH,          X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP

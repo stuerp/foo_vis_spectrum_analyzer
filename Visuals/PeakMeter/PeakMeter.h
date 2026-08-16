@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2025.11.12) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.06.15) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -17,10 +17,10 @@
 
 #include <atlbase.h>
 
-#include "Element.h"
+#include "Visualization.h"
 #include "PeakMeterParts.h"
 
-class peak_meter_t : public element_t
+class peak_meter_t : public visualization_t
 {
 public:
     peak_meter_t();
@@ -33,10 +33,11 @@ public:
     virtual ~peak_meter_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
+
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -54,21 +55,21 @@ private:
 
     const FLOAT _TickSize = 4.f;
 
-    style_t * _BackgroundStyle;
+    style_t _BackgroundStyle;
 
-    style_t * _PeakStyle;
-    style_t * _Peak0dBStyle;
-    style_t * _MaxPeakStyle;
-    style_t * _PeakTextStyle;
+    style_t _PeakStyle;
+    style_t _Peak0dBStyle;
+    style_t _MaxPeakStyle;
+    style_t _PeakTextStyle;
 
-    style_t * _RMSStyle;
-    style_t * _RMS0dBStyle;
-    style_t * _RMSTextStyle;
+    style_t _RMSStyle;
+    style_t _RMS0dBStyle;
+    style_t _RMSTextStyle;
 
-    style_t * _NameStyle;
+    style_t _NameStyle;
 
-    style_t * _ScaleTextStyle;
-    style_t * _ScaleLineStyle;
+    style_t _ScaleTextStyle;
+    style_t _ScaleLineStyle;
 
     CComPtr<ID2D1Bitmap> _OpacityMask;
 

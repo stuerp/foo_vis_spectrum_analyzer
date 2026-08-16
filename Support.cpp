@@ -7,14 +7,11 @@
 #include "CustomTitleformatHook.h"
 
 #include "Direct2D.h"
-#include "SafeModuleHandle.h"
+#include "Module.h"
 
 #include <shellscalingapi.h>
 
 #pragma comment(lib, "shcore")
-
-//#include <pfc/string_conv.h>
-//#include <pfc/string-conv-lite.h>
 
 #pragma hdrstop
 
@@ -31,7 +28,7 @@ HRESULT InitializeDpiAwareness() noexcept
 /// </summary>
 HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
 {
-    safe_module_handle_t Module = safe_module_handle_t(L"user32.dll");
+    auto Module = module_t(L"user32.dll");
 
     typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
 

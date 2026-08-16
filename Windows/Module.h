@@ -1,5 +1,5 @@
 
-/** $VER: SafeModuleHandle.h (2024.03.09) P. Stuer **/
+/** $VER: Module.h (2026.08.16) P. Stuer **/
 
 #pragma once
 
@@ -10,15 +10,15 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
-class safe_module_handle_t
+class module_t
 {
 public:
-    safe_module_handle_t(const WCHAR * libraryName)
+    module_t(const WCHAR * libraryName)
     {
         _Handle = ::LoadLibraryW(libraryName);
     }
 
-    virtual ~safe_module_handle_t()
+    virtual ~module_t()
     {
         if (_Handle != nullptr)
         {

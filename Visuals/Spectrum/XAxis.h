@@ -11,7 +11,7 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Element.h"
+#include "Visualization.h"
 #include "State.h"
 #include "FrequencyBand.h"
 
@@ -22,7 +22,7 @@
 /// Implements the X axis of a graph.
 /// </summary>
 #pragma warning(disable: 4820)
-class x_axis_t : public element_t
+class x_axis_t : public visualization_t
 {
 public:
     x_axis_t() : _BandCount(), _LoFrequency(), _HiFrequency() { }
@@ -33,17 +33,19 @@ public:
     x_axis_t & operator=(x_axis_t &&) = delete;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
+
+    // visualization_t
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle->_Height;
+        return _TextStyle._Height;
     }
 
 private:
@@ -70,6 +72,6 @@ private:
 
     std::vector<label_t> _Labels;
 
-    style_t * _LineStyle;
-    style_t * _TextStyle;
+    style_t _LineStyle;
+    style_t _TextStyle;
 };

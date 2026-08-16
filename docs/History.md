@@ -1,6 +1,54 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.11.0.0-alpha6, 2026-07-04
+
+- New: `Frame count` setting determines the number of audio frames that will be used by the oscilloscope per screen update.
+- Fixed: Initializing gradient brushes (Regression)
+- Fixed: Phosphor Decay setting was not respected (Regression)
+
+v0.11.0.0-alpha5, 2026-06-24
+
+- New: Overlapping graphs support for bar, curve, radial bar and radial curve visualizations. See `Overlap graphs` option on the `Graph` page.
+  - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render two or more channels with different colors on top of each other.
+- New: Global and local styles.
+  - Each graph can have its own styles. This is particularly useful for overlapping graphs.
+  - Make sure the styles of overlapping visual elements are set to `None` to prevent overpainting (e.g. the background style of all but the first graph).
+- New: Channel Pair can be configured per graph.
+- Improved: Significantly improved the afterglow effect of the oscilloscope. Also, it should work now with a transparent background.
+- Fixed: Artwork Blur for high DPI screens.
+- Fixed: Switching between oscilloscope modes was not picked up until a new track started. (Regression)
+- Fixed: Level Meter should not show a measurement unless all channels of the selected channel pair were selected for measurement.
+- Fixed: Weird caret behavior of the numeric edit controls.
+
+v0.11.0.0-alpha4, 2026-06-09
+
+- New: Artwork can be blurred. Setting the number of pixels to 0 (default) disables the blurring.
+- Fixed: Static content of the bit meter did not resize correctly.
+
+v0.11.0.0-alpha3, 2026-05-30
+
+- Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.
+- Fixed: The JSON configuration file reader ignored the Y-axis visibility setting.
+
+v0.11.0.0-alpha2, 2026-05-25
+
+- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
+
+v0.11.0.0-alpha1, 2026-05-24
+
+- New: The number of decimals used by the X-axis labels can be configured.
+- New: Added Integer mode to the Bit Meter visualization.
+  - The number of bits can be configured.
+- Changed: Saves the settings as a human-readable JSON object.
+  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
+  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
+- Changed: Builds with Visual Studio 2026.
+
+v0.10.0.0, 2026-03-15
+
+- Release to repository.
+
 v0.10.0.0-beta2, 2026-03-13
 
 - Fixed: Clicking the Reset button resulted in a crash. (Regression)

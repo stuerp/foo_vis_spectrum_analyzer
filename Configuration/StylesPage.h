@@ -1,16 +1,13 @@
 
-/** $VER: StylesPage.h (2026.03.07) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.06.15) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
-
 #include "Page.h"
 #include "Resources.h"
-#include "State.h"
+#include "Constants.h"
 
 class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
@@ -76,10 +73,74 @@ private:
 
 private:
     std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
-    std::vector<VisualElement> _ActiveStyles;   // The styles relevant to the current visualization.
+    std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
     size_t _SelectedStyle;                      // Index of the selected style in the listbox.
 
     CColorButton _Color;
     CColorButton _Gradient;
     CColorListBox _Colors;
+
+    style_manager_t * _StyleManager;
+
+    // An index of the styles to determine the display order in the configuration dialog.
+    const VisualElement _StyleDisplayOrder[(size_t) VisualElement::Count] =
+    {
+        VisualElement::GraphBackground,
+        VisualElement::GraphDescriptionText,
+        VisualElement::GraphDescriptionBackground,
+
+        VisualElement::XAxisText,
+        VisualElement::XAxisLine,
+
+        VisualElement::YAxisText,
+        VisualElement::YAxisLine,
+
+        VisualElement::HorizontalGridLine,
+        VisualElement::VerticalGridLine,
+
+        VisualElement::NyquistMarker,
+
+        // Spectrum Analyzer
+        VisualElement::BarArea,
+        VisualElement::BarTop,
+
+        VisualElement::BarPeakArea,
+        VisualElement::BarPeakTop,
+
+        VisualElement::BarDarkBackground,
+        VisualElement::BarLightBackground,
+
+        VisualElement::CurveLine,
+        VisualElement::CurveArea,
+        VisualElement::CurvePeakLine,
+        VisualElement::CurvePeakArea,
+
+        // Spectrogram
+        VisualElement::Spectrogram,
+
+        // Peak Meter
+        VisualElement::BarBackground,
+        VisualElement::BarPeakLevel,
+        VisualElement::Bar0dBPeakLevel,
+        VisualElement::BarMaxPeakLevel,
+        VisualElement::BarPeakLevelText,
+        VisualElement::BarRMSLevel,
+        VisualElement::Bar0dBRMSLevel,
+        VisualElement::BarRMSLevelText,
+
+        // Level Meter
+        VisualElement::BarLeftRight,
+        VisualElement::BarLeftRightIndicator,
+        VisualElement::BarMidSide,
+        VisualElement::BarMidSideIndicator,
+        VisualElement::LevelMeterAxis,
+
+        // Oscilloscope
+        VisualElement::SignalLine,
+
+        // Bit Meter
+        VisualElement::BarSign,
+        VisualElement::BarExponent,
+        VisualElement::BarMantissa,
+    };
 };

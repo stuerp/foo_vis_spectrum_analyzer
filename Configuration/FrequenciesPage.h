@@ -5,8 +5,8 @@
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
+#include <SDK\coreDarkMode.h>
+#include <SDK\cfg_var.h>
 
 #include "Page.h"
 #include "Resources.h"

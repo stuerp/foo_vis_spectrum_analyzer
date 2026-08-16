@@ -1,16 +1,11 @@
 
-/** $VER: GraphsPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: GraphsPage.h (2026.06.15) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
-
 #include "Page.h"
-#include "Resources.h"
-#include "State.h"
 
 class graphs_page_t : public page_t
 {

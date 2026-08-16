@@ -6,9 +6,6 @@
 #include "PresetsPage.h"
 #include "PresetManager.h"
 
-#include "Support.h"
-#include "Log.h"
-
 /// <summary>
 /// Initializes the page.
 /// </summary>
@@ -278,14 +275,14 @@ void presets_page_t::GetPreset(const std::wstring & presetName) noexcept
 
     PresetManager::Load(_State->_PresetsDirectoryPath, presetName, &NewState);
 
-    NewState._StyleManager.DominantColor       = _State->_StyleManager.DominantColor;
-    NewState._StyleManager.UserInterfaceColors = _State->_StyleManager.UserInterfaceColors;
-
-    NewState._StyleManager.UpdateCurrentColors();
+    NewState._ArtworkDominantColor = _State->_ArtworkDominantColor;
+    NewState._UserInterfaceColors  = _State->_UserInterfaceColors;
 
     NewState._ActivePresetName = presetName;
 
     *_State = NewState;
+
+    _State->_RecreateStyles = true;
 
     InitializeControls();
 }

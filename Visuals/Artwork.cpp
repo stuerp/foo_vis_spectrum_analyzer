@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2025.10.22) P. Stuer **/
+/** $VER: Artwork.cpp (2026.06.10) P. Stuer **/
 
 #include "pch.h"
 
@@ -7,7 +7,9 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
-#include "Support.h"
+
+#include <State.h>
+#include <Constants.h>
 
 #pragma hdrstop
 
@@ -16,7 +18,7 @@
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -45,8 +47,6 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 
     SetStatus(Initialized);
 
-    _CriticalSection.Leave();
-
     return hr;
 }
 
@@ -55,7 +55,7 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -81,8 +81,6 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 
     SetStatus(Initialized);
 
-    _CriticalSection.Leave();
-
     return S_OK;
 }
 
@@ -91,7 +89,7 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 /// </summary>
 HRESULT artwork_t::DeleteWICResources() noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
 
@@ -106,8 +104,6 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 
     SetStatus(Idle);
 
-    _CriticalSection.Leave();
-
     return S_OK;
 }
 
@@ -116,9 +112,9 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 /// </summary>
 HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
 {
-    HRESULT hr = E_FAIL;
+    msc::lock_t Lock(_CriticalSection);
 
-    _CriticalSection.Enter();
+    HRESULT hr = E_FAIL;
 
     if (_FormatConverter != nullptr)
     {
@@ -130,7 +126,7 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 
         if (SUCCEEDED(hr))
         {
-            uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+            const uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
 
             hr = ColorThief::GetPalette(_FormatConverter, Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
         }
@@ -155,8 +151,6 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 
     SetStatus(GotColors);
 
-    _CriticalSection.Leave();
-
     return hr;
 }
 
@@ -165,55 +159,73 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 /// </summary>
 void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
-    if (_Bitmap != nullptr)
+    if (_Bitmap == nullptr)
+        return;
+
+    FLOAT Scalar = 1.f;
+    D2D1_RECT_F Rect = rect;
+
+    AdjustRect(state->_FitMode, Scalar, Rect);
+
+    if (state->_ArtworkBlurSigma == 0.f)
     {
-        D2D1_RECT_F Rect = rect;
-
-        AdjustRect(state->_FitMode, Rect);
-
         deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
+    else
+    {
+        FLOAT DPIX, DPIY;
 
-    _CriticalSection.Leave();
+        deviceContext->GetDpi(&DPIX, &DPIY);
+
+        const FLOAT DPIScale = DPIX / 96.f;
+
+        _ScaleEffect->SetInput(0, _Bitmap);
+        _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
+
+        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, state->_ArtworkOpacity);
+
+        const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
+
+        deviceContext->DrawImage(_OpacityEffect, Offset);
+    }
 }
 
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
-void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rect) const noexcept
+void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept
 {
     const FLOAT MaxWidth  = rect.right  - rect.left;
     const FLOAT MaxHeight = rect.bottom - rect.top;
 
-    FLOAT WScalar = 1.f;
-    FLOAT HScalar = 1.f;
-
-    FLOAT Scalar = 1.f;
+    FLOAT WScalar = 1.f, HScalar = 1.f;
 
     D2D1_SIZE_F Size = _Bitmap->GetSize();
 
     if (fitMode != FitMode::Fill)
     {
         if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitBig))
-            WScalar = (Size.width  > MaxWidth)  ? (FLOAT) MaxWidth  / (FLOAT) Size.width  : 1.f;
+            WScalar = (Size.width  > MaxWidth)  ? MaxWidth  / Size.width  : 1.f;
 
         if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitBig))
-            HScalar = (Size.height > MaxHeight) ? (FLOAT) MaxHeight / (FLOAT) Size.height : 1.f;
+            HScalar = (Size.height > MaxHeight) ? MaxHeight / Size.height : 1.f;
 
-        Scalar = std::min(WScalar, HScalar);
+        scalar = std::min(WScalar, HScalar);
     }
     else
     {
-        WScalar = (Size.width  > MaxWidth)  ? (FLOAT) Size.width  / (FLOAT) MaxWidth  : (FLOAT) MaxWidth  / (FLOAT) Size.width;
-        HScalar = (Size.height > MaxHeight) ? (FLOAT) Size.height / (FLOAT) MaxHeight : (FLOAT) MaxHeight / (FLOAT) Size.height;
+        WScalar = (Size.width  > MaxWidth)  ? Size.width  / MaxWidth  : MaxWidth  / Size.width;
+        HScalar = (Size.height > MaxHeight) ? Size.height / MaxHeight : MaxHeight / Size.height;
 
-        Scalar = std::max(WScalar, HScalar);
+        scalar = std::max(WScalar, HScalar);
     }
 
-    Size.width  *= Scalar;
-    Size.height *= Scalar;
+    Size.width  *= scalar;
+    Size.height *= scalar;
 
     rect.left   += (MaxWidth  - Size.width)  / 2.f;
     rect.top    += (MaxHeight - Size.height) / 2.f;
@@ -227,20 +239,55 @@ void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rec
 /// </summary>
 HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _CriticalSection.Enter();
+    HRESULT hr = S_OK;
 
-    HRESULT hr = (_FormatConverter != nullptr) ? S_OK : E_FAIL;
-
-    // Create a Direct2D bitmap from the WIC bitmap source.
-    if (SUCCEEDED(hr) && (_Bitmap == nullptr))
     {
-        hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+        msc::lock_t Lock(_CriticalSection);
 
-        if (SUCCEEDED(hr))
-            SetStatus(GotBitmap);
+        // No format converter means no artwork.
+        if (_FormatConverter == nullptr)
+            return E_FAIL;
+
+        // Create a Direct2D bitmap from the WIC bitmap source.
+        if (_Bitmap == nullptr)
+        {
+            hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+
+            if (SUCCEEDED(hr))
+                SetStatus(GotBitmap);
+        }
     }
 
-    _CriticalSection.Leave();
+    if (_ScaleEffect == nullptr)
+    {
+        hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_BlurEffect == nullptr)
+    {
+        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+
+        _BlurEffect->SetInputEffect(0, _ScaleEffect);
+    }
+
+    if (_OpacityEffect == nullptr)
+    {
+        hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _OpacityEffect->SetInputEffect(0, _BlurEffect);
+    }
 
     return hr;
 }
@@ -250,11 +297,15 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 /// </summary>
 void artwork_t::DeleteDeviceSpecificResources() noexcept
 {
-    _CriticalSection.Enter();
+    _OpacityEffect.Release();
+    _BlurEffect.Release();
+    _ScaleEffect.Release();
 
-    _Bitmap.Release();
+    {
+        msc::lock_t Lock(_CriticalSection);
 
-    SetStatus(Initialized);
+        _Bitmap.Release();
 
-    _CriticalSection.Leave();
+        SetStatus(Initialized);
+    }
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2025.10.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -17,11 +17,11 @@
 
 #include <atlbase.h>
 
-#include "Element.h"
+#include "Visualization.h"
 
 #include <deque>
 
-class spectrogram_t : public element_t
+class spectrogram_t : public visualization_t
 {
 public:
     spectrogram_t();
@@ -34,15 +34,17 @@ public:
     virtual ~spectrogram_t();
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
+    // visualization_t
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
 private:
-    bool Update() noexcept;
+    bool RenderSpectrum() noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * deviceContext) const noexcept;
 
@@ -56,6 +58,23 @@ private:
 
     void Resize() noexcept;
 
+    static frequency_bands_t DecimateSpectrum(const frequency_bands_t & fb, size_t targetCount) noexcept;
+    static frequency_bands_t ResampleSpectrum(const frequency_bands_t & fb, size_t targetCount, int lobe = 3) noexcept;
+
+    // Lanczos-windowed sinc kernel
+    inline static double Lanczos(double x, int a) noexcept
+    {
+        if (x == 0.)
+            return 1.;
+
+        if (std::abs(x) >= a)
+            return 0;
+
+        const double PiX = M_PI * x;
+
+        return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
+    }
+
 private:
     D2D1_RECT_F _BitmapRect;
     FLOAT _X;
@@ -64,7 +83,6 @@ private:
     double _TrackTime;
     bool _RequestErase;
 
-    size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
 
@@ -111,15 +129,15 @@ private:
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
-    style_t * _SpectrogramStyle;
+    style_t _SpectrogramStyle;
 
-    style_t * _TimeLineStyle;
-    style_t * _TimeTextStyle;
+    style_t _TimeLineStyle;
+    style_t _TimeTextStyle;
 
-    style_t * _FreqLineStyle;
-    style_t * _FreqTextStyle;
+    style_t _FreqLineStyle;
+    style_t _FreqTextStyle;
 
-    style_t * _NyquistMarkerStyle;
+    style_t _NyquistMarkerStyle;
 
     D2D1_SIZE_F _BitmapSize;
 

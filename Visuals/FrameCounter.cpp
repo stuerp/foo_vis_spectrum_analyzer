@@ -44,30 +44,32 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
+    if (!SUCCEEDED(hr))
+        return hr;
+
     const FLOAT Inset = 4.f;
 
     static WCHAR Text[512] = { };
 
-    if (SUCCEEDED(hr))
-        hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
+    hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
 
-    if (SUCCEEDED(hr) && (_Brush != nullptr))
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    const D2D1_RECT_F Rect = { _ClientWidth - 2.f - (Inset + _TextWidth + Inset), 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
+
+    // Draw the background.
     {
-        const D2D1_RECT_F Rect = { _ClientWidth - 2.f - (Inset + _TextWidth + Inset), 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
+        _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
-        // Draw the background.
-        {
-            _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
+    }
 
-            deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
-        }
+    // Draw the text.
+    {
+        _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-        // Draw the text.
-        {
-            _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
-
-            deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
-        }
+        deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     return hr;

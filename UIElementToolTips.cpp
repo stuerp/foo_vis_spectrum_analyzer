@@ -1,5 +1,5 @@
 
-/** $VER: ToolTips.cpp (2025.11.12) P. Stuer **/
+/** $VER: UIElementToolTips.cpp (2025.11.12) P. Stuer **/
 
 #include "pch.h"
 #include "UIElement.h"
@@ -22,7 +22,7 @@ void uielement_t::CreateToolTipControl() noexcept
 /// <summary>
 /// Handles mouse move messages.
 /// </summary>
-void uielement_t::OnMouseMove(UINT, CPoint pt)
+void uielement_t::OnMouseMove(UINT, CPoint pt) noexcept
 {
     if (!_ToolTipControl.IsWindow() || (!_UIState._ShowToolTipsAlways && !_UIState._ShowToolTipsNow))
         return;
@@ -148,7 +148,7 @@ void uielement_t::OnMouseMove(UINT, CPoint pt)
 /// <summary>
 /// Turns off the tracking tooltip when the mouse leaves the window.
 /// </summary>
-void uielement_t::OnMouseLeave()
+void uielement_t::OnMouseLeave() noexcept
 {
     POINT pt; GetCursorPos(&pt); HWND hWndNew = WindowFromPoint(pt);
 

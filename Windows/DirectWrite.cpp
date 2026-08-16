@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "DirectWrite.h"
 
-#include <libmsc.h>
+#include <Win32Exception.h>
 
 #pragma comment(lib, "dwrite")
 

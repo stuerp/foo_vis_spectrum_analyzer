@@ -1,16 +1,20 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.03.13) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.06.29) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
 #include "ConfigurationDialog.h"
-#include "Gradients.h"
-#include "Layout.h"
-#include "CColorDialogEx.h"
-#include "PresetManager.h"
-#include "Support.h"
+#include "ConfigurationDialogLayout.h"
 
-#include "Direct2D.h"
+#include "VisualizationPage.h"
+#include "TransformPage.h"
+#include "FrequenciesPage.h"
+#include "FiltersPage.h"
+#include "CommonPage.h"
+#include "GraphsPage.h"
+#include "StylesPage.h"
+#include "PresetsPage.h"
+
 #include "Theme.h"
 
 #include "Log.h"
@@ -31,17 +35,17 @@ BOOL configuration_dialog_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
     _hParent = _DialogParameters->_hWnd;
     _State   = _DialogParameters->_State;
 
-    if (IsRectEmpty(&_State->_DialogRect))
+    if (IsRectEmpty(&_State->_Bounds))
     {
-        _State->_DialogRect.right  = W_A00;
-        _State->_DialogRect.bottom = H_A00;
+        _State->_Bounds.right  = W_A00;
+        _State->_Bounds.bottom = H_A00;
 
-        ::MapDialogRect(m_hWnd, &_State->_DialogRect);
+        ::MapDialogRect(m_hWnd, &_State->_Bounds);
     }
 
     _OldState = *_State;
 
-    MoveWindow(&_State->_DialogRect);
+    MoveWindow(&_State->_Bounds);
 
     _DarkMode.AddDialogWithControls(*this);
 
@@ -144,7 +148,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 ConfigurationChanged(ConfigurationChanges::All);
             }
 
-            GetWindowRect(&_State->_DialogRect);
+            GetWindowRect(&_State->_Bounds);
 
             TerminateControls(); // Don't call from WM_DESTROY handler.
             DestroyWindow();

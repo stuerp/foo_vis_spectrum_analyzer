@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2025.10.22) P. Stuer  **/
+/** $VER: Artwork.h (2026.06.10) P. Stuer  **/
 
 #pragma once
 
@@ -10,13 +10,12 @@
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
 #include <Windows.h>
-#include <d2d1_2.h>
+#include <d2d1.h>
 
-#include <libmsc.h>
+#include <RAII.h>
 
 #include "State.h"
-
-#include "Log.h"
+#include <Constants.h>
 
 class artwork_t
 {
@@ -51,7 +50,7 @@ public:
     HRESULT DeleteWICResources() noexcept;
 
 private:
-    void AdjustRect(_In_ const FitMode fitMode, _Inout_ D2D1_RECT_F & rect) const noexcept;
+    void AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
 
 private:
     enum Status
@@ -66,11 +65,9 @@ private:
 
     void SetStatus(Status status) noexcept
     {
-        _CriticalSection.Enter();
+        msc::lock_t Lock(_CriticalSection);
 
         _Status = status;
-
-        _CriticalSection.Leave();
     }
 
 private:
@@ -82,6 +79,10 @@ private:
     CComPtr<IWICBitmapFrameDecode> _Frame;
     CComPtr<IWICFormatConverter> _FormatConverter;
     CComPtr<ID2D1Bitmap> _Bitmap;
+
+    CComPtr<ID2D1Effect> _ScaleEffect;
+    CComPtr<ID2D1Effect> _BlurEffect;
+    CComPtr<ID2D1Effect> _OpacityEffect;
 
     Status _Status;
 };

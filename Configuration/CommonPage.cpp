@@ -1,10 +1,9 @@
 
-/** $VER: CommonPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "CommonPage.h"
-#include "Support.h"
 #include "Log.h"
 
 /// <summary>
@@ -29,12 +28,15 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_COLOR_ORDER, "Determines how to sort the colors selected from the artwork." },
 
         { IDC_ARTWORK_BACKGROUND, "Renders artwork on the graph background." },
-        { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background." },
+        { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background or will be used to extract colors from." },
 
         { IDC_FIT_MODE, "Determines how over- and undersized artwork is rendered." },
         { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },
 
         { IDC_ARTWORK_OPACITY, "Determines the opacity of the artwork when displayed." },
+
+        { IDC_ARTWORK_BLUR_SIGMA_SLIDER, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
+
         { IDC_ARTWORK_FILE_PATH, "A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background" },
 
         // Component
@@ -103,6 +105,16 @@ void common_page_t::InitializeControls() noexcept
         w.SetRange32((int) (MinArtworkOpacity * 100.f), (int) (MaxArtworkOpacity * 100.f));
         w.SetPos32((int) (_State->_ArtworkOpacity * 100.f));
         w.SetAccel(_countof(Accel), Accel);
+    }
+    {
+        auto w = (CTrackBarCtrl) GetDlgItem(IDC_ARTWORK_BLUR_SIGMA_SLIDER);
+
+        w.SetBuddy(GetDlgItem(IDC_ARTWORK_BLUR_SIGMA), TRUE);
+        w.SetRange((int) MinArtworkBlurSigma, (int) MaxArtworkBlurSigma * 10);
+        w.SetPageSize(1);
+        w.SetPos((int) (_State->_ArtworkBlurSigma * 10.f));
+
+        SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma * 3.f).c_str()); // Blur radius = 3 x σ (ref. D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION)
     }
     {
         UDACCEL Accel[] =
@@ -192,6 +204,7 @@ void common_page_t::UpdateControls() noexcept
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
+    // Common
     const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
@@ -201,7 +214,7 @@ void common_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
 
     // Artwork
-    const bool SupportsArtworkOnBackground = !(IsPeakMeter || IsLevelMeter || IsOscilloscope);
+    const bool SupportsArtworkOnBackground = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter);
 
     GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsArtworkOnBackground);
 
@@ -209,6 +222,7 @@ void common_page_t::UpdateControls() noexcept
     {
         IDC_FIT_MODE, IDC_FIT_WINDOW,
         IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN,
+        IDC_ARTWORK_BLUR_SIGMA, IDC_ARTWORK_BLUR_SIGMA_SLIDER,
         IDC_ARTWORK_FILE_PATH
     })
         GetDlgItem(ID).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
@@ -376,18 +390,21 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         // Artwork
         case IDC_NUM_ARTWORK_COLORS:
         {
-            SetInteger(id, _State->_NumArtworkColors); break;
+            SetInteger(id, _State->_NumArtworkColors);
+            break;
         }
 
         case IDC_LIGHTNESS_THRESHOLD:
         {
-            SetInteger(id, (int64_t) (_State->_LightnessThreshold * 100.f)); break;
+            SetInteger(id, (int64_t) (_State->_LightnessThreshold * 100.f));
+            break;
         }
 
         // Artwork Background
         case IDC_ARTWORK_OPACITY:
         {
-            SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f)); break;
+            SetInteger(id, (int64_t) (_State->_ArtworkOpacity * 100.f));
+            break;
         }
     }
 
@@ -497,6 +514,36 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     }
 
     ConfigurationChanged(ChangedSettings);
+
+    return 0;
+}
+
+/// <summary>
+/// Handles the notification from the track bar.
+/// </summary>
+LRESULT common_page_t::OnHScroll(UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+{
+    if ((LOWORD(wParam) != TB_ENDTRACK) && (LOWORD(wParam) != TB_THUMBTRACK))
+        return 1;
+
+    const int ID = ::GetDlgCtrlID((HWND) lParam);
+    auto w = (CTrackBarCtrl) GetDlgItem(ID);
+
+    switch (ID)
+    {
+        case IDC_ARTWORK_BLUR_SIGMA_SLIDER:
+        {
+            _State->_ArtworkBlurSigma = (FLOAT) w.GetPos() / 10.f;
+
+            SetDlgItemText(IDC_ARTWORK_BLUR_SIGMA, msc::FormatText(L"%.1f pixels", _State->_ArtworkBlurSigma * 3.f).c_str()); // Blur radius = 3 x σ (ref. D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION)
+            break;
+        }
+
+        default:
+            return 1; // Notification not processed
+    }
+
+    ConfigurationChanged(ConfigurationChanges::Artwork);
 
     return 0;
 }

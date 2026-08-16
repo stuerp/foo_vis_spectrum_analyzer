@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2025.09.28) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.06.17) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -11,24 +11,19 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Support.h"
-
-#include "Element.h"
-#include "Gradients.h"
+#include "Visualization.h"
 
 #include "XAxis.h"
 #include "YAxis.h"
 
 #include "Chrono.h"
 
-#include <valarray>
 #include <vector>
-#include <string>
 
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class spectrum_t : public element_t
+class spectrum_t : public visualization_t
 {
 public:
     spectrum_t() {}
@@ -41,10 +36,12 @@ public:
     virtual ~spectrum_t();
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
+
+    // visualization_t
+    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -55,9 +52,9 @@ private:
     void Resize() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * areaStyle, const style_t * topStyle, double value, double opacity) noexcept;
+    void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;
 
-    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t * style) const noexcept;
+    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
 
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
@@ -106,17 +103,17 @@ private:
     // Device-dependent resources
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
-    style_t * _BarAreaStyle;
-    style_t * _BarTopStyle;
-    style_t * _BarPeakAreaStyle;
-    style_t * _BarPeakTopStyle;
-    style_t * _DarkBackgroundStyle;
-    style_t * _LightBackgroundStyle;
+    style_t _BarAreaStyle;
+    style_t _BarTopStyle;
+    style_t _BarPeakAreaStyle;
+    style_t _BarPeakTopStyle;
+    style_t _DarkBackgroundStyle;
+    style_t _LightBackgroundStyle;
 
-    style_t * _CurveLineStyle;
-    style_t * _CurveAreaStyle;
-    style_t * _CurvePeakLineStyle;
-    style_t * _CurvePeakAreaStyle;
+    style_t _CurveLineStyle;
+    style_t _CurveAreaStyle;
+    style_t _CurvePeakLineStyle;
+    style_t _CurvePeakAreaStyle;
 
-    style_t * _NyquistMarkerStyle;
+    style_t _NyquistMarkerStyle;
 };

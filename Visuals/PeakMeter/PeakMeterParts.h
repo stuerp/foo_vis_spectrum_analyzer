@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2025.11.12) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2026.06.15) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -26,10 +26,10 @@
 class part_t
 {
 public:
-    part_t(const state_t * state, const graph_description_t * settings) noexcept : _Rect()
+    part_t(const state_t * state, const graph_options_t * settings) noexcept : _Rect()
     {
         _State    = state;
-        _Settings = settings;
+        _GraphOptions = settings;
     }
 
     virtual ~part_t() = default;
@@ -49,7 +49,7 @@ private:
 
 protected:
     const state_t * _State;
-    const graph_description_t * _Settings;
+    const graph_options_t * _GraphOptions;
 
     D2D1_RECT_F _Rect;
     D2D1_SIZE_F _Size;
@@ -77,6 +77,11 @@ protected:
 
     CComPtr<ID2D1DeviceContext> _DeviceContext;
 
+    CComPtr<IDWriteTextLayout> _NameTextLayout;
+
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    CComPtr<ID2D1Bitmap> _OpacityMask;
+
     const FLOAT _TickSize = 4.f;
 
     style_t * _BackgroundStyle;
@@ -94,11 +99,6 @@ protected:
 
     style_t * _ScaleTextStyle;
     style_t * _ScaleLineStyle;
-
-    CComPtr<IDWriteTextLayout> _NameTextLayout;
-
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-    CComPtr<ID2D1Bitmap> _OpacityMask;
 };
 
 /// <summary>
@@ -107,11 +107,11 @@ protected:
 class bar_t : public part_t
 {
 public:
-    bar_t(const state_t * state, const graph_description_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
+    bar_t(const state_t * state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
     {
         _Measurement = measurement;
 
-        _dBFSZeroNormalized = msc::Map(0., _Settings->_AmplitudeLo, _Settings->_AmplitudeHi, 0., 1.);
+        _dBFSZeroNormalized = msc::Map(0., _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, 0., 1.);
     }
 
     bar_t(const bar_t &) = delete;
@@ -147,7 +147,7 @@ private:
 class scale_t : public part_t
 {
 public:
-    scale_t(const state_t * state, const graph_description_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
+    scale_t(const state_t * state, const graph_options_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
     {
         _TextAlignment      = textAlignment;
         _ParagraphAlignment = paragraphAlignment;

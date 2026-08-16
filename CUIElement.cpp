@@ -1,23 +1,21 @@
 
-/** $VER: CUIElement.cpp (2024.03.13) P. Stuer **/
+/** $VER: CUIElement.cpp (2026.03.22) P. Stuer **/
 
 #include "pch.h"
 
 #include "CUIElement.h"
-#include "Color.h"
+#include "CUINotificationHandler.h"
 
-#include "ui_extension.h"
+#include "Color.h"
 
 #pragma hdrstop
 
 namespace uie
 {
-static cui::colours::client::factory<CUIColorClient> _CUIColorClientFactory;
-
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-CUIElement::CUIElement()
+cui_element_t::cui_element_t()
 {
     _IsVisible = true; // CUI does send notifications.
 
@@ -29,14 +27,14 @@ CUIElement::CUIElement()
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-CUIElement::~CUIElement()
+cui_element_t::~cui_element_t() noexcept
 {
 }
 
 /// <summary>
 /// Creates or transfers the window.
 /// </summary>
-HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
+HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_ptr & newHost, const ui_helpers::window_position_t & position)
 {
     if (*this == nullptr)
     {
@@ -61,7 +59,7 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
         SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
-    CUIColorClient::Register(this);
+    cui_notification_handler_t::Register(this);
 
     return *this;
 }
@@ -69,44 +67,21 @@ HWND CUIElement::create_or_transfer_window(HWND hParent, const window_host_ptr &
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void CUIElement::destroy_window()
+void cui_element_t::destroy_window()
 {
-    CUIColorClient::Unregister(this);
+    cui_notification_handler_t::Unregister(this);
 
     ::DestroyWindow(*this);
 
     _Host.release();
 }
-/*
-/// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
-{
-    if (!_IsInitializing)
-        return 0;
 
-    RECT cr;
-
-    GetClientRect(&cr);
-
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._StyleManager.UserInterfaceColors[3]);
-
-    ::FillRect(hDC, &cr, hBrush);
-
-    ::DeleteObject((HGDIOBJ) hBrush);
-
-    _IsInitializing = false;
-
-    return 1; // Prevent GDI from erasing the background. Required for transparency.
-}
-*/
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>
-void CUIElement::ToggleFullScreen() noexcept
+void cui_element_t::ToggleFullScreen() noexcept
 {
-    _CriticalSection.Enter();
+    msc::lock_t Lock(_CriticalSection);
 
     if (!_IsFullScreen)
     {
@@ -156,40 +131,27 @@ void CUIElement::ToggleFullScreen() noexcept
 
         _IsFullScreen = false;
     }
-
-    _CriticalSection.Leave();
 }
 
 /// <summary>
 /// Gets the user interface colors.
 /// </summary>
-void CUIElement::GetColors() noexcept
+void cui_element_t::GetColors() noexcept
 {
     cui::colours::helper Helper(pfc::guid_null);
 
-    _UIState._StyleManager.UserInterfaceColors.clear();
+    _UIState._UserInterfaceColors.clear();
 
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_text)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_text)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_text)));
 
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_background)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_selection_background)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_inactive_selection_background)));
 
-    _UIState._StyleManager.UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
+    _UIState._UserInterfaceColors.push_back(color_t::ToD2D1_COLOR_F(Helper.get_colour(cui::colours::colour_active_item_frame)));
 }
 
-static uie::window_factory<CUIElement> _WindowFactory;
-
-void CUIColorClient::on_colour_changed(uint32_t changed_items_mask) const
-{
-    for (auto Iter : _Elements)
-        Iter->OnColorsChanged();
-}
-
-void CUIColorClient::on_bool_changed(uint32_t changed_items_mask) const
-{
-}
-
+static uie::window_factory<cui_element_t> _WindowFactory;
 }

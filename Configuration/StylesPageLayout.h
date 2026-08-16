@@ -1,24 +1,36 @@
 
-/** $VER: StylesPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: StylesPageLayout.h (2026.06.10) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
 #include "ConfigurationDialogLayout.h"
 
 #define W_I00    W_A00 - IX - W_D01 - IX - IX
-#define H_I00    H_A00 - IY - IY - H_BTN - IY
+#define H_I00    H_A00 - IY - IY - H_BTN - IY - IY
 
 // Listbox
 #define W_I01    112
-#define H_I01    H_I00
+#define H_I01    291
 #define X_I01    0
 #define Y_I01    0
+
+// Label: Scope
+#define W_I50    48
+#define H_I50    H_LBL
+#define X_I50    X_I01 + W_I01 + IX
+#define Y_I50    Y_I01
+
+// Combobox: Scope
+#define W_I52    82
+#define H_I52    H_CBX
+#define X_I52    X_I50 + W_I50 + IX
+#define Y_I52    Y_I50
 
 // Label: Source
 #define W_I02    48
 #define H_I02    H_LBL
-#define X_I02    X_I01 + W_I01 + IX
-#define Y_I02    Y_I01
+#define X_I02    X_I50
+#define Y_I02    Y_I52 + H_I52 + IY
 
 // Combobox: Source
 #define W_I03    82

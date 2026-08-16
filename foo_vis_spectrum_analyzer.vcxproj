@@ -37,37 +37,37 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -96,21 +96,28 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)int\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <OutDir>$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\int\$(PlatformTarget)-$(Configuration)-$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -118,7 +125,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)sdk\foobar2000\shared;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -126,12 +133,13 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Message>Executing post-build script...</Message>
@@ -145,7 +153,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)sdk\foobar2000\shared;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -157,14 +165,16 @@
       <StringPooling>true</StringPooling>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>
@@ -180,7 +190,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)sdk\foobar2000\shared;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -188,12 +198,13 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(PlatformTarget).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Message>Executing post-build script...</Message>
@@ -215,6 +226,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -234,7 +246,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdParty\WTL10_10320\Include;$(SolutionDir)sdk;$(SolutionDir)sdk\foobar2000;$(SolutionDir)sdk\foobar2000\shared;$(SolutionDir)3rdParty\columns_ui_sdk;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\LevelMeter;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\PeakMeter;$(ProjectDir)Visuals\Spectrogram;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\Tester;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -246,13 +258,15 @@
       <StringPooling>true</StringPooling>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(PlatformTarget).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\sdk\foobar2000\shared\shared-$(Platform).lib;$(SolutionDir)..\out\$(PlatformTarget)-$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>pwsh.exe -NoLogo -NonInteractive -NoProfile -File Build-FB2KComponent.ps1 $(TargetName) $(TargetFileName) $(Platform) $(OutputPath)</Command>
@@ -280,12 +294,13 @@
       <StringPooling>true</StringPooling>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>$(SolutionDir)sdk\foobar2000\shared\shared-$(PlatformTarget).lib;$(SolutionDir)out\$(PlatformTarget)\$(Configuration)\columns_ui_sdk.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -297,6 +312,7 @@
     <Manifest />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="3rdParty\json\single_include\nlohmann\json.hpp" />
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
@@ -323,8 +339,11 @@
     <ClInclude Include="Configuration\TransformPageLayout.h" />
     <ClInclude Include="Configuration\VisualizationPage.h" />
     <ClInclude Include="Configuration\VisualizationPageLayout.h" />
+    <ClInclude Include="CUINotificationHandler.h" />
     <ClInclude Include="CustomTitleFormatHook.h" />
+    <ClInclude Include="MemoryStream.h" />
     <ClInclude Include="Visuals\BitMeter\BitMeter.h" />
+    <ClInclude Include="Analyzers\Decimator.h" />
     <ClInclude Include="Visuals\LevelMeter\LevelMeter.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeBase.h" />
@@ -333,6 +352,7 @@
     <ClInclude Include="Visuals\PeakMeter\PeakMeterParts.h" />
     <ClInclude Include="Visuals\Spectrogram\Spectrogram.h" />
     <ClInclude Include="Visuals\Tester\Tester.h" />
+    <ClInclude Include="Visuals\Visualization.h" />
     <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Direct3D.h" />
     <ClInclude Include="Windows\Event.h" />
@@ -345,7 +365,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Windows\Error.h" />
     <ClInclude Include="Windows\Path.h" />
-    <ClInclude Include="Visuals\GraphDescription.h" />
+    <ClInclude Include="Visuals\GraphOptions.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
@@ -364,12 +384,11 @@
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Windows\Raster.h" />
-    <ClInclude Include="Windows\SafeModuleHandle.h" />
+    <ClInclude Include="Windows\Module.h" />
     <ClInclude Include="Visuals\Spectrum\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
     <ClInclude Include="Visuals\Gradients.h" />
     <ClInclude Include="Visuals\Graph.h" />
-    <ClInclude Include="Configuration\Layout.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Visuals\RingBuffer.h" />
     <ClInclude Include="Visuals\Spectrum\Spectrum.h" />
@@ -390,6 +409,7 @@
     <ClCompile Include="Analyzers\AnalogStyleAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
+    <ClCompile Include="Analyzers\Decimator.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\CommonPage.cpp" />
     <ClCompile Include="Configuration\FiltersPage.cpp" />
@@ -401,6 +421,7 @@
     <ClCompile Include="Configuration\StylesPage.cpp" />
     <ClCompile Include="Configuration\TransformPage.cpp" />
     <ClCompile Include="Configuration\VisualizationPage.cpp" />
+    <ClCompile Include="CUINotificationHandler.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
@@ -421,7 +442,7 @@
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
     <ClCompile Include="Visuals\Gradients.cpp" />
-    <ClCompile Include="Visuals\GraphDescription.cpp" />
+    <ClCompile Include="Visuals\GraphOptions.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="CUIElement.cpp" />
@@ -463,6 +484,9 @@
   <ItemGroup>
     <ProjectReference Include="..\3rdParty\columns_ui_sdk\columns_ui-sdk-public.vcxproj">
       <Project>{93ec0ede-01cd-4fb0-b8e8-4f2a027e026e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\foo_uie_canvas\foo_uie_canvas.vcxproj">
+      <Project>{e89a9683-87ed-0a48-de60-b8007f5f3afc}</Project>
     </ProjectReference>
     <ProjectReference Include="..\sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">
       <Project>{71ad2674-065b-48f5-b8b0-e1f9d3892081}</Project>

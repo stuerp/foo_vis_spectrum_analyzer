@@ -19,10 +19,10 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 10. [Support](#support)
 
 ---
-
+`
 ## Introduction
-
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters or oscilloscope.
+`
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters, oscilloscope or bit meter.
 
 ---
 
@@ -44,7 +44,7 @@ You can download the component from the foobar2000 [Components](https://www.foob
 > [!Tip]
 > To verify if the installation was successful open the foobar2000 Preferences using the **File / Preferences / Components** menu item and look for **Spectrum Analyzer** in the **Installed components** list.
 
-You can experiment with the component without modifying your layout by selecting **Spectrum Analyzer** from the **View / Visualizations**.
+You can experiment with the component without modifying your layout by selecting **Spectrum Analyzer** from the **View / Visualizations** menu item.
 
 ---
 
@@ -218,9 +218,9 @@ This visualization uses the following settings:
 - Graph X-axis and Y-axis settings
   - Select *Off* or *None* to prevent the axis from being rendered.
 - Channel pair selection: Determines which channels will be plotted against each other.
-- Swap channels to determine which channel uses the X axis and which one uses the Y axis. 
+- Swap channels to determine which channel uses the X-axis and which one uses the Y-axis. 
 - X and Y signal gain
-- Phosphor effect settings
+- Phosphor afterglow effect settings
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
@@ -232,7 +232,7 @@ The Bit Meter visualization is a specialized tool used to analyze the digital pr
 
 It can demonstrate if a file is, for example, 24-bit but only actually using 16 bits of information, indicating potential wasted headroom or improper recording levels.
 
-The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the y-axis the channel name.
+The distribution of bit usage over time is display as a histogram during playback. The X-axis shows the bit number; the Y-axis the channel name.
 
 foobar2000 uses single or double precision floating-point numbers (real numbers) between -1 and 1 to represent audio samples.
 A floating-point number is internally represented by 32 or 64 bits divided into a sign (+/-) and exponent and a mantissa (the decimal part).
@@ -245,11 +245,15 @@ If, while playing a track, not all of the bits of the mantissa are used that may
 
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar heights</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>
 
 ![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
 
-<sup>Bit Meter using varying bar opacity</sup>
+<sup>Bit Meter (Floating-Point Mode) using varying bar opacity</sup>
+
+![Screenshot](assets/Bit-Meter-Integer-Mode.png?raw=true "Screenshot")
+
+<sup>Bit Meter (Integer Mode)</sup>
 
 #### Peak Indicators group
 
@@ -320,6 +324,14 @@ Sets the angular velocity of the rotation in degrees per second. Use positive va
 #### Bit Meter group
 
 Set the visualization type to **Bit Meter** to enable these settings.
+
+`Mode`
+
+Determines if the bit meter displays the bits of a floating-point sample or an integer sample.
+
+`Bits per integer`
+
+Sets the number of bits an integer sample will use in *Integer* mode.
 
 `Opacity Mode`
 
@@ -405,9 +417,13 @@ Specifies the gain applied to the Y signal.
 
 Specifies the rotation angle in degrees of the signal when displayed by an X/Y oscilloscope. Valid range is -180 to +180 degrees.
 
+`Frame count`
+
+Specifies the number of audio frames that will be used by the oscilloscope per screen update.
+
 `Phosphor decay`
 
-Enables a phosphor decay effect simulation of analog oscilloscopes.
+Enables a phosphor afterglow effect simulation of analog oscilloscopes.
 
 `Blur sigma`
 
@@ -704,7 +720,7 @@ Some visualizations can use artwork to display on the background or to use as a 
 
 `Artwork type`
 
-Determines which artwork will be displayed on the graph background.
+Determines which artwork will be displayed on the graph background or will be used to extract colors from.
 
 `No. artwork colors`
 
@@ -745,6 +761,10 @@ Enable to use the full component window as available area instead of the client 
 
 Determines the opacity of the artwork when displayed.
 
+`Artwork blur radius`
+
+Specifies the number of pixels used for the Gaussian blur radius. A higher value increases the blurring. Setting the number of pixels to 0 (default) disables the blurring.
+
 `Artwork file path`
 
 A fully-qualified file path or a foobar2000 script that returns the file path of an image to display on the graph background.
@@ -772,6 +792,13 @@ The graph list shows all graphs in the current window. Use the + button to add a
 
 Enables this setting to stack the graphs vertically instead of horizontally.
 
+`Overlap graphs`
+
+Select to draw the graphs overlapped instead of stacked horizontally or vertically.
+
+> [!Note]
+> Only allowed for the bar, curve, radial bar and radial curve visualization.
+
 `Description`
 
 Allow you to edit the description of the selected graph.
@@ -780,7 +807,7 @@ Allow you to edit the description of the selected graph.
 
 `Horizontal alignment`
 
-Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X axis).
+Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X-axis).
 
 - *Near* aligns the visualization with the near side of the graph (aka the *left* edge when using normal orientation).
 - *Center* centers the visualization in the graph area.
@@ -795,15 +822,15 @@ Flips the current graph horizontally. Any axes will be rendered accordingly.
 
 Flips the current graph vertically. Any axes will be rendered accordingly.
 
-#### X axis group
+#### X-axis group
 
-Groups the parameters that determine the way the X axis is displayed.
+Groups the parameters that determine the way the X-axis is displayed.
 
 `Mode`
 
-Determines which X axis to display.
+Determines which X-axis to display.
 
-- None: Hides the X axis (reserve no screen area for it).
+- None: Hides the X-axis (reserve no screen area for it).
 - Bands: Center frequency of a band, every 10 bands.
 - Decades: Fixed frequency range
 - Octaves: Frequency of the C note of each octave
@@ -817,15 +844,19 @@ Displays an X-axis on top of the graph.
 
 Displays an X-axis at the bottom of the graph.
 
-#### Y axis group
+`Decimals`
 
-Groups the parameters that determine the way the Y axis is displayed.
+Determines the number of decimals to show in the X-axis labels. Valid values are 0 to 3.
+
+#### Y-axis group
+
+Groups the parameters that determine the way the Y-axis is displayed.
 
 `Mode`
 
-Determines which Y axis to display.
+Determines which Y-axis to display.
 
-- None: Hides the Y axis (reserve no screen area for it).
+- None: Hides the Y-axis (reserve no screen area for it).
 - Decibel: Uses decibel values to render the scale.
 - Linear/n-th root: Uses logarithmic values to render the scale.
 
@@ -881,6 +912,12 @@ Enable to swap the interpretation of a channel pair by visualisations that suppo
 ### Styles page
 
 Most of the elements of a graph can be styled. The styles list shows all available styles. Each style has a number of settings that determine how the element is rendered.
+
+`Scope`
+
+Styles are available in the global scope and local to each graph. Graph-local style override their definition in the global scope.
+
+Some styles behave differently when selecting the `Overlap graphs` options. F.e. when overlapping graphs the global graph styles are used.
 
 `Color source`
 
@@ -1089,6 +1126,7 @@ The history of foo_vis_spectrum_analyzer development is available in a separate 
 - fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
+- [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://github.com/nlohmann/json).
 
 ---
 

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.03.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.06.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -11,22 +11,10 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "Support.h"
 #include "Artwork.h"
 
 #include "Element.h"
-
-#include "Spectrum.h"
-#include "Spectrogram.h"
-#include "PeakMeter.h"
-#include "LevelMeter.h"
-#include "Oscilloscope.h"
-#include "OscilloscopeXY.h"
-#include "BitMeter.h"
-
-#include "Tester.h"
-
-#include "Log.h"
+#include "Visualization.h"
 
 /// <summary>
 /// Implements a graph on which the visualizations are rendered.
@@ -35,15 +23,16 @@ class graph_t : public element_t
 {
 public:
     graph_t();
-    virtual ~graph_t();
+
+    virtual ~graph_t() noexcept;
 
     // element_t
-    void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept override final;
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
+    void Initialize(state_t * state, graph_options_t * graphDescription, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
 
@@ -71,6 +60,8 @@ public:
 
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
+    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -84,11 +75,13 @@ public:
 
 private:
     std::wstring _Description;
-    std::unique_ptr<element_t> _Visualization;
+    std::unique_ptr<visualization_t> _Visualization;
 
-    style_t * _BackgroundStyle;
-    style_t * _DescriptionTextStyle;
-    style_t * _DescriptionBackgroundStyle;
+//  style_manager_t _StyleManager;                  // Styles only used by this graph in case of overlapping graphs.
+
+    style_t _BackgroundStyle;
+    style_t _DescriptionTextStyle;
+    style_t _DescriptionBackgroundStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;

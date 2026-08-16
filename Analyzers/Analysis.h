@@ -68,16 +68,16 @@ struct peak_measurement_t : measurement_t
 };
 
 /// <summary>
-/// Represents a bit meter measurement.
+/// Represents a bit meter measurement of one channel.
 /// </summary>
 struct bit_measurement_t : measurement_t
 {
     bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
     {
-        BitCounts.resize(audio_sample_size, 0.);
+        BitCounts.resize(bitCount, 0.);
     }
 
-    std::vector<double> BitCounts;
+    std::vector<double> BitCounts; // Occurrance count of each bit
 };
 
 /// <summary>
@@ -95,7 +95,7 @@ public:
 
     virtual ~analysis_t() noexcept { Reset(); };
 
-    void Initialize(const state_t * state, const graph_description_t * settings) noexcept;
+    void Initialize(const state_t * state, const graph_options_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
@@ -134,7 +134,7 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(msc::Map(amplitude, _GraphDescription->_AmplitudeLo, _GraphDescription->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
@@ -162,7 +162,7 @@ private:
 
 public:
     const state_t * _State;
-    const graph_description_t * _GraphDescription;
+    const graph_options_t * _GraphOptions;
 
     audio_chunk_impl _Chunk;    // Only used by oscilloscope
 

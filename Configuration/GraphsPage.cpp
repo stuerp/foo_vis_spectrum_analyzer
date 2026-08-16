@@ -1,11 +1,10 @@
 
-/** $VER: GraphsPage.cpp (2026.03.11) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "GraphsPage.h"
-#include "Support.h"
-#include "Log.h"
+#include "Constants.h"
 
 // Display names for the audio_chunk channel bits.
 static const WCHAR * const ChannelNames[] =
@@ -36,7 +35,8 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_ADD_GRAPH, "Adds a graph." },
         { IDC_REMOVE_GRAPH, "Removes the selected graph." },
 
-        { IDC_VERTICAL_LAYOUT, "Enable to stack the graphs vertically instead of horizontally." },
+        { IDC_VERTICAL_LAYOUT, "Select to stack the graphs vertically instead of horizontally." },
+        { IDC_OVERLAP_GRAPHS, "Select to draw the graphs overlapped instead of stacked horizontally or vertically." },
 
         { IDC_GRAPH_DESCRIPTION, "Describes the configuration of this graph." },
 
@@ -49,6 +49,7 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_AXIS_MODE, "Determines the type of X-axis." },
         { IDC_X_AXIS_TOP, "Enables or disables an X-axis above the visualization." },
         { IDC_X_AXIS_BOTTOM, "Enables or disables an X-axis below the visualization." },
+        { IDC_X_AXIS_DECIMALS, "Determines the number of decimals used by X-axis labels." },
 
         // Y-axis
         { IDC_Y_AXIS_MODE, "Determines the type of Y-axis." },
@@ -84,11 +85,16 @@ void graphs_page_t::InitializeControls() noexcept
 {
     _SelectedGraph = 0;
 
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     // Vertical Layout
     {
         SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
+    }
+
+    // Overlap graphs
+    {
+        SendDlgItemMessageW(IDC_OVERLAP_GRAPHS, BM_SETCHECK, _State->_OverlapGraphs);
     }
 
     // Horizontal Alignment
@@ -100,7 +106,7 @@ void graphs_page_t::InitializeControls() noexcept
         for (const auto & x : { L"Near", L"Center", L"Far", L"Fit" })
             w.AddString(x);
 
-        w.SetCurSel((int) gd._HorizontalAlignment);
+        w.SetCurSel((int) Options._HorizontalAlignment);
     }
 
     // X Axis
@@ -130,8 +136,8 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
 
-            SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo);
-            w.SetPos32((int) (gd._AmplitudeLo * 10.));
+            SetDouble(IDC_AMPLITUDE_LO, Options._AmplitudeLo);
+            w.SetPos32((int) (Options._AmplitudeLo * 10.));
         }
 
         {
@@ -142,8 +148,8 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
 
-            SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi);
-            w.SetPos32((int) (gd._AmplitudeHi * 10.));
+            SetDouble(IDC_AMPLITUDE_HI, Options._AmplitudeHi);
+            w.SetPos32((int) (Options._AmplitudeHi * 10.));
         }
 
         {
@@ -154,17 +160,17 @@ void graphs_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
 
-            SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
-            w.SetPos32((int) (gd._AmplitudeStep * 10.));
+            SetDouble(IDC_AMPLITUDE_STEP, Options._AmplitudeStep, 0, 1);
+            w.SetPos32((int) (Options._AmplitudeStep * 10.));
         }
     }
 
     // Used by the Linear/n-th root y-axis mode.
     {
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, Options._UseAbsolute);
 
         auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
-        SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
+        SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
     }
 
     // Channels
@@ -189,12 +195,12 @@ void graphs_page_t::InitializeControls() noexcept
         for (const auto & x : { L"Front Left/Right", L"Back Left/Right", L"Front Center Left/Right", L"Side Left/Right", L"Top Front Left/Right", L"Top Back Left/Right" })
             w.AddString(x);
 
-        w.SetCurSel((int) _State->_ChannelPair);
+        w.SetCurSel((int) Options._ChannelPair);
     }
 
     // Swap channels of a channel pair
     {
-        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
+        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, Options._SwapChannels);
     }
 
     UpdateControls();
@@ -205,6 +211,7 @@ void graphs_page_t::InitializeControls() noexcept
 /// </summary>
 void graphs_page_t::UpdateControls() noexcept
 {
+    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
@@ -219,55 +226,67 @@ void graphs_page_t::UpdateControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & Iter : _State->_GraphDescriptions)
-            w.AddString(Iter._Description.c_str());
+        uint32_t i = 1;
+
+        for (const auto & Iter : _State->_GraphOptions)
+        {
+            w.AddString(!Iter._Description.empty() ? Iter._Description.c_str() : msc::FormatText(L"Graph %u", i).c_str());
+
+            i++;
+        }
 
         w.SetCurSel((int) _SelectedGraph);
     }
 
     if (_State->_VerticalLayout)
     {
-        _State->_GridRowCount    = (size_t) _State->_GraphDescriptions.size();
+        _State->_GridRowCount    = (size_t) _State->_GraphOptions.size();
         _State->_GridColumnCount = (size_t) 1;
     }
     else
     {
         _State->_GridRowCount    = (size_t) 1;
-        _State->_GridColumnCount = (size_t) _State->_GraphDescriptions.size();
+        _State->_GridColumnCount = (size_t) _State->_GraphOptions.size();
     }
 
-    for (auto & gs : _State->_GraphDescriptions)
+    for (auto & gd : _State->_GraphOptions)
     {
-        gs._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
-        gs._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
+        gd._HRatio = 1.f / (FLOAT) _State->_GridColumnCount;
+        gd._VRatio = 1.f / (FLOAT) _State->_GridRowCount;
     }
 
-    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphDescriptions.size() > 1);
+    GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphOptions.size() > 1);
 
     /* Vertical Layout **/
 
-    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter);
+    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1) && !_State->_OverlapGraphs;
 
     GetDlgItem(IDC_VERTICAL_LAYOUT).EnableWindow(SupportsVerticalLayout);
 
+    /* Overlap Graphs **/
+
+    const bool SupportsOverlapGraphs = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1);
+
+    GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
+
     /* Graph settings */
 
-    const auto & gd = _State->_GraphDescriptions[(size_t) _SelectedGraph];
+    const auto & Options = _State->_GraphOptions[(size_t) _SelectedGraph];
 
     // Description
-    SetDlgItemText(IDC_GRAPH_DESCRIPTION, gd._Description.c_str());
+    SetDlgItemText(IDC_GRAPH_DESCRIPTION, Options._Description.c_str());
 
     // Layout
     {
-        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) gd._HorizontalAlignment);
+        ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) Options._HorizontalAlignment);
 
-        CheckDlgButton(IDC_FLIP_HORIZONTALLY, gd._FlipHorizontally);
-        CheckDlgButton(IDC_FLIP_VERTICALLY, gd._FlipVertically);
+        CheckDlgButton(IDC_FLIP_HORIZONTALLY, Options._FlipHorizontally);
+        CheckDlgButton(IDC_FLIP_VERTICALLY, Options._FlipVertically);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!IsOscilloscope);
+        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!(IsPeakMeter || IsLevelMeter || IsOscilloscope));
 
-        const bool SupportsLayout = !(IsOscilloscope || IsBitMeter);
+        const bool SupportsLayout = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter);
 
         for (const auto ID : { IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
             GetDlgItem(ID).EnableWindow(SupportsLayout);
@@ -275,57 +294,59 @@ void graphs_page_t::UpdateControls() noexcept
 
     // X axis
     {
-        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) gd._XAxisMode);
+        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) Options._XAxisMode);
 
-        CheckDlgButton(IDC_X_AXIS_TOP,    gd._XAxisTop);
-        CheckDlgButton(IDC_X_AXIS_BOTTOM, gd._XAxisBottom);
+        CheckDlgButton(IDC_X_AXIS_TOP,    Options._XAxisTop);
+        CheckDlgButton(IDC_X_AXIS_BOTTOM, Options._XAxisBottom);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!IsBitMeter);
+        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
 
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(gd.HasXAxis() && !(IsOscilloscope || IsBitMeter));
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(gd.HasXAxis() && !IsOscilloscope);
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter));
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope));
+
+        SetInteger(IDC_X_AXIS_DECIMALS, Options._XAxisDecimals);
     }
 
     // Y axis
     {
-        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) gd._YAxisMode);
+        ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) Options._YAxisMode);
 
-        CheckDlgButton(IDC_Y_AXIS_LEFT,  gd._YAxisLeft);
-        CheckDlgButton(IDC_Y_AXIS_RIGHT, gd._YAxisRight);
+        CheckDlgButton(IDC_Y_AXIS_LEFT,  Options._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_RIGHT, Options._YAxisRight);
 
-        SetDouble(IDC_AMPLITUDE_LO, gd._AmplitudeLo, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (gd._AmplitudeLo * 10.));
+        SetDouble(IDC_AMPLITUDE_LO, Options._AmplitudeLo, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (Options._AmplitudeLo * 10.));
 
-        SetDouble(IDC_AMPLITUDE_HI, gd._AmplitudeHi, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (gd._AmplitudeHi * 10.));
+        SetDouble(IDC_AMPLITUDE_HI, Options._AmplitudeHi, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN)).SetPos32((int) (Options._AmplitudeHi * 10.));
 
-        SetDouble(IDC_AMPLITUDE_STEP, gd._AmplitudeStep, 0, 1);
-        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (gd._AmplitudeStep * 10.));
+        SetDouble(IDC_AMPLITUDE_STEP, Options._AmplitudeStep, 0, 1);
+        CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN)).SetPos32((int) (Options._AmplitudeStep * 10.));
 
-        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, gd._UseAbsolute);
-        SetDouble(IDC_GAMMA, gd._Gamma, 0, 1);
+        SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, Options._UseAbsolute);
+        SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!IsBitMeter);
+        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
 
-        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY));
-        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY || IsBitMeter));
+        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY));
+        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
 
         for (const auto & Iter : { IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(gd.HasYAxis() && !(IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
 
-        const bool IsLinear = (gd._YAxisMode == YAxisMode::Linear);
+        const bool IsLinear = (Options._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
     }
 
     // Channels
     {
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        uint32_t Channels = gd._SelectedChannels;
+        uint32_t Channels = Options._SelectedChannels;
 
         for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {
@@ -336,11 +357,21 @@ void graphs_page_t::UpdateControls() noexcept
     }
 
     // Channel Pairs
-    GetDlgItem(IDC_CHANNEL_PAIRS_LBL).EnableWindow(IsLevelMeter || IsOscilloscope);
-    GetDlgItem(IDC_CHANNEL_PAIRS).EnableWindow(IsLevelMeter || IsOscilloscopeXY);
+    const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY;
 
-    SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, gd._SwapChannels);
-    GetDlgItem(IDC_SWAP_CHANNELS).EnableWindow(IsOscilloscopeXY);
+    {
+        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+
+        w.EnableWindow(SupportsChannelPairs);
+        w.SetCurSel((int) Options._ChannelPair);
+    }
+
+    // Swap Channels
+    {
+        SendDlgItemMessageW(IDC_SWAP_CHANNELS, BM_SETCHECK, Options._SwapChannels);
+
+        GetDlgItem(IDC_SWAP_CHANNELS).EnableWindow(SupportsChannelPairs);
+    }
 }
 
 /// <summary>
@@ -385,9 +416,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_HORIZONTAL_ALIGNMENT:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
+            Options._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -401,9 +432,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_X_AXIS_MODE:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._XAxisMode = (XAxisMode) SelectedIndex;
+            Options._XAxisMode = (XAxisMode) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -415,9 +446,9 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
         case IDC_Y_AXIS_MODE:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-            gs._YAxisMode = (YAxisMode) SelectedIndex;
+            Options._YAxisMode = (YAxisMode) SelectedIndex;
 
             _IgnoreNotifications = true;
 
@@ -430,6 +461,14 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
         case IDC_CHANNELS:
         {
             UpdateSelectedChannels();
+            break;
+        }
+
+        case IDC_CHANNEL_PAIRS:
+        {
+            auto & Options = _State->_GraphOptions[_SelectedGraph];
+
+            Options._ChannelPair = (ChannelPair) SelectedIndex;
             break;
         }
 
@@ -448,7 +487,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -462,6 +501,15 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_GRAPH_DESCRIPTION:
         {
             gd._Description = Text;
+            break;
+        }
+
+        // X axis
+        case IDC_X_AXIS_DECIMALS:
+        {
+            gd._XAxisDecimals = (uint32_t) std::clamp(::_wtoi(Text), MinXAxisDecimals, MaxXAxisDecimals);
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -505,38 +553,42 @@ void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
         default:
             return;
 
+        case IDC_X_AXIS_DECIMALS:
+        {
+            SetInteger(id, Options._XAxisDecimals);
+
+            ChangedSettings = ConfigurationChanges::Layout;
+            break;
+        }
+
         case IDC_AMPLITUDE_LO:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            SetDouble(id, gs._AmplitudeLo, 0, 1);
+            SetDouble(id, Options._AmplitudeLo, 0, 1);
             break;
         }
+
         case IDC_AMPLITUDE_HI:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            SetDouble(id, gs._AmplitudeHi, 0, 1);
+            SetDouble(id, Options._AmplitudeHi, 0, 1);
             break;
         }
+
         case IDC_AMPLITUDE_STEP:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            SetDouble(id, gs._AmplitudeStep, 0, 1);
+            SetDouble(id, Options._AmplitudeStep, 0, 1);
             break;
         }
+
         case IDC_GAMMA:
         {
-            auto & gs = _State->_GraphDescriptions[_SelectedGraph];
-
-            SetDouble(id, gs._Gamma, 0, 1);
+            SetDouble(id, Options._Gamma, 0, 1);
             break;
         }
     }
@@ -554,7 +606,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
     auto ChangedSettings = ConfigurationChanges::All;
 
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & Options = _State->_GraphOptions[_SelectedGraph];
 
     switch (id)
     {
@@ -563,15 +615,19 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ADD_GRAPH:
         {
-            graph_description_t NewGraphDescription = _State->_GraphDescriptions[_SelectedGraph];
+            // Make sure the first graph gets a local copy of the global styles before adding a second grahp.
+            if (_State->_GraphOptions.size() == 1)
+                _State->_GraphOptions[_SelectedGraph]._StyleManager = _State->_StyleManager;
 
-            int Index = (int) _State->_GraphDescriptions.size();
+            auto NewOptions = _State->_GraphOptions[_SelectedGraph];
+
+            int Index = (int) _State->_GraphOptions.size();
 
             WCHAR Description[32]; ::StringCchPrintfW(Description, _countof(Description), L"Graph %d", Index + 1);
 
-            NewGraphDescription._Description = Description;
+            NewOptions._Description = Description;
 
-            _State->_GraphDescriptions.insert(_State->_GraphDescriptions.begin() + (int) Index, NewGraphDescription);
+            _State->_GraphOptions.insert(_State->_GraphOptions.begin() + (int) Index, NewOptions);
 
             _IsInitializing = true;
 
@@ -586,9 +642,9 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_REMOVE_GRAPH:
         {
-            _State->_GraphDescriptions.erase(_State->_GraphDescriptions.begin() + (int) _SelectedGraph);
+            _State->_GraphOptions.erase(_State->_GraphOptions.begin() + (int) _SelectedGraph);
 
-            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphDescriptions.size() - 1);
+            _SelectedGraph = std::clamp(_SelectedGraph, (size_t) 0, _State->_GraphOptions.size() - 1);
 
             UpdateControls();
             break;
@@ -602,45 +658,53 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_OVERLAP_GRAPHS:
+        {
+            _State->_OverlapGraphs = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+            break;
+        }
+
         case IDC_FLIP_HORIZONTALLY:
         {
-            gd._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._FlipHorizontally = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_FLIP_VERTICALLY:
         {
-            gd._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._FlipVertically = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_X_AXIS_TOP:
         {
-            gd._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._XAxisTop = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_X_AXIS_BOTTOM:
         {
-            gd._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._XAxisBottom = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_LEFT:
         {
-            gd._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._YAxisLeft = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_Y_AXIS_RIGHT:
         {
-            gd._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._YAxisRight = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_USE_ABSOLUTE:
         {
-            gd._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._UseAbsolute = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -666,7 +730,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_SWAP_CHANNELS:
         {
-            gd._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            Options._SwapChannels = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
     }
@@ -683,7 +747,7 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         return -1;
 
     auto ChangedSettings = ConfigurationChanges::All;
-    auto & gd = _State->_GraphDescriptions[_SelectedGraph];
+    auto & gd = _State->_GraphOptions[_SelectedGraph];
 
     auto nmud = (LPNMUPDOWN) nmhd;
 
@@ -744,10 +808,10 @@ void graphs_page_t::InitializeXAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphDescriptions[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode, 0, 1);
+        _State->_GraphOptions[_SelectedGraph]._XAxisMode = (XAxisMode) std::clamp((int) _State->_GraphOptions[_SelectedGraph]._XAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._XAxisMode);
+    w.SetCurSel((int) _State->_GraphOptions[_SelectedGraph]._XAxisMode);
 }
 
 /// <summary>
@@ -769,10 +833,10 @@ void graphs_page_t::InitializeYAxisMode() noexcept
         for (const auto & x : { L"Off", L"On" })
             w.AddString(x);
 
-        _State->_GraphDescriptions[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode, 0, 1);
+        _State->_GraphOptions[_SelectedGraph]._YAxisMode = (YAxisMode) std::clamp((int) _State->_GraphOptions[_SelectedGraph]._YAxisMode, 0, 1);
     }
 
-    w.SetCurSel((int) _State->_GraphDescriptions[_SelectedGraph]._YAxisMode);
+    w.SetCurSel((int) _State->_GraphOptions[_SelectedGraph]._YAxisMode);
 }
 
 /// <summary>
@@ -793,5 +857,5 @@ void graphs_page_t::UpdateSelectedChannels() noexcept
     for (int Item : Items)
         Channels |= 1 << Item;
 
-    _State->_GraphDescriptions[_SelectedGraph]._SelectedChannels = Channels;
+    _State->_GraphOptions[_SelectedGraph]._SelectedChannels = Channels;
 }

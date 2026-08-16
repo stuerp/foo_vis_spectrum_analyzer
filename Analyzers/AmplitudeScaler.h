@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+#include "Support.h"
+
 /// <summary>
 /// Implements an amplitude scaler as a functor.
 /// </summary>

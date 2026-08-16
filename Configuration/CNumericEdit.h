@@ -20,6 +20,8 @@
 #include <atlcom.h>
 #include <atlcrack.h>
 
+#undef SubclassWindow
+
 class CNumericEdit: public CWindowImpl<CNumericEdit, CEdit>
 {
 public:

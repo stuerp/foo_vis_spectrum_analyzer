@@ -1,32 +1,19 @@
 
-/** $VER: ConfigurationDialog.h (2026.02.22) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2026.06.29) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
+#include <SDK\coreDarkMode.h>
 
 #include "DialogParameters.h"
 #include "Resources.h"
 #include "State.h"
 
 #include "CMenuListBox.h"
-#include "CNumericEdit.h"
-#include "CColorButton.h"
-#include "CColorListBox.h"
 
-#include "StyleManager.h"
-
-#include "VisualizationPage.h"
-#include "TransformPage.h"
-#include "FrequenciesPage.h"
-#include "FiltersPage.h"
-#include "CommonPage.h"
-#include "GraphsPage.h"
-#include "StylesPage.h"
-#include "PresetsPage.h"
+#include "Page.h"
 
 /// <summary>
 /// Implements the modeless configuration dialog.

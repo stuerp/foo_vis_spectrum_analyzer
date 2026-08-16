@@ -1,5 +1,5 @@
 
-/** $VER: Page.cpp (2026.02.21) P. Stuer - Implements the configuration page base class. **/
+/** $VER: Page.cpp (2026.06.24) P. Stuer - Implements the configuration page base class. **/
 
 #include "pch.h"
 
@@ -141,7 +141,13 @@ double page_t::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double max
 /// </summary>
 void page_t::SetInteger(int id, int64_t value) noexcept
 {
-    SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_int(value)));
+    auto Edit = ((CEdit) GetDlgItem(id));
+
+    auto CaretIndex = Edit.GetCaretIndex();
+
+    Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_int(value)));
+
+    Edit.SetCaretIndex(CaretIndex); // Restore the caret index.
 }
 
 /// <summary>
@@ -149,7 +155,13 @@ void page_t::SetInteger(int id, int64_t value) noexcept
 /// </summary>
 void page_t::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
-    SetDlgItemTextW(id, pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
+    auto Edit = ((CEdit) GetDlgItem(id));
+
+    auto CaretIndex = Edit.GetCaretIndex();
+
+    Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
+
+    Edit.SetCaretIndex(CaretIndex); // Restore the caret index.
 }
 
 /// <summary>

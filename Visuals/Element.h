@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.03.11) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements. **/
 
 #pragma once
 
@@ -7,24 +7,17 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-
 #include "State.h"
-#include "GraphDescription.h"
+#include "Graphoptions.h"
 #include "Analysis.h"
-
-#include "Direct2D.h"
-
-#include "Style.h"
 
 class element_t
 {
 public:
-    element_t() : _State(), _Settings(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
+    element_t() : _State(), _GraphOptions(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
 
-    virtual ~element_t() noexcept {}
+    virtual ~element_t() noexcept { }
 
-    virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept { }
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { }
@@ -67,6 +60,8 @@ public:
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
+    virtual void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept { }
+
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
 
@@ -91,19 +86,12 @@ public:
     }
 
 protected:
-    void SafeRelease(style_t ** style) noexcept
-    {
-        if (*style != nullptr)
-        {
-            (*style)->DeleteDeviceSpecificResources();
-            *style = nullptr;
-        }
-    }
-
-protected:
     state_t * _State;
-    const graph_description_t * _Settings;
+    graph_options_t * _GraphOptions;
     const analysis_t * _Analysis;
+
+    bool _IsFirst;
+    bool _IsLast;
 
     D2D1_RECT_F _Rect;
     D2D1_SIZE_F _Size;

@@ -1,13 +1,13 @@
 
-/** $VER: OscilloscopeBase.h (2026.02.22) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
-#include "Element.h"
+#include "Visualization.h"
 
-class oscilloscope_base_t : public element_t
+class oscilloscope_base_t : public visualization_t
 {
 public:
     oscilloscope_base_t();
@@ -20,7 +20,6 @@ public:
     virtual ~oscilloscope_base_t() noexcept;
 
     // element_t
-    virtual void Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept = 0;
     virtual void Move(const D2D1_RECT_F & rect) noexcept = 0;
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept = 0;
     virtual void Reset() noexcept = 0;
@@ -38,11 +37,11 @@ protected:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
     CComPtr<ID2D1StrokeStyle1> _AxisStrokeStyle;
 
-    style_t * _SignalLineStyle;
-    style_t * _XAxisLineStyle;
-    style_t * _YAxisLineStyle;
-    style_t * _HorizontalGridLineStyle;
-    style_t * _VerticalGridLineStyle;
+    style_t _SignalLineStyle;
+    style_t _XAxisLineStyle;
+    style_t _YAxisLineStyle;
+    style_t _HorizontalGridLineStyle;
+    style_t _VerticalGridLineStyle;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
@@ -52,7 +51,8 @@ protected:
 
     CComPtr<ID2D1Bitmap1> _FrontBuffer;
     CComPtr<ID2D1Bitmap1> _BackBuffer;
+    CComPtr<ID2D1Bitmap1> _CompositeBuffer;
 
-    CComPtr<ID2D1Effect> _GaussBlurEffect;
+    CComPtr<ID2D1Effect> _BlurEffect;
     CComPtr<ID2D1Effect> _ColorMatrixEffect;
 };

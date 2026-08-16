@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialogLayout.h (2026.02.22) P. Stuer - Defines the layout of the configuration dialog. **/
+/** $VER: ConfigurationDialogLayout.h (2026.05.24) P. Stuer - Defines the layout of the configuration dialog. **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 #define H_CHB       10 // Check box
 
 #define W_A00      442 // Dialog width (in dialog units)
-#define H_A00      320 // Dialog height (in dialog units)
+#define H_A00      342 // Dialog height (in dialog units)
 
 #define DX           7
 #define DY           7

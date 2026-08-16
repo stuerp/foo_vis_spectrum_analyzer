@@ -1,15 +1,11 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.03.11) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.07.04) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
 #include "OscilloscopeXY.h"
-#include "AmplitudeScaler.h"
 
-#include "Support.h"
-#include "Log.h"
-
-#include "DirectWrite.h"
+#include "Direct2D.h"
 
 #pragma hdrstop
 
@@ -18,9 +14,6 @@
 /// </summary>
 oscilloscope_xy_t::oscilloscope_xy_t()
 {
-    _XAxisTextStyle = nullptr;
-    _YAxisTextStyle = nullptr;
-
     Reset();
 }
 
@@ -35,10 +28,10 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, const graph_description_t * settings, const analysis_t * analysis) noexcept
+void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _Settings = settings;
+    _GraphOptions = graphDescription;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -75,18 +68,8 @@ void oscilloscope_xy_t::Resize() noexcept
 
     oscilloscope_base_t::Resize();
 
-    // Release resources that are size dependent.
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
-
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
+    _XAxisTextStyle.DeleteDeviceSpecificResources();
+    _YAxisTextStyle.DeleteDeviceSpecificResources();
 
     _GridCommandList.Release();
 
@@ -100,34 +83,37 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (FAILED(hr))
+    if (!SUCCEEDED(hr))
         return;
-
-    const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
-    const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
-    const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                         // get_sample_count() actually returns the number of frames.
+        const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+        const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+        const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+
+        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                                 // get_sample_count() actually returns the number of frames.
         const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-        const uint32_t ChunkChannels    = _Analysis->_Chunk.get_channel_config();                   // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels = _Settings->_SelectedChannels;                             // Mask containing the channels selected by the user.
-        const uint32_t BalanceChannels  = analysis_t::ChannelPairs[(size_t) _State->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
+        const uint32_t AvailableChannels = _Analysis->_Chunk.get_channel_config();                          // Mask containing the channels in the audio chunk.
+        const uint32_t SelectedChannels  = _GraphOptions->_SelectedChannels;                                // Mask containing the channels selected by the user.
+        const uint32_t BalanceChannels   = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
-        const uint32_t ChannelMask = ChunkChannels & SelectedChannels & BalanceChannels;
+        const uint32_t ChannelMask = AvailableChannels & SelectedChannels & BalanceChannels;
 
         if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
         {
             const audio_sample * Samples = _Analysis->_Chunk.get_data();
 
-            const size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
-            const size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
+            size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
+            size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
+
+            if (_GraphOptions->_SwapChannels)
+                std::swap(Channel1, Channel2);
 
             CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
-            // Create the geometry for the X-Y plot.
+            // Create the signal geometry.
             {
                 CComPtr<ID2D1PathGeometry> Geometry;
 
@@ -142,18 +128,12 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
                     FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
 
-                    if (_Settings->_SwapChannels)
-                        std::swap(x, y);
-
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                     for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
                     {
-                        x = (FLOAT) std::clamp(Samples[i + Channel1] * _State->_XGain, -1., 1.);
-                        y = (FLOAT) std::clamp(Samples[i + Channel2] * _State->_YGain, -1., 1.);
-
-                        if (_Settings->_SwapChannels)
-                            std::swap(x, y);
+                        x = (FLOAT) std::clamp(Samples[Channel1 + i] * _State->_XGain, -1., 1.);
+                        y = (FLOAT) std::clamp(Samples[Channel2 + i] * _State->_YGain, -1., 1.);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
                     }
@@ -167,16 +147,62 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Rotate * Scale * Translate, &TransformedGeometry);
             }
 
+            // Draw the signal in the composite buffer.
             if (SUCCEEDED(hr))
             {
-                _DeviceContext->SetTarget(_BackBuffer);
                 _DeviceContext->BeginDraw();
 
                 _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle->_Brush, _SignalLineStyle->_Thickness, _SignalStrokeStyle);
+                if (_State->_HasPhosphorDecay)
+                {
+                    _DeviceContext->SetTarget(_BackBuffer);
 
-                hr = _DeviceContext->EndDraw();
+                    {
+                        // Clear the buffer.
+                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+                        // Draw a wide version of the signal.
+                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
+                    }
+
+                    _DeviceContext->SetTarget(_CompositeBuffer);
+
+                    {
+                        // Clear the buffer.
+                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+                        // Draw a color reduced version of the back buffer.
+                        _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                        _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+                        {
+                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+                            // Draw a blurred version of the back buffer.
+                            _BlurEffect->SetInput(0, _BackBuffer);
+
+                            _DeviceContext->DrawImage(_BlurEffect);
+
+                            // Draw a normal version of the signal.
+                            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+
+                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+                        }
+                    }
+                }
+                else
+                {
+                    _DeviceContext->SetTarget(_CompositeBuffer);
+
+                    // Clear the buffer.
+                    _DeviceContext->Clear(); // Required for alpha transparency
+
+                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                }
+
+                _DeviceContext->EndDraw();
             }
         }
     }
@@ -185,46 +211,30 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the grid to the window.
         {
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
+            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
             deviceContext->SetTransform(Rotate * Translate);
 
-            deviceContext->DrawImage(_GridCommandList);
+            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            deviceContext->DrawImage(_GridCommandList);
         }
 
-        // Draw the back buffer to the window.
+        // Draw the composite buffer to the window.
         {
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+
+            deviceContext->SetTransform(Translate);
+
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 
-            deviceContext->DrawBitmap(_BackBuffer);
+            deviceContext->DrawBitmap(_CompositeBuffer);
 
             deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
-        // Add the phosphor afterglow effect before the next pass.
-        {
-            _DeviceContext->SetTarget(_FrontBuffer);
-            _DeviceContext->BeginDraw();
-
-            if (_State->_PhosphorDecay)
-            {
-                _GaussBlurEffect->SetInput(0, _BackBuffer);
-
-                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-                _DeviceContext->DrawImage(_GaussBlurEffect);
-
-                _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-                _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-                _DeviceContext->DrawImage(_ColorMatrixEffect);
-            }
-            else
-                _DeviceContext->Clear(); // Required for alpha transparency
-
-            hr = _DeviceContext->EndDraw();
-        }
+        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
         std::swap(_FrontBuffer, _BackBuffer);
     }
@@ -253,25 +263,39 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = S_OK;
-
     _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
 
-    if (SUCCEEDED(hr))
-        Resize();
+    Resize();
 
-    if (SUCCEEDED(hr))
-        hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
-    // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::XAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_XAxisTextStyle);
+    if (_XAxisTextStyle._Brush == nullptr)
+    {
+        _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-    // The font style is created prescaled to counter the Scale transform in the command list.
-    if (SUCCEEDED(hr))
-        hr = _State->_StyleManager.GetInitializedStyle(VisualElement::YAxisText, _DeviceContext, _Size, L"+0.0", _ScaleFactor, &_YAxisTextStyle);
+        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-    if (SUCCEEDED(hr) && (_GridCommandList == nullptr))
+        // The font style is created prescaled to counter the Scale transform in the command list.
+        hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_YAxisTextStyle._Brush == nullptr)
+    {
+        _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+
+        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        // The font style is created prescaled to counter the Scale transform in the command list.
+        hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_GridCommandList == nullptr)
         hr = CreateGridCommandList();
 
     return hr;
@@ -284,24 +308,15 @@ void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
 {
     _GridCommandList.Release();
 
-    if (_YAxisTextStyle)
-    {
-        _YAxisTextStyle->DeleteDeviceSpecificResources();
-        _YAxisTextStyle = nullptr;
-    }
-
-    if (_XAxisTextStyle)
-    {
-        _XAxisTextStyle->DeleteDeviceSpecificResources();
-        _XAxisTextStyle = nullptr;
-    }
+    _YAxisTextStyle.DeleteDeviceSpecificResources();
+    _XAxisTextStyle.DeleteDeviceSpecificResources();
 
     oscilloscope_base_t::DeleteDeviceSpecificResources();
 }
 
 /// <summary>
 /// Creates a command list to render the grid and the X and Y axis labels.
-/// This is created in a -1 .. 1 axis setup and scaled up as necessary.
+/// This is created in a [-1, 1] axis setup and scaled up as necessary.
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 {
@@ -328,88 +343,88 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         {
             D2D1_RECT_F TextRect = { -1.f, 0.01f, 1.f, 1.f };
 
-            if (_Settings->HasXAxis() || _Settings->HasYAxis())
+            if (_GraphOptions->HasXAxis() || _GraphOptions->HasYAxis())
             {
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-                _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            if (_Settings->HasXAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+            if (_GraphOptions->HasXAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
-            if (_Settings->HasYAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+            if (_GraphOptions->HasYAxis())
+                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
         }
 
-        _XAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
         for (FLOAT x = .2f; x < 1.01f; x += .2f)
         {
             // Draw the vertical grid line.
-            if (_VerticalGridLineStyle->IsEnabled())
+            if (_VerticalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_Settings->HasXAxis())
+            if (_GraphOptions->HasXAxis())
             {
                 // Draw the negative X label.
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
                 D2D1_RECT_F TextRect = { -x + 0.01f, 0.01f, 0.f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive X label.
-                _XAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+                _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
                 TextRect = { 0.f, 0.01f, x - 0.01f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle->_TextFormat, TextRect, _XAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        if (!_Settings->HasXAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+        if (!_GraphOptions->HasXAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
-        _YAxisTextStyle->SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
         for (FLOAT y = .2f; y < 1.01f; y += .2f)
         {
             // Draw the horizontal grid line.
-            if (_HorizontalGridLineStyle->IsEnabled())
+            if (_HorizontalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
             }
 
-            if (_Settings->HasYAxis())
+            if (_GraphOptions->HasYAxis())
             {
                 // Draw the negative y label.
-                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+                _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
                 D2D1_RECT_F TextRect = { 0.01f, y - 0.01f, 1.f, -1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive y label.
-                _YAxisTextStyle->SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
                 TextRect = { 0.01f, -y + 0.01f, 1.f, 0.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle->_TextFormat, TextRect, _YAxisTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
-        if (!_Settings->HasYAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle->_Brush, 1.f, _AxisStrokeStyle);
+        if (!_GraphOptions->HasYAxis())
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 

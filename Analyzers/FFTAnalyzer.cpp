@@ -148,10 +148,10 @@ void fft_analyzer_t::Transform() noexcept
 /// </summary>
 void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept
 {
-    const bool IsRMS       =  (_State->_SummationMethod == SummationMethod::RMS || _State->_SummationMethod == SummationMethod::RMSSum);
-    const bool IsMedian    =   _State->_SummationMethod == SummationMethod::Median;
-    const bool UseBandGain =  (_State->_SmoothGainTransition && (_State->_SummationMethod == SummationMethod::Sum || _State->_SummationMethod == SummationMethod::RMSSum));
-    const bool IsAverage   = ((_State->_SummationMethod == SummationMethod::Average || _State->_SummationMethod == SummationMethod::RMS) || UseBandGain);
+    const bool IsRMS       =  (_State->_AggregationMethod == AggregationMethod::RMS || _State->_AggregationMethod == AggregationMethod::RMSSum);
+    const bool IsMedian    =   _State->_AggregationMethod == AggregationMethod::Median;
+    const bool UseBandGain =  (_State->_SmoothGainTransition && (_State->_AggregationMethod == AggregationMethod::Sum || _State->_AggregationMethod == AggregationMethod::RMSSum));
+    const bool IsAverage   = ((_State->_AggregationMethod == AggregationMethod::Average || _State->_AggregationMethod == AggregationMethod::RMS) || UseBandGain);
 
     std::vector<double> Values;
 
@@ -169,7 +169,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
         {
             HiIdx -= std::max(HiIdx - LoIdx - (double) _FreqData.size(), 0.);
 
-            double Value = (_State->_SummationMethod == SummationMethod::Minimum) ? DBL_MAX : 0.;
+            double Value = (_State->_AggregationMethod == AggregationMethod::Minimum) ? DBL_MAX : 0.;
 
             Values.clear();
 
@@ -181,27 +181,27 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
 
                 const double Magnitude = std::abs(_FreqData[BinIdx]);
 
-                switch (_State->_SummationMethod)
+                switch (_State->_AggregationMethod)
                 {
-                    case SummationMethod::Minimum:
+                    case AggregationMethod::Minimum:
                         Value = std::min(Magnitude, Value);
                         break;
 
-                    case SummationMethod::Maximum:
+                    case AggregationMethod::Maximum:
                         Value = std::max(Magnitude, Value);
                         break;
 
-                    case SummationMethod::Sum:
-                    case SummationMethod::Average:
+                    case AggregationMethod::Sum:
+                    case AggregationMethod::Average:
                         Value += Magnitude;
                         break;
 
-                    case SummationMethod::RMS:
-                    case SummationMethod::RMSSum:
+                    case AggregationMethod::RMS:
+                    case AggregationMethod::RMSSum:
                         Value += Magnitude * Magnitude;
                         break;
 
-                    case SummationMethod::Median:
+                    case AggregationMethod::Median:
                         Values.push_back(Magnitude);
                         break;
 

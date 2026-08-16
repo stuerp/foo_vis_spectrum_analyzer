@@ -1,11 +1,9 @@
 
-/** $VER: VisualizationPage.cpp (2026.03.12) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.07.04) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "VisualizationPage.h"
-#include "Support.h"
-#include "Log.h"
 
 /// <summary>
 /// Initializes the page.
@@ -31,6 +29,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_OUTER_RADIUS, "Sets the outer radius as a percentage of the smallest side of the graph area." },
         { IDC_ANGULAR_VELOCITY, "Sets the angular velocity of the rotation in degrees per second. Positive values result in clockwise rotation; negative values in anti-clockwise rotation." },
 
+        { IDC_BIT_METER_MODE, "Determines the mode of the bit meter visualization." },
+        { IDC_BITS_PER_INTEGER, "Specifies the number of bits represented by each integer in Integer mode." },
         { IDC_OPACITY_MODE, "Renders the bit occurancy using opacity." },
 
         { IDC_SCROLLING_SPECTROGRAM, "Activates scrolling of the spectrogram." },
@@ -51,8 +51,9 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
+        { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope per screen update." },
         { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
-        { IDC_BLUR_SIGMA, "Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring." },
+        { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
     };
 
@@ -121,27 +122,38 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Bit Meter
     {
+        auto w = (CComboBox) GetDlgItem(IDC_BIT_METER_MODE);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"Floating-point", L"Integer" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_BitMeterMode);
+
+        SetInteger(IDC_BITS_PER_INTEGER, _State->_BitsPerInteger);
+
         SendDlgItemMessageW(IDC_OPACITY_MODE, BM_SETCHECK, _State->_OpacityMode);
     }
 
     // Spectrogram
     {
-        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_ScrollingSpectrogram);
-        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_HorizontalSpectrogram);
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_IsScrollingSpectrogram);
+        SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_IsHorizontalSpectrogram);
         SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
     }
 
     // Peak Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_IsHorizontalPeakMeter);
-        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_RMSPlus3);
+        SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_HasRMSPlus3);
         SendDlgItemMessageW(IDC_CENTER_SCALE, BM_SETCHECK, _State->_HasCenterScale);
         SendDlgItemMessageW(IDC_SCALE_LINES, BM_SETCHECK, _State->_HasScaleLines);
 
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
+            auto w = ::CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
 
             UDACCEL Accel[] =
             {
@@ -155,7 +167,7 @@ void visualization_page_t::InitializeControls() noexcept
             w.SetAccel(_countof(Accel), Accel);
 
             SetDouble(IDC_RMS_WINDOW, _State->_RMSWindow, 0, 3);
-            ((CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
+            ((::CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
         }
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
@@ -171,7 +183,7 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Level Meter
     {
-        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_HorizontalLevelMeter);
+        SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_IsHorizontalLevelMeter);
     }
 
     // Oscilloscope
@@ -187,8 +199,11 @@ void visualization_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
         }
+        {
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FRAME_COUNT)); _NumericEdits.push_back(ne); SetInteger(IDC_FRAME_COUNT, _State->_FrameCount);
+        }
 
-        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_PhosphorDecay);
+        SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_HasPhosphorDecay);
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
         }
@@ -243,12 +258,14 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
 
     // Bit Meter
+    GetDlgItem(IDC_BIT_METER_MODE).EnableWindow(IsBitMeter);
+    GetDlgItem(IDC_BITS_PER_INTEGER).EnableWindow(IsBitMeter && (_State->_BitMeterMode == BitMeterMode::Integer));
     GetDlgItem(IDC_OPACITY_MODE).EnableWindow(IsBitMeter);
-
+ 
     // Spectrogram
     GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_HorizontalSpectrogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
 
     // Peak Meter
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
@@ -269,11 +286,12 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
     GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both modes.
     GetDlgItem(IDC_ROTATION).EnableWindow(IsOscilloscope && _State->_XYMode);
+    GetDlgItem(IDC_FRAME_COUNT).EnableWindow(IsOscilloscope);    // Available in both modes.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_PhosphorDecay);
+    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
 }
 
 /// <summary>
@@ -315,17 +333,17 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             break;
         }
 
-        case IDC_PEAK_MODE:
+        case IDC_BIT_METER_MODE:
         {
-            _State->_PeakMode = (PeakMode) SelectedIndex;
+            _State->_BitMeterMode = (BitMeterMode) SelectedIndex;
 
             UpdateControls();
             break;
         }
 
-        case IDC_CHANNEL_PAIRS:
+        case IDC_PEAK_MODE:
         {
-            _State->_ChannelPair = (ChannelPair) SelectedIndex;
+            _State->_PeakMode = (PeakMode) SelectedIndex;
 
             UpdateControls();
             break;
@@ -353,6 +371,15 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     {
         default:
             return;
+
+        // Bit Meter
+        case IDC_BITS_PER_INTEGER:
+        {
+            if (!SetProperty(_State->_BitsPerInteger, std::clamp((uint8_t) ::_wtoi(Text), MinBitsPerInteger, MaxBitsPerInteger)))
+                return;
+
+            break;
+        }
 
         // Peak indicator
         case IDC_HOLD_TIME:
@@ -466,12 +493,21 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_FRAME_COUNT:
+        {
+            if (!SetProperty(_State->_FrameCount, std::clamp((uint32_t) ::_wtoi(Text), MinFrameCount, MaxFrameCount)))
+                return;
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
         case IDC_BLUR_SIGMA:
         {
             if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -480,7 +516,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_DecayFactor, std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }
@@ -526,6 +562,13 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_LED_GAP:
         {
             SetDouble(id, _State->_LEDGap, 0, 0);
+            break;
+        }
+
+        // Bit Meter
+        case IDC_BITS_PER_INTEGER:
+        {
+            SetInteger(id, (int64_t) _State->_BitsPerInteger);
             break;
         }
 
@@ -592,11 +635,19 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_FRAME_COUNT:
+        {
+            SetInteger(id, _State->_FrameCount);
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
         case IDC_BLUR_SIGMA:
         {
             SetDouble(id, _State->_BlurSigma, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -604,7 +655,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_DecayFactor, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }
@@ -643,13 +694,13 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_SCROLLING_SPECTROGRAM:
         {
-            _State->_ScrollingSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsScrollingSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
         case IDC_HORIZONTAL_SPECTROGRAM:
         {
-            _State->_HorizontalSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsHorizontalSpectrogram = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
             break;
@@ -677,7 +728,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_RMS_PLUS_3:
         {
-            _State->_RMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HasRMSPlus3 = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 
@@ -695,9 +746,9 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_HORIZONTAL_LEVEL_METER:
         {
-            _State->_HorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_IsHorizontalLevelMeter = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
 
@@ -707,17 +758,17 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_PHOSPHOR_DECAY:
         {
-            _State->_PhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            _State->_HasPhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::PhosphorEffect;
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
     }
