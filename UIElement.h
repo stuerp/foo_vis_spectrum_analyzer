@@ -17,7 +17,7 @@
 /// <summary>
 /// Implements the UIElement and Playback interface.
 /// </summary>
-class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base /*, now_playing_album_art_notify*/
+class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base
 {
 public:
     uielement_t();
@@ -31,7 +31,7 @@ public:
 
     static CWndClassInfo & GetWndClassInfo();
 
-    void OnColorsChanged();
+    void OnColorsChanged() noexcept;
 
     #pragma endregion
 
@@ -46,8 +46,10 @@ protected:
         return guid;
     }
 
-    virtual void OnContextMenu(CWindow wnd, CPoint point);
+    virtual void OnContextMenu(CWindow wnd, CPoint point) noexcept;
+
     virtual void GetColors() noexcept = 0;
+    virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
     void UpdateState(ConfigurationChanges settings) noexcept;
 
@@ -57,20 +59,21 @@ private:
 
     #pragma region CWindowImpl
 
-    LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct);
-    void OnDestroy();
-    void OnPaint(CDCHandle dc);
-    LRESULT OnEraseBackground(CDCHandle dc);
-    void OnSize(UINT nType, CSize size);
-    void OnLButtonDown(UINT nFlags, CPoint point);
-    void OnLButtonUp(UINT nFlags, CPoint point);
-    void OnLButtonDblClk(UINT nFlags, CPoint point);
-    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect);
+    LRESULT OnCreate(LPCREATESTRUCT cs) noexcept;
+    void OnDestroy() noexcept;
+    LRESULT OnEraseBackground(CDCHandle dc) noexcept;
+    void OnPaint(CDCHandle dc) noexcept;
+    void OnSize(UINT nType, CSize size) noexcept;
 
-    void OnMouseMove(UINT, CPoint);
-    void OnMouseLeave();
+    void OnLButtonDown(UINT nFlags, CPoint point) noexcept;
+    void OnLButtonUp(UINT nFlags, CPoint point) noexcept;
+    void OnLButtonDblClk(UINT nFlags, CPoint point) noexcept;
+    LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept;
 
-    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    void OnMouseMove(UINT, CPoint) noexcept;
+    void OnMouseLeave() noexcept;
+
+    LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
     #pragma endregion
 
@@ -93,8 +96,6 @@ private:
     void StopRenderer() noexcept;
 
     static DWORD WINAPI CallRenderThreadProc(LPVOID context) noexcept;
-
-    virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
     void ToggleFrameCounter() noexcept;
 
@@ -120,7 +121,9 @@ private:
         MSG_WM_ERASEBKGND(OnEraseBackground)
         MSG_WM_PAINT(OnPaint)
         MSG_WM_SIZE(OnSize)
+
         MSG_WM_CONTEXTMENU(OnContextMenu)
+
         MSG_WM_LBUTTONDOWN(OnLButtonDown)
         MSG_WM_LBUTTONUP(OnLButtonUp)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)

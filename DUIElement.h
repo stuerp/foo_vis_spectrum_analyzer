@@ -5,7 +5,7 @@
 
 #include "pch.h"
 
-#include <helpers\BumpableElem.h>
+#include <helpers/BumpableElem.h>
 
 #include "UIElement.h"
 
@@ -22,8 +22,7 @@ public:
     dui_element_t(dui_element_t &&) = delete;
     dui_element_t & operator=(dui_element_t &&) = delete;
 
-//  LRESULT OnEraseBackground(CDCHandle hDC) override final;
-    void OnContextMenu(CWindow wnd, CPoint position) override final;
+    void OnContextMenu(CWindow wnd, CPoint position) noexcept final;
 
     void ToggleFullScreen() noexcept override final;
 

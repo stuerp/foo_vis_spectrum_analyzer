@@ -42,17 +42,17 @@ struct frequency_band_t
 
     virtual ~frequency_band_t() noexcept { }
 
-    double RawValue;    // [0, 1]
-    double Value;    // [0, 1]
+    double RawValue;    // [0, 1], Magnitude
+    double Value;       // [0, 1]
 
     double Lo;          // Hz
-    double Center;         // Hz
+    double Center;      // Hz
     double Hi;          // Hz
 
-    double MaxValue;    // 0.0 .. 1.0, The value of the maximum indicator
+    double MaxValue;    // [0, 1], The value of the maximum indicator
     double HoldTime;    // Time to hold the current peak value.
     double DecaySpeed;  // Speed at which the current peak value decays.
-    double Opacity;     // 0.0 .. 1.0, The opacity of the maximum indicator
+    double Opacity;     // [0, 1], The opacity of the maximum indicator
 
     WCHAR Label[16];
     bool HasDarkBackground;

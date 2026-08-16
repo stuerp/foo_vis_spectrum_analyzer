@@ -3,7 +3,7 @@
 
 v0.11.0.0-alpha6, 2026-07-04
 
-- New: `Frame count` settings determines the number of audio frames that will be used by the oscilloscope per screen update.
+- New: `Frame count` setting determines the number of audio frames that will be used by the oscilloscope per screen update.
 - Fixed: Initializing gradient brushes (Regression)
 - Fixed: Phosphor Decay setting was not respected (Regression)
 

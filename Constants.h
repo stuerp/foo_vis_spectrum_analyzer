@@ -516,7 +516,7 @@ enum class BackgroundMode
     Artwork = 2,
 };
 
-// Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
+// Should be the exact layout as in "SDK\audio_chunk.h". No need to include foobar2000 SDK everywhere.
 enum class Channels : uint32_t
 {
     FrontLeft = 1 << 0,

@@ -75,30 +75,7 @@ void cui_element_t::destroy_window()
 
     _Host.release();
 }
-/*
-/// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT CUIElement::OnEraseBackground(CDCHandle hDC)
-{
-    if (!_IsInitializing)
-        return 0;
 
-    RECT cr;
-
-    GetClientRect(&cr);
-
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._State.UserInterfaceColors[3]);
-
-    ::FillRect(hDC, &cr, hBrush);
-
-    ::DeleteObject((HGDIOBJ) hBrush);
-
-    _IsInitializing = false;
-
-    return 1; // Prevent GDI from erasing the background. Required for transparency.
-}
-*/
 /// <summary>
 /// Toggles full screen mode.
 /// </summary>

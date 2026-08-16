@@ -1,11 +1,12 @@
 
-/** $VER: Spectrogram.cpp (2026.06.17) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectrogram.h"
 
 #include "Support.h"
 
+#include "Direct2D.h"
 #include "DirectWrite.h"
 
 #pragma hdrstop
@@ -120,7 +121,7 @@ void spectrogram_t::Resize() noexcept
         _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
     }
 
-    const FLOAT Bandwidth = std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
+    const FLOAT Bandwidth = std::max(std::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
     const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
@@ -141,7 +142,7 @@ void spectrogram_t::Resize() noexcept
         const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
         const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-        msc::rect_t Rect = { };
+        rect_t Rect = { };
 
         if (_State->_IsHorizontalSpectrogram)
         {
@@ -294,7 +295,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         return;
 
     // Update the offscreen bitmap.
-    if (!Update())
+    if (!RenderSpectrum())
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -472,7 +473,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
         const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle._Height;
         const FLOAT y2 = first ? _TimeTextStyle._Height : _Size.height;
 
-        msc::rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
+        rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
 
         deviceContext->PushAxisAlignedClip({ _BitmapRect.left, y1, _BitmapRect.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -507,7 +508,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
         const FLOAT x1 = first ? _BitmapRect.right                         : _BitmapRect.left - _TimeTextStyle._Width;
         const FLOAT x2 = first ? _BitmapRect.right + _TimeTextStyle._Width : _BitmapRect.left;
 
-        msc::rect_t Rect = { x1, 0.f, x2, 0.f };
+        rect_t Rect = { x1, 0.f, x2, 0.f };
 
         deviceContext->PushAxisAlignedClip({ x1, _BitmapRect.top, x2, _BitmapRect.bottom }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -575,9 +576,9 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
 }
 
 /// <summary>
-/// Updates this instance.
+/// Render the spectrum.
 /// </summary>
-bool spectrogram_t::Update() noexcept
+bool spectrogram_t::RenderSpectrum() noexcept
 {
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
@@ -586,14 +587,18 @@ bool spectrogram_t::Update() noexcept
 
     if (_State->_IsHorizontalSpectrogram)
     {
+        const auto Bands = (_BitmapSize.height < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) _BitmapSize.height) : _Analysis->_FrequencyBands;
+
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) _BandCount;
+            const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) Bands.size();
 
             FLOAT y1 = 0.f;
             FLOAT y2 = Bandwidth;
 
-            for (const auto & fb : _Analysis->_FrequencyBands)
+            size_t i = 0;
+
+            for (const auto & fb : Bands)
             {
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
@@ -604,6 +609,8 @@ bool spectrogram_t::Update() noexcept
 
                 y1  = y2;
                 y2 += Bandwidth;
+
+                ++i;
             }
         }
 
@@ -642,15 +649,17 @@ bool spectrogram_t::Update() noexcept
     }
     else
     {
+        const auto Bands = (_BitmapSize.width < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) _BitmapSize.width) : _Analysis->_FrequencyBands;
+
         // Draw the next Spectrogram line.
         {
-            const FLOAT Bandwidth = _State->_UseSpectrumBarMetrics ? std::max(::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f) : _BitmapSize.width / (FLOAT) _BandCount;
-            const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
+            const FLOAT Bandwidth     = _State->_UseSpectrumBarMetrics ? std::max(std::floor(_BitmapSize.width / (FLOAT) Bands.size()), 2.f) : _BitmapSize.width / (FLOAT) Bands.size();
+            const FLOAT SpectrumWidth = Bandwidth * (FLOAT) Bands.size();
 
             FLOAT x1 = _State->_UseSpectrumBarMetrics ? (_BitmapSize.width - SpectrumWidth) / 2.f : 0.f;
             FLOAT x2 = Bandwidth;
 
-            for (const auto & fb : _Analysis->_FrequencyBands)
+            for (const auto & fb : Bands)
             {
                 if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
                     break;
@@ -737,8 +746,6 @@ void spectrogram_t::InitFreqAxis() noexcept
 
     if (fb.empty())
         return;
-
-    _BandCount = fb.size();
 
     _LoFrequency = fb.front().Center;
     _HiFrequency = fb.back().Center;
@@ -988,4 +995,97 @@ void spectrogram_t::DeleteDeviceSpecificResources() noexcept
     _TimeTextStyle.DeleteDeviceSpecificResources();
     _TimeLineStyle.DeleteDeviceSpecificResources();
     _SpectrogramStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Decimates the spectrum while preserving the energy.
+/// </summary>
+frequency_bands_t spectrogram_t::DecimateSpectrum(const frequency_bands_t & fb, size_t targetCount) noexcept
+{
+    if (fb.empty() || targetCount == 0)
+        return {};
+
+    const double Scale = (double) (fb.size() - 1) / (double) (targetCount - 1);
+
+    const size_t SrcCount = fb.size();
+    const size_t DstCount = std::max<size_t>(1, (size_t) std::lround((double) SrcCount / Scale));
+
+    frequency_bands_t Dst(DstCount);
+    std::vector<double> Weights(DstCount, 0.);
+
+    for (size_t j = 0; j < SrcCount; ++j)
+    {
+        const double Index = (double) j / Scale;
+
+        const size_t i0 = (size_t) std::floor(Index);
+        const size_t i1 = std::min(i0 + 1, DstCount - 1);
+
+        double Fraction = Index - (double) i0;
+
+        // Linearly distribute the energy.
+        Dst[i0].Value += fb[j].Value * (1. - Fraction);
+        Weights[i0]   +=               (1. - Fraction);
+
+        if (i1 != i0)
+        {
+            Dst[i1].Value += fb[j].Value * Fraction;
+            Weights[i1]   += Fraction;
+        }
+
+        Dst[i0].Lo = fb[j].Lo;
+    }
+
+    for (size_t i = 0; i < DstCount; ++i)
+    {
+        if (Weights[i] > 0.f)
+            Dst[i].Value /= Weights[i];
+    }
+
+    return Dst;
+}
+
+/// <summary>
+/// Resamples the spectrum using a windowed sinc.
+/// </summary>
+/// Decimates when the targetCount is less than the number of bins. Interpolates in case of the opposite. The lobe Lanczos a-parameter is typically 2 to 5.
+frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, size_t targetCount, int lobe) noexcept
+{
+    if (fb.empty() || targetCount == 0)
+        return {};
+
+    const double Scale = (double) (fb.size() - 1) / (double) (targetCount - 1);
+
+    const size_t SrcCount = fb.size();
+    const size_t DstCount = std::max<size_t>(1, (size_t) std::lround((double) SrcCount / Scale));
+
+    frequency_bands_t Dst(DstCount);
+
+    const double Factor = (double) (SrcCount - 1) / (double) (DstCount - 1);
+
+    for (size_t i = 0; i < DstCount; ++i)
+    {
+        const double Center = (double) i * Factor;
+
+        double Sum    = 0.;
+        double Weight = 0.;
+
+        // Support of the kernel: [Center - lobe, Center + lobe]
+        const size_t j0 = (size_t) std::max(                 0, (int) std::floor(Center) - lobe);
+        const size_t j1 = (size_t) std::min((int) SrcCount - 1, (int) std::ceil (Center) + lobe);
+
+        for (size_t j = j0; j <= j1; ++j)
+        {
+            const double x = Center - (double) j;
+            const double w = Lanczos(x, lobe);
+
+            Sum += fb[j].Value * w;
+
+            Weight += w;
+        }
+
+        Dst[i].Value = (Weight != 0.) ? std::max(0., Sum / Weight) : 0.;
+        Dst[i].Lo    = fb[j0].Lo;
+    }
+
+    return Dst;
 }

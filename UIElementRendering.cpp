@@ -381,8 +381,8 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         GetClientRect(cr);
 
-        const UINT32 Width  = (UINT) cr.Width();
-        const UINT32 Height = (UINT) cr.Height();
+        const auto Width  = (UINT32) cr.Width();
+        const auto Height = (UINT32) cr.Height();
 
         if ((Width == 0) || (Height == 0))
             return DXGI_ERROR_INVALID_CALL;

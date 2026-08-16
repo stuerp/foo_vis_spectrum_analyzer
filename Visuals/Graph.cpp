@@ -2,10 +2,11 @@
 /** $VER: Graph.cpp (2026.06.15) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
-#include "Graph.h"
 
+#include "Graph.h"
 #include "StyleManager.h"
 
+#include "Direct2D.h"
 #include "DirectWrite.h"
 
 #include "Spectrum.h"
@@ -167,7 +168,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 {
     if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
     {
-        const msc::rect_t & cr = (const msc::rect_t &) _Visualization->GetClientRect();
+        const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
         FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
 

@@ -5,10 +5,10 @@
 
 #define WIN32_LEAN_AND_MEAN
 
-#include <sdkddkver.h>
-#include <Windows.h>
+#include <SDKDDKVer.h>
+#include <windows.h>
 
-#include <math.h>
+#include <cmath>
 
 namespace msc
 {

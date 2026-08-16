@@ -5,6 +5,9 @@
 
 #include "Decimator.h"
 
+/// <summary>
+/// Decimates the samples of a chunk to another taking into account the specified ratio.
+/// </summary>
 void decimator_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio) noexcept
 {
     const uint32_t ChannelCount = srcChunk.get_channels();
@@ -18,7 +21,7 @@ void decimator_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, 
 
     if (DstSampleRate == 0 || std::abs((int) DstSampleRate - (int) SrcSampleRate) < 1)
     {
-        dstChunk.set_data(SrcFrames, SrcFrameCount, ChannelCount, SrcSampleRate);
+        dstChunk.copy(srcChunk, true);
 
         return;
     }

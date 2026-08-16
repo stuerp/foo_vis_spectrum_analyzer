@@ -125,7 +125,7 @@ public:
             }
             catch (const exception_io & e)
             {
-                Log.AtError().Write("Failed to deserialize configuration to binary stream. Error: ", e.what());
+                Log.AtError().Write(STR_COMPONENT_BASENAME " failed to deserialize configuration to binary stream. Error: ", e.what());
             }
         }
     }
@@ -144,7 +144,7 @@ public:
         }
         catch (const std::exception & e)
         {
-            Log.AtError().Write("Failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
+            Log.AtError().Write(STR_COMPONENT_BASENAME " failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
 
             // Try to write the data as a binary stream. (Legacy)
             _UIState.Write(stream, abortHandler);

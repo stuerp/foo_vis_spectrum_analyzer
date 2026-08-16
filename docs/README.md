@@ -44,7 +44,7 @@ You can download the component from the foobar2000 [Components](https://www.foob
 > [!Tip]
 > To verify if the installation was successful open the foobar2000 Preferences using the **File / Preferences / Components** menu item and look for **Spectrum Analyzer** in the **Installed components** list.
 
-You can experiment with the component without modifying your layout by selecting **Spectrum Analyzer** from the **View / Visualizations**.
+You can experiment with the component without modifying your layout by selecting **Spectrum Analyzer** from the **View / Visualizations** menu item.
 
 ---
 
@@ -1126,6 +1126,7 @@ The history of foo_vis_spectrum_analyzer development is available in a separate 
 - fismineur for [foo_musical_spectrum](https://wiki.hydrogenaud.io/index.php?title=Foobar2000:Components/Musical_Spectrum_(foo_musical_spectrum)) that inspired this component.
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
+- [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://github.com/nlohmann/json).
 
 ---
 

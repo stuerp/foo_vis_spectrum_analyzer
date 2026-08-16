@@ -117,7 +117,7 @@ ui_element_config::ptr dui_element_t::get_configuration(state_t & state)
     }
     catch (const std::exception & e)
     {
-        Log.AtError().Write("Failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to serialize configuration to JSON, falling back to binary stream. Error: ", e.what());
 
         // Try to write the data as a binary stream. (Legacy)
         ui_element_config_builder Builder;
@@ -154,39 +154,16 @@ void dui_element_t::notify(const GUID & what, t_size param1, const void * param2
 static service_factory_single_t<ui_element_impl_visualisation<dui_element_t>> _Factory;
 
 #pragma endregion
-/*
-/// <summary>
-/// Handles the WM_ERASEBKGND message.
-/// </summary>
-LRESULT dui_element_t::OnEraseBackground(CDCHandle hDC)
-{
-    if (!_IsInitializing)
-        return 0;
 
-    RECT cr;
-
-    GetClientRect(&cr);
-
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._UserInterfaceColors[1]);
-
-    ::FillRect(hDC, &cr, hBrush);
-
-    ::DeleteObject((HGDIOBJ) hBrush);
-
-    _IsInitializing = false;
-
-    return 1; // Prevent GDI from erasing the background. Required for transparency.
-}
-*/
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void dui_element_t::OnContextMenu(CWindow wnd, CPoint position)
+void dui_element_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 {
     if (m_callback->is_edit_mode_enabled())
         SetMsgHandled(FALSE);
     else
-        uielement_t::OnContextMenu(wnd, position);
+        __super::OnContextMenu(wnd, position);
 }
 
 /// <summary>

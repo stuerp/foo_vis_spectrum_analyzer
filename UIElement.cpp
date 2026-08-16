@@ -53,7 +53,7 @@ CWndClassInfo & uielement_t::GetWndClassInfo()
 /// <summary>
 /// Creates the window.
 /// </summary>
-LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
+LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 {
     _hParent = ::GetAncestor(m_hWnd, GA_ROOT); // This is usually the main foobar2000 window but it can also be a flowin window.
 
@@ -116,7 +116,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs)
 /// <summary>
 /// Destroys the window.
 /// </summary>
-void uielement_t::OnDestroy()
+void uielement_t::OnDestroy() noexcept
 {
     StopRenderer();
 
@@ -138,26 +138,15 @@ void uielement_t::OnDestroy()
 /// <summary>
 /// Handles the WM_ERASEBKGND message.
 /// </summary>
-LRESULT uielement_t::OnEraseBackground(CDCHandle hDC)
+LRESULT uielement_t::OnEraseBackground(CDCHandle hDC) noexcept
 {
-/*
-    RECT cr;
-
-    GetClientRect(&cr);
-
-    HBRUSH hBrush = color_t::CreateBrush(_UIThread._UserInterfaceColors[1]);
-
-    ::FillRect(hDC, &cr, hBrush);
-
-    ::DeleteObject((HGDIOBJ) hBrush);
-*/
-    return 1; // Prevent GDI from erasing the background. Required for transparency.
+    return 1; // Prevent GDI from erasing the background. Required for alpha transparency.
 }
 
 /// <summary>
 /// Handles the WM_PAINT message.
 /// </summary>
-void uielement_t::OnPaint(CDCHandle hDC)
+void uielement_t::OnPaint(CDCHandle hDC) noexcept
 {
     ValidateRect(nullptr); // Prevent any further WM_PAINT messages.
 }
@@ -165,7 +154,7 @@ void uielement_t::OnPaint(CDCHandle hDC)
 /// <summary>
 /// Handles the WM_SIZE message.
 /// </summary>
-void uielement_t::OnSize(UINT type, CSize size)
+void uielement_t::OnSize(UINT type, CSize size) noexcept
 {
     if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
         return;
@@ -197,7 +186,7 @@ void uielement_t::OnSize(UINT type, CSize size)
 /// <summary>
 /// Handles a context menu selection.
 /// </summary>
-void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
+void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 {
     CMenu Menu;
     CMenu RefreshRateLimitMenu;
@@ -337,7 +326,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position)
 /// <summary>
 /// Handles a left mousebutton down message.
 /// </summary>
-void uielement_t::OnLButtonDown(UINT flags, CPoint point)
+void uielement_t::OnLButtonDown(UINT flags, CPoint point) noexcept
 {
    if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
@@ -354,7 +343,7 @@ void uielement_t::OnLButtonDown(UINT flags, CPoint point)
 /// <summary>
 /// Handles a left mousebutton up message.
 /// </summary>
-void uielement_t::OnLButtonUp(UINT flags, CPoint point)
+void uielement_t::OnLButtonUp(UINT flags, CPoint point) noexcept
 {
     if (_UIState._ShowToolTipsAlways)
         return; // Already showing tooltips.
@@ -369,7 +358,7 @@ void uielement_t::OnLButtonUp(UINT flags, CPoint point)
 /// <summary>
 /// Toggles between panel and full screen mode.
 /// </summary>
-void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
+void uielement_t::OnLButtonDblClk(UINT flags, CPoint point) noexcept
 {
     ToggleFullScreen();
 }
@@ -377,7 +366,7 @@ void uielement_t::OnLButtonDblClk(UINT flags, CPoint point)
 /// <summary>
 /// Handles a DPI change.
 /// </summary>
-LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect)
+LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
 {
     _DPI = dpiX;
 
@@ -432,7 +421,7 @@ void uielement_t::Resize()
 /// <summary>
 /// Handles a change of the user interface colors.
 /// </summary>
-void uielement_t::OnColorsChanged()
+void uielement_t::OnColorsChanged() noexcept
 {
     GetColors();
 
@@ -461,7 +450,7 @@ void uielement_t::OnColorsChanged()
 /// <summary>
 /// Handles the UM_CONFIGURATION_CHANGED message from the configuration dialog.
 /// </summary>
-LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT uielement_t::OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     UpdateState((ConfigurationChanges) wParam);
 

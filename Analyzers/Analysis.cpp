@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.05.24) P. Stuer **/
+/** $VER: Analysis.cpp (2026.07.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -925,7 +925,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
 /// </summary>
 void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
-    _Chunk.copy(chunk);
+    _Chunk.copy(chunk, true);
 }
 
 #pragma endregion

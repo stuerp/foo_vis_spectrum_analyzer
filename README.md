@@ -109,14 +109,15 @@ You can find the user guide [here](docs/README.md).
 
 To build the code you need:
 
-- [Microsoft Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
+- [Microsoft Visual Studio 2026 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
 - [foobar2000 SDK](https://www.foobar2000.org/SDK) 2025-03-07
 - [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320
-- [Columns UI SDK](https://yuo.be/columns-ui-sdk) 7.0.0
+- [Columns UI SDK](https://yuo.be/columns-ui-sdk) 8.0.0
 
-The following library is included in the code:
+The following libraries are included in the repository:
 
 - [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
+- [JSON for Modern C++](https://json.nlohmann.me/)
 
 To create the deployment package you need:
 
@@ -132,6 +133,7 @@ Create the following directory structure:
     bin
     bin.x86
     foo_vis_spectrum_analyzer
+    int
     out
     sdk
 
@@ -140,6 +142,7 @@ Create the following directory structure:
 - `bin` contains a portable version of foobar2000 64-bit for debugging purposes.
 - `bin.x86` contains a portable version of foobar2000 32-bit for debugging purposes.
 - `foo_vis_spectrum_analyzer` contains the [Git](https://github.com/stuerp/foo_vis_spectrum_analyzer) repository.
+* `int` receives the intermedidiate files of the build.
 - `out` receives a deployable version of the component.
 - `sdk` contains the foobar2000 SDK.
 
@@ -156,6 +159,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.11.0.0-alpha7, 2026-07-xx
 
 - New: Oscilloscope uses decimation to improve the quality of the rendered signal.
+- New: Spectrogram uses resampling to improve the quality of the rendered spectrum.
 
 You can read the full history [here](docs/History.md).
 

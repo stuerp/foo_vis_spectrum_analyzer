@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.06.10) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -44,7 +44,7 @@ public:
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
 private:
-    bool Update() noexcept;
+    bool RenderSpectrum() noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * deviceContext) const noexcept;
 
@@ -58,6 +58,23 @@ private:
 
     void Resize() noexcept;
 
+    static frequency_bands_t DecimateSpectrum(const frequency_bands_t & fb, size_t targetCount) noexcept;
+    static frequency_bands_t ResampleSpectrum(const frequency_bands_t & fb, size_t targetCount, int lobe = 3) noexcept;
+
+    // Lanczos-windowed sinc kernel
+    inline static double Lanczos(double x, int a) noexcept
+    {
+        if (x == 0.)
+            return 1.;
+
+        if (std::abs(x) >= a)
+            return 0;
+
+        const double PiX = M_PI * x;
+
+        return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
+    }
+
 private:
     D2D1_RECT_F _BitmapRect;
     FLOAT _X;
@@ -66,7 +83,6 @@ private:
     double _TrackTime;
     bool _RequestErase;
 
-    size_t _BandCount;
     double _LoFrequency;
     double _HiFrequency;
 
