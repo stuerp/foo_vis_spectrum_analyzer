@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.03.11) P. Stuer **/
+/** $VER: Analysis.h (2026.08.17) P. Stuer **/
 
 #pragma once
 
@@ -12,6 +12,7 @@
 #include <Windows.h>
 
 #include "State.h"
+#include "Chrono.h"
 
 #include "WindowFunctions.h"
 
@@ -54,17 +55,17 @@ struct peak_measurement_t : measurement_t
     // User settings
     double HoldTime;            // Time to hold the current max value.
     double DecaySpeed;          // Speed at which the current max value decays.
-    double Opacity;             // 0.0 .. 1.0
+    double Opacity;             // [0, 1]
 
     // Measurements
     double RMSTotal;            // RMS value for the current RMS window.
 
     double Peak;                // in dBFS
-    double PeakNormalized;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-    double MaxPeakNormalized;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double PeakNormalized;      // [0, 1], Normalized and smoothed value used for rendering
+    double MaxPeakNormalized;   // [0, 1], Normalized and smoothed value used for rendering
 
     double RMS;                 // in dBFS
-    double RMSNormalized;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double RMSNormalized;       // [0, 1], Normalized and smoothed value used for rendering
 };
 
 /// <summary>
@@ -206,7 +207,11 @@ public:
 
     static const uint32_t ChannelPairs[6];
 
+    std::wstring _DebugText;
+
 private:
     const double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
+
+    chrono_t _Chrono;
 };

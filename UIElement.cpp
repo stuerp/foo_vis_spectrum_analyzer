@@ -623,14 +623,14 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState(ConfigurationChanges::All);
+//  UpdateState(ConfigurationChanges::All);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
         GetArtwork(track);
 
     // Notify the render thread.
-    _Event.Raise(event_t::PlaybackStartedNewTrack);
+    _Event.Raise(event_t::PlaybackNewTrack);
 }
 
 /// <summary>

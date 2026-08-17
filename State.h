@@ -62,8 +62,8 @@ public:
         VisualizationType _VisualizationType;
 
         PeakMode _PeakMode;
-        double _HoldTime;                                               // Peak hold time, 0.0 .. 120.0
-        double _Acceleration;                                           // Peak fall acceleration rate, 0.0 .. 2.0
+        double _HoldTime;                                               // Peak hold time, [0, 120]
+        double _Acceleration;                                           // Peak fall acceleration rate, [0, 2]
 
         #pragma region Bars
 

@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.07.04) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.08.17) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -233,10 +233,9 @@ void visualization_page_t::UpdateControls() noexcept
 
 //  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool HasPeaks = (IsBars || IsCurve || IsRadialBars || IsRadialCurve);
+    const bool HasPeaks = IsBars || IsCurve || IsRadialBars || IsRadialCurve || IsPeakMeter;
+    const bool HasLEDs  = IsBars || IsPeakMeter || IsLevelMeter;
 
-    const bool HasLEDs = IsBars || IsPeakMeter || IsLevelMeter;
- 
     const bool IsRadial = IsRadialBars || IsRadialCurve;
 
     // Peak Indicators
