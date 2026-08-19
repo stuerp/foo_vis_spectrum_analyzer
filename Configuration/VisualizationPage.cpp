@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.08.17) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.08.19) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -20,7 +20,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_HOLD_TIME, "Determines how long the peak values are held before they fall in seconds." },
         { IDC_FALL_RATE, "Determines the fall rate of the peak value in dB/s." },
 
-        { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
+        { IDC_LED_MODE, "Renders the spectrum bars Peak/RMS and Balance/Correlation meters as LEDs." },
         { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
         { IDC_LED_GAP, "Specifies the gap between the LEDs in pixels." },
         { IDC_LED_INTEGRAL_SIZE, "Renders the LEDs as full blocks." },
@@ -37,15 +37,15 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_HORIZONTAL_SPECTROGRAM, "Renders the spectrogram horizontally." },
         { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectrogram with a spectrum bar visualization." },
 
-        { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
+        { IDC_HORIZONTAL_PEAK_METER, "Renders the Peak/RMS meter horizontally." },
         { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
         { IDC_CENTER_SCALE, "Renders a scale between the meter bars" },
         { IDC_SCALE_LINES, "Renders a scale line on the background of the meter bars" },
         { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
-        { IDC_BAR_GAP, "Specifies the gap between the peak meter bars (in pixels)." },
+        { IDC_BAR_GAP, "Specifies the gap between the Peak/RMS meter bars (in pixels)." },
         { IDC_MAX_BAR_SIZE, "Specifies the max. size of a meter bar (in pixels). Use 0 to remove constraint." },
 
-        { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
+        { IDC_HORIZONTAL_LEVEL_METER, "Renders the Balance/Correlation meter horizontally." },
 
         { IDC_XY_MODE, "Enables X-Y mode." },
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
@@ -72,7 +72,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak Meter", L"Level Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -143,7 +143,7 @@ void visualization_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
     }
 
-    // Peak Meter
+    // Peak/RMS Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_IsHorizontalPeakMeter);
         SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_HasRMSPlus3);
@@ -181,7 +181,7 @@ void visualization_page_t::InitializeControls() noexcept
         }
     }
 
-    // Level Meter
+    // Balance/Correlation Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_IsHorizontalLevelMeter);
     }
@@ -266,7 +266,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
 
-    // Peak Meter
+    // Peak/RMS Meter
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
@@ -276,7 +276,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
 
-    // Level Meter
+    // Balance/Correlation Meter
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 
     // Oscilloscope
@@ -439,7 +439,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // Peak Meter
+        // Peak/RMS Meter
         case IDC_RMS_WINDOW:
         {
             if (!SetProperty(_State->_RMSWindow, std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow)))
@@ -590,7 +590,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // Peak Meter
+        // Peak/RMS Meter
         case IDC_RMS_WINDOW:
         {
             SetDouble(id, _State->_RMSWindow, 0, 3);

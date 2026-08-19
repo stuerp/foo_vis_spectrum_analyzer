@@ -69,7 +69,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         control     "Horizontal",                   IDC_HORIZONTAL_SPECTROGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
         control     "Use spectrum bar metrics",     IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
 
-    groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Peak / RMS Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "Horizontal",                   IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
         control     "RMS +3",                       IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
@@ -88,13 +88,13 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Max. bar size:"                IDC_MAX_BAR_SIZE_LBL,           X_C75, Y_C75 + 2, W_C75, H_C75
         edittext                                    IDC_MAX_BAR_SIZE,               X_C76, Y_C76,     W_C76, H_C76, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Level Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Balance / Correlation Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "Horizontal",                   IDC_HORIZONTAL_LEVEL_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C52, Y_C52, W_C52, H_C52
 
     groupbox "Oscilloscope", IDC_OSCILLOSCOPE, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "X-Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
+        control     "X/Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
 
         rtext       "X gain:"                       IDC_X_GAIN_LBL,                 X_C56, Y_C56 + 2, W_C56, H_C56
         edittext                                    IDC_X_GAIN,                     X_C58, Y_C58, W_C58, H_C58, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

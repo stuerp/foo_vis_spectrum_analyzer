@@ -12,7 +12,7 @@
 #define Y_E01    0
 
 // Combobox
-#define W_E02    82
+#define W_E02    86
 #define H_E02    H_CBX
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
