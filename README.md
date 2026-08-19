@@ -156,11 +156,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-vNext, 2026-xx-xx
+v0.12.0.0-alpha1, 2026-xx-xx
 
 - Improved: Visualizations continue without interruption when starting a new track.
+- Improved: Performance and numeric stability of the CQT transform.
 - Breaking Change: The peak hold time and fall rate (was Acceleration) are now expressed in seconds and dB/s respectively to make them independent of the frame rate. The old values will be remapped to the new ranges but some tweaking may be necessary.
-- Fixed: Peak mode configuration was disabled for the peak meter.
+- Fixed: Peak mode configuration was disabled for the Peak / RMS meter.
 
 You can read the full history [here](docs/History.md).
 
