@@ -33,8 +33,8 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
     {
         _Coefs.push_back(swift_coef_t
         (
-            ::cos(fb.Center * a),
-            ::sin(fb.Center * a),
+            ::cos(fb.Mid * a),
+            ::sin(fb.Mid * a),
             ::exp(-::abs(fb.Hi - fb.Lo) * Constant1 - Constant2)
         ));
     }

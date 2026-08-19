@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.07.04) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.08.18) P. Stuer **/
 
 #include "Resources.h"
 
@@ -24,9 +24,11 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext       "Hold time:"                    IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
         edittext                                    IDC_HOLD_TIME,                  X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext       "s"                             IDC_STATIC,                     X_A55, Y_A55 + 2, W_A55, H_A55
 
-        rtext       "Acceleration:"                 IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
-        edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Fall rate:"                    IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
+        edittext                                    IDC_FALL_RATE,                  X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext       "dB/s"                          IDC_STATIC,                     X_A56, Y_A56 + 2, W_A56, H_A56
 
     groupbox "LEDs", IDC_LEDS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -113,5 +115,4 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
         edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-
 }

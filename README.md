@@ -18,7 +18,7 @@ Over time other visualisations were added.
 
 ![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
-<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+<sup>Spectrum analyzer Curve Mode with album art background and peak / RMS and balance / correlation</sup>
 
 ![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
 
@@ -74,7 +74,7 @@ Over time other visualisations were added.
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter, Oscilloscope and Bit Meter visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -158,7 +158,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 vNext, 2026-xx-xx
 
-- Fixed: Non-continuous visuals when starting a new track.
+- Improved: Visualizations continue without interruption when starting a new track.
+- Breaking Change: The peak hold time and fall rate (was Acceleration) are now expressed in seconds and dB/s respectively to make them independent of the frame rate. The old values will be remapped to the new ranges but some tweaking may be necessary.
 - Fixed: Peak mode configuration was disabled for the peak meter.
 
 You can read the full history [here](docs/History.md).

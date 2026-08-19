@@ -716,8 +716,8 @@ bool spectrogram_t::RenderSpectrum() noexcept
 /// </summary>
 void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
 {
-    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State->_ScalingFunction, _State->_SkewFactor);
-    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State->_ScalingFunction, _State->_SkewFactor);
+    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State->_ScalingFunction, _State->_SkewFactor);
+    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State->_ScalingFunction, _State->_SkewFactor);
 
     const double NyquistFrequency = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), LoFrequency, HiFrequency);
 
@@ -747,8 +747,8 @@ void spectrogram_t::InitFreqAxis() noexcept
     if (fb.empty())
         return;
 
-    _LoFrequency = fb.front().Center;
-    _HiFrequency = fb.back().Center;
+    _LoFrequency = fb.front().Mid;
+    _HiFrequency = fb.back().Mid;
 
     // Precalculate the labels.
     {
@@ -765,7 +765,7 @@ void spectrogram_t::InitFreqAxis() noexcept
             {
                 for (size_t i = 0; i < fb.size(); i += 10)
                 {
-                    double Frequency = fb[i].Center;
+                    double Frequency = fb[i].Mid;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.f", Frequency);

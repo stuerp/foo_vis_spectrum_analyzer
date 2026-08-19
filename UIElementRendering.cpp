@@ -720,8 +720,9 @@ void uielement_t::RenderDebug() noexcept
     TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
     TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-    for (auto Item : _Grid)
-        _DeviceContext->DrawText(Item->_Analysis._DebugText.c_str(), (UINT) ::wcslen(Item->_Analysis._DebugText.c_str()), TextFormat, Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
+
+    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat, Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 #endif

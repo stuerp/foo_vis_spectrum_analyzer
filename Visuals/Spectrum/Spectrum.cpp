@@ -566,8 +566,8 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
 void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept
 {
     // Calculate the x coordinate.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State->_ScalingFunction, _State->_SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double NyquistScale = std::clamp(ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale);

@@ -31,12 +31,12 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         const double Bandwidth  = std::abs(fb.Hi - fb.Lo) + (SampleDuration * _State->_CQTBandwidthOffset);
         const double TimeLength = std::min(1. / Bandwidth, 1. / SampleDuration);
 
-        double SamplingPeriod = std::max(1., std::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Center + TimeLength)));
+        double SamplingPeriod = std::max(1., std::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Mid + TimeLength)));
 
         if (!UseGranularSamplingPeriod)
             SamplingPeriod = std::pow(2., std::trunc(std::log2(SamplingPeriod)));
 
-        const double KTerm = fb.Center * SamplingPeriod;                // Frequency of interest
+        const double KTerm = fb.Mid * SamplingPeriod;                // Frequency of interest
         const double Omega = 2. * M_PI * KTerm / (double) _SampleRate;  // ω
         const double Coeff = 2. * std::cos(Omega);
 

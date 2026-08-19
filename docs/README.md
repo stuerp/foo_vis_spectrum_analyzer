@@ -22,7 +22,12 @@ Welcome to [foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectru
 `
 ## Introduction
 `
-[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component that that implements a panel that can render different kinds of visualisations of the track being played such as a spectrum analysis, a spectrogram, peak meters, oscilloscope or bit meter.
+[foo_vis_spectrum_analyzer](https://github.com/stuerp/foo_vis_spectrum_analyzer/releases) is a [foobar2000](https://www.foobar2000.org/) component.
+
+It implements a panel to visualize the track being played as a spectrum analysis, a spectrogram, Peak / RMS, Balance / Correlation, oscilloscope or bit meter.
+Several advanced parameters and settings are available to modify the analysis.
+
+Or you can just play with the graphics parameters to create a pleasing result.
 
 ---
 
@@ -45,6 +50,18 @@ You can download the component from the foobar2000 [Components](https://www.foob
 > To verify if the installation was successful open the foobar2000 Preferences using the **File / Preferences / Components** menu item and look for **Spectrum Analyzer** in the **Installed components** list.
 
 You can experiment with the component without modifying your layout by selecting **Spectrum Analyzer** from the **View / Visualizations** menu item.
+
+## Quick Start
+
+1. Add a Spectrum Analyzer panel to your layout.
+2. Right-click the panel and select **Configure** from the context menu.
+3. Choose a visualization type:
+   - Bars
+   - Curve
+   - Spectrogram
+4. Adjust colors and frequency distribution as desired.
+
+Enjoy the show.
 
 ---
 
@@ -147,7 +164,7 @@ The same as bars but with a smoothed curve instead of bars.
 
 ![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
-<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+<sup>Spectrum analyzer Curve Mode with album art background, Peak / RMS and Balance / Correlation</sup>
 
 ![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
 
@@ -159,11 +176,11 @@ The same as bars but with a smoothed curve instead of bars.
 
 <sup>Horizontal scrolling spectrogram visualization</sup>
 
-##### Peak Meter
+##### Peak / RMS
 
 Displays the peak and RMS levels of the audio.
 
-##### Level Meter
+##### Balance / Correlation
 
 Displays the balance and mid/side correlation of the audio.
 
@@ -206,7 +223,7 @@ This visualization uses the following settings:
 
 <sup>Oscilloscope with Y-axis in dBFS</sup>
 
-###### X-Y mode
+###### X/Y mode
 
 In this mode the visualization displays two input signals (typically the left and right channel) plotted against each other, with one signal driving the horizontal axis (X)
 and the other the vertical axis (Y), instead of the usual time-based sweep.
@@ -224,7 +241,7 @@ This visualization uses the following settings:
 
 ![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
 
-<sup>Oscilloscope in X-Y mode displaying a Lissajous figure</sup>
+<sup>Oscilloscope in X/Y mode displaying a Lissajous figure</sup>
 
 ##### Bit Meter
 
@@ -263,22 +280,24 @@ Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlatio
 
 `Peak mode`
 
-Specifies how the peak indicators are rendered:
+Determines how the peak indicators behave:
 
-- None
-- Classic
-- Gravity
-- AIMP
-- Fade Out
-- Fading AIMP: A combination of AIMP and Fade Out
+| Mode        | Description                      |
+|-------------|----------------------------------|
+| None        | Disable peak indicators          |
+| Classic     | Traditional falling peak marker  |
+| Gravity     | Physically-inspired decay        |
+| AIMP        | Emulates AIMP peak behavior      |
+| Fade Out    | Peaks gradually fade             |
+| Fading AIMP | Combination of AIMP and Fade Out |
 
 `Hold time`
 
-Specifies how long a peak value will be held steady before it decays.
+Specifies how long a peak value will be held steady before it starts falling (in seconds).
 
-`Acceleration`
+`Fall rate`
 
-Specifies the acceleration used to decay the peak value.
+Specifies the rate at which the peak value decreases towards 0 (in dB/s).
 
 #### LEDs group
 
@@ -288,7 +307,7 @@ Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlatio
 
 `Enabled`
 
-Display the spectrum bars and peak meters as LEDs.
+Display the spectrum bars, Peak / RMS and Balance / Correlation as LEDs.
 
 `LED light`
 
@@ -351,9 +370,9 @@ Renders the spectrogram horizontally when enabled, vertically when not.
 
 `Use spectrum bar metrics`
 
-#### Peak Meter group
+#### Peak / RMS group
 
-The peak meter will display the instant peak and RMS over time level of the playing track.
+The Peak / RMS will display the instant peak and RMS over time level of the playing track.
 
 > [!Tip]
 > A bar will be shown for each of the channels in the playing track but only when it is also selected in the Channels list on the Graphs page. F.e. a 7.1 track with only the Front Left and Front Right channel selected will only show 2 bars. A mono track without the Front Center channel selected will show no bar.
@@ -362,7 +381,7 @@ Set the visualization type to **Peak / RMS** to enable these settings.
 
 `Horizontal`
 
-Renders the peak meter horizontally when enabled, vertically when not.
+Renders the Peak / RMS horizontally when enabled, vertically when not.
 
 `RMS+3`
 
@@ -391,17 +410,17 @@ Specifies the gap between the bar (in pixels). Defaults to 1 pixel.
 
 Allows you to constrain the width or height of a bar when the graph is resized. Specify a size in pixels to constrain the bar width or height. Set to 0 to remove the constraint.
 
-#### Level Meter group
+#### Balance / Correlation group
 
 Set the visualization type to **Balance / Correlation** to enable these settings.
 
 `Horizontal`
 
-Renders the level meter horizontally when enabled, vertically when not.
+Renders the Balance / Correlation horizontally when enabled, vertically when not.
 
 #### Oscilloscope group
 
-`X-Y mode`
+`X/Y mode`
 
 Enables X/Y-mode. Select a channel pair, typically Left/Right. The Left signal will be plotted on the X-axis; the Right signal will be plotted on the Y-axis.
 
@@ -437,18 +456,70 @@ Specifies the color fade speed. Lower values cause a faster decay.
 
 ### Transform page
 
-This page contains the controls to configure the Time to Frequency transform that the component will use to visualize the frequencies.
+This page contains the controls to configure the Time to Frequency domain transform that the component will use to visualize the frequencies.
+
+#### FFT vs. CQT
+
+Both FFT (Fast Fourier Transform) and CQT (Constant-Q Transform) convert audio from the time domain into the frequency domain, but they distribute frequency bins very differently.
+
+**FFT** divides the frequency range into equal-width frequency bins e.g. 20Hz, 40Hz, 60Hz, 80Hz, 100Hz ...
+The size of the frequency bins remains constant.
+
+##### Advantages
+
+- Fast and efficient
+- Excellent frequency accuracy at high frequencies
+- Industry standard for spectrum analyzers
+- Low CPU usage
+
+##### Disadvantages
+
+- Frequency resolution in the lower frequencies is limited.
+- Musical notes do not align naturally with bins.
+- Bass frequencies can appear compressed together.
+
+##### Recommended for most users
+
+- Traditional spectrum analyzers
+- Technical measurements
+- Real-time visualizations
+- General-purpose audio analysis
+
+**CQT** divides frequencies logarithmically, similar to musical pitch perception e.g. 20Hz, 40Hz, 80Hz, 160Hz, 320Hz, 640Hz ...
+The size of the frequency bins becomes larger as the frequency increases.
+
+Human hearing is approximately logarithmic. Each octave step doubles the frequency, but we perceive each doubling as the same musical distance.
+
+CQT looks better for music because:
+
+- it gives bass notes more detail.
+- Octaves are distributed evenly.
+- Harmonics form clearer patterns
+- Musical instruments appear more recognizable.
+
+##### Advantages
+
+- Higher resolution at low frequencies
+- Matches musical note spacing
+- More natural-looking audio visualizations
+- Better for harmonic and musical content
+
+##### Disadvantages
+
+- More computationally expensive
+- Lower precision at very high frequencies
+- More complex to configure
+
+#### Other methods
+
+- Sliding Windowed Infinite Fourier (SWIFT)
+- Analog-style
 
 #### Transform group
 
 `Method`
 
 Allows you to select the Time to Frequency domain transform. The following transforms are implemented:
-
-- Fast Fourier (FFT)
-- Constant-Q (CQT)
-- Sliding Windowed Infinite Fourier (SWIFT)
-- Analog-style
 
 `Window function`
 
@@ -690,7 +761,7 @@ This page contains settings that the visualizations have in common.
 
 `Smoothing method`
 
-Determines how the spectrum coefficients and the peak meter values are smoothed.
+Determines how the spectrum coefficients and the Peak / RMS values are smoothed.
 
 - Average: Calculates a weighted average between the old and the new value of the peak. Uses the smoothing factor as a weight.
 - Peak: Retains the maximum between the old and the new value of the peak.
@@ -901,7 +972,7 @@ Deselects all channels in the `Channels` list.
 
 `Channel pair`
 
-Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Level Meter](#balance--correlation) and the [Oscilloscope](#oscilloscope).
+Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak-rms) and the [Oscilloscope](#oscilloscope).
 
 `Swap channels`
 
@@ -1050,26 +1121,26 @@ Deletes the currently selected preset.
 
 **A:**
 
-|Abbr|Description|
-|----|-----------|
-|FL|Front Left|
-|FR|Front Right|
-|FC|Front Center|
-|LFE|Low-Frequence Effects|
-|BL|Back Left|
-|BR|Back Right|
-|FCL|Front Center Left|
-|FCR|Front Center Right|
-|BC|Back Center|
-|SL|Side Left|
-|SR|Side Right|
-|TC|Top Center|
-|TFL|Top Front Left|
-|TFC|Top Front Center|
-|TFR|Top Front Right|
-|TBL|Top Back Left|
-|TBC|Top Back Center|
-|TBR|Top Back Right|
+|Abbr|Description          |
+|----|---------------------|
+|FL  |Front Left           |
+|FR  |Front Right          |
+|FC  |Front Center         |
+|LFE |Low-Frequency Effects|
+|BL  |Back Left            |
+|BR  |Back Right           |
+|FCL |Front Center Left    |
+|FCR |Front Center Right   |
+|BC  |Back Center          |
+|SL  |Side Left            |
+|SR  |Side Right           |
+|TC  |Top Center           |
+|TFL |Top Front Left       |
+|TFC |Top Front Center     |
+|TFR |Top Front Right      |
+|TBL |Top Back Left        |
+|TBC |Top Back Center      |
+|TBR |Top Back Right       |
 
 ---
 

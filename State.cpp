@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.07.04) P. Stuer **/
+/** $VER: State.cpp (2026.08.19) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -222,8 +222,8 @@ void state_t::Reset() noexcept
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode = PeakMode::Classic;
-    _HoldTime = 30.;
-    _Acceleration = 0.5;
+    _HoldTime = .5; // s
+    _FallRate = 20; // dB/s
 
     // Radial Bars
     _InnerRadius = 0.2f;
@@ -502,7 +502,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     _PeakMode = other._PeakMode;
     _HoldTime = other._HoldTime;
-    _Acceleration = other._Acceleration;
+    _FallRate = other._FallRate;
 
     // Radial Bars
     _InnerRadius = other._InnerRadius;
@@ -671,7 +671,13 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
         stream->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
         stream->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->read(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        stream->read(&_FallRate, sizeof(_FallRate), abortHandler);
+
+        if (Version < 36)
+        {
+            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
+            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+        }
 
     #pragma endregion
 
@@ -1082,7 +1088,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
 
         stream->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
         stream->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->write(&_Acceleration, sizeof(_Acceleration), abortHandler);
+        stream->write(&_FallRate, sizeof(_FallRate), abortHandler);
 
         #pragma endregion
 
@@ -1353,6 +1359,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 {
     json Object = json::parse(data, data + size, nullptr, true);
 
+    const uint32_t SchemaVersion = Object.value("schemaVersion", _SchemaVersion);
+
     // User Interface
     _RefreshRateLimit = Object.value("refreshRateLimit", _RefreshRateLimit);
 
@@ -1373,9 +1381,18 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & PeakIndicators = Object.value("peakIndicators", json::object());
 
-    _PeakMode     = PeakIndicators.value("mode", _PeakMode);
-    _HoldTime     = PeakIndicators.value("holdTime", _HoldTime);
-    _Acceleration = PeakIndicators.value("acceleration", _Acceleration);
+    _PeakMode = PeakIndicators.value("mode", _PeakMode);
+    _HoldTime = PeakIndicators.value("holdTime", _HoldTime);
+
+    if (SchemaVersion < 2)
+    {
+        _FallRate = PeakIndicators.value("acceleration", _FallRate);
+
+        _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
+        _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+    }
+    else
+        _FallRate = PeakIndicators.value("fallRate", _FallRate);
 
     const auto & LEDs = Object.value("leds", json::object());
 
@@ -1603,7 +1620,7 @@ json state_t::ToJSON(bool isPreset) const
             ({
                 { "mode", _PeakMode },
                 { "holdTime", _HoldTime },
-                { "acceleration", _Acceleration },
+                { "fallRate", _FallRate },
             })
         ),
 

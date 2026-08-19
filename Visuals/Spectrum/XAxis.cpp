@@ -29,8 +29,8 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, c
 
     _BandCount = fb.size();
 
-    _LoFrequency = fb.front().Center;
-    _HiFrequency = fb.back().Center;
+    _LoFrequency = fb.front().Mid;
+    _HiFrequency = fb.back().Mid;
 
     // Precalculate the labels.
     {
@@ -47,7 +47,7 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, c
             {
                 for (size_t i = 0; i < _BandCount; i += 10)
                 {
-                    double Frequency = fb[i].Center;
+                    double Frequency = fb[i].Mid;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphDescription->_XAxisDecimals, Frequency);

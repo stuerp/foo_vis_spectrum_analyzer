@@ -508,23 +508,23 @@ void bar_t::Render() const noexcept
 
             // Draw the foreground (Peak).
             {
-                Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
+                Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedPeak * _Size.width;
 
                 DrawHorizontalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+                if (_Peak0dBStyle->IsEnabled() && (_Measurement->NormalizedPeak > _dBFSZeroNormalized))
                 {
                     Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
-                    Rect.right = _Rect.left + (FLOAT) _Measurement->PeakNormalized * _Size.width;
+                    Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedPeak * _Size.width;
 
                     DrawHorizontalRectangle(Rect, _Peak0dBStyle);
                 }
             }
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                const FLOAT x = (FLOAT) _Measurement->MaxPeakNormalized * _Size.width;
+                const FLOAT x = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.width;
 
                 Rect.left  = _Rect.left + x;
                 Rect.right = _Rect.left + x;
@@ -554,15 +554,15 @@ void bar_t::Render() const noexcept
             if (_RMSStyle->IsEnabled())
             {
                 Rect.left  = _Rect.left;
-                Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
+                Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedRMS * _Size.width;
 
                 DrawHorizontalRectangle(Rect, _RMSStyle);
 
                 // Draw the foreground (RMS, Measurement > 0dBFS).
-                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+                if (_RMS0dBStyle->IsEnabled() && (_Measurement->NormalizedRMS > _dBFSZeroNormalized))
                 {
                     Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
-                    Rect.right = _Rect.left + (FLOAT) _Measurement->RMSNormalized * _Size.width;
+                    Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedRMS * _Size.width;
 
                     DrawHorizontalRectangle(Rect, _RMS0dBStyle);
                 }
@@ -579,24 +579,24 @@ void bar_t::Render() const noexcept
             // Draw the foreground (Peak).
             if (_PeakStyle->IsEnabled())
             {
-                Rect.bottom = _Rect.top + ((FLOAT) _Measurement->PeakNormalized * _Size.height);
+                Rect.bottom = _Rect.top + ((FLOAT) _Measurement->NormalizedPeak * _Size.height);
 
                 DrawVerticalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_Peak0dBStyle->IsEnabled() && (_Measurement->PeakNormalized > _dBFSZeroNormalized))
+                if (_Peak0dBStyle->IsEnabled() && (_Measurement->NormalizedPeak > _dBFSZeroNormalized))
                 {
                     Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
-                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->PeakNormalized * _Size.height;
+                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedPeak * _Size.height;
 
                     DrawVerticalRectangle(Rect, _Peak0dBStyle);
                 }
             }
 
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxPeakNormalized > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                const FLOAT y = (FLOAT) _Measurement->MaxPeakNormalized * _Size.height;
+                const FLOAT y = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.height;
 
                 Rect.top    = _Rect.top + y;
                 Rect.bottom = _Rect.top + y;
@@ -626,15 +626,15 @@ void bar_t::Render() const noexcept
             if (_RMSStyle->IsEnabled())
             {
                 Rect.top    = _Rect.top;
-                Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
+                Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedRMS * _Size.height;
 
                 DrawVerticalRectangle(Rect, _RMSStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
-                if (_RMS0dBStyle->IsEnabled() && (_Measurement->RMSNormalized > _dBFSZeroNormalized))
+                if (_RMS0dBStyle->IsEnabled() && (_Measurement->NormalizedRMS > _dBFSZeroNormalized))
                 {
                     Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
-                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->RMSNormalized * _Size.height;
+                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedRMS * _Size.height;
 
                     DrawVerticalRectangle(Rect, _RMS0dBStyle);
                 }

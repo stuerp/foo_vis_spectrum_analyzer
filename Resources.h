@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.08.16) P. Stuer **/
+/** $VER: Resources.h (2026.08.17) P. Stuer **/
 
 #pragma once
 
@@ -411,7 +411,7 @@
 #define IDC_HOLD_TIME                   7114
 
 #define IDC_ACCELERATION_LBL            7116
-#define IDC_ACCELERATION                7118
+#define IDC_FALL_RATE                   7118
 
 // LEDs
 #define IDC_LEDS                        7120

@@ -17,8 +17,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_VISUALIZATION, "Selects the type of visualization." },
 
         { IDC_PEAK_MODE, "Determines how to display the peak values." },
-        { IDC_HOLD_TIME, "Determines how long the peak values are held before they decay." },
-        { IDC_ACCELERATION, "Determines the accelaration of the peak value decay." },
+        { IDC_HOLD_TIME, "Determines how long the peak values are held before they fall in seconds." },
+        { IDC_FALL_RATE, "Determines the fall rate of the peak value in dB/s." },
 
         { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
         { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
@@ -100,7 +100,7 @@ void visualization_page_t::InitializeControls() noexcept
         w.SetCurSel((int) _State->_PeakMode);
 
         SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
-        SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
+        SetDouble(IDC_FALL_RATE, _State->_FallRate, 0, 1);
     }
 
     // LEDs
@@ -242,7 +242,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_PEAK_MODE).EnableWindow(HasPeaks);
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_FALL_RATE).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
 
     // LEDs
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
@@ -389,9 +389,9 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_ACCELERATION:
+        case IDC_FALL_RATE:
         {
-            if (!SetProperty(_State->_Acceleration, std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration)))
+            if (!SetProperty(_State->_FallRate, std::clamp(::_wtof(Text), MinFallRate, MaxFallRate)))
                 return;
 
             break;
@@ -545,9 +545,9 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_ACCELERATION:
+        case IDC_FALL_RATE:
         {
-            SetDouble(id, _State->_Acceleration, 0, 1);
+            SetDouble(id, _State->_FallRate, 0, 1);
             break;
         }
 

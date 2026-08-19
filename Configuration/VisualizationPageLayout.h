@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.07.04) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.08.18) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -49,9 +49,15 @@
     #define H_A52    H_TBX
     #define X_A52    X_A51 + W_A51 + IX
     #define Y_A52    Y_A51
+
+    // Label: Unit
+    #define W_A55    42
+    #define H_A55    H_LBL
+    #define X_A55    X_A52 + W_A52 + IX
+    #define Y_A55    Y_A52
     #pragma endregion
 
-    #pragma region Acceleration (db/s2)
+    #pragma region Fall rate (dB/s)
     // Label
     #define W_A53    42
     #define H_A53    H_LBL
@@ -63,6 +69,12 @@
     #define H_A54    H_TBX
     #define X_A54    X_A53 + W_A53 + IX
     #define Y_A54    Y_A53
+
+    // Label: Unit
+    #define W_A56    42
+    #define H_A56    H_LBL
+    #define X_A56    X_A54 + W_A54 + IX
+    #define Y_A56    Y_A54
     #pragma endregion
 
 #define W_B13   116
