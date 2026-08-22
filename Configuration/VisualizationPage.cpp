@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.08.19) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.08.22) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -47,14 +47,15 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
         { IDC_HORIZONTAL_LEVEL_METER, "Renders the Balance/Correlation meter horizontally." },
 
-        { IDC_XY_MODE, "Enables X-Y mode." },
+        { IDC_XY_MODE, "Enables X/Y mode." },
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
         { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope per screen update." },
-        { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
+        { IDC_PHOSPHOR_DECAY, "Enables a phosphor decay effect simulation of analog oscilloscopes." },
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
+        { IDC_DOWNMIX, "Enable this setting to downmix the input audio of the oscilloscope to mono." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -210,6 +211,8 @@ void visualization_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
         }
+
+        SendDlgItemMessageW(IDC_DOWNMIX, BM_SETCHECK, _State->_Downmix);
     }
 
     UpdateControls();
@@ -291,6 +294,8 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
     GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+
+    GetDlgItem(IDC_DOWNMIX).EnableWindow(IsOscilloscope && !_State->_XYMode);
 }
 
 /// <summary>
@@ -764,6 +769,16 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_PHOSPHOR_DECAY:
         {
             _State->_HasPhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
+        case IDC_DOWNMIX:
+        {
+            _State->_Downmix = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
 

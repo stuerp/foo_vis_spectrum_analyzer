@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.08.19) P. Stuer **/
+/** $VER: State.cpp (2026.08.22) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -264,6 +264,7 @@ void state_t::Reset() noexcept
     _BlurSigma = 3.f;
     _DecayFactor = 0.95f;
     _FrameCount = 1024;
+    _Downmix = false;
 
     // Bit Meter
     _BitMeterMode = BitMeterMode::FloatingPoint;
@@ -543,6 +544,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _BlurSigma = other._BlurSigma;
     _DecayFactor = other._DecayFactor;
     _FrameCount = other._FrameCount;
+    _Downmix = other._Downmix;
 
     // Bit Meter
     _BitMeterMode = other._BitMeterMode;
@@ -551,24 +553,23 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma endregion
 
-    #pragma region Styles
+    // Styles
+    _StyleManager         = other._StyleManager;
 
-    _StyleManager = other._StyleManager;
-
-    #pragma endregion
-
-    #pragma region Presets
-
+    // Presets
     _PresetsDirectoryPath = other._PresetsDirectoryPath;
 
-    #pragma endregion
+    // Not serialized
+/*
+    _ArtworkDominantColor = other._ArtworkDominantColor;
+    _ArtworkGradientStops = other._ArtworkGradientStops;
 
-    #pragma region Not serialized
+    _UserInterfaceColors  = other._UserInterfaceColors;
 
-    _BinCount = other._BinCount;
-    _ActivePresetName = other._ActivePresetName;
-
-    #pragma endregion
+    _RecreateStyles       = other._RecreateStyles;
+*/
+    _BinCount             = other._BinCount;
+    _ActivePresetName     = other._ActivePresetName;
 
     return *this;
 }
@@ -1441,6 +1442,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _BlurSigma        = PhosporDecay.value("blurSigma", _BlurSigma);
     _DecayFactor      = PhosporDecay.value("decayFactor", _DecayFactor);
 
+    _Downmix = Oscilloscope.value("downmix", _Downmix);
+
     const auto & BitMeter = Object.value("bitMeter", json::object());
 
     _BitMeterMode   = BitMeter.value("mode", _BitMeterMode);
@@ -1694,7 +1697,9 @@ json state_t::ToJSON(bool isPreset) const
                         { "blurSigma", _BlurSigma },
                         { "decayFactor", _DecayFactor },
                     })
-                }
+                },
+
+                { "downmix", _Downmix },
             })
         ),
 

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.07.04) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.08.22) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -38,7 +38,7 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
-    HRESULT CreateAxesCommandList() noexcept;
+    HRESULT CreateAxesCommandList(uint32_t axesCount) noexcept;
 
 private:
     decimator_t _Decimator;
@@ -60,4 +60,5 @@ private:
     double _ChunkDuration;
 
     CComPtr<ID2D1CommandList> _AxesCommandList;
+    size_t _AxesCount;
 };

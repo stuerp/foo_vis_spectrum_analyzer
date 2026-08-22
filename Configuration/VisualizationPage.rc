@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.08.18) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.08.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -108,11 +108,13 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Frame count:"                  IDC_STATIC,                     X_C90, Y_C90 + 2, W_C90, H_C90
         edittext                                    IDC_FRAME_COUNT,                X_C91, Y_C91, W_C91, H_C91, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control     "Phosphor decay effect:"        IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
+        control     "Phosphor decay"                IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
 
         rtext       "Blur sigma:"                   IDC_BLUR_SIGMA_LBL,             X_C66, Y_C66 + 2, W_C66, H_C66
         edittext                                    IDC_BLUR_SIGMA,                 X_C68, Y_C68, W_C68, H_C68, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
         edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        control     "Downmix to mono"               IDC_DOWNMIX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
 }

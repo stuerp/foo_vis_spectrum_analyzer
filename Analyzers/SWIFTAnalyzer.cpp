@@ -54,7 +54,7 @@ bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameC
 
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(&frames[i], selectedChannels);
+        const audio_sample Sample = Downmix(&frames[i], selectedChannels);
 
         size_t k = 0;
 

@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.08.18) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.08.22) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -418,7 +418,7 @@
     #define X_C91    X_C62
     #define Y_C91    Y_C79
 
-    // Checkbox: Phosphor decay effect
+    // Checkbox: Phosphor decay
     #define W_C64    62
     #define H_C64    H_CHB
     #define X_C64    X_C54
@@ -448,5 +448,11 @@
     #define X_C72    X_C70 + W_C70 + IX
     #define Y_C72    Y_C70
 
+    // Checkbox: Downmix to mono
+    #define W_A40    80
+    #define H_A40    H_CHB
+    #define X_A40    X_C64
+    #define Y_A40    Y_C72 + H_C72 + IY
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7

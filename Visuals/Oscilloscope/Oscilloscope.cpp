@@ -1,14 +1,17 @@
 
-/** $VER: Oscilloscope.cpp (2026.07.04) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.08.22) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
 #include "Oscilloscope.h"
-#include "AmplitudeScaler.h"
+
+#include <Analyzers/AmplitudeScaler.h>
+#include <Analyzers/Downmixer.h>
 
 #include "Support.h"
 
 #include "Direct2D.h"
+#include "Resources.h"
 
 #pragma hdrstop
 
@@ -103,6 +106,7 @@ void oscilloscope_t::Resize() noexcept
     _YAxisTextStyle.DeleteDeviceSpecificResources();
 
     _AxesCommandList.Release();
+    _AxesCount = 0;
 
     _IsResized = false;
 }
@@ -113,14 +117,17 @@ void oscilloscope_t::Resize() noexcept
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+    const uint32_t ChannelCount = _State->_Downmix ? 1 :  _Analysis->_Chunk.get_channel_count();
 
     // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
     if ((FrameCount == 0) || (ChannelCount == 0))
         return;
 
     if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
+    {
         _AxesCommandList.Release();
+        _AxesCount = 0;
+    }
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -146,15 +153,32 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
 
-        audio_chunk_impl Chunk;
+        audio_chunk_impl DstChunk;
 
-        const double Ratio = (double) _Analysis->_Chunk.get_sample_count() / (double) SignalSize.width;
+        {
+            const audio_chunk * IntChunk;
 
-        _Decimator.Process(_Analysis->_Chunk, Chunk, Ratio);
+            audio_chunk_impl TmpChunk;
+
+            if (_State->_Downmix)
+            {
+                downmixer_t Downmixer;
+
+                Downmixer(_Analysis->_Chunk, _GraphOptions->_SelectedChannels, TmpChunk);
+
+                IntChunk = &TmpChunk;
+            }
+            else
+                IntChunk = &_Analysis->_Chunk;
+
+            const double Ratio = (double) IntChunk->get_sample_count() / (double) SignalSize.width;
+
+            _Decimator.Process(*IntChunk, DstChunk, Ratio);
+        }
 
         CComPtr<ID2D1PathGeometry> Geometry;
 
-        hr = CreateSignalGeometry(Chunk, SignalSize, Geometry);
+        hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
 
         // Draw the signal in the composite buffer.
         if (SUCCEEDED(hr))
@@ -321,8 +345,10 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             return hr;
     }
 
-    if (_AxesCommandList == nullptr)
-        hr = CreateAxesCommandList();
+    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_SelectedChannels);
+
+    if ((_AxesCommandList == nullptr) || (_AxesCount != AxesCount))
+        hr = CreateAxesCommandList(AxesCount);
 
     return hr;
 }
@@ -333,6 +359,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
     _AxesCommandList.Release();
+    _AxesCount = 0;
 
     _YAxisTextStyle.DeleteDeviceSpecificResources();
     _XAxisTextStyle.DeleteDeviceSpecificResources();
@@ -432,10 +459,11 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 /// <summary>
 /// Creates a command list to render the grid and the X and Y axis labels.
 /// </summary>
-HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
+HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 {
-    const size_t SelectedChannelCount = (size_t) std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_SelectedChannels);
-    const FLOAT ChannelHeight = _Size.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
+    _AxesCommandList.Release();
+
+    const FLOAT ChannelHeight = _Size.height / (FLOAT) axesCount; // Height available to one channel.
     const FLOAT YAxisWidth = _YAxisTextStyle._Width;
 
     const FLOAT x1 = 0.f         + ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisLeft)  ? YAxisWidth : 0.f);
@@ -444,124 +472,125 @@ HRESULT oscilloscope_t::CreateAxesCommandList() noexcept
     // Create a command list that will store the grid pattern and the axes.
     HRESULT hr = _DeviceContext->CreateCommandList(&_AxesCommandList);
 
-    if (SUCCEEDED(hr))
+    if (!SUCCEEDED(hr))
+        return hr;
+
+    _DeviceContext->SetTarget(_AxesCommandList);
+    _DeviceContext->BeginDraw();
+
+    _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+
+    // Y-axis
+    if (_GraphOptions->HasYAxis())
     {
-        _DeviceContext->SetTarget(_AxesCommandList);
-        _DeviceContext->BeginDraw();
+        _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+        _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+        FLOAT y1 = 0.f;
+        FLOAT y2 = ChannelHeight;
 
-        // Y-axis
-        if (_GraphOptions->HasYAxis())
+        D2D1_RECT_F TextRect = { };
+
+        for (uint32_t i = 0; i < axesCount; ++i)
         {
-            _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            if (_GraphOptions->_YAxisLeft)
+                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
 
-            FLOAT y1 = 0.f;
-            FLOAT y2 = ChannelHeight;
+            if (_GraphOptions->_YAxisRight)
+                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
 
-            D2D1_RECT_F TextRect = { };
-
-            for (uint32_t i = 0; i < SelectedChannelCount; ++i)
+            if (_YAxisTextStyle.IsEnabled())
             {
-                if (_GraphOptions->_YAxisLeft)
-                    _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
-
-                if (_GraphOptions->_YAxisRight)
-                    _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
-
-                if (_YAxisTextStyle.IsEnabled())
+                for (const label_t & Label : _Labels)
                 {
-                    for (const label_t & Label : _Labels)
+                    const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
+
+                    if (_HorizontalGridLineStyle.IsEnabled())
+                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _AxisStrokeStyle);
+
+                    TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
+                    TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
+
+                    if (_GraphOptions->_YAxisLeft)
                     {
-                        const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
+                        TextRect.left  = 0.f;
+                        TextRect.right = YAxisWidth - 2.f;
 
-                        if (_HorizontalGridLineStyle.IsEnabled())
-                            _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _AxisStrokeStyle);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
 
-                        TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
-                        TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
+                    if (_GraphOptions->_YAxisRight)
+                    {
+                        TextRect.left  = x2 + 2.f;
+                        TextRect.right = _Size.width - 1.f;
 
-                        if (_GraphOptions->_YAxisLeft)
-                        {
-                            TextRect.left  = 0.f;
-                            TextRect.right = YAxisWidth - 2.f;
-
-                            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                        }
-
-                        if (_GraphOptions->_YAxisRight)
-                        {
-                            TextRect.left  = x2 + 2.f;
-                            TextRect.right = _Size.width - 1.f;
-
-                            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                        }
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
-
-                y1  = y2;
-                y2 += ChannelHeight;
             }
+
+            y1  = y2;
+            y2 += ChannelHeight;
         }
-
-        // X-axis
-        if (_GraphOptions->HasXAxis())
-        {
-            _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
-
-            FLOAT y = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
-
-            FLOAT y1 = 0;
-            FLOAT y2 = ChannelHeight;
-
-            D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
-
-            _ChunkDuration = _Analysis->_Chunk.get_duration();
-
-            const int dt = (int) (_ChunkDuration * 100.); // Convert to 10-milliseconds units
-
-            for (uint32_t i = 0; i < SelectedChannelCount; ++i)
-            {
-                int Time = dt;
-
-                if (_XAxisLineStyle.IsEnabled())
-                    _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _AxisStrokeStyle);
-
-                if (_XAxisTextStyle.IsEnabled())
-                {
-                    TextRect.bottom = y;
-
-                    const FLOAT dx = (x2 - x1) / 10.f;
-
-                    for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
-                    {
-                        if (_VerticalGridLineStyle.IsEnabled())
-                            _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _AxisStrokeStyle);
-
-                        WCHAR Text[8] = { };
-
-                        ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
-
-                        _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-                        Time += dt;
-                    }
-                }
-
-                y += ChannelHeight;
-
-                y1 += ChannelHeight;
-                y2 += ChannelHeight;
-            }
-        }
-
-        hr = _DeviceContext->EndDraw();
     }
 
-    if (SUCCEEDED(hr))
-        hr = _AxesCommandList->Close();
+    // X-axis
+    if (_GraphOptions->HasXAxis())
+    {
+        _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
+        FLOAT y = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
+
+        FLOAT y1 = 0;
+        FLOAT y2 = ChannelHeight;
+
+        D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
+
+        _ChunkDuration = _Analysis->_Chunk.get_duration();
+
+        const int dt = (int) (_ChunkDuration * 100.); // Convert to 10-milliseconds units
+
+        for (uint32_t i = 0; i < axesCount; ++i)
+        {
+            int Time = dt;
+
+            if (_XAxisLineStyle.IsEnabled())
+                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _AxisStrokeStyle);
+
+            if (_XAxisTextStyle.IsEnabled())
+            {
+                TextRect.bottom = y;
+
+                const FLOAT dx = (x2 - x1) / 10.f;
+
+                for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
+                {
+                    if (_VerticalGridLineStyle.IsEnabled())
+                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _AxisStrokeStyle);
+
+                    WCHAR Text[8] = { };
+
+                    ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
+
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+                    Time += dt;
+                }
+            }
+
+            y += ChannelHeight;
+
+            y1 += ChannelHeight;
+            y2 += ChannelHeight;
+        }
+    }
+
+    (void) _DeviceContext->EndDraw();
+
+    hr = _AxesCommandList->Close();
+
+    _AxesCount = axesCount;
 
     return hr;
 }

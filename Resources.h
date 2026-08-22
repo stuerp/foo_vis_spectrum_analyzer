@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.08.19) P. Stuer **/
+/** $VER: Resources.h (2026.08.22) P. Stuer **/
 
 #pragma once
 
@@ -495,6 +495,8 @@
 #define IDC_BLUR_SIGMA                  7222
 #define IDC_DECAY_FACTOR_LBL            7224
 #define IDC_DECAY_FACTOR                7226
+
+#define IDC_DOWNMIX                     7228
 
 // Bit Meter
 

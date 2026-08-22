@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.08.19) P. Stuer **/
+/** $VER: State.h (2026.08.22) P. Stuer **/
 
 #pragma once
 
@@ -119,6 +119,7 @@ public:
             FLOAT _BlurSigma;
             FLOAT _DecayFactor;
             uint32_t _FrameCount;
+            bool _Downmix;                                              // Downmix the input audio to mono.
 
         #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: Decimator.h (2026.07.04) P. Stuer - Implements a decimator **/
+/** $VER: Decimator.h (2026.08.22) P. Stuer - Implements a decimator **/
 
 #pragma once
 
@@ -9,6 +9,7 @@
 class decimator_t
 {
 public:
+    void ProcessFiltered(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio = 2.0) noexcept;
     void Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio = 2.0) noexcept;
 
 private:

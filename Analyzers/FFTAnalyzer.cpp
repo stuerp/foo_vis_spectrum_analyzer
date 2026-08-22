@@ -86,7 +86,7 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        p[_Next] = AverageSamples(&samples[i], selectedChannels);
+        p[_Next] = Downmix(&samples[i], selectedChannels);
 
         _Next = (_Next + 1) % _InputRing.size();
     }

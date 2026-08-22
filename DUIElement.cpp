@@ -126,6 +126,9 @@ ui_element_config::ptr dui_element_t::get_configuration(state_t & state)
 
         return Builder.finish(g_get_guid());
     }
+    catch (...)
+    {
+    }
 }
 
 /// <summary>

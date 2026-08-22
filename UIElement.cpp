@@ -665,6 +665,8 @@ void uielement_t::on_playback_time(double time)
 
 #pragma endregion
 
+#pragma region Artwork
+
 /// <summary>
 /// Gets the artwork for the specified track.
 /// </summary>
@@ -758,3 +760,5 @@ GUID uielement_t::GetArtworkTypeGUID(ArtworkType artworkType) noexcept
         case ArtworkType::Artist: return album_art_ids::artist;
     }
 }
+
+#pragma endregion

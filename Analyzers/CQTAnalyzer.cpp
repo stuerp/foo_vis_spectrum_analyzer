@@ -230,7 +230,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         _MonoSamples.resize(frameCount);
 
     for (size_t Frame = 0; Frame < frameCount; ++Frame)
-        _MonoSamples[Frame] = AverageSamples(&frames[Frame * _ChannelCount], selectedChannels);
+        _MonoSamples[Frame] = Downmix(&frames[Frame * _ChannelCount], selectedChannels);
 
     for (frequency_band_t & fb : frequencyBands)
     {
