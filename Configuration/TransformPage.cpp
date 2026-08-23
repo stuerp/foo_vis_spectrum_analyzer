@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -156,7 +156,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
+        static_assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
 
         for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
             w.AddString(WindowFunctionNames[i]);
@@ -192,7 +192,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
+        static_assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
 
         for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
             w.AddString(WindowFunctionNames[i]);

@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -102,11 +102,24 @@ void styles_page_t::InitializeControls() noexcept
     }
 
     {
+        static const WCHAR * ColorMapNames[] =
+        {
+            L"Solid", L"Custom", L"Artwork",
+            L"Prism 1", L"Prism 2", L"Prism 3",
+            L"foobar2000", L"foobar2000 Dark Mode",
+            L"Fire", L"Rainbow",
+            L"SoX", 
+            L"Turbo",
+            L"Viridis", L"Plasma", L"Inferno", L"Magma", L"Cividis"
+        };
+
+        static_assert((_countof(ColorMapNames) - 1) == (size_t) ColorScheme::Max, "");
+
         auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
 
         w.ResetContent();
 
-        for (const auto & x : { L"Solid", L"Custom", L"Artwork", L"Prism 1", L"Prism 2", L"Prism 3", L"foobar2000", L"foobar2000 Dark Mode", L"Fire", L"Rainbow", L"SoX" })
+        for (const auto & x : ColorMapNames)
             w.AddString(x);
     }
 

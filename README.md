@@ -159,6 +159,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.12.0.0-alpha1, 2026-xx-xx
 
 - New: You can downmix the input of the oscilloscope to mono.
+- New: [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) and a couple of Perceptually Uniform Sequential [Matplotlib](https://matplotlib.org/stable/users/explain/colors/colormaps.html) color maps.
 - Improved: Visualizations continue without interruption when starting a new track.
 - Improved: Performance and numeric stability of the CQT transform.
 - Improved: Downsampling of the oscilloscope input should now retain more peak values and produce better representation of large input audio chunks.
@@ -181,6 +182,8 @@ You can read the full history [here](docs/History.md).
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 - [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://json.nlohmann.me/).
+- Anton Mikhailov for the [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color map.
+- [Matplotlib](https://matplotlib.org/) for the [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps.
 
 ## Reference Material
 

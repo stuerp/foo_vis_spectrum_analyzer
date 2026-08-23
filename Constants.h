@@ -453,20 +453,28 @@ enum class ColorScheme : uint32_t
     Custom = 1,
     Artwork = 2,
 
-    Prism1 = 3,
-    Prism2 = 4,
-    Prism3 = 5,
+    Prism1,
+    Prism2,
+    Prism3,
 
-    foobar2000 = 6,
-    foobar2000DarkMode = 7,
+    foobar2000,
+    foobar2000DarkMode,
 
-    Fire = 8,
-    Rainbow = 9,
+    Fire,
+    Rainbow,
 
-    SoX = 10,
+    SoX,
+
+    Turbo,
+
+    Viridis,
+    Plasma,
+    Inferno,
+    Magma,
+    Cividis,
 
     Min = Solid,
-    Max = SoX,
+    Max = Cividis,
 };
 
 enum class VisualizationTypes : uint64_t
@@ -622,7 +630,7 @@ enum class Channels : uint32_t
     Config5point1Side   = Config4point0Side | FrontCenter | LFE,
     Config7point1       = Config5point1 | SideLeftRight,
 
-    Count = 18,
+    Count = 18u,
 
     None = 0,
     All = (1 << Count) - 1,

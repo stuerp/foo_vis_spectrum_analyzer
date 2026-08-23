@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.08.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -181,8 +181,8 @@ void graphs_page_t::InitializeControls() noexcept
 
     // Channels
     {
-        assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
-        assert(_countof(ChannelNames) == (size_t) Channels::Count);
+        static_assert(_countof(ChannelNames) == audio_chunk::defined_channel_count, "Channels enum mismatch");
+        static_assert(_countof(ChannelNames) == (size_t) Channels::Count, "Insufficient channels names");
 
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
