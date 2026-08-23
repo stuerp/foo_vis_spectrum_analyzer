@@ -156,7 +156,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.12.0.0-alpha1, 2026-xx-xx
+v0.12.0.0-alpha1, 2026-08-23
 
 - New: You can downmix the input of the oscilloscope to mono.
 - New: [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) and a couple of Perceptually Uniform Sequential [Matplotlib](https://matplotlib.org/stable/users/explain/colors/colormaps.html) color maps.

@@ -301,7 +301,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
             const double x = Position * 2. - 1.;
             const double w = _WindowFunction(x);
 
-            const audio_sample Sample = _MonoSamples[SampleIndex] * w;
+            const auto Sample = (audio_sample) _MonoSamples[SampleIndex] * w;
 
             const double s = Sample + (Coeff * f1) - f2;
 
