@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.06.17) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.08.22) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 #include "XAxis.h"
@@ -14,11 +14,11 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
-    _State = state;
-    _GraphOptions = graphDescription;
-    _Analysis = analysis;
+    _State        = state;
+    _GraphOptions = graphOptions;
+    _Analysis     = analysis;
 
     _Labels.clear();
 
@@ -36,7 +36,7 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, c
     {
         WCHAR Text[32] = { };
 
-        switch (graphDescription->_XAxisMode)
+        switch (graphOptions->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -50,9 +50,9 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, c
                     double Frequency = fb[i].Mid;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphDescription->_XAxisDecimals, Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphDescription->_XAxisDecimals, Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
 
                     label_t lb = { Text, Frequency };
 
@@ -72,9 +72,9 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphDescription, c
                     Frequency = j * i;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphDescription->_XAxisDecimals, Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphDescription->_XAxisDecimals, Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
 
                     label_t lb = { Text, Frequency };
 
@@ -231,7 +231,7 @@ void x_axis_t::Resize() noexcept
                     }
                 }
 
-                Iter.RectB = { Iter.RectT.left,               yb,          Iter.RectT.right,              _Rect.bottom };
+                Iter.RectB = { Iter.RectT.left, yb, Iter.RectT.right, _Rect.bottom };
             }
         }
 
@@ -266,7 +266,9 @@ void x_axis_t::Resize() noexcept
 /// </summary>
 void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
     if (!SUCCEEDED(hr))
         return;
@@ -305,13 +307,13 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
     HRESULT hr = S_OK;
 
     if (_LineStyle._Brush == nullptr)
     {
-        _LineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
+        _LineStyle = *styleManager.GetStyle(VisualElement::VerticalGridLine);
 
         _LineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
@@ -323,7 +325,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
     if (_TextStyle._Brush == nullptr)
     {
-        _TextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+        _TextStyle = *styleManager.GetStyle(VisualElement::XAxisText);
 
         _TextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 

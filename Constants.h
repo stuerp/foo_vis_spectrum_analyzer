@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.08.19) P. Stuer **/
+/** $VER: Constants.h (2026.08.22) P. Stuer **/
 
 #pragma once
 
@@ -42,6 +42,9 @@ enum class SmoothingMethod
 
     Average = 1,
     Peak = 2,
+
+    Min = None,
+    Max = Peak,
 };
 
 enum class ColorOrder
@@ -56,6 +59,9 @@ enum class ColorOrder
 
     LightnessAscending = 5,
     LightnessDescending = 6,
+
+    Min = None,
+    Max = LightnessDescending,
 };
 
 enum class ArtworkType
@@ -64,7 +70,10 @@ enum class ArtworkType
     Back,
     Disc,
     Icon,
-    Artist
+    Artist,
+
+    Min = Front,
+    Max = Artist,
 };
 
 enum class FitMode
@@ -76,6 +85,9 @@ enum class FitMode
     FitHeight,
 
     Fill,
+
+    Min = Free,
+    Max = Fill,
 };
 
 // Visualization
@@ -85,20 +97,20 @@ inline constexpr double MaxHoldTime =   5.; // s
 inline constexpr double MinFallRate =   0.; // dB/s
 inline constexpr double MaxFallRate = 120.; // dB/s
 
-inline constexpr FLOAT MinLEDSize =  0.f;
-inline constexpr FLOAT MaxLEDSize = 32.f;
+inline constexpr FLOAT MinLEDSize =  0.f;   // DIPs
+inline constexpr FLOAT MaxLEDSize = 32.f;   // DIPs
 
-inline constexpr FLOAT MinLEDGap =  0.f;
-inline constexpr FLOAT MaxLEDGap = 32.f;
+inline constexpr FLOAT MinLEDGap =  0.f;    // DIPs
+inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
 
-inline constexpr double MinRMSWindow = 0.; // in seconds
-inline constexpr double MaxRMSWindow = 3.; // in seconds
+inline constexpr double MinRMSWindow = 0.;  // s
+inline constexpr double MaxRMSWindow = 3.;  // s
 
-inline constexpr FLOAT MinBarGap =   0.; // in pixels
-inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // in pixels
+inline constexpr FLOAT MinBarGap =   0.;    // DIPs
+inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr FLOAT MinBarSize =   0.; // in pixels
-inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // in pixels
+inline constexpr FLOAT MinBarSize =   0.;   // DIPs
+inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
 
 enum class PeakMode
 {
@@ -109,6 +121,9 @@ enum class PeakMode
     AIMP = 3,
     FadeOut = 4,
     FadingAIMP = 5,
+
+    Min = None,
+    Max = FadingAIMP,
 };
 
 // Transform
@@ -127,6 +142,9 @@ enum class TransformMethod
     CQT = 1,
     SWIFT = 2,
     AnalogStyle = 3,
+
+    Min = FFT,
+    Max = AnalogStyle,
 };
 
 enum class FFTMode
@@ -145,6 +163,9 @@ enum class FFTMode
 
     FFTCustom   = 11,
     FFTDuration = 12,
+
+    Min         = FFT64,
+    Max         = FFTDuration,
 };
 
 enum class Mapping
@@ -152,6 +173,9 @@ enum class Mapping
     Standard = 0,
     TriangularFilterBank = 1,
     BrownPuckette = 2,
+
+    Min = Standard,
+    Max = BrownPuckette,
 };
 
 enum class AggregationMethod
@@ -165,7 +189,10 @@ enum class AggregationMethod
     RMSSum = 4,
 
     Average = 5,
-    Median = 6
+    Median = 6,
+
+    Min = Minimum,
+    Max = Median,
 };
 
 // Window Function / Brown-Puckette CQT Kernel
@@ -242,6 +269,9 @@ enum class FrequencyDistribution
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+
+    Min = Linear,
+    Max = AveePlayer,
 };
 
 enum class ScalingFunction
@@ -262,6 +292,9 @@ enum class ScalingFunction
     NthRoot = 9,
     NegativeExponential = 10,
     Period = 11,
+
+    Min = Linear,
+    Max = Period,
 };
 
 // Filters
@@ -296,6 +329,9 @@ enum class WeightingType
     DWeighting = 4,
 
     MWeighting = 5, // M-weighting, related to ITU-R 468 noise weighting, https://en.wikipedia.org/wiki/ITU-R_468_noise_weighting
+
+    Min = None,
+    Max = MWeighting,
 };
 
 // Styles
@@ -366,12 +402,15 @@ enum class VisualElement : uint32_t
 
 enum class ColorSource : uint32_t
 {
-    None,
+    None = 0,
     Solid,
     DominantColor,
     Gradient,
     Windows,
     UserInterface,
+
+    Min = None,
+    Max = UserInterface,
 };
 
 enum class WindowsColor : uint32_t
@@ -425,11 +464,14 @@ enum class ColorScheme : uint32_t
     Rainbow = 9,
 
     SoX = 10,
+
+    Min = Solid,
+    Max = SoX,
 };
 
 enum class VisualizationTypes : uint64_t
 {
-    None = 0,
+    None = 0ull,
 
     Bars            = 1 << (int) VisualizationType::Bars,
     Curve           = 1 << (int) VisualizationType::Curve,
@@ -441,7 +483,7 @@ enum class VisualizationTypes : uint64_t
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
     BitMeter        = 1 << (int) VisualizationType::BitMeter,
 
-    All = ~0
+    All = ~0ull
 };
 
 // Oscilloscope
@@ -467,7 +509,10 @@ inline constexpr FLOAT MaxDecayFactor = 1.f;
 enum class BitMeterMode : uint32_t
 {
     FloatingPoint,
-    Integer
+    Integer,
+
+    Min = FloatingPoint,
+    Max = Integer,
 };
 
 inline constexpr uint8_t MinBitsPerInteger =  1;
@@ -480,6 +525,9 @@ enum class HorizontalAlignment
     Center,
     Far,
     Fit,
+
+    Min = Near,
+    Max = Fit
 };
 
 enum class VerticalAlignment
@@ -487,6 +535,9 @@ enum class VerticalAlignment
     Near = 0,
     Center,
     Far,
+
+    Min = Near,
+    Max = Far
 };
 
 enum class XAxisMode
@@ -497,6 +548,9 @@ enum class XAxisMode
     Decades = 2,
     Octaves = 3,
     Notes = 4,
+
+    Min = None,
+    Max = Notes,
 };
 
 enum class YAxisMode
@@ -505,6 +559,9 @@ enum class YAxisMode
 
     Decibels = 1,
     Linear = 2,
+
+    Min = None,
+    Max = Linear,
 };
 
 // Deprecated
@@ -514,40 +571,43 @@ enum class BackgroundMode
 
     Solid = 1,
     Artwork = 2,
+
+    Min = None,
+    Max = Artwork,
 };
 
-// Should be the exact layout as in "SDK\audio_chunk.h". No need to include foobar2000 SDK everywhere.
+// Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
 enum class Channels : uint32_t
 {
-    FrontLeft = 1 << 0,
-    FrontRight = 1 << 1,
-    FrontCenter = 1 << 2,
+    FrontLeft           = 1 <<  0,
+    FrontRight          = 1 <<  1,
+    FrontCenter         = 1 <<  2,
 
-    LFE = 1 << 3,
+    LFE                 = 1 <<  3,
 
-    BackLeft = 1 << 4,
-    BackRight = 1 << 5,
+    BackLeft            = 1 <<  4,
+    BackRight           = 1 <<  5,
 
-    FrontCenterLeft = 1 << 6,
-    FrontCenterRight = 1 << 7,
+    FrontCenterLeft     = 1 <<  6,
+    FrontCenterRight    = 1 <<  7,
 
-    BackCenter = 1 << 8,
+    BackCenter          = 1 <<  8,
 
-    SideLeft = 1 << 9,
-    SideRight = 1 << 10,
+    SideLeft            = 1 <<  9,
+    SideRight           = 1 << 10,
 
-    TopCenter = 1 << 11,
+    TopCenter           = 1 << 11,
 
-    TopFrontLeft = 1 << 12,
-    TopFrontCenter = 1 << 13,
-    TopFrontRight = 1 << 14,
+    TopFrontLeft        = 1 << 12,
+    TopFrontCenter      = 1 << 13,
+    TopFrontRight       = 1 << 14,
 
-    TopBackLeft = 1 << 15,
-    TopBackCenter = 1 << 16,
-    TopBackRight = 1 << 17,
+    TopBackLeft         = 1 << 15,
+    TopBackCenter       = 1 << 16,
+    TopBackRight        = 1 << 17,
 
-    BackLeftRight = BackLeft | BackRight,
-    SideLeftRight = SideLeft | SideRight,
+    BackLeftRight       = BackLeft | BackRight,
+    SideLeftRight       = SideLeft | SideRight,
 
     ConfigMono          = FrontCenter,
     ConfigStereo        = FrontLeft | FrontRight,
@@ -563,6 +623,9 @@ enum class Channels : uint32_t
     Config7point1       = Config5point1 | SideLeftRight,
 
     Count = 18,
+
+    None = 0,
+    All = (1 << Count) - 1,
 };
 
 inline constexpr uint32_t AllChannels = ((1 << (uint32_t) Channels::Count) - 1);
@@ -578,34 +641,43 @@ enum class ChannelPair : uint32_t
     TopFrontLeftRight,
     TopBackLeftRight,
 
-    Count,
+    Min = FrontLeftRight,
+    Max = TopBackLeftRight,
 };
 
 enum class HorizontalTextAlignment : uint32_t
 {
     Left = 0,
     Center = 1,
-    Right = 2
+    Right = 2,
+
+    Min = Left,
+    Max = Right
 };
 
 enum class VerticalTextAlignment : uint32_t
 {
     Top = 0,
     Center = 1,
-    Bottom = 2
+    Bottom = 2,
+
+    Min = Top,
+    Max = Bottom
 };
 
 enum class ConfigurationChanges : uint32_t
 {
-    None = 0,
+    None = 0u,
 
-    RenderLoop   = 1 << 0, // Configuration change impacts the behavior of the render loop.
-    Layout       = 1 << 1, // Configuration change impacts the layout of the visualization.
+    RenderLoop          = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Layout              = 1 << 1, // Configuration change impacts the layout of the visualization.
 
-    RefreshRate  = 1 << 2,
-    Oscilloscope = 1 << 3, // Configuration change impacts the oscilloscope.
+    RefreshRate         = 1 << 2,
+    Oscilloscope        = 1 << 3, // Configuration change impacts the oscilloscope.
 
-    Artwork      = 1 << 4, // Configuration change impacts how the artwork is rendered.
+    Artwork             = 1 << 4, // Configuration change impacts how the artwork is rendered.
+
+    UserInterfaceColors = 1 << 5, // Configuration change impacts the user interface colors.
 
     All = ~0u,
 };

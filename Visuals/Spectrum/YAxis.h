@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2026.10.17) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.08.22) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -40,7 +40,7 @@ public:
     // visualization_t
     void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept

@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2026.06.17) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.08.22) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -101,7 +101,9 @@ void y_axis_t::Resize() noexcept
 /// </summary>
 void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
     if (!SUCCEEDED(hr))
         return;
@@ -134,13 +136,13 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
     HRESULT hr = S_OK;
 
     if (_LineStyle._Brush == nullptr)
     {
-        _LineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+        _LineStyle = *styleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         _LineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
@@ -152,7 +154,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
     if (_TextStyle._Brush == nullptr)
     {
-        _TextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+        _TextStyle = *styleManager.GetStyle(VisualElement::YAxisText);
 
         _TextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 

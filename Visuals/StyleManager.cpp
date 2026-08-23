@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.06.21) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.06.23) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -267,27 +267,27 @@ void style_manager_t::FromJSON(const json & array) noexcept
             if (Id < (uint32_t) VisualElement::Count)
                 Style = _Styles[(VisualElement) Id];    
 
-            Style._Flags = Iter.value("flags", Style._Flags);
-            Style._ColorSource = Iter.value("colorSource", ColorSource::None);
+            Style._Flags       = Iter.value("flags", Style._Flags);
+            Style._ColorSource = std::clamp(Iter.value("colorSource", ColorSource::None), ColorSource::Min, ColorSource::Max);
 
             const auto & Color = Iter.value("customColor", json::object());
 
             Style._CustomColor = style_manager_t::FromJSONColor(Color);
 
-            Style._ColorIndex = Iter.value("colorIndex", Style._ColorIndex);
-            Style._ColorScheme = Iter.value("colorScheme", Style._ColorScheme);
+            Style._ColorIndex  = Iter.value("colorIndex", Style._ColorIndex);
+            Style._ColorScheme = std::clamp(Iter.value("colorScheme", Style._ColorScheme), ColorScheme::Min, ColorScheme::Max);
 
             const auto & Array = Iter.value("customGradientStops", json::array());
 
             Style._CustomGradientStops = style_manager_t::FromJSONGradientStops(Array);
 
-            Style._Opacity = Iter.value("opacity", Style._Opacity);
-            Style._Thickness = Iter.value("thickness", Style._Thickness);
+            Style._Opacity     = std::clamp(Iter.value("opacity", Style._Opacity), 0.f, 1.f);
+            Style._Thickness   = std::clamp(Iter.value("thickness", Style._Thickness), (FLOAT) MinThickness, (FLOAT) MaxThickness);
 
-            const auto & Font = Iter.value("font", json::object());
+            const auto & Font  = Iter.value("font", json::object());
 
-            Style._FontName = msc::UTF8ToWide(Font.value("name", msc::WideToUTF8(Style._FontName)));
-            Style._FontSize = Font.value("size", Style._FontSize);
+            Style._FontName    = msc::UTF8ToWide(Font.value("name", msc::WideToUTF8(Style._FontName)));
+            Style._FontSize    = std::clamp(Font.value("size", Style._FontSize), (FLOAT) MinFontSize, (FLOAT) MaxFontSize);
 
             // Sets the default font settings.
             if (Style.Has(style_t::Features::SupportsFont))
@@ -354,10 +354,11 @@ json style_manager_t::ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept
 /// </summary>
 D2D1_GRADIENT_STOP style_manager_t::FromJSONGradientStop(const json & object) noexcept
 {
-    D2D1_GRADIENT_STOP gs;
-
-    gs.position = object.value("position", 0.f);
-    gs.color    = FromJSONColor(object.value("color", json::object()));
+    D2D1_GRADIENT_STOP gs
+    {
+        .position = std::clamp(object.value("position", 0.f), 0.f, 1.f),
+        .color    = FromJSONColor(object.value("color", json::object()))
+    };
 
     return gs;
 }   
@@ -381,7 +382,13 @@ json style_manager_t::ToJSON(const D2D1_COLOR_F & color) noexcept
 /// </summary>
 D2D1_COLOR_F style_manager_t::FromJSONColor(const json & object) noexcept
 {
-    return D2D1::ColorF(object.value("red", 0.f), object.value("green", 0.f), object.value("blue", 0.f), object.value("alpha", 1.f));
+    return D2D1::ColorF
+    (
+        std::clamp(object.value("red",   0.f), 0.f, 1.f),
+        std::clamp(object.value("green", 0.f), 0.f, 1.f),
+        std::clamp(object.value("blue",  0.f), 0.f, 1.f),
+        std::clamp(object.value("alpha", 1.f), 0.f, 1.f)
+    );
 }
 
 std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles

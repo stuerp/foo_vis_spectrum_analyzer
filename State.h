@@ -35,8 +35,8 @@ public:
     void Read(stream_reader * reader, size_t size, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) noexcept;
     void Write(stream_writer * writer, abort_callback & abortHandler = fb2k::noAbort, bool isPreset = false) const noexcept;
 
-    json ToJSON(bool isPreset = false) const;
     void FromJSON(const char * data, size_t size, bool isPreset = false);
+    json ToJSON(bool isPreset = false) const;
 
 public:
     // Configuration Dialog
@@ -380,8 +380,8 @@ private:
     #pragma endregion
 
 private:
-    const size_t _CurrentVersion = 35; // v0.10.0.0-beta1
-    const uint32_t _SchemaVersion = 2; // v0.12.0.0
+    static constexpr size_t _CurrentVersion = 35; // v0.10.0.0-beta1
+    static constexpr uint32_t _SchemaVersion = 2; // v0.12.0.0
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

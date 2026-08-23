@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.06.17) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.08.22) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -28,12 +28,12 @@ spectrum_t::~spectrum_t()
 /// </summary>
 void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
-    _State = state;
+    _State        = state;
     _GraphOptions = options;
-    _Analysis = analysis;
+    _Analysis     = analysis;
 
-    _IsFirst = isFirst;
-    _IsLast = isLast;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     DeleteDeviceSpecificResources();
 
@@ -196,7 +196,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
         if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
-            const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
+            const bool GreaterThanNyquist = (fb.Lo >= _Analysis->_NyquistFrequency); // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
             if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
             {
@@ -599,14 +599,14 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     if (_State->_RecreateStyles)
         DeleteDeviceSpecificResources();
 
-    auto & StyleManager = (_State->_GraphOptions.size() > 1) ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
-    HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    hr = _YAxis.CreateDeviceSpecificResources(deviceContext);
+    hr = _YAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
     if (!SUCCEEDED(hr))
         return hr;
@@ -1123,7 +1123,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
         // Make sure all control points are on or above the inner circle.
         std::transform(std::execution::par_unseq, points.p1.begin(), points.p1.end(), points.p1.begin(), [InnerRadius](D2D1_POINT_2F & p)
         {
-            const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
+            const auto d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
 
             if (d < InnerRadius)
             {
@@ -1142,7 +1142,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
 
         std::transform(std::execution::par_unseq, points.p2.begin(), points.p2.end(), points.p2.begin(), [InnerRadius](D2D1_POINT_2F & p)
         {
-            const FLOAT d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
+            const auto d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
 
             if (d < InnerRadius)
             {
@@ -1237,20 +1237,21 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
     {
         FLOAT Sin, Cos;
 
+        // Inner arc
         ::D2D1SinCos(a1, &Sin, &Cos);
 
-        FLOAT x = (FLOAT) (Cos * r1);
-        FLOAT y = (FLOAT) (Sin * r1);
+        auto x = (FLOAT) (Cos * r1);
+        auto y = (FLOAT) (Sin * r1);
 
         Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
 
-        // Vertical from inner to outer circle.
+        // Vertical from inner to outer arc.
         x = (FLOAT) (Cos * r2);
         y = (FLOAT) (Sin * r2);
 
         Sink->AddLine(D2D1::Point2F(x, y));
 
-        // Top arc
+        // Outer arc
         ::D2D1SinCos(a2, &Sin, &Cos);
 
         x = (FLOAT) (Cos * r2);
@@ -1258,7 +1259,7 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 
         Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
 
-        // Vertical from outer to inner circle.
+        // Vertical from outer to inner arc.
         x = (FLOAT) (Cos * r1);
         y = (FLOAT) (Sin * r1);
 

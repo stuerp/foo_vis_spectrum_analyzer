@@ -11,7 +11,6 @@
 #include "Support.h"
 
 #include "Direct2D.h"
-#include "Resources.h"
 
 #pragma hdrstop
 
@@ -173,7 +172,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             const double Ratio = (double) IntChunk->get_sample_count() / (double) SignalSize.width;
 
-            _Decimator.Process(*IntChunk, DstChunk, Ratio);
+            _Downsampler.Process(*IntChunk, DstChunk, Ratio);
         }
 
         CComPtr<ID2D1PathGeometry> Geometry;

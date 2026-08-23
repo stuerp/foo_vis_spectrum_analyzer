@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPageLayout.h (2026.06.10) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: GraphsPageLayout.h (2026.08.22) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -23,17 +23,23 @@
     #define X_G22   X_G21
     #define Y_G22   Y_G21 + H_G21 + IY
 
-// Checkbox: Vertical Layout
+// Checkbox: Vertical layout
 #define W_G23   70
 #define H_G23   H_CHB
 #define X_G23   X_G20
 #define Y_G23   Y_G20 + H_G20 + IY
 
-// Checkbox: Overlap Graphs
+// Checkbox: Overlap graphs
 #define W_G60   70
 #define H_G60   H_CHB
 #define X_G60   X_G23
 #define Y_G60   Y_G23 + H_G23 + IY
+
+// Checkbox: Use local styles
+#define W_G62   70
+#define H_G62   H_CHB
+#define X_G62   X_G60
+#define Y_G62   Y_G60 + H_G60 + IY
 
 // Label: Description
 #define W_G24   38

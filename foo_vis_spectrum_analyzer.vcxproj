@@ -220,6 +220,7 @@
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />
+    <ClInclude Include="Analyzers\Downsampler.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
@@ -314,6 +315,7 @@
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Decimator.cpp" />
     <ClCompile Include="Analyzers\Downmixer.cpp" />
+    <ClCompile Include="Analyzers\Downsampler.cpp" />
     <ClCompile Include="Analyzers\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Configuration\CommonPage.cpp" />
     <ClCompile Include="Configuration\FiltersPage.cpp" />

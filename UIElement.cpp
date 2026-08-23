@@ -574,6 +574,13 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                 break;
             }
 
+            case ConfigurationChanges::UserInterfaceColors:
+            {
+                _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
+                _RenderState._RecreateStyles = true;
+                break;
+            }
+
             case ConfigurationChanges::None:
             case ConfigurationChanges::RenderLoop:
             case ConfigurationChanges::RefreshRate:
@@ -623,7 +630,7 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-//  UpdateState(ConfigurationChanges::All);
+    UpdateState(ConfigurationChanges::UserInterfaceColors);
 
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())

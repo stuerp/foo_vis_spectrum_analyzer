@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.06.15) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.08.22) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -124,6 +124,9 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// </summary>
 void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
@@ -302,7 +305,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
-    auto & StyleManager = (_State->_GraphOptions.size() > 1) ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     if (_BackgroundStyle._Brush == nullptr)
     {

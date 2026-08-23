@@ -8,10 +8,10 @@
 #include "Resources.h"
 #include "Log.h"
 
-#include <sdk\file.h>
-#include <sdk\filesystem.h>
+#include <sdk/file.h>
+#include <sdk/filesystem.h>
 
-#include <pfc\string-conv-lite.h>
+#include <pfc/string-conv-lite.h>
 
 using namespace pfc;
 using namespace stringcvt;
@@ -19,7 +19,7 @@ using namespace stringcvt;
 #pragma warning(push)
 #pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
 
-#include <nlohmann\json.hpp>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::ordered_json;
 
@@ -560,14 +560,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _PresetsDirectoryPath = other._PresetsDirectoryPath;
 
     // Not serialized
-/*
-    _ArtworkDominantColor = other._ArtworkDominantColor;
-    _ArtworkGradientStops = other._ArtworkGradientStops;
-
-    _UserInterfaceColors  = other._UserInterfaceColors;
-
-    _RecreateStyles       = other._RecreateStyles;
-*/
     _BinCount             = other._BinCount;
     _ActivePresetName     = other._ActivePresetName;
 
@@ -1446,9 +1438,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
 
-    _BitMeterMode   = BitMeter.value("mode", _BitMeterMode);
-    _BitsPerInteger = BitMeter.value("bitsPerInteger", _BitsPerInteger);
-    _OpacityMode    = BitMeter.value("opacityMode", _OpacityMode);
+    _BitMeterMode           = BitMeter.value("mode", _BitMeterMode);
+    _BitsPerInteger         = BitMeter.value("bitsPerInteger", _BitsPerInteger);
+    _OpacityMode            = BitMeter.value("opacityMode", _OpacityMode);
 
     // Transform
     const auto & Transform = Object.value("transform", json::object());
@@ -1475,67 +1467,67 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     // CQT
     const auto & CQT = Transform.value("cqt", json::object());
 
-    _BandwidthOffset      = CQT.value("bandwidthOffset", _BandwidthOffset);
-    _BandwidthCap         = CQT.value("bandwidthCap", _BandwidthCap);
-    _BandwidthAmount      = CQT.value("bandwidthAmount", _BandwidthAmount);
-    _UseGranularBandwidth = CQT.value("useGranularBandwidth", _UseGranularBandwidth);
+    _BandwidthOffset        = CQT.value("bandwidthOffset", _BandwidthOffset);
+    _BandwidthCap           = CQT.value("bandwidthCap", _BandwidthCap);
+    _BandwidthAmount        = CQT.value("bandwidthAmount", _BandwidthAmount);
+    _UseGranularBandwidth   = CQT.value("useGranularBandwidth", _UseGranularBandwidth);
 
-    _KernelShape          = CQT.value("kernelShape", _KernelShape);
-    _KernelShapeParameter = CQT.value("kernelShapeParameter", _KernelShapeParameter);
-    _KernelAsymmetry      = CQT.value("kernelAsymmetry", _KernelAsymmetry); 
+    _KernelShape            = CQT.value("kernelShape", _KernelShape);
+    _KernelShapeParameter   = CQT.value("kernelShapeParameter", _KernelShapeParameter);
+    _KernelAsymmetry        = CQT.value("kernelAsymmetry", _KernelAsymmetry); 
 
     // IIR (SWIFT / Analog-style)
     const auto & IIR = Transform.value("iir", json::object());
 
-    _FilterBankOrder     = IIR.value("filterBankOrder", _FilterBankOrder);
-    _TimeResolution      = IIR.value("timeResolution", _TimeResolution);
-    _IIRBandwidth        = IIR.value("bandwidth", _IIRBandwidth);
-    _ConstantQ           = IIR.value("constantQ", _ConstantQ);
-    _CompensateBandwidth = IIR.value("compensateBandwidth", _CompensateBandwidth);
-    _UsePreWarpedQ       = IIR.value("usePreWarpedQ", _UsePreWarpedQ);
+    _FilterBankOrder        = IIR.value("filterBankOrder", _FilterBankOrder);
+    _TimeResolution         = IIR.value("timeResolution", _TimeResolution);
+    _IIRBandwidth           = IIR.value("bandwidth", _IIRBandwidth);
+    _ConstantQ              = IIR.value("constantQ", _ConstantQ);
+    _CompensateBandwidth    = IIR.value("compensateBandwidth", _CompensateBandwidth);
+    _UsePreWarpedQ          = IIR.value("usePreWarpedQ", _UsePreWarpedQ);
 
     // Frequencies
     const auto & Frequencies = Object.value("frequencies", json::object());
 
-    _FrequencyDistribution = Frequencies.value("distribution", _FrequencyDistribution);
-    _BandCount             = Frequencies.value("bandCount", _BandCount);
+    _FrequencyDistribution  = Frequencies.value("distribution", _FrequencyDistribution);
+    _BandCount              = Frequencies.value("bandCount", _BandCount);
 
-    _LoFrequency           = Frequencies.value("loFrequency", _LoFrequency);
-    _HiFrequency           = Frequencies.value("hiFrequency", _HiFrequency);
+    _LoFrequency            = Frequencies.value("loFrequency", _LoFrequency);
+    _HiFrequency            = Frequencies.value("hiFrequency", _HiFrequency);
 
-    _LoNote                = Frequencies.value("loNote", _LoNote);
-    _HiNote                = Frequencies.value("hiNote", _HiNote);
+    _LoNote                 = Frequencies.value("loNote", _LoNote);
+    _HiNote                 = Frequencies.value("hiNote", _HiNote);
 
-    _BandsPerOctave        = Frequencies.value("bandsPerOctave", _BandsPerOctave);
-    _TuningPitch           = Frequencies.value("tuningPitch", _TuningPitch);
-    _Transpose             = Frequencies.value("transpose", _Transpose);
+    _BandsPerOctave         = Frequencies.value("bandsPerOctave", _BandsPerOctave);
+    _TuningPitch            = Frequencies.value("tuningPitch", _TuningPitch);
+    _Transpose              = Frequencies.value("transpose", _Transpose);
 
-    _ScalingFunction       = Frequencies.value("scalingFunction", _ScalingFunction);
-    _SkewFactor            = Frequencies.value("skewFactor", _SkewFactor);
-    _Bandwidth             = Frequencies.value("bandwidth", _Bandwidth);
+    _ScalingFunction        = Frequencies.value("scalingFunction", _ScalingFunction);
+    _SkewFactor             = Frequencies.value("skewFactor", _SkewFactor);
+    _Bandwidth              = Frequencies.value("bandwidth", _Bandwidth);
 
     // Acoustic Filters
     const auto & Filters = Object.value("acousticFilters", json::object());
 
-    _WeightingType = Filters.value("weightingType", _WeightingType);
+    _WeightingType          = Filters.value("weightingType", _WeightingType);
 
-    _SlopeFunctionOffset = Filters.value("slopeFunctionOffset", _SlopeFunctionOffset);
-    _Slope               = Filters.value("slope", _Slope);
-    _SlopeOffset         = Filters.value("slopeOffset", _SlopeOffset);
+    _SlopeFunctionOffset    = Filters.value("slopeFunctionOffset", _SlopeFunctionOffset);
+    _Slope                  = Filters.value("slope", _Slope);
+    _SlopeOffset            = Filters.value("slopeOffset", _SlopeOffset);
 
-    _EqualizeAmount      = Filters.value("equalizeAmount", _EqualizeAmount);
-    _EqualizeOffset      = Filters.value("equalizeOffset", _EqualizeOffset);
-    _EqualizeDepth       = Filters.value("equalizeDepth", _EqualizeDepth);
+    _EqualizeAmount         = Filters.value("equalizeAmount", _EqualizeAmount);
+    _EqualizeOffset         = Filters.value("equalizeOffset", _EqualizeOffset);
+    _EqualizeDepth          = Filters.value("equalizeDepth", _EqualizeDepth);
 
-    _WeightingAmount     = Filters.value("weightingAmount", _WeightingAmount);
+    _WeightingAmount        = Filters.value("weightingAmount", _WeightingAmount);
 
     // Common
-    _SmoothingMethod      = Object.value("smoothingMethod", _SmoothingMethod);
-    _SmoothingFactor      = Object.value("smoothingFactor", _SmoothingFactor);
+    _SmoothingMethod        = Object.value("smoothingMethod", _SmoothingMethod);
+    _SmoothingFactor        = Object.value("smoothingFactor", _SmoothingFactor);
 
-    _ShowToolTipsAlways   = Object.value("showToolTipsAlways", _ShowToolTipsAlways);
-    _SuppressMirrorImage  = Object.value("suppressMirrorImage", _SuppressMirrorImage);
-    _VisualizeDuringPause = Object.value("visualizeDuringPause", _VisualizeDuringPause);
+    _ShowToolTipsAlways     = Object.value("showToolTipsAlways", _ShowToolTipsAlways);
+    _SuppressMirrorImage    = Object.value("suppressMirrorImage", _SuppressMirrorImage);
+    _VisualizeDuringPause   = Object.value("visualizeDuringPause", _VisualizeDuringPause);
 
     // Artwork
     const auto & Artwork = Object.value("artwork", json::object());
@@ -1558,11 +1550,11 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & Grid = Object.value("grid", json::object());
 
-    _GridRowCount    = Grid.value("rows", _GridRowCount);
-    _GridColumnCount = Grid.value("columns", _GridColumnCount);
+    _GridRowCount           = Grid.value("rows", _GridRowCount);
+    _GridColumnCount        = Grid.value("columns", _GridColumnCount);
 
-    _VerticalLayout  = Grid.value("verticalLayout", _VerticalLayout);
-    _OverlapGraphs   = Grid.value("overlapGraphs", _OverlapGraphs);
+    _VerticalLayout         = Grid.value("verticalLayout", _VerticalLayout);
+    _OverlapGraphs          = Grid.value("overlapGraphs", _OverlapGraphs);
 
     {
         std::vector<graph_options_t> Options;

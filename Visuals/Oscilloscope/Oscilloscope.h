@@ -7,7 +7,7 @@
 
 #include "OscilloscopeBase.h"
 
-#include "Decimator.h"
+#include <Analyzers/Downsampler.h>
 
 class oscilloscope_t : public oscilloscope_base_t
 {
@@ -41,7 +41,7 @@ private:
     HRESULT CreateAxesCommandList(uint32_t axesCount) noexcept;
 
 private:
-    decimator_t _Decimator;
+    downsampler_t _Downsampler;
 
     struct label_t
     {
