@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.07.04) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.08.17) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -88,7 +88,7 @@ void uielement_t::RenderThreadProc() noexcept
 
                     Render();
 
-                    Animate();
+                    Animate(Chrono.Now());
                 }
 
                 if (_IsConfigurationChanged)
@@ -138,7 +138,7 @@ void uielement_t::ProcessEvents() noexcept
     if (Flags == 0)
         return;
 
-    if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackStartedNewTrack))
+    if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackNewTrack))
     {
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
@@ -162,7 +162,7 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
     }
 
-    if (event_t::IsRaised(Flags, event_t::PlaybackStartedNewTrack))
+    if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
     {
         if (_Artwork.Bitmap() == nullptr)
         {
@@ -253,6 +253,10 @@ void uielement_t::Render() noexcept
     if (_UIState._ShowFrameCounter)
         _FrameCounter.Render(_DeviceContext);
 
+#ifdef _DEBUG
+    RenderDebug();
+#endif
+
     hr = _DeviceContext->EndDraw();
 
     // Present the swap chain immediately.
@@ -268,14 +272,16 @@ void uielement_t::Render() noexcept
 /// <summary>
 /// Updates the current and peak values of all the graphs.
 /// </summary>
-void uielement_t::Animate() noexcept
+void uielement_t::Animate(int64_t now) noexcept
 {
-    if (_UIState._PeakMode == PeakMode::None)
+    if (_RenderState._PeakMode == PeakMode::None)
         return;
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
+    const bool IsStopped = (_RenderState._PlaybackTime == 0.);
+
     for (auto & Item : _Grid)
-        Item->_Analysis.UpdatePeakValues(_RenderState._PlaybackTime == 0.);
+        Item->_Analysis.UpdatePeakValues(IsStopped);
 }
 
 /// <summary>
@@ -646,6 +652,8 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
 #pragma endregion
 
+#ifdef _DEBUG
+
 /// <summary>
 /// Gets an initialized audio chunk.
 /// </summary>
@@ -687,3 +695,34 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     
     return true;
 }
+
+/// <summary>
+/// Draws some debug information.
+/// </summary>
+void uielement_t::RenderDebug() noexcept
+{
+    RECT rc;
+
+    ::GetClientRect(m_hWnd, &rc);
+
+    const D2D1_RECT_F Rect = { (FLOAT) rc.right / 2.f, (FLOAT) rc.top, (FLOAT) rc.right, (FLOAT) rc.bottom };
+
+    CComPtr<IDWriteTextFormat> TextFormat;
+
+    const FLOAT FontSize = ToDIPs(12.f); // In DIPs
+
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(L"Segoe UI", NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &TextFormat);
+
+    if (!SUCCEEDED(hr))
+        return;
+
+    TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+    TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+
+    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
+
+    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat, Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+}
+
+#endif

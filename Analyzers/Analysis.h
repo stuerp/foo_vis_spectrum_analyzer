@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.03.11) P. Stuer **/
+/** $VER: Analysis.h (2026.08.18) P. Stuer **/
 
 #pragma once
 
@@ -12,6 +12,7 @@
 #include <Windows.h>
 
 #include "State.h"
+#include "Chrono.h"
 
 #include "WindowFunctions.h"
 
@@ -39,32 +40,36 @@ struct measurement_t
 /// </summary>
 struct peak_measurement_t : measurement_t
 {
-    peak_measurement_t(const WCHAR * channelName, double holdTime) noexcept : measurement_t(channelName), HoldTime(holdTime)
+    peak_measurement_t(const WCHAR * channelName) noexcept : measurement_t(channelName)
     {
+        HoldTime = 0.;
+        FallRate = 0.;
+        Opacity  = 1.;
+
         RMSTotal = 0.;
 
         Peak = -std::numeric_limits<double>::infinity();
-        PeakNormalized = 0.;
-        MaxPeakNormalized = 0.;
+        NormalizedPeak = 0.;
+        MaxNormalizedPeak = 0.;
 
         RMS = 0.;
-        RMSNormalized = 0.;
+        NormalizedRMS = 0.;
     }
 
     // User settings
-    double HoldTime;            // Time to hold the current max value.
-    double DecaySpeed;          // Speed at which the current max value decays.
-    double Opacity;             // 0.0 .. 1.0
+    double HoldTime;            // Peak hold time, in seconds [0, 2]
+    double FallRate;            // Peak fall rate, in dB/s [0, 240]
+    double Opacity;             // [0, 1]
 
     // Measurements
     double RMSTotal;            // RMS value for the current RMS window.
 
     double Peak;                // in dBFS
-    double PeakNormalized;      // 0.0 .. 1.0, Normalized and smoothed value used for rendering
-    double MaxPeakNormalized;   // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double NormalizedPeak;      // [0, 1], Normalized and smoothed value used for rendering
+    double MaxNormalizedPeak;   // [0, 1], Normalized and smoothed value used for rendering
 
     double RMS;                 // in dBFS
-    double RMSNormalized;       // 0.0 .. 1.0, Normalized and smoothed value used for rendering
+    double NormalizedRMS;       // [0, 1], Normalized and smoothed value used for rendering
 };
 
 /// <summary>
@@ -206,7 +211,11 @@ public:
 
     static const uint32_t ChannelPairs[6];
 
+    std::wstring _DebugText;
+
 private:
     const double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
+
+    chrono_t _Chrono;
 };

@@ -86,7 +86,7 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 
     for (size_t i = 0; i < SampleCount; i += _ChannelCount)
     {
-        p[_Next] = AverageSamples(&samples[i], selectedChannels);
+        p[_Next] = Downmix(&samples[i], selectedChannels);
 
         _Next = (_Next + 1) % _InputRing.size();
     }
@@ -222,7 +222,7 @@ void fft_analyzer_t::AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & fre
         }
         else
         {
-            const double Index = HzToBinIndex(fb.Center, _FreqData.size(), sampleRate);
+            const double Index = HzToBinIndex(fb.Mid, _FreqData.size(), sampleRate);
 
             fb.RawValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
         }
@@ -242,7 +242,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands
         double Sum = 0.;
 
         const double MinBin = std::min(fb.Lo, fb.Hi) * Scale;
-        const double MidBin = fb.Center              * Scale;
+        const double MidBin = fb.Mid              * Scale;
         const double MaxBin = std::max(fb.Lo, fb.Hi) * Scale;
 
         const double OverflowCompensation = std::max(0., MaxBin - MinBin - (double) _FreqData.size());
@@ -270,7 +270,7 @@ void fft_analyzer_t::AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_
         double re = 0.;
         double im = 0.;
 
-        const double Center      = fb.Center * HzToBin;
+        const double Center      = fb.Mid * HzToBin;
 
         const double Bandwidth    = std::abs(fb.Hi - fb.Lo) + (double) sampleRate / (double) _FreqData.size() * _State->_BandwidthOffset;
         const double tlen         = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);

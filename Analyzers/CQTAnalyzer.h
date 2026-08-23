@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.h (2025.10.05) P. Stuer **/
+/** $VER: CQTAnalyzer.h (2026.08.19) P. Stuer **/
 
 #pragma once
 
@@ -32,4 +32,7 @@ public:
 
     cqt_analyzer_t(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
     bool AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept;
+
+private:
+    std::vector<audio_sample> _MonoSamples;
 };

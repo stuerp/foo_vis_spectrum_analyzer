@@ -1,5 +1,5 @@
 
-/** $VER: GraphOptions.h (2026.06.15) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.h (2026.08.22) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 #pragma warning(push)
 #pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
 
-#include <nlohmann\json.hpp>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::ordered_json;
 
@@ -27,66 +27,68 @@ using json = nlohmann::ordered_json;
 struct graph_options_t
 {
 public:
-    graph_options_t()
+    graph_options_t() noexcept
     {
-        Initialize();
+        Reset();
     }
 
-    graph_options_t(const std::wstring & description)
+    graph_options_t(const std::wstring & description) noexcept
     {
         _Description = description;
 
-        Initialize();
+        Reset();
     }
 
-    graph_options_t(const graph_options_t & other)
+    graph_options_t(const graph_options_t & other) noexcept
     {
         *this = other;
     }
 
-    graph_options_t & operator=(const graph_options_t & other)
+    graph_options_t & operator=(const graph_options_t & other) noexcept
     {
-        _Description         = other._Description;
+        _Description             = other._Description;
 
-        _SelectedChannels    = other._SelectedChannels;
+        _SelectedChannels        = other._SelectedChannels;
 
-        _ChannelPair         = other._ChannelPair;
-        _SwapChannels        = other._SwapChannels;
+        _ChannelPair             = other._ChannelPair;
+        _SwapChannels            = other._SwapChannels;
 
-        _HorizontalAlignment = other._HorizontalAlignment;
-        _VerticalAlignment   = other._VerticalAlignment;
+        _HorizontalAlignment     = other._HorizontalAlignment;
+        _VerticalAlignment       = other._VerticalAlignment;
 
-        _FlipHorizontally    = other._FlipHorizontally;
-        _FlipVertically      = other._FlipVertically;
+        _FlipHorizontally        = other._FlipHorizontally;
+        _FlipVertically          = other._FlipVertically;
 
-        _XAxisMode           = other._XAxisMode;
-        _XAxisTop            = other._XAxisTop;
-        _XAxisBottom         = other._XAxisBottom;
-        _XAxisDecimals       = other._XAxisDecimals;
+        _XAxisMode               = other._XAxisMode;
+        _XAxisTop                = other._XAxisTop;
+        _XAxisBottom             = other._XAxisBottom;
+        _XAxisDecimals           = other._XAxisDecimals;
 
-        _YAxisMode           = other._YAxisMode;
-        _YAxisLeft           = other._YAxisLeft;
-        _YAxisRight          = other._YAxisRight;
+        _YAxisMode               = other._YAxisMode;
+        _YAxisLeft               = other._YAxisLeft;
+        _YAxisRight              = other._YAxisRight;
 
-        _AmplitudeLo         = other._AmplitudeLo;
-        _AmplitudeHi         = other._AmplitudeHi;
-        _AmplitudeStep       = other._AmplitudeStep;
+        _AmplitudeLo             = other._AmplitudeLo;
+        _AmplitudeHi             = other._AmplitudeHi;
+        _AmplitudeStep           = other._AmplitudeStep;
 
-        _UseAbsolute         = other._UseAbsolute;
-        _Gamma               = other._Gamma;
+        _UseAbsolute             = other._UseAbsolute;
+        _Gamma                   = other._Gamma;
 
-        _HRatio              = other._HRatio;
-        _VRatio              = other._VRatio;
+        _HRatio                  = other._HRatio;
+        _VRatio                  = other._VRatio;
 
-        _LPadding            = other._LPadding;
-        _RPadding            = other._RPadding;
-        _TPadding            = other._TPadding;
-        _BPadding            = other._BPadding;
+        _LPadding                = other._LPadding;
+        _RPadding                = other._RPadding;
+        _TPadding                = other._TPadding;
+        _BPadding                = other._BPadding;
 
         _HorizontalTextAlignment = other._HorizontalTextAlignment;
         _VerticalTextAlignment   = other._VerticalTextAlignment;
 
         _StyleManager            = other._StyleManager;
+
+        _UseLocalStyles          = other._UseLocalStyles;
 
         return *this;
     }
@@ -103,7 +105,7 @@ public:
     static graph_options_t FromJSON(const json & object) noexcept;
 
 private:
-    void Initialize() noexcept;
+    void Reset() noexcept;
 
 public:
     std::wstring _Description;
@@ -148,5 +150,7 @@ public:
 
     style_manager_t _StyleManager;
 
-    static const uint32_t _CurrentVersion = 4;  // v0.10.0-alpha5
+    bool _UseLocalStyles;
+
+    static constexpr uint32_t _CurrentVersion = 4;  // v0.10.0-alpha5
 };

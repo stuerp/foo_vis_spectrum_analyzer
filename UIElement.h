@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.03.21) P. Stuer **/
+/** $VER: UIElement.h (2026.08.17) P. Stuer **/
 
 #pragma once
 
@@ -147,7 +147,7 @@ private:
     void ProcessEvents() noexcept;
     void Render() noexcept;
     void ProcessAudio() noexcept;
-    void Animate() noexcept;
+    void Animate(int64_t now) noexcept;
 
     void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
 
@@ -161,6 +161,10 @@ private:
     HRESULT CreateArtworkDependentResources() noexcept;
 
     #pragma endregion
+
+#ifdef _DEBUG
+    void RenderDebug() noexcept;
+#endif
 
 protected:
     state_t _UIState;

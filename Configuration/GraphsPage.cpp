@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -37,6 +37,7 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
         { IDC_VERTICAL_LAYOUT, "Select to stack the graphs vertically instead of horizontally." },
         { IDC_OVERLAP_GRAPHS, "Select to draw the graphs overlapped instead of stacked horizontally or vertically." },
+        { IDC_USE_LOCAL_STYLES, "Use local instead of global styles." },
 
         { IDC_GRAPH_DESCRIPTION, "Describes the configuration of this graph." },
 
@@ -87,7 +88,7 @@ void graphs_page_t::InitializeControls() noexcept
 
     auto & Options = _State->_GraphOptions[_SelectedGraph];
 
-    // Vertical Layout
+    // Vertical layout
     {
         SendDlgItemMessageW(IDC_VERTICAL_LAYOUT, BM_SETCHECK, _State->_VerticalLayout);
     }
@@ -95,6 +96,11 @@ void graphs_page_t::InitializeControls() noexcept
     // Overlap graphs
     {
         SendDlgItemMessageW(IDC_OVERLAP_GRAPHS, BM_SETCHECK, _State->_OverlapGraphs);
+    }
+
+    // Use local styles
+    {
+        SendDlgItemMessageW(IDC_USE_LOCAL_STYLES, BM_SETCHECK, Options._UseLocalStyles);
     }
 
     // Horizontal Alignment
@@ -175,8 +181,8 @@ void graphs_page_t::InitializeControls() noexcept
 
     // Channels
     {
-        assert(_countof(ChannelNames) == audio_chunk::defined_channel_count);
-        assert(_countof(ChannelNames) == (size_t) Channels::Count);
+        static_assert(_countof(ChannelNames) == audio_chunk::defined_channel_count, "Channels enum mismatch");
+        static_assert(_countof(ChannelNames) == (size_t) Channels::Count, "Insufficient channels names");
 
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
@@ -257,17 +263,23 @@ void graphs_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_REMOVE_GRAPH).EnableWindow(_State->_GraphOptions.size() > 1);
 
-    /* Vertical Layout **/
+    /* Vertical layout **/
 
     const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1) && !_State->_OverlapGraphs;
 
     GetDlgItem(IDC_VERTICAL_LAYOUT).EnableWindow(SupportsVerticalLayout);
 
-    /* Overlap Graphs **/
+    /* Overlap graphs **/
 
     const bool SupportsOverlapGraphs = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1);
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
+
+    /* Use local styles **/
+
+    const bool SupportsLocalStyles = (_State->_GraphOptions.size() > 1);
+
+    GetDlgItem(IDC_USE_LOCAL_STYLES).EnableWindow(SupportsLocalStyles);
 
     /* Graph settings */
 
@@ -661,6 +673,14 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_OVERLAP_GRAPHS:
         {
             _State->_OverlapGraphs = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+            break;
+        }
+
+        case IDC_USE_LOCAL_STYLES:
+        {
+            Options._UseLocalStyles = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
             break;

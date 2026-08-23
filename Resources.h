@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.08.16) P. Stuer **/
+/** $VER: Resources.h (2026.08.22) P. Stuer **/
 
 #pragma once
 
@@ -7,16 +7,16 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          11
+#define NUM_FILE_MINOR          12
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       11
+#define NUM_PRODUCT_MINOR       12
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         ""
+#define STR_RELEASE_TAG         "-alpha1"
 
 /** Component specific **/
 
@@ -304,8 +304,8 @@
 #define IDC_COLOR_ORDER_LBL             6114
 #define IDC_COLOR_ORDER                 6116
 
-#define IDC_ARTWORK_FILE_PATH_LBL               6120
-#define IDC_ARTWORK_FILE_PATH                   6122
+#define IDC_ARTWORK_FILE_PATH_LBL       6120
+#define IDC_ARTWORK_FILE_PATH           6122
 
 #pragma endregion
 
@@ -324,31 +324,32 @@
 #define IDC_REMOVE_GRAPH                5104
 
 #define IDC_VERTICAL_LAYOUT             5106
-#define IDC_OVERLAP_GRAPHS              5107
+#define IDC_OVERLAP_GRAPHS              5108
+#define IDC_USE_LOCAL_STYLES            5110
 
-#define IDC_GRAPH_DESCRIPTION_LBL       5108
-#define IDC_GRAPH_DESCRIPTION           5109
+#define IDC_GRAPH_DESCRIPTION_LBL       5112
+#define IDC_GRAPH_DESCRIPTION           5114
 
-#define IDC_LAYOUT                      5110
+#define IDC_LAYOUT                      5116
 
-#define IDC_HORIZONTAL_ALIGNMENT_LBL    5112
-#define IDC_HORIZONTAL_ALIGNMENT        5113
+#define IDC_HORIZONTAL_ALIGNMENT_LBL    5118
+#define IDC_HORIZONTAL_ALIGNMENT        5120
 
-#define IDC_VERTICAL_ALIGNMENT_LBL      5114
-#define IDC_VERTICAL_ALIGNMENT          5115
+#define IDC_VERTICAL_ALIGNMENT_LBL      5122
+#define IDC_VERTICAL_ALIGNMENT          5124
 
-#define IDC_FLIP_HORIZONTALLY           5116
-#define IDC_FLIP_VERTICALLY             5118
+#define IDC_FLIP_HORIZONTALLY           5126
+#define IDC_FLIP_VERTICALLY             5128
 
-#define IDC_CHANNELS_LBL                5120
-#define IDC_CHANNELS                    5122
+#define IDC_CHANNELS_LBL                5130
+#define IDC_CHANNELS                    5132
 
-#define IDC_ALL_CHANNELS                5124
-#define IDC_NO_CHANNELS                 5126
+#define IDC_ALL_CHANNELS                5134
+#define IDC_NO_CHANNELS                 5136
 
-#define IDC_CHANNEL_PAIRS               5130
+#define IDC_CHANNEL_PAIRS               5138
 
-#define IDC_SWAP_CHANNELS               5132
+#define IDC_SWAP_CHANNELS               5140
 
 #pragma endregion
 
@@ -411,7 +412,7 @@
 #define IDC_HOLD_TIME                   7114
 
 #define IDC_ACCELERATION_LBL            7116
-#define IDC_ACCELERATION                7118
+#define IDC_FALL_RATE                   7118
 
 // LEDs
 #define IDC_LEDS                        7120
@@ -495,6 +496,8 @@
 #define IDC_BLUR_SIGMA                  7222
 #define IDC_DECAY_FACTOR_LBL            7224
 #define IDC_DECAY_FACTOR                7226
+
+#define IDC_DOWNMIX                     7228
 
 // Bit Meter
 

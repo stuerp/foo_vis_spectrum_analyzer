@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.07.04) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.08.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -24,9 +24,11 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext       "Hold time:"                    IDC_HOLD_TIME_LBL,              X_A51, Y_A51 + 2, W_A51, H_A51
         edittext                                    IDC_HOLD_TIME,                  X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext       "s"                             IDC_STATIC,                     X_A55, Y_A55 + 2, W_A55, H_A55
 
-        rtext       "Acceleration:"                 IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
-        edittext                                    IDC_ACCELERATION,               X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Fall rate:"                    IDC_ACCELERATION_LBL,           X_A53, Y_A53 + 2, W_A53, H_A53
+        edittext                                    IDC_FALL_RATE,                  X_A54, Y_A54, W_A54, H_A54, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        ltext       "dB/s"                          IDC_STATIC,                     X_A56, Y_A56 + 2, W_A56, H_A56
 
     groupbox "LEDs", IDC_LEDS, X_B07, Y_B07, W_B07, H_B07, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -67,7 +69,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         control     "Horizontal",                   IDC_HORIZONTAL_SPECTROGRAM, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C27, Y_C27, W_C27, H_C27
         control     "Use spectrum bar metrics",     IDC_SPECTRUM_BAR_METRICS, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C28, Y_C28, W_C28, H_C28
 
-    groupbox "Peak Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Peak / RMS Meter", IDC_PEAK_METER, X_B12, Y_B12, W_B12, H_B12, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "Horizontal",                   IDC_HORIZONTAL_PEAK_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C16, Y_C16, W_C16, H_C16
         control     "RMS +3",                       IDC_RMS_PLUS_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C24, Y_C24, W_C24, H_C24
@@ -86,13 +88,13 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Max. bar size:"                IDC_MAX_BAR_SIZE_LBL,           X_C75, Y_C75 + 2, W_C75, H_C75
         edittext                                    IDC_MAX_BAR_SIZE,               X_C76, Y_C76,     W_C76, H_C76, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Level Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Balance / Correlation Meter", IDC_LEVEL_METER, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "Horizontal",                   IDC_HORIZONTAL_LEVEL_METER, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C52, Y_C52, W_C52, H_C52
 
     groupbox "Oscilloscope", IDC_OSCILLOSCOPE, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "X-Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
+        control     "X/Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
 
         rtext       "X gain:"                       IDC_X_GAIN_LBL,                 X_C56, Y_C56 + 2, W_C56, H_C56
         edittext                                    IDC_X_GAIN,                     X_C58, Y_C58, W_C58, H_C58, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
@@ -106,7 +108,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Frame count:"                  IDC_STATIC,                     X_C90, Y_C90 + 2, W_C90, H_C90
         edittext                                    IDC_FRAME_COUNT,                X_C91, Y_C91, W_C91, H_C91, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control     "Phosphor decay effect:"        IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
+        control     "Phosphor decay"                IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
 
         rtext       "Blur sigma:"                   IDC_BLUR_SIGMA_LBL,             X_C66, Y_C66 + 2, W_C66, H_C66
         edittext                                    IDC_BLUR_SIGMA,                 X_C68, Y_C68, W_C68, H_C68, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
@@ -114,4 +116,5 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
         edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
+        control     "Downmix to mono"               IDC_DOWNMIX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
 }

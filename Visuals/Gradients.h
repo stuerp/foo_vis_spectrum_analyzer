@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.h (2024.03.16) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.h (2026.08.23) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -15,4 +15,4 @@
 
 typedef std::vector<D2D1_GRADIENT_STOP> gradient_stops_t;
 
-const gradient_stops_t GetBuiltInGradientStops(ColorScheme colorScheme) noexcept;
+const gradient_stops_t & GetBuiltInGradientStops(ColorScheme colorScheme) noexcept;

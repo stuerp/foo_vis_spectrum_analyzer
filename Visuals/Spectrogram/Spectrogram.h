@@ -64,11 +64,11 @@ private:
     // Lanczos-windowed sinc kernel
     inline static double Lanczos(double x, int a) noexcept
     {
-        if (x == 0.)
+        if (std::abs(x) < 1.e-12)
             return 1.;
 
         if (std::abs(x) >= a)
-            return 0;
+            return 0.;
 
         const double PiX = M_PI * x;
 

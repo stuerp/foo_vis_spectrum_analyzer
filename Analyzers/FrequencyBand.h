@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2024.03.02) P. Stuer **/
+/** $VER: FrequencyBand.h (2026.08.18) P. Stuer **/
 
 #pragma once
 
@@ -16,23 +16,24 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() : RawValue(), Value(), Lo(), Center(), Hi(), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t() noexcept : RawValue(), Value(), Lo(), Mid(), Hi(), HoldTime(), FallRate(), MaxValue(), Opacity(1.) { }
 
-    frequency_band_t(double l, double c, double h) : RawValue(), Value(), Lo(l), Center(c), Hi(h), MaxValue(), HoldTime(), DecaySpeed(), Opacity() { }
+    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), Lo(l), Mid(c), Hi(h), HoldTime(), FallRate(), MaxValue(), Opacity(1.) { }
 
-    frequency_band_t(const frequency_band_t & other)
+    frequency_band_t(const frequency_band_t & other) noexcept
     {
         RawValue = other.RawValue;
-        Value = other.Value;
+        Value    = other.Value;
 
-        Lo  = other.Lo;
-        Center = other.Center;
-        Hi  = other.Hi;
+        Lo       = other.Lo;
+        Mid      = other.Mid;
+        Hi       = other.Hi;
 
-        MaxValue   = other.MaxValue;
-        HoldTime   = other.HoldTime;
-        DecaySpeed = other.DecaySpeed;
-        Opacity    = other.Opacity;
+        HoldTime = other.HoldTime;
+        FallRate = other.FallRate;
+
+        MaxValue = other.MaxValue;
+        Opacity  = other.Opacity;
 
         ::memcpy(Label, other.Label, sizeof(Label));
 
@@ -46,12 +47,13 @@ struct frequency_band_t
     double Value;       // [0, 1]
 
     double Lo;          // Hz
-    double Center;      // Hz
+    double Mid;         // Hz
     double Hi;          // Hz
 
+    double HoldTime;    // Time to hold the current peak value (in s)
+    double FallRate;    // Rate at which the current peak value decays (in dB/s)
+
     double MaxValue;    // [0, 1], The value of the maximum indicator
-    double HoldTime;    // Time to hold the current peak value.
-    double DecaySpeed;  // Speed at which the current peak value decays.
     double Opacity;     // [0, 1], The opacity of the maximum indicator
 
     WCHAR Label[16];

@@ -5,7 +5,7 @@
 
 #include "pch.h"
 
-#include <SDK\coreDarkMode.h>
+#include <sdk/coreDarkMode.h>
 
 #include "DialogParameters.h"
 #include "Resources.h"

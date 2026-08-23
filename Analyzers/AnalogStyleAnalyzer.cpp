@@ -28,13 +28,13 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
     for (const frequency_band_t & fb : frequencyBands)
     {
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
-        const double rad = M_PI * fb.Center / (double) _SampleRate;
+        const double rad = M_PI * fb.Mid / (double) _SampleRate;
 
         const double K = std::tan(rad);
         const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State->_IIRBandwidth + (1. / (TimeResolution / 1000.));
 
         const double QCompensationFactor = _State->_UsePreWarpedQ ? rad / K : 1.;
-        const double Q = fb.Center / Bandwidth * QCompensationFactor / (_State->_CompensateBandwidth ? ::sqrt(_State->_FilterBankOrder) : 1.);
+        const double Q = fb.Mid / Bandwidth * QCompensationFactor / (_State->_CompensateBandwidth ? ::sqrt(_State->_FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
         coef_t c = { };
@@ -65,10 +65,10 @@ bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t
     const audio_sample * Samples = frames;
     const size_t SampleCount = frameCount * _ChannelCount;
 
-    #pragma loop(hint_parallel(2))
+    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < SampleCount; i += _ChannelCount, Samples += _ChannelCount)
     {
-        const audio_sample Sample = AverageSamples(Samples, selectedChannels);
+        const audio_sample Sample = Downmix(Samples, selectedChannels);
 
         size_t k = 0;
 

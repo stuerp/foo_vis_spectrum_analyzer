@@ -4,7 +4,7 @@
 #include "pch.h"
 
 #include "CUIElement.h"
-#include "CUINotificationHandler.h"
+#include "CUIColorClient.h"
 
 #include "Color.h"
 
@@ -59,7 +59,7 @@ HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_pt
         SetWindowPos(NULL, position.x, position.y, (int) position.cx, (int) position.cy, SWP_NOZORDER);
     }
 
-    cui_notification_handler_t::Register(this);
+    cui_color_client_t::Register(this);
 
     return *this;
 }
@@ -69,7 +69,7 @@ HWND cui_element_t::create_or_transfer_window(HWND hParent, const window_host_pt
 /// </summary>
 void cui_element_t::destroy_window()
 {
-    cui_notification_handler_t::Unregister(this);
+    cui_color_client_t::Unregister(this);
 
     ::DestroyWindow(*this);
 

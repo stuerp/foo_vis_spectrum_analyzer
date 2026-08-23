@@ -1,5 +1,5 @@
 
-/** $VER: CUINotificationHandler.h (2026.03.22) P. Stuer - Handles CUI notifications **/
+/** $VER: CUIColorClient.h (2026.03.22) P. Stuer - Columns User Interface support **/
 
 #pragma once
 
@@ -13,17 +13,17 @@ namespace uie
 /// <summary>
 /// Handles CUI notifications.
 /// </summary>
-class cui_notification_handler_t : public cui::colours::client
+class cui_color_client_t : public cui::colours::client
 {
 public:
-    cui_notification_handler_t() { }
+    cui_color_client_t() { }
 
-    cui_notification_handler_t(const cui_notification_handler_t &) = delete;
-    cui_notification_handler_t & operator=(const cui_notification_handler_t &) = delete;
-    cui_notification_handler_t(cui_notification_handler_t &&) = delete;
-    cui_notification_handler_t & operator=(cui_notification_handler_t &&) = delete;
+    cui_color_client_t(const cui_color_client_t &) = delete;
+    cui_color_client_t & operator=(const cui_color_client_t &) = delete;
+    cui_color_client_t(cui_color_client_t &&) = delete;
+    cui_color_client_t & operator=(cui_color_client_t &&) = delete;
 
-    virtual ~cui_notification_handler_t() noexcept { }
+    virtual ~cui_color_client_t() noexcept { }
 
     #pragma region cui::colours::client
 
@@ -57,6 +57,9 @@ public:
 
     void on_colour_changed(uint32_t changed_items_mask) const override final;
 
+    /// <summary>
+    /// Called whenever a supported boolean flag changes. Support for a flag is determined using the get_supported_bools() method.
+    /// </summary>
     void on_bool_changed(uint32_t changed_items_mask) const override final;
 
     #pragma endregion

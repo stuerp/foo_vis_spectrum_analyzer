@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2026.07.03) P. Stuer **/
+/** $VER: Style.cpp (2026.08.22) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(const style_t & other)
+style_t::style_t(const style_t & other) noexcept
 {
     operator=(other);
 }
@@ -22,31 +22,31 @@ style_t::style_t(const style_t & other)
 /// <summary>
 /// Implements the = operator.
 /// </summary>
-style_t & style_t::operator=(const style_t & other)
+style_t & style_t::operator=(const style_t & other) noexcept
 {
-    _Name = other._Name;
-    _UsedBy = other._UsedBy;
+    _Name                 = other._Name;
+    _UsedBy               = other._UsedBy;
 
-    _Flags = other._Flags;
+    _Flags                = other._Flags;
 
-    _ColorSource = other._ColorSource;
-    _ColorIndex = other._ColorIndex;
-    _ColorScheme = other._ColorScheme;
+    _ColorSource          = other._ColorSource;
+    _ColorIndex           = other._ColorIndex;
+    _ColorScheme          = other._ColorScheme;
 
-    _CustomColor = other._CustomColor;
-    _CustomGradientStops = other._CustomGradientStops;
+    _CustomColor          = other._CustomColor;
+    _CustomGradientStops  = other._CustomGradientStops;
 
-    _Opacity = other._Opacity;
-    _Thickness = other._Thickness;
+    _Opacity              = other._Opacity;
+    _Thickness            = other._Thickness;
 
-    _FontName = other._FontName;
-    _FontSize = other._FontSize;
+    _FontName             = other._FontName;
+    _FontSize             = other._FontSize;
 
-    _CurrentColor = other._CurrentColor;
+    _CurrentColor         = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
-    _Width = other._Width;
-    _Height = other._Height;
+    _Width                = other._Width;
+    _Height               = other._Height;
 
     DeleteDeviceSpecificResources();
 
@@ -58,29 +58,29 @@ style_t & style_t::operator=(const style_t & other)
 /// </summary>
 style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    _Name = name;
-    _UsedBy = usedBy;
+    _Name                 = name;
+    _UsedBy               = usedBy;
 
-    _Flags = flags;
+    _Flags                = flags;
 
-    _ColorSource = colorSource;
-    _ColorIndex = colorIndex;
-    _ColorScheme = colorScheme;
+    _ColorSource          = colorSource;
+    _ColorIndex           = colorIndex;
+    _ColorScheme          = colorScheme;
 
-    _CustomColor = customColor;
-    _CustomGradientStops = customGradientStops;
+    _CustomColor          = customColor;
+    _CustomGradientStops  = customGradientStops;
 
-    _Opacity = opacity;
-    _Thickness = thickness;
+    _Opacity              = opacity;
+    _Thickness            = thickness;
 
-    _FontName = fontName;
-    _FontSize = fontSize;
+    _FontName             = fontName;
+    _FontSize             = fontSize;
 
     _CurrentColor         = customColor;
     _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetBuiltInGradientStops(_ColorScheme);
 
-    _Width  = 0.f;
-    _Height = 0.f;
+    _Width                = 0.f;
+    _Height               = 0.f;
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.07.04) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.08.22) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -17,10 +17,10 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_VISUALIZATION, "Selects the type of visualization." },
 
         { IDC_PEAK_MODE, "Determines how to display the peak values." },
-        { IDC_HOLD_TIME, "Determines how long the peak values are held before they decay." },
-        { IDC_ACCELERATION, "Determines the accelaration of the peak value decay." },
+        { IDC_HOLD_TIME, "Determines how long the peak values are held before they fall in seconds." },
+        { IDC_FALL_RATE, "Determines the fall rate of the peak value in dB/s." },
 
-        { IDC_LED_MODE, "Renders the spectrum bars and peak meters as LEDs." },
+        { IDC_LED_MODE, "Renders the spectrum bars Peak/RMS and Balance/Correlation meters as LEDs." },
         { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
         { IDC_LED_GAP, "Specifies the gap between the LEDs in pixels." },
         { IDC_LED_INTEGRAL_SIZE, "Renders the LEDs as full blocks." },
@@ -37,24 +37,25 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_HORIZONTAL_SPECTROGRAM, "Renders the spectrogram horizontally." },
         { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectrogram with a spectrum bar visualization." },
 
-        { IDC_HORIZONTAL_PEAK_METER, "Renders the peak meter horizontally." },
+        { IDC_HORIZONTAL_PEAK_METER, "Renders the Peak/RMS meter horizontally." },
         { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
         { IDC_CENTER_SCALE, "Renders a scale between the meter bars" },
         { IDC_SCALE_LINES, "Renders a scale line on the background of the meter bars" },
         { IDC_RMS_WINDOW, "Specifies the duration of each RMS measurement." },
-        { IDC_BAR_GAP, "Specifies the gap between the peak meter bars (in pixels)." },
+        { IDC_BAR_GAP, "Specifies the gap between the Peak/RMS meter bars (in pixels)." },
         { IDC_MAX_BAR_SIZE, "Specifies the max. size of a meter bar (in pixels). Use 0 to remove constraint." },
 
-        { IDC_HORIZONTAL_LEVEL_METER, "Renders the level meter horizontally." },
+        { IDC_HORIZONTAL_LEVEL_METER, "Renders the Balance/Correlation meter horizontally." },
 
-        { IDC_XY_MODE, "Enables X-Y mode." },
+        { IDC_XY_MODE, "Enables X/Y mode." },
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
         { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope per screen update." },
-        { IDC_PHOSPHOR_DECAY, "Enables phosphor decay effect simulation of analog oscilloscopes." },
+        { IDC_PHOSPHOR_DECAY, "Enables a phosphor decay effect simulation of analog oscilloscopes." },
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
+        { IDC_DOWNMIX, "Enable this setting to downmix the input audio of the oscilloscope to mono." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -72,7 +73,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak Meter", L"Level Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -100,7 +101,7 @@ void visualization_page_t::InitializeControls() noexcept
         w.SetCurSel((int) _State->_PeakMode);
 
         SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
-        SetDouble(IDC_ACCELERATION, _State->_Acceleration, 0, 1);
+        SetDouble(IDC_FALL_RATE, _State->_FallRate, 0, 1);
     }
 
     // LEDs
@@ -143,7 +144,7 @@ void visualization_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
     }
 
-    // Peak Meter
+    // Peak/RMS Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_PEAK_METER, BM_SETCHECK, _State->_IsHorizontalPeakMeter);
         SendDlgItemMessageW(IDC_RMS_PLUS_3, BM_SETCHECK, _State->_HasRMSPlus3);
@@ -181,7 +182,7 @@ void visualization_page_t::InitializeControls() noexcept
         }
     }
 
-    // Level Meter
+    // Balance/Correlation Meter
     {
         SendDlgItemMessageW(IDC_HORIZONTAL_LEVEL_METER, BM_SETCHECK, _State->_IsHorizontalLevelMeter);
     }
@@ -210,6 +211,8 @@ void visualization_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
         }
+
+        SendDlgItemMessageW(IDC_DOWNMIX, BM_SETCHECK, _State->_Downmix);
     }
 
     UpdateControls();
@@ -233,17 +236,16 @@ void visualization_page_t::UpdateControls() noexcept
 
 //  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool HasPeaks = (IsBars || IsCurve || IsRadialBars || IsRadialCurve);
+    const bool HasPeaks = IsBars || IsCurve || IsRadialBars || IsRadialCurve || IsPeakMeter;
+    const bool HasLEDs  = IsBars || IsPeakMeter || IsLevelMeter;
 
-    const bool HasLEDs = IsBars || IsPeakMeter || IsLevelMeter;
- 
     const bool IsRadial = IsRadialBars || IsRadialCurve;
 
     // Peak Indicators
     GetDlgItem(IDC_PEAK_MODE).EnableWindow(HasPeaks);
 
     GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
-    GetDlgItem(IDC_ACCELERATION).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_FALL_RATE).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
 
     // LEDs
     GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
@@ -267,7 +269,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
 
-    // Peak Meter
+    // Peak/RMS Meter
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
@@ -277,7 +279,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
     GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
 
-    // Level Meter
+    // Balance/Correlation Meter
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 
     // Oscilloscope
@@ -292,6 +294,8 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
     GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+
+    GetDlgItem(IDC_DOWNMIX).EnableWindow(IsOscilloscope && !_State->_XYMode);
 }
 
 /// <summary>
@@ -390,9 +394,9 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_ACCELERATION:
+        case IDC_FALL_RATE:
         {
-            if (!SetProperty(_State->_Acceleration, std::clamp(::_wtof(Text), MinAcceleration, MaxAcceleration)))
+            if (!SetProperty(_State->_FallRate, std::clamp(::_wtof(Text), MinFallRate, MaxFallRate)))
                 return;
 
             break;
@@ -440,7 +444,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // Peak Meter
+        // Peak/RMS Meter
         case IDC_RMS_WINDOW:
         {
             if (!SetProperty(_State->_RMSWindow, std::clamp(::_wtof(Text), MinRMSWindow, MaxRMSWindow)))
@@ -546,9 +550,9 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_ACCELERATION:
+        case IDC_FALL_RATE:
         {
-            SetDouble(id, _State->_Acceleration, 0, 1);
+            SetDouble(id, _State->_FallRate, 0, 1);
             break;
         }
 
@@ -591,7 +595,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // Peak Meter
+        // Peak/RMS Meter
         case IDC_RMS_WINDOW:
         {
             SetDouble(id, _State->_RMSWindow, 0, 3);
@@ -765,6 +769,16 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_PHOSPHOR_DECAY:
         {
             _State->_HasPhosphorDecay = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
+        case IDC_DOWNMIX:
+        {
+            _State->_Downmix = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
 

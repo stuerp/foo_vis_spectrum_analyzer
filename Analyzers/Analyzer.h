@@ -40,11 +40,14 @@ public:
     }
 
     /// <summary>
-    /// Calculates the average of the samples of the specified audio frame.
+    /// Downmixes an audio frame to a mono sample.
     /// </summary>
-    audio_sample AverageSamples(const audio_sample * samples, uint32_t selectedChannels) const noexcept
+    audio_sample Downmix(const audio_sample * samples, uint32_t selectedChannels) const noexcept
     {
-        audio_sample Average = 0.;
+        if ((samples == nullptr) || (selectedChannels == 0))
+            return (audio_sample) 0.;
+
+        double Sample = 0.;
         uint32_t n = 0;
 
         for (uint32_t AvailableChannels = _ChannelConfig; (AvailableChannels != 0) && (selectedChannels != 0); AvailableChannels >>= 1, selectedChannels >>= 1)
@@ -53,7 +56,7 @@ public:
             {
                 if (selectedChannels & 1)
                 {
-                    Average += *samples;
+                    Sample += (double) *samples;
                     n++;
                 }
 
@@ -61,7 +64,7 @@ public:
             }
         }
 
-        return (n > 0) ? Average / (audio_sample) n : (audio_sample) 0.;
+        return (n > 0) ? (audio_sample) (Sample / n) : (audio_sample) 0.;
     }
 
 protected:

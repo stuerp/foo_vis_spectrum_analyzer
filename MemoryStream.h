@@ -9,7 +9,7 @@
 
 #define NOMINMAX
 
-#include <sdk\foobar2000.h>
+#include <sdk/foobar2000.h>
 
 using namespace foobar2000_io;
 

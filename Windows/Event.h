@@ -1,5 +1,5 @@
 
-/**$VER: Event.h (2026.01.21) P. Stuer - Implements a very simple thread-safe event class. **/
+/**$VER: Event.h (2026.08.17) P. Stuer - Implements a very simple thread-safe event class. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@ public:
     {
         None = 0,
 
-        PlaybackStartedNewTrack = 1,
+        PlaybackNewTrack = 1,
         PlaybackStopped = 2,
         PlaybackPaused = 4,
         PlaybackResumed = 8,

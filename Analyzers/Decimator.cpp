@@ -1,32 +1,40 @@
 
-/** $VER: Decimator.cpp (2026.07.04) P. Stuer - Implements a decimator **/
+/** $VER: Decimator.cpp (2026.08.22) P. Stuer - Implements a decimator **/
 
 #include "pch.h"
 
 #include "Decimator.h"
 
 /// <summary>
-/// Decimates the samples of a chunk to another taking into account the specified ratio.
+/// Decimates the samples of a chunk to another taking into account the specified ratio using filtering.
 /// </summary>
-void decimator_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio) noexcept
+void decimator_t::ProcessFiltered(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio) noexcept
 {
     const uint32_t ChannelCount = srcChunk.get_channels();
 
-    const uint32_t SrcSampleRate   = srcChunk.get_sample_rate();
-    const size_t SrcFrameCount     = srcChunk.get_sample_count();
+    const uint32_t SrcSampleRate = srcChunk.get_sample_rate();
+    const size_t SrcFrameCount   = srcChunk.get_sample_count();
 
     const audio_sample * __restrict SrcFrames = srcChunk.get_data();
 
-    const uint32_t DstSampleRate = (uint32_t) std::round(SrcSampleRate / ratio);
+    if ((ChannelCount == 0) || (SrcFrameCount == 0) || (ratio <= 0.0) || (SrcFrames == nullptr))
+    {
+        dstChunk.set_sample_count(0);
+        dstChunk.set_data_size(0);
 
-    if (DstSampleRate == 0 || std::abs((int) DstSampleRate - (int) SrcSampleRate) < 1)
+        return;
+    }
+
+    const auto DstSampleRate = (uint32_t) std::round(SrcSampleRate / ratio);
+
+    if ((DstSampleRate == 0) || (std::abs((int) DstSampleRate - (int) SrcSampleRate) < 1))
     {
         dstChunk.copy(srcChunk, true);
 
         return;
     }
 
-    const size_t DstFrameCount = (size_t) std::ceil((double) SrcFrameCount / ratio);
+    const auto DstFrameCount = (size_t) std::ceil((double) SrcFrameCount / ratio);
 
     dstChunk.set_channels(ChannelCount, srcChunk.get_channel_config());
     dstChunk.set_sample_rate(DstSampleRate);
@@ -46,13 +54,13 @@ void decimator_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, 
 
         const double Alpha = 0.85 * (0.45 / ratio); // Conservative cutoff
 
-        for (uint32_t ch = 0; ch < ChannelCount; ++ch)
+        for (size_t ch = 0; ch < ChannelCount; ++ch)
         {
             double State = 0.;
 
             for (size_t i = 0; i < SrcFrameCount; ++i)
             {
-                double Sample = SrcFrames[(i * Stride) + ch];
+                const double Sample = SrcFrames[(i * Stride) + ch];
 
                 State += (Sample - State) * Alpha;
 

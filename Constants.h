@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.07.04) P. Stuer **/
+/** $VER: Constants.h (2026.08.22) P. Stuer **/
 
 #pragma once
 
@@ -21,20 +21,20 @@ enum class VisualizationType
 };
 
 // Common
-inline const double MinSmoothingFactor = 0.;
-inline const double MaxSmoothingFactor = 1.;
+inline constexpr double MinSmoothingFactor = 0.;
+inline constexpr double MaxSmoothingFactor = 1.;
 
-inline const double MinArtworkOpacity = 0.;
-inline const double MaxArtworkOpacity = 1.;
+inline constexpr double MinArtworkOpacity = 0.;
+inline constexpr double MaxArtworkOpacity = 1.;
 
-inline const double MinArtworkBlurSigma = 0.;
-inline const double MaxArtworkBlurSigma = 20.;
+inline constexpr double MinArtworkBlurSigma = 0.;
+inline constexpr double MaxArtworkBlurSigma = 20.;
 
-inline const uint32_t MinArtworkColors = 2;
-inline const uint32_t MaxArtworkColors = 16;
+inline constexpr uint32_t MinArtworkColors = 2;
+inline constexpr uint32_t MaxArtworkColors = 16;
 
-inline const double MinLightnessThreshold = 0.;
-inline const double MaxLightnessThreshold = 1.;
+inline constexpr double MinLightnessThreshold = 0.;
+inline constexpr double MaxLightnessThreshold = 1.;
 
 enum class SmoothingMethod
 {
@@ -42,6 +42,9 @@ enum class SmoothingMethod
 
     Average = 1,
     Peak = 2,
+
+    Min = None,
+    Max = Peak,
 };
 
 enum class ColorOrder
@@ -56,6 +59,9 @@ enum class ColorOrder
 
     LightnessAscending = 5,
     LightnessDescending = 6,
+
+    Min = None,
+    Max = LightnessDescending,
 };
 
 enum class ArtworkType
@@ -64,7 +70,10 @@ enum class ArtworkType
     Back,
     Disc,
     Icon,
-    Artist
+    Artist,
+
+    Min = Front,
+    Max = Artist,
 };
 
 enum class FitMode
@@ -76,29 +85,32 @@ enum class FitMode
     FitHeight,
 
     Fill,
+
+    Min = Free,
+    Max = Fill,
 };
 
 // Visualization
-inline const double MinHoldTime =   0.;
-inline const double MaxHoldTime = 120.;
+inline constexpr double MinHoldTime =   0.; // s
+inline constexpr double MaxHoldTime =   5.; // s
 
-inline const double MinAcceleration = 0.;
-inline const double MaxAcceleration = 2.;
+inline constexpr double MinFallRate =   0.; // dB/s
+inline constexpr double MaxFallRate = 120.; // dB/s
 
-inline const FLOAT MinLEDSize =  0.f;
-inline const FLOAT MaxLEDSize = 32.f;
+inline constexpr FLOAT MinLEDSize =  0.f;   // DIPs
+inline constexpr FLOAT MaxLEDSize = 32.f;   // DIPs
 
-inline const FLOAT MinLEDGap =  0.f;
-inline const FLOAT MaxLEDGap = 32.f;
+inline constexpr FLOAT MinLEDGap =  0.f;    // DIPs
+inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
 
-inline const double MinRMSWindow = 0.; // in seconds
-inline const double MaxRMSWindow = 3.; // in seconds
+inline constexpr double MinRMSWindow = 0.;  // s
+inline constexpr double MaxRMSWindow = 3.;  // s
 
-inline const FLOAT MinBarGap =   0.; // in pixels
-inline const FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // in pixels
+inline constexpr FLOAT MinBarGap =   0.;    // DIPs
+inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline const FLOAT MinBarSize =   0.; // in pixels
-inline const FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // in pixels
+inline constexpr FLOAT MinBarSize =   0.;   // DIPs
+inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
 
 enum class PeakMode
 {
@@ -109,17 +121,20 @@ enum class PeakMode
     AIMP = 3,
     FadeOut = 4,
     FadingAIMP = 5,
+
+    Min = None,
+    Max = FadingAIMP,
 };
 
 // Transform
-inline const int MinFFTSize =     2;
-inline const int MaxFFTSize = 32768;
+inline constexpr int MinFFTSize =     2;
+inline constexpr int MaxFFTSize = 32768;
 
-inline const double MinFFTDuration =    1.; // ms
-inline const double MaxFFTDuration = 2000.; // ms
+inline constexpr double MinFFTDuration =    1.; // ms
+inline constexpr double MaxFFTDuration = 2000.; // ms
 
-inline const int MinKernelSize =  1;
-inline const int MaxKernelSize = 64;
+inline constexpr int MinKernelSize =  1;
+inline constexpr int MaxKernelSize = 64;
 
 enum class TransformMethod
 {
@@ -127,6 +142,9 @@ enum class TransformMethod
     CQT = 1,
     SWIFT = 2,
     AnalogStyle = 3,
+
+    Min = FFT,
+    Max = AnalogStyle,
 };
 
 enum class FFTMode
@@ -145,6 +163,9 @@ enum class FFTMode
 
     FFTCustom   = 11,
     FFTDuration = 12,
+
+    Min         = FFT64,
+    Max         = FFTDuration,
 };
 
 enum class Mapping
@@ -152,6 +173,9 @@ enum class Mapping
     Standard = 0,
     TriangularFilterBank = 1,
     BrownPuckette = 2,
+
+    Min = Standard,
+    Max = BrownPuckette,
 };
 
 enum class AggregationMethod
@@ -165,83 +189,89 @@ enum class AggregationMethod
     RMSSum = 4,
 
     Average = 5,
-    Median = 6
+    Median = 6,
+
+    Min = Minimum,
+    Max = Median,
 };
 
 // Window Function / Brown-Puckette CQT Kernel
-inline const double MinWindowParameter =  0.;
-inline const double MaxWindowParameter = 10.;
+inline constexpr double MinWindowParameter =  0.;
+inline constexpr double MaxWindowParameter = 10.;
 
-inline const double MinWindowSkew = -1.;
-inline const double MaxWindowSkew =  1.;
+inline constexpr double MinWindowSkew = -1.;
+inline constexpr double MaxWindowSkew =  1.;
 
-inline const double MinReactionAlignment = -0.5;
-inline const double MaxReactionAlignment =  0.5;
+inline constexpr double MinReactionAlignment = -0.5;
+inline constexpr double MaxReactionAlignment =  0.5;
 
 // Brown-Puckette CQT
-inline const double MinBandwidthOffset = 0.;
-inline const double MaxBandwidthOffset = 1.;
+inline constexpr double MinBandwidthOffset = 0.;
+inline constexpr double MaxBandwidthOffset = 1.;
 
-inline const double MinBandwidthCap = 0.;
-inline const double MaxBandwidthCap = 1.;
+inline constexpr double MinBandwidthCap = 0.;
+inline constexpr double MaxBandwidthCap = 1.;
 
-inline const double MinBandwidthAmount =   0.;
-inline const double MaxBandwidthAmount = 256.;
+inline constexpr double MinBandwidthAmount =   0.;
+inline constexpr double MaxBandwidthAmount = 256.;
 
 // SWIFT
-inline const size_t MinFilterBankOrder = 1;
-inline const size_t MaxFilterBankOrder = 8;
+inline constexpr size_t MinFilterBankOrder = 1;
+inline constexpr size_t MaxFilterBankOrder = 8;
 
-inline const double MinTimeResolution = 0.; 
-inline const double MaxTimeResolution = 2000.;
+inline constexpr double MinTimeResolution = 0.; 
+inline constexpr double MaxTimeResolution = 2000.;
 
-inline const double MinIIRBandwidth =  0.;
-inline const double MaxIIRBandwidth = 64.;
+inline constexpr double MinIIRBandwidth =  0.;
+inline constexpr double MaxIIRBandwidth = 64.;
 
 // Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
-inline const int MinBands =    2;
-inline const int MaxBands = 8192;
+inline constexpr int MinBands =    2;
+inline constexpr int MaxBands = 8192;
 
-inline const double MinFrequency =     1.; // Hz
-inline const double MaxFrequency = 96000.; // Hz
+inline constexpr double MinFrequency =     1.; // Hz
+inline constexpr double MaxFrequency = 96000.; // Hz
 
-inline const int MinNote =   0;
-inline const int MaxNote = 143;
+inline constexpr int MinNote =   0;
+inline constexpr int MaxNote = 143;
 
-inline const int MinBandsPerOctave =  1;
-inline const int MaxBandsPerOctave = 48;
+inline constexpr int MinBandsPerOctave =  1;
+inline constexpr int MaxBandsPerOctave = 48;
 
-inline const double MinPitch =    16.35; // Hz, C0
-inline const double MaxPitch = 63217.06; // Hz, B11
+inline constexpr double MinPitch =    16.35; // Hz, C0
+inline constexpr double MaxPitch = 63217.06; // Hz, B11
 
-inline const int MinTranspose = -24;
-inline const int MaxTranspose =  24;
+inline constexpr int MinTranspose = -24;
+inline constexpr int MaxTranspose =  24;
 
-inline const double MinSkewFactor = 0.;
-inline const double MaxSkewFactor = 1.;
+inline constexpr double MinSkewFactor = 0.;
+inline constexpr double MaxSkewFactor = 1.;
 
-inline const double MinBandwidth =  0.;
-inline const double MaxBandwidth = 64.;
+inline constexpr double MinBandwidth =  0.;
+inline constexpr double MaxBandwidth = 64.;
 
-inline const double MinAmplitude = -120.; // dB
-inline const double MaxAmplitude =    6.; // dB
+inline constexpr double MinAmplitude = -120.; // dB
+inline constexpr double MaxAmplitude =    6.; // dB
 
-inline const double MinAmplitudeStep = -10.; // dB
-inline const double MaxAmplitudeStep =  -1.; // dB
+inline constexpr double MinAmplitudeStep = -10.; // dB
+inline constexpr double MaxAmplitudeStep =  -1.; // dB
 
-inline const double MinGamma =  0.5;
-inline const double MaxGamma = 10.0;
+inline constexpr double MinGamma =  0.5;
+inline constexpr double MaxGamma = 10.0;
 
-inline const int MinXAxisDecimals = 0;
-inline const int MaxXAxisDecimals = 3;
+inline constexpr int MinXAxisDecimals = 0;
+inline constexpr int MaxXAxisDecimals = 3;
 
 enum class FrequencyDistribution
 {
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+
+    Min = Linear,
+    Max = AveePlayer,
 };
 
 enum class ScalingFunction
@@ -262,29 +292,32 @@ enum class ScalingFunction
     NthRoot = 9,
     NegativeExponential = 10,
     Period = 11,
+
+    Min = Linear,
+    Max = Period,
 };
 
 // Filters
-inline const double MinSlopeFunctionOffset = 0.;
-inline const double MaxSlopeFunctionOffset = 8.;
+inline constexpr double MinSlopeFunctionOffset = 0.;
+inline constexpr double MaxSlopeFunctionOffset = 8.;
 
-inline const double MinSlope = -12.;
-inline const double MaxSlope =  12.;
+inline constexpr double MinSlope = -12.;
+inline constexpr double MaxSlope =  12.;
 
-inline const double MinSlopeOffset =     0.; // Hz
-inline const double MaxSlopeOffset = 96000.; // Hz
+inline constexpr double MinSlopeOffset =     0.; // Hz
+inline constexpr double MaxSlopeOffset = 96000.; // Hz
 
-inline const double MinEqualizeAmount = -12.;
-inline const double MaxEqualizeAmount =  12.;
+inline constexpr double MinEqualizeAmount = -12.;
+inline constexpr double MaxEqualizeAmount =  12.;
 
-inline const double MinEqualizeOffset =     0.; // Hz
-inline const double MaxEqualizeOffset = 96000.; // Hz
+inline constexpr double MinEqualizeOffset =     0.; // Hz
+inline constexpr double MaxEqualizeOffset = 96000.; // Hz
 
-inline const double MinEqualizeDepth =     0.; // Hz
-inline const double MaxEqualizeDepth = 96000.; // Hz
+inline constexpr double MinEqualizeDepth =     0.; // Hz
+inline constexpr double MaxEqualizeDepth = 96000.; // Hz
 
-inline const double MinWeightingAmount = -1.; // %
-inline const double MaxWeightingAmount =  1.; // %
+inline constexpr double MinWeightingAmount = -1.; // %
+inline constexpr double MaxWeightingAmount =  1.; // %
 
 enum class WeightingType
 {
@@ -296,17 +329,20 @@ enum class WeightingType
     DWeighting = 4,
 
     MWeighting = 5, // M-weighting, related to ITU-R 468 noise weighting, https://en.wikipedia.org/wiki/ITU-R_468_noise_weighting
+
+    Min = None,
+    Max = MWeighting,
 };
 
 // Styles
-inline const double MinOpacity = 0.;
-inline const double MaxOpacity = 1.;
+inline constexpr double MinOpacity = 0.;
+inline constexpr double MaxOpacity = 1.;
 
-inline const double MinThickness =  0.;
-inline const double MaxThickness = 32.;
+inline constexpr double MinThickness =  0.;
+inline constexpr double MaxThickness = 32.;
 
-inline const double MinFontSize = 1.;
-inline const double MaxFontSize = 200.;
+inline constexpr double MinFontSize = 1.;
+inline constexpr double MaxFontSize = 200.;
 
 enum class VisualElement : uint32_t
 {
@@ -366,12 +402,15 @@ enum class VisualElement : uint32_t
 
 enum class ColorSource : uint32_t
 {
-    None,
+    None = 0,
     Solid,
     DominantColor,
     Gradient,
     Windows,
     UserInterface,
+
+    Min = None,
+    Max = UserInterface,
 };
 
 enum class WindowsColor : uint32_t
@@ -414,22 +453,33 @@ enum class ColorScheme : uint32_t
     Custom = 1,
     Artwork = 2,
 
-    Prism1 = 3,
-    Prism2 = 4,
-    Prism3 = 5,
+    Prism1,
+    Prism2,
+    Prism3,
 
-    foobar2000 = 6,
-    foobar2000DarkMode = 7,
+    foobar2000,
+    foobar2000DarkMode,
 
-    Fire = 8,
-    Rainbow = 9,
+    Fire,
+    Rainbow,
 
-    SoX = 10,
+    SoX,
+
+    Turbo,
+
+    Viridis,
+    Plasma,
+    Inferno,
+    Magma,
+    Cividis,
+
+    Min = Solid,
+    Max = Cividis,
 };
 
 enum class VisualizationTypes : uint64_t
 {
-    None = 0,
+    None = 0ull,
 
     Bars            = 1 << (int) VisualizationType::Bars,
     Curve           = 1 << (int) VisualizationType::Curve,
@@ -441,33 +491,36 @@ enum class VisualizationTypes : uint64_t
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
     BitMeter        = 1 << (int) VisualizationType::BitMeter,
 
-    All = ~0
+    All = ~0ull
 };
 
 // Oscilloscope
-inline const double MinXGain =  0.;
-inline const double MaxXGain = 10.;
+inline constexpr double MinXGain =  0.;
+inline constexpr double MaxXGain = 10.;
 
-inline const double MinYGain =  0.;
-inline const double MaxYGain = 10.;
+inline constexpr double MinYGain =  0.;
+inline constexpr double MaxYGain = 10.;
 
-inline const FLOAT MinRotation = -180.f;
-inline const FLOAT MaxRotation =  180.f;
+inline constexpr FLOAT MinRotation = -180.f;
+inline constexpr FLOAT MaxRotation =  180.f;
 
-inline const uint32_t MinFrameCount = 256;
-inline const uint32_t MaxFrameCount = std::numeric_limits<uint32_t>::max();
+inline constexpr uint32_t MinFrameCount = 256;
+inline constexpr uint32_t MaxFrameCount = std::numeric_limits<uint32_t>::max();
 
-inline const FLOAT MinBlurSigma =  1.f;
-inline const FLOAT MaxBlurSigma = 10.f;
+inline constexpr FLOAT MinBlurSigma =  1.f;
+inline constexpr FLOAT MaxBlurSigma = 10.f;
 
-inline const FLOAT MinDecayFactor = 0.f;
-inline const FLOAT MaxDecayFactor = 1.f;
+inline constexpr FLOAT MinDecayFactor = 0.f;
+inline constexpr FLOAT MaxDecayFactor = 1.f;
 
 // Bit Meter
 enum class BitMeterMode : uint32_t
 {
     FloatingPoint,
-    Integer
+    Integer,
+
+    Min = FloatingPoint,
+    Max = Integer,
 };
 
 inline constexpr uint8_t MinBitsPerInteger =  1;
@@ -480,6 +533,9 @@ enum class HorizontalAlignment
     Center,
     Far,
     Fit,
+
+    Min = Near,
+    Max = Fit
 };
 
 enum class VerticalAlignment
@@ -487,6 +543,9 @@ enum class VerticalAlignment
     Near = 0,
     Center,
     Far,
+
+    Min = Near,
+    Max = Far
 };
 
 enum class XAxisMode
@@ -497,6 +556,9 @@ enum class XAxisMode
     Decades = 2,
     Octaves = 3,
     Notes = 4,
+
+    Min = None,
+    Max = Notes,
 };
 
 enum class YAxisMode
@@ -505,6 +567,9 @@ enum class YAxisMode
 
     Decibels = 1,
     Linear = 2,
+
+    Min = None,
+    Max = Linear,
 };
 
 // Deprecated
@@ -514,40 +579,43 @@ enum class BackgroundMode
 
     Solid = 1,
     Artwork = 2,
+
+    Min = None,
+    Max = Artwork,
 };
 
-// Should be the exact layout as in "SDK\audio_chunk.h". No need to include foobar2000 SDK everywhere.
+// Should be the exact layout as in "sdk/audio_chunk.h". No need to include foobar2000 SDK everywhere.
 enum class Channels : uint32_t
 {
-    FrontLeft = 1 << 0,
-    FrontRight = 1 << 1,
-    FrontCenter = 1 << 2,
+    FrontLeft           = 1 <<  0,
+    FrontRight          = 1 <<  1,
+    FrontCenter         = 1 <<  2,
 
-    LFE = 1 << 3,
+    LFE                 = 1 <<  3,
 
-    BackLeft = 1 << 4,
-    BackRight = 1 << 5,
+    BackLeft            = 1 <<  4,
+    BackRight           = 1 <<  5,
 
-    FrontCenterLeft = 1 << 6,
-    FrontCenterRight = 1 << 7,
+    FrontCenterLeft     = 1 <<  6,
+    FrontCenterRight    = 1 <<  7,
 
-    BackCenter = 1 << 8,
+    BackCenter          = 1 <<  8,
 
-    SideLeft = 1 << 9,
-    SideRight = 1 << 10,
+    SideLeft            = 1 <<  9,
+    SideRight           = 1 << 10,
 
-    TopCenter = 1 << 11,
+    TopCenter           = 1 << 11,
 
-    TopFrontLeft = 1 << 12,
-    TopFrontCenter = 1 << 13,
-    TopFrontRight = 1 << 14,
+    TopFrontLeft        = 1 << 12,
+    TopFrontCenter      = 1 << 13,
+    TopFrontRight       = 1 << 14,
 
-    TopBackLeft = 1 << 15,
-    TopBackCenter = 1 << 16,
-    TopBackRight = 1 << 17,
+    TopBackLeft         = 1 << 15,
+    TopBackCenter       = 1 << 16,
+    TopBackRight        = 1 << 17,
 
-    BackLeftRight = BackLeft | BackRight,
-    SideLeftRight = SideLeft | SideRight,
+    BackLeftRight       = BackLeft | BackRight,
+    SideLeftRight       = SideLeft | SideRight,
 
     ConfigMono          = FrontCenter,
     ConfigStereo        = FrontLeft | FrontRight,
@@ -562,10 +630,13 @@ enum class Channels : uint32_t
     Config5point1Side   = Config4point0Side | FrontCenter | LFE,
     Config7point1       = Config5point1 | SideLeftRight,
 
-    Count = 18,
+    Count = 18u,
+
+    None = 0,
+    All = (1 << Count) - 1,
 };
 
-inline const uint32_t AllChannels = ((1 << (uint32_t) Channels::Count) - 1);
+inline constexpr uint32_t AllChannels = ((1 << (uint32_t) Channels::Count) - 1);
 
 enum class ChannelPair : uint32_t
 {
@@ -578,34 +649,43 @@ enum class ChannelPair : uint32_t
     TopFrontLeftRight,
     TopBackLeftRight,
 
-    Count,
+    Min = FrontLeftRight,
+    Max = TopBackLeftRight,
 };
 
 enum class HorizontalTextAlignment : uint32_t
 {
     Left = 0,
     Center = 1,
-    Right = 2
+    Right = 2,
+
+    Min = Left,
+    Max = Right
 };
 
 enum class VerticalTextAlignment : uint32_t
 {
     Top = 0,
     Center = 1,
-    Bottom = 2
+    Bottom = 2,
+
+    Min = Top,
+    Max = Bottom
 };
 
 enum class ConfigurationChanges : uint32_t
 {
-    None = 0,
+    None = 0u,
 
-    RenderLoop   = 1 << 0, // Configuration change impacts the behavior of the render loop.
-    Layout       = 1 << 1, // Configuration change impacts the layout of the visualization.
+    RenderLoop          = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Layout              = 1 << 1, // Configuration change impacts the layout of the visualization.
 
-    RefreshRate  = 1 << 2,
-    Oscilloscope = 1 << 3, // Configuration change impacts the oscilloscope.
+    RefreshRate         = 1 << 2,
+    Oscilloscope        = 1 << 3, // Configuration change impacts the oscilloscope.
 
-    Artwork      = 1 << 4, // Configuration change impacts how the artwork is rendered.
+    Artwork             = 1 << 4, // Configuration change impacts how the artwork is rendered.
+
+    UserInterfaceColors = 1 << 5, // Configuration change impacts the user interface colors.
 
     All = ~0u,
 };

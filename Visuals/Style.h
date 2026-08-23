@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2026.06.22) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.08.22) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -21,8 +21,8 @@ class style_t
 public:
     style_t() { }
 
-    style_t(const style_t &);
-    style_t & operator=(const style_t & other);
+    style_t(const style_t &) noexcept;
+    style_t & operator=(const style_t & other) noexcept;
 
     style_t(const style_t &&) = delete;
     style_t & operator=(const style_t && other) = delete;
@@ -45,7 +45,7 @@ public:
 
         System              = SupportsOpacity | SupportsThickness | SupportsFont | AmplitudeAware | SupportsRadial,
 
-        Global              = 1ULL << 63,
+        Global              = 1ull << 63,
     };
 
     style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;

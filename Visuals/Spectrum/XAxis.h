@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2025.09.24) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2026.08.22) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -40,7 +40,7 @@ public:
     // visualization_t
     void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextHeight() const noexcept

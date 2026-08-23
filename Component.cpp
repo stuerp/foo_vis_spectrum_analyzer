@@ -3,7 +3,7 @@
 
 #include "pch.h"
 
-#include <SDK\componentversion.h>
+#include <sdk/componentversion.h>
 
 #include "State.h"
 #include "Resources.h"

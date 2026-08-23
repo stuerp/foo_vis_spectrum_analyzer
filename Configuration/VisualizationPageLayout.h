@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.07.04) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.08.22) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #define Y_E01    0
 
 // Combobox
-#define W_E02    82
+#define W_E02    86
 #define H_E02    H_CBX
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
@@ -49,9 +49,15 @@
     #define H_A52    H_TBX
     #define X_A52    X_A51 + W_A51 + IX
     #define Y_A52    Y_A51
+
+    // Label: Unit
+    #define W_A55    42
+    #define H_A55    H_LBL
+    #define X_A55    X_A52 + W_A52 + IX
+    #define Y_A55    Y_A52
     #pragma endregion
 
-    #pragma region Acceleration (db/s2)
+    #pragma region Fall rate (dB/s)
     // Label
     #define W_A53    42
     #define H_A53    H_LBL
@@ -63,6 +69,12 @@
     #define H_A54    H_TBX
     #define X_A54    X_A53 + W_A53 + IX
     #define Y_A54    Y_A53
+
+    // Label: Unit
+    #define W_A56    42
+    #define H_A56    H_LBL
+    #define X_A56    X_A54 + W_A54 + IX
+    #define Y_A56    Y_A54
     #pragma endregion
 
 #define W_B13   116
@@ -406,7 +418,7 @@
     #define X_C91    X_C62
     #define Y_C91    Y_C79
 
-    // Checkbox: Phosphor decay effect
+    // Checkbox: Phosphor decay
     #define W_C64    62
     #define H_C64    H_CHB
     #define X_C64    X_C54
@@ -436,5 +448,11 @@
     #define X_C72    X_C70 + W_C70 + IX
     #define Y_C72    Y_C70
 
+    // Checkbox: Downmix to mono
+    #define W_A40    80
+    #define H_A40    H_CHB
+    #define X_A40    X_C64
+    #define Y_A40    Y_C72 + H_C72 + IY
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7

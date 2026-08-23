@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.rc (2026.06.10) P. Stuer **/
+/** $VER: GraphsPage.rc (2026.08.22) P. Stuer **/
 
 #include "Resources.h"
 
@@ -19,8 +19,9 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         pushbutton      "+",                        IDC_ADD_GRAPH,                  X_G21, Y_G21,     W_G21, H_G21
         pushbutton      "-",                        IDC_REMOVE_GRAPH,               X_G22, Y_G22,     W_G22, H_G22
 
-        control         "Vertical layout" IDC_VERTICAL_LAYOUT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G23, Y_G23, W_G23, H_G23
-        control         "Overlap graphs"  IDC_OVERLAP_GRAPHS,  "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G60, Y_G60, W_G60, H_G60
+        control         "Vertical layout"           IDC_VERTICAL_LAYOUT,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G23, Y_G23, W_G23, H_G23
+        control         "Overlap graphs"            IDC_OVERLAP_GRAPHS,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G60, Y_G60, W_G60, H_G60
+        control         "Use local styles"          IDC_USE_LOCAL_STYLES            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G62, Y_G62, W_G62, H_G62
 
     rtext               "Description:"              IDC_STATIC,                     X_G24, Y_G24 + 2, W_G24, H_G24
     edittext                                        IDC_GRAPH_DESCRIPTION           X_G25, Y_G25,     W_G25, H_G25, ES_AUTOHSCROLL | WS_TABSTOP

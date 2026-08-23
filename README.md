@@ -18,7 +18,7 @@ Over time other visualisations were added.
 
 ![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
 
-<sup>Spectrum analyzer Curve Mode with album art background, a peak meter and a level meter</sup>
+<sup>Spectrum analyzer Curve Mode with album art background and peak / RMS and balance / correlation</sup>
 
 ![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
 
@@ -74,7 +74,7 @@ Over time other visualisations were added.
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak Meter, Level Meter, Oscilloscope and Bit Meter visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple graphs
@@ -156,31 +156,16 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.11.0.0, 2026-08-16
+v0.12.0.0-alpha1, 2026-08-23
 
-- New: The number of decimals used by the X-axis labels can be configured.
-- New: Added Integer mode to the Bit Meter visualization.
-  - The number of bits can be configured.
-- New: Artwork can be blurred. Setting the number of pixels to 0 (default) disables the blurring.
-- New: Overlapping graphs support for bar, curve, radial bar and radial curve visualizations. See `Overlap graphs` option on the `Graph` page.
-  - Graphs can be rendered overlapped instead of in a row or column layout. Each graph can have its own styles. This can be used to render two or more channels with different colors on top of each other.
-- New: Global and local styles.
-  - Each graph can have its own styles. This is particularly useful for overlapping graphs.
-  - Make sure the styles of overlapping visual elements are set to `None` to prevent overpainting (e.g. the background style of all but the first graph).
-- New: Channel Pair can be configured per graph.
-- New: `Frame count` setting determines the number of audio frames that will be used by the oscilloscope per screen update.
-- New: Oscilloscope uses decimation to improve the quality of the rendered signal.
-- New: Spectrogram uses resampling to improve the quality of the rendered spectrum.
-- Improved: Significantly improved the afterglow effect of the oscilloscope. Also, it should work now with a transparent background.
-- Changed: Saves the settings as a human-readable JSON object.
-  - The component will keep reading presets files from v0.10.0.0 and older. But going forward, all new settings will only be saved in the new format.
-  - An extra benefit is that the presets files can be used by the x86 and x64 versions of the component.
-- Changed: Bit Meter Integer mode now uses the absolute value of the samples to visualize the signal.
-- Changed: Reduced Bit Meter Integer mode to use max. 32 bits. Thx. to [@Case](https://hydrogenaudio.org/index.php?action=profile;u=322) for the input and testing.
-- Changed: Builds with Visual Studio 2026.
-- Fixed: The JSON configuration file reader ignored the Y-axis visibility setting.
-- Fixed: Level Meter should not show a measurement unless all channels of the selected channel pair were selected for measurement.
-- Fixed: Weird caret behavior of the numeric edit controls.
+- New: You can downmix the input of the oscilloscope to mono.
+- New: [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) and a couple of Perceptually Uniform Sequential [Matplotlib](https://matplotlib.org/stable/users/explain/colors/colormaps.html) color maps.
+- Improved: Visualizations continue without interruption when starting a new track.
+- Improved: Performance and numeric stability of the CQT transform.
+- Improved: Downsampling of the oscilloscope input should now retain more peak values and produce better representation of large input audio chunks.
+- Breaking Change: The peak hold time and fall rate (was Acceleration) are now expressed in seconds and dB/s respectively to make them independent of the frame rate. The old values will be remapped to the new ranges but some tweaking may be necessary.
+- Breaking Change: Multiple graphs used to imply the use of local styles. By default global styles will be used unless you enable the setting `Use local style` on the `Graphs` page.
+- Fixed: Peak mode configuration was disabled for the Peak / RMS meter.
 
 You can read the full history [here](docs/History.md).
 
@@ -197,6 +182,8 @@ You can read the full history [here](docs/History.md).
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 - [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://json.nlohmann.me/).
+- Anton Mikhailov for the [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color map.
+- [Matplotlib](https://matplotlib.org/) for the [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps.
 
 ## Reference Material
 
