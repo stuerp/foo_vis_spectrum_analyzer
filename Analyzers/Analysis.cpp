@@ -16,10 +16,10 @@ static inline double GetAcousticWeight(double x, WeightingType weightingType, do
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * state, const graph_options_t * graphDescription) noexcept
+void analysis_t::Initialize(const state_t * state, const graph_options_t * graphOptions) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
 
     switch (_State->_FrequencyDistribution)
     {
@@ -90,16 +90,13 @@ void analysis_t::Reset() noexcept
     for (auto & fb : _FrequencyBands)
         fb.Value = 0.;
 
-    // Peak Meter
+    // Peak/RMS Meter
     {
-        _PeakMeasuredChannels = 0;
-
-        InitializePeakMeasurements((uint32_t) Channels::ConfigStereo);
-
+        ResetPeakMeasurements();
         ResetRMSDependentValues();
     }
 
-    // Level Meter
+    // Balance/Correlation Meter
     {
         _Balance = 0.5;
         _Phase   = 0.5;
@@ -211,25 +208,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
     const double HoldTime = _State->_HoldTime * (double) _State->_RefreshRateLimit;
     const double FallRate = (_State->_FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State->_FallRate, 0., 1.) : 0.;
 
-#ifdef _TROUBLE
-static double Value = 0.;
-static int64_t Elapsed1 = 0;
-static int64_t Elapsed2 = 0;
-
-if (Elapsed1 == 0)
-{
-    Value = 1.;
-    Elapsed1 = _Chrono.Now();
-}
-
-if (Value > 0.)
-    Value -= FallRate;
-
-if (Value <= 0. && Elapsed2 == 0)
-    Elapsed2 = _Chrono.Now();
-
-    _DebugText = msc::FormatText(L"%.3f %.6f\n%4dms\n%.6f / %4dms\n", HoldTime, FallRate, (int) (Elapsed * 1'000.), Value, (int) _Chrono.TicksToMilliseconds(Elapsed2 - Elapsed1));
-#endif
+    const bool IsAIMP = (_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP);
 
     switch (_State->_VisualizationType)
     {
@@ -247,7 +226,7 @@ if (Value <= 0. && Elapsed2 == 0)
             {
                 if (fb.Value >= fb.MaxValue)
                 {
-                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    if (IsAIMP)
                         fb.HoldTime += (fb.Value - fb.MaxValue) * HoldTime;
                     else
                         fb.HoldTime = HoldTime;
@@ -260,12 +239,12 @@ if (Value <= 0. && Elapsed2 == 0)
                 {
                     if (fb.HoldTime > 0.)
                     {
-                        if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        if (IsAIMP)
                             fb.MaxValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
 
                         fb.HoldTime--;
 
-                        if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        if (IsAIMP)
                             fb.HoldTime = std::min(fb.HoldTime, HoldTime);
                     }
                     else
@@ -279,7 +258,9 @@ if (Value <= 0. && Elapsed2 == 0)
 
                             case PeakMode::Classic:
                             {
-                                fb.FallRate  = FallRate;
+                                constexpr double FallAcceleration = 0.1;
+
+                                fb.FallRate  = std::min(fb.FallRate + FallAcceleration, FallRate);
                                 fb.MaxValue -= fb.FallRate;
                                 break;
                             }
@@ -336,7 +317,7 @@ if (Value <= 0. && Elapsed2 == 0)
             {
                 if (m.NormalizedPeak >= m.MaxNormalizedPeak)
                 {
-                    if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                    if (IsAIMP)
                         m.HoldTime += (m.NormalizedPeak - m.MaxNormalizedPeak) * HoldTime;
                     else
                         m.HoldTime = HoldTime;
@@ -349,12 +330,12 @@ if (Value <= 0. && Elapsed2 == 0)
                 {
                     if (m.HoldTime > 0.)
                     {
-                        if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        if (IsAIMP)
                             m.MaxNormalizedPeak += (m.HoldTime - std::max(m.HoldTime - 1., 0.)) / HoldTime;
 
                         m.HoldTime--;
 
-                        if ((_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP))
+                        if (IsAIMP)
                             m.HoldTime = std::min(m.HoldTime, HoldTime);
                     }
                     else
@@ -581,11 +562,11 @@ void analysis_t::GenerateLinearFrequencyBands()
 
     for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo     = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
         fb.Mid = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi     = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
 
         fb.HasDarkBackground = true;
 
@@ -598,7 +579,7 @@ void analysis_t::GenerateLinearFrequencyBands()
 /// </summary>
 static int FrequencyToNote(double frequency) noexcept
 {
-    const int A4 = 69;
+    constexpr int A4 = 69;
 
     return A4 + (int) ::round(12. * ::log2(frequency / 440.));
 }
@@ -608,7 +589,7 @@ static int FrequencyToNote(double frequency) noexcept
 /// </summary>
 static double NoteToFrequency(int note) noexcept
 {
-    const int A4 = 69;
+    constexpr int A4 = 69;
 
     return 440. * ::pow(2., (note - A4) / 12.);
 }
@@ -653,9 +634,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
             if (msc::InRange(f, fb.Lo, fb.Hi))
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Mid);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Mid);
             else
-                ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -679,12 +660,12 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        fb.Lo     = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
+        fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
         fb.Mid = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
-        fb.Hi     = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
+        fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
-        ::swprintf_s(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
 
         ++i;
     }
@@ -999,7 +980,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 
         size_t i = 0;
 
-        uint32_t ChunkChannels    = chunk.get_channel_config();             // Mask containing the channels in the audio chunk.
+        uint32_t ChunkChannels    = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
         uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user for processing.
 
         while ((ChunkChannels & SelectedChannels) != 0)

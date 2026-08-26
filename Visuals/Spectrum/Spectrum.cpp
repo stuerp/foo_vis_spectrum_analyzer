@@ -294,7 +294,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
 
     if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
     {
-        Points.Clear();
+    //  Points.Clear();
 
         hr = CreateGeometryPointsFromAmplitude(Points, true);
 
@@ -974,7 +974,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
         if (!((fb.Lo > _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage))
             Value = !usePeak ? fb.Value : fb.MaxValue;
 
-        y = std::clamp((FLOAT)(Value * _ClientSize.height), 0.f, _ClientSize.height);
+        y = std::clamp((FLOAT) (Value * _ClientSize.height), 0.f, _ClientSize.height);
 
         points.p0.push_back(D2D1::Point2F(x, y));
 

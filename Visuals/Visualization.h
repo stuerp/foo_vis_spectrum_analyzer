@@ -16,7 +16,7 @@ public:
 
     virtual ~visualization_t() noexcept {}
 
-    virtual void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept = 0;
+    virtual void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept = 0;
 
 protected:
 };

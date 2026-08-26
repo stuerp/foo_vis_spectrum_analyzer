@@ -1,6 +1,17 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.12.0.0-alpha1, 2026-08-23
+
+- New: You can downmix the input of the oscilloscope to mono.
+- New: [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) and a couple of Perceptually Uniform Sequential [Matplotlib](https://matplotlib.org/stable/users/explain/colors/colormaps.html) color maps.
+- Improved: Visualizations continue without interruption when starting a new track.
+- Improved: Performance and numeric stability of the CQT transform.
+- Improved: Downsampling of the oscilloscope input should now retain more peak values and produce better representation of large input audio chunks.
+- Breaking Change: The peak hold time and fall rate (was Acceleration) are now expressed in seconds and dB/s respectively to make them independent of the frame rate. The old values will be remapped to the new ranges but some tweaking may be necessary.
+- Breaking Change: Multiple graphs used to imply the use of local styles. By default global styles will be used unless you enable the setting `Use local style` on the `Graphs` page.
+- Fixed: Peak mode configuration was disabled for the Peak / RMS meter.
+
 v0.11.0.0, 2026-08-16
 
 - New: The number of decimals used by the X-axis labels can be configured.

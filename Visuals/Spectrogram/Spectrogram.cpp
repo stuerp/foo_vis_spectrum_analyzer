@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.08.24) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
 #include "Spectrogram.h"
@@ -53,28 +53,6 @@ void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void spectrogram_t::Reset() noexcept
-{
-/*
-console::print("Reset");
-
-    _X = 0.f;
-    _Y = 0.f;
-    _PlaybackTime = -1.;
-    _TrackTime = -1.;
-
-    _TimeLabels.clear();
-
-    _Bitmap.Release();
-    _BitmapRenderTarget.Release();
-
-    _IsResized = true;
-*/
 }
 
 /// <summary>
@@ -1083,7 +1061,7 @@ frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, 
             Weight += w;
         }
 
-        Dst[i].Value = (Weight != 0.) ? std::max(0., Sum / Weight) : 0.;
+        Dst[i].Value = (Weight != 0.) ? std::clamp(Sum / Weight, 0., 1.) : 0.;
         Dst[i].Lo    = fb[j0].Lo;
     }
 

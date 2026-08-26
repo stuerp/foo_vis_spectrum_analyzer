@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.08.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.08.26) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -35,10 +35,10 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -184,13 +184,17 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             _DeviceContext->BeginDraw();
 
+            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
             if (_State->_HasPhosphorDecay)
             {
                 _DeviceContext->SetTarget(_BackBuffer);
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+                    _DeviceContext->Clear(); // Required for alpha transparency.
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
                     // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -206,32 +210,33 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+                    _DeviceContext->Clear(); // Required for alpha transparency.
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+                    // Draw a color reduced version of the front buffer.
+                    _ColorMatrixEffect->SetInput(0, _FrontBuffer);
+
+                    _DeviceContext->DrawImage(_ColorMatrixEffect);
 
                     // Draw a color reduced version of the back buffer.
                     _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                     _DeviceContext->DrawImage(_ColorMatrixEffect);
 
-                    {
-                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+                    // Draw a blurred version of the back buffer.
+                    _BlurEffect->SetInput(0, _BackBuffer);
 
-                        // Draw a blurred version of the back buffer.
-                        _BlurEffect->SetInput(0, _BackBuffer);
+                    _DeviceContext->DrawImage(_BlurEffect);
 
-                        _DeviceContext->DrawImage(_BlurEffect);
+                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                        // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                        _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                    // Draw a normal version of the signal.
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
 
-                        // Draw a normal version of the signal.
-                        _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                        // Remove the clip region.
-                        _DeviceContext->PopAxisAlignedClip();
-
-                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-                    }
+                    // Remove the clip region.
+                    _DeviceContext->PopAxisAlignedClip();
                 }
             }
             else
@@ -276,11 +281,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
             deviceContext->DrawBitmap(_CompositeBuffer);
-
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -570,7 +571,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 
                     WCHAR Text[8] = { };
 
-                    ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
+                    ::StringCchPrintfW(Text, _countof(Text), L"%3d ms", Time);
 
                     _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 

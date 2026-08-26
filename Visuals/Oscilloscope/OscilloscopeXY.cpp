@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.07.04) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.08.26) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -28,10 +28,10 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -101,6 +101,8 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         const uint32_t ChannelMask = AvailableChannels & SelectedChannels & BalanceChannels;
 
+        CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
+
         if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
         {
             const audio_sample * Samples = _Analysis->_Chunk.get_data();
@@ -110,8 +112,6 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (_GraphOptions->_SwapChannels)
                 std::swap(Channel1, Channel2);
-
-            CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
             // Create the signal geometry.
             {
@@ -146,64 +146,70 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 if (SUCCEEDED(hr))
                     hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Rotate * Scale * Translate, &TransformedGeometry);
             }
+        }
 
-            // Draw the signal in the composite buffer.
-            if (SUCCEEDED(hr))
+        // Draw the signal in the composite buffer. Keep drawing even if no signal data is available to create the blur effect.
+        if (SUCCEEDED(hr))
+        {
+            _DeviceContext->BeginDraw();
+
+            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+            if (_State->_HasPhosphorDecay)
             {
-                _DeviceContext->BeginDraw();
+                _DeviceContext->SetTarget(_BackBuffer);
 
-                _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-                if (_State->_HasPhosphorDecay)
                 {
-                    _DeviceContext->SetTarget(_BackBuffer);
-
-                    {
-                        // Clear the buffer.
-                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
-
-                        // Draw a wide version of the signal.
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
-                    }
-
-                    _DeviceContext->SetTarget(_CompositeBuffer);
-
-                    {
-                        // Clear the buffer.
-                        _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
-
-                        // Draw a color reduced version of the back buffer.
-                        _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-                        _DeviceContext->DrawImage(_ColorMatrixEffect);
-
-                        {
-                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-                            // Draw a blurred version of the back buffer.
-                            _BlurEffect->SetInput(0, _BackBuffer);
-
-                            _DeviceContext->DrawImage(_BlurEffect);
-
-                            // Draw a normal version of the signal.
-                            _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                            _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-                        }
-                    }
-                }
-                else
-                {
-                    _DeviceContext->SetTarget(_CompositeBuffer);
-
-                    // Clear the buffer.
+                    // Clear the back buffer.
                     _DeviceContext->Clear(); // Required for alpha transparency
 
-                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+
+                    // Draw a wide version of the signal.
+                    if (TransformedGeometry)
+                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
                 }
 
-                _DeviceContext->EndDraw();
+                _DeviceContext->SetTarget(_CompositeBuffer);
+
+                {
+                    // Clear the composite buffer.
+                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+                    // Draw a color reduced version of the front buffer.
+                    _ColorMatrixEffect->SetInput(0, _FrontBuffer);
+
+                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+                    // Draw a color reduced version of the back buffer.
+                    _ColorMatrixEffect->SetInput(0, _BackBuffer);
+
+                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+
+                    // Draw a blurred version of the back buffer.
+                    _BlurEffect->SetInput(0, _BackBuffer);
+
+                    _DeviceContext->DrawImage(_BlurEffect);
+
+                    // Draw a normal version of the signal.
+                    if (TransformedGeometry)
+                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                }
             }
+            else
+            {
+                _DeviceContext->SetTarget(_CompositeBuffer);
+
+                // Clear the buffer.
+                _DeviceContext->Clear(); // Required for alpha transparency
+
+                if (TransformedGeometry)
+                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+            }
+
+            _DeviceContext->EndDraw();
         }
     }
 
@@ -227,11 +233,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
             deviceContext->DrawBitmap(_CompositeBuffer);
-
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());

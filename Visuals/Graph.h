@@ -32,7 +32,7 @@ public:
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphDescription, bool isFirst, bool isLast) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
 

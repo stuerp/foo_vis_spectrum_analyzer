@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.08.22) P. Stuer **/
+/** $VER: State.cpp (2026.08.24) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -536,20 +536,20 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _IsHorizontalLevelMeter = other._IsHorizontalLevelMeter;
 
     // Oscilloscope
-    _XYMode = other._XYMode;
-    _XGain = other._XGain;
-    _YGain = other._YGain;
-    _Rotation = other._Rotation;
-    _HasPhosphorDecay = other._HasPhosphorDecay;
-    _BlurSigma = other._BlurSigma;
-    _DecayFactor = other._DecayFactor;
-    _FrameCount = other._FrameCount;
-    _Downmix = other._Downmix;
+    _XYMode               = other._XYMode;
+    _XGain                = other._XGain;
+    _YGain                = other._YGain;
+    _Rotation             = other._Rotation;
+    _HasPhosphorDecay     = other._HasPhosphorDecay;
+    _BlurSigma            = other._BlurSigma;
+    _DecayFactor          = other._DecayFactor;
+    _FrameCount           = other._FrameCount;
+    _Downmix              = other._Downmix;
 
     // Bit Meter
-    _BitMeterMode = other._BitMeterMode;
-    _BitsPerInteger = other._BitsPerInteger;
-    _OpacityMode = other._OpacityMode;
+    _BitMeterMode         = other._BitMeterMode;
+    _BitsPerInteger       = other._BitsPerInteger;
+    _OpacityMode          = other._OpacityMode;
 
     #pragma endregion
 
@@ -560,6 +560,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _PresetsDirectoryPath = other._PresetsDirectoryPath;
 
     // Not serialized
+    _UserInterfaceColors  = other._UserInterfaceColors; // Keep this: It makes sure the render thread has color information at startup.
+
     _BinCount             = other._BinCount;
     _ActivePresetName     = other._ActivePresetName;
 

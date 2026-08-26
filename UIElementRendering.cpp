@@ -46,6 +46,7 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
+        // Wait for the presentation time of the frame.
         {
             Now = Chrono.Now();
 
@@ -74,7 +75,7 @@ void uielement_t::RenderThreadProc() noexcept
 
         if (!(_IsFrozen || !_IsVisible || ::IsIconic(_hParent)))
         {
-            bool HaveColorsChanged = false;
+            bool HaveArtworkColorsChanged = false;
 
             if (_CriticalSection.TryEnter())
             {
@@ -93,25 +94,25 @@ void uielement_t::RenderThreadProc() noexcept
 
                 if (_IsConfigurationChanged)
                 {
-                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
                     _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
 
                     _IsConfigurationChanged = false;
 
-                    HaveColorsChanged = true;
+                    HaveArtworkColorsChanged = true;
                 }
 
                 _CriticalSection.Leave();
             }
 
             // Notify the configuration dialog about the changed artwork colors.
-            if (HaveColorsChanged && _ConfigurationDialog.IsWindow())
+            if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
             {
                 _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-                Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+            //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
 
-                HaveColorsChanged = false;
+                HaveArtworkColorsChanged = false;
             }
         }
 
@@ -138,7 +139,29 @@ void uielement_t::ProcessEvents() noexcept
     if (Flags == 0)
         return;
 
-    if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackNewTrack))
+    if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
+    {
+        _RenderState._PlaybackTime = 0.;
+        _RenderState._TrackTime = 0.;
+/*
+        for (auto & Item : _Grid)
+            Item->Reset();
+*/
+        _RenderState._IsPaused = false;
+
+        if (_Artwork.Bitmap() == nullptr)
+        {
+            // Set the default dominant color and gradient for the artwork color scheme.
+            _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
+            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+
+            _RenderState._RecreateStyles = true;
+
+            _IsConfigurationChanged = true;
+        }
+    }
+    else
+    if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
@@ -148,31 +171,19 @@ void uielement_t::ProcessEvents() noexcept
 
         _RenderState._IsPaused = false;
     }
-
+    else
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
+/*
         for (auto & Item : _Grid)
             Item->Reset();
-
+*/
         _RenderState._IsPaused = true;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackResumed))
     {
         _RenderState._IsPaused = false;
-    }
-
-    if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
-    {
-        if (_Artwork.Bitmap() == nullptr)
-        {
-            // Set the default dominant color and gradient for the artwork color scheme.
-            _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
-            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
-            _RenderState._RecreateStyles = true;
-
-            _IsConfigurationChanged = true;
-        }
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
@@ -314,16 +325,6 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
     }
 
     #pragma warning(default: 4061)
-}
-
-/// <summary>
-/// Render thread procedure.
-/// </summary>
-DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
-{
-    ((uielement_t *) context)->RenderThreadProc();
-
-    return 0;
 }
 
 #pragma region DirectX

@@ -470,6 +470,16 @@ void uielement_t::StartRenderer() noexcept
 }
 
 /// <summary>
+/// Render thread procedure.
+/// </summary>
+DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
+{
+    ((uielement_t *) context)->RenderThreadProc();
+
+    return 0;
+}
+
+/// <summary>
 /// Stops the render thread.
 /// </summary>
 void uielement_t::StopRenderer() noexcept
@@ -481,7 +491,8 @@ void uielement_t::StopRenderer() noexcept
 
     ::WaitForSingleObject(_hThread, INFINITE);
 
-    ::CloseHandle(_hThread), _hThread = NULL;
+    ::CloseHandle(_hThread);
+    _hThread = NULL;
 }
 
 /// <summary>
@@ -630,8 +641,6 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState(ConfigurationChanges::UserInterfaceColors);
-
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
         GetArtwork(track);

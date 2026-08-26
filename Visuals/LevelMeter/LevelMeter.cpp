@@ -29,10 +29,10 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void level_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -44,13 +44,6 @@ void level_meter_t::Initialize(state_t * state, graph_options_t * graphDescripti
 void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void level_meter_t::Reset() noexcept
-{
 }
 
 /// <summary>

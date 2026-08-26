@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements. **/
+/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -32,7 +32,7 @@ public:
 
         // Derived metrics
         _Size = { std::abs(rect.right - rect.left), std::abs(rect.bottom - rect.top) };
-        _ScaleFactor = std::min(_Size.width / 2.f, _Size.height  / 2.f); // For oscilloscope visualization.
+        _ScaleFactor = std::min(_Size.width, _Size.height)  / 2.f; // For oscilloscope visualization.
 
         _IsResized = true;
     }
