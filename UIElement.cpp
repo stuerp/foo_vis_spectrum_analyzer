@@ -392,13 +392,7 @@ void uielement_t::Resize()
 
     // Resize the grid.
     {
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.DelTool(&ti);
-        }
+        DeleteTools();
 
         {
             msc::lock_t Lock(_CriticalSection);
@@ -408,13 +402,7 @@ void uielement_t::Resize()
             _RenderState._RecreateStyles = true;
         }
 
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.AddTool(&ti);
-        }
+        AddTools();
     }
 }
 
@@ -528,13 +516,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
     {
         DeleteTrackingToolTip();
 
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.DelTool(&ti);
-        }
+        DeleteTools();
     }
 
     {
@@ -604,17 +586,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
     if (configurationChanges == ConfigurationChanges::All)
     {
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
+        Resize();
 
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.AddTool(&ti);
-        }
+//      AddTools();
 
         _ToolTipControl.Activate(_RenderState._ShowToolTipsAlways);
-
-        Resize();
     }
 }
 

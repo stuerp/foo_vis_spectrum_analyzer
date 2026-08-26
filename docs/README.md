@@ -452,6 +452,10 @@ Specifies the number of pixels for the Gaussian blur. Higher values increase the
 
 Specifies the color fade speed. Lower values cause a faster decay.
 
+`Downmix to mono`
+
+When enable the input signals to the oscilloscope will be downmix to a mono signal.
+
 ---
 
 ### Transform page
@@ -861,14 +865,18 @@ The graph list shows all graphs in the current window. Use the + button to add a
 
 `Vertical layout`
 
-Enables this setting to stack the graphs vertically instead of horizontally.
+Enable this setting to stack the graphs vertically instead of horizontally.
 
 `Overlap graphs`
 
 Select to draw the graphs overlapped instead of stacked horizontally or vertically.
 
 > [!Note]
-> Only allowed for the bar, curve, radial bar and radial curve visualization.
+> Only supported by the bar, curve, radial bar and radial curve visualization.
+
+`Use local styles`
+
+Enable this setting to use local styles. A local style is tied to a graph. Each grah can have its own local style.
 
 `Description`
 

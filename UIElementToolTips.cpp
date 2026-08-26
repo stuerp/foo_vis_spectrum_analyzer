@@ -175,3 +175,33 @@ void uielement_t::DeleteTrackingToolTip() noexcept
     _TrackingGraph = nullptr;
     _LastBandIndex = ~0U;
 }
+
+/// <summary>
+/// Adds a tool for each of the grid items to the ToolTip control.
+/// </summary>
+void uielement_t::AddTools() noexcept
+{
+    for (auto & Item : _Grid)
+    {
+        TTTOOLINFOW ti = { };
+
+        Item->InitToolInfo(m_hWnd, ti);
+
+        _ToolTipControl.AddTool(&ti);
+    }
+}
+
+/// <summary>
+/// Deletes the grid item tools from the ToolTip control.
+/// </summary>
+void uielement_t::DeleteTools() noexcept
+{
+    for (auto & Item : _Grid)
+    {
+        TTTOOLINFOW ti = { };
+
+        Item->InitToolInfo(m_hWnd, ti);
+
+        _ToolTipControl.DelTool(&ti);
+    }
+}
