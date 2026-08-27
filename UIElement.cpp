@@ -18,7 +18,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0llu)
 {
 }
 
@@ -664,6 +664,8 @@ void uielement_t::on_playback_time(double time)
 /// </summary>
 bool uielement_t::GetArtwork(const metadb_handle_ptr & track) noexcept
 {
+    _Artwork.DeleteWICResources();
+
     if (_UIState._ArtworkFilePath.empty())
         return GetArtworkFromTrack(track, fb2k::noAbort);
     else
@@ -677,7 +679,7 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork for the playing track.");
 
-    GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
+    const GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
 
     static_api_ptr_t<album_art_manager_v2> ArtworkManager;
 

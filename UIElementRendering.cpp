@@ -149,16 +149,13 @@ void uielement_t::ProcessEvents() noexcept
 */
         _RenderState._IsPaused = false;
 
-        if (_Artwork.Bitmap() == nullptr)
-        {
-            // Set the default dominant color and gradient for the artwork color scheme.
-            _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
-            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+        // Set the default dominant color and gradient for the artwork color scheme.
+        _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
+        _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
 
-            _RenderState._RecreateStyles = true;
+        _RenderState._RecreateStyles = true;
 
-            _IsConfigurationChanged = true;
-        }
+        _IsConfigurationChanged = true;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
@@ -257,6 +254,7 @@ void uielement_t::Render() noexcept
     _DeviceContext->BeginDraw();
 
     _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+
 
     for (auto & Item : _Grid)
         Item->Render(_DeviceContext, _Artwork);
@@ -500,7 +498,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
     }
 
     // Create the background bitmap from the artwork.
-    if (_Artwork.Bitmap() == nullptr)
+    if (!_Artwork.Bitmap())
     {
         hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
 
@@ -529,7 +527,7 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     for (auto & Item : _Grid)
         Item->Release();
 
-    _Artwork.DeleteDeviceSpecificResources();
+    _Artwork.DeleteWICResources();
 
     _FrameCounter.DeleteDeviceSpecificResources();
 

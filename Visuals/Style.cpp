@@ -154,7 +154,7 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
         COLOR_HOTLIGHT,         // Hot Light
     };
 
-    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0u, (uint32_t) _countof(ColorIndex) - 1)]));
 }
 
 /// <summary>

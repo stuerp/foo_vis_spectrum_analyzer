@@ -212,7 +212,7 @@ void styles_page_t::UpdateControls() noexcept
             for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
                 w.AddString(x);
 
-            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0u, (uint32_t) (w.GetCount() - 1)));
             break;
         }
 
@@ -233,7 +233,7 @@ void styles_page_t::UpdateControls() noexcept
                     w.AddString(x);
             }
 
-            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0U, (uint32_t) (w.GetCount() - 1)));
+            w.SetCurSel((int) std::clamp(style->_ColorIndex, 0u, (uint32_t) (w.GetCount() - 1)));
             break;
         }
     }
@@ -600,7 +600,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            UpdateGradientStopPositons(style, ~0U);
+            UpdateGradientStopPositons(style, ~0llu);
 
             UpdateColorControls();
             break;
@@ -912,7 +912,7 @@ void styles_page_t::UpdateGradientStopPositons(style_t * style, size_t index) co
     if (index == gs.size() - 1)
         gs[index].position = 1.f;
     else
-    if (index != ~0U)
+    if (index != ~0llu)
         gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
     else
     // Spread the positions of the stops between 0.f and 1.f.

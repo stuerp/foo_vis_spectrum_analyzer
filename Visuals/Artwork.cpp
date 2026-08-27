@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.06.10) P. Stuer **/
+/** $VER: Artwork.cpp (2026.08.27) P. Stuer **/
 
 #include "pch.h"
 
@@ -7,6 +7,7 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
+#include "Resources.h""
 
 #include <State.h>
 #include <Constants.h>
@@ -18,6 +19,8 @@
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcept
 {
+    assert(core_api::is_main_thread());
+
     msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
@@ -45,7 +48,7 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
             hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     }
 
-    SetStatus(Initialized);
+//  SetStatus(Initialized);
 
     return hr;
 }
@@ -55,6 +58,8 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
 /// </summary>
 HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 {
+    assert(core_api::is_main_thread());
+
     msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
@@ -79,7 +84,7 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
             hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     }
 
-    SetStatus(Initialized);
+//  SetStatus(Initialized);
 
     return S_OK;
 }
@@ -89,6 +94,8 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
 /// </summary>
 HRESULT artwork_t::DeleteWICResources() noexcept
 {
+    assert(core_api::is_main_thread());
+
     msc::lock_t Lock(_CriticalSection);
 
     DeleteDeviceSpecificResources();
@@ -102,7 +109,7 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 
     _Raster.swap(Empty);
 
-    SetStatus(Idle);
+//  SetStatus(Idle);
 
     return S_OK;
 }
@@ -149,7 +156,7 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
         colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
     }
 
-    SetStatus(GotColors);
+//  SetStatus(GotColors);
 
     return hr;
 }
@@ -159,6 +166,11 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 /// </summary>
 void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
 {
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+
+    if (!SUCCEEDED(hr))
+        return;
+
     msc::lock_t Lock(_CriticalSection);
 
     if (_Bitmap == nullptr)
@@ -253,8 +265,14 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
         {
             hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
 
-            if (SUCCEEDED(hr))
-                SetStatus(GotBitmap);
+            if (!SUCCEEDED(hr))
+            {
+                Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to create Direct2D bitmap from WIC bitmap: 0x%08X", hr);
+
+                return hr;
+            }
+
+//          SetStatus(GotBitmap);
         }
     }
 
@@ -306,6 +324,6 @@ void artwork_t::DeleteDeviceSpecificResources() noexcept
 
         _Bitmap.Release();
 
-        SetStatus(Initialized);
+//      SetStatus(Initialized);
     }
 }
