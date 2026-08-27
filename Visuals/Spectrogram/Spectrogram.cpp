@@ -934,7 +934,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         if (_Bitmap == nullptr)
         {
             _BitmapRenderTarget->BeginDraw();
-            _BitmapRenderTarget->Clear(); // Make the bitmap completely transparent.
+            _BitmapRenderTarget->Clear(); // Transparent
             _BitmapRenderTarget->EndDraw();
 
 //          _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE); // Don't use: This causes ghost images in the final output.

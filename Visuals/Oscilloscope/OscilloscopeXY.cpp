@@ -174,7 +174,8 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the composite buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+//                  _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+                    _DeviceContext->Clear(); // Required for alpha transparency.
 
                     _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
 

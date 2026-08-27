@@ -362,7 +362,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
-    _DeviceContext->Clear(D2D1::ColorF(0, 0.f));
+    _DeviceContext->Clear(); // Transparent
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;

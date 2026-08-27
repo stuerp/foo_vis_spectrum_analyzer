@@ -245,7 +245,7 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget) noexc
         {
             rt->BeginDraw();
 
-            rt->Clear();
+            rt->Clear(); // Transparent
 
             rt->FillRectangle(D2D1::RectF(0.f, 0.f, 8.f, 8.f), Brush);
 

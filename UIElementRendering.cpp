@@ -253,8 +253,7 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
-
+    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
     for (auto & Item : _Grid)
         Item->Render(_DeviceContext, _Artwork);

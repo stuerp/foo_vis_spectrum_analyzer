@@ -929,7 +929,7 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
         {
             rt->BeginDraw();
 
-            rt->Clear();
+            rt->Clear(); // Transparent
 
             const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
 
