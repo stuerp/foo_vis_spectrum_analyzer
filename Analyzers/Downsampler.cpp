@@ -40,7 +40,6 @@ void downsampler_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk
     audio_sample * const __restrict DstFrames = dstChunk.get_data();
 
     // Peak envelope aggregation
-    #pragma loop(hint_parallel(8))
     for (size_t DstFrameIndex = 0; DstFrameIndex < DstFrameCount; ++DstFrameIndex)
     {
         const size_t SrcBeginIndex = (DstFrameIndex * SrcFrameCount) / DstFrameCount;

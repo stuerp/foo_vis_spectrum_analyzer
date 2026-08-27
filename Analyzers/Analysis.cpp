@@ -1,9 +1,10 @@
 
-/** $VER: Analysis.cpp (2026.08.18) P. Stuer **/
+/** $VER: Analysis.cpp (2026.08.27) P. Stuer **/
 
 #include "pch.h"
 
 #include "Analysis.h"
+#include "Downmixer.h"
 
 #include "Support.h"
 
@@ -788,7 +789,7 @@ void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 
 #pragma endregion
 
-#pragma region Peak Meter / Level Meter
+#pragma region Peak/RMS Meter / Balance/Correlation Meter
 
 /// <summary>
 /// Process the chunk data for the peak and the level meter.
@@ -950,7 +951,14 @@ void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
 /// </summary>
 void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
-    _Chunk.copy(chunk, true);
+    if (_State->_Downmix)
+    {
+        downmixer_t Downmixer;
+
+        Downmixer(chunk, _GraphOptions->_SelectedChannels, _Chunk);
+    }
+    else
+        _Chunk.copy(chunk, true);
 }
 
 #pragma endregion

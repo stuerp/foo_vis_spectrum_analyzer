@@ -6,7 +6,6 @@
 #include "Oscilloscope.h"
 
 #include <Analyzers/AmplitudeScaler.h>
-#include <Analyzers/Downmixer.h>
 
 #include "Support.h"
 
@@ -116,7 +115,7 @@ void oscilloscope_t::Resize() noexcept
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _State->_Downmix ? 1 :  _Analysis->_Chunk.get_channel_count();
+    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
     // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
     if ((FrameCount == 0) || (ChannelCount == 0))
@@ -150,34 +149,20 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
-
-        audio_chunk_impl DstChunk;
-
-        {
-            const audio_chunk * IntChunk;
-
-            audio_chunk_impl TmpChunk;
-
-            if (_State->_Downmix)
-            {
-                downmixer_t Downmixer;
-
-                Downmixer(_Analysis->_Chunk, _GraphOptions->_SelectedChannels, TmpChunk);
-
-                IntChunk = &TmpChunk;
-            }
-            else
-                IntChunk = &_Analysis->_Chunk;
-
-            const double Ratio = (double) IntChunk->get_sample_count() / (double) SignalSize.width;
-
-            _Downsampler.Process(*IntChunk, DstChunk, Ratio);
-        }
-
+        // Create the signal geometry.
         CComPtr<ID2D1PathGeometry> Geometry;
 
-        hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
+        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
+
+        {
+            audio_chunk_impl DstChunk;
+
+            const double Ratio = (double) _Analysis->_Chunk.get_sample_count() / (double) SignalSize.width;
+
+            _Downsampler.Process(_Analysis->_Chunk, DstChunk, Ratio);
+
+            hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
+        }
 
         // Draw the signal in the composite buffer.
         if (SUCCEEDED(hr))

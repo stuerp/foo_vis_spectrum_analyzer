@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.08.27) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -275,18 +275,20 @@ void graphs_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 
-    /* Use local styles **/
-
-    const bool SupportsLocalStyles = (_State->_GraphOptions.size() > 1);
-
-    GetDlgItem(IDC_USE_LOCAL_STYLES).EnableWindow(SupportsLocalStyles);
-
     /* Graph settings */
 
     const auto & Options = _State->_GraphOptions[(size_t) _SelectedGraph];
 
     // Description
     SetDlgItemText(IDC_GRAPH_DESCRIPTION, Options._Description.c_str());
+
+    /* Use local styles **/
+
+    const bool SupportsLocalStyles = (_State->_GraphOptions.size() > 1);
+
+    GetDlgItem(IDC_USE_LOCAL_STYLES).EnableWindow(SupportsLocalStyles);
+
+    CheckDlgButton(IDC_USE_LOCAL_STYLES, Options._UseLocalStyles);
 
     // Layout
     {

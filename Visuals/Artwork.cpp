@@ -7,7 +7,7 @@
 
 #include "WIC.h"
 #include "ColorThief.h"
-#include "Resources.h""
+#include "Resources.h"
 
 #include <State.h>
 #include <Constants.h>

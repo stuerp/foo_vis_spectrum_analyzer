@@ -28,9 +28,7 @@
 /// </summary>
 struct measurement_t
 {
-    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName)
-    {
-    }
+    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName) { }
 
     std::wstring ChannelName;
 };

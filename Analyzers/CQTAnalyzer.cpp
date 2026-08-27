@@ -60,7 +60,6 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
 
         double Norm = 0.;
 
-        #pragma loop(hint_parallel(2))
         for (double Idx = std::trunc(LoIdx / SamplingPeriod); Idx <= std::trunc(HiIdx / SamplingPeriod); Idx += _ChannelCount)
         {
             const double x = (((Idx * SamplingPeriod) - LoIdx) / (HiIdx - LoIdx) * 2.) - 1.;
@@ -228,9 +227,12 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
     // Precompute the selected-channel average once, one value per audio frame.
     if (_MonoSamples.size() != frameCount)
         _MonoSamples.resize(frameCount);
-
+/*
     for (size_t Frame = 0; Frame < frameCount; ++Frame)
         _MonoSamples[Frame] = Downmix(&frames[Frame * _ChannelCount], selectedChannels);
+*/
+    for (size_t SrcFrame = 0, DstFrame = 0; DstFrame < frameCount; SrcFrame += _ChannelCount, ++DstFrame)
+        _MonoSamples[DstFrame] = Downmix(&frames[SrcFrame], selectedChannels);
 
     for (frequency_band_t & fb : frequencyBands)
     {

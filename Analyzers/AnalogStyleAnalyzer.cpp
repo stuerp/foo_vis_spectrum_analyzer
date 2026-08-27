@@ -65,7 +65,6 @@ bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t
     const audio_sample * Samples = frames;
     const size_t SampleCount = frameCount * _ChannelCount;
 
-    #pragma loop(hint_parallel(8))
     for (size_t i = 0; i < SampleCount; i += _ChannelCount, Samples += _ChannelCount)
     {
         const audio_sample Sample = Downmix(Samples, selectedChannels);

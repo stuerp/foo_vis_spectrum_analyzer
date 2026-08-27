@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPageLayout.h (2026.08.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: GraphsPageLayout.h (2026.08.27) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -35,12 +35,6 @@
 #define X_G60   X_G23
 #define Y_G60   Y_G23 + H_G23 + IY
 
-// Checkbox: Use local styles
-#define W_G62   70
-#define H_G62   H_CHB
-#define X_G62   X_G60
-#define Y_G62   Y_G60 + H_G60 + IY
-
 // Label: Description
 #define W_G24   38
 #define H_G24   H_LBL
@@ -53,10 +47,16 @@
 #define X_G25    X_G24 + W_G24 + IX
 #define Y_G25    Y_G24
 
+// Checkbox: Use local styles
+#define W_G62   70
+#define H_G62   H_CHB
+#define X_G62   X_G24
+#define Y_G62   Y_G25 + H_G25 + IY
+
 /** Layout Groupbox **/
 
-#define X_B16   X_G24
-#define Y_B16   Y_G25 + H_G25 + IY
+#define X_B16   X_G62
+#define Y_B16   Y_G62 + H_G62 + IY
 
     // Label: Horizontal Alignment
     #define W_G33    66
