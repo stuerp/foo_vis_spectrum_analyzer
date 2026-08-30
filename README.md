@@ -10,6 +10,8 @@ Over time other visualisations were added.
 
 [![Screenshot](assets/Gallery.png?raw=true "Gallery")](docs/Gallery.md)
 
+Click the image above to view [the gallery]((docs/Gallery.md)).
+
 ## Features
 
 - Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope and Bit Meter visualizations.
@@ -94,11 +96,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.12.0.0-alpha2, 2026-08-30
+v0.12.0.0-alpha3, 2026-09-xx
 
-- Improved: Tweaked the behavior of the visualizations when changing tracks. They no longer fully reset.
-- Improved: Overall code hardening and cleanup.
-- Fixed: Minor regressions caused by the introduction of local styles.
+- Improved: Optimized the FFT analyzer and improved (and fixed) the coefficient mapping code.
 
 You can read the full history [here](docs/History.md).
 

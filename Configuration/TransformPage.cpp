@@ -34,15 +34,15 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_WINDOW_SKEW, "Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
 
         { IDC_REACTION_ALIGNMENT, "Controls the delay between the actual playback and the visualization.\n"
-                                    "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
-                                    "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
-                                    "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
+                                  "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
+                                  "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
+                                  "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
 
         { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
-        { IDC_SUMMATION_METHOD, "Method used to aggregate FFT coefficients" },
         { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bins." },
+        { IDC_AGGREGATION_METHOD, "Method used to aggregate FFT coefficients" },
 
         { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
         { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
@@ -114,7 +114,7 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
+        auto w = (CComboBox) GetDlgItem(IDC_AGGREGATION_METHOD);
 
         w.ResetContent();
 
@@ -258,14 +258,14 @@ void transform_page_t::UpdateControls() noexcept
         GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
         GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
 
+        GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
+
         // FFT
         {
-            for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
-                GetDlgItem(Iter).EnableWindow(IsFFT);
+            const bool IsStandard = IsFFT && (_State->_MappingMethod == Mapping::Standard);
 
-            for (const auto & Iter : { IDC_NUM_BINS,  })
-                GetDlgItem(Iter).EnableWindow(IsFFT);
-
+            for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+                GetDlgItem(Iter).EnableWindow(IsStandard);
         }
 
         // Brown-Puckette CQT
@@ -292,8 +292,7 @@ void transform_page_t::UpdateControls() noexcept
         {
             IDC_METHOD,
             IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
-//          IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER,
-            IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD,
+            IDC_AGGREGATION_METHOD, IDC_MAPPING_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
             IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
@@ -390,7 +389,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
             break;
         }
 
-        case IDC_SUMMATION_METHOD:
+        case IDC_AGGREGATION_METHOD:
         {
             _State->_AggregationMethod = (AggregationMethod) SelectedIndex;
             break;

@@ -1,5 +1,5 @@
 
-/** $VER: TransformPageLayout.h (2026.02.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: TransformPageLayout.h (2026.08.30) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -79,6 +79,7 @@
 
 #define W_B05   178
 #define H_B05   11 + H_A63 + IY + H_C02 + IY + H_C04 + IY + H_C06 + IY + H_C08 + 7
+
 #pragma endregion
 
 #pragma region FFT
@@ -120,26 +121,12 @@
     #define Y_A60   Y_A59
     #pragma endregion
 
-    #pragma region Summation Method
-    // Label
-    #define W_A15    64
-    #define H_A15    H_LBL
-    #define X_A15    X_A03
-    #define Y_A15    Y_A59 + H_A59 + IY
-
-    // Combobox
-    #define W_A16    100
-    #define H_A16    H_CBX
-    #define X_A16    X_A15 + W_A15 + IX
-    #define Y_A16    Y_A15
-    #pragma endregion
-
     #pragma region Mapping
     // Label
     #define W_A65    64
     #define H_A65    H_LBL
-    #define X_A65    X_A15
-    #define Y_A65    Y_A16 + H_A16 + IY
+    #define X_A65    X_A03
+    #define Y_A65    Y_A59 + H_A59 + IY
 
     // Combobox
     #define W_A66    100
@@ -148,12 +135,26 @@
     #define Y_A66    Y_A65
     #pragma endregion
 
+    #pragma region Aggregation Method
+    // Label
+    #define W_A15    64
+    #define H_A15    H_LBL
+    #define X_A15    X_A65
+    #define Y_A15    Y_A66 + H_A66 + IY
+
+    // Combobox
+    #define W_A16    100
+    #define H_A16    H_CBX
+    #define X_A16    X_A15 + W_A15 + IX
+    #define Y_A16    Y_A15
+    #pragma endregion
+
     #pragma region Smooth lower frequencies
     // Checkbox
     #define W_A43    100
     #define H_A43    H_CHB
-    #define X_A43    X_A66
-    #define Y_A43    Y_A66 + H_A66 + IY
+    #define X_A43    X_A15
+    #define Y_A43    Y_A16 + H_A16 + IY
     #pragma endregion
 
     #pragma region Smooth gain transition

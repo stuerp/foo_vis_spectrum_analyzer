@@ -1,6 +1,12 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.12.0.0-alpha2, 2026-08-30
+
+- Improved: Tweaked the behavior of the visualizations when changing tracks. They no longer fully reset.
+- Improved: Overall code hardening and cleanup.
+- Fixed: Minor regressions caused by the introduction of local styles.
+
 v0.12.0.0-alpha1, 2026-08-23
 
 - New: You can downmix the input of the oscilloscope to mono.

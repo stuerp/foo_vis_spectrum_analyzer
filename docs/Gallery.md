@@ -36,7 +36,7 @@
 
 ![Screenshot](assets/Peak-Meter.png?raw=true "Screenshot")
 
-<sup>Peak Meter</sup>
+<sup>Peak / RMS Meter</sup>
 
 ![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
 
