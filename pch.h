@@ -11,8 +11,8 @@
 
 #define NOMINMAX
 
-#include <helpers\foobar2000+atl.h>
-#include <helpers\helpers.h>
+#include <helpers/foobar2000+atl.h>
+#include <helpers/helpers.h>
 
 #include <dxgi1_3.h>
 #include <d3d11_2.h>

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.02.08) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.08.30) P. Stuer **/
 
 #pragma once
 
@@ -32,19 +32,21 @@ public:
 
     virtual ~fft_analyzer_t();
 
-    fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel, size_t fftSize);
+    fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, size_t fftSize, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
+
     bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
     void Transform() noexcept;
 
-    void AnalyzeSamples(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
-    void AnalyzeSamplesUsingTFB(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
-    void AnalyzeSamplesUsingBP(uint32_t sampleRate, frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficients(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficientsUsingBP(frequency_bands_t & freqBands) const noexcept;
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
-    double Median(std::vector<double> & data) const noexcept;
+
+    static double Median(std::vector<double> & data) noexcept;
 
     /// <summary>
     /// Gets the current FFT size.
@@ -73,17 +75,17 @@ private:
     /// <summary>
     /// Gets the index of the coefficient corresponding to the specified frequency.
     /// </summary>
-    double HzToBinIndex(double frequency, size_t bufferSize, uint32_t sampleRate) const noexcept
+    double HzToBinIndex(double frequency, size_t bufferSize) const noexcept
     {
-        return frequency * (double) bufferSize / sampleRate;
+        return frequency * (double) bufferSize / _SampleRate;
     }
 
     /// <summary>
     /// Gets the frequency corresponding to the specified coefficient index.
     /// </summary>
-    double FFTIndexToHz(size_t index, size_t bufferSize, uint32_t sampleRate) const noexcept
+    double FFTIndexToHz(size_t index, size_t bufferSize) const noexcept
     {
-        return (double)((size_t)(index * sampleRate) / bufferSize);
+        return (double)((size_t)(index * _SampleRate) / bufferSize);
     }
 
 private:

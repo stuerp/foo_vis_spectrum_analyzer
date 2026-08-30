@@ -8,79 +8,17 @@ and the [Audio Spectrum project](https://codepen.io/TF3RDL/pen/poQJwRW) for foob
 
 Over time other visualisations were added.
 
-![Screenshot](assets/Spectrum-Analyzer-Bars.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Bars Mode with gradient colors</sup>
-
-![Screenshot](assets/Spectrum-Analyzer-LED-Bars.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer LED Bars Mode with gradient colors</sup>
-
-![Screenshot](assets/Spectrum-Analyzer-Curve+Peak-Meter+Level-Meter.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Curve Mode with album art background and peak / RMS and balance / correlation</sup>
-
-![Screenshot](assets/Spectrum-Analyzer-Mirrored-Curves.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer with mirrored Curve Mode</sup>
-
-![Screenshot](assets/MultipleGraphs.png?raw=true "Screenshot")
-
-<sup>Multiple spectrum analyzer graphs for the separate channels</sup>
-
-![Screenshot](assets/Overlapping-Graphs.png?raw=true "Screenshot")
-
-<sup>Multiple overlapping spectrum analyzer graphs</sup>
-
-![Screenshot](assets/Spectrogram.png?raw=true "Screenshot")
-
-<sup>Horizontal scrolling spectrogram visualization</sup>
-
-![Screenshot](assets/Radial-Bars.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Radial Bars Mode</sup>
-
-![Screenshot](assets/Radial-Curve.png?raw=true "Screenshot")
-
-<sup>Spectrum analyzer Radial Curve Mode</sup>
-
-![Screenshot](assets/Peak-Meter.png?raw=true "Screenshot")
-
-<sup>Peak Meter</sup>
-
-![Screenshot](assets/Oscilloscope.png?raw=true "Screenshot")
-
-<sup>Oscilloscope with phosphor afterglow effect</sup>
-
-![Screenshot](assets/Oscilloscope-dBFS.png?raw=true "Screenshot")
-
-<sup>Oscilloscope with Y-axis in dBFS</sup>
-
-![Screenshot](assets/Oscilloscope-XY.png?raw=true "Screenshot")
-
-<sup>Oscilloscope in X-Y mode with phosphor afterglow effect</sup>
-
-![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
-
-<sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>
-
-![Screenshot](assets/Bit-Meter-2.png?raw=true "Screenshot")
-
-<sup>Bit Meter (Floating-Point Mode) using varying bar opacity</sup>
-
-![Screenshot](assets/Bit-Meter-Integer-Mode.png?raw=true "Screenshot")
-
-<sup>Bit Meter (Integer Mode)</sup>
+[![Screenshot](assets/Gallery.png?raw=true "Gallery")](docs/Gallery.md)
 
 ## Features
 
 - Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
-- Multiple graphs
+- Multiple stacked or overlapping graphs
 - Styling of all visual elements
 - Artwork background and color extraction
-- Uses DirectX rendering.
+- DirectX rendering.
 - Supports the Default User Interface (DUI) and the [Columns User Interface](https://yuo.be/columns-ui) (CUI).
 - Supports dark mode.
 - Supports foobar2000 2.0 and later (32 and 64-bit version).
@@ -117,7 +55,7 @@ To build the code you need:
 The following libraries are included in the repository:
 
 - [Project Nayuki FFT](https://www.nayuki.io/page/free-small-fft-in-multiple-languages)
-- [JSON for Modern C++](https://json.nlohmann.me/)
+- [JSON for Modern C++](https://json.nlohmann.me/) 3.12.0
 
 To create the deployment package you need:
 

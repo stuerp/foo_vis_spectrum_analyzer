@@ -458,7 +458,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
                 if (_BrownPucketteKernel == nullptr)
                     _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
 
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel, _State->_BinCount);
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
             }
 
             _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
