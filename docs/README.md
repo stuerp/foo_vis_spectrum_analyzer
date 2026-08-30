@@ -778,6 +778,9 @@ Specifies the strength of the smoothing (0.0 to 1.0)
 
 Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, or the frequency band.
 
+> [!Note]
+> When this option is disabled you can get tooltips by pressing and holding the left mousebutton on the graph.
+
 `Suppress mirror image`
 
 Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered.

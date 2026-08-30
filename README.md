@@ -156,9 +156,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.12.0.0-alpha2, 2026-xx-xx
+v0.12.0.0-alpha2, 2026-08-30
 
 - Improved: Tweaked the behavior of the visualizations when changing tracks. They no longer fully reset.
+- Improved: Overall code hardening and cleanup.
+- Fixed: Minor regressions caused by the introduction of local styles.
 
 You can read the full history [here](docs/History.md).
 

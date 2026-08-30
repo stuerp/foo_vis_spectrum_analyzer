@@ -600,7 +600,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             style_t * const style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            UpdateGradientStopPositons(style, ~0llu);
+            UpdateGradientStopPositons(style, ~(size_t) 0);
 
             UpdateColorControls();
             break;
@@ -912,7 +912,7 @@ void styles_page_t::UpdateGradientStopPositons(style_t * style, size_t index) co
     if (index == gs.size() - 1)
         gs[index].position = 1.f;
     else
-    if (index != ~0llu)
+    if (index != ~(size_t) 0)
         gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
     else
     // Spread the positions of the stops between 0.f and 1.f.
