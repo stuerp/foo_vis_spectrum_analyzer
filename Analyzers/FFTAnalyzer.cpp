@@ -685,20 +685,20 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
     }
 
     const size_t BinCount = _FreqData.size();
-    const double N        = (double) (BinCount);
+    const double N        = (double) BinCount;
     const double HzToBin  = N / _SampleRate;
 
     // Linearly interpolate between adjacent FFT-bin powers.
     const auto InterpolatePower = [&](double index) noexcept
     {
-        index = std::clamp(index, 0., (double) BinCount - 1.);
+        index = std::clamp(index, 0., N - 1.);
 
         const size_t LowerBin = (size_t) std::floor(index);
         const size_t UpperBin = std::min(LowerBin + 1, BinCount - 1);
-        const double Fraction = index - (double) LowerBin;
 
         const double LowerPower = std::norm(_FreqData[LowerBin]);
         const double UpperPower = std::norm(_FreqData[UpperBin]);
+        const double Fraction   = index - (double) LowerBin;
 
         return std::lerp(LowerPower, UpperPower, Fraction);
     };
@@ -718,10 +718,10 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
         if (!(MinBin < MidBin && MidBin < MaxBin))
             continue;
 
-        const double StartBin = std::max(0., MinBin);
-        const double EndBin   = std::min((double) BinCount - 1., MaxBin);
+        const double StartBin = std::max(    0., MinBin);
+        const double EndBin   = std::min(N - 1., MaxBin);
 
-        if (!(StartBin < EndBin))
+        if (StartBin >= EndBin)
             continue;
 
         double WeightedPower = 0.;
@@ -743,7 +743,7 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
 
             while (Index < EndBin)
             {
-                // Split at FFT-bin boundaries and at the triangular band's peak. Within each interval, both the interpolated power and triangular weight are continuous.
+                // Split at FFT-bin boundaries and at the triangular band's peak. Within each interval both the interpolated power and triangular weight are continuous.
                 double NextIndex = std::min(std::floor(Index) + 1., EndBin);
 
                 if ((Index < MidBin) && (MidBin < NextIndex))

@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.08.22) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.08.31) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -54,6 +54,8 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
 
     switch (_State->_VisualizationType)
     {
+        default:
+
         case VisualizationType::Bars:
         case VisualizationType::Curve:
         case VisualizationType::RadialBars:
@@ -85,7 +87,6 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
             break;
 
         case VisualizationType::Tester:
-        default:
             _Visualization = std::make_unique<tester_t>();
             break;
     }

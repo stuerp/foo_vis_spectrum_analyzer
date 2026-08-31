@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.08.27) P. Stuer **/
+/** $VER: Analysis.cpp (2026.08.31) P. Stuer **/
 
 #include "pch.h"
 
@@ -36,6 +36,10 @@ void analysis_t::Initialize(const state_t * state, const graph_options_t * graph
 
         case FrequencyDistribution::AveePlayer:
             GenerateAveePlayerFrequencyBands();
+            break;
+
+        case FrequencyDistribution::Mel:
+            GenerateMelFrequencyBands();
             break;
     }
 
@@ -667,6 +671,64 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 
         fb.HasDarkBackground = true;
         ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+
+        ++i;
+    }
+}
+
+/// <summary>
+/// Converts a frequency in Hz to the Mel scale.
+/// </summary>
+static inline double HzToMel(const double frequency) noexcept
+{
+    return 2595. * std::log10(1. + frequency / 700.);
+}
+
+/// <summary>
+/// Converts a value on the Mel scale to Hz.
+/// </summary>
+static inline double MelToHz(const double mel) noexcept
+{
+    return 700. * (std::pow(10., mel / 2595.) - 1.);
+}
+
+/// <summary>
+/// Generates triangular frequency bands spaced uniformly on the Mel scale.
+/// </summary>
+/// <ref>https://deepwiki.com/dspavankumar/compute-mfcc/2.4.2-mel-filterbank-construction</ref>
+void analysis_t::GenerateMelFrequencyBands()
+{
+    const double MinHz = std::min(_State->_LoFrequency, _State->_HiFrequency);
+    const double MaxHz = std::max(_State->_LoFrequency, _State->_HiFrequency);
+
+    const double MinMel  = HzToMel(MinHz);
+    const double MaxMel  = HzToMel(MaxHz);
+    const double MelStep = (MaxMel - MinMel) / (double) (_State->_MelBandCount + 1);
+
+    std::vector<double> Frequencies(_State->_MelBandCount + 2);
+
+    double Mel = MinMel;
+
+    for (size_t i = 0; i < Frequencies.size(); ++i, Mel += MelStep)
+        Frequencies[i] = MelToHz(Mel);
+
+    Frequencies.front() = MinHz;
+    Frequencies.back()  = MaxHz;
+
+    _FrequencyBands.resize(_State->_MelBandCount);
+
+    size_t i = 0;
+
+    for (frequency_band_t & fb: _FrequencyBands)
+    {
+        // Intentional overlap: Adjacent triangular Mel filters share their center and edge frequencies.
+        fb.Lo  = Frequencies[i];
+        fb.Mid = Frequencies[i + 1];
+        fb.Hi  = Frequencies[i + 2];
+
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+
+        fb.HasDarkBackground = true;
 
         ++i;
     }

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.08.22) P. Stuer **/
+/** $VER: Constants.h (2026.08.31) P. Stuer **/
 
 #pragma once
 
@@ -18,9 +18,15 @@ enum class VisualizationType
     BitMeter = 8,
 
     Tester = 63,
+
+    Min = Bars,
+    Max = Tester,
 };
 
 // Common
+inline constexpr int64_t MinRefreshRate = 20;
+inline constexpr int64_t MaxRefreshRate = 200;
+
 inline constexpr double MinSmoothingFactor = 0.;
 inline constexpr double MaxSmoothingFactor = 1.;
 
@@ -264,14 +270,18 @@ inline constexpr double MaxGamma = 10.0;
 inline constexpr int MinXAxisDecimals = 0;
 inline constexpr int MaxXAxisDecimals = 3;
 
+inline constexpr int MinMelBands =   24;
+inline constexpr int MaxMelBands =  128;
+
 enum class FrequencyDistribution
 {
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+    Mel = 3,
 
     Min = Linear,
-    Max = AveePlayer,
+    Max = Mel,
 };
 
 enum class ScalingFunction

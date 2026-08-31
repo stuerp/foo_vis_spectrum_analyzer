@@ -48,8 +48,7 @@ public:
         return _TextStyle._Height;
     }
 
-private:
-    void Resize() noexcept;
+    void Resize(bool force = false) noexcept;
 
 private:
     size_t _BandCount;

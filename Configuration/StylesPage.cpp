@@ -18,7 +18,7 @@ BOOL styles_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
     DlgResize_Init(false, true); // This page has resizable controls.
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_STYLES, "Selects the visual element that will be styled" },
 

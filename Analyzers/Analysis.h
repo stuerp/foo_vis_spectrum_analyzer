@@ -114,6 +114,7 @@ private:
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
+    void GenerateMelFrequencyBands();
 
     void ApplyAcousticWeighting();
     double GetWeight(double x) const noexcept;
@@ -212,7 +213,7 @@ public:
     std::wstring _DebugText;
 
 private:
-    const double Amax = M_SQRT1_2;
+    static constexpr double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 
     chrono_t _Chrono;

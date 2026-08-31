@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.08.24) P. Stuer **/
+/** $VER: State.cpp (2026.08.31) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -108,6 +108,9 @@ void state_t::Reset() noexcept
     _BandsPerOctave = 12;
     _TuningPitch = 440.0;
     _Transpose = 0;
+
+    // Mel range
+    _MelBandCount = 48;
 
     _ScalingFunction = ScalingFunction::Logarithmic;
     _SkewFactor = 0.0;
@@ -1357,44 +1360,48 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const uint32_t SchemaVersion = Object.value("schemaVersion", _SchemaVersion);
 
     // User Interface
-    _RefreshRateLimit = Object.value("refreshRateLimit", _RefreshRateLimit);
+    _RefreshRateLimit = std::clamp(Object.value("refreshRateLimit", _RefreshRateLimit), MinRefreshRate, MaxRefreshRate);
 
     // Configuration Dialog
     const auto & Dialog = Object.value("configurationDialog", json::object());
+    {
+        const auto & Bounds = Dialog.value("bounds", json::object());
+        {
+            _Bounds.left   = Bounds.value("left",   _Bounds.left);
+            _Bounds.top    = Bounds.value("top",    _Bounds.top);
+            _Bounds.right  = Bounds.value("right",  _Bounds.right);
+            _Bounds.bottom = Bounds.value("bottom", _Bounds.bottom);
+        }
 
-    const auto & Bounds = Dialog.value("bounds", json::object());
-
-    _Bounds.left   = Bounds.value("left", _Bounds.left);
-    _Bounds.top    = Bounds.value("top", _Bounds.top);
-    _Bounds.right  = Bounds.value("right", _Bounds.right);
-    _Bounds.bottom = Bounds.value("bottom", _Bounds.bottom);
-
-    _PageIndex = Dialog.value("page", _PageIndex);
+        _PageIndex = Dialog.value("page", _PageIndex);
+    }
 
     // Visalization
-    _VisualizationType = Object.value("visualizationType", _VisualizationType);
+    _VisualizationType = std::clamp(Object.value("visualizationType", _VisualizationType), VisualizationType::Min, VisualizationType::Max);
 
     const auto & PeakIndicators = Object.value("peakIndicators", json::object());
-
-    _PeakMode = PeakIndicators.value("mode", _PeakMode);
-    _HoldTime = PeakIndicators.value("holdTime", _HoldTime);
-
-    if (SchemaVersion < 2)
     {
-        _FallRate = PeakIndicators.value("acceleration", _FallRate);
+        _PeakMode = std::clamp(PeakIndicators.value("mode",     _PeakMode), PeakMode::Min, PeakMode::Max);
+        _HoldTime = std::clamp(PeakIndicators.value("holdTime", _HoldTime), MinHoldTime, MaxHoldTime);
 
-        _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
-        _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+        if (SchemaVersion < 2)
+        {
+            _FallRate = PeakIndicators.value("acceleration", _FallRate);
+
+            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
+            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+        }
+        else
+            _FallRate = std::clamp(PeakIndicators.value("fallRate", _FallRate), MinFallRate, MaxFallRate);
     }
-    else
-        _FallRate = PeakIndicators.value("fallRate", _FallRate);
 
     const auto & LEDs = Object.value("leds", json::object());
-
-    _LEDMode         = LEDs.value("enabled", _LEDMode);
-    _LEDLight        = LEDs.value("lightSize", _LEDLight);
-    _LEDGap          = LEDs.value("gapSize", _LEDGap);
-    _LEDIntegralSize = LEDs.value("integralSize", _LEDIntegralSize);
+    {
+        _LEDMode         = LEDs.value("enabled", _LEDMode);
+        _LEDLight        = LEDs.value("lightSize", _LEDLight);
+        _LEDGap          = LEDs.value("gapSize", _LEDGap);
+        _LEDIntegralSize = LEDs.value("integralSize", _LEDIntegralSize);
+    }
 
     const auto & Radial = Object.value("radial", json::object());
 
@@ -1491,7 +1498,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     // Frequencies
     const auto & Frequencies = Object.value("frequencies", json::object());
 
-    _FrequencyDistribution  = Frequencies.value("distribution", _FrequencyDistribution);
+    _FrequencyDistribution  = std::clamp(Frequencies.value("distribution", _FrequencyDistribution), FrequencyDistribution::Min, FrequencyDistribution::Max);
     _BandCount              = Frequencies.value("bandCount", _BandCount);
 
     _LoFrequency            = Frequencies.value("loFrequency", _LoFrequency);

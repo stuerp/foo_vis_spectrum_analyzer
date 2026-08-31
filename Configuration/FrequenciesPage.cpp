@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.cpp (2026.05.24) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FrequenciesPage.cpp (2026.08.31) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -14,7 +14,7 @@ BOOL frequencies_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_DISTRIBUTION, "Determines how the frequencies are distributed" },
         { IDC_NUM_BANDS, "Determines how many frequency bands are used" },
@@ -51,7 +51,7 @@ void frequencies_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer" })
+        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer", L"Mel" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FrequencyDistribution);

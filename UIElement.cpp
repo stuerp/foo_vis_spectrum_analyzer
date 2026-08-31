@@ -588,7 +588,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
     {
         Resize();
 
-//      AddTools();
+        AddTools();
 
         _ToolTipControl.Activate(_RenderState._ShowToolTipsAlways);
     }

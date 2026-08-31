@@ -13,7 +13,7 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_SMOOTHING_METHOD, "Determines how the spectrum coefficients and the peak meter values are smoothed." },
         { IDC_SMOOTHING_FACTOR, "Determines the strength of the smoothing." },

@@ -149,6 +149,18 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Handles a configuration change.
+/// </summary>
+void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (configurationChanges == ConfigurationChanges::Layout)
+    {
+        _XAxis.Initialize(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
+        _XAxis.Resize(true);
+    }
+}
+
+/// <summary>
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>

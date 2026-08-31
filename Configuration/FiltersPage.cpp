@@ -14,7 +14,7 @@ BOOL filters_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_ACOUSTIC_FILTER, "Selects the Weighting filter type that will be applied." },
 

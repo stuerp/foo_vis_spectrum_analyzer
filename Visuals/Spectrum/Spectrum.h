@@ -40,6 +40,8 @@ public:
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
 
+    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+
     // visualization_t
     void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 

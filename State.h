@@ -208,6 +208,9 @@ public:
         double _TuningPitch;                                            // Hz, [0, 96000], Octave bands tuning (nearest note = tuning frequency in Hz)
         int _Transpose;                                                 // Transpose, [-24,.24] quarter tones
 
+        // Mel range
+        size_t _MelBandCount;                                           // Number of Mel bands, 
+
         ScalingFunction _ScalingFunction;
 
         double _SkewFactor;                                             // Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum (in the case of Avee Player's frequency distribution, exactly linear when this parameter is 1), 0.0 .. 1.0
