@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.08.22) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.09.01) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 #include "Spectrum.h"
@@ -153,11 +153,11 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
 {
-    if (configurationChanges == ConfigurationChanges::Layout)
-    {
-        _XAxis.Initialize(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
-        _XAxis.Resize(true);
-    }
+    if (configurationChanges != ConfigurationChanges::Layout)
+        return;
+
+    _XAxis.Initialize(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
+    _XAxis.Resize(true);
 }
 
 /// <summary>
