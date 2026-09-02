@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPageLayout.h (2026.03.18) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: FrequenciesPageLayout.h (2026.09.01) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -23,7 +23,8 @@
     #define Y_A02   Y_A01
     #pragma endregion
 
-    #pragma region Number of Bands
+    /** Number of Bands **/
+
     // Label
     #define W_A19    60
     #define H_A19    H_LBL
@@ -35,7 +36,20 @@
     #define H_A20    H_TBX
     #define X_A20    X_A19 + W_A19 + IX
     #define Y_A20    Y_A19
-    #pragma endregion
+
+    /** Number of Mel Bands **/
+
+    // Label
+    #define W_A40    60
+    #define H_A40    H_LBL
+    #define X_A40    X_A20 + W_A20 + IX
+    #define Y_A40    Y_A19
+
+    // Textbox
+    #define W_A41    40
+    #define H_A41    H_TBX
+    #define X_A41    X_A40 + W_A40 + IX
+    #define Y_A41    Y_A40
 
     /** Frequencies: [Lo] - [Hi] Hz **/
 
@@ -186,5 +200,5 @@
     #define Y_A36    Y_A35
     #pragma endregion
 
-#define W_B01   194
+#define W_B01   226
 #define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7

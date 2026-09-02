@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.cpp (2026.08.31) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FrequenciesPage.cpp (2026.09.01) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -17,7 +17,9 @@ BOOL frequencies_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
     static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_DISTRIBUTION, "Determines how the frequencies are distributed" },
+
         { IDC_NUM_BANDS, "Determines how many frequency bands are used" },
+        { IDC_NUM_MEL_BANDS, "Determines how many mel bands are used" },
 
         { IDC_LO_FREQUENCY, "Center frequency of the first band" },
         { IDC_HI_FREQUENCY, "Center frequency of the last band" },
@@ -73,6 +75,24 @@ void frequencies_page_t::InitializeControls() noexcept
 
         w.SetRange32(MinBands, MaxBands);
         w.SetPos32((int) _State->_BandCount);
+    }
+
+    {
+        UDACCEL Accel[] =
+        {
+            { 1,  4 },
+            { 2, 16 },
+            { 3, 64 },
+        };
+
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_NUM_MEL_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_MEL_BANDS, (int64_t) _State->_MelBandCount);
+
+        auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_MEL_BANDS_SPIN));
+
+        w.SetAccel(_countof(Accel), Accel);
+
+        w.SetRange32(MinMelBands, MaxMelBands);
+        w.SetPos32((int) _State->_MelBandCount);
     }
 
     {
@@ -233,17 +253,19 @@ void frequencies_page_t::UpdateControls() noexcept
     if (SupportsFrequencies)
     {
         const bool IsOctaves = (_State->_FrequencyDistribution == FrequencyDistribution::Octaves);
-    //  const bool IsAveePlayer = (_State->_FrequencyDistribution == FrequencyDistribution::AveePlayer);
+        const bool IsMel     = (_State->_FrequencyDistribution == FrequencyDistribution::Mel);
 
-        GetDlgItem(IDC_NUM_BANDS).EnableWindow(!IsOctaves);
+        GetDlgItem(IDC_NUM_BANDS)    .EnableWindow(!IsOctaves && !IsMel);
+        GetDlgItem(IDC_NUM_MEL_BANDS).EnableWindow(IsMel);
+
         GetDlgItem(IDC_LO_FREQUENCY).EnableWindow(!IsOctaves);
         GetDlgItem(IDC_HI_FREQUENCY).EnableWindow(!IsOctaves);
 
-    //  GetDlgItem(IDC_SCALING_FUNCTION).EnableWindow(!IsOctaves && !IsAveePlayer);
-    //  GetDlgItem(IDC_SKEW_FACTOR).EnableWindow(!IsOctaves);
-
         for (const auto & Iter : { IDC_MIN_NOTE, IDC_MAX_NOTE, IDC_BANDS_PER_OCTAVE, IDC_PITCH, IDC_TRANSPOSE, })
             GetDlgItem(Iter).EnableWindow(IsOctaves);
+
+        for (const auto & Iter : { IDC_SKEW_FACTOR, IDC_SKEW_FACTOR_SPIN, IDC_BANDWIDTH, IDC_BANDWIDTH_SPIN, })
+            GetDlgItem(Iter).EnableWindow(!IsMel);
     }
     else
     {
@@ -251,6 +273,7 @@ void frequencies_page_t::UpdateControls() noexcept
         {
             IDC_DISTRIBUTION,
             IDC_NUM_BANDS, IDC_NUM_BANDS_SPIN,
+            IDC_NUM_MEL_BANDS, IDC_NUM_MEL_BANDS_SPIN,
             IDC_LO_FREQUENCY, IDC_LO_FREQUENCY_SPIN, IDC_HI_FREQUENCY, IDC_HI_FREQUENCY_SPIN,
             IDC_MIN_NOTE, IDC_MIN_NOTE_SPIN, IDC_MAX_NOTE, IDC_MAX_NOTE_SPIN,
             IDC_BANDS_PER_OCTAVE, IDC_BANDS_PER_OCTAVE_SPIN,
@@ -340,6 +363,14 @@ void frequencies_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_NUM_MEL_BANDS:
+        {
+            if (!SetProperty(_State->_MelBandCount, (size_t) std::clamp(::_wtoi(Text), MinMelBands, MaxMelBands)))
+                return;
+
+            break;
+        }
+
         case IDC_LO_FREQUENCY:
         {
             _State->_LoFrequency = std::min(std::clamp(::_wtof(Text), MinFrequency, MaxFrequency), _State->_HiFrequency);
@@ -384,6 +415,11 @@ void frequencies_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_NUM_BANDS:
         {
             SetInteger(id, (int64_t) _State->_BandCount); break;
+        }
+
+        case IDC_NUM_MEL_BANDS:
+        {
+            SetInteger(id, (int64_t) _State->_MelBandCount); break;
         }
 
         case IDC_LO_FREQUENCY:
@@ -438,6 +474,15 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
                 return -1;
 
             SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
+            break;
+        }
+
+        case IDC_NUM_MEL_BANDS_SPIN:
+        {
+            if (!SetProperty(_State->_MelBandCount, (size_t) ClampNewSpinPosition(nmud, MinMelBands, MaxMelBands)))
+                return -1;
+
+            SetInteger(IDC_NUM_MEL_BANDS, (int64_t) _State->_MelBandCount);
             break;
         }
 

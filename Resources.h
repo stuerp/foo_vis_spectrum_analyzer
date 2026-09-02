@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.08.30) P. Stuer **/
+/** $VER: Resources.h (2026.09.02) P. Stuer **/
 
 #pragma once
 
@@ -162,49 +162,40 @@
 
 #define IDC_FREQUENCIES_GROUP           2100
 
-#define IDC_DISTRIBUTION_LBL            2110
 #define IDC_DISTRIBUTION                2112
 
-#define IDC_NUM_BANDS_LBL               2120
 #define IDC_NUM_BANDS                   2122
 #define IDC_NUM_BANDS_SPIN              2124
 
-#define IDC_RANGE_LBL_1                 2130
+#define IDC_NUM_MEL_BANDS               2126
+#define IDC_NUM_MEL_BANDS_SPIN          2128
+
 #define IDC_LO_FREQUENCY                2132
 #define IDC_LO_FREQUENCY_SPIN           2134
-#define IDC_RANGE_LBL_2                 2136
+
 #define IDC_HI_FREQUENCY                2138
 #define IDC_HI_FREQUENCY_SPIN           2140
-#define IDC_RANGE_LBL_3                 2142
 
-#define IDC_MIN_NOTE_LBL                2150
 #define IDC_MIN_NOTE                    2152
 #define IDC_MIN_NOTE_SPIN               2154
-#define IDC_MAX_NOTE_LBL                2156
+
 #define IDC_MAX_NOTE                    2158
 #define IDC_MAX_NOTE_SPIN               2160
 
-#define IDC_BANDS_PER_OCTAVE_LBL        2170
 #define IDC_BANDS_PER_OCTAVE            2172
 #define IDC_BANDS_PER_OCTAVE_SPIN       2174
 
-#define IDC_PITCH_LBL_1                 2180
 #define IDC_PITCH                       2182
 #define IDC_PITCH_SPIN                  2184
-#define IDC_PITCH_LBL_2                 2186
 
-#define IDC_TRANSPOSE_LBL               2200
 #define IDC_TRANSPOSE                   2202
 #define IDC_TRANSPOSE_SPIN              2204
 
-#define IDC_SCALING_FUNCTION_LBL        2210
 #define IDC_SCALING_FUNCTION            2212
 
-#define IDC_SKEW_FACTOR_LBL             2220
 #define IDC_SKEW_FACTOR                 2222
 #define IDC_SKEW_FACTOR_SPIN            2224
 
-#define IDC_BANDWIDTH_LBL               2230
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
 
@@ -443,6 +434,7 @@
 #define IDC_SCROLLING_SPECTROGRAM       7152
 #define IDC_HORIZONTAL_SPECTROGRAM      7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
+#define IDC_SPECTROGRAM_LEGEND          7158
 
 // Peak Meter
 

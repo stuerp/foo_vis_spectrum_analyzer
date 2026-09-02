@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.08.31) P. Stuer **/
+/** $VER: Constants.h (2026.09.02) P. Stuer **/
 
 #pragma once
 
@@ -24,8 +24,13 @@ enum class VisualizationType
 };
 
 // Common
+#ifdef _WIN64
 inline constexpr int64_t MinRefreshRate = 20;
 inline constexpr int64_t MaxRefreshRate = 200;
+#else
+inline constexpr int32_t MinRefreshRate = 20;
+inline constexpr int32_t MaxRefreshRate = 200;
+#endif
 
 inline constexpr double MinSmoothingFactor = 0.;
 inline constexpr double MaxSmoothingFactor = 1.;
@@ -174,7 +179,7 @@ enum class FFTMode
     Max         = FFTDuration,
 };
 
-enum class Mapping
+enum class CoefficientMapping
 {
     Standard = 0,
     TriangularFilterBank = 1,
@@ -237,6 +242,9 @@ inline constexpr double MaxIIRBandwidth = 64.;
 inline constexpr int MinBands =    2;
 inline constexpr int MaxBands = 8192;
 
+inline constexpr int MinMelBands =   24;
+inline constexpr int MaxMelBands =  128;
+
 inline constexpr double MinFrequency =     1.; // Hz
 inline constexpr double MaxFrequency = 96000.; // Hz
 
@@ -269,9 +277,6 @@ inline constexpr double MaxGamma = 10.0;
 
 inline constexpr int MinXAxisDecimals = 0;
 inline constexpr int MaxXAxisDecimals = 3;
-
-inline constexpr int MinMelBands =   24;
-inline constexpr int MaxMelBands =  128;
 
 enum class FrequencyDistribution
 {

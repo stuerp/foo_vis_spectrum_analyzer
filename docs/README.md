@@ -570,11 +570,14 @@ Determines which method is used to aggregate the coefficients of the FFT into fr
 
 `Mapping`
 
-Determines how the FFT coefficients are mapped to the frequency bins.
+Determines how the FFT power coefficients are mapped to the frequency bins.
 
 - Standard
 - Triangular Filter Bank
 - Brown-Puckette CQT
+
+> [!Note]
+> The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).
 
 `Smooth lower frequencies`
 
@@ -665,10 +668,15 @@ Determines which parameters are used to generate the frequency bands.
 - Linear: Generate frequency bands based on the frequency parameters.
 - Octaves: Generate frequency bands based on the note parameters.
 - AveePlayer: Generate frequency bands used by AveePlayer.
+- Mel: Generate frequency bands using the Mel scale.
 
 `No. of bands`
 
-Specifies the number of frequency bands to generate (2 to 512) in the specified frequency range.
+Specifies the number of frequency bands to generate (2 to 8192) in the specified frequency range.
+
+`No. of Mel bands`
+
+Specifies the number of mel bands to generate (24 to 128) in the specified frequency range.
 
 `Frequency range`
 
@@ -697,7 +705,7 @@ Determines which algorithm will be used to scale the frequencies:
 - Linear
 - Logarithmic
 - Shifted logarithmic
-- Mel (AIMP)
+- [Mel](https://en.wikipedia.org/wiki/Mel_scale)
 - Bark
 - Adjustable Bark
 - ERB

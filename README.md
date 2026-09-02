@@ -98,7 +98,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.12.0.0-alpha3, 2026-09-xx
 
-- Improved: Optimized the FFT analyzer and improved (and fixed) the coefficient mapping code.
+- New: Mel scale frequency distribution.
+- New: A spectrogram color legend can be enabled in the configuration dialog.
+- Improved: Optimized the FFT analyzer and improved all coefficient mapping modes.
+- Fixed: Triangular Filter Bank (TFB) coefficient mapping. This mapping will always use frequencies generated using the Mel scale.
 - Changed: Peak values continue to animate when the parent window is minimized.
 
 You can read the full history [here](docs/History.md).

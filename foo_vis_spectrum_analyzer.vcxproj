@@ -218,6 +218,7 @@
     <ClInclude Include="3rdParty\json\single_include\nlohmann\json.hpp" />
     <ClInclude Include="3rdParty\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
+    <ClInclude Include="Analyzers\Aggregator.h" />
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />

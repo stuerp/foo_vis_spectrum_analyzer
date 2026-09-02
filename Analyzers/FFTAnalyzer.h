@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.08.30) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.09.02) P. Stuer **/
 
 #pragma once
 
@@ -12,6 +12,7 @@
 #include <Windows.h>
 
 #include "Analyzer.h"
+#include "Aggregator.h"
 #include "FrequencyBand.h"
 
 #include "FFT.h"
@@ -40,7 +41,7 @@ private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
     void Transform() noexcept;
 
-    void MapCoefficients(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficients(frequency_bands_t & freqBands) noexcept;
     void MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept;
     void MapCoefficientsUsingBP(frequency_bands_t & freqBands) const noexcept;
 

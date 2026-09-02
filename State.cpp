@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.08.31) P. Stuer **/
+/** $VER: State.cpp (2026.09.02) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -69,7 +69,7 @@ void state_t::Reset() noexcept
     _FFTCustom = 4096;
     _FFTDuration = 100.;
 
-    _MappingMethod = Mapping::Standard;
+    _MappingMethod = CoefficientMapping::Standard;
 
     // CQT
     _CQTBandwidthOffset = 1.;
@@ -97,8 +97,11 @@ void state_t::Reset() noexcept
     // Frequencies
     _FrequencyDistribution = FrequencyDistribution::Octaves;
 
-    // Frequency range
+    // Frequency / Mel band count
     _BandCount = 320;
+    _MelBandCount = 48;
+
+    // Frequency range
     _LoFrequency = 20.;
     _HiFrequency = 20000.;
 
@@ -108,9 +111,6 @@ void state_t::Reset() noexcept
     _BandsPerOctave = 12;
     _TuningPitch = 440.0;
     _Transpose = 0;
-
-    // Mel range
-    _MelBandCount = 48;
 
     _ScalingFunction = ScalingFunction::Logarithmic;
     _SkewFactor = 0.0;
@@ -245,6 +245,7 @@ void state_t::Reset() noexcept
     _IsScrollingSpectrogram = true;
     _IsHorizontalSpectrogram = true;
     _UseSpectrumBarMetrics = false;
+    _SpectrogramLegend = false;
 
     // Peak Meter
     _IsHorizontalPeakMeter = false;
@@ -372,6 +373,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _FrequencyDistribution = other._FrequencyDistribution;
 
         _BandCount = other._BandCount;
+        _MelBandCount = other._MelBandCount;
+
         _LoFrequency = other._LoFrequency;
         _HiFrequency = other._HiFrequency;
 
@@ -525,6 +528,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _IsScrollingSpectrogram = other._IsScrollingSpectrogram;
     _IsHorizontalSpectrogram = other._IsHorizontalSpectrogram;
     _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
+    _SpectrogramLegend = other._SpectrogramLegend;
 
     // Peak Meter
     _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
@@ -1410,10 +1414,12 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _AngularVelocity = Radial.value("angularVelocity", _AngularVelocity);
 
     const auto & Spectrogram = Object.value("spectrogram", json::object());
-
-    _IsScrollingSpectrogram  = Spectrogram.value("scrolling", _IsScrollingSpectrogram);
-    _IsHorizontalSpectrogram = Spectrogram.value("horizontally", _IsHorizontalSpectrogram);
-    _UseSpectrumBarMetrics   = Spectrogram.value("useBarMetrics", _UseSpectrumBarMetrics);
+    {
+        _IsScrollingSpectrogram  = Spectrogram.value("scrolling", _IsScrollingSpectrogram);
+        _IsHorizontalSpectrogram = Spectrogram.value("horizontally", _IsHorizontalSpectrogram);
+        _UseSpectrumBarMetrics   = Spectrogram.value("useBarMetrics", _UseSpectrumBarMetrics);
+        _SpectrogramLegend                  = Spectrogram.value("legend", _SpectrogramLegend);
+    }
 
     const auto & PeakMeter = Object.value("peakMeter", json::object());
 
@@ -1497,23 +1503,26 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     // Frequencies
     const auto & Frequencies = Object.value("frequencies", json::object());
+    {
+        _FrequencyDistribution  = std::clamp(Frequencies.value("distribution",    _FrequencyDistribution), FrequencyDistribution::Min, FrequencyDistribution::Max);
 
-    _FrequencyDistribution  = std::clamp(Frequencies.value("distribution", _FrequencyDistribution), FrequencyDistribution::Min, FrequencyDistribution::Max);
-    _BandCount              = Frequencies.value("bandCount", _BandCount);
+        _BandCount              = std::clamp(Frequencies.value("bandCount",       _BandCount), (size_t) MinBands, (size_t) MaxBands);
+        _MelBandCount           = std::clamp(Frequencies.value("melBandCount",    _MelBandCount), (size_t) MinMelBands, (size_t) MaxMelBands);
 
-    _LoFrequency            = Frequencies.value("loFrequency", _LoFrequency);
-    _HiFrequency            = Frequencies.value("hiFrequency", _HiFrequency);
+        _LoFrequency            = std::clamp(Frequencies.value("loFrequency",     _LoFrequency), MinFrequency, MaxFrequency);
+        _HiFrequency            = std::clamp(Frequencies.value("hiFrequency",     _HiFrequency), MinFrequency, MaxFrequency);
 
-    _LoNote                 = Frequencies.value("loNote", _LoNote);
-    _HiNote                 = Frequencies.value("hiNote", _HiNote);
+        _LoNote                 = std::clamp(Frequencies.value("loNote",          _LoNote), (uint32_t) MinNote, (uint32_t) MaxNote);
+        _HiNote                 = std::clamp(Frequencies.value("hiNote",          _HiNote), (uint32_t) MinNote, (uint32_t) MaxNote);
 
-    _BandsPerOctave         = Frequencies.value("bandsPerOctave", _BandsPerOctave);
-    _TuningPitch            = Frequencies.value("tuningPitch", _TuningPitch);
-    _Transpose              = Frequencies.value("transpose", _Transpose);
+        _BandsPerOctave         = std::clamp(Frequencies.value("bandsPerOctave",  _BandsPerOctave), (uint32_t) MinBandsPerOctave, (uint32_t) MaxBandsPerOctave);
+        _TuningPitch            = std::clamp(Frequencies.value("tuningPitch",     _TuningPitch), MinPitch, MaxPitch);
+        _Transpose              = std::clamp(Frequencies.value("transpose",       _Transpose), MinTranspose, MaxTranspose);
 
-    _ScalingFunction        = Frequencies.value("scalingFunction", _ScalingFunction);
-    _SkewFactor             = Frequencies.value("skewFactor", _SkewFactor);
-    _Bandwidth              = Frequencies.value("bandwidth", _Bandwidth);
+        _ScalingFunction        = std::clamp(Frequencies.value("scalingFunction", _ScalingFunction), ScalingFunction::Min, ScalingFunction::Max);
+        _SkewFactor             = std::clamp(Frequencies.value("skewFactor",      _SkewFactor), MinSkewFactor, MaxSkewFactor);
+        _Bandwidth              = std::clamp(Frequencies.value("bandwidth",       _Bandwidth), MinBandwidth, MaxBandwidth);
+    }
 
     // Acoustic Filters
     const auto & Filters = Object.value("acousticFilters", json::object());
@@ -1656,6 +1665,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "scrolling", _IsScrollingSpectrogram },
                 { "horizontally", _IsHorizontalSpectrogram },
                 { "useBarMetrics", _UseSpectrumBarMetrics },
+                { "legend", _SpectrogramLegend },
             })
         ),
 
@@ -1779,6 +1789,7 @@ json state_t::ToJSON(bool isPreset) const
                     { "distribution", _FrequencyDistribution },
 
                     { "bandCount", _BandCount },
+                    { "melBandCount", _MelBandCount },
 
                     { "loFrequency", _LoFrequency },
                     { "hiFrequency", _HiFrequency },

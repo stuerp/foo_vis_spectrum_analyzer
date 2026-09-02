@@ -51,6 +51,8 @@ private:
     void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
     void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
 
+    void RenderLegend(ID2D1DeviceContext * deviceContext) const noexcept;
+
     void InitFreqAxis() noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext);
@@ -125,11 +127,14 @@ private:
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
+    D2D1_RECT_F _LegendRect;
+
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     style_t _SpectrogramStyle;
+    style_t _LegendStyle;
 
     style_t _TimeLineStyle;
     style_t _TimeTextStyle;
@@ -141,5 +146,8 @@ private:
 
     D2D1_SIZE_F _BitmapSize;
 
-    const FLOAT Offset = 4.f; // Distance between the tick and the text.
+    static constexpr FLOAT Offset       = 4.f; // Distance between the tick and the text.
+
+    static constexpr FLOAT LegendSize   = 24.f;
+    static constexpr FLOAT TickSize     =  4.f;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.08.31) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.01) P. Stuer **/
 
 #include "pch.h"
 
@@ -229,14 +229,14 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             // Animate the spectrum peak value.
             for (auto & fb : _FrequencyBands)
             {
-                if (fb.Value >= fb.MaxValue)
+                if (fb.Value >= fb.PeakValue)
                 {
                     if (IsAIMP)
-                        fb.HoldTime += (fb.Value - fb.MaxValue) * HoldTime;
+                        fb.HoldTime += (fb.Value - fb.PeakValue) * HoldTime;
                     else
                         fb.HoldTime = HoldTime;
 
-                    fb.MaxValue = fb.Value;
+                    fb.PeakValue = fb.Value;
                     fb.FallRate = 0.;
                     fb.Opacity  = 1.;
                 }
@@ -245,7 +245,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                     if (fb.HoldTime > 0.)
                     {
                         if (IsAIMP)
-                            fb.MaxValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
+                            fb.PeakValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
 
                         fb.HoldTime--;
 
@@ -266,14 +266,14 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                                 constexpr double FallAcceleration = 0.1;
 
                                 fb.FallRate  = std::min(fb.FallRate + FallAcceleration, FallRate);
-                                fb.MaxValue -= fb.FallRate;
+                                fb.PeakValue -= fb.FallRate;
                                 break;
                             }
 
                             case PeakMode::Gravity:
                             {
                                 fb.FallRate += FallRate;
-                                fb.MaxValue -= fb.FallRate;
+                                fb.PeakValue -= fb.FallRate;
                                 break;
                             }
 
@@ -284,32 +284,32 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                                 fb.Opacity -= fb.FallRate;
 
                                 if (fb.Opacity <= 0.)
-                                    fb.MaxValue = fb.Value;
+                                    fb.PeakValue = fb.Value;
                                 break;
                             }
 
                             case PeakMode::AIMP:
                             {
-                                fb.FallRate  = FallRate * (1. + (int) (fb.MaxValue < 0.5));
-                                fb.MaxValue -= fb.FallRate;
+                                fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
+                                fb.PeakValue -= fb.FallRate;
                                 break;
                             }
 
                             case PeakMode::FadingAIMP:
                             {
-                                fb.FallRate  = FallRate * (1. + (int) (fb.MaxValue < 0.5));
-                                fb.MaxValue -= fb.FallRate;
+                                fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
+                                fb.PeakValue -= fb.FallRate;
 
                                 fb.Opacity -= fb.FallRate;
 
                                 if (fb.Opacity <= 0.)
-                                    fb.MaxValue = fb.Value;
+                                    fb.PeakValue = fb.Value;
                                 break;
                             }
                         }
                     }
 
-                    fb.MaxValue = std::clamp(fb.MaxValue, fb.Value, 1.);
+                    fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
                 }
             }
             break;
@@ -559,7 +559,7 @@ void analysis_t::GenerateLinearFrequencyBands()
     const double MinScale = ScaleFrequency(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleFrequency(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State->_BandCount);
 
@@ -614,7 +614,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
     const double LoIndex = ::round(_State->_LoNote * 2. / NoteGroup);
     const double HiIndex = ::round(_State->_HiNote * 2. / NoteGroup);
 
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.clear();
 
@@ -655,7 +655,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
 /// </summary>
 void analysis_t::GenerateAveePlayerFrequencyBands()
 {
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == Mapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State->_BandCount);
 
@@ -698,22 +698,23 @@ static inline double MelToHz(const double mel) noexcept
 /// <ref>https://deepwiki.com/dspavankumar/compute-mfcc/2.4.2-mel-filterbank-construction</ref>
 void analysis_t::GenerateMelFrequencyBands()
 {
-    const double MinHz = std::min(_State->_LoFrequency, _State->_HiFrequency);
-    const double MaxHz = std::max(_State->_LoFrequency, _State->_HiFrequency);
-
-    const double MinMel  = HzToMel(MinHz);
-    const double MaxMel  = HzToMel(MaxHz);
-    const double MelStep = (MaxMel - MinMel) / (double) (_State->_MelBandCount + 1);
-
+    // Generate the frequencies for each of the Mel points.
     std::vector<double> Frequencies(_State->_MelBandCount + 2);
+    {
+        assert(_State->_LoFrequency < _State->_HiFrequency);
 
-    double Mel = MinMel;
+        const double LoMel  = HzToMel(_State->_LoFrequency);
+        const double HiMel  = HzToMel(_State->_HiFrequency);
+        const double MelStep = (HiMel - LoMel) / (double) (_State->_MelBandCount + 1);
 
-    for (size_t i = 0; i < Frequencies.size(); ++i, Mel += MelStep)
-        Frequencies[i] = MelToHz(Mel);
+        double Mel = LoMel;
 
-    Frequencies.front() = MinHz;
-    Frequencies.back()  = MaxHz;
+        for (size_t i = 0; i < Frequencies.size(); ++i, Mel += MelStep)
+            Frequencies[i] = MelToHz(Mel);
+
+        Frequencies.front() = _State->_LoFrequency;
+        Frequencies.back()  = _State->_HiFrequency;
+    }
 
     _FrequencyBands.resize(_State->_MelBandCount);
 
@@ -726,7 +727,7 @@ void analysis_t::GenerateMelFrequencyBands()
         fb.Mid = Frequencies[i + 1];
         fb.Hi  = Frequencies[i + 2];
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.2fHz", (int) HzToMel(fb.Mid), fb.Mid);
 
         fb.HasDarkBackground = true;
 

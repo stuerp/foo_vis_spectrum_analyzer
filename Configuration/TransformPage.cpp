@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.09.01) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -42,7 +42,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
         { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bins." },
-        { IDC_AGGREGATION_METHOD, "Method used to aggregate FFT coefficients" },
+        { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients." },
 
         { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
         { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
@@ -262,7 +262,7 @@ void transform_page_t::UpdateControls() noexcept
 
         // FFT
         {
-            const bool IsStandard = IsFFT && (_State->_MappingMethod == Mapping::Standard);
+            const bool IsStandard = IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard);
 
             for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
                 GetDlgItem(Iter).EnableWindow(IsStandard);
@@ -270,7 +270,7 @@ void transform_page_t::UpdateControls() noexcept
 
         // Brown-Puckette CQT
         {
-            const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
+            const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == CoefficientMapping::BrownPuckette);
 
             for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
                 GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
@@ -383,7 +383,13 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_MAPPING_METHOD:
         {
-            _State->_MappingMethod = (Mapping) SelectedIndex;
+            _State->_MappingMethod = (CoefficientMapping) SelectedIndex;
+
+            if (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)
+            {
+                _State->_FrequencyDistribution = FrequencyDistribution::Mel;
+                _State->_ScalingFunction       = ScalingFunction::Mel;
+            }
 
             UpdateControls();
             break;

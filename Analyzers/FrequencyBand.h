@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2026.08.18) P. Stuer **/
+/** $VER: FrequencyBand.h (2026.09.02) P. Stuer **/
 
 #pragma once
 
@@ -16,24 +16,24 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() noexcept : RawValue(), Value(), Lo(), Mid(), Hi(), HoldTime(), FallRate(), MaxValue(), Opacity(1.) { }
+    frequency_band_t() noexcept : RawValue(), Value(), PeakValue(), Lo(), Mid(), Hi(), HoldTime(), FallRate(), Opacity(1.) { }
 
-    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), Lo(l), Mid(c), Hi(h), HoldTime(), FallRate(), MaxValue(), Opacity(1.) { }
+    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), PeakValue(), Lo(l), Mid(c), Hi(h), HoldTime(), FallRate(), Opacity(1.) { }
 
     frequency_band_t(const frequency_band_t & other) noexcept
     {
-        RawValue = other.RawValue;
-        Value    = other.Value;
+        RawValue  = other.RawValue;
+        Value     = other.Value;
+        PeakValue = other.PeakValue;
 
-        Lo       = other.Lo;
-        Mid      = other.Mid;
-        Hi       = other.Hi;
+        Lo        = other.Lo;
+        Mid       = other.Mid;
+        Hi        = other.Hi;
 
-        HoldTime = other.HoldTime;
-        FallRate = other.FallRate;
+        HoldTime  = other.HoldTime;
+        FallRate  = other.FallRate;
 
-        MaxValue = other.MaxValue;
-        Opacity  = other.Opacity;
+        Opacity   = other.Opacity;
 
         ::memcpy(Label, other.Label, sizeof(Label));
 
@@ -43,22 +43,24 @@ struct frequency_band_t
 
     virtual ~frequency_band_t() noexcept { }
 
-    double RawValue;    // [0, 1], Magnitude
-    double Value;       // [0, 1]
+    double RawValue;    // Magnitude / Power
+    double Value;       // [0, 1], Normalized magnitude / power
+    double PeakValue;   // [0, 1], Peak normalized magnitude / power
 
-    double Lo;          // Hz
-    double Mid;         // Hz
-    double Hi;          // Hz
+    double Lo;          // Hz, Low frequency of this band
+    double Mid;         // Hz, Center frequency of this band
+    double Hi;          // Hz, High frequency of this band
 
     double HoldTime;    // Time to hold the current peak value (in s)
     double FallRate;    // Rate at which the current peak value decays (in dB/s)
 
-    double MaxValue;    // [0, 1], The value of the maximum indicator
-    double Opacity;     // [0, 1], The opacity of the maximum indicator
+    double Opacity;     // [0, 1], Opacity used to draw the peak normalized magnitude / power indicator
 
     WCHAR Label[16];
     bool HasDarkBackground;
     D2D1_COLOR_F GradientColor;
+
+    std::vector<double> _Weights;   // Triangular Filter Bank weights for this band.
 };
 
 typedef std::vector<frequency_band_t> frequency_bands_t;

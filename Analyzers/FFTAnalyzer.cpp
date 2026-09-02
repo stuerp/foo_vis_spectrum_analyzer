@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.08.30) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.09.02) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 
@@ -26,7 +26,7 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
     _FFT.Initialize(_FFTSize);
 
     // Create the input ring buffer.
-    _InputRing.resize(_FFTSize, (audio_sample)0.);
+    _InputRing.resize(_FFTSize, (audio_sample) 0.);
     _Next = 0;
 
     _TimeData.resize(_FFTSize);
@@ -48,15 +48,17 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frame
     {
         default:
 
-        case Mapping::Standard:
+        case CoefficientMapping::Standard:
             MapCoefficients(frequencyBands);
             break;
 
-        case Mapping::TriangularFilterBank:
+        case CoefficientMapping::TriangularFilterBank:
+        {
             MapCoefficientsUsingTFB(frequencyBands);
             break;
+        }
 
-        case Mapping::BrownPuckette:
+        case CoefficientMapping::BrownPuckette:
             MapCoefficientsUsingBP(frequencyBands);
             break;
     }
@@ -107,7 +109,7 @@ void fft_analyzer_t::Transform() noexcept
 
         for (auto & Iter : _TimeData)
         {
-            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t)0, _FFTSize - 1, -1., 1.));
+            const double WindowFactor = _WindowFunction(msc::Map(j, (size_t) 0, _FFTSize - 1, -1., 1.));
 
             Iter = std::complex<double>(p[i] * WindowFactor, 0.);
 
@@ -120,7 +122,7 @@ void fft_analyzer_t::Transform() noexcept
 
     // Normalize the Time domain data.
     {
-        const double Factor = (double)_FFTSize / Norm; // * M_SQRT2;
+        const double Factor = (double) _FFTSize / Norm; // * M_SQRT2;
 
         std::transform(std::execution::par_unseq, _TimeData.begin(), _TimeData.end(), _TimeData.begin(), [Factor](std::complex<double> x)
         {
@@ -133,7 +135,7 @@ void fft_analyzer_t::Transform() noexcept
 
     // Normalize the Frequency domain data.
     {
-        const double Factor = 2. / (double)_FFTSize;
+        const double Factor = 2. / (double) _FFTSize;
 
         std::transform(std::execution::par_unseq, _FreqData.begin(), _FreqData.end(), _FreqData.begin(), [Factor](std::complex<double> x)
         {
@@ -248,253 +250,28 @@ double fft_analyzer_t::Median(std::vector<double> & data) noexcept
 #endif
 
 #ifdef v2
-class aggregator_t
-{
-public:
-    virtual ~aggregator_t() = default;
-
-    virtual inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept = 0;
-};
-
-class min_aggregator_t final : public aggregator_t
-{
-public:
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        double Value = std::numeric_limits<double>::max();
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value = std::min(Value, std::abs(data[binIndex]));
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        return Value;
-    }
-};
-
-class max_aggregator_t final : public aggregator_t
-{
-public:
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        double Value = 0.;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value = std::max(Value, std::abs(data[binIndex]));
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        return Value;
-    }
-};
-
-class sum_aggregator_t final : public aggregator_t
-{
-public:
-    sum_aggregator_t(bool smoothGainTransition) : _SmoothGainTransition(smoothGainTransition) { }
-
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        double Value = 0.;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value += std::abs(data[binIndex]);
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        if (_SmoothGainTransition)
-            Value /= (double) count;
-
-        return Value;
-    }
-
-private:
-    bool _SmoothGainTransition;
-};
-
-class avg_aggregator_t final : public aggregator_t
-{
-public:
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        assert(count != 0);
-
-        double Value = 0.;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value += std::abs(data[binIndex]);
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        return Value / (double) count;
-    }
-};
-
-class rms_aggregator_t final : public aggregator_t
-{
-public:
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        assert(count != 0);
-
-        double Value = 0.;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value += std::norm(data[binIndex]);
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        return std::sqrt(Value / (double) count);
-    }
-};
-
-class rms_sum_aggregator_t final : public aggregator_t
-{
-public:
-    rms_sum_aggregator_t(bool smoothGainTransition) : _SmoothGainTransition(smoothGainTransition) { }
-
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        double Value = 0.;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value += std::norm(data[binIndex]);
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        if (_SmoothGainTransition)
-            Value /= (double) count;
-
-        return std::sqrt(Value);
-    }
-
-private:
-    bool _SmoothGainTransition;
-};
-
-class median_aggregator_t final : public aggregator_t
-{
-public:
-    median_aggregator_t(size_t binCount)
-    {
-        Values.reserve(binCount);
-    }
-
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        Values.clear();
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Values.push_back(std::abs(data[binIndex]));
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        const double Value = Median(Values);
-
-        return Value;
-    }
-
-private:
-    /// <summary>
-    /// Calculates the median.
-    /// </summary>
-    double Median(std::vector<double> & data) const noexcept
-    {
-        if (data.empty())
-            return std::numeric_limits<double>::quiet_NaN();
-
-        if (data.size() == 1)
-            return data[0];
-
-        std::sort(data.begin(), data.end());
-
-        const size_t Mid = data.size() / 2;
-
-        return (data.size() & 1) ? data[Mid] : (data[Mid - 1] + data[Mid]) / 2.;
-    }
-
-private:
-    std::vector<double> Values;
-};
-
-class default_aggregator_t : public aggregator_t
-{
-public:
-    inline double operator()(const std::vector<std::complex<double>> & data, size_t count, size_t binIndex, size_t binCount) noexcept final
-    {
-        double Value = 0.;
-
-        // The value of the last bin wins.
-        for (size_t i = 0; i < count; ++i)
-        {
-            Value = std::abs(data[binIndex]);
-
-            ++binIndex;
-
-            if (binIndex == binCount)
-                binIndex = 0;
-        }
-
-        return Value;
-    }
-};
-
 /// <summary>
 /// Maps FFT power-spectrum coefficients onto the frequency bands.
 /// </summary>
-void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexcept
+void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
 {
-    const auto Method                 = _State->_AggregationMethod;
+    const auto AggregationMethod      = _State->_AggregationMethod;
     const bool SmoothLowerFrequencies = _State->_SmoothLowerFrequencies;
-    const bool SmoothGainTransition   = _State->_SmoothGainTransition && (Method == AggregationMethod::Sum || Method == AggregationMethod::RMSSum);
+    const bool SmoothGainTransition   = _State->_SmoothGainTransition && (AggregationMethod == AggregationMethod::Sum || AggregationMethod == AggregationMethod::RMSSum);
 
-    const bool IsRMS = (Method == AggregationMethod::RMS) || (Method == AggregationMethod::RMSSum);
+    const bool IsRMS = (AggregationMethod == AggregationMethod::RMS) || (AggregationMethod == AggregationMethod::RMSSum);
 
-    const size_t BinCount = _FreqData.size();
+    const auto BinCount = _FreqData.size();
 
     if (BinCount == 0)
         return;
 
-    const auto BandWidthScale = (double)(BinCount - 1) / (double)_SampleRate;
+    const auto BandWidthScale = (double) (BinCount - 1) / (double) _SampleRate;
 
+    // Determine the coefficient aggregator.
     std::unique_ptr<aggregator_t> Aggregate;
 
-    switch (Method)
+    switch (AggregationMethod)
     {
         case AggregationMethod::Minimum:
             Aggregate = std::make_unique<min_aggregator_t>();
@@ -505,7 +282,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexce
             break;
 
         case AggregationMethod::Sum:
-            Aggregate = std::make_unique<sum_aggregator_t>(_State->_SmoothGainTransition);
+            Aggregate = std::make_unique<sum_aggregator_t>(SmoothGainTransition);
             break;
 
         case AggregationMethod::Average:
@@ -517,7 +294,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexce
             break;
 
         case AggregationMethod::RMSSum:
-            Aggregate = std::make_unique<rms_sum_aggregator_t>(_State->_SmoothGainTransition);
+            Aggregate = std::make_unique<rms_sum_aggregator_t>(SmoothGainTransition);
             break;
 
         case AggregationMethod::Median:
@@ -529,6 +306,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexce
             break;
     }
 
+    // Determine the aggregated power for each of the frequency bands.
     for (frequency_band_t & fb : freqBands)
     {
         assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
@@ -547,7 +325,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexce
         const double HiIdx = HzToBinIndex(fb.Hi, BinCount);
 
         const auto First = std::max((ptrdiff_t) (SmoothLowerFrequencies ? std::round(LoIdx) + 1. : std::ceil (LoIdx)), (ptrdiff_t) 0);
-        const auto Last =           (ptrdiff_t) (SmoothLowerFrequencies ? std::round(HiIdx) - 1. : std::floor(HiIdx));
+        const auto Last  =          (ptrdiff_t) (SmoothLowerFrequencies ? std::round(HiIdx) - 1. : std::floor(HiIdx));
 
         if (First > Last)
         {
@@ -557,12 +335,10 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexce
             continue;
         }
 
-        const auto RequestedCount = (size_t) (Last - First + 1);
-        const auto Count = std::min(RequestedCount, BinCount);
+        const auto RequestedBins = std::min((size_t) (Last - First + 1), BinCount);
+        const auto BinIndex = msc::Wrap((size_t) First, BinCount);
 
-        size_t BinIndex = msc::Wrap((size_t) First, BinCount);
-
-        const double Value = (*Aggregate)(_FreqData, Count, BinIndex, BinCount);
+        const double Value = (*Aggregate)(_FreqData, RequestedBins, BinIndex, BinCount);
 
         fb.RawValue = Value * BandGain;
     }
@@ -671,12 +447,12 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
 #endif
 
 /// <summary>
-/// Maps FFT power-spectrum coefficients onto triangular frequency bands. Assumes the frequency bands are spaced on the Mel scale.
+/// Maps FFT power-spectrum coefficients using a triangular filter bank. Assumes the frequency bands are spaced on the Mel scale.
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
 void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept
 {
-    if (_FreqData.empty() || !std::isfinite(_SampleRate) || _SampleRate <= 0.)
+    if (_FreqData.empty() || (_SampleRate == 0))
     {
         for (frequency_band_t & fb : freqBands)
             fb.RawValue = 0.;
@@ -685,83 +461,46 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
     }
 
     const size_t BinCount = _FreqData.size();
-    const double N        = (double) BinCount;
+    const auto   N        = (double) BinCount;
     const double HzToBin  = N / _SampleRate;
-
-    // Linearly interpolate between adjacent FFT-bin powers.
-    const auto InterpolatePower = [&](double index) noexcept
-    {
-        index = std::clamp(index, 0., N - 1.);
-
-        const size_t LowerBin = (size_t) std::floor(index);
-        const size_t UpperBin = std::min(LowerBin + 1, BinCount - 1);
-
-        const double LowerPower = std::norm(_FreqData[LowerBin]);
-        const double UpperPower = std::norm(_FreqData[UpperBin]);
-        const double Fraction   = index - (double) LowerBin;
-
-        return std::lerp(LowerPower, UpperPower, Fraction);
-    };
 
     for (frequency_band_t & fb : freqBands)
     {
         fb.RawValue = 0.;
 
-        if (!std::isfinite(fb.Lo) || !std::isfinite(fb.Mid) || !std::isfinite(fb.Hi))
-            continue;
+        const double LoBin  = std::max(    0., fb.Lo ) * HzToBin;
+              double MidBin =                  fb.Mid  * HzToBin;
+              double HiBin  = std::min(N - 1., fb.Hi ) * HzToBin;
 
-        const double MinBin = std::min(fb.Lo, fb.Hi) * HzToBin;
-        const double MidBin =          fb.Mid        * HzToBin;
-        const double MaxBin = std::max(fb.Lo, fb.Hi) * HzToBin;
+        if (MidBin <= LoBin)
+            MidBin = LoBin + 1.;
 
-        // A proper triangular band requires its peak to lie strictly between its lower and upper edges.
-        if (!(MinBin < MidBin && MidBin < MaxBin))
-            continue;
+        if (HiBin <= MidBin)
+            HiBin  = MidBin + 1.;
 
-        const double StartBin = std::max(    0., MinBin);
-        const double EndBin   = std::min(N - 1., MaxBin);
+        const size_t StartBin = (size_t) std::ceil(LoBin);
+        const size_t EndBin   = (size_t) std::floor(HiBin);
 
-        if (StartBin >= EndBin)
+        if (StartBin > EndBin)
             continue;
 
         double WeightedPower = 0.;
 
+        for (size_t Bin = StartBin; Bin <= EndBin; ++Bin)
         {
-            const auto GetWeight = [&](const double index) noexcept
-            {
-                double Weight;
+            const auto Index = (double) Bin;
 
-                if (index <= MidBin)
-                    Weight = (index - MinBin) / (MidBin - MinBin);
-                else
-                    Weight = (MaxBin - index) / (MaxBin - MidBin);
+            double Weight;
 
-                return std::clamp(Weight, 0., 1.);
-            };
+            if (Index <= MidBin)
+                Weight = (Index - LoBin) / (MidBin - LoBin);
+            else
+                Weight = (HiBin - Index) / (HiBin - MidBin);
 
-            double Index = StartBin;
+            Weight = std::clamp(Weight, 0., 1.);
 
-            while (Index < EndBin)
-            {
-                // Split at FFT-bin boundaries and at the triangular band's peak. Within each interval both the interpolated power and triangular weight are continuous.
-                double NextIndex = std::min(std::floor(Index) + 1., EndBin);
-
-                if ((Index < MidBin) && (MidBin < NextIndex))
-                    NextIndex = MidBin;
-
-                if (!(Index < NextIndex))
-                    NextIndex = std::min(Index + 1., EndBin);
-
-                const double MidIndex = (Index + NextIndex) / 2.;
-
-                const double StartValue  = InterpolatePower(Index)     * GetWeight(Index);
-                const double MiddleValue = InterpolatePower(MidIndex)  * GetWeight(MidIndex);
-                const double EndValue    = InterpolatePower(NextIndex) * GetWeight(NextIndex);
-
-                WeightedPower += (NextIndex - Index) * (StartValue + 4. * MiddleValue + EndValue) / 6.;
-
-                Index = NextIndex;
-            }
+            // Contribute the power of the bin weighed by the triangular filter bank.
+            WeightedPower += std::norm(_FreqData[Bin]) * Weight;
         }
 
         fb.RawValue = std::sqrt(std::max(WeightedPower, 0.));

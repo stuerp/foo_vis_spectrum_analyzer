@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.08.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.02) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -36,6 +36,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_SCROLLING_SPECTROGRAM, "Activates scrolling of the spectrogram." },
         { IDC_HORIZONTAL_SPECTROGRAM, "Renders the spectrogram horizontally." },
         { IDC_SPECTRUM_BAR_METRICS, "Uses the same rounding algorithm as when displaying spectrum bars. This makes it easier to align a vertical spectrogram with a spectrum bar visualization." },
+        { IDC_SPECTROGRAM_LEGEND, "Shows a color legend on the spectrogram." },
 
         { IDC_HORIZONTAL_PEAK_METER, "Renders the Peak/RMS meter horizontally." },
         { IDC_RMS_PLUS_3, "Enables RMS readings compliant with IEC 61606:1997 / AES17-1998 standard (RMS +3)." },
@@ -139,9 +140,10 @@ void visualization_page_t::InitializeControls() noexcept
 
     // Spectrogram
     {
-        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM, BM_SETCHECK, _State->_IsScrollingSpectrogram);
+        SendDlgItemMessageW(IDC_SCROLLING_SPECTROGRAM,  BM_SETCHECK, _State->_IsScrollingSpectrogram);
         SendDlgItemMessageW(IDC_HORIZONTAL_SPECTROGRAM, BM_SETCHECK, _State->_IsHorizontalSpectrogram);
-        SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS, BM_SETCHECK, _State->_UseSpectrumBarMetrics);
+        SendDlgItemMessageW(IDC_SPECTRUM_BAR_METRICS,   BM_SETCHECK, _State->_UseSpectrumBarMetrics);
+        SendDlgItemMessageW(IDC_SPECTROGRAM_LEGEND,     BM_SETCHECK, _State->_SpectrogramLegend);
     }
 
     // Peak/RMS Meter
@@ -265,9 +267,10 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_OPACITY_MODE).EnableWindow(IsBitMeter);
  
     // Spectrogram
-    GetDlgItem(IDC_SCROLLING_SPECTROGRAM).EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_SCROLLING_SPECTROGRAM) .EnableWindow(IsSpectrogram);
     GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS).EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS)  .EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
+    GetDlgItem(IDC_SPECTROGRAM_LEGEND)    .EnableWindow(IsSpectrogram);
 
     // Peak/RMS Meter
     GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
@@ -713,6 +716,12 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_SPECTRUM_BAR_METRICS:
         {
             _State->_UseSpectrumBarMetrics = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SPECTROGRAM_LEGEND:
+        {
+            _State->_SpectrogramLegend = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 

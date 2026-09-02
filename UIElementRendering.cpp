@@ -204,8 +204,8 @@ void uielement_t::ProcessAudio() noexcept
     if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
         return; // Playback is paused.
 
-    double WindowSize;
-    double WindowOffset;
+    double WindowSize;   // in seconds
+    double WindowOffset; // in seconds
 
     const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
 
@@ -213,7 +213,7 @@ void uielement_t::ProcessAudio() noexcept
     {
         if (_RenderState._SampleRate != 0)
         {
-            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount : _RenderState._FrameCount;
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount: _RenderState._FrameCount;
 
             WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
             WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
