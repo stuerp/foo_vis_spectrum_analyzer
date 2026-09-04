@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.09.04) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -44,14 +44,13 @@ public:
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
 private:
-    bool RenderSpectrum() noexcept;
-
-    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * deviceContext) const noexcept;
+    bool RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
 
     void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
     void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
 
-    void RenderLegend(ID2D1DeviceContext * deviceContext) const noexcept;
+    void CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
 
     void InitFreqAxis() noexcept;
 
@@ -79,8 +78,14 @@ private:
 
 private:
     D2D1_RECT_F _BitmapRect;
+    D2D1_SIZE_F _BitmapSize;
+
+    D2D1_RECT_F _LegendRect;
+    D2D1_SIZE_F _LegendSize;
+
     FLOAT _X;
     FLOAT _Y;
+
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
@@ -127,14 +132,15 @@ private:
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
 
-    D2D1_RECT_F _LegendRect;
+    CComPtr<ID2D1BitmapRenderTarget> _LegendBitmapRenderTarget;
+    CComPtr<ID2D1Bitmap> _LegendBitmap;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     style_t _SpectrogramStyle;
-    style_t _LegendStyle;
+    style_t _GradientStyle;
 
     style_t _TimeLineStyle;
     style_t _TimeTextStyle;
@@ -144,10 +150,8 @@ private:
 
     style_t _NyquistMarkerStyle;
 
-    D2D1_SIZE_F _BitmapSize;
+    static constexpr FLOAT Offset       =  4.f; // Distance between the tick and the text.
 
-    static constexpr FLOAT Offset       = 4.f; // Distance between the tick and the text.
-
-    static constexpr FLOAT LegendSize   = 24.f;
+    static constexpr FLOAT GradientSize   = 24.f;
     static constexpr FLOAT TickSize     =  4.f;
 };

@@ -370,6 +370,12 @@ Renders the spectrogram horizontally when enabled, vertically when not.
 
 `Use spectrum bar metrics`
 
+Some users create a *waterfall* effect by positioning the spectrogram under a spectrum visualization. This option tells the spectrogram to use the same spacing calculations so that the spectrum and spectrogram align.
+
+`Legend`
+
+Renders a color legend in the visualization area that tells which color correspondents to a power level.
+
 #### Peak / RMS group
 
 The Peak / RMS will display the instant peak and RMS over time level of the playing track.

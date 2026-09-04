@@ -1,9 +1,9 @@
 
-/** $VER: Spectrogram.cpp (2026.09.02) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.09.04) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #include "pch.h"
-#include "Spectrogram.h"
 
+#include "Spectrogram.h"
 #include "Support.h"
 
 #include "Direct2D.h"
@@ -53,6 +53,11 @@ void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
+
+    _LegendBitmap.Release();
+    _LegendBitmapRenderTarget.Release();
+
+    _GradientStyle.DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -67,16 +72,18 @@ void spectrogram_t::Resize() noexcept
     {
         if (_State->_IsHorizontalSpectrogram)
         {
-            const FLOAT w = 8.f + LegendSize + 8.f + _FreqTextStyle._Width;
+            const FLOAT w = GradientSize + _FreqTextStyle._Width;
 
-            _LegendRect = { _Rect.right - w, 0.f, _Rect.right, _Rect.bottom };
+            _LegendRect = { _Rect.right - 8.f - w - 8.f - 4.f, 0.f, _Rect.right, _Rect.bottom };
         }
         else
         {
-            const FLOAT h = 8.f + LegendSize  + _FreqTextStyle._Height;
+            const FLOAT h = GradientSize + _FreqTextStyle._Height;
 
-            _LegendRect = { 8.f, _Rect.bottom - h, _Rect.right - 8.f, _Rect.bottom };
+            _LegendRect = { 8.f, _Rect.bottom - 8.f - h - 8.f, _Rect.right - 8.f, _Rect.bottom };
         }
+
+        _LegendSize = { _LegendRect.right - _LegendRect.left, _LegendRect.bottom - _LegendRect.top };
     }
 
     // Resize the offscreen bitmap. Compensate for the axes.
@@ -297,7 +304,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         return;
 
     // Update the offscreen bitmap.
-    if (!RenderSpectrum())
+    if (!RenderSpectrum(_BitmapRenderTarget))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -434,7 +441,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     // Draw the legend.
     if (_State->_SpectrogramLegend)
-        RenderLegend(deviceContext);
+        deviceContext->DrawBitmap(_LegendBitmap, _LegendRect, 1.f);
 
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
     {
@@ -466,6 +473,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         _PlaybackTime = _State->_PlaybackTime;
     }
 }
+
 /// <summary>
 /// Renders an X-axis (Time)
 /// </summary>
@@ -475,7 +483,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
 
     if (_State->_IsHorizontalSpectrogram)
     {
-        const FLOAT y1 = first ? 0.f : _Size.height - _TimeTextStyle._Height;
+        const FLOAT y1 = first ?                    0.f : _Size.height - _TimeTextStyle._Height;
         const FLOAT y2 = first ? _TimeTextStyle._Height : _Size.height;
 
         rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
@@ -583,12 +591,12 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
 /// <summary>
 /// Render the spectrum.
 /// </summary>
-bool spectrogram_t::RenderSpectrum() noexcept
+bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept
 {
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
 
-    _BitmapRenderTarget->BeginDraw();
+    renderTarget->BeginDraw();
 
     if (_State->_IsHorizontalSpectrogram)
     {
@@ -610,7 +618,7 @@ bool spectrogram_t::RenderSpectrum() noexcept
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                _BitmapRenderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle._Brush);
+                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle._Brush);
 
                 y1  = y2;
                 y2 += Bandwidth;
@@ -621,9 +629,9 @@ bool spectrogram_t::RenderSpectrum() noexcept
 
         // Draw the Nyquist marker.
         if (_NyquistMarkerStyle.IsEnabled())
-            RenderNyquistFrequencyMarker(_BitmapRenderTarget);
+            RenderNyquistFrequencyMarker(renderTarget);
 
-        _BitmapRenderTarget->EndDraw();
+        renderTarget->EndDraw();
 
         // Update the time axis.
         if (_State->_IsScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
@@ -671,7 +679,7 @@ bool spectrogram_t::RenderSpectrum() noexcept
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                _BitmapRenderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle._Brush);
+                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle._Brush);
 
                 x1  = x2;
                 x2 += Bandwidth;
@@ -680,9 +688,9 @@ bool spectrogram_t::RenderSpectrum() noexcept
 
         // Draw the Nyquist marker.
         if (_NyquistMarkerStyle.IsEnabled())
-            RenderNyquistFrequencyMarker(_BitmapRenderTarget);
+            RenderNyquistFrequencyMarker(renderTarget);
 
-        _BitmapRenderTarget->EndDraw();
+        renderTarget->EndDraw();
 
         // Update the time axis.
         if (_State->_IsScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
@@ -713,77 +721,6 @@ bool spectrogram_t::RenderSpectrum() noexcept
     }
 
     return true;
-}
-
-/// <summary>
-/// Renders the legend.
-/// </summary>
-void spectrogram_t::RenderLegend(ID2D1DeviceContext * deviceContext) const noexcept
-{
-//  deviceContext->DrawRectangle(_LegendRect, _DebugBrush, 1.f, nullptr);
-
-    if (_State->_IsHorizontalSpectrogram)
-    {
-        // Draw the colors.
-        const D2D1_RECT_F r1 = { _LegendRect.left + 8.f, _LegendRect.top + 8.f, _LegendRect.left + LegendSize, _LegendRect.bottom - 8.f };
-
-        deviceContext->FillRectangle(r1, _LegendStyle._Brush);
-        deviceContext->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
-
-        // Draw the labels.
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-        _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-
-        WCHAR Text[16];
-
-        D2D1_RECT_F r2 = { r1.right, 0.f, r2.left + TickSize + _FreqTextStyle._Width + 8.f, 0.f };
-
-        for (double a = _GraphOptions->_AmplitudeHi; a >= _GraphOptions->_AmplitudeLo; a += _GraphOptions->_AmplitudeStep)
-        {
-            ::StringCchPrintfW(Text, _countof(Text), L"%.f dB", a);
-
-            const FLOAT y = msc::Map(a, _GraphOptions->_AmplitudeHi, _GraphOptions->_AmplitudeLo, r1.top, r1.bottom);
-
-            r2.top    = y - _FreqTextStyle._Height / 2.f;
-            r2.bottom = r2.top + _FreqTextStyle._Height;
-
-            deviceContext->DrawLine({ r2.left, y }, { r2.left + TickSize, y }, _FreqTextStyle._Brush);
-
-            deviceContext->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
-    }
-    else
-    {
-        // Draw the colors.
-        const D2D1_RECT_F r1 = { _LegendRect.left + 8.f, _LegendRect.top + 8.f, _LegendRect.right - 8.f, _LegendRect.top + LegendSize };
-
-        deviceContext->FillRectangle(r1, _LegendStyle._Brush);
-        deviceContext->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
-
-        // Draw the labels.
-        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-        _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-
-        WCHAR Text[16];
-
-        D2D1_RECT_F r2 = { 0.f, r1.bottom, 0.f, r2.top + TickSize + _FreqTextStyle._Height + 8.f };
-
-        for (double a = _GraphOptions->_AmplitudeHi; a >= _GraphOptions->_AmplitudeLo; a += _GraphOptions->_AmplitudeStep)
-        {
-            ::StringCchPrintfW(Text, _countof(Text), L"%.f dB", a);
-
-            const FLOAT x = msc::Map(a, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, r1.left, r1.right);
-
-            r2.left  = x - _FreqTextStyle._Width / 2.f;
-            r2.right = r2.left + _FreqTextStyle._Width;
-
-            deviceContext->DrawLine({ x, r2.top}, { x, r2.top + TickSize }, _FreqTextStyle._Brush);
-
-            deviceContext->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
-    }
 }
 
 /// <summary>
@@ -957,26 +894,26 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (_LegendStyle._Brush == nullptr)
+    if (_GradientStyle._Brush == nullptr)
     {
-        _LegendStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
+        _GradientStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
 
-        _LegendStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _GradientStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         // Remove these features.
         if (_State->_IsHorizontalSpectrogram)
         {
-            _LegendStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient);
+            _GradientStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient);
 
-            std::reverse(_LegendStyle._CurrentGradientStops.begin(), _LegendStyle._CurrentGradientStops.end());
+            std::reverse(_GradientStyle._CurrentGradientStops.begin(), _GradientStyle._CurrentGradientStops.end());
 
-            for (auto & x : _LegendStyle._CurrentGradientStops)
+            for (auto & x : _GradientStyle._CurrentGradientStops)
                 x.position = 1.f - x.position;
         }
         else
-            _LegendStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor);
+            _GradientStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor);
 
-        hr = _LegendStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+        hr = _GradientStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
         if (!SUCCEEDED(hr))
             return hr;
@@ -1042,6 +979,11 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
+#endif
+
     Resize();
 
     // Create the offscreen bitmap resources.
@@ -1070,10 +1012,26 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         }
     }
 
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
-#endif
+    // Create the legend bitmap resources.
+    {
+        if (_LegendBitmapRenderTarget == nullptr)
+        {
+            hr = deviceContext->CreateCompatibleRenderTarget(_LegendSize, &_LegendBitmapRenderTarget);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+        }
+
+        if (_LegendBitmap == nullptr)
+        {
+            CreateLegend(_LegendBitmapRenderTarget);
+
+            hr = _LegendBitmapRenderTarget->GetBitmap(&_LegendBitmap);
+
+            if (!SUCCEEDED(hr))
+                return hr;
+        }
+    }
 
     return hr;
 }
@@ -1086,6 +1044,8 @@ void spectrogram_t::DeleteDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _DebugBrush.Release();
 #endif
+    _LegendBitmap.Release();
+    _LegendBitmapRenderTarget.Release();
 
     _Bitmap.Release();
     _BitmapRenderTarget.Release();
@@ -1095,8 +1055,91 @@ void spectrogram_t::DeleteDeviceSpecificResources() noexcept
     _FreqLineStyle.DeleteDeviceSpecificResources();
     _TimeTextStyle.DeleteDeviceSpecificResources();
     _TimeLineStyle.DeleteDeviceSpecificResources();
-    _LegendStyle.DeleteDeviceSpecificResources();
+    _GradientStyle.DeleteDeviceSpecificResources();
     _SpectrogramStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Renders the legend.
+/// </summary>
+void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept
+{
+    renderTarget->BeginDraw();
+
+    renderTarget->Clear(); // Transparent
+
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+//  renderTarget->DrawRectangle(_LegendRect, _DebugBrush, 1.f, nullptr);
+
+    if (_State->_IsHorizontalSpectrogram)
+    {
+        // Draw the colors.
+        const D2D1_RECT_F r1 = { 8.f, 8.f, r1.left + GradientSize, _LegendSize.height - 8.f };
+
+        renderTarget->FillRectangle(r1, _GradientStyle._Brush);
+        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
+
+        // Draw the labels.
+        _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+
+        WCHAR Text[16];
+
+        D2D1_RECT_F r2 = { r1.right, 0.f, r2.left + TickSize + _FreqTextStyle._Width + 4.f, 0.f };
+
+        for (double a = _GraphOptions->_AmplitudeHi; a >= _GraphOptions->_AmplitudeLo; a += _GraphOptions->_AmplitudeStep)
+        {
+            ::StringCchPrintfW(Text, _countof(Text), L"%.f dB", a);
+
+            const FLOAT y = msc::Map(a, _GraphOptions->_AmplitudeHi, _GraphOptions->_AmplitudeLo, r1.top, r1.bottom);
+
+            r2.top    = y - _FreqTextStyle._Height / 2.f;
+            r2.bottom = r2.top + _FreqTextStyle._Height;
+
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+            renderTarget->DrawLine({ r2.left, y }, { r2.left + TickSize, y }, _FreqTextStyle._Brush);
+
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+    }
+    else
+    {
+        // Draw the colors.
+        const D2D1_RECT_F r1 = { std::max(8.f, _FreqTextStyle._Width / 2.f), 8.f, _LegendSize.width - std::max(8.f, _FreqTextStyle._Width / 2.f), r1.top + GradientSize };
+
+        renderTarget->FillRectangle(r1, _GradientStyle._Brush);
+        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
+
+        // Draw the labels.
+        _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+
+        WCHAR Text[16];
+
+        D2D1_RECT_F r2 = { 0.f, r1.bottom, 0.f, r2.top + TickSize + _FreqTextStyle._Height + 8.f };
+
+        for (double a = _GraphOptions->_AmplitudeHi; a >= _GraphOptions->_AmplitudeLo; a += _GraphOptions->_AmplitudeStep)
+        {
+            ::StringCchPrintfW(Text, _countof(Text), L"%.f dB", a);
+
+            const FLOAT x = msc::Map(a, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, r1.left, r1.right);
+
+            r2.left  = x - _FreqTextStyle._Width / 2.f;
+            r2.right = r2.left + _FreqTextStyle._Width;
+
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+            renderTarget->DrawLine({ x, r2.top}, { x, r2.top + TickSize }, _FreqTextStyle._Brush);
+
+            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+    }
+
+    renderTarget->EndDraw();
 }
 
 /// <summary>

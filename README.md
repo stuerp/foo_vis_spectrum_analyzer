@@ -96,7 +96,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.12.0.0-alpha3, 2026-09-xx
+v0.12.0.0-alpha3, 2026-09-04
 
 - New: Mel scale frequency distribution.
 - New: A spectrogram color legend can be enabled in the configuration dialog.
