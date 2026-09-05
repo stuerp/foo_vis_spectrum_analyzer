@@ -1,5 +1,5 @@
 
-/** $VER: FrequencyBand.h (2026.09.02) P. Stuer **/
+/** $VER: FrequencyBand.h (2026.09.05) P. Stuer **/
 
 #pragma once
 
@@ -56,7 +56,7 @@ struct frequency_band_t
 
     double Opacity;     // [0, 1], Opacity used to draw the peak normalized magnitude / power indicator
 
-    WCHAR Label[16];
+    WCHAR Label[32];
     bool HasDarkBackground;
     D2D1_COLOR_F GradientColor;
 

@@ -636,13 +636,10 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
         // Update the time axis.
         if (_State->_IsScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
         {
+            const FLOAT dx = (!_GraphOptions->_FlipHorizontally) ? -1.f : 1.f; // Move the labels by 1 pixel to the left or to the right.
+
             for (auto & Label : _TimeLabels)
-            {
-                if (!_GraphOptions->_FlipHorizontally)
-                    Label.X--; // Move each label to the left.
-                else
-                    Label.X++; // Move each label to the right.
-            }
+                Label.X += dx;
         }
 
         if (_TrackTime != _State->_TrackTime) // in seconds

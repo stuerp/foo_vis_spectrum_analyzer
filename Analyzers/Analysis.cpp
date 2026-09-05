@@ -571,7 +571,7 @@ void analysis_t::GenerateLinearFrequencyBands()
         fb.Mid = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
         fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
         fb.HasDarkBackground = true;
 
@@ -639,9 +639,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
             if (msc::InRange(f, fb.Lo, fb.Hi))
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.2fHz", NoteNames[n], Octave, fb.Mid);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.*f Hz", NoteNames[n], Octave, _GraphOptions->_XAxisDecimals, fb.Mid);
             else
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -670,7 +670,7 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
         fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
         fb.HasDarkBackground = true;
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.2fHz", fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
         ++i;
     }
@@ -727,7 +727,7 @@ void analysis_t::GenerateMelFrequencyBands()
         fb.Mid = Frequencies[i + 1];
         fb.Hi  = Frequencies[i + 2];
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.2fHz", (int) HzToMel(fb.Mid), fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Mid), _GraphOptions->_XAxisDecimals, fb.Mid);
 
         fb.HasDarkBackground = true;
 

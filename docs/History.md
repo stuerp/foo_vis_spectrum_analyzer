@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.12.0.0-alpha3, 2026-09-04
+
+- New: Mel scale frequency distribution.
+- New: A spectrogram color legend can be enabled in the configuration dialog.
+- Improved: Optimized the FFT analyzer and improved all coefficient mapping modes.
+- Fixed: Triangular Filter Bank (TFB) coefficient mapping. This mapping will always use frequencies generated using the Mel scale.
+- Changed: Peak values continue to animate when the parent window is minimized.
+
 v0.12.0.0-alpha2, 2026-08-30
 
 - Improved: Tweaked the behavior of the visualizations when changing tracks. They no longer fully reset.

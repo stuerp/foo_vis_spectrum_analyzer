@@ -152,6 +152,6 @@ private:
 
     static constexpr FLOAT Offset       =  4.f; // Distance between the tick and the text.
 
-    static constexpr FLOAT GradientSize   = 24.f;
+    static constexpr FLOAT GradientSize = 24.f;
     static constexpr FLOAT TickSize     =  4.f;
 };
