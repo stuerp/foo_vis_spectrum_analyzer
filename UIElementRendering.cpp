@@ -229,7 +229,7 @@ void uielement_t::ProcessAudio() noexcept
     audio_chunk_impl Chunk;
 
     if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
-//  if (GetAudioChunk(Chunk, 44100, _RenderState._BinCount))
+//  if (GetAudioChunk(Chunk, 44'100, (uint32_t) _RenderState._BinCount))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
@@ -669,23 +669,23 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     /** Hann
         const double x = (double) i / (double) (frameCount - 1);
 
-        Samples[i] = 0.5 * (1. + (audio_sample) std::cos(x * M_PI));
+        Samples[i] = 0.5 * (1. + (audio_sample) std::cos(x * std::numbers::pi));
     **/
     /** Hamming
-        const double x = 2.0 * M_PI * (double) i / (double) (frameCount - 1);
+        const double x = 2. * std::numbers::pi * (double) i / (double) (frameCount - 1);
 
         Samples[i] = 0.54 - 0.46 * (audio_sample) std::cos(x);
     **/
     /** Bartlett
         Samples[i] = 1. - (double) i / (double) (frameCount - 1);
      **/
-        const double Frequency = 440.0;
+        const double Frequency = 2'300.0;
 
         const double t = (double) i / (double) sampleRate;
 
-        Samples[i] = (audio_sample) std::sin(2.0 * M_PI * Frequency * t);
+        Samples[i] = (audio_sample) std::sin(2. * std::numbers::pi * Frequency * t);
     }
-    
+ 
     chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);
     
     delete[] Samples;

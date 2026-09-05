@@ -42,7 +42,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
             SamplingPeriod = std::pow(2., std::trunc(std::log2(SamplingPeriod)));
 
         const double KTerm = fb.Mid * SamplingPeriod;                // Frequency of interest
-        const double Omega = 2. * M_PI * KTerm / (double) _SampleRate;  // ω
+        const double Omega = 2. * std::numbers::pi * KTerm / (double) _SampleRate;  // ω
         const double Coeff = 2. * std::cos(Omega);
 
         double BandSampleCount = TimeLength * (double) _SampleRate * _ChannelCount;
@@ -130,7 +130,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Because the signal is effectively sampled every samplingPeriod frames, the effective sample rate is Fs / samplingPeriod.
-        const double Omega = 2. * M_PI * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = 2. * std::numbers::pi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);
@@ -271,7 +271,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Effective sample rate is Fs / SamplingPeriod.
-        const double Omega = 2. * M_PI * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = 2. * std::numbers::pi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);

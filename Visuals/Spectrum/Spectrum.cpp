@@ -384,10 +384,10 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
-//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * std::numbers::pi);
+//  FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * std::numbers::pi);
 
-    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+    const FLOAT da = (FLOAT)(2. * std::numbers::pi) / (FLOAT) _Analysis->_FrequencyBands.size();
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -620,19 +620,25 @@ void spectrum_t::RenderDebug(ID2D1DeviceContext * deviceContext) const noexcept
 
     _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
 
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     deviceContext->DrawRectangle(r, _DebugBrush);
 
     // Render the window function.
     _DebugBrush->SetColor(D2D1::ColorF(0.0f, 1.0f, 0.0f));
 
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
     const FLOAT y1 = _ClientRect.bottom;
     const FLOAT y2 = _ClientRect.top + 1.f;
+
+    constexpr double dx = 0.05;
 
     double y = _Analysis->_WindowFunction->operator()(-1.);
 
     auto p1 = D2D1_POINT_2F(_ClientRect.left, msc::Map(y, 0., 1., y1, y2));
 
-    for (double x = -.95; x < 1.; x += .05)
+    for (double x = -1. + dx; x < 1.; x += dx)
     {
         y = _Analysis->_WindowFunction->operator()(x);
 
@@ -1139,10 +1145,10 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
 
     const FLOAT MaxHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod(M_PI_2 + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * M_PI);
-//  FLOAT a = (FLOAT) ::fmod(M_PI_2 + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * M_PI);
+    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * std::numbers::pi);
+//  FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * std::numbers::pi);
 
-    const FLOAT da = (FLOAT)(2. * M_PI) / (FLOAT) _Analysis->_FrequencyBands.size();
+    const FLOAT da = (FLOAT)(2. * std::numbers::pi) / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Create all the knots.
     for (const auto & fb: _Analysis->_FrequencyBands)

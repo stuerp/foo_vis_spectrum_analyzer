@@ -237,6 +237,8 @@ HRESULT CColorButton::CreatePatternBrush(ID2D1RenderTarget * renderTarget) noexc
 
     if (SUCCEEDED(hr))
     {
+        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
         CComPtr<ID2D1SolidColorBrush> Brush;
 
         hr = rt->CreateSolidColorBrush(D2D1::ColorF(1.f, 1.f, 1.f, 1.f), &Brush);

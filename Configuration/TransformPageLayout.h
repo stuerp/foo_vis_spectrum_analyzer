@@ -19,7 +19,7 @@
     #define Y_A62    Y_B05 + 11
 
     // Combobox
-    #define W_A63    82
+    #define W_A63    100
     #define H_A63    H_CBX
     #define X_A63    X_A62 + W_A62 + IX
     #define Y_A63    Y_A62
@@ -34,7 +34,7 @@
     #define Y_C01    Y_A63 + H_A63 + IY
 
     // Combobox: Window function
-    #define W_C02    82
+    #define W_C02    100
     #define H_C02    H_CBX
     #define X_C02    X_C01 + W_C01 + IX
     #define Y_C02    Y_C01

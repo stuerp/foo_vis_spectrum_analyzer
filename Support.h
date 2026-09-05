@@ -147,5 +147,5 @@ inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t 
 /// </summary>
 inline double Degrees2Radians(double degrees) noexcept
 {
-    return (degrees * 2 * M_PI) / 360.;
+    return (degrees * 2. * std::numbers::pi) / 360.;
 }

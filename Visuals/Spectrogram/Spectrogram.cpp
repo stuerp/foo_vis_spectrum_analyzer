@@ -598,6 +598,8 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
     renderTarget->BeginDraw();
 
+    renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
     if (_State->_IsHorizontalSpectrogram)
     {
         const auto Bands = (_BitmapSize.height < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) _BitmapSize.height) : _Analysis->_FrequencyBands;
@@ -1066,6 +1068,7 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
     renderTarget->Clear(); // Transparent
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+    renderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
 //  renderTarget->DrawRectangle(_LegendRect, _DebugBrush, 1.f, nullptr);
 
@@ -1093,11 +1096,7 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
             r2.top    = y - _FreqTextStyle._Height / 2.f;
             r2.bottom = r2.top + _FreqTextStyle._Height;
 
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
             renderTarget->DrawLine({ r2.left, y }, { r2.left + TickSize, y }, _FreqTextStyle._Brush);
-
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
@@ -1126,11 +1125,7 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
             r2.left  = x - _FreqTextStyle._Width / 2.f;
             r2.right = r2.left + _FreqTextStyle._Width;
 
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
             renderTarget->DrawLine({ x, r2.top}, { x, r2.top + TickSize }, _FreqTextStyle._Brush);
-
-            renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }

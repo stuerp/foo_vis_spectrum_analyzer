@@ -23,7 +23,7 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
     const double Constant1 = 4. * _State->_IIRBandwidth / (double) _SampleRate;
     const double Constant2 = 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
 
-    const double a = M_PI * 2. / (double) _SampleRate;
+    const double a = std::numbers::pi * 2. / (double) _SampleRate;
 
     _Coefs.clear();
 

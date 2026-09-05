@@ -71,7 +71,7 @@ private:
         if (std::abs(x) >= a)
             return 0.;
 
-        const double PiX = M_PI * x;
+        const double PiX = std::numbers::pi * x;
 
         return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
     }

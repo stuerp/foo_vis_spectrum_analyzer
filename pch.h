@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2026.02.18) P. Stuer **/
+/** $VER: pch.h (2026.09.05) P. Stuer **/
 
 #pragma once
 
@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cmath>
 #include <memory>
+#include <numbers>
 #include <ranges>
 #include <string>
 

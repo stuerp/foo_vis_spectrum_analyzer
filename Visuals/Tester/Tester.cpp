@@ -108,7 +108,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->DrawLine(p1, p2, _DebugBrush);
 
-    _Angle = msc::Wrap(_Angle - (FLOAT) (M_PI / 180.), 359.f);
+    _Angle = msc::Wrap(_Angle - (FLOAT) (std::numbers::pi / 180.), 359.f);
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 

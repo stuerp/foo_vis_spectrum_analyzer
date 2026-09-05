@@ -591,7 +591,7 @@ double fft_analyzer_t::Interpolate(const std::vector<std::complex<double>> & fft
         const int Index = Base + i;
 
         // Distance from the interpolation point.
-        const double d = (index - Index) * M_PI;
+        const double d = (index - Index) * std::numbers::pi;
 
         // Lanczos-a kernel.
         double Weight = sinc(d) * sinc(d / kernelSize);
