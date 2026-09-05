@@ -574,9 +574,15 @@ void analysis_t::GenerateLinearFrequencyBands()
 
     for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo  = DeScaleF(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Mid = DeScaleF(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DeScaleF(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo  = DescaleFrequency(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Mid = DescaleFrequency(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi  = DescaleFrequency(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+
+        if (fb.Mid <= fb.Lo)
+            fb.Mid = fb.Lo + 1.;
+
+        if (fb.Hi <= fb.Mid)
+            fb.Hi = fb.Mid + 1.;
 
         ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
@@ -593,7 +599,7 @@ static int FrequencyToNote(double frequency) noexcept
 {
     constexpr int A4 = 69;
 
-    return A4 + (int) ::round(12. * ::log2(frequency / 440.));
+    return A4 + (int) std::round(12. * std::log2(frequency / 440.));
 }
 
 /// <summary>
@@ -603,7 +609,7 @@ static double NoteToFrequency(int note) noexcept
 {
     constexpr int A4 = 69;
 
-    return 440. * ::pow(2., (note - A4) / 12.);
+    return 440. * std::pow(2., (note - A4) / 12.);
 }
 
 /// <summary>
@@ -611,15 +617,15 @@ static double NoteToFrequency(int note) noexcept
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
-    const double Root24 = ::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
+    const double Root24 = std::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
-    const double TuningNote  = (_State->_TuningPitch > 0.) ? ::round(12.* (::log2(_State->_TuningPitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
-    const double C0Frequency =  _State->_TuningPitch * ::pow(Root24, -TuningNote);                                          // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
+    const double TuningNote  = (_State->_TuningPitch > 0.) ? std::round(12.* (::log2(_State->_TuningPitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
+    const double C0Frequency =  _State->_TuningPitch * std::pow(Root24, -TuningNote);                                          // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
-    const double LoIndex = ::round(_State->_LoNote * 2. / NoteGroup);
-    const double HiIndex = ::round(_State->_HiNote * 2. / NoteGroup);
+    const double LoIndex = std::round(_State->_LoNote * 2. / NoteGroup);
+    const double HiIndex = std::round(_State->_HiNote * 2. / NoteGroup);
 
     const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
@@ -631,10 +637,16 @@ void analysis_t::GenerateOctaveFrequencyBands()
     {
         frequency_band_t fb = 
         {
-            C0Frequency * ::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
-            C0Frequency * ::pow(Root24,  i              * NoteGroup + _State->_Transpose),
-            C0Frequency * ::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * std::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * std::pow(Root24,  i              * NoteGroup + _State->_Transpose),
+            C0Frequency * std::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
+
+        if (fb.Mid <= fb.Lo)
+            fb.Mid = fb.Lo + 1.;
+
+        if (fb.Hi <= fb.Mid)
+            fb.Hi = fb.Mid + 1.;
 
         double f = NoteToFrequency(FrequencyToNote(fb.Mid));
 
@@ -676,6 +688,12 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
         fb.Mid = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
         fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
 
+        if (fb.Mid <= fb.Lo)
+            fb.Mid = fb.Lo + 1.;
+
+        if (fb.Hi <= fb.Mid)
+            fb.Hi = fb.Mid + 1.;
+
         fb.HasDarkBackground = true;
         ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
@@ -710,8 +728,8 @@ void analysis_t::GenerateMelFrequencyBands()
     {
         assert(_State->_LoFrequency < _State->_HiFrequency);
 
-        const double LoMel  = HzToMel(_State->_LoFrequency);
-        const double HiMel  = HzToMel(_State->_HiFrequency);
+        const double LoMel   = HzToMel(_State->_LoFrequency);
+        const double HiMel   = HzToMel(_State->_HiFrequency);
         const double MelStep = (HiMel - LoMel) / (double) (_State->_MelBandCount + 1);
 
         double Mel = LoMel;
@@ -733,6 +751,12 @@ void analysis_t::GenerateMelFrequencyBands()
         fb.Lo  = Frequencies[i];
         fb.Mid = Frequencies[i + 1];
         fb.Hi  = Frequencies[i + 2];
+
+        if (fb.Mid <= fb.Lo)
+            fb.Mid = fb.Lo + 1.;
+
+        if (fb.Hi <= fb.Mid)
+            fb.Hi = fb.Mid + 1.;
 
         ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Mid), _GraphOptions->_XAxisDecimals, fb.Mid);
 
@@ -774,7 +798,7 @@ double analysis_t::GetWeight(double x) const noexcept
 /// </summary>
 static inline double GetFrequencyTilt(double x, double amount, double offset) noexcept
 {
-    return ::pow(x / offset, amount / 6.);
+    return std::pow(x / offset, amount / 6.);
 }
 
 /// <summary>
@@ -783,9 +807,9 @@ static inline double GetFrequencyTilt(double x, double amount, double offset) no
 static inline double Equalize(double x, double amount, double depth, double offset) noexcept
 {
     const double pos = x * depth / offset;
-    const double bias = ::pow(1.0025, -pos) * 0.04;
+    const double bias = std::pow(1.0025, -pos) * 0.04;
 
-    return ::pow((10. * ::log10(1. + bias + (pos + 1.) * (9. - bias) / depth)), amount / 6.);
+    return std::pow((10. * std::log10(1. + bias + (pos + 1.) * (9. - bias) / depth)), amount / 6.);
 }
 
 /// <summary>
@@ -803,23 +827,23 @@ static inline double GetAcousticWeight(double x, WeightingType weightType, doubl
             return 1.;
 
         case WeightingType::AWeighting:
-            return ::pow(1.2588966          * 148'840'000. * (f2 * f2)    / ((f2 + 424.36) * ::sqrt((f2 + 11'599.29) * (f2 + 544'496.41)) * (f2 + 148'840'000.)), weightAmount);
+            return std::pow(1.2588966          * 148'840'000. * (f2 * f2)    / ((f2 + 424.36) * std::sqrt((f2 + 11'599.29) * (f2 + 544'496.41)) * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::BWeighting:
-            return ::pow(1.019764760044717  * 148'840'000. * ::pow(x, 3.) / ((f2 + 424.36) * ::sqrt( f2 + 25'122.25)                      * (f2 + 148'840'000.)), weightAmount);
+            return std::pow(1.019764760044717  * 148'840'000. * std::pow(x, 3.) / ((f2 + 424.36) * std::sqrt( f2 + 25'122.25)                      * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::CWeighting:
-            return ::pow(1.0069316688518042 * 148'840'000. * f2           / ((f2 + 424.36)                                                * (f2 + 148'840'000.)), weightAmount);
+            return std::pow(1.0069316688518042 * 148'840'000. * f2           / ((f2 + 424.36)                                                * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::DWeighting:
-            return ::pow(x / 6.8966888496476e-5 * ::sqrt(((1'037'918.48 - f2) * (1'037'918.48 - f2) + 1'080'768.16 * f2) / ((9'837'328. - f2) * (9'837'328. - f2) + 11'723'776. * f2) / ((f2 + 79'919.29) * (f2 + 1'345'600.))), weightAmount);
+            return std::pow(x / 6.8966888496476e-5 * std::sqrt(((1'037'918.48 - f2) * (1'037'918.48 - f2) + 1'080'768.16 * f2) / ((9'837'328. - f2) * (9'837'328. - f2) + 11'723'776. * f2) / ((f2 + 79'919.29) * (f2 + 1'345'600.))), weightAmount);
 
         case WeightingType::MWeighting:
         {
-            const double h1 = -4.737338981378384e-24 * ::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)    - 1.363894795463638e-7 * f2 + 1;
-            const double h2 =  1.306612257412824e-19 * ::pow( x, 5.) - 2.118150887518656e-11 * ::pow(x, 3.) + 5.559488023498642e-4 * x;
+            const double h1 = -4.737338981378384e-24 * std::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)    - 1.363894795463638e-7 * f2 + 1;
+            const double h2 =  1.306612257412824e-19 * std::pow( x, 5.) - 2.118150887518656e-11 * std::pow(x, 3.) + 5.559488023498642e-4 * x;
 
-            return ::pow(8.128305161640991 * 1.246332637532143e-4 * x / ::hypot(h1, h2), weightAmount);
+            return std::pow(8.128305161640991 * 1.246332637532143e-4 * x / std::hypot(h1, h2), weightAmount);
         }
     }
 }
@@ -852,7 +876,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
 void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.Value = std::clamp(std::max(fb.Value * factor, ::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) : 0.), 0., 1.);
+        fb.Value = std::clamp(std::max(fb.Value * factor, std::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) : 0.), 0., 1.);
 }
 
 #pragma endregion

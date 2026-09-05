@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2026.03.01) P. Stuer **/
+/** $VER: Support.h (2026.09.05) P. Stuer **/
 
 #pragma once
 
@@ -19,7 +19,7 @@ HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::s
 /// </summary>
 inline static double ToDecibel(const double magnitude) noexcept
 {
-    return 20.0 * ::log10(magnitude);
+    return 20. * std::log10(magnitude);
 }
 
 /// <summary>
@@ -27,7 +27,7 @@ inline static double ToDecibel(const double magnitude) noexcept
 /// </summary>
 inline static double ToMagnitude(const double dB) noexcept
 {
-    return ::pow(10.0, dB / 20.0);
+    return std::pow(10., dB / 20.);
 }
 
 /// <summary>
@@ -35,7 +35,7 @@ inline static double ToMagnitude(const double dB) noexcept
 /// </summary>
 inline static FLOAT ToDIPs(const FLOAT points) noexcept
 {
-    return (points / 72.0f) * (FLOAT) USER_DEFAULT_SCREEN_DPI; // FIXME: Should 96.0 change on high DPI screens?
+    return (points / 72.f) * (FLOAT) USER_DEFAULT_SCREEN_DPI; // FIXME: Should 96.0 change on high DPI screens?
 }
 
 /// <summary>
@@ -51,44 +51,44 @@ inline double ScaleFrequency(const double f, const ScalingFunction function, con
             return f;
 
         case ScalingFunction::Logarithmic:
-            return ::log2(f);
+            return std::log2(f);
 
         case ScalingFunction::ShiftedLogarithmic:
-            return ::log2(::pow(10, skewFactor * 4.0) + f);
+            return std::log2(std::pow(10, skewFactor * 4.) + f);
 
         case ScalingFunction::Mel:
-            return ::log2(1.0 + f / 700.0);
+            return std::log2(1. + f / 700.);
 
         case ScalingFunction::Bark: // "Critical bands"
-            return (26.81 * f) / (1960.0 + f) - 0.53;
+            return (26.81 * f) / (1960. + f) - 0.53;
 
         case ScalingFunction::AdjustableBark:
-            return (26.81 * f) / (::pow(10, skewFactor * 4.0) + f);
+            return (26.81 * f) / (std::pow(10, skewFactor * 4.) + f);
 
         case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
-            return ::log2(1.0 + 0.00437 * f);
+            return std::log2(1. + 0.00437 * f);
 
         case ScalingFunction::Cams:
-            return ::log2((f / 1000.0 + 0.312) / (f / 1000.0 + 14.675));
+            return std::log2((f / 1000. + 0.312) / (f / 1000. + 14.675));
 
         case ScalingFunction::HyperbolicSine:
-            return ::asinh(f / ::pow(10, skewFactor * 4));
+            return std::asinh(f / std::pow(10, skewFactor * 4));
 
         case ScalingFunction::NthRoot:
-            return ::pow(f, (1.0 / (11.0 - skewFactor * 10.0)));
+            return std::pow(f, (1. / (11. - skewFactor * 10.)));
 
         case ScalingFunction::NegativeExponential:
-            return -::exp2(-f / ::exp2(7 + skewFactor * 8));
+            return -std::exp2(-f / std::exp2(7. + skewFactor * 8.));
 
         case ScalingFunction::Period:
-            return 1.0 / f;
+            return 1. / f;
     }
 }
 
 /// <summary>
 /// Calculates the frequency from the specified scale factor.
 /// </summary>
-inline double DeScaleF(const double x, const ScalingFunction function, const double skewFactor) noexcept
+inline double DescaleFrequency(const double x, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {
@@ -98,37 +98,37 @@ inline double DeScaleF(const double x, const ScalingFunction function, const dou
             return x;
 
         case ScalingFunction::Logarithmic:
-            return ::exp2(x);
+            return std::exp2(x);
 
         case ScalingFunction::ShiftedLogarithmic:
-            return ::exp2(x) - ::pow(10.0, skewFactor * 4.0);
+            return std::exp2(x) - std::pow(10., skewFactor * 4.);
 
         case ScalingFunction::Mel:
-            return 700.0 * (::exp2(x) - 1.0);
+            return 700. * (std::exp2(x) - 1.);
 
         case ScalingFunction::Bark: // "Critical bands"
-            return 1960.0 / (26.81 / (x + 0.53) - 1.0);
+            return 1960. / (26.81 / (x + 0.53) - 1.);
 
         case ScalingFunction::AdjustableBark:
-            return ::pow(10.0, (skewFactor * 4.0)) / (26.81 / x - 1.0);
+            return std::pow(10., (skewFactor * 4.)) / (26.81 / x - 1.);
 
         case ScalingFunction::ERB: // Equivalent Rectangular Bandwidth
-            return (1 / 0.00437) * (::exp2(x) - 1);
+            return (1. / 0.00437) * (std::exp2(x) - 1.);
 
         case ScalingFunction::Cams:
-            return (14.675 * ::exp2(x) - 0.312) / (1.0 - ::exp2(x)) * 1000.0;
+            return (14.675 * std::exp2(x) - 0.312) / (1. - std::exp2(x)) * 1000.;
 
         case ScalingFunction::HyperbolicSine:
-            return ::sinh(x) * ::pow(10.0, skewFactor * 4);
+            return std::sinh(x) * std::pow(10., skewFactor * 4.);
 
         case ScalingFunction::NthRoot:
-            return ::pow(x, ((11.0 - skewFactor * 10.0)));
+            return std::pow(x, ((11. - skewFactor * 10.)));
 
         case ScalingFunction::NegativeExponential:
-            return -::log2(-x) * ::exp2(7.0 + skewFactor * 8.0);
+            return -std::log2(-x) * std::exp2(7. + skewFactor * 8.);
 
         case ScalingFunction::Period:
-            return 1.0 / x;
+            return 1. / x;
     }
 }
 
@@ -137,9 +137,9 @@ inline double DeScaleF(const double x, const ScalingFunction function, const dou
 /// </summary>
 inline double LogSpace(double minFreq, double maxFreq, double bandIndex, size_t maxBands, double skewFactor) noexcept
 {
-    const double CenterFreq = minFreq * ::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
+    const double CenterFreq = minFreq * std::pow((maxFreq / minFreq), (bandIndex / (double) maxBands));
 
-    return CenterFreq * (1 - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
+    return CenterFreq * (1. - skewFactor) + (minFreq + ((maxFreq - minFreq) * bandIndex * (1. / (double) maxBands))) * skewFactor;
 }
 
 /// <summary>
