@@ -107,7 +107,6 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (_IsLast && _NyquistMarkerStyle.IsEnabled())
                 RenderNyquistFrequencyMarker(deviceContext);
-
             break;
         }
 
@@ -146,6 +145,10 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     }
 
     ResetTransform(deviceContext);
+
+#ifdef _DEBUG
+    RenderDebug(deviceContext);
+#endif
 }
 
 /// <summary>
@@ -588,7 +591,7 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
 
     // Use the full width of the graph?
     if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
-        t = ::floor(t);
+        t = std::floor(t);
 
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
     const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis->_FrequencyBands.size() : _ClientSize.width;
@@ -600,6 +603,51 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
+}
+
+/// <summary>
+/// Renders debug information.
+/// </summary>
+void spectrum_t::RenderDebug(ID2D1DeviceContext * deviceContext) const noexcept
+{
+    if (_Analysis->_WindowFunction == nullptr)
+        return;
+
+    // Render the client rectangle.
+    auto r = _ClientRect;
+
+    r.top++;
+
+    _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
+
+    deviceContext->DrawRectangle(r, _DebugBrush);
+
+    // Render the window function.
+    _DebugBrush->SetColor(D2D1::ColorF(0.0f, 1.0f, 0.0f));
+
+    const FLOAT y1 = _ClientRect.bottom;
+    const FLOAT y2 = _ClientRect.top + 1.f;
+
+    double y = _Analysis->_WindowFunction->operator()(-1.);
+
+    auto p1 = D2D1_POINT_2F(_ClientRect.left, msc::Map(y, 0., 1., y1, y2));
+
+    for (double x = -.95; x < 1.; x += .05)
+    {
+        y = _Analysis->_WindowFunction->operator()(x);
+
+        auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
+
+        deviceContext->DrawLine(p1, p2, _DebugBrush);
+
+        p1 = p2;
+    }
+
+    y = _Analysis->_WindowFunction->operator()(1.);
+
+    auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
+
+    deviceContext->DrawLine(p1, p2, _DebugBrush);
 }
 
 /// <summary>
@@ -624,6 +672,11 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         return hr;
 
     Resize();
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+#endif
 
     #pragma warning(disable: 4062)
     switch (_State->_VisualizationType)
@@ -918,6 +971,7 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _NyquistMarkerStyle.DeleteDeviceSpecificResources();
 
     _OpacityMask.Release();
+    _DebugBrush.Release();
 }
 
 /// <summary>

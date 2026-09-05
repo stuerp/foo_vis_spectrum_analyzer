@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.01) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.05) P. Stuer **/
 
 #include "pch.h"
 
@@ -19,6 +19,10 @@ static inline double GetAcousticWeight(double x, WeightingType weightingType, do
 /// </summary>
 void analysis_t::Initialize(const state_t * state, const graph_options_t * graphOptions) noexcept
 {
+#ifdef _DEBUG
+    TestWindowFunctions();
+#endif
+
     _State = state;
     _GraphOptions = graphOptions;
 
@@ -207,6 +211,9 @@ void analysis_t::ResetRMSDependentValues() noexcept
 /// </summary>
 void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 {
+    if ((_State == nullptr) || (_GraphOptions == nullptr))
+        return;
+
     const double Elapsed = _Chrono.Elapsed();
     const double AmplitudeRange = _GraphOptions->_AmplitudeHi - _GraphOptions->_AmplitudeLo;
 

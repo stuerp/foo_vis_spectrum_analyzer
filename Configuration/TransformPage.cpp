@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.09.01) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.09.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -14,8 +14,10 @@ static const WCHAR * WindowFunctionNames[] =
     L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
     L"Bartlett (Triangular)", L"Parzen",
     L"Welch", L"Power-of-sine", L"Power-of-circle",
-    L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
-    L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
+    L"Gaussian", L"Tukey", L"Kaiser", L"Poisson",
+    L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss",
+    L"Lanczos",
+    L"Blackman-Harris (4 terms)",
 };
 
 /// <summary>
@@ -251,7 +253,7 @@ void transform_page_t::UpdateControls() noexcept
                          || (_State->_WindowFunction == WindowFunction::Gaussian)
                          || (_State->_WindowFunction == WindowFunction::Tukey)
                          || (_State->_WindowFunction == WindowFunction::Kaiser)
-                         || (_State->_WindowFunction == WindowFunction::Poison)
+                         || (_State->_WindowFunction == WindowFunction::Poisson)
                          || (_State->_WindowFunction == WindowFunction::HyperbolicSecant);
 
         GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);

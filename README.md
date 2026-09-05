@@ -98,7 +98,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.12.0.0-alpha4, 2026-09-xx
 
-- 
+- New: Lanczos and 4-term Blackman-Harris window function.
+  - The latter produces very clean peaks with minimal leakage from strong tones into neighboring bins.
+- Changed: Made the CPU/GPU use optimization logic less invasive when the visualization is hidden or minimized to react more predictable to track changes and the end of a playlist.
 
 You can read the full history [here](docs/History.md).
 

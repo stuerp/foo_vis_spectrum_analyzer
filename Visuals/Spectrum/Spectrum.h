@@ -64,6 +64,8 @@ private:
 
     void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
 
+    void RenderDebug(ID2D1DeviceContext * deviceContext) const noexcept;
+
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
     struct geometry_points_t
@@ -89,8 +91,8 @@ private:
     HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
-    const FLOAT PaddingX = 0.f;
-    const FLOAT PaddingY = 0.f;
+    static constexpr FLOAT PaddingX = 0.f;
+    static constexpr FLOAT PaddingY = 0.f;
 
     D2D1_RECT_F _ClientRect;
     D2D1_SIZE_F _ClientSize;
@@ -103,6 +105,7 @@ private:
     chrono_t _Chrono;
 
     // Device-dependent resources
+    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
     CComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _BarAreaStyle;

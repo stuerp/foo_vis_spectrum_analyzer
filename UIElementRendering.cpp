@@ -73,52 +73,47 @@ void uielement_t::RenderThreadProc() noexcept
             }
         }
 
-        if (!(_IsFrozen || !_IsVisible))
+        bool HaveArtworkColorsChanged = false;
+
+        if (_CriticalSection.TryEnter())
         {
-            if (!::IsIconic(_hParent))
+            ProcessEvents();
+
+            if (!(!IsWindowVisible() || ::IsIconic(_hParent) || _IsFrozen))
             {
-                bool HaveArtworkColorsChanged = false;
+                _FrameCounter.NewFrame();
 
-                if (_CriticalSection.TryEnter())
-                {
-                    ProcessEvents();
+                ProcessAudio();
 
-                    if (IsWindowVisible())
-                    {
-                        _FrameCounter.NewFrame();
-
-                        ProcessAudio();
-
-                        Render();
-                    }
-
-                    if (_IsConfigurationChanged)
-                    {
-                        _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
-                        _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
-
-                        _IsConfigurationChanged = false;
-
-                        HaveArtworkColorsChanged = true;
-                    }
-
-                    _CriticalSection.Leave();
-                }
-
-                // Notify the configuration dialog about the changed artwork colors.
-                if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
-                {
-                    _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-                //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
-
-                    HaveArtworkColorsChanged = false;
-                }
+                Render();
             }
 
-            // Continue to animate the peak values unless the parent window is minized.
-            Animate(Chrono.Now());
+            if (_IsConfigurationChanged)
+            {
+                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+                _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
+
+                _IsConfigurationChanged = false;
+
+                HaveArtworkColorsChanged = true;
+            }
+
+            _CriticalSection.Leave();
         }
+
+        // Notify the configuration dialog about the changed artwork colors.
+        if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
+        {
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
+
+        //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+
+            HaveArtworkColorsChanged = false;
+        }
+
+        // Continue to animate the peak values unless the parent window is minized.
+        if (!_IsFrozen)
+            Animate(Chrono.Now());
 
         // Determine the presentation time of the next frame.
         {
