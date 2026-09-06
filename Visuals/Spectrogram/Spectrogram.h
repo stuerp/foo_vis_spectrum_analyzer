@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.09.04) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.09.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -93,9 +93,9 @@ private:
     double _LoFrequency;
     double _HiFrequency;
 
-    struct TimeLabel
+    struct time_label_t
     {
-        TimeLabel(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
+        time_label_t(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
         {
             Text = text;
             X = x;
@@ -107,11 +107,11 @@ private:
         FLOAT Y;
     };
 
-    std::deque<TimeLabel> _TimeLabels;
+    std::deque<time_label_t> _TimeLabels;
 
-    struct FreqLabel
+    struct freq_label_t
     {
-        FreqLabel(const WCHAR * text, double frequency, bool isDimmed = false)
+        freq_label_t(const WCHAR * text, double frequency, bool isDimmed = false)
         {
             Text = text;
             Frequency = frequency;
@@ -125,9 +125,11 @@ private:
 
         D2D1_RECT_F Rect1;
         D2D1_RECT_F Rect2;
+
+        FLOAT Tick;
     };
 
-    std::vector<FreqLabel> _FreqLabels;
+    std::vector<freq_label_t> _FreqLabels;
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
@@ -149,8 +151,6 @@ private:
     style_t _FreqTextStyle;
 
     style_t _NyquistMarkerStyle;
-
-    static constexpr FLOAT Offset       =  4.f; // Distance between the tick and the text.
 
     static constexpr FLOAT GradientSize = 24.f;
     static constexpr FLOAT TickSize     =  4.f;

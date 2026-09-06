@@ -97,10 +97,42 @@
 #define W_B16  170
 #define H_B16   11 + H_G34 + IY + H_G26 + 7
 
+/** Axes Groupbox **/
+
+#define X_B09   X_B16
+#define Y_B09   Y_B16 + H_B16 + IY
+
+    // Checkbox: Left
+    #define W_G17    36
+    #define H_G17    H_CHB
+    #define X_G17    X_B09 + 5
+    #define Y_G17    Y_B09 + 11
+
+    // Checkbox: Right
+    #define W_G18    36
+    #define H_G18    H_CHB
+    #define X_G18    X_G17 + W_G17 + IX
+    #define Y_G18    Y_G17
+
+    // Checkbox: Top
+    #define W_G15    36
+    #define H_G15    H_CHB
+    #define X_G15    X_G18 + W_G18 + IX
+    #define Y_G15    Y_G18
+
+    // Checkbox: Bottom
+    #define W_G16    36
+    #define H_G16    H_CHB
+    #define X_G16    X_G15 + W_G15 + IX
+    #define Y_G16    Y_G15
+
+#define W_B09  170
+#define H_B09   11 + H_G17 + 7
+
 /** X axis Groupbox **/
 
-#define X_B02   X_B16
-#define Y_B02   Y_B16 + H_B16 + IY
+#define X_B02   X_B09
+#define Y_B02   Y_B09 + H_B09 + IY
 
     // Label: Mode
     #define W_A05    66
@@ -114,23 +146,11 @@
     #define X_A06    X_A05 + W_A05 + IX
     #define Y_A06    Y_A05
 
-    // Checkbox: Top
-    #define W_G15    39
-    #define H_G15    H_CHB
-    #define X_G15    X_A06
-    #define Y_G15    Y_A06 + H_A06 + IY
-
-    // Checkbox: Bottom
-    #define W_G16    39
-    #define H_G16    H_CHB
-    #define X_G16    X_G15 + W_G15 + IX
-    #define Y_G16    Y_G15
-
     // Label
     #define W_A51    66
     #define H_A51    H_LBL
     #define X_A51    X_A05
-    #define Y_A51    Y_G15 + H_G15 + IY
+    #define Y_A51    Y_A06 + H_A06 + IY
 
     // Textbox: Decimals
     #define W_A52    20
@@ -139,7 +159,7 @@
     #define Y_A52    Y_A51
 
 #define W_B02  170
-#define H_B02   11 + H_A06 + IY + H_G15 + IY + H_A52 + 7
+#define H_B02   11 + H_A06 + IY + H_A52 + 7
 
 /** Y axis Groupbox **/
 
@@ -158,25 +178,13 @@
     #define X_A08    X_A07 + W_A07 + IX
     #define Y_A08    Y_A07
 
-    // Checkbox: Left
-    #define W_G17    39
-    #define H_G17    H_CHB
-    #define X_G17    X_A08
-    #define Y_G17    Y_A08 + H_A08 + IY
-
-    // Checkbox: Right
-    #define W_G18    39
-    #define H_G18    H_CHB
-    #define X_G18    X_G17 + W_G17 + IX
-    #define Y_G18    Y_G17
-
     /** Amplitude range: [Lo] - [Hi] dB **/
 
     // Label
     #define W_A45    54
     #define H_A45    H_LBL
     #define X_A45    X_A07
-    #define Y_A45    Y_G17 + H_G17 + IY
+    #define Y_A45    Y_A08 + H_A08 + IY
 
     // Textbox (Lo)
     #define W_A46    40
@@ -245,7 +253,7 @@
     #define Y_A42    Y_A41
 
 #define W_B03   170
-#define H_B03   11 + H_A08 + IY + H_G17 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
+#define H_B03   11 + H_A08 + IY + H_A85 + IY + H_A46 + IY + H_A50 + IY + H_A42 + 7
 
 // Label: Channels
 #define W_G28    46

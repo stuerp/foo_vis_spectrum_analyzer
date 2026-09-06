@@ -540,12 +540,11 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
 /*
 {
-    static size_t i = 0;
-
     for (auto & fb : _FrequencyBands)
         fb.Value = 0.;
 
-    _FrequencyBands[i++].Value = 1.;
+    _FrequencyBands.front().Value = .5;
+    _FrequencyBands.back() .Value = .5;
 }
 */
 }
@@ -853,20 +852,20 @@ static inline double GetAcousticWeight(double x, WeightingType weightType, doubl
             return 1.;
 
         case WeightingType::AWeighting:
-            return std::pow(1.2588966          * 148'840'000. * (f2 * f2)    / ((f2 + 424.36) * std::sqrt((f2 + 11'599.29) * (f2 + 544'496.41)) * (f2 + 148'840'000.)), weightAmount);
+            return std::pow(1.2588966          * 148'840'000. * (f2 * f2)       / ((f2 + 424.36) * std::sqrt((f2 + 11'599.29) * (f2 + 544'496.41)) * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::BWeighting:
             return std::pow(1.019764760044717  * 148'840'000. * std::pow(x, 3.) / ((f2 + 424.36) * std::sqrt( f2 + 25'122.25)                      * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::CWeighting:
-            return std::pow(1.0069316688518042 * 148'840'000. * f2           / ((f2 + 424.36)                                                * (f2 + 148'840'000.)), weightAmount);
+            return std::pow(1.0069316688518042 * 148'840'000. * f2              / ((f2 + 424.36)                                                   * (f2 + 148'840'000.)), weightAmount);
 
         case WeightingType::DWeighting:
             return std::pow(x / 6.8966888496476e-5 * std::sqrt(((1'037'918.48 - f2) * (1'037'918.48 - f2) + 1'080'768.16 * f2) / ((9'837'328. - f2) * (9'837'328. - f2) + 11'723'776. * f2) / ((f2 + 79'919.29) * (f2 + 1'345'600.))), weightAmount);
 
         case WeightingType::MWeighting:
         {
-            const double h1 = -4.737338981378384e-24 * std::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)    - 1.363894795463638e-7 * f2 + 1;
+            const double h1 = -4.737338981378384e-24 * std::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)       - 1.363894795463638e-7 * f2 + 1;
             const double h2 =  1.306612257412824e-19 * std::pow( x, 5.) - 2.118150887518656e-11 * std::pow(x, 3.) + 5.559488023498642e-4 * x;
 
             return std::pow(8.128305161640991 * 1.246332637532143e-4 * x / std::hypot(h1, h2), weightAmount);

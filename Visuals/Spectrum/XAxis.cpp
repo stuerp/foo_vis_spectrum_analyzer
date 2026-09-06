@@ -91,8 +91,8 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
 
             case XAxisMode::Octaves:
             {
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.);   // Frequency of C0
+                double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -103,18 +103,18 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
                     _Labels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
                 }
                 break;
             }
 
             case XAxisMode::Notes:
             {
-                static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
-                static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
+                static constexpr const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
+                static constexpr const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
-                double Note = -57.;                                             // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.);   // Frequency of C0
+                double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 int j = 0;
 
@@ -132,7 +132,7 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
                     _Labels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
@@ -162,7 +162,7 @@ void x_axis_t::Resize(bool force) noexcept
 
     // Use the full width of the graph?
     if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
-        t = ::floor(t);
+        t = std::floor(t);
 
     // Calculate the position of the labels.
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP

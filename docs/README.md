@@ -918,13 +918,13 @@ Flips the current graph horizontally. Any axes will be rendered accordingly.
 
 Flips the current graph vertically. Any axes will be rendered accordingly.
 
-#### X-axis group
+#### Frequency axis group
 
 Groups the parameters that determine the way the X-axis is displayed.
 
 `Mode`
 
-Determines which X-axis to display.
+Determines which frequency axis to display.
 
 - None: Hides the X-axis (reserve no screen area for it).
 - Bands: Center frequency of a band, every 10 bands.
@@ -934,35 +934,35 @@ Determines which X-axis to display.
 
 `Top`
 
-Displays an X-axis on top of the graph.
+Displays an axis on top of the graph.
 
 `Bottom`
 
-Displays an X-axis at the bottom of the graph.
+Displays an axis at the bottom of the graph.
 
 `Decimals`
 
-Determines the number of decimals to show in the X-axis labels. Valid values are 0 to 3.
+Determines the number of decimals to show in the axis labels. Valid values are 0 to 3.
 
-#### Y-axis group
+#### Amplitude axis group
 
-Groups the parameters that determine the way the Y-axis is displayed.
+Groups the parameters that determine the way the amplitude axis is displayed.
 
 `Mode`
 
-Determines which Y-axis to display.
+Determines which amplitude axis to display.
 
-- None: Hides the Y-axis (reserve no screen area for it).
+- None: Hides the axis (reserve no screen area for it).
 - Decibel: Uses decibel values to render the scale.
 - Linear/n-th root: Uses logarithmic values to render the scale.
 
 `Left`
 
-Displays an Y-axis on the left of the graph.
+Displays an axis on the left of the graph.
 
 `Right`
 
-Displays an Y-axis on the bottom of the graph.
+Displays an axis on the bottom of the graph.
 
 `Amplitude range`
 
@@ -979,6 +979,8 @@ Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled.
 `Gamma`
 
 Sets index n of the n-th root calculation.
+
+#### Channels group
 
 `Channels`
 

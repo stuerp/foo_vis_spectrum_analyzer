@@ -10,7 +10,7 @@
 /// <summary>
 /// Calculates the scale factor from the specified frequency.
 /// </summary>
-inline double ScaleFrequency(const double f, const ScalingFunction function, const double skewFactor) noexcept
+[[nodiscard]] inline double ScaleFrequency(const double f, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {
@@ -57,7 +57,7 @@ inline double ScaleFrequency(const double f, const ScalingFunction function, con
 /// <summary>
 /// Calculates the frequency from the specified scale factor.
 /// </summary>
-inline double DescaleFrequency(const double x, const ScalingFunction function, const double skewFactor) noexcept
+[[nodiscard]] inline double DescaleFrequency(const double x, const ScalingFunction function, const double skewFactor) noexcept
 {
     switch (function)
     {

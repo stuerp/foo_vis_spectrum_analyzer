@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.05) P. Stuer **/
+/** $VER: Resources.h (2026.09.06) P. Stuer **/
 
 #pragma once
 
@@ -342,8 +342,6 @@
 
 #pragma region X axis
 
-#define IDC_X_AXIS                      4000
-
 #define IDC_X_AXIS_MODE                 4004
 
 #define IDC_X_AXIS_TOP                  4006
@@ -355,29 +353,21 @@
 
 #pragma region Y axis
 
-#define IDC_Y_AXIS                      5000
-
 #define IDC_Y_AXIS_MODE                 5004
 
 #define IDC_Y_AXIS_LEFT                 5006
 #define IDC_Y_AXIS_RIGHT                5008
 
-#define IDC_AMPLITUDE_LBL_1             5010
 #define IDC_AMPLITUDE_LO                5012
 #define IDC_AMPLITUDE_LO_SPIN           5014
-#define IDC_AMPLITUDE_LBL_2             5016
 #define IDC_AMPLITUDE_HI                5018
 #define IDC_AMPLITUDE_HI_SPIN           5020
-#define IDC_AMPLITUDE_LBL_3             5022
 
-#define IDC_AMPLITUDE_STEP_LBL        5030
 #define IDC_AMPLITUDE_STEP              5032
 #define IDC_AMPLITUDE_STEP_SPIN         5034
-#define IDC_AMPLITUDE_STEP_UNIT        5036
 
 #define IDC_USE_ABSOLUTE                5040
 
-#define IDC_GAMMA_LBL                   5050
 #define IDC_GAMMA                       5052
 
 #pragma endregion

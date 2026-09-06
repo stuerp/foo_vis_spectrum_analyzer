@@ -100,30 +100,30 @@ void spectrogram_t::Resize() noexcept
 
         if (_State->_IsHorizontalSpectrogram)
         {
-            if (_GraphOptions->_XAxisTop)
-                _BitmapRect.top += _TimeTextStyle._Height;
-
-            if (_GraphOptions->_XAxisBottom)
-                _BitmapRect.bottom -= _TimeTextStyle._Height;
-
             if (_GraphOptions->_YAxisLeft)
                 _BitmapRect.left += _FreqTextStyle._Width;
 
             if (_GraphOptions->_YAxisRight)
                 _BitmapRect.right -= _FreqTextStyle._Width;
+
+            if (_GraphOptions->_XAxisTop)
+                _BitmapRect.top += _TimeTextStyle._Height;
+
+            if (_GraphOptions->_XAxisBottom)
+                _BitmapRect.bottom -= _TimeTextStyle._Height;
         }
         else
         {
-            if (_GraphOptions->_XAxisTop)
-                _BitmapRect.right -= _TimeTextStyle._Width;
-
-            if (_GraphOptions->_XAxisBottom)
+            if (_GraphOptions->_YAxisLeft)
                 _BitmapRect.left += _TimeTextStyle._Width;
 
-            if (_GraphOptions->_YAxisLeft)
+            if (_GraphOptions->_YAxisRight)
+                _BitmapRect.right -= _TimeTextStyle._Width;
+
+            if (_GraphOptions->_XAxisTop)
                 _BitmapRect.top += _FreqTextStyle._Height;
 
-            if (_GraphOptions->_YAxisRight)
+            if (_GraphOptions->_XAxisBottom)
                 _BitmapRect.bottom -= _FreqTextStyle._Height;
         }
 
@@ -161,7 +161,7 @@ void spectrogram_t::Resize() noexcept
             {
                 const double Scale = ScaleFrequency(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor);
 
-                const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+                const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height - 1.f);
 
                 if (!_GraphOptions->_FlipVertically)
                 {
@@ -174,24 +174,28 @@ void spectrogram_t::Resize() noexcept
                     Rect.y2 = Rect.y1 + _FreqTextStyle._Height;
                 }
 
+                // Left axis
                 Label.Rect1 = Rect;
 
                 Label.Rect1.left  = 0.f;
-                Label.Rect1.right = _FreqTextStyle._Width - Offset;
+                Label.Rect1.right = _FreqTextStyle._Width - (TickSize + 1.f);
   
+                // Right axis
                 Label.Rect2 = Rect;
 
-                Label.Rect2.left  = _BitmapRect.right + Offset;
+                Label.Rect2.left  = _BitmapRect.right + TickSize + 1.f;
                 Label.Rect2.right = Label.Rect2.left + _FreqTextStyle._Width;
 
                 Label.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
+
+                Label.Tick = (Label.Rect1.bottom + Label.Rect1.top) / 2.f;
             }
 
             if (_FreqLabels.size() > 2)
             {
                 #define NotesMode (_GraphOptions->_XAxisMode == XAxisMode::Notes)
 
-                const FreqLabel * Anchor = &_FreqLabels[0];
+                const freq_label_t * Anchor = &_FreqLabels[0];
 
                 // Determine which labels should be hidden.
                 for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
@@ -215,6 +219,11 @@ void spectrogram_t::Resize() noexcept
 
                     Anchor = &_FreqLabels[i];
                 }
+
+                // Hide the next to last label if it overlaps with the last one.
+                const size_t i = _FreqLabels.size() - 1;
+
+                _FreqLabels[i - 1].IsHidden = IsOverlappingVertically(_FreqLabels[i - 1].Rect1, _FreqLabels[i].Rect1);
             }
         }
         else
@@ -249,11 +258,13 @@ void spectrogram_t::Resize() noexcept
                     }
                 }
 
+                // Top axis
                 Label.Rect1 = Rect;
 
                 Label.Rect1.top    = 0.f;
                 Label.Rect1.bottom = _FreqTextStyle._Height;
 
+                // Bottom axis
                 Label.Rect2 = Rect;
 
                 Label.Rect2.bottom = _BitmapRect.bottom;
@@ -266,7 +277,7 @@ void spectrogram_t::Resize() noexcept
             {
                 #define NotesMode (_GraphOptions->_XAxisMode == XAxisMode::Notes)
 
-                const FreqLabel * Anchor = &_FreqLabels[0];
+                const freq_label_t * Anchor = &_FreqLabels[0];
 
                 // Determine which labels should be hidden.
                 for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
@@ -313,9 +324,9 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    // Draw the offscreen bitmap.
     if (_State->_IsHorizontalSpectrogram)
     {
+        // Draw the offscreen bitmap.
         if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
             SetTransform(deviceContext, _BitmapRect);
@@ -338,9 +349,9 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
             else
             {
-                D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+                const auto r = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-                deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                deviceContext->DrawBitmap(_Bitmap, &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
             }
 
             ResetTransform(deviceContext);
@@ -353,30 +364,40 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.top }, { _BitmapRect.right - 1.f, _BitmapRect.top }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
             }
 
             if (_GraphOptions->_XAxisBottom)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
-    
-                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right - 1.f, _BitmapRect.bottom + 1.f }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
             }
         }
 
         // Draw the Frequency axis.
-        if (!_FreqLabels.empty())
         {
             if (_GraphOptions->_YAxisLeft)
-                RenderFreqAxis(deviceContext, true);
+            {
+                if (!_FreqLabels.empty())
+                    RenderFreqAxis(deviceContext, true);
+
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+            }
 
             if (_GraphOptions->_YAxisRight)
-                RenderFreqAxis(deviceContext, false);
+            {
+                if (!_FreqLabels.empty())
+                    RenderFreqAxis(deviceContext, false);
+
+                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+            }
         }
     }
     else
     {
+        // Draw the offscreen bitmap.
         if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
         {
             SetTransform(deviceContext, _BitmapRect);
@@ -400,9 +421,9 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             }
             else
             {
-                D2D1_RECT_F Rect = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
+                const D2D1_RECT_F r = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-                deviceContext->DrawBitmap(_Bitmap, &Rect, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                deviceContext->DrawBitmap(_Bitmap, &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
             }
 
             ResetTransform(deviceContext);
@@ -410,35 +431,39 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         // Draw the Time axis.
         {
-            if (_GraphOptions->_XAxisTop)
+            if (_GraphOptions->_YAxisLeft)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
             }
 
-            if (_GraphOptions->_XAxisBottom)
+            if (_GraphOptions->_YAxisRight)
             {
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
     
-                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.right + 1.f, _BitmapRect.top }, { _BitmapRect.right + 1.f, _BitmapRect.bottom }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
             }
         }
 
         // Draw the Frequency axis.
         {
-            if (_GraphOptions->_YAxisLeft)
+            if (_GraphOptions->_XAxisTop)
             {
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, true);
+
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.right,  _BitmapRect.top }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
             }
 
-            if (_GraphOptions->_YAxisRight)
+            if (_GraphOptions->_XAxisBottom)
             {
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, false);
+
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right, _BitmapRect.bottom + 1.f }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
             }
         }
     }
@@ -505,12 +530,12 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
 
             if (!_GraphOptions->_FlipHorizontally)
             {
-                Rect.x1 = x + Offset;
+                Rect.x1 = x + TickSize;
                 Rect.x2 = Rect.x1 + _TimeTextStyle._Width;
             }
             else
             {
-                Rect.x2 = x - Offset;
+                Rect.x2 = x - TickSize;
                 Rect.x1 = Rect.x2 - _TimeTextStyle._Width;
             }
 
@@ -567,29 +592,37 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
     const FLOAT Opacity = _FreqTextStyle._Brush->GetOpacity();
 
     if (_State->_IsHorizontalSpectrogram)
-        _FreqTextStyle.SetHorizontalAlignment(left? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
+        _FreqTextStyle.SetHorizontalAlignment(left ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
     else
         _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
-    for (const auto & Iter : _FreqLabels)
+    for (const auto & Label : _FreqLabels)
     {
-        if (Iter.IsHidden)
+        if (Label.IsHidden)
             continue;
 
-        _FreqTextStyle._Brush->SetOpacity(Iter.IsMinor ? Opacity * .5f : Opacity);
+        _FreqTextStyle._Brush->SetOpacity(Label.IsMinor ? Opacity / 2.f : Opacity);
 
         if (left)
-            deviceContext->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _FreqTextStyle._TextFormat, Iter.Rect1, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        {
+            const auto & r = Label.Rect1;
+
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat, r, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            deviceContext->DrawLine({ r.right + 1.f, Label.Tick }, { r.right + 1.f + TickSize, Label.Tick }, _FreqLineStyle._Brush);
+        }
         else
-            deviceContext->DrawTextW(Iter.Text.c_str(), (UINT32) Iter.Text.size(), _FreqTextStyle._TextFormat, Iter.Rect2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        {
+            const auto & r = Label.Rect2;
+
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat, Label.Rect2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            deviceContext->DrawLine({ r.left - 2.f - TickSize, Label.Tick }, { r.left - 2.f, Label.Tick }, _FreqLineStyle._Brush);
+        }
     }
 
-    if (left)
-        deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.top },    { _BitmapRect.right, _BitmapRect.top },    _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
-    else
-        deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom }, { _BitmapRect.right, _BitmapRect.bottom }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
-
     _FreqTextStyle._Brush->SetOpacity(Opacity);
+
 }
 
 /// <summary>
@@ -757,6 +790,21 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
 }
 
 /// <summary>
+/// Formats the text of a frequency label.
+/// </summary>
+static const WCHAR * FormatLabel(double frequency) noexcept
+{
+    static WCHAR Text[32] = { };
+
+    if (frequency < 1000.)
+        ::StringCchPrintfW(Text, _countof(Text), L"%.f", frequency);
+    else
+        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", frequency / 1000.);
+
+    return Text;
+}
+
+/// <summary>
 /// Initializes the Y-axis.
 /// </summary>
 void spectrogram_t::InitFreqAxis() noexcept
@@ -786,63 +834,58 @@ void spectrogram_t::InitFreqAxis() noexcept
             {
                 for (size_t i = 0; i < fb.size(); i += 10)
                 {
-                    double Frequency = fb[i].Mid;
-
-                    if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.f", Frequency);
-                    else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
-
-                    FreqLabel lb = { Text, Frequency };
+                    freq_label_t lb = { FormatLabel(fb[i].Mid), fb[i].Mid };
 
                     _FreqLabels.push_back(lb);
                 }
+
+                // Make sure the last label shows the highest frequency.
+                _FreqLabels.back() = { FormatLabel(fb.back().Mid), fb.back().Mid };
                 break;
             }
 
             case XAxisMode::Decades:
             {
                 double Frequency = 0.;
+
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < fb.back().Lo)
+                while (Frequency < fb.back().Mid)
                 {
                     Frequency = j * i;
 
-                    if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.f", Frequency);
-                    else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.1fk", Frequency / 1000.);
-
-                    FreqLabel lb = { Text, Frequency };
+                    freq_label_t lb = { FormatLabel(Frequency), Frequency };
 
                     _FreqLabels.push_back(lb);
 
                     if (++i == 10)
                     {
-                        i = 1;
+                        i  = 1;
                         j *= 10;
                     }
                 }
+
+                // Make sure the last label shows the highest frequency.
+                _FreqLabels.back() = { FormatLabel(fb.back().Mid), fb.back().Mid };
                 break;
             }
 
             case XAxisMode::Octaves:
             {
-                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
+                double Note      = -57.;                                            // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
-                for (int i = 0; Frequency < fb.back().Lo; ++i)
+                for (int i = 0; Frequency < fb.back().Mid; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    FreqLabel lb = { Text, Frequency };
+                    freq_label_t lb = { Text, Frequency };
 
                     _FreqLabels.push_back(lb);
 
-                    Note += 12.;
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Note     += 12.;
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
                 }
                 break;
             }
@@ -852,28 +895,31 @@ void spectrogram_t::InitFreqAxis() noexcept
                 static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
-                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
+                double Note      = -57.;                                            // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
-                int j = 0;
+                int i = 0;
 
-                while (Frequency < fb.back().Lo)
+                while (Frequency < fb.back().Mid)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 
-                    if (j == 0)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[j], Octave);
+                    if (i == 0)
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c%d", Name[i], Octave);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[i]);
 
-                    FreqLabel lb = { Text, Frequency, j != 0 };
+                    freq_label_t lb = { Text, Frequency, i != 0 };
 
                     _FreqLabels.push_back(lb);
 
-                    Note += Step[j];
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Note     += Step[i];
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
 
-                    if (j < 6) j++; else j = 0;
+                    if (i < 6)
+                        i++;
+                    else
+                        i = 0;
                 }
                 break;
             }

@@ -3,23 +3,13 @@
 
 #include "pch.h"
 
+#ifdef _DEBUG
+
+#include "Analyzers/FrequencyScaler.h"
 #include "Analyzers/WindowFunctions.h"
 #include "Log.h"
 
-#ifdef _DEBUG
-
-static void TestWindowFunctions();
-
-void RunTests()
-{
-    Log.Write("Running tests...");
-
-    TestWindowFunctions();
-
-    Log.Write("Finished running tests.");
-}
-
-void TestWindowFunctions()
+static void TestWindowFunctions()
 {
 //  constexpr double Epsilon = 1.0e-12;
     constexpr double Epsilon = std::numeric_limits<double>::epsilon();
@@ -398,6 +388,89 @@ void TestWindowFunctions()
 
         assert(std::abs(w(1.5) - Expected) < Epsilon);
     }
+}
+
+static void TestFrequencyScaler()
+{
+    constexpr double Epsilon = 1.0e-5;
+
+    for (double f = MinFrequency; f <= MaxFrequency; f += 10.)
+    {
+        double Scale = ScaleFrequency(f, ScalingFunction::Linear, 0.);
+        double Frequency = DescaleFrequency(Scale, ScalingFunction::Linear, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::Logarithmic, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::Logarithmic, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::ShiftedLogarithmic, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::ShiftedLogarithmic, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::Mel, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::Mel, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::Bark, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::Bark, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::AdjustableBark, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::AdjustableBark, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::ERB, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::ERB, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::Cams, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::Cams, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::HyperbolicSine, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::HyperbolicSine, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::NthRoot, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::NthRoot, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::NegativeExponential, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::NegativeExponential, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+
+        Scale = ScaleFrequency(f, ScalingFunction::Period, 0.);
+        Frequency = DescaleFrequency(Scale, ScalingFunction::Period, 0.);
+
+        assert(std::abs(Frequency - f) <= Epsilon);
+    }
+}
+
+void RunTests()
+{
+    Log.Write("Running tests...");
+
+    Log.Write("Testing frequency scalers...");
+
+    TestFrequencyScaler();
+
+    Log.Write("Testing window functions...");
+
+    TestWindowFunctions();
+
+    Log.Write("Finished running tests.");
 }
 
 #endif

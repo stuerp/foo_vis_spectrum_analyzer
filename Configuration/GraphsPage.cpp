@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.08.27) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.09.06) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -7,7 +7,7 @@
 #include "Constants.h"
 
 // Display names for the audio_chunk channel bits.
-static const WCHAR * const ChannelNames[] =
+static constexpr const WCHAR * const ChannelNames[] =
 {
     L"Front Left", L"Front Right",
     L"Front Center",
@@ -28,7 +28,7 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    static const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char * const> Tips =
     {
         { IDC_GRAPH_SETTINGS, "Shows the list of graphs." },
 
@@ -46,19 +46,20 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_FLIP_HORIZONTALLY, "Renders the visualization from right to left." },
         { IDC_FLIP_VERTICALLY, "Renders the visualization upside down." },
 
-        // X-axis
-        { IDC_X_AXIS_MODE, "Determines the type of X-axis." },
-        { IDC_X_AXIS_TOP, "Enables or disables an X-axis above the visualization." },
-        { IDC_X_AXIS_BOTTOM, "Enables or disables an X-axis below the visualization." },
-        { IDC_X_AXIS_DECIMALS, "Determines the number of decimals used by X-axis labels." },
+        { IDC_Y_AXIS_LEFT, "Enables or disables an axis left of the visualization." },
+        { IDC_Y_AXIS_RIGHT, "Enables or disables an axis right of the visualization." },
+        { IDC_X_AXIS_TOP, "Enables or disables an axis above the visualization." },
+        { IDC_X_AXIS_BOTTOM, "Enables or disables an axis below the visualization." },
 
-        // Y-axis
-        { IDC_Y_AXIS_MODE, "Determines the type of Y-axis." },
-        { IDC_Y_AXIS_LEFT, "Enables or disables an Y-axis left of the visualization." },
-        { IDC_Y_AXIS_RIGHT, "Enables or disables an Y-axis right of the visualization." },
+        // Frequency axis
+        { IDC_X_AXIS_MODE, "Determines the type of frequency axis." },
+        { IDC_X_AXIS_DECIMALS, "Determines the number of decimals used by the frequency labels." },
 
-        { IDC_AMPLITUDE_LO, "Sets the lowest amplitude to display on the Y-axis." },
-        { IDC_AMPLITUDE_HI, "Sets the highest amplitude to display on the Y-axis." },
+        // Amplitude axis
+        { IDC_Y_AXIS_MODE, "Determines the type of amY-axis." },
+
+        { IDC_AMPLITUDE_LO, "Sets the lowest amplitude to display." },
+        { IDC_AMPLITUDE_HI, "Sets the highest amplitude to display." },
         { IDC_AMPLITUDE_STEP, "Sets the amplitude increment." },
 
         { IDC_USE_ABSOLUTE, "Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled." },
@@ -217,6 +218,7 @@ void graphs_page_t::InitializeControls() noexcept
 /// </summary>
 void graphs_page_t::UpdateControls() noexcept
 {
+    const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
@@ -306,18 +308,26 @@ void graphs_page_t::UpdateControls() noexcept
             GetDlgItem(ID).EnableWindow(SupportsLayout);
     }
 
-    // X axis
     {
-        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) Options._XAxisMode);
+        CheckDlgButton(IDC_Y_AXIS_LEFT,   Options._YAxisLeft);
+        CheckDlgButton(IDC_Y_AXIS_RIGHT,  Options._YAxisRight);
 
         CheckDlgButton(IDC_X_AXIS_TOP,    Options._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, Options._XAxisBottom);
 
+        GetDlgItem(IDC_Y_AXIS_LEFT)  .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY)));
+        GetDlgItem(IDC_Y_AXIS_RIGHT) .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter)));
+
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter)));
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope)));
+    }
+
+    // X axis
+    {
+        ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) Options._XAxisMode);
+
         // Enable / Disable the required controls.
         GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
-
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter));
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope));
 
         SetInteger(IDC_X_AXIS_DECIMALS, Options._XAxisDecimals);
     }
@@ -325,9 +335,6 @@ void graphs_page_t::UpdateControls() noexcept
     // Y axis
     {
         ((CComboBox) GetDlgItem(IDC_Y_AXIS_MODE)).SetCurSel((int) Options._YAxisMode);
-
-        CheckDlgButton(IDC_Y_AXIS_LEFT,  Options._YAxisLeft);
-        CheckDlgButton(IDC_Y_AXIS_RIGHT, Options._YAxisRight);
 
         SetDouble(IDC_AMPLITUDE_LO, Options._AmplitudeLo, 0, 1);
         CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN)).SetPos32((int) (Options._AmplitudeLo * 10.));
@@ -343,9 +350,6 @@ void graphs_page_t::UpdateControls() noexcept
 
         // Enable / Disable the required controls.
         GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
-
-        GetDlgItem(IDC_Y_AXIS_LEFT) .EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY));
-        GetDlgItem(IDC_Y_AXIS_RIGHT).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
 
         for (const auto & Iter : { IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
             GetDlgItem(Iter).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
