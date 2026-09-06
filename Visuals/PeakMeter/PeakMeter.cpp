@@ -464,12 +464,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-    {
-        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
     if (_RenderedChannels != _Analysis->_PeakMeasuredChannels)

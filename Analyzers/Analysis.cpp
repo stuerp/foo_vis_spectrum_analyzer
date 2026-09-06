@@ -100,6 +100,8 @@ void analysis_t::Reset() noexcept
     {
         ResetPeakMeasurements();
         ResetRMSDependentValues();
+
+        InitializePeakMeasurements((uint32_t) Channels::ConfigStereo);
     }
 
     // Balance/Correlation Meter
@@ -1031,7 +1033,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
     if (_PeakMeasuredChannels != measuredChannels)
     {
         // The chunk configuration has changed. Recreate the measurements.
-        static const WCHAR * ChannelNames[] =
+        static constexpr const WCHAR * const ChannelNames[] =
         {
             L"FL", L"FR", L"FC",
             L"LFE",

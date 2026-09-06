@@ -491,7 +491,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
     #ifdef _DEBUG
         if (_DebugBrush == nullptr)
-            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+            (void) _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
     #endif
     }
 

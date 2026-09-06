@@ -329,7 +329,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
     return hr;
