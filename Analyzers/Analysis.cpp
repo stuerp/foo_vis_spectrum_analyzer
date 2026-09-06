@@ -1,10 +1,11 @@
 
-/** $VER: Analysis.cpp (2026.09.05) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.06) P. Stuer **/
 
 #include "pch.h"
 
 #include "Analysis.h"
 #include "Downmixer.h"
+#include "FrequencyScaler.h"
 
 #include "Support.h"
 
@@ -19,10 +20,6 @@ static inline double GetAcousticWeight(double x, WeightingType weightingType, do
 /// </summary>
 void analysis_t::Initialize(const state_t * state, const graph_options_t * graphOptions) noexcept
 {
-#ifdef _DEBUG
-    TestWindowFunctions();
-#endif
-
     _State = state;
     _GraphOptions = graphOptions;
 
@@ -546,12 +543,9 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     static size_t i = 0;
 
     for (auto & fb : _FrequencyBands)
-        fb.Value = .0;
+        fb.Value = 0.;
 
     _FrequencyBands[i++].Value = 1.;
-
-    if (i == _FrequencyBands.size())
-        i = 0;
 }
 */
 }
@@ -563,6 +557,8 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 /// </summary>
 void analysis_t::GenerateLinearFrequencyBands()
 {
+    assert(_State->_BandCount != 0);
+
     const double MinScale = ScaleFrequency(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
     const double MaxScale = ScaleFrequency(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
@@ -572,17 +568,22 @@ void analysis_t::GenerateLinearFrequencyBands()
 
     double i = 0.;
 
+    const double MaxIndex = (double) (_State->_BandCount - 1);
+
     for (frequency_band_t & fb: _FrequencyBands)
     {
-        fb.Lo  = DescaleFrequency(msc::Map(i - Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Mid = DescaleFrequency(msc::Map(i,             0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DescaleFrequency(msc::Map(i + Bandwidth, 0., (double)(_State->_BandCount - 1), MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
+        const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        if (fb.Mid <= fb.Lo)
-            fb.Mid = fb.Lo + 1.;
+        fb.Lo  = DescaleFrequency(msc::Map(LoIndex, 0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Mid = DescaleFrequency(msc::Map(i,       0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Hi  = DescaleFrequency(msc::Map(HiIndex, 0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
 
-        if (fb.Hi <= fb.Mid)
-            fb.Hi = fb.Mid + 1.;
+        assert(std::isfinite(fb.Lo));
+        assert(std::isfinite(fb.Mid));
+        assert(std::isfinite(fb.Hi));
+
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
 
         ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
@@ -595,7 +596,7 @@ void analysis_t::GenerateLinearFrequencyBands()
 /// <summary>
 /// Returns the MIDI note nearest to the specified frequency.
 /// </summary>
-static int FrequencyToNote(double frequency) noexcept
+static inline int FrequencyToNote(double frequency) noexcept
 {
     constexpr int A4 = 69;
 
@@ -605,7 +606,7 @@ static int FrequencyToNote(double frequency) noexcept
 /// <summary>
 /// Returns the frequency of the specified MIDI note.
 /// </summary>
-static double NoteToFrequency(int note) noexcept
+static inline double NoteToFrequency(int note) noexcept
 {
     constexpr int A4 = 69;
 
@@ -617,21 +618,27 @@ static double NoteToFrequency(int note) noexcept
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
+    assert(_State->_TuningPitch > 0.); assert(_State->_BandsPerOctave != 0);
+
     const double Root24 = std::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
-    const double TuningNote  = (_State->_TuningPitch > 0.) ? std::round(12.* (::log2(_State->_TuningPitch) - 4.)) * 2. : 0.;   // Nearest MIDI note of the tuning frequency.
-    const double C0Frequency =  _State->_TuningPitch * std::pow(Root24, -TuningNote);                                          // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
+    constexpr double C0 = 16.35; // Hz
+
+    const double TuningOffset = (_State->_TuningPitch > 0.) ? std::round(12.* std::log2(_State->_TuningPitch / C0)) * 2. : 0.;  // Number of quarter-tone steps between C0 and the nearest equal-tempered semitone corresponding to the tuning frequency.
+    const double C0Frequency  =  _State->_TuningPitch * std::pow(Root24, -TuningOffset);                                        // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
     const double NoteGroup = 24. / _State->_BandsPerOctave;
 
     const double LoIndex = std::round(_State->_LoNote * 2. / NoteGroup);
     const double HiIndex = std::round(_State->_HiNote * 2. / NoteGroup);
 
+    assert(LoIndex <= HiIndex);
+
     const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
-    _FrequencyBands.clear();
+    _FrequencyBands.reserve((size_t) (HiIndex - LoIndex + 1.));
 
-    static const WCHAR * NoteNames[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
+    static constexpr const WCHAR * NoteNames[] = { L"C", L"C#", L"D", L"D#", L"E", L"F", L"F#", L"G", L"G#", L"A", L"A#", L"B" };
 
     for (double i = LoIndex; i <= HiIndex; ++i)
     {
@@ -642,13 +649,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             C0Frequency * std::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
         };
 
-        if (fb.Mid <= fb.Lo)
-            fb.Mid = fb.Lo + 1.;
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
 
-        if (fb.Hi <= fb.Mid)
-            fb.Hi = fb.Mid + 1.;
-
-        double f = NoteToFrequency(FrequencyToNote(fb.Mid));
+        const double f = NoteToFrequency(FrequencyToNote(fb.Mid));
 
         // Pre-calculate the tooltip text and the band background color.
         {
@@ -670,32 +673,55 @@ void analysis_t::GenerateOctaveFrequencyBands()
 }
 
 /// <summary>
+/// Calculates a frequency value for a given band index between minFreq and maxFreq.
+/// The skew factor determines the interpolation between the logarithmic and linear scale.
+/// skewFactor = 0.0: Pure logarithmic spacing
+/// skewFactor = 1.0: Pure linear spacing
+/// skewFactor = 0.5: 50% mix of both
+/// </summary>
+static inline double CalcBlendedLogLinearFrequency(double minFreq, double maxFreq, double bandIndex, double maxBandIndex, double skewFactor) noexcept
+{
+    assert(minFreq > 0.); assert(maxFreq > 0.); assert(bandIndex <= maxBandIndex); assert(maxBandIndex != 0); assert(0. <= skewFactor && skewFactor <= 1.);
+
+    // Calculate the frequency on a logarithmic scale. Good for audio frequencies and human perception.
+    const double f1 = minFreq * std::pow((maxFreq / minFreq), (bandIndex / maxBandIndex));
+
+    // Calculate the frequency on a linear scale. Even numerical distance between frequencies.
+    const double f2 = minFreq + ((maxFreq - minFreq) * (bandIndex / maxBandIndex));
+
+    // Blend the two results using interpolation.
+    return (f1 * (1. - skewFactor)) + (f2 * skewFactor);
+}
+
+/// <summary>
 /// Generates frequency bands like AveePlayer.
 /// </summary>
 void analysis_t::GenerateAveePlayerFrequencyBands()
 {
+    assert(_State->_BandCount > 1); assert(0. <= _State->_Bandwidth && _State->_Bandwidth <= 64.);
+
     const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State->_BandCount);
 
-    const size_t n = _State->_BandCount - 1;
+    const double MaxIndex = (double) (_State->_BandCount - 1);
 
     double i = 0.;
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        fb.Lo  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i - Bandwidth, n, _State->_SkewFactor);
-        fb.Mid = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i,             n, _State->_SkewFactor);
-        fb.Hi  = LogSpace(_State->_LoFrequency, _State->_HiFrequency, i + Bandwidth, n, _State->_SkewFactor);
+        const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
+        const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        if (fb.Mid <= fb.Lo)
-            fb.Mid = fb.Lo + 1.;
+        fb.Lo  = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, LoIndex, MaxIndex, _State->_SkewFactor);
+        fb.Mid = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, i,       MaxIndex, _State->_SkewFactor);
+        fb.Hi  = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, HiIndex, MaxIndex, _State->_SkewFactor);
 
-        if (fb.Hi <= fb.Mid)
-            fb.Hi = fb.Mid + 1.;
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
         fb.HasDarkBackground = true;
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
 
         ++i;
     }

@@ -1,13 +1,13 @@
 
-/** $VER: Spectrogram.cpp (2026.09.04) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.cpp (2026.09.06) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
 #include "Spectrogram.h"
-#include "Support.h"
 
 #include "Direct2D.h"
 #include "DirectWrite.h"
+#include "FrequencyScaler.h"
 
 #pragma hdrstop
 
@@ -157,9 +157,11 @@ void spectrogram_t::Resize() noexcept
         {
             const FLOAT y1 = (_GraphOptions->_XAxisTop ? _TimeTextStyle._Height : 0.f) - (_FreqTextStyle._Height / 2.f);
 
-            for (auto & Iter : _FreqLabels)
+            for (auto & Label : _FreqLabels)
             {
-                const FLOAT y = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.height);
+                const double Scale = ScaleFrequency(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor);
+
+                const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
                 if (!_GraphOptions->_FlipVertically)
                 {
@@ -172,17 +174,17 @@ void spectrogram_t::Resize() noexcept
                     Rect.y2 = Rect.y1 + _FreqTextStyle._Height;
                 }
 
-                Iter.Rect1 = Rect;
+                Label.Rect1 = Rect;
 
-                Iter.Rect1.left  = 0.f;
-                Iter.Rect1.right = _FreqTextStyle._Width - Offset;
+                Label.Rect1.left  = 0.f;
+                Label.Rect1.right = _FreqTextStyle._Width - Offset;
   
-                Iter.Rect2 = Rect;
+                Label.Rect2 = Rect;
 
-                Iter.Rect2.left  = _BitmapRect.right + Offset;
-                Iter.Rect2.right = Iter.Rect2.left + _FreqTextStyle._Width;
+                Label.Rect2.left  = _BitmapRect.right + Offset;
+                Label.Rect2.right = Label.Rect2.left + _FreqTextStyle._Width;
 
-                Iter.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
+                Label.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
             }
 
             if (_FreqLabels.size() > 2)
@@ -217,14 +219,16 @@ void spectrogram_t::Resize() noexcept
         }
         else
         {
-            for (auto & Iter : _FreqLabels)
+            for (auto & Label : _FreqLabels)
             {
-                const FLOAT x = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, _BitmapSize.width);
+                const double Scale = ScaleFrequency(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor);
+
+                const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
                 {
                     CComPtr<IDWriteTextLayout> TextLayout;
 
-                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _FreqTextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
+                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
 
                     if (SUCCEEDED(hr))
                     {
@@ -245,17 +249,17 @@ void spectrogram_t::Resize() noexcept
                     }
                 }
 
-                Iter.Rect1 = Rect;
+                Label.Rect1 = Rect;
 
-                Iter.Rect1.top    = 0.f;
-                Iter.Rect1.bottom = _FreqTextStyle._Height;
+                Label.Rect1.top    = 0.f;
+                Label.Rect1.bottom = _FreqTextStyle._Height;
 
-                Iter.Rect2 = Rect;
+                Label.Rect2 = Rect;
 
-                Iter.Rect2.bottom = _BitmapRect.bottom;
-                Iter.Rect2.top    = Iter.Rect2.bottom + _FreqTextStyle._Height;
+                Label.Rect2.bottom = _BitmapRect.bottom;
+                Label.Rect2.top    = Label.Rect2.bottom + _FreqTextStyle._Height;
 
-                Iter.IsHidden = (Rect.x2 < _BitmapRect.left) || (Rect.x1 > _BitmapRect.right);
+                Label.IsHidden = (Rect.x2 < _BitmapRect.left) || (Rect.x1 > _BitmapRect.right);
             }
 
             if (_FreqLabels.size() > 2)
@@ -731,22 +735,22 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
     if (_Analysis->_NyquistFrequency < std::numeric_limits<double>::epsilon())
         return;
 
-    // Calculate the x coordinate.
-    const double LoFrequency = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State->_ScalingFunction, _State->_SkewFactor);
-    const double HiFrequency = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State->_ScalingFunction, _State->_SkewFactor);
+    // Calculate the scale range.
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State->_ScalingFunction, _State->_SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
-    const double NyquistFrequency = ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor);
 
     if (_State->_IsHorizontalSpectrogram)
     {
-        const FLOAT y = msc::Map(NyquistFrequency, LoFrequency, HiFrequency, 0.f, _BitmapSize.height);
+        const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
         renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
     }
     else
     {
-        const FLOAT x = msc::Map(NyquistFrequency, LoFrequency, HiFrequency, 0.f, _BitmapSize.width);
+        const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
         renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
     }

@@ -236,6 +236,8 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
 
     for (frequency_band_t & fb : frequencyBands)
     {
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+
         // Calculate the band width (in Hz).
         const double Bandwidth = std::abs(fb.Hi - fb.Lo) + (FrequencyResolution * _State->_CQTBandwidthOffset);
 

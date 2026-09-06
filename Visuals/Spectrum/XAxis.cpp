@@ -1,13 +1,13 @@
 
-/** $VER: XAXis.cpp (2026.08.22) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.09.06) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
+
 #include "XAxis.h"
 
-#include "StyleManager.h"
 #include "DirectWrite.h"
-
-#include "Support.h"
+#include "FrequencyScaler.h"
+#include "StyleManager.h"
 
 #pragma hdrstop
 

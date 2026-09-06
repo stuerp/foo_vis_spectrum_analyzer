@@ -198,8 +198,8 @@ public:
         FrequencyDistribution _FrequencyDistribution;
 
         // Frequency / Mel bands
-        size_t _BandCount;                                              // Number of frequency bands, 2 .. 512
-        size_t _MelBandCount;                                           // Number of Mel bands, 
+        size_t _BandCount;                                              // Number of frequency bands, [2, 8192]
+        size_t _MelBandCount;                                           // Number of Mel bands, [24, 128]
 
         // Frequency range
         double _LoFrequency;                                            // Hz, [0, 96000]
@@ -214,8 +214,8 @@ public:
 
         ScalingFunction _ScalingFunction;
 
-        double _SkewFactor;                                             // Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum (in the case of Avee Player's frequency distribution, exactly linear when this parameter is 1), 0.0 .. 1.0
-        double _Bandwidth;                                              // Distance between low and high frequency boundaries for each band, More useful for constant-Q/variable-Q transforms and Mel/triangular filterbank energies (higher values smooths out the spectrum and reduces the visual noise) than bandpower mode that we have currently at the time, 0.0 .. 64.0
+        double _SkewFactor;                                             // [0, 1], Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum (in the case of Avee Player's frequency distribution, exactly linear when this parameter is 1)
+        double _Bandwidth;                                              // [0, 64], Distance between low and high frequency boundaries for each band, More useful for constant-Q/variable-Q transforms and Mel/triangular filterbank energies (higher values smooths out the spectrum and reduces the visual noise) than bandpower mode.
 
     #pragma endregion
 
@@ -223,16 +223,16 @@ public:
 
         WeightingType _WeightingType;
 
-        double _SlopeFunctionOffset;                                    // 0..8, Slope function offset expressed in sample rate / FFT size in samples.
+        double _SlopeFunctionOffset;                                    // [0, 8], Slope function offset expressed in sample rate / FFT size in samples.
 
-        double _Slope;                                                  // -12 .. 12, Frequency slope (dB per octave)
-        double _SlopeOffset;                                            // 0 .. 96000, Frequency slope offset (Hz = 0dB)
+        double _Slope;                                                  // [-12, 12], Frequency slope (dB per octave)
+        double _SlopeOffset;                                            // Hz, [0, 96000], Frequency slope offset (Hz = 0dB)
 
-        double _EqualizeAmount;                                         // -12 .. 12, Equalize amount
-        double _EqualizeOffset;                                         // 0 .. 96000, Equalize offset
-        double _EqualizeDepth;                                          // 0 .. 96000, Equalize depth
+        double _EqualizeAmount;                                         // [-12, 12], Equalize amount
+        double _EqualizeOffset;                                         // Hz, [0, 96000], Equalize offset
+        double _EqualizeDepth;                                          // Hz, [0, 96000], Equalize depth
 
-        double _WeightingAmount;                                        // -1 .. 1, Weighting amount
+        double _WeightingAmount;                                        // [-1, 1], Weighting amount
 
     #pragma endregion
 

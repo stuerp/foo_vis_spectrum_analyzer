@@ -15,6 +15,10 @@
 
 #pragma hdrstop
 
+#ifdef _DEBUG
+extern void RunTests();
+#endif
+
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
@@ -109,6 +113,10 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
     _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
     StartRenderer();
+
+#ifdef _DEBUG
+    RunTests();
+#endif
 
     return 0;
 }

@@ -27,6 +27,8 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 
     for (const frequency_band_t & fb : frequencyBands)
     {
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
         const double rad = std::numbers::pi * fb.Mid / (double) _SampleRate;
 

@@ -223,6 +223,7 @@
     <ClInclude Include="Analyzers\Analysis.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />
     <ClInclude Include="Analyzers\Downsampler.h" />
+    <ClInclude Include="Analyzers\FrequencyScaler.h" />
     <ClInclude Include="Analyzers\SWIFTAnalyzer.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
@@ -344,6 +345,7 @@
     <ClCompile Include="Configuration\CColorListBox.cpp" />
     <ClCompile Include="Configuration\CDirectXControl.cpp" />
     <ClCompile Include="Configuration\CMenuListBox.cpp" />
+    <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
     <ClCompile Include="Visuals\Gradients.cpp" />

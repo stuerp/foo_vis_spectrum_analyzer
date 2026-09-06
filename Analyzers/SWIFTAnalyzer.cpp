@@ -31,11 +31,13 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
     // Pre-calculate rX and rY here since sin and cos functions are pretty slow.
     for (const frequency_band_t & fb : frequencyBands)
     {
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+
         _Coefs.push_back(swift_coef_t
         (
-            ::cos(fb.Mid * a),
-            ::sin(fb.Mid * a),
-            ::exp(-::abs(fb.Hi - fb.Lo) * Constant1 - Constant2)
+            std::cos(fb.Mid * a),
+            std::sin(fb.Mid * a),
+            std::exp(-std::abs(fb.Hi - fb.Lo) * Constant1 - Constant2)
         ));
     }
 
