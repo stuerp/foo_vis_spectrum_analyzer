@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.02) P. Stuer **/
+/** $VER: State.cpp (2026.09.06) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -1402,65 +1402,72 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const auto & LEDs = Object.value("leds", json::object());
     {
         _LEDMode         = LEDs.value("enabled", _LEDMode);
-        _LEDLight        = LEDs.value("lightSize", _LEDLight);
-        _LEDGap          = LEDs.value("gapSize", _LEDGap);
+        _LEDLight        = std::clamp(LEDs.value("lightSize", _LEDLight), MinLEDSize, MaxLEDSize);
+        _LEDGap          = std::clamp(LEDs.value("gapSize",   _LEDGap),   MinLEDGap,  MaxLEDGap);
         _LEDIntegralSize = LEDs.value("integralSize", _LEDIntegralSize);
     }
 
     const auto & Radial = Object.value("radial", json::object());
-
-    _InnerRadius     = Radial.value("innerRadius", _InnerRadius);
-    _OuterRadius     = Radial.value("outerRadius", _OuterRadius);
-    _AngularVelocity = Radial.value("angularVelocity", _AngularVelocity);
+    {
+        _InnerRadius     = std::clamp(Radial.value("innerRadius",     _InnerRadius),     (FLOAT) MinInnerRadius,     (FLOAT) MaxInnerRadius);
+        _OuterRadius     = std::clamp(Radial.value("outerRadius",     _OuterRadius),     (FLOAT) MinOuterRadius,     (FLOAT) MaxOuterRadius);
+        _AngularVelocity = std::clamp(Radial.value("angularVelocity", _AngularVelocity), (FLOAT) MinAngularVelocity, (FLOAT) MaxAngularVelocity);
+    }
 
     const auto & Spectrogram = Object.value("spectrogram", json::object());
     {
         _IsScrollingSpectrogram  = Spectrogram.value("scrolling", _IsScrollingSpectrogram);
         _IsHorizontalSpectrogram = Spectrogram.value("horizontally", _IsHorizontalSpectrogram);
         _UseSpectrumBarMetrics   = Spectrogram.value("useBarMetrics", _UseSpectrumBarMetrics);
-        _SpectrogramLegend                  = Spectrogram.value("legend", _SpectrogramLegend);
+        _SpectrogramLegend       = Spectrogram.value("legend", _SpectrogramLegend);
     }
 
     const auto & PeakMeter = Object.value("peakMeter", json::object());
-
-    _RMSWindow             = PeakMeter.value("rmsWindow", _RMSWindow);
-    _IsHorizontalPeakMeter = PeakMeter.value("horizontally", _IsHorizontalPeakMeter);
-    _HasCenterScale        = PeakMeter.value("hasCenterScale", _HasCenterScale);
-    _HasRMSPlus3           = PeakMeter.value("hasRMSPlus3", _HasRMSPlus3);
-    _HasScaleLines         = PeakMeter.value("hasScaleLines", _HasScaleLines);
-    _BarGap                = PeakMeter.value("barGap", _BarGap);
-    _MaxBarSize            = PeakMeter.value("maxBarSize", _MaxBarSize);
+    {
+        _RMSWindow             = std::clamp(PeakMeter.value("rmsWindow",  _RMSWindow), MinRMSWindow, MaxRMSWindow);
+        _IsHorizontalPeakMeter = PeakMeter.value("horizontally", _IsHorizontalPeakMeter);
+        _HasCenterScale        = PeakMeter.value("hasCenterScale", _HasCenterScale);
+        _HasRMSPlus3           = PeakMeter.value("hasRMSPlus3", _HasRMSPlus3);
+        _HasScaleLines         = PeakMeter.value("hasScaleLines", _HasScaleLines);
+        _BarGap                = std::clamp(PeakMeter.value("barGap",     _BarGap),     MinBarGap,  MaxBarGap);
+        _MaxBarSize            = std::clamp(PeakMeter.value("maxBarSize", _MaxBarSize), MinBarSize, MinBarSize);
+    }
 
     const auto & LevelMeter = Object.value("levelMeter", json::object());
-
-    _IsHorizontalLevelMeter = LevelMeter.value("horizontally", _IsHorizontalLevelMeter);
+    {
+        _IsHorizontalLevelMeter = LevelMeter.value("horizontally", _IsHorizontalLevelMeter);
+    }
 
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
+    {
+        _XYMode     = Oscilloscope.value("xyMode", _XYMode);
+        _XGain      = std::clamp(Oscilloscope.value("xGain",      _XGain),      MinXGain,      MaxXGain);
+        _YGain      = std::clamp(Oscilloscope.value("yGain",      _YGain),      MinYGain,      MaxYGain);
+        _Rotation   = std::clamp(Oscilloscope.value("rotation",   _Rotation),   MinRotation,   MaxRotation);
+        _FrameCount = std::clamp(Oscilloscope.value("frameCount", _FrameCount), MinFrameCount, MaxFrameCount);
 
-    _XYMode     = Oscilloscope.value("xyMode", _XYMode);
-    _XGain      = Oscilloscope.value("xGain", _XGain);
-    _YGain      = Oscilloscope.value("yGain", _YGain);
-    _Rotation   = Oscilloscope.value("rotation", _Rotation);
-    _FrameCount = Oscilloscope.value("frameCount", _FrameCount);
+        const auto & PhosporDecay = Oscilloscope.value("phosphorDecay", json::object());
+        {
+            _HasPhosphorDecay = PhosporDecay.value("enabled",   _HasPhosphorDecay);
+            _BlurSigma        = std::clamp(PhosporDecay.value("blurSigma",    _BlurSigma),  MinBlurSigma,   MaxBlurSigma);
+            _DecayFactor      = std::clamp(PhosporDecay.value("decayFactor", _DecayFactor), MinDecayFactor, MaxDecayFactor);
+        }
 
-    const auto & PhosporDecay = Oscilloscope.value("phosphorDecay", json::object());
-
-    _HasPhosphorDecay = PhosporDecay.value("enabled", _HasPhosphorDecay);
-    _BlurSigma        = PhosporDecay.value("blurSigma", _BlurSigma);
-    _DecayFactor      = PhosporDecay.value("decayFactor", _DecayFactor);
-
-    _Downmix = Oscilloscope.value("downmix", _Downmix);
+        _Downmix = Oscilloscope.value("downmix", _Downmix);
+    }
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
-
-    _BitMeterMode           = BitMeter.value("mode", _BitMeterMode);
-    _BitsPerInteger         = BitMeter.value("bitsPerInteger", _BitsPerInteger);
-    _OpacityMode            = BitMeter.value("opacityMode", _OpacityMode);
+    {
+        _BitMeterMode   = std::clamp(BitMeter.value("mode",           _BitMeterMode),   BitMeterMode::Min, BitMeterMode::Max);
+        _BitsPerInteger = std::clamp(BitMeter.value("bitsPerInteger", _BitsPerInteger), MinBitsPerInteger, MaxBitsPerInteger);
+        _OpacityMode    = BitMeter.value("opacityMode", _OpacityMode);
+    }
 
     // Transform
     const auto & Transform = Object.value("transform", json::object());
-
-    _TransformMethod        = Transform.value("method", _TransformMethod);
+    {
+        _TransformMethod        = std::clamp(Transform.value("method", _TransformMethod), TransformMethod::Min, TransformMethod::Max);
+    }
 
     // FFT
     _WindowFunction         = Transform.value("windowFunction", _WindowFunction);

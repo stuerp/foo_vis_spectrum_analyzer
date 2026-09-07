@@ -117,11 +117,20 @@ inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
 inline constexpr double MinRMSWindow = 0.;  // s
 inline constexpr double MaxRMSWindow = 3.;  // s
 
-inline constexpr FLOAT MinBarGap =   0.;    // DIPs
+inline constexpr FLOAT MinBarGap =   0.f;   // DIPs
 inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr FLOAT MinBarSize =   0.;   // DIPs
+inline constexpr FLOAT MinBarSize =   0.f;  // DIPs
 inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
+
+inline constexpr double MinInnerRadius =   0.;  // DIPs
+inline constexpr double MaxInnerRadius = 100.;  // DIPs
+
+inline constexpr double MinOuterRadius =   0.;  // DIPs
+inline constexpr double MaxOuterRadius = 100.;  // DIPs
+
+inline constexpr double MinAngularVelocity = -360.; // Degrees
+inline constexpr double MaxAngularVelocity =  360.; // Degrees
 
 enum class PeakMode
 {

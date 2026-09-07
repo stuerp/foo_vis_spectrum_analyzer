@@ -425,7 +425,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         // Radial Bars / Radial Curve
         case IDC_INNER_RADIUS:
         {
-            if (!SetProperty(_State->_InnerRadius, (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f))
+            if (!SetProperty(_State->_InnerRadius, (FLOAT) std::clamp(::_wtof(Text), MinInnerRadius, MaxInnerRadius) / 100.f))
                 return;
 
             break;
@@ -433,7 +433,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_OUTER_RADIUS:
         {
-            if (!SetProperty(_State->_OuterRadius, (FLOAT) std::clamp(::_wtof(Text), 0., 100.) / 100.f))
+            if (!SetProperty(_State->_OuterRadius, (FLOAT) std::clamp(::_wtof(Text), MinInnerRadius, MaxInnerRadius) / 100.f))
                 return;
 
             break;
@@ -441,7 +441,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
         case IDC_ANGULAR_VELOCITY:
         {
-            if (!SetProperty(_State->_AngularVelocity, (FLOAT) std::clamp(::_wtof(Text), -360., 360.)))
+            if (!SetProperty(_State->_AngularVelocity, (FLOAT) std::clamp(::_wtof(Text), MinAngularVelocity, MaxAngularVelocity)))
                 return;
 
             break;
